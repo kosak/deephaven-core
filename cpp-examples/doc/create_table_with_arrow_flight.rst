@@ -76,9 +76,8 @@ Consider the following program from ``cpp-examples/create_table_with_arrow_fligh
     // 8. Get a Deephaven "FlightWrapper" object to access Arrow Flight
     auto wrapper = manager.createFlightWrapper();
 
-    // 9. Set up the destination path. In this case, the table named "tempTable"
-    std::string tableName = "tempTable";
-    auto fd = arrow::flight::FlightDescriptor::Path({"scope", tableName});
+    // 9. Allocate a TableHandle and get its corresponding Arrow flight descriptor
+    auto [table, fd] = manager.newTableHandleAndFlightDescriptor();
 
     // 10. DoPut takes FlightCallOptions, which need to at least contain the Deephaven
     // authentication headers for this session.
@@ -101,7 +100,6 @@ Consider the following program from ``cpp-examples/create_table_with_arrow_fligh
     statusOrDie(fsw->Close(), "Close failed");
 
     // 14. Use Deephaven high level operations to fetch the table and print it
-    auto table = manager.fetchTable(tableName);
     std::cout << "table is:\n" << table.stream(true) << std::endl;
   }
 
