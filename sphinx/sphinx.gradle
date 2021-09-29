@@ -10,10 +10,11 @@ evaluationDependsOn ':Integrations'
 
 def sphinxDockerfile = tasks.register('sphinxDockerfile', Dockerfile) {
     destFile.set layout.buildDirectory.file('sphinx-image/Dockerfile')
+    // Deephaven server python API requires that the wheel be installed to build, so we share this image
     from 'deephaven/runtime-base:local-build'
 
     runCommand '''set -eux; \\ 
-                  pip3 install sphinx==3.5.4 sphinx-autodoc-typehints==1.12.0 pyarrow==5.0.0 protobuf==3.17.3 grpcio==1.39.0 bitstring==3.1.9
+                  pip3 install sphinx==4.0.3 sphinx-autodoc-typehints==1.12.0 pyarrow==5.0.0 protobuf==3.17.3 grpcio==1.39.0 bitstring==3.1.9 breathe==4.31.0 furo==2021.9.8
                   '''
 }
 def sphinxImage = Docker.registerDockerImage(project, 'sphinx') {
@@ -41,7 +42,7 @@ def makePyDocTask = { name, archiveBaseName, sourcePaths, outDirPath ->
             runCommand '''set -eux; \\
                        mkdir /build; \\
                        cd /project; \\
-                       sphinx-build -b html source /build
+                       sphinx-build -n -b html source /build
                        '''
         }
         parentContainers = [sphinxImage.get()]
@@ -59,9 +60,34 @@ def makePyDocTask = { name, archiveBaseName, sourcePaths, outDirPath ->
     }
 }
 
-def pythonDocs = makePyDocTask('pythonDocs', 'dh-python-docs', ["$projectDir/source":'source'], "$buildDir/docs")
+def cppClientDoxygenTask = Docker.registerDockerTask(project, 'cppClientDoxygen') {
+    copyIn {
+        from "$rootDir/cpp-client"
+    }
+    dockerfile {
+        // share the common base image to keep it simple
+        from 'deephaven/runtime-base:local-build'
+
+        runCommand('''set -eax; \\
+                      apt-get -y install doxygen graphviz
+                      ''')
+
+        copyFile('.', '/project')
+
+        runCommand('''set -eax; \\
+                      cd /project/doc; \\
+                      doxygen
+                      ''')
+    }
+    containerOutPath = '/project/doc/doxygenoutput'
+    copyOut {
+        into "$buildDir/cppClientDoxygen"
+    }
+}
+
+def pythonDocs = makePyDocTask('pythonDocs', 'dh-python-docs', [("$projectDir/source".toString()):'source'], "$buildDir/docs")
 //TODO why do docs depend on this, but the wheel itself doesn't? makes more sense to depend on assert, right?
-project.tasks.named('pythonDocsMakeImage').configure {
+project.tasks.named('pythonDocsPrepareDocker').configure {
     dependsOn ':Generators:generateFigureImmutable'
     dependsOn ':Generators:generatePythonFigureWrapper'
     dependsOn ':Generators:generatePythonIntegrationStaticMethods'
@@ -71,3 +97,17 @@ makePyDocTask('pydeephavenDocs', 'pydeephaven', [
         ("$rootDir/pyclient/docs/source".toString()):'source',
         ("$rootDir/pyclient/pydeephaven".toString()):'pydeephaven'
 ], "$buildDir/pyclient-docs")
+
+
+makePyDocTask('cppClientDocs', 'cpp-client', [
+        ("$buildDir/cppClientDoxygen".toString()):'source/doxygenoutput',
+        ("$rootDir/cpp-client/doc".toString()):'source',
+        ("$rootDir/cpp-client/deephaven".toString()):'deephaven',
+], "$buildDir/cppClientDocs")
+tasks.named('cppClientDocsPrepareDocker').configure {
+    dependsOn cppClientDoxygenTask
+}
+
+makePyDocTask('cppExamplesDocs', 'cpp-examples', [
+        ("$rootDir/cpp-examples/doc".toString()):'source',
+], "$buildDir/cppExampleDocs")
