@@ -24,17 +24,17 @@ def sphinxImage = Docker.registerDockerImage(project, 'sphinx') {
     images.add('deephaven/sphinx:local-build')
 }
 
-def makePyDocTask = { name, archiveBaseName, sourcePaths, outDirPath ->
+def makePyDocTask = { name, archiveBaseName, sourcePaths, outDirPath, Closure c = {} ->
 
-    TaskProvider<? extends Task> pyDoc = Docker.registerDockerTask(project, name) {
-        copyIn {
+    TaskProvider<? extends Task> pyDoc = Docker.registerDockerTask(project, name) { cfg ->
+        cfg.copyIn {
             sourcePaths.each { entry ->
                 from(entry.key) {
                     into entry.value
                 }
             }
         }
-        dockerfile {
+        cfg.dockerfile {
             from 'deephaven/sphinx:local-build'
 
             copyFile('.', '/project')
@@ -45,12 +45,15 @@ def makePyDocTask = { name, archiveBaseName, sourcePaths, outDirPath ->
                        sphinx-build -n -b html source /build
                        '''
         }
-        parentContainers = [sphinxImage.get()]
-        containerOutPath = '/build'
-        copyOut {
+        cfg.parentContainers = [sphinxImage.get()]
+        cfg.containerOutPath = '/build'
+        cfg.copyOut {
             into outDirPath
         }
+
+        if (c) c(cfg)
     }
+
 
     project.tasks.register "${name}Tar", Tar, {
         Tar tar ->
@@ -110,4 +113,7 @@ tasks.named('cppClientDocsPrepareDocker').configure {
 
 makePyDocTask('cppExamplesDocs', 'cpp-examples', [
         ("$rootDir/cpp-examples/doc".toString()):'source',
-], "$buildDir/cppExampleDocs")
+        ("$buildDir/cppClientDocs".toString()):'cpp'
+], "$buildDir/cppExampleDocs") {
+
+}

@@ -31,8 +31,8 @@ extensions = [ 'sphinx.ext.intersphinx' ]
 
 intersphinx_mapping = {
     'dhclient': (
-        'http://client.virtual-uk.com/',
-        'http://client.virtual-uk.com/objects.inv'
+        '../cpp/',
+        '../cpp/objects.inv'
     )
 }
 

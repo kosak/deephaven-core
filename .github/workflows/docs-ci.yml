@@ -118,7 +118,7 @@ jobs:
         uses: burnett01/rsync-deployments@4.1
         with:
           switches: -avzr --delete
-          path: sphinx/build/pyclient-docs/
+          path: sphinx/build/cppClientDocs/
           remote_path: deephaven-core/client-api/cpp/
           remote_host: ${{ secrets.DOCS_HOST }}
           remote_port: ${{ secrets.DOCS_PORT }}
@@ -129,7 +129,7 @@ jobs:
         uses: burnett01/rsync-deployments@4.1
         with:
           switches: -avzr --delete
-          path: sphinx/build/pyclient-docs/
+          path: sphinx/build/cppExampleDocs/
           remote_path: deephaven-core/client-api/cpp-examples/
           remote_host: ${{ secrets.DOCS_HOST }}
           remote_port: ${{ secrets.DOCS_PORT }}
