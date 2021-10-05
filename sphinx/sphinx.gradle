@@ -114,6 +114,6 @@ tasks.named('cppClientDocsPrepareDocker').configure {
 makePyDocTask('cppExamplesDocs', 'cpp-examples', [
         ("$rootDir/cpp-examples/doc".toString()):'source',
         ("$buildDir/cppClientDocs".toString()):'cpp'
-], "$buildDir/cppExampleDocs") {
-
+], "$buildDir/cppExamplesDocs") {
+    //TODO declare dependency once updated to latest
 }
