@@ -17,6 +17,8 @@
 #include <arrow/util/key_value_metadata.h>
 #include "deephaven/client/utility/utility.h"
 
+#include <optional>
+
 namespace deephaven::client::utility {
 namespace internal {
 class TypeConverter {
