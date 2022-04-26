@@ -16,30 +16,14 @@ set -eux
 # export CXX=/l/gcc/11.2.0/bin/g++
 
 # Set to "Debug" or "Release"
-BUILD_TYPE=Debug
+: ${BUILD_TYPE:=Debug}
 
-export DHDEPS_HOME=$(pwd)
-
-#
-# End of user customization section; you should not need to modify the code below
-# unless you need to do partial re-builds.
-#
-
-# How many CPUs to use in -j arguments to make.
-NCPUS=$(getconf _NPROCESSORS_ONLN)
-
-# Where the checked out sources for dependencies will go
-export SRC=$DHDEPS_HOME/src
-
-# Where the install prefix paths will go
-export PFX=$DHDEPS_HOME/local
-
-# Let's get make to print out commands as they run
-export VERBOSE=1
-
-export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gflags:${PFX}/protobuf:${PFX}/re2:${PFX}/zlib:${PFX}/grpc:${PFX}/arrow:${PFX}/deephaven
+# Set to where you intend the sources for and installed depdenencies to live.
+: ${DHDEPS_HOME:=$(pwd)}
 
 # If you want to rebuild only certain parts or skip phases change "yes" to "no" below.
+# Note this assumues you at least once built everything; otherwise dependencies among libraries
+# may fail.
 : ${CHECKOUT:=yes}
 : ${BUILD_PROTOBUF:=yes}
 : ${BUILD_RE2:=yes}
@@ -50,6 +34,25 @@ export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gf
 : ${BUILD_ZLIB:=yes}
 : ${BUILD_GRPC:=yes}
 : ${BUILD_ARROW:=yes}
+
+#
+# End of user customization section; you should not need to modify the code below
+# unless you need to do partial re-builds.
+#
+
+# How many CPUs to use in -j arguments to make.
+NCPUS=$(getconf _NPROCESSORS_ONLN)
+
+# Where the checked out sources for dependencies will go
+SRC=$DHDEPS_HOME/src
+
+# Where the install prefix paths will go
+PFX=$DHDEPS_HOME/local
+
+# Let's get make to print out commands as they run
+export VERBOSE=1
+
+export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gflags:${PFX}/protobuf:${PFX}/re2:${PFX}/zlib:${PFX}/grpc:${PFX}/arrow:${PFX}/deephaven
 
 if [ ! -d $SRC ]; then
   mkdir -p $SRC

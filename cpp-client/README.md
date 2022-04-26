@@ -1,9 +1,8 @@
 # Building the C++ client from a base Ubuntu 20.04 image
 
 These instructions show how to install and run the Deephaven C++ client, its dependencies,
-and its unit tests. For now the installation instructions are limited to a static library
-installation, into /usr/local, assuming C++17. We intend to provide instructions for other
-variations in the future.
+and its unit tests. We have tested these instructions in Ubuntu 20.04 with the default
+C++ compiler and tool suite (cmake etc).
 
 1. Start with an Ubuntu 20.04 install
 
@@ -17,7 +16,7 @@ variations in the future.
 4. Make a new directory for the Deephaven source code and assign that directory
    to a temporary shell variable. This will make subsequent build steps easier.
    ```
-   mkdir -p ~/src/deephaven && cd src/deephaven && export DHSRC=`pwd`
+   mkdir -p ~/src/deephaven && cd ~/src/deephaven && export DHSRC=`pwd`
    ```
 5. Clone deephaven-core sources.
    ```
@@ -52,10 +51,11 @@ variations in the future.
    export PFX=$HOME/dhcpp/local  # This should reflect your selection in the previous point.
    export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gflags:${PFX}/protobuf:${PFX}/re2:${PFX}/zlib:${PFX}/grpc:${PFX}/arrow:${PFX}/deephaven
    export NCPUS=$(getconf _NPROCESSORS_ONLN)
-   cmake CMAKE_INSTALL_PREFIX=${PFX}/deephaven .. && make -j$NCPUS install
+   cmake -DCMAKE_INSTALL_PREFIX=${PFX}/deephaven .. && make -j$NCPUS install
    ```
 
-8. Build and run the deephaven example which uses the installed client
+8. Build and run the deephaven example which uses the installed client.
+   Note this assumes deephaven server is running (see step 2).
 
    ```
    cd $DHSRC/deephaven-core/cpp-examples/hello_world
