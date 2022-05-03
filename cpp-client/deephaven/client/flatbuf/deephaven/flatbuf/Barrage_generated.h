@@ -162,8 +162,8 @@ struct BarrageMessageWrapper FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_MAGIC) &&
-           VerifyField<int8_t>(verifier, VT_MSG_TYPE) &&
+           VerifyField<uint32_t>(verifier, VT_MAGIC, 4) &&
+           VerifyField<int8_t>(verifier, VT_MSG_TYPE, 1) &&
            VerifyOffset(verifier, VT_MSG_PAYLOAD) &&
            verifier.VerifyVector(msg_payload()) &&
            verifier.EndTable();
@@ -236,7 +236,7 @@ struct NewSessionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_PROTOCOL_VERSION) &&
+           VerifyField<uint32_t>(verifier, VT_PROTOCOL_VERSION, 4) &&
            VerifyOffset(verifier, VT_PAYLOAD) &&
            verifier.VerifyVector(payload()) &&
            verifier.EndTable();
@@ -364,7 +364,7 @@ struct SessionInfoResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
            verifier.VerifyVector(metadata_header()) &&
            VerifyOffset(verifier, VT_SESSION_TOKEN) &&
            verifier.VerifyVector(session_token()) &&
-           VerifyField<int64_t>(verifier, VT_TOKEN_REFRESH_DEADLINE_MS) &&
+           VerifyField<int64_t>(verifier, VT_TOKEN_REFRESH_DEADLINE_MS, 8) &&
            verifier.EndTable();
   }
 };
@@ -451,10 +451,10 @@ struct BarrageSubscriptionOptions FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE) &&
-           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS) &&
-           VerifyField<int32_t>(verifier, VT_MIN_UPDATE_INTERVAL_MS) &&
-           VerifyField<int32_t>(verifier, VT_BATCH_SIZE) &&
+           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS, 1) &&
+           VerifyField<int32_t>(verifier, VT_MIN_UPDATE_INTERVAL_MS, 4) &&
+           VerifyField<int32_t>(verifier, VT_BATCH_SIZE, 4) &&
            verifier.EndTable();
   }
 };
@@ -518,8 +518,7 @@ struct BarrageSubscriptionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   const flatbuffers::Vector<int8_t> *columns() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_COLUMNS);
   }
-  /// This is an encoded and compressed RowSet in position-space to subscribe to. If not provided then the entire
-  /// table is requested.
+  /// This is an encoded and compressed RowSet in position-space to subscribe to.
   const flatbuffers::Vector<int8_t> *viewport() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_VIEWPORT);
   }
@@ -527,8 +526,8 @@ struct BarrageSubscriptionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   const io::deephaven::barrage::flatbuf::BarrageSubscriptionOptions *subscription_options() const {
     return GetPointer<const io::deephaven::barrage::flatbuf::BarrageSubscriptionOptions *>(VT_SUBSCRIPTION_OPTIONS);
   }
-  /// When this is set the viewport RowSet will be inverted against the length of the table. That is to say
-  /// every position value is converted from `i` to `n - i - 1` if the table has `n` rows.
+  /// When this is set the viewport RowSet will be inverted against the length of the table. That is to say the
+  /// every index value is converted from `i` to `n - i` if the table has `n` rows.
   bool reverse_viewport() const {
     return GetField<uint8_t>(VT_REVERSE_VIEWPORT, 0) != 0;
   }
@@ -542,7 +541,7 @@ struct BarrageSubscriptionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
            verifier.VerifyVector(viewport()) &&
            VerifyOffset(verifier, VT_SUBSCRIPTION_OPTIONS) &&
            verifier.VerifyTable(subscription_options()) &&
-           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT) &&
+           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT, 1) &&
            verifier.EndTable();
   }
 };
@@ -636,9 +635,9 @@ struct BarrageSnapshotOptions FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE) &&
-           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS) &&
-           VerifyField<int32_t>(verifier, VT_BATCH_SIZE) &&
+           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS, 1) &&
+           VerifyField<int32_t>(verifier, VT_BATCH_SIZE, 4) &&
            verifier.EndTable();
   }
 };
@@ -706,8 +705,8 @@ struct BarrageSnapshotRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
   const io::deephaven::barrage::flatbuf::BarrageSnapshotOptions *snapshot_options() const {
     return GetPointer<const io::deephaven::barrage::flatbuf::BarrageSnapshotOptions *>(VT_SNAPSHOT_OPTIONS);
   }
-  /// When this is set the viewport RowSet will be inverted against the length of the table. That is to say
-  /// every position value is converted from `i` to `n - i - 1` if the table has `n` rows.
+  /// When this is set the viewport RowSet will be inverted against the length of the table. That is to say the
+  /// every index value is converted from `i` to `n - i` if the table has `n` rows.
   bool reverse_viewport() const {
     return GetField<uint8_t>(VT_REVERSE_VIEWPORT, 0) != 0;
   }
@@ -721,7 +720,7 @@ struct BarrageSnapshotRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
            verifier.VerifyVector(viewport()) &&
            VerifyOffset(verifier, VT_SNAPSHOT_OPTIONS) &&
            verifier.VerifyTable(snapshot_options()) &&
-           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT) &&
+           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT, 1) &&
            verifier.EndTable();
   }
 };
@@ -803,7 +802,7 @@ struct BarragePublicationOptions FLATBUFFERS_FINAL_CLASS : private flatbuffers::
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS) &&
+           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS, 1) &&
            verifier.EndTable();
   }
 };
@@ -903,7 +902,7 @@ inline flatbuffers::Offset<BarragePublicationRequest> CreateBarragePublicationRe
       publish_options);
 }
 
-/// Holds all of the rowset data structures for the column being modified.
+/// Holds all of the index data structures for the column being modified.
 struct BarrageModColumnMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef BarrageModColumnMetadataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -973,8 +972,7 @@ struct BarrageUpdateMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
     VT_REMOVED_ROWS = 20,
     VT_SHIFT_DATA = 22,
     VT_ADDED_ROWS_INCLUDED = 24,
-    VT_MOD_COLUMN_NODES = 26,
-    VT_EFFECTIVE_REVERSE_VIEWPORT = 28
+    VT_MOD_COLUMN_NODES = 26
   };
   /// The number of record batches that describe rows added (may be zero).
   uint16_t num_add_batches() const {
@@ -1014,7 +1012,7 @@ struct BarrageUpdateMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
   const flatbuffers::Vector<int8_t> *removed_rows() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_REMOVED_ROWS);
   }
-  /// This is an encoded and compressed RowSetShiftData describing how the keyspace of unmodified rows changed.
+  /// This is an encoded and compressed IndexShiftData describing how the keyspace of unmodified rows changed.
   const flatbuffers::Vector<int8_t> *shift_data() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_SHIFT_DATA);
   }
@@ -1028,18 +1026,13 @@ struct BarrageUpdateMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
   const flatbuffers::Vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>> *mod_column_nodes() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>> *>(VT_MOD_COLUMN_NODES);
   }
-  /// When this is set the viewport RowSet will be inverted against the length of the table. That is to say
-  /// every position value is converted from `i` to `n - i - 1` if the table has `n` rows.
-  bool effective_reverse_viewport() const {
-    return GetField<uint8_t>(VT_EFFECTIVE_REVERSE_VIEWPORT, 0) != 0;
-  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_NUM_ADD_BATCHES) &&
-           VerifyField<uint16_t>(verifier, VT_NUM_MOD_BATCHES) &&
-           VerifyField<int64_t>(verifier, VT_FIRST_SEQ) &&
-           VerifyField<int64_t>(verifier, VT_LAST_SEQ) &&
-           VerifyField<uint8_t>(verifier, VT_IS_SNAPSHOT) &&
+           VerifyField<uint16_t>(verifier, VT_NUM_ADD_BATCHES, 2) &&
+           VerifyField<uint16_t>(verifier, VT_NUM_MOD_BATCHES, 2) &&
+           VerifyField<int64_t>(verifier, VT_FIRST_SEQ, 8) &&
+           VerifyField<int64_t>(verifier, VT_LAST_SEQ, 8) &&
+           VerifyField<uint8_t>(verifier, VT_IS_SNAPSHOT, 1) &&
            VerifyOffset(verifier, VT_EFFECTIVE_VIEWPORT) &&
            verifier.VerifyVector(effective_viewport()) &&
            VerifyOffset(verifier, VT_EFFECTIVE_COLUMN_SET) &&
@@ -1055,7 +1048,6 @@ struct BarrageUpdateMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
            VerifyOffset(verifier, VT_MOD_COLUMN_NODES) &&
            verifier.VerifyVector(mod_column_nodes()) &&
            verifier.VerifyVectorOfTables(mod_column_nodes()) &&
-           VerifyField<uint8_t>(verifier, VT_EFFECTIVE_REVERSE_VIEWPORT) &&
            verifier.EndTable();
   }
 };
@@ -1100,9 +1092,6 @@ struct BarrageUpdateMetadataBuilder {
   void add_mod_column_nodes(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>>> mod_column_nodes) {
     fbb_.AddOffset(BarrageUpdateMetadata::VT_MOD_COLUMN_NODES, mod_column_nodes);
   }
-  void add_effective_reverse_viewport(bool effective_reverse_viewport) {
-    fbb_.AddElement<uint8_t>(BarrageUpdateMetadata::VT_EFFECTIVE_REVERSE_VIEWPORT, static_cast<uint8_t>(effective_reverse_viewport), 0);
-  }
   explicit BarrageUpdateMetadataBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -1127,8 +1116,7 @@ inline flatbuffers::Offset<BarrageUpdateMetadata> CreateBarrageUpdateMetadata(
     flatbuffers::Offset<flatbuffers::Vector<int8_t>> removed_rows = 0,
     flatbuffers::Offset<flatbuffers::Vector<int8_t>> shift_data = 0,
     flatbuffers::Offset<flatbuffers::Vector<int8_t>> added_rows_included = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>>> mod_column_nodes = 0,
-    bool effective_reverse_viewport = false) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>>> mod_column_nodes = 0) {
   BarrageUpdateMetadataBuilder builder_(_fbb);
   builder_.add_last_seq(last_seq);
   builder_.add_first_seq(first_seq);
@@ -1141,7 +1129,6 @@ inline flatbuffers::Offset<BarrageUpdateMetadata> CreateBarrageUpdateMetadata(
   builder_.add_effective_viewport(effective_viewport);
   builder_.add_num_mod_batches(num_mod_batches);
   builder_.add_num_add_batches(num_add_batches);
-  builder_.add_effective_reverse_viewport(effective_reverse_viewport);
   builder_.add_is_snapshot(is_snapshot);
   return builder_.Finish();
 }
@@ -1159,8 +1146,7 @@ inline flatbuffers::Offset<BarrageUpdateMetadata> CreateBarrageUpdateMetadataDir
     const std::vector<int8_t> *removed_rows = nullptr,
     const std::vector<int8_t> *shift_data = nullptr,
     const std::vector<int8_t> *added_rows_included = nullptr,
-    const std::vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>> *mod_column_nodes = nullptr,
-    bool effective_reverse_viewport = false) {
+    const std::vector<flatbuffers::Offset<io::deephaven::barrage::flatbuf::BarrageModColumnMetadata>> *mod_column_nodes = nullptr) {
   auto effective_viewport__ = effective_viewport ? _fbb.CreateVector<int8_t>(*effective_viewport) : 0;
   auto effective_column_set__ = effective_column_set ? _fbb.CreateVector<int8_t>(*effective_column_set) : 0;
   auto added_rows__ = added_rows ? _fbb.CreateVector<int8_t>(*added_rows) : 0;
@@ -1181,8 +1167,7 @@ inline flatbuffers::Offset<BarrageUpdateMetadata> CreateBarrageUpdateMetadataDir
       removed_rows__,
       shift_data__,
       added_rows_included__,
-      mod_column_nodes__,
-      effective_reverse_viewport);
+      mod_column_nodes__);
 }
 
 inline const io::deephaven::barrage::flatbuf::BarrageMessageWrapper *GetBarrageMessageWrapper(const void *buf) {

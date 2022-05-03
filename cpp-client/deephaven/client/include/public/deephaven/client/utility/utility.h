@@ -150,6 +150,20 @@ internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin,
 #define DEEPHAVEN_EXPR_MSG(EXPR) (EXPR), #EXPR "@" __FILE__ ":" DEEPHAVEN_STRINGIFY(__LINE__)
 
 /**
+ * If result's status is OK, do nothing. Otherwise throw a runtime error with an informative message.
+ * @param result an arrow::Result
+ * @param optionalMessage An optional message to be included in the exception message.
+ */
+template<typename T>
+void okOrThrow(const arrow::Result<T> &result, const char *message) {
+    if (result.ok()) {
+        return;
+    }
+    auto msg = stringf("Status: %o. Caller message: %o", result.status(), message != nullptr ? message : "(none)");
+    throw std::runtime_error(msg);
+}
+
+/**
  * If status is OK, do nothing. Otherwise throw a runtime error with an informative message.
  * @param status the arrow::Status
  * @param optionalMessage An optional message to be included in the exception message.

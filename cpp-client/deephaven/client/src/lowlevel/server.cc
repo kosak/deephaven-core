@@ -55,22 +55,20 @@ std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
 
   // TODO(kosak): Warn about this string conversion or do something more general.
   auto flightTarget = "grpc://" + target;
-  arrow::flight::Location location;
-  auto rc1 = arrow::flight::Location::Parse(flightTarget, &location);
-  if (!rc1.ok()) {
-    auto message = stringf("Location::Parse(%o) failed, error = %o", flightTarget, rc1.ToString());
+  auto location = arrow::flight::Location::Parse(flightTarget);
+  if (!location.ok()) {
+    auto message = stringf("Location::Parse(%o) failed, error = %o", flightTarget, location.status().ToString());
     throw std::runtime_error(message);
   }
 
-  std::unique_ptr<arrow::flight::FlightClient> fc;
-  auto rc2 = arrow::flight::FlightClient::Connect(location, &fc);
-  if (!rc2.ok()) {
-    auto message = stringf("FlightClient::Connect() failed, error = %o", rc2.ToString());
+  auto flight_client = arrow::flight::FlightClient::Connect(location.ValueUnsafe());
+  if (!flight_client.ok()) {
+    auto message = stringf("FlightClient::Connect() failed, error = %o", flight_client.status().ToString());
     throw std::runtime_error(message);
   }
 
   auto result = std::make_shared<Server>(Private(), std::move(as), std::move(cs),
-      std::move(ss), std::move(ts), std::move(fc));
+      std::move(ss), std::move(ts), std::move(flight_client.ValueOrDie()));
   result->self_ = result;
 
   std::thread t(&processCompletionQueueForever, result);
