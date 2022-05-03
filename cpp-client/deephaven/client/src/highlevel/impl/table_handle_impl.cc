@@ -591,6 +591,9 @@ void ThreadNubbin::runForeverHelperImpl() {
     // adds
     // modifies
 
+    std::cerr << "ZAMBONI TIME\n";
+    continue;
+
     if (!addedRows->empty()) {
       streamf(std::cerr, "There was some new data: %o rows, %o columns:\n",
           flightStreamChunk.data->num_rows(), flightStreamChunk.data->num_columns());

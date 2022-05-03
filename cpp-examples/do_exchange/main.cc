@@ -90,7 +90,7 @@ template<typename T> inline std::vector<T> reserved_vector(size_t n) {
 
 void Callback::onTick(const std::shared_ptr<SadTable> &table) {
   // Deliberately chosen to be small so I can test chunking. In production this would be a lot larger.
-  const size_t chunkSize = 8;
+  const size_t chunkSize = 8192;
 
   auto ncols = table->numColumns();
   auto selectedCols = reserved_vector<size_t>(ncols);
@@ -232,13 +232,39 @@ void makeModifiesHappen(const TableHandleManager &manager) {
   std::cerr << "exiting\n";
 }
 
+void millionRows(const TableHandleManager &manager) {
+  auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+
+  const size_t topAndBottomSize = 500'000;
+  auto tTop = manager.emptyTable(topAndBottomSize).select("Value = ii");
+  auto tBottom = manager.emptyTable(topAndBottomSize).select("Value = 10_000_000 + ii");
+  auto pulsatingMiddle =  manager.timeTable(start, 1 * 1'000'000'000L)
+      .tail(10)
+      .select("Selector = ((int)(Timestamp.getNanos() / 1_000_000_000)) % 20")
+      .where("Selector < 10")
+      .select("Value = 1_000_000L + Selector");
+
+  auto table = tTop.merge({pulsatingMiddle, tBottom});
+
+  table.bindToVariable("showme");
+
+  auto myCallback = std::make_shared<Callback>();
+  table.subscribe(myCallback);
+  std::this_thread::sleep_for(std::chrono::seconds(5'000));
+  std::cerr << "I unsubscribed here\n";
+  table.unsubscribe(std::move(myCallback));
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::cerr << "exiting\n";
+}
+
 int main() {
   const char *server = "localhost:10000";
 
   try {
     auto client = Client::connect(server);
     auto manager = client.getManager();
-    makeModifiesHappen(manager);
+    millionRows(manager);
   } catch (const std::exception &e) {
     std::cerr << "Caught exception: " << e.what() << '\n';
   }
