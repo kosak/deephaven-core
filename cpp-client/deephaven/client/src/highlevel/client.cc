@@ -424,7 +424,8 @@ std::shared_ptr<arrow::flight::FlightStreamReader> FlightWrapper::getFlightStrea
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
   arrow::flight::Ticket tkt;
   tkt.ticket = table.impl()->ticket().ticket();
-  okOrThrow(DEEPHAVEN_EXPR_MSG(server->flightClient()->DoGet(options, tkt).Value(&fsr)));
+
+  okOrThrow(DEEPHAVEN_EXPR_MSG(server->flightClient()->DoGet(options, tkt, &fsr)));
   return fsr;
 }
 
@@ -561,7 +562,7 @@ void printTableData(std::ostream &s, const TableHandle &tableHandle, bool wantHe
 
   while (true) {
     arrow::flight::FlightStreamChunk chunk;
-    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next().Value(&chunk)));
+    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(&chunk)));
     if (chunk.data == nullptr) {
       break;
     }

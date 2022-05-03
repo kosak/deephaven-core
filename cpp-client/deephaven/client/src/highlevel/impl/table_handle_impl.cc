@@ -464,8 +464,9 @@ void SubscribeNubbin::invokeHelper() {
 
   dummy.type = arrow::flight::FlightDescriptor::DescriptorType::CMD;
   dummy.cmd = std::string(magicData, 4);
-  arrow::Result<arrow::flight::FlightClient::DoExchangeResult> do_exchange_result;
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_exchange_result = client->DoExchange(fco, dummy)));
+  std::unique_ptr<arrow::flight::FlightStreamWriter> fsw;
+  std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
+  okOrThrow(DEEPHAVEN_EXPR_MSG(client->DoExchange(fco, dummy, &fsw, &fsr)));
 
   // Make a BarrageMessageWrapper
   // ...Whose payload is a BarrageSubscriptionRequest
@@ -493,9 +494,9 @@ void SubscribeNubbin::invokeHelper() {
   auto wrapperBuffer = wrapperBuilder.Release();
 
   auto buffer = std::make_shared<ZamboniBuffer>(std::move(wrapperBuffer));
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_exchange_result->writer->WriteMetadata(std::move(buffer))));
+  okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->WriteMetadata(std::move(buffer))));
 
-  auto threadNubbin = std::make_shared<ThreadNubbin>(std::move(do_exchange_result->reader),
+  auto threadNubbin = std::make_shared<ThreadNubbin>(std::move(fsr),
       std::move(colDefs_), std::move(callback_));
   sadClown_ = threadNubbin;
   std::thread t(&ThreadNubbin::runForever, std::move(threadNubbin));
@@ -544,11 +545,10 @@ void ThreadNubbin::runForeverHelperImpl() {
   }
 
   auto sadTable = SadTickingTable::create(std::move(tableColumns));
-  arrow::Result<arrow::flight::FlightStreamChunk> flightStreamChunkResult;
+  arrow::flight::FlightStreamChunk flightStreamChunk;
   while (true) {
-    okOrThrow(flightStreamChunkResult = DEEPHAVEN_EXPR_MSG(fsr_->Next()));
+    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
     // streamf(std::cerr, "GOT A NUBBIN\n%o\n", chunk.data->ToString());
-    arrow::flight::FlightStreamChunk flightStreamChunk = flightStreamChunkResult.ValueUnsafe();
     if (flightStreamChunk.app_metadata == nullptr) {
       std::cerr << "TODO(kosak) -- chunk.app_metdata == nullptr\n";
       continue;
@@ -568,6 +568,8 @@ void ThreadNubbin::runForeverHelperImpl() {
 
     const auto *pp = zamboni->msg_payload()->data();
     auto *nubbinp = flatbuffers::GetRoot<BarrageUpdateMetadata>(pp);
+    streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", nubbinp->num_add_batches(), nubbinp->num_mod_batches());
+
     DataInput diAdded(nubbinp->added_rows()->data(), nubbinp->added_rows()->size());
     auto addedRows = readExternalCompressedDelta(&diAdded);
     DataInput diRemoved(nubbinp->removed_rows()->data(), nubbinp->removed_rows()->size());
@@ -1014,18 +1016,19 @@ public:
   void invoke() final {
     arrow::flight::FlightCallOptions options;
     options.headers.push_back(owner_->server_->makeBlessing());
+    std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
     arrow::flight::Ticket tkt;
     tkt.ticket = ticket_.ticket();
 
-    auto doGetRes = owner_->server_->flightClient()->DoGet(options, tkt);
+    auto doGetRes = owner_->server_->flightClient()->DoGet(options, tkt, &fsr);
     if (!doGetRes.ok()) {
-      auto message = stringf("Doget failed with status %o", doGetRes.status().ToString());
+      auto message = stringf("Doget failed with status %o", doGetRes.ToString());
       auto ep = std::make_exception_ptr(std::runtime_error(message));
       owner_->colDefsPromise_.setError(std::move(ep));
       return;
     }
 
-    auto schemaHolder = doGetRes.ValueUnsafe()->GetSchema();
+    auto schemaHolder = fsr->GetSchema();
     if (!schemaHolder.ok()) {
       auto message = stringf("GetSchema failed with status %o", schemaHolder.status().ToString());
       auto ep = std::make_exception_ptr(std::runtime_error(message));

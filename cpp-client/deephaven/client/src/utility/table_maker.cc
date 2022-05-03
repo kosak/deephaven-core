@@ -42,16 +42,17 @@ TableHandle TableMaker::makeTable(const TableHandleManager &manager) {
   arrow::flight::FlightCallOptions options;
   wrapper.addAuthHeaders(&options);
 
-  arrow::Result<arrow::flight::FlightClient::DoPutResult> do_put_result;
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_put_result = wrapper.flightClient()->DoPut(options, fd, schema)));
+  std::unique_ptr<arrow::flight::FlightStreamWriter> fsw;
+  std::unique_ptr<arrow::flight::FlightMetadataReader> fmr;
+  okOrThrow(DEEPHAVEN_EXPR_MSG(wrapper.flightClient()->DoPut(options, fd, schema, &fsw, &fmr)));
   auto batch = arrow::RecordBatch::Make(schema, numRows_, std::move(columns_));
 
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_put_result->writer->WriteRecordBatch(*batch)));
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_put_result->writer->DoneWriting()));
+  okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->WriteRecordBatch(*batch)));
+  okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->DoneWriting()));
 
   std::shared_ptr<arrow::Buffer> buf;
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_put_result->reader->ReadMetadata(&buf)));
-  okOrThrow(DEEPHAVEN_EXPR_MSG(do_put_result->writer->Close()));
+  okOrThrow(DEEPHAVEN_EXPR_MSG(fmr->ReadMetadata(&buf)));
+  okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->Close()));
   return result;
 }
 

@@ -162,8 +162,8 @@ struct BarrageMessageWrapper FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_MAGIC) &&
-           VerifyField<int8_t>(verifier, VT_MSG_TYPE) &&
+           VerifyField<uint32_t>(verifier, VT_MAGIC, 4) &&
+           VerifyField<int8_t>(verifier, VT_MSG_TYPE, 1) &&
            VerifyOffset(verifier, VT_MSG_PAYLOAD) &&
            verifier.VerifyVector(msg_payload()) &&
            verifier.EndTable();
@@ -236,7 +236,7 @@ struct NewSessionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_PROTOCOL_VERSION) &&
+           VerifyField<uint32_t>(verifier, VT_PROTOCOL_VERSION, 4) &&
            VerifyOffset(verifier, VT_PAYLOAD) &&
            verifier.VerifyVector(payload()) &&
            verifier.EndTable();
@@ -364,7 +364,7 @@ struct SessionInfoResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
            verifier.VerifyVector(metadata_header()) &&
            VerifyOffset(verifier, VT_SESSION_TOKEN) &&
            verifier.VerifyVector(session_token()) &&
-           VerifyField<int64_t>(verifier, VT_TOKEN_REFRESH_DEADLINE_MS) &&
+           VerifyField<int64_t>(verifier, VT_TOKEN_REFRESH_DEADLINE_MS, 8) &&
            verifier.EndTable();
   }
 };
@@ -451,10 +451,10 @@ struct BarrageSubscriptionOptions FLATBUFFERS_FINAL_CLASS : private flatbuffers:
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE) &&
-           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS) &&
-           VerifyField<int32_t>(verifier, VT_MIN_UPDATE_INTERVAL_MS) &&
-           VerifyField<int32_t>(verifier, VT_BATCH_SIZE) &&
+           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS, 1) &&
+           VerifyField<int32_t>(verifier, VT_MIN_UPDATE_INTERVAL_MS, 4) &&
+           VerifyField<int32_t>(verifier, VT_BATCH_SIZE, 4) &&
            verifier.EndTable();
   }
 };
@@ -541,7 +541,7 @@ struct BarrageSubscriptionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
            verifier.VerifyVector(viewport()) &&
            VerifyOffset(verifier, VT_SUBSCRIPTION_OPTIONS) &&
            verifier.VerifyTable(subscription_options()) &&
-           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT) &&
+           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT, 1) &&
            verifier.EndTable();
   }
 };
@@ -635,9 +635,9 @@ struct BarrageSnapshotOptions FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE) &&
-           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS) &&
-           VerifyField<int32_t>(verifier, VT_BATCH_SIZE) &&
+           VerifyField<int8_t>(verifier, VT_COLUMN_CONVERSION_MODE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS, 1) &&
+           VerifyField<int32_t>(verifier, VT_BATCH_SIZE, 4) &&
            verifier.EndTable();
   }
 };
@@ -720,7 +720,7 @@ struct BarrageSnapshotRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
            verifier.VerifyVector(viewport()) &&
            VerifyOffset(verifier, VT_SNAPSHOT_OPTIONS) &&
            verifier.VerifyTable(snapshot_options()) &&
-           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT) &&
+           VerifyField<uint8_t>(verifier, VT_REVERSE_VIEWPORT, 1) &&
            verifier.EndTable();
   }
 };
@@ -802,7 +802,7 @@ struct BarragePublicationOptions FLATBUFFERS_FINAL_CLASS : private flatbuffers::
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS) &&
+           VerifyField<uint8_t>(verifier, VT_USE_DEEPHAVEN_NULLS, 1) &&
            verifier.EndTable();
   }
 };
@@ -1034,11 +1034,11 @@ struct BarrageUpdateMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_NUM_ADD_BATCHES) &&
-           VerifyField<uint16_t>(verifier, VT_NUM_MOD_BATCHES) &&
-           VerifyField<int64_t>(verifier, VT_FIRST_SEQ) &&
-           VerifyField<int64_t>(verifier, VT_LAST_SEQ) &&
-           VerifyField<uint8_t>(verifier, VT_IS_SNAPSHOT) &&
+           VerifyField<uint16_t>(verifier, VT_NUM_ADD_BATCHES, 2) &&
+           VerifyField<uint16_t>(verifier, VT_NUM_MOD_BATCHES, 2) &&
+           VerifyField<int64_t>(verifier, VT_FIRST_SEQ, 8) &&
+           VerifyField<int64_t>(verifier, VT_LAST_SEQ, 8) &&
+           VerifyField<uint8_t>(verifier, VT_IS_SNAPSHOT, 1) &&
            VerifyOffset(verifier, VT_EFFECTIVE_VIEWPORT) &&
            verifier.VerifyVector(effective_viewport()) &&
            VerifyOffset(verifier, VT_EFFECTIVE_COLUMN_SET) &&
@@ -1054,7 +1054,7 @@ struct BarrageUpdateMetadata FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
            VerifyOffset(verifier, VT_MOD_COLUMN_NODES) &&
            verifier.VerifyVector(mod_column_nodes()) &&
            verifier.VerifyVectorOfTables(mod_column_nodes()) &&
-           VerifyField<uint8_t>(verifier, VT_EFFECTIVE_REVERSE_VIEWPORT) &&
+           VerifyField<uint8_t>(verifier, VT_EFFECTIVE_REVERSE_VIEWPORT, 1) &&
            verifier.EndTable();
   }
 };
