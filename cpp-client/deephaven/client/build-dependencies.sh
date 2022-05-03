@@ -73,10 +73,10 @@ if [ "$CHECKOUT" = "yes" ]; then
   git clone -b 2022-04-01 --depth 1 https://github.com/google/re2.git
   git clone -b v2.2.2 --depth 1 https://github.com/gflags/gflags.git
   git clone -b 20210324.2 --depth 1 https://github.com/abseil/abseil-cpp.git
-  git clone -b v2.0.6 --depth 1 https://github.com/google/flatbuffers.git
+  git clone -b v2.0.0 --depth 1 https://github.com/google/flatbuffers.git
   git clone -b cares-1_17_2 --depth 1 https://github.com/c-ares/c-ares.git
   git clone -b v1.2.11 --depth 1 https://github.com/madler/zlib
-  git clone -b v1.45.2 --depth 1 https://github.com/grpc/grpc
+  git clone -b v1.44.0 --depth 1 https://github.com/grpc/grpc
   git clone -b apache-arrow-8.0.0 --depth 1 https://github.com/apache/arrow
   # Apply apache arrow patch.
   (cd arrow && patch -p1 <<EOF
