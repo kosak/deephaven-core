@@ -6,16 +6,24 @@
 #include <vector>
 #include <arrow/type.h>
 
-namespace deephaven {
-namespace client {
-namespace utility {
+namespace deephaven::client::utility {
 template<typename Dest, typename Src>
 inline Dest bit_cast(const Src &item) {
   static_assert(sizeof(Src) == sizeof(Dest), "Src and Dest are not the same size");
   Dest dest;
-  memcpy(static_cast<void*>(&dest), static_cast<const void*>(&item), sizeof(Dest));
+  memcpy(static_cast<void *>(&dest), static_cast<const void *>(&item), sizeof(Dest));
   return dest;
 }
+
+template<typename T>
+std::vector<T> makeReservedVector(size_t n) {
+  std::vector<T> v;
+  v.reserve(n);
+  return v;
+}
+
+void assertLessEq(size_t lhs, size_t rhs, std::string_view context, std::string_view lhsName,
+  std::string_view rhsName);
 
 // A more efficient ostringstream that also allows you to grab the internal buffer if you want it.
 // Or, if you don't want to use the internal buffer, it allows you to provide your own.
@@ -127,9 +135,9 @@ void defaultCallback(std::ostream &s, const T &item) {
 }  // namespace internal
 
 template<typename Iterator>
-internal::SeparatedListAdaptor<Iterator, void(*)(std::ostream &s, const decltype(*std::declval<Iterator>()) &)> separatedList(Iterator begin, Iterator end,
-    const char *separator = ", ") {
-  return internal::SeparatedListAdaptor<Iterator, void(*)(std::ostream &s, const decltype(*std::declval<Iterator>()) &)>(
+auto separatedList(Iterator begin, Iterator end, const char *separator = ", ") {
+  return internal::SeparatedListAdaptor<Iterator, void (*)(std::ostream &s,
+      const std::remove_reference_t<decltype(*std::declval<Iterator>())> &)>(
       begin, end, separator, &internal::defaultCallback);
 }
 
@@ -148,6 +156,69 @@ internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin,
  * message.
  */
 #define DEEPHAVEN_EXPR_MSG(EXPR) (EXPR), #EXPR "@" __FILE__ ":" DEEPHAVEN_STRINGIFY(__LINE__)
+
+
+#if defined(__clang__)
+#define DEEPHAVEN_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__GNUC__)
+#define DEEPHAVEN_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__MSC_VER)
+#define DEEPHAVEN_PRETTY_FUNCTION __FUNCSIG__
+#else
+# error Unsupported compiler
+#endif
+
+// https://stackoverflow.com/questions/281818/unmangling-the-result-of-stdtype-infoname
+template <typename T>
+constexpr std::string_view getTypeName() {
+#if defined(__clang__)
+  constexpr auto prefix = std::string_view{"[T = "};
+  constexpr auto suffix = "]";
+#elif defined(__GNUC__)
+  constexpr auto prefix = std::string_view{"with T = "};
+  constexpr auto suffix = "; ";
+#elif defined(__MSC_VER)
+  constexpr auto prefix = std::string_view{"get_type_name<"};
+  constexpr auto suffix = ">(void)";
+#else
+# error Unsupported compiler
+#endif
+
+  constexpr auto function = std::string_view{DEEPHAVEN_PRETTY_FUNCTION};
+
+  const auto start = function.find(prefix) + prefix.size();
+  const auto end = function.find(suffix);
+  const auto size = end - start;
+
+  return function.substr(start, size);
+}
+
+template<typename DESTP, typename SRCP>
+DESTP verboseCast(SRCP ptr, std::string_view caller) {
+  using deephaven::client::utility::stringf;
+
+  auto *typedPtr = dynamic_cast<DESTP>(ptr);
+  if (typedPtr != nullptr) {
+    return typedPtr;
+  }
+  typedef decltype(*std::declval<DESTP>()) destType_t;
+  auto message = stringf("%o: Expected type %o. Got type %o",
+      caller, getTypeName<destType_t>(), typeid(*ptr).name());
+  throw std::runtime_error(message);
+}
+
+/**
+ * TODO(kosak): Do something else here. Maybe.
+ */
+template<typename T>
+void assertLessEq(const T &lhs, const T &rhs, std::string_view lhsText, std::string_view rhsText,
+  std::string_view func) {
+  if (lhs <= rhs) {
+    return;
+  }
+  throw std::runtime_error(stringf("assertion failed: %o: %o <= %o (%o <= %o)", func, lhs, rhs,
+      lhsText, rhsText));
+}
 
 /**
  * If result's status is OK, do nothing. Otherwise throw a runtime error with an informative message.
@@ -177,6 +248,6 @@ T valueOrThrow(arrow::Result<T> result, const char *optionalMessage = nullptr) {
   okOrThrow(result.status(), optionalMessage);
   return result.ValueUnsafe();
 }
-}  // namespace utility
-}  // namespace client
-}  // namespace deephaven
+
+
+}  // namespace deephaven::client::utility

@@ -4,7 +4,7 @@
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/utility.h"
 
-using deephaven::client::highlevel::TableHandle;
+using deephaven::client::TableHandle;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::valueOrThrow;
 
