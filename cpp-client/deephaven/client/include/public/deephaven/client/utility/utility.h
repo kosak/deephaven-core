@@ -156,11 +156,11 @@ internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin,
  */
 template<typename T>
 void okOrThrow(const arrow::Result<T> &result, const char *message) {
-    if (result.ok()) {
-        return;
-    }
-    auto msg = stringf("Status: %o. Caller message: %o", result.status(), message != nullptr ? message : "(none)");
-    throw std::runtime_error(msg);
+  if (result.ok()) {
+    return;
+  }
+  auto msg = stringf("Status: %o. Caller message: %o", result.status(), message != nullptr ? message : "(none)");
+  throw std::runtime_error(msg);
 }
 
 /**
