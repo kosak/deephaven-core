@@ -69,7 +69,7 @@ using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 namespace deephaven::client::highlevel {
 namespace impl {
 
-inline const io::deephaven::barrage::flatbuf::BarrageMessageWrapper *GetBarrageMessageWrapper(const void *buf) {
+const io::deephaven::barrage::flatbuf::BarrageMessageWrapper *GetBarrageMessageWrapper(const void *buf) {
   return flatbuffers::GetRoot<io::deephaven::barrage::flatbuf::BarrageMessageWrapper>(buf);
 }
 
