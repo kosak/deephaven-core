@@ -65,10 +65,13 @@ using io::deephaven::barrage::flatbuf::ColumnConversionMode;
 using io::deephaven::barrage::flatbuf::CreateBarrageMessageWrapper;
 using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionOptions;
 using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
-using io::deephaven::barrage::flatbuf::GetBarrageMessageWrapper;
 
 namespace deephaven::client::highlevel {
 namespace impl {
+
+const io::deephaven::barrage::flatbuf::BarrageMessageWrapper *GetBarrageMessageWrapper(const void *buf) {
+  return flatbuffers::GetRoot<io::deephaven::barrage::flatbuf::BarrageMessageWrapper>(buf);
+}
 
 std::shared_ptr<internal::LazyState> TableHandleImpl::createEtcCallback(const TableHandleManagerImpl *thm) {
   return internal::LazyState::create(thm->server(), thm->flightExecutor());
