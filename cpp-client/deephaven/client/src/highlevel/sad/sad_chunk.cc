@@ -5,21 +5,15 @@
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::highlevel::sad {
-SadChunk::~SadChunk() = default;
-
-std::shared_ptr<SadIntChunk> SadIntChunk::create(size_t size) {
-  return std::make_shared<SadIntChunk>(Private(), size);
-}
-
-std::shared_ptr<SadLongChunk> SadLongChunk::create(size_t size) {
-  return std::make_shared<SadLongChunk>(Private(), size);
-}
-
-std::shared_ptr<SadSizeTChunk> SadSizeTChunk::create(size_t size) {
-  return std::make_shared<SadSizeTChunk>(Private(), size);
-}
-
-std::shared_ptr<SadDoubleChunk> SadDoubleChunk::create(size_t size) {
-  return std::make_shared<SadDoubleChunk>(Private(), size);
+std::shared_ptr<SadLongChunk> SadLongChunk::slice(size_t begin, size_t end) {
+  if (begin > end) {
+    auto message = stringf("begin (%o) > end (%o)", begin, end);
+    throw std::runtime_error(message);
+  }
+  if (end > capacity()) {
+    auto message = stringf("end (%o) > capacity (%o)", end, capacity());
+    throw std::runtime_error(message);
+  }
+  return std::make_shared<SadLongChunk>(Private(), buffer_, begin, end);
 }
 }  // namespace deephaven::client::highlevel::sad

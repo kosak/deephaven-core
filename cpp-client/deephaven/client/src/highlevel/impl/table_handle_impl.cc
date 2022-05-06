@@ -411,6 +411,7 @@ struct Constants {
 
 class DataInput {
 public:
+  explicit DataInput(const flatbuffers::Vector<int8_t> &vec) : DataInput(vec.data(), vec.size()) {}
   DataInput(const void *start, size_t size) : data_(static_cast<const char*>(start)), size_(size) {}
   int64_t readLong();
   int32_t readInt();
@@ -426,6 +427,14 @@ std::shared_ptr<SadMutableColumnSource> makeColumnSource(const arrow::DataType &
 int64_t readValue(DataInput *in, int command);
 
 std::shared_ptr<SadRowSequence> readExternalCompressedDelta(DataInput *in);
+
+void processAddBatches(
+    int64_t numAdds,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    SadTickingTable *table,
+    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns,
+    const SadRowSequence &addedRows);
 }  // namespace
 
 namespace {
@@ -569,9 +578,9 @@ void ThreadNubbin::runForeverHelperImpl() {
 
     streamf(std::cerr, "FYI, my row sequence is currently %o\n", sadTable->getRowSequence());
 
-    DataInput diAdded(bumd->added_rows());
-    DataInput diRemoved(bumd->removed_rows());
-    DataInput diThreeShiftIndexes(bumd->shift_data());
+    DataInput diAdded(*bumd->added_rows());
+    DataInput diRemoved(*bumd->removed_rows());
+    DataInput diThreeShiftIndexes(*bumd->shift_data());
     auto addedRows = readExternalCompressedDelta(&diAdded);
     auto removedRows = readExternalCompressedDelta(&diRemoved);
 
@@ -619,9 +628,10 @@ void ThreadNubbin::runForeverHelperImpl() {
     }
 
     if (hasAdds) {
-      processAddBatches();
+      processAddBatches(numAdds, fsr_.get(), &flightStreamChunk, sadTable.get(),
+          &mutableColumns, *addedRows);
     } else if (hasMods) {
-      processModBatches();
+      // processModBatches();
     }
 
     // 4, Modifies
@@ -650,7 +660,7 @@ void ThreadNubbin::runForeverHelperImpl() {
       destColDh->fillFromChunk(context.get(), *chunk, *modIndex);
     }
 
-    rowSequence = sadTable->getRowSequence();
+    auto rowSequence = sadTable->getRowSequence();
     streamf(std::cerr, "Now my index looks like this: [%o]\n", *rowSequence);
 
     // TODO(kosak): Do something about the sharing story for SadTable
@@ -669,6 +679,9 @@ void processAddBatches(
   if (numAdds == 0) {
     return;
   }
+  const auto &srcCols2 = flightStreamChunk->data->columns();
+  (void)srcCols2;
+
   auto unwrappedTable = table->add(addedRows);
   auto allRowKeys = unwrappedTable->getUnorderedRowKeys();
   int64_t rowKeyBegin = 0;
@@ -704,9 +717,6 @@ void processAddBatches(
 
       auto context = destColDh->createContext(numRows);
       auto chunk = ChunkMaker::createChunkFor(*destColDh, numRows);
-
-
-
       ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
       destColDh->fillFromChunkUnordered(context.get(), *chunk, *rowKeys, numRows);
     }
