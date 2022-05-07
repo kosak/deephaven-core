@@ -82,10 +82,11 @@ private:
   size_t index_ = 0;
 };
 
-template<typename T> inline std::vector<T> reserved_vector(size_t n) {
-    std::vector<T> v;
-    v.reserve(n);
-    return v;
+template<typename T>
+std::vector<T> reservedVector(size_t n) {
+  std::vector<T> v;
+  v.reserve(n);
+  return v;
 }
 
 void Callback::onTick(const std::shared_ptr<SadTable> &table) {
@@ -93,7 +94,7 @@ void Callback::onTick(const std::shared_ptr<SadTable> &table) {
   const size_t chunkSize = 8192;
 
   auto ncols = table->numColumns();
-  auto selectedCols = reserved_vector<size_t>(ncols);
+  auto selectedCols = reservedVector<size_t>(ncols);
 
   for (size_t col = 0; col < ncols; ++col) {
     selectedCols.push_back(col);
@@ -109,8 +110,8 @@ void Callback::onTick(const std::shared_ptr<SadTable> &table) {
     auto unwrappedTable = table->unwrap(selectedRows, selectedCols);
     auto rowKeys = unwrappedTable->getUnorderedRowKeys();
 
-    auto contexts = reserved_vector<std::shared_ptr<SadContext>>(ncols);
-    auto chunks = reserved_vector<std::shared_ptr<SadChunk>>(ncols);
+    auto contexts = reservedVector<std::shared_ptr<SadContext>>(ncols);
+    auto chunks = reservedVector<std::shared_ptr<SadChunk>>(ncols);
 
     for (size_t col = 0; col < ncols; ++col) {
       const auto &c = unwrappedTable->getColumn(col);

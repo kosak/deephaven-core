@@ -160,6 +160,8 @@ void SadLongArrayColumnSource::fillFromChunkUnordered(SadContext *context, const
   auto *typedSrc = verboseCast<const SadLongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(size, src.capacity());
 
+  streamf(std::cout, "These are the rowKeys: %o\n", rowKeys);
+
   for (size_t i = 0; i < size; ++i) {
     auto destIndex = rowKeys.data()[i];
     ensureSize(destIndex + 1);

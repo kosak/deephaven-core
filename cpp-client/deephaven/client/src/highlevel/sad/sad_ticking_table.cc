@@ -67,30 +67,22 @@ std::shared_ptr<SadUnwrappedTable> SadTickingTable::add(const SadRowSequence &ad
   auto iter = addedRows.getRowSequenceIterator();
   int64_t row;
   size_t destIndex = 0;
-  if (true) {
-    while (iter->tryGetNext(&row)) {
-      int64_t nextRedirectedRow;
-      if (!slotsToReuse_.empty()) {
-        nextRedirectedRow = slotsToReuse_.back();
-        slotsToReuse_.pop_back();
-      } else {
-        nextRedirectedRow = (int64_t)redirection_->size();
-      }
-      auto result = redirection_->insert(std::make_pair(row, nextRedirectedRow));
-      if (!result.second) {
-        auto message = stringf("Row %o already exists", row);
-        throw std::runtime_error(message);
-      }
-      // rowKeys->data()[destIndex] = nextRedirectedRow;
-      ++destIndex;
+  while (iter->tryGetNext(&row)) {
+    int64_t nextRedirectedRow;
+    if (!slotsToReuse_.empty()) {
+      nextRedirectedRow = slotsToReuse_.back();
+      slotsToReuse_.pop_back();
+    } else {
+      nextRedirectedRow = (int64_t)redirection_->size();
     }
-  } else {
-    size_t qqq = addedRows.size();
-    for (size_t i = 0; i < qqq; ++i) {
-      rowKeys->data()[i] = 0xdeadbeef;
+    auto result = redirection_->insert(std::make_pair(row, nextRedirectedRow));
+    if (!result.second) {
+      auto message = stringf("Row %o already exists", row);
+      throw std::runtime_error(message);
     }
+    rowKeys->data()[destIndex] = nextRedirectedRow;
+    ++destIndex;
   }
-  std::cerr << "destIndex is " << destIndex << '\n';
   return SadUnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
 }
 

@@ -47,6 +47,7 @@ using deephaven::client::highlevel::sad::SadDoubleArrayColumnSource;
 using deephaven::client::highlevel::sad::SadMutableColumnSource;
 using deephaven::client::highlevel::sad::SadRowSequence;
 using deephaven::client::highlevel::sad::SadRowSequenceBuilder;
+using deephaven::client::highlevel::sad::SadRowSequenceIterator;
 using deephaven::client::highlevel::sad::SadTable;
 using deephaven::client::highlevel::sad::SadTickingTable;
 using deephaven::client::utility::Callback;
@@ -435,6 +436,12 @@ void processAddBatches(
     SadTickingTable *table,
     std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns,
     const SadRowSequence &addedRows);
+
+void processModBatches(int64_t numMods,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    const std::vector<std::shared_ptr<SadRowSequence>> &modIndexes,
+    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns);
 }  // namespace
 
 namespace {
@@ -570,20 +577,20 @@ void ThreadNubbin::runForeverHelperImpl() {
     if (barrageWrapper->msg_type() != BarrageMessageType::BarrageMessageType_BarrageUpdateMetadata) {
       continue;
     }
-    const auto *bumdRaw = barrageWrapper->msg_payload()->data();
-    const auto *bumd = flatbuffers::GetRoot<BarrageUpdateMetadata>(bumdRaw);
-    auto numAdds = bumd->num_add_batches();
-    auto numMods = bumd->num_mod_batches();
+    const auto *bmdRaw = barrageWrapper->msg_payload()->data();
+    const auto *bmd = flatbuffers::GetRoot<BarrageUpdateMetadata>(bmdRaw);
+    auto numAdds = bmd->num_add_batches();
+    auto numMods = bmd->num_mod_batches();
     streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", numAdds, numMods);
 
-    streamf(std::cerr, "FYI, my row sequence is currently %o\n", sadTable->getRowSequence());
+    streamf(std::cerr, "FYI, my row sequence is currently %o\n", *sadTable->getRowSequence());
 
-    DataInput diAdded(*bumd->added_rows());
-    DataInput diRemoved(*bumd->removed_rows());
-    DataInput diThreeShiftIndexes(*bumd->shift_data());
+    DataInput diAdded(*bmd->added_rows());
+    DataInput diRemoved(*bmd->removed_rows());
+    DataInput diThreeShiftIndexes(*bmd->shift_data());
+
     auto addedRows = readExternalCompressedDelta(&diAdded);
     auto removedRows = readExternalCompressedDelta(&diRemoved);
-
     auto shiftStartIndex = readExternalCompressedDelta(&diThreeShiftIndexes);
     auto shiftEndIndex = readExternalCompressedDelta(&diThreeShiftIndexes);
     auto shiftDestIndex = readExternalCompressedDelta(&diThreeShiftIndexes);
@@ -600,20 +607,20 @@ void ThreadNubbin::runForeverHelperImpl() {
     // 3. adds
     // 4. modifies
 
-// informational
-//    if (!addedRows->empty()) {
-//      streamf(std::cerr, "There was some new data: %o rows, %o columns:\n",
-//          flightStreamChunk.data->num_rows(), flightStreamChunk.data->num_columns());
-//      const auto &srcCols = flightStreamChunk.data->columns();
-//      for (size_t colNum = 0; colNum < srcCols.size(); ++colNum) {
-//        streamf(std::cerr, "Column %o\n", colNum);
-//        const auto &srcCol = srcCols[colNum];
-//        for (uint32_t ii = 0; ii < addedRows->size(); ++ii) {
-//          const auto &res = srcCol->GetScalar(ii);
-//          streamf(std::cerr, "%o: %o\n", ii, res.ValueOrDie()->ToString());
-//        }
-//      }
-//    }
+    // informational
+    //    if (!addedRows->empty()) {
+    //      streamf(std::cerr, "There was some new data: %o rows, %o columns:\n",
+    //          flightStreamChunk.data->num_rows(), flightStreamChunk.data->num_columns());
+    //      const auto &srcCols = flightStreamChunk.data->columns();
+    //      for (size_t colNum = 0; colNum < srcCols.size(); ++colNum) {
+    //        streamf(std::cerr, "Column %o\n", colNum);
+    //        const auto &srcCol = srcCols[colNum];
+    //        for (uint32_t ii = 0; ii < addedRows->size(); ++ii) {
+    //          const auto &res = srcCol->GetScalar(ii);
+    //          streamf(std::cerr, "%o: %o\n", ii, res.ValueOrDie()->ToString());
+    //        }
+    //      }
+    //    }
 
     // 1. Removes
     sadTable->erase(*removedRows);
@@ -621,43 +628,27 @@ void ThreadNubbin::runForeverHelperImpl() {
     // 2. Shifts
     sadTable->shift(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
 
-    auto hasAdds = numAdds != 0;
-    auto hasMods = numMods != 0;
-    if (hasAdds && hasMods) {
+    if (numAdds != 0 && numMods != 0) {
       throw std::runtime_error("Message has both add batches and mod batches?");
     }
 
-    if (hasAdds) {
+    // 3. Adds
+    if (numAdds != 0) {
       processAddBatches(numAdds, fsr_.get(), &flightStreamChunk, sadTable.get(),
           &mutableColumns, *addedRows);
-    } else if (hasMods) {
-      // processModBatches();
     }
 
-    // 4, Modifies
-    const auto &mcms = *bumd->mod_column_nodes();
-    for (size_t i = 0; i < mcms.size(); ++i) {
-      const auto &elt = mcms.Get(i);
-      DataInput diModified(elt->modified_rows()->data(), elt->modified_rows()->size());
-      auto modIndex = readExternalCompressedDelta(&diModified);
-
-      if (modIndex->empty()) {
-        continue;
+    // 4. Modifies
+    if (numMods != 0) {
+      const auto &modColumnNodes = *bmd->mod_column_nodes();
+      std::vector<std::shared_ptr<SadRowSequence>> modIndexes;
+      for (size_t i = 0; i < modColumnNodes.size(); ++i) {
+        const auto &elt = modColumnNodes.Get(i);
+        DataInput diModified(*elt->modified_rows());
+        auto modIndex = readExternalCompressedDelta(&diModified);
+        modIndexes.push_back(std::move(modIndex));
       }
-
-      auto zamboniRows = modIndex->size();
-
-      const auto &srcCols = flightStreamChunk.data->columns();
-      const auto &srcColArrow = *srcCols[i];
-
-      auto &destColDh = mutableColumns[i];
-      auto context = destColDh->createContext(zamboniRows);
-      auto chunk = ChunkMaker::createChunkFor(*destColDh, zamboniRows);
-
-      auto sequentialRows = SadRowSequence::createSequential(0, (int64_t)zamboniRows);
-
-      ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
-      destColDh->fillFromChunk(context.get(), *chunk, *modIndex);
+      processModBatches(numMods, fsr_.get(), &flightStreamChunk, modIndexes, &mutableColumns);
     }
 
     auto rowSequence = sadTable->getRowSequence();
@@ -679,19 +670,17 @@ void processAddBatches(
   if (numAdds == 0) {
     return;
   }
-  const auto &srcCols2 = flightStreamChunk->data->columns();
-  (void)srcCols2;
-
   auto unwrappedTable = table->add(addedRows);
   auto allRowKeys = unwrappedTable->getUnorderedRowKeys();
+  streamf(std::cout, "allRowKeys: %o\n", *allRowKeys);
   int64_t rowKeyBegin = 0;
 
   while (true) {
     const auto &srcCols = flightStreamChunk->data->columns();
     auto ncols = srcCols.size();
-    if (ncols != table->numColumns()) {
+    if (ncols != mutableColumns->size()) {
       auto message = stringf("Received %o columns, but my table has %o columns", ncols,
-          table->numColumns());
+          mutableColumns->size());
       throw std::runtime_error(message);
     }
 
@@ -722,6 +711,58 @@ void processAddBatches(
     }
 
     if (--numAdds == 0) {
+      return;
+    }
+    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
+  }
+}
+
+void processModBatches(int64_t numMods,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    const std::vector<std::shared_ptr<SadRowSequence>> &modIndexes,
+    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns) {
+  if (numMods == 0) {
+    return;
+  }
+
+  std::vector<std::shared_ptr<SadRowSequenceIterator>> iterators;
+  for (const auto &mi : modIndexes) {
+    iterators.push_back(mi->getRowSequenceIterator());
+  }
+
+  while (true) {
+    // this is probably wrong. The modify probably only has a limited number of columns.
+    const auto &srcCols = flightStreamChunk->data->columns();
+    auto ncols = srcCols.size();
+    if (ncols != mutableColumns->size()) {
+      auto message = stringf("Received %o columns, but my table has %o columns", ncols,
+          mutableColumns->size());
+      throw std::runtime_error(message);
+    }
+
+    for (size_t i = 0; i < modIndexes.size(); ++i) {
+      const auto &modIndex = *modIndexes[i];
+      if (modIndex.empty()) {
+        continue;
+      }
+
+      const auto &srcColArrow = *srcCols[i];
+      auto numRows = srcColArrow.length();
+
+      auto &destColDh = (*mutableColumns)[i];
+
+      auto context = destColDh->createContext(numRows);
+      auto chunk = ChunkMaker::createChunkFor(*destColDh, numRows);
+
+      auto sequentialRows = SadRowSequence::createSequential(0, numRows);
+
+      ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
+      auto destIndices = iterators[i]->getNextRowSequenceWithLength(numRows);
+      destColDh->fillFromChunk(context.get(), *chunk, *destIndices);
+    }
+
+    if (--numMods == 0) {
       return;
     }
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));

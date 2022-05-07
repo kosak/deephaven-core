@@ -22,12 +22,10 @@ template<typename T>
 class SadNumericChunk : public SadChunk {
 protected:
   SadNumericChunk(std::shared_ptr<T[]> buffer, size_t begin, size_t end) : SadChunk(end - begin) {
-    std::cerr << "begin is " << begin << '\n';
     if (buffer == nullptr) {
-      std::cerr << "end-begin is " << end - begin << '\n';
-      T *memory = new T[end - begin];
-      buffer = std::shared_ptr<T[]>(memory);
-      std::make_shared<T[]>(10);
+      auto size = end - begin;
+      // Note: std::make_shared<T[]>(size) doesn't DTRT until C++20
+      buffer = std::shared_ptr<T[]>(new T[size]);
     }
     buffer_ = std::move(buffer);
     begin_ = buffer_.get() + begin;
@@ -39,6 +37,12 @@ protected:
 public:
   T *data() { return begin_; }
   const T *data() const { return begin_; }
+
+  T *begin() { return begin_; }
+  const T *begin() const { return begin_; }
+
+  T *end() { return end_; }
+  const T *end() const { return end_; }
 
 protected:
   std::shared_ptr<T[]> buffer_;
@@ -90,6 +94,8 @@ public:
   }
 
   std::shared_ptr<SadLongChunk> slice(size_t begin, size_t end);
+
+  friend std::ostream &operator<<(std::ostream &s, const SadLongChunk &o);
 };
 
 class SadDoubleChunk final : public SadNumericChunk<double> {
