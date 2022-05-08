@@ -119,13 +119,13 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
   // Deliberately chosen to be small so I can test chunking.
   const size_t chunkSize = 16;
 
-  auto ncols = table->numColumns();
-  auto selectedCols = reservedVector<size_t>(ncols);
+  auto nrows = table.numRows();
+  auto ncols = table.numColumns();
+  auto selectedCols = makeVector<size_t>(ncols);
 
   for (size_t col = 0; col < ncols; ++col) {
     selectedCols.push_back(col);
   }
-  auto nrows = table->numRows();
 
   auto outerIter = table->getRowSequence()->getRowSequenceIterator();
 
@@ -149,10 +149,10 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     }
     for (size_t j = 0; j < thisSize; ++j) {
       ElementStreamer es(std::cerr, j);
-      auto chunk_accept = [&es](std::ostream &s, const std::shared_ptr<SadChunk> &chunk) {
+      auto chunkAcceptor = [&es](std::ostream &s, const std::shared_ptr<SadChunk> &chunk) {
         chunk->acceptVisitor(es);
       };
-      std::cerr << deephaven::client::utility::separatedList(chunks.begin(), chunks.end(), ", ", chunk_accept) << '\n';
+      std::cerr << separatedList(chunks.begin(), chunks.end(), ", ", chunkAcceptor) << '\n';
     }
   }
 }
@@ -287,7 +287,6 @@ void millionRows(const TableHandleManager &manager) {
 
 
 namespace {
-
 std::string getWhat(std::exception_ptr ep) {
   try {
     std::rethrow_exception(std::move(ep));
@@ -297,6 +296,4 @@ std::string getWhat(std::exception_ptr ep) {
     return "(unknown exception)";
   }
 }
-
-
 }  // namespace
