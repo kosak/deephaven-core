@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/sad/sad_column_source.h"
-#include "deephaven/client/highlevel/sad/sad_row_sequence.h"
-#include "deephaven/client/highlevel/sad/sad_table.h"
-#include "deephaven/client/highlevel/sad/sad_unwrapped_table.h"
+#include "deephaven/client/highlevel/column/column_source.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/highlevel/table/table.h"
+#include "deephaven/client/highlevel/table/unwrapped_table.h"
 
 namespace deephaven::client::highlevel::table {
 class TickingTable final : public SadTable {
