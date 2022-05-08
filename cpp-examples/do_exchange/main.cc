@@ -36,17 +36,34 @@ using deephaven::client::utility::valueOrThrow;
 
 using std::size_t;
 
+namespace {
+void millionRows(const TableHandleManager &manager);
+}  // namespace
+
+int main() {
+  const char *server = "localhost:10000";
+
+  try {
+    auto client = Client::connect(server);
+    auto manager = client.getManager();
+    millionRows(manager);
+  } catch (const std::exception &e) {
+    std::cerr << "Caught exception: " << e.what() << '\n';
+  }
+}
+
 // Hey, we should standardize on either deephaven or io::deephaven
 
 namespace {
 class Callback final : public TickingCallback {
 public:
   void onFailure(std::exception_ptr ep) final;
-  void onTick(const std::shared_ptr<SadTable> &table) final;
+  void onTick(const std::shared_ptr<TickingUpdate> &table) final;
+
   bool failed() const { return failed_; }
 
 private:
-    std::atomic<bool> failed_ = false;
+  std::atomic<bool> failed_ = false;
 };
 
 // or maybe make a stream manipulator
@@ -89,9 +106,18 @@ std::vector<T> reservedVector(size_t n) {
   return v;
 }
 
-void Callback::onTick(const std::shared_ptr<SadTable> &table) {
-  // Deliberately chosen to be small so I can test chunking. In production this would be a lot larger.
-  const size_t chunkSize = 8192;
+void dumpTable(std::string_view what, const Table &table, const RowSequence &rows);
+
+void Callback::onTick(const std::shared_ptr<TickingUpdate> &update) {
+  dumpTable("removed", update.prevTable(), update.removed());
+  dumpTable("modified-prev", update.prevTable(), update.modified());
+  dumpTable("modified-this", update.thisTable(), update.modified());
+  dumpTable("added", update.thisTable(), update.added());
+}
+
+void dumpTable(std::string_view what, const Table &table, const RowSequence &rows) {
+  // Deliberately chosen to be small so I can test chunking.
+  const size_t chunkSize = 16;
 
   auto ncols = table->numColumns();
   auto selectedCols = reservedVector<size_t>(ncols);
@@ -259,17 +285,6 @@ void millionRows(const TableHandleManager &manager) {
   std::cerr << "exiting\n";
 }
 
-int main() {
-  const char *server = "localhost:10000";
-
-  try {
-    auto client = Client::connect(server);
-    auto manager = client.getManager();
-    millionRows(manager);
-  } catch (const std::exception &e) {
-    std::cerr << "Caught exception: " << e.what() << '\n';
-  }
-}
 
 namespace {
 

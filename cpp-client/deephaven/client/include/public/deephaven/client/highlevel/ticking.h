@@ -31,10 +31,10 @@ private:
   std::shared_ptr<Table> prevTable_;
   std::shared_ptr<Table> thisTable_;
   // In the key space of 'prevTable'
-  std::vector<Range> removes_;
+  std::shared_ptr<RowSequence> removes_;
   // In the key space of 'thisTable'
-  std::vector<Range> modifies_;
+  std::shared_ptr<RowSequence> modifies_;
   // In the key space of 'thisTable'
-  std::vector<Range> adds_;
+  std::shared_ptr<RowSequence> adds_;
 };
 }  // namespace deephaven::client::highlevel

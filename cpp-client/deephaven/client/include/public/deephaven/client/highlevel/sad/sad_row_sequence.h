@@ -34,33 +34,6 @@ public:
   virtual bool tryGetNext(int64_t *result) = 0;
 };
 
-//class SadRowSequenceImplTodo {
-//  typedef std::set<int64_t> data_t;
-//public:
-//  explicit SadRowSequence(data_t data);
-//
-//  std::shared_ptr<SadRowSequenceIterator> getRowSequenceIterator();
-//
-//  size_t size() const {
-//    return data_.size();
-//  }
-//
-//  auto begin() const { return data_.begin(); }
-//  auto end() const { return data_.end(); }
-//
-//  bool empty() const {
-//    return data_.empty();
-//  }
-//
-//private:
-//  data_t data_;
-//};
-//
-//class SadRowSequenceIteratorImpl {
-//public:
-//  std::shared_ptr<SadRowSequence> getNextRowSequenceWithLength(size_t size);
-//};
-
 class SadRowSequenceBuilder {
 public:
   SadRowSequenceBuilder();
