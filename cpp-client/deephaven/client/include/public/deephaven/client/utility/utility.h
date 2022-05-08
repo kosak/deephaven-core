@@ -5,15 +5,14 @@
 #include <string>
 #include <vector>
 #include <arrow/type.h>
+#include <immer/flex_vector.h>
 
-namespace deephaven {
-namespace client {
-namespace utility {
+namespace deephaven::client::utility {
 template<typename Dest, typename Src>
 inline Dest bit_cast(const Src &item) {
   static_assert(sizeof(Src) == sizeof(Dest), "Src and Dest are not the same size");
   Dest dest;
-  memcpy(static_cast<void*>(&dest), static_cast<const void*>(&item), sizeof(Dest));
+  memcpy(static_cast<void *>(&dest), static_cast<const void *>(&item), sizeof(Dest));
   return dest;
 }
 
@@ -127,9 +126,11 @@ void defaultCallback(std::ostream &s, const T &item) {
 }  // namespace internal
 
 template<typename Iterator>
-internal::SeparatedListAdaptor<Iterator, void(*)(std::ostream &s, const decltype(*std::declval<Iterator>()) &)> separatedList(Iterator begin, Iterator end,
+internal::SeparatedListAdaptor<Iterator, void (*)(std::ostream &s,
+    const decltype(*std::declval<Iterator>()) &)> separatedList(Iterator begin, Iterator end,
     const char *separator = ", ") {
-  return internal::SeparatedListAdaptor<Iterator, void(*)(std::ostream &s, const decltype(*std::declval<Iterator>()) &)>(
+  return internal::SeparatedListAdaptor<Iterator, void (*)(std::ostream &s,
+      const decltype(*std::declval<Iterator>()) &)>(
       begin, end, separator, &internal::defaultCallback);
 }
 
@@ -177,6 +178,4 @@ T valueOrThrow(arrow::Result<T> result, const char *optionalMessage = nullptr) {
   okOrThrow(result.status(), optionalMessage);
   return result.ValueUnsafe();
 }
-}  // namespace utility
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::utility

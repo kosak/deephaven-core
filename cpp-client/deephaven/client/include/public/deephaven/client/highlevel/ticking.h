@@ -9,6 +9,7 @@
 #include "deephaven/client/highlevel/sad/sad_table.h"
 
 namespace deephaven::client::highlevel {
+class TickingUpdate;
 class TickingCallback : public deephaven::client::utility::FailureCallback {
 protected:
   typedef deephaven::client::highlevel::sad::SadRowSequence SadRowSequence;
@@ -16,11 +17,23 @@ protected:
 
 public:
   /**
-   * @param tableView A "view" on the updated table, after the changes in this delta have been
-   * applied. Although this "view" shared underlying data with other TableViews, it is threadsafe
-   * and can be kept around for an arbitrarily long time. (an aspirational statement that will
-   * eventually be true, even though it's false at the moment).
+   * @param update An update message which describes the changes (removes, adds, modifies) that
+   * transform the previous version of the table to the new version. This class is threadsafe and
+   * can be kept around for an arbitrary amount of time. On the other hand, it probably should be
+   * processed and discard quickly so that the underlying resources can be reused.
    */
-  virtual void onTick(const std::shared_ptr<SadTable> &tableView) = 0;
+  virtual void onTick(const std::shared_ptr<TickingUpdate> &update) = 0;
+};
+
+class TickingUpdate {
+private:
+  std::shared_ptr<Table> prevTable_;
+  std::shared_ptr<Table> thisTable_;
+  // In the key space of 'prevTable'
+  std::vector<Range> removes_;
+  // In the key space of 'thisTable'
+  std::vector<Range> modifies_;
+  // In the key space of 'thisTable'
+  std::vector<Range> adds_;
 };
 }  // namespace deephaven::client::highlevel
