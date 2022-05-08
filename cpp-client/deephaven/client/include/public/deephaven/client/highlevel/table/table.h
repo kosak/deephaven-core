@@ -3,24 +3,24 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/sad/sad_column_source.h"
-#include "deephaven/client/highlevel/sad/sad_row_sequence.h"
-#include "deephaven/client/highlevel/sad/sad_unwrapped_table.h"
+#include "deephaven/client/highlevel/column/column_source.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/highlevel/table/unwrapped_table.h"
 
-namespace deephaven::client::highlevel::sad {
-class SadTable {
+namespace deephaven::client::highlevel::table {
+class Table {
 public:
-  SadTable();
-  virtual ~SadTable();
+  Table();
+  virtual ~Table();
 
-  virtual std::shared_ptr<SadRowSequence> getRowSequence() const = 0;
-  virtual std::shared_ptr<SadColumnSource> getColumn(size_t columnIndex) const = 0;
+  virtual std::shared_ptr<RowSequence> getRowSequence() const = 0;
+  virtual std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const = 0;
 
-  virtual std::shared_ptr<SadUnwrappedTable> unwrap(const std::shared_ptr<SadRowSequence> &rows,
+  virtual std::shared_ptr<UnwrappedTable> unwrap(const std::shared_ptr<RowSequence> &rows,
       const std::vector<size_t> &cols) const = 0;
 
   virtual size_t numRows() const = 0;
   virtual size_t numColumns() const = 0;
 };
 
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::table

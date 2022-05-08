@@ -64,15 +64,15 @@ set(ALL_FILES
     include/public/deephaven/client/highlevel/client.h
     include/public/deephaven/client/highlevel/ticking.h
     include/public/deephaven/client/highlevel/types.h
-    include/public/deephaven/client/highlevel/sad/chunk_filler.h
-    include/public/deephaven/client/highlevel/sad/chunk_maker.h
-    include/public/deephaven/client/highlevel/sad/sad_chunk.h
-    include/public/deephaven/client/highlevel/sad/sad_column_source.h
-    include/public/deephaven/client/highlevel/sad/sad_context.h
-    include/public/deephaven/client/highlevel/sad/sad_row_sequence.h
-    include/public/deephaven/client/highlevel/sad/sad_table.h
-    include/public/deephaven/client/highlevel/sad/sad_ticking_table.h
-    include/public/deephaven/client/highlevel/sad/sad_unwrapped_table.h
+    include/public/deephaven/client/highlevel/chunk/chunk.h
+    include/public/deephaven/client/highlevel/chunk/chunk_filler.h
+    include/public/deephaven/client/highlevel/chunk/chunk_maker.h
+    include/public/deephaven/client/highlevel/column/column_source.h
+    include/public/deephaven/client/highlevel/container/context.h
+    include/public/deephaven/client/highlevel/container/row_sequence.h
+    include/public/deephaven/client/highlevel/table/table.h
+    include/public/deephaven/client/highlevel/table/ticking_table.h
+    include/public/deephaven/client/highlevel/table/unwrapped_table.h
 
     src/utility/executor.cc
     include/private/deephaven/client/utility/executor.h
