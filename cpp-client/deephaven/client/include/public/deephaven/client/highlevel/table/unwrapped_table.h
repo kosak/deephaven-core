@@ -12,6 +12,7 @@ class UnwrappedTable {
   struct Private {};
 
   typedef deephaven::client::highlevel::chunk::LongChunk LongChunk;
+  typedef deephaven::client::highlevel::column::ColumnSource ColumnSource;
 
 public:
   static std::shared_ptr<UnwrappedTable> create(std::shared_ptr<LongChunk> rowKeys,
