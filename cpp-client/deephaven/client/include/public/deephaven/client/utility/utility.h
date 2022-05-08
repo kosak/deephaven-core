@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <arrow/type.h>
-#include <immer/flex_vector.h>
 
 namespace deephaven::client::utility {
 template<typename Dest, typename Src>

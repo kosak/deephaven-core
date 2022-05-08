@@ -124,7 +124,9 @@ target_include_directories(client PRIVATE "./flatbuf")
 
 target_link_libraries(client PUBLIC arrow_flight_static)
 target_link_libraries(client PUBLIC arrow_static)
+target_link_libraries(client PUBLIC immer)
 target_link_libraries(client PUBLIC protobuf::libprotobuf)
 target_link_libraries(client PUBLIC flatbuffers::flatbuffers)
 target_link_libraries(client PUBLIC gRPC::grpc++)
 target_link_libraries(client PUBLIC Threads::Threads)
+

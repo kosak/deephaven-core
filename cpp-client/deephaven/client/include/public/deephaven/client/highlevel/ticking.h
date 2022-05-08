@@ -7,6 +7,7 @@
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/highlevel/sad/sad_row_sequence.h"
 #include "deephaven/client/highlevel/sad/sad_table.h"
+#include "immer/flex_vector.hpp"
 
 namespace deephaven::client::highlevel {
 class TickingUpdate;
