@@ -10,8 +10,8 @@
 namespace deephaven::client::highlevel::table {
 class Table {
 public:
-  Table();
-  virtual ~Table();
+  Table() = default;
+  virtual ~Table() = default;
 
   virtual std::shared_ptr<RowSequence> getRowSequence() const = 0;
   virtual std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const = 0;

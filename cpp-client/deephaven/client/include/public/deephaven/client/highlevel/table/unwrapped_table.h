@@ -6,8 +6,8 @@
 #include "deephaven/client/highlevel/sad/sad_column_source.h"
 #include "deephaven/client/highlevel/sad/sad_row_sequence.h"
 
-namespace deephaven::client::highlevel::sad {
-class SadUnwrappedTable {
+namespace deephaven::client::highlevel::table {
+class UnwrappedTable {
   struct Private {};
 public:
   static std::shared_ptr<SadUnwrappedTable> create(std::shared_ptr<SadLongChunk> rowKeys,
@@ -28,4 +28,4 @@ private:
   size_t numRows_ = 0;
   std::vector<std::shared_ptr<SadColumnSource>> columns_;
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::table

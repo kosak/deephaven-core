@@ -5,10 +5,10 @@
 #include <ostream>
 #include <set>
 
-namespace deephaven::client::highlevel::sad {
-class SadRowSequenceIterator;
+namespace deephaven::client::highlevel::container {
+class RowSequenceIterator;
 
-class SadRowSequence {
+class RowSequence {
 public:
   static std::shared_ptr<SadRowSequence> createSequential(int64_t begin, int64_t end);
 
@@ -50,4 +50,4 @@ public:
 private:
   std::shared_ptr<std::set<int64_t>> data_;
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::container

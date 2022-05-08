@@ -6,8 +6,8 @@
 #include "deephaven/client/highlevel/sad/sad_table.h"
 #include "deephaven/client/highlevel/sad/sad_unwrapped_table.h"
 
-namespace deephaven::client::highlevel::sad {
-class SadTickingTable final : public SadTable {
+namespace deephaven::client::highlevel::table {
+class TickingTable final : public SadTable {
   struct Private {};
 
 public:
@@ -54,5 +54,5 @@ private:
    */
   std::vector<int64_t> slotsToReuse_;
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::table
 

@@ -1,9 +1,9 @@
-#include "deephaven/client/highlevel/sad/sad_unwrapped_table.h"
+#include "deephaven/client/highlevel/table/unwrapped_table.h"
 
 #include <utility>
 #include "deephaven/client/utility/utility.h"
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::table {
 std::shared_ptr<SadUnwrappedTable> SadUnwrappedTable::create(std::shared_ptr<SadLongChunk> rowKeys,
     size_t numRows, std::vector<std::shared_ptr<SadColumnSource>> columns) {
   return std::make_shared<SadUnwrappedTable>(Private(), std::move(rowKeys), numRows, std::move(columns));
@@ -22,4 +22,4 @@ std::shared_ptr<SadLongChunk> SadUnwrappedTable::getUnorderedRowKeys() const {
 std::shared_ptr<SadColumnSource> SadUnwrappedTable::getColumn(size_t columnIndex) const {
   return columns_[columnIndex];
 }
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::table

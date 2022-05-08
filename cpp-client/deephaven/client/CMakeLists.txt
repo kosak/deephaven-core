@@ -49,15 +49,15 @@ set(ALL_FILES
     src/highlevel/client.cc
     src/highlevel/ticking.cc
     src/highlevel/types.cc
-    src/highlevel/sad/chunk_filler.cc
-    src/highlevel/sad/chunk_maker.cc
-    src/highlevel/sad/chunk.cc
-    src/highlevel/sad/column_source.cc
-    src/highlevel/sad/context.cc
-    src/highlevel/sad/row_sequence.cc
-    src/highlevel/sad/table.cc
-    src/highlevel/sad/ticking_table.cc
-    src/highlevel/sad/unwrapped_table.cc
+    src/highlevel/chunk/chunk.cc
+    src/highlevel/chunk/chunk_filler.cc
+    src/highlevel/chunk/chunk_maker.cc
+    src/highlevel/column/column_source.cc
+    src/highlevel/container/context.cc
+    src/highlevel/container/row_sequence.cc
+    src/highlevel/table/table.cc
+    src/highlevel/table/ticking_table.cc
+    src/highlevel/table/unwrapped_table.cc
 
     include/public/deephaven/client/highlevel/columns.h
     include/public/deephaven/client/highlevel/expressions.h

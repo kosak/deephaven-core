@@ -2,22 +2,22 @@
 
 #include <vector>
 #include <arrow/array.h>
-#include "deephaven/client/highlevel/sad/sad_row_sequence.h"
-#include "deephaven/client/highlevel/sad/sad_chunk.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/highlevel/container/chunk.h"
 #include "deephaven/client/highlevel/sad/sad_context.h"
 
-namespace deephaven::client::highlevel::sad {
-class SadColumnSourceContext;
-class SadLongColumnSource;
-class SadColumnSourceVisitor;
+namespace deephaven::client::highlevel::column {
+class ColumnSourceContext;
+class LongColumnSource;
+class ColumnSourceVisitor;
 
 // the column source interfaces
 
-class SadColumnSource {
+class ColumnSource {
 public:
-  virtual ~SadColumnSource();
-  virtual std::shared_ptr<SadColumnSourceContext> createContext(size_t chunkSize) const = 0;
-  virtual void fillChunk(SadContext *context, const SadRowSequence &rows, SadChunk *dest) const = 0;
+  virtual ~ColumnSource();
+  virtual std::shared_ptr<ColumnSourceContext> createContext(size_t chunkSize) const = 0;
+  virtual void fillChunk(Context *context, const SadRowSequence &rows, SadChunk *dest) const = 0;
   virtual void fillChunkUnordered(SadContext *context, const SadLongChunk &rowKeys, size_t size, SadChunk *dest) const = 0;
 
   virtual void acceptVisitor(SadColumnSourceVisitor *visitor) const = 0;
@@ -118,4 +118,4 @@ public:
   virtual void visit(const SadLongColumnSource *) = 0;
   virtual void visit(const SadDoubleColumnSource *) = 0;
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::column

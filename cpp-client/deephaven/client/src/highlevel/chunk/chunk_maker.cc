@@ -1,19 +1,19 @@
-#include "deephaven/client/highlevel/sad/chunk_maker.h"
+#include "deephaven/client/highlevel/chunk/chunk_maker.h"
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::chunk {
 namespace {
-struct Visitor final : SadColumnSourceVisitor {
+struct Visitor final : ColumnSourceVisitor {
   explicit Visitor(size_t chunkSize) : chunkSize_(chunkSize) {}
-  void visit(const SadIntColumnSource *source) final;
-  void visit(const SadLongColumnSource *source) final;
-  void visit(const SadDoubleColumnSource *source) final;
+  void visit(const IntColumnSource *source) final;
+  void visit(const LongColumnSource *source) final;
+  void visit(const DoubleColumnSource *source) final;
 
   size_t chunkSize_;
-  std::shared_ptr<SadChunk> result_;
+  std::shared_ptr<Chunk> result_;
 };
 }  // namespace
 
-std::shared_ptr<SadChunk> ChunkMaker::createChunkFor(const SadColumnSource &columnSource,
+std::shared_ptr<Chunk> ChunkMaker::createChunkFor(const ColumnSource &columnSource,
     size_t chunkSize) {
   Visitor v(chunkSize);
   columnSource.acceptVisitor(&v);
@@ -21,16 +21,16 @@ std::shared_ptr<SadChunk> ChunkMaker::createChunkFor(const SadColumnSource &colu
 }
 
 namespace {
-void Visitor::visit(const SadIntColumnSource *source) {
-  result_ = SadIntChunk::create(chunkSize_);
+void Visitor::visit(const IntColumnSource *source) {
+  result_ = IntChunk::create(chunkSize_);
 }
 
 void Visitor::visit(const SadLongColumnSource *source) {
-  result_ = SadLongChunk::create(chunkSize_);
+  result_ = LongChunk::create(chunkSize_);
 }
 
 void Visitor::visit(const SadDoubleColumnSource *source) {
-  result_ = SadDoubleChunk::create(chunkSize_);
+  result_ = DoubleChunk::create(chunkSize_);
 }
 }  // namespace
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::chunk

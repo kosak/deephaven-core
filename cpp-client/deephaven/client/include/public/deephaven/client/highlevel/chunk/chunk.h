@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::chunk {
 class SadChunkVisitor;
 class SadChunk {
 public:
@@ -127,4 +127,4 @@ public:
     v.visit(*this);
   }
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::chunk

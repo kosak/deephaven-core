@@ -1,7 +1,8 @@
 #pragma once
-namespace deephaven::client::highlevel::sad {
-class SadContext {
+
+namespace deephaven::client::highlevel::container {
+class Context {
 public:
-  virtual ~SadContext();
+  virtual ~Context();
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::container

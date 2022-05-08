@@ -5,10 +5,10 @@
 #include "deephaven/client/highlevel/sad/sad_column_source.h"
 #include "deephaven/client/highlevel/sad/sad_chunk.h"
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::chunk {
 class ChunkMaker {
 public:
   static std::shared_ptr<SadChunk> createChunkFor(const SadColumnSource &columnSource,
       size_t chunkSize);
 };
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::chunk
