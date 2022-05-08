@@ -51,13 +51,13 @@ set(ALL_FILES
     src/highlevel/types.cc
     src/highlevel/sad/chunk_filler.cc
     src/highlevel/sad/chunk_maker.cc
-    src/highlevel/sad/sad_chunk.cc
-    src/highlevel/sad/sad_column_source.cc
-    src/highlevel/sad/sad_context.cc
-    src/highlevel/sad/sad_row_sequence.cc
-    src/highlevel/sad/sad_table.cc
-    src/highlevel/sad/sad_ticking_table.cc
-    src/highlevel/sad/sad_unwrapped_table.cc
+    src/highlevel/sad/chunk.cc
+    src/highlevel/sad/column_source.cc
+    src/highlevel/sad/context.cc
+    src/highlevel/sad/row_sequence.cc
+    src/highlevel/sad/table.cc
+    src/highlevel/sad/ticking_table.cc
+    src/highlevel/sad/unwrapped_table.cc
 
     include/public/deephaven/client/highlevel/columns.h
     include/public/deephaven/client/highlevel/expressions.h
