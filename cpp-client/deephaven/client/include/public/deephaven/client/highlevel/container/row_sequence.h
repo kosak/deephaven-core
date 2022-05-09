@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <functional>
 #include <memory>
 #include <ostream>
 #include <set>
@@ -16,6 +17,8 @@ public:
 
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const = 0;
+
+  virtual void forEachChunk(const std::function<void(int64_t firstKey, int64_t lastKey)> &f) const = 0;
 
   virtual size_t size() const = 0;
 

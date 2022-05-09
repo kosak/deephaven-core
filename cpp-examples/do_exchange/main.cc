@@ -14,6 +14,8 @@
 #include "deephaven/client/highlevel/table/table.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/utility.h"
+#include "immer/flex_vector.hpp"
+#include "immer/algorithm.hpp"
 
 using deephaven::client::highlevel::Client;
 using deephaven::client::highlevel::NumCol;
@@ -43,17 +45,23 @@ using std::size_t;
 
 namespace {
 void millionRows(const TableHandleManager &manager);
-
-template<typename T>
-std::vector<T> makeVector(size_t n) {
-  std::vector<T> v;
-  v.reserve(n);
-  return v;
-}
 }  // namespace
 
 int main() {
   const char *server = "localhost:10000";
+
+  immer::flex_vector<int> v;
+  for (int i = 0; i < 1000; ++i) {
+    v = std::move(v).push_back(i);
+  }
+  auto b = v.begin() + 500;
+  auto e = v.begin() + 550;
+
+  auto doit = [](const int *b, const int *e) {
+    std::cerr << "processing a chunk of size " << e - b << '\n';
+  };
+  immer::for_each_chunk(b, e, doit);
+  v.take()
 
   try {
     auto client = Client::connect(server);

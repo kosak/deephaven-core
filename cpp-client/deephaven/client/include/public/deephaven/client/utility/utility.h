@@ -15,6 +15,13 @@ inline Dest bit_cast(const Src &item) {
   return dest;
 }
 
+template<typename T>
+std::vector<T> makeReservedVector(size_t n) {
+  std::vector<T> v;
+  v.reserve(n);
+  return v;
+}
+
 // A more efficient ostringstream that also allows you to grab the internal buffer if you want it.
 // Or, if you don't want to use the internal buffer, it allows you to provide your own.
 class SimpleOstringstream final : private std::basic_streambuf<char>, public std::ostream {
@@ -149,6 +156,56 @@ internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin,
  */
 #define DEEPHAVEN_EXPR_MSG(EXPR) (EXPR), #EXPR "@" __FILE__ ":" DEEPHAVEN_STRINGIFY(__LINE__)
 
+
+#if defined(__clang__)
+#define DEEPHAVEN_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__GNUC__)
+#define DEEPHAVEN_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__MSC_VER)
+#define DEEPHAVEN_PRETTY_FUNCTION __FUNCSIG__
+#else
+# error Unsupported compiler
+#endif
+
+// https://stackoverflow.com/questions/281818/unmangling-the-result-of-stdtype-infoname
+template <typename T>
+constexpr std::string_view getTypeName() {
+#if defined(__clang__)
+  constexpr auto prefix = std::string_view{"[T = "};
+  constexpr auto suffix = "]";
+#elif defined(__GNUC__)
+  constexpr auto prefix = std::string_view{"with T = "};
+  constexpr auto suffix = "; ";
+#elif defined(__MSC_VER)
+  constexpr auto prefix = std::string_view{"get_type_name<"};
+  constexpr auto suffix = ">(void)";
+#else
+# error Unsupported compiler
+#endif
+
+  constexpr auto function = std::string_view{DEEPHAVEN_PRETTY_FUNCTION};
+
+  const auto start = function.find(prefix) + prefix.size();
+  const auto end = function.find(suffix);
+  const auto size = end - start;
+
+  return function.substr(start, size);
+}
+
+template<typename DESTP, typename SRCP>
+DESTP verboseCast(std::string_view caller, SRCP ptr) {
+  using deephaven::client::utility::stringf;
+
+  auto *typedPtr = dynamic_cast<DESTP>(ptr);
+  if (typedPtr != nullptr) {
+    return typedPtr;
+  }
+  typedef decltype(*std::declval<DESTP>()) destType_t;
+  auto message = stringf("%o: Expected type %o. Got type %o",
+      caller, getTypeName<destType_t>(), typeid(*ptr).name());
+  throw std::runtime_error(message);
+}
+
 /**
  * If result's status is OK, do nothing. Otherwise throw a runtime error with an informative message.
  * @param result an arrow::Result
@@ -177,4 +234,6 @@ T valueOrThrow(arrow::Result<T> result, const char *optionalMessage = nullptr) {
   okOrThrow(result.status(), optionalMessage);
   return result.ValueUnsafe();
 }
+
+
 }  // namespace deephaven::client::utility

@@ -37,7 +37,6 @@ public:
   // In the key space of 'thisTable'
   const std::shared_ptr<RowSequence> &added() const { return added_; }
 
-
 private:
   std::shared_ptr<Table> prevTable_;
   std::shared_ptr<Table> thisTable_;

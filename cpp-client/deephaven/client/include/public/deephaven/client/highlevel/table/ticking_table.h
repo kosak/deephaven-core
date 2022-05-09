@@ -11,6 +11,7 @@ class TickingTable final : public Table {
   struct Private {};
 
   typedef deephaven::client::highlevel::column::ColumnSource ColumnSource;
+  typedef deephaven::client::highlevel::column::ImmerColumnSourceBase ImmerColumnSourceBase;
   typedef deephaven::client::highlevel::container::RowSequence RowSequence;
 
 public:
@@ -41,7 +42,7 @@ public:
   std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const final;
 
   size_t numRows() const final {
-    return redirection_->size();
+    return rowKeys_->size();
   }
 
   size_t numColumns() const final {
@@ -49,13 +50,8 @@ public:
   }
 
 private:
-  std::vector<std::shared_ptr<ColumnSource>> columns_;
-  std::shared_ptr<std::map<int64_t, int64_t>> redirection_;
-  /**
-   * These are slots (in the target, aka the redirected space) that we once allocated but
-   * then subsequently removed, so they're available for reuse.
-   */
-  std::vector<int64_t> slotsToReuse_;
+  std::vector<std::shared_ptr<ImmerColumnSourceBase>> columns_;
+  CleverRowSequence rowKeys_;
 };
 }  // namespace deephaven::client::highlevel::table
 
