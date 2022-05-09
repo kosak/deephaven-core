@@ -139,7 +139,7 @@ void Server::startConsoleAsync(std::shared_ptr<SFCallback<StartConsoleResponse>>
   auto ticket = newTicket();
   StartConsoleRequest req;
   *req.mutable_result_id() = std::move(ticket);
-  req.set_session_type("groovy");
+  req.set_session_type("python");
   sendRpc(req, std::move(callback), consoleStub(), &ConsoleService::Stub::AsyncStartConsole,
       true);
 }
