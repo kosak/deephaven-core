@@ -5,17 +5,13 @@
 #include <set>
 #include <arrow/type.h>
 #include "deephaven/client/utility/callbacks.h"
-#include "deephaven/client/highlevel/sad/sad_row_sequence.h"
-#include "deephaven/client/highlevel/sad/sad_table.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/highlevel/table/table.h"
 #include "immer/flex_vector.hpp"
 
 namespace deephaven::client::highlevel {
 class TickingUpdate;
 class TickingCallback : public deephaven::client::utility::FailureCallback {
-protected:
-  typedef deephaven::client::highlevel::sad::SadRowSequence SadRowSequence;
-  typedef deephaven::client::highlevel::sad::SadTable SadTable;
-
 public:
   /**
    * @param update An update message which describes the changes (removes, adds, modifies) that
@@ -27,6 +23,10 @@ public:
 };
 
 class TickingUpdate {
+protected:
+  typedef deephaven::client::highlevel::container::RowSequence RowSequence;
+  typedef deephaven::client::highlevel::table::Table Table;
+
 private:
   std::shared_ptr<Table> prevTable_;
   std::shared_ptr<Table> thisTable_;
