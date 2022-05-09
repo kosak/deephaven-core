@@ -1,18 +1,18 @@
-#include "deephaven/client/highlevel/sad/sad_row_sequence.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::container {
 namespace {
 /**
  * Holds a slice of a set::set<int64_t>
  */
-class MySadRowSequence final : public SadRowSequence {
+class MyRowSequence final : public RowSequence {
   typedef std::set<int64_t> data_t;
 public:
-  MySadRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
+  MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
       data_t::const_iterator end, size_t size);
-  ~MySadRowSequence() final = default;
-  std::shared_ptr<SadRowSequenceIterator> getRowSequenceIterator() const final;
-  std::shared_ptr<SadRowSequenceIterator> getRowSequenceReverseIterator() const final;
+  ~MyRowSequence() final = default;
+  std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
+  std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
   size_t size() const final {
     return size_;
   }
@@ -24,13 +24,13 @@ private:
   size_t size_ = 0;
 };
 
-class MySadRowSequenceIterator final : public SadRowSequenceIterator {
+class MyRowSequenceIterator final : public RowSequenceIterator {
   typedef std::set<int64_t> data_t;
 public:
-  MySadRowSequenceIterator(std::shared_ptr<data_t> data, data_t::const_iterator begin,
+  MyRowSequenceIterator(std::shared_ptr<data_t> data, data_t::const_iterator begin,
       data_t::const_iterator end, size_t size, bool forward);
-  ~MySadRowSequenceIterator() final = default;
-  std::shared_ptr<SadRowSequence> getNextRowSequenceWithLength(size_t size) final;
+  ~MyRowSequenceIterator() final = default;
+  std::shared_ptr<RowSequence> getNextRowSequenceWithLength(size_t size) final;
   bool tryGetNext(int64_t *result) final;
 
 private:
@@ -42,20 +42,20 @@ private:
 };
 } // namespace
 
-std::shared_ptr<SadRowSequence> SadRowSequence::createSequential(int64_t begin, int64_t end) {
+std::shared_ptr<RowSequence> RowSequence::createSequential(int64_t begin, int64_t end) {
   // Inefficient hack for now. The efficient thing to do would be to make a special implementation
   // that just iterates over the range.
-  SadRowSequenceBuilder builder;
+  RowSequenceBuilder builder;
   if (begin != end) {
-    // Sad: decide on whether you want half-open or fully-closed intervals.
+    // : decide on whether you want half-open or fully-closed intervals.
     builder.addRange(begin, end - 1);
   }
   return builder.build();
 }
 
-SadRowSequence::~SadRowSequence() = default;
+RowSequence::~RowSequence() = default;
 
-std::ostream &operator<<(std::ostream &s, const SadRowSequence &o) {
+std::ostream &operator<<(std::ostream &s, const RowSequence &o) {
   s << '[';
   auto iter = o.getRowSequenceIterator();
   const char *sep = "";
@@ -68,12 +68,12 @@ std::ostream &operator<<(std::ostream &s, const SadRowSequence &o) {
   return s;
 }
 
-SadRowSequenceIterator::~SadRowSequenceIterator() = default;
+RowSequenceIterator::~RowSequenceIterator() = default;
 
-SadRowSequenceBuilder::SadRowSequenceBuilder() : data_(std::make_shared<std::set<int64_t>>()) {}
-SadRowSequenceBuilder::~SadRowSequenceBuilder() = default;
+RowSequenceBuilder::RowSequenceBuilder() : data_(std::make_shared<std::set<int64_t>>()) {}
+RowSequenceBuilder::~RowSequenceBuilder() = default;
 
-void SadRowSequenceBuilder::addRange(int64_t first, int64_t last) {
+void RowSequenceBuilder::addRange(int64_t first, int64_t last) {
   if (first > last) {
     return;
   }
@@ -86,32 +86,32 @@ void SadRowSequenceBuilder::addRange(int64_t first, int64_t last) {
   }
 }
 
-std::shared_ptr<SadRowSequence> SadRowSequenceBuilder::build() {
+std::shared_ptr<RowSequence> RowSequenceBuilder::build() {
   auto begin = data_->begin();
   auto end = data_->end();
   auto size = data_->size();
-  return std::make_shared<MySadRowSequence>(std::move(data_), begin, end, size);
+  return std::make_shared<MyRowSequence>(std::move(data_), begin, end, size);
 }
 
 namespace {
-MySadRowSequence::MySadRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
+MyRowSequence::MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
     data_t::const_iterator end, size_t size) : data_(std::move(data)), begin_(begin),
     end_(end), size_(size) {}
 
-std::shared_ptr<SadRowSequenceIterator> MySadRowSequence::getRowSequenceIterator() const {
-  return std::make_shared<MySadRowSequenceIterator>(data_, begin_, end_, size_, true);
+std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() const {
+  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, true);
 }
 
-std::shared_ptr<SadRowSequenceIterator> MySadRowSequence::getRowSequenceReverseIterator() const {
-  return std::make_shared<MySadRowSequenceIterator>(data_, begin_, end_, size_, false);
+std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
+  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, false);
 }
 
-MySadRowSequenceIterator::MySadRowSequenceIterator(
+MyRowSequenceIterator::MyRowSequenceIterator(
     std::shared_ptr<data_t> data, data_t::const_iterator begin,
     data_t::const_iterator end, size_t size, bool forward) : data_(std::move(data)), begin_(begin),
     end_(end), size_(size), forward_(forward) {}
 
-bool MySadRowSequenceIterator::tryGetNext(int64_t *result) {
+bool MyRowSequenceIterator::tryGetNext(int64_t *result) {
   if (begin_ == end_) {
     return false;
   }
@@ -124,8 +124,8 @@ bool MySadRowSequenceIterator::tryGetNext(int64_t *result) {
   return true;
 }
 
-std::shared_ptr<SadRowSequence>
-MySadRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
+std::shared_ptr<RowSequence>
+MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
   auto sizeToUse = std::min(size, size_);
   data_t::const_iterator newBegin, newEnd;
   if (forward_) {
@@ -138,8 +138,8 @@ MySadRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
     newBegin = end_;
   }
   size_ -= sizeToUse;
-  return std::make_shared<MySadRowSequence>(data_, newBegin, newEnd, sizeToUse);
+  return std::make_shared<MyRowSequence>(data_, newBegin, newEnd, sizeToUse);
 }
 
 }  // namespace
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::

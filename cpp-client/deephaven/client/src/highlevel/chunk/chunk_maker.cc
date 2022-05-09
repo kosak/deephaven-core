@@ -2,6 +2,11 @@
 
 #include "deephaven/client/highlevel/column/column_source.h"
 
+using deephaven::client::highlevel::column::ColumnSourceVisitor;
+using deephaven::client::highlevel::column::DoubleColumnSource;
+using deephaven::client::highlevel::column::IntColumnSource;
+using deephaven::client::highlevel::column::LongColumnSource;
+
 namespace deephaven::client::highlevel::chunk {
 namespace {
 struct Visitor final : ColumnSourceVisitor {
@@ -27,11 +32,11 @@ void Visitor::visit(const IntColumnSource *source) {
   result_ = IntChunk::create(chunkSize_);
 }
 
-void Visitor::visit(const SadLongColumnSource *source) {
+void Visitor::visit(const LongColumnSource *source) {
   result_ = LongChunk::create(chunkSize_);
 }
 
-void Visitor::visit(const SadDoubleColumnSource *source) {
+void Visitor::visit(const DoubleColumnSource *source) {
   result_ = DoubleChunk::create(chunkSize_);
 }
 }  // namespace

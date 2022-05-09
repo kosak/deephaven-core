@@ -1,28 +1,36 @@
-#include "deephaven/client/highlevel/sad/sad_ticking_table.h"
+#include "deephaven/client/highlevel/table/ticking_table.h"
+
+#include "deephaven/client/highlevel/chunk/chunk.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/highlevel/column/column_source.h"
 
 #include <optional>
 #include <utility>
 
 #include "deephaven/client/utility/utility.h"
 
+using deephaven::client::highlevel::chunk::LongChunk;
+using deephaven::client::highlevel::column::ColumnSource;
+using deephaven::client::highlevel::container::RowSequence;
+using deephaven::client::highlevel::container::RowSequenceIterator;
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::table {
 namespace {
 void mapShifter(int64_t start, int64_t endInclusive, int64_t dest, std::map<int64_t, int64_t> *zm);
-void applyShiftData(const SadRowSequence &startIndex, const SadRowSequence &endInclusiveIndex,
-    const SadRowSequence &destIndex,
+void applyShiftData(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
+    const RowSequence &destIndex,
     const std::function<void(int64_t, int64_t, int64_t)> &processShift);
 
-class MyRowSequence final : public SadRowSequence {
+class MyRowSequence final : public RowSequence {
   typedef std::map<int64_t, int64_t> data_t;
 public:
   MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
       data_t::const_iterator end, size_t size);
   ~MyRowSequence() final = default;
-  std::shared_ptr<SadRowSequenceIterator> getRowSequenceIterator() const final;
-  std::shared_ptr<SadRowSequenceIterator> getRowSequenceReverseIterator() const final;
+  std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
+  std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
   size_t size() const final {
     return size_;
   }
@@ -34,14 +42,14 @@ private:
   size_t size_ = 0;
 };
 
-class MyRowSequenceIterator final : public SadRowSequenceIterator {
+class MyRowSequenceIterator final : public RowSequenceIterator {
   typedef std::map<int64_t, int64_t> data_t;
 public:
   MyRowSequenceIterator(std::shared_ptr<data_t> data,
       data_t::const_iterator begin, data_t::const_iterator end, size_t size, bool forward);
   ~MyRowSequenceIterator() final;
 
-  std::shared_ptr<SadRowSequence> getNextRowSequenceWithLength(size_t size) final;
+  std::shared_ptr<RowSequence> getNextRowSequenceWithLength(size_t size) final;
   bool tryGetNext(int64_t *result) final;
 
 private:
@@ -53,17 +61,17 @@ private:
 };
 }  // namespace
 
-std::shared_ptr<SadTickingTable> SadTickingTable::create(std::vector<std::shared_ptr<SadColumnSource>> columns) {
-  return std::make_shared<SadTickingTable>(Private(), std::move(columns));
+std::shared_ptr<TickingTable> TickingTable::create(std::vector<std::shared_ptr<ColumnSource>> columns) {
+  return std::make_shared<TickingTable>(Private(), std::move(columns));
 }
-SadTickingTable::SadTickingTable(Private, std::vector<std::shared_ptr<SadColumnSource>> columns) :
+TickingTable::TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> columns) :
     columns_(std::move(columns)) {
   redirection_ = std::make_shared<std::map<int64_t, int64_t>>();
 }
-SadTickingTable::~SadTickingTable() = default;
+TickingTable::~TickingTable() = default;
 
-std::shared_ptr<SadUnwrappedTable> SadTickingTable::add(const SadRowSequence &addedRows) {
-  auto rowKeys = SadLongChunk::create(addedRows.size());
+std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) {
+  auto rowKeys = LongChunk::create(addedRows.size());
   auto iter = addedRows.getRowSequenceIterator();
   int64_t row;
   size_t destIndex = 0;
@@ -83,10 +91,10 @@ std::shared_ptr<SadUnwrappedTable> SadTickingTable::add(const SadRowSequence &ad
     rowKeys->data()[destIndex] = nextRedirectedRow;
     ++destIndex;
   }
-  return SadUnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
+  return UnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
 }
 
-void SadTickingTable::erase(const SadRowSequence &removedRows) {
+void TickingTable::erase(const RowSequence &removedRows) {
   auto iter = removedRows.getRowSequenceIterator();
   int64_t row;
   while (iter->tryGetNext(&row)) {
@@ -100,23 +108,23 @@ void SadTickingTable::erase(const SadRowSequence &removedRows) {
   }
 }
 
-void SadTickingTable::shift(const SadRowSequence &startIndex, const SadRowSequence &endInclusiveIndex,
-    const SadRowSequence &destIndex) {
+void TickingTable::shift(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
+    const RowSequence &destIndex) {
   auto processShift = [this](int64_t s, int64_t ei, int64_t dest) {
     mapShifter(s, ei, dest, redirection_.get());
   };
   applyShiftData(startIndex, endInclusiveIndex, destIndex, processShift);
 }
 
-std::shared_ptr<SadRowSequence> SadTickingTable::getRowSequence() const {
+std::shared_ptr<RowSequence> TickingTable::getRowSequence() const {
   return std::make_shared<MyRowSequence>(redirection_, redirection_->begin(), redirection_->end(),
       redirection_->size());
 }
 
-std::shared_ptr<SadUnwrappedTable>
-SadTickingTable::unwrap(const std::shared_ptr<SadRowSequence> &rows,
+std::shared_ptr<UnwrappedTable>
+TickingTable::unwrap(const std::shared_ptr<RowSequence> &rows,
     const std::vector<size_t> &cols) const {
-  auto rowKeys = SadLongChunk::create(rows->size());
+  auto rowKeys = LongChunk::create(rows->size());
   auto iter = rows->getRowSequenceIterator();
   size_t destIndex = 0;
   int64_t rowKey;
@@ -129,7 +137,7 @@ SadTickingTable::unwrap(const std::shared_ptr<SadRowSequence> &rows,
     rowKeys->data()[destIndex++] = ip->second;
   }
 
-  std::vector<std::shared_ptr<SadColumnSource>> columns;
+  std::vector<std::shared_ptr<ColumnSource>> columns;
   columns.reserve(cols.size());
   for (auto colIndex : cols) {
     if (colIndex >= columns_.size()) {
@@ -138,16 +146,16 @@ SadTickingTable::unwrap(const std::shared_ptr<SadRowSequence> &rows,
     }
     columns.push_back(columns_[colIndex]);
   }
-  return SadUnwrappedTable::create(std::move(rowKeys), destIndex, std::move(columns));
+  return UnwrappedTable::create(std::move(rowKeys), destIndex, std::move(columns));
 }
 
-std::shared_ptr<SadColumnSource> SadTickingTable::getColumn(size_t columnIndex) const {
-  throw std::runtime_error("SadTickingTable: getColumn [redirected]: not implemented yet");
+std::shared_ptr<ColumnSource> TickingTable::getColumn(size_t columnIndex) const {
+  throw std::runtime_error("TickingTable: getColumn [redirected]: not implemented yet");
 }
 
 namespace {
-void applyShiftData(const SadRowSequence &startIndex, const SadRowSequence &endInclusiveIndex,
-    const SadRowSequence &destIndex,
+void applyShiftData(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
+    const RowSequence &destIndex,
     const std::function<void(int64_t, int64_t, int64_t)> &processShift) {
   if (startIndex.empty()) {
     return;
@@ -156,7 +164,7 @@ void applyShiftData(const SadRowSequence &startIndex, const SadRowSequence &endI
   // Loop twice: once in the forward direction (applying negative shifts), and once in the reverse direction
   // (applying positive shifts).
   for (auto direction = 0; direction < 2; ++direction) {
-    std::shared_ptr<SadRowSequenceIterator> startIter, endIter, destIter;
+    std::shared_ptr<RowSequenceIterator> startIter, endIter, destIter;
     if (direction == 0) {
       startIter = startIndex.getRowSequenceIterator();
       endIter = endInclusiveIndex.getRowSequenceIterator();
@@ -239,12 +247,12 @@ MyRowSequence::MyRowSequence(std::shared_ptr<data_t> data,
     data_t::const_iterator begin, data_t::const_iterator end, size_t size)
     : data_(std::move(data)), begin_(begin), end_(end), size_(size) {}
 
-    std::shared_ptr<SadRowSequenceIterator>
+    std::shared_ptr<RowSequenceIterator>
     MyRowSequence::getRowSequenceIterator() const {
   return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, true);
 }
 
-std::shared_ptr<SadRowSequenceIterator>
+std::shared_ptr<RowSequenceIterator>
 MyRowSequence::getRowSequenceReverseIterator() const {
   return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, false);
 }
@@ -269,7 +277,7 @@ bool MyRowSequenceIterator::tryGetNext(int64_t *result) {
   return true;
 }
 
-std::shared_ptr<SadRowSequence>
+std::shared_ptr<RowSequence>
 MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
   // TODO(kosak): iterates whole set. ugh.
   auto remaining = std::distance(begin_, end_);
@@ -288,4 +296,4 @@ MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
   return std::make_shared<MyRowSequence>(data_, newBegin, newEnd, sizeToUse);
 }
 }  // namespace
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::table

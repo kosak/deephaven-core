@@ -119,7 +119,7 @@ public:
   virtual ~ColumnSourceContext();
 };
 
-class SadColumnSourceVisitor {
+class ColumnSourceVisitor {
 public:
   virtual void visit(const IntColumnSource *) = 0;
   virtual void visit(const LongColumnSource *) = 0;
