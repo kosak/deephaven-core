@@ -10,12 +10,12 @@ class RowSequenceIterator;
 
 class RowSequence {
 public:
-  static std::shared_ptr<SadRowSequence> createSequential(int64_t begin, int64_t end);
+  static std::shared_ptr<RowSequence> createSequential(int64_t begin, int64_t end);
 
-  virtual ~SadRowSequence();
+  virtual ~RowSequence();
 
-  virtual std::shared_ptr<SadRowSequenceIterator> getRowSequenceIterator() const = 0;
-  virtual std::shared_ptr<SadRowSequenceIterator> getRowSequenceReverseIterator() const = 0;
+  virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
+  virtual std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const = 0;
 
   virtual size_t size() const = 0;
 
@@ -23,21 +23,21 @@ public:
     return size() == 0;
   }
 
-  friend std::ostream &operator<<(std::ostream &s, const SadRowSequence &o);
+  friend std::ostream &operator<<(std::ostream &s, const RowSequence &o);
 };
 
-class SadRowSequenceIterator {
+class RowSequenceIterator {
 public:
-  virtual ~SadRowSequenceIterator();
+  virtual ~RowSequenceIterator();
 
-  virtual std::shared_ptr<SadRowSequence> getNextRowSequenceWithLength(size_t size) = 0;
+  virtual std::shared_ptr<RowSequence> getNextRowSequenceWithLength(size_t size) = 0;
   virtual bool tryGetNext(int64_t *result) = 0;
 };
 
-class SadRowSequenceBuilder {
+class RowSequenceBuilder {
 public:
-  SadRowSequenceBuilder();
-  ~SadRowSequenceBuilder();
+  RowSequenceBuilder();
+  ~RowSequenceBuilder();
 
   void addRange(int64_t first, int64_t last);
 
@@ -45,7 +45,7 @@ public:
     data_->insert(key);
   }
 
-  std::shared_ptr<SadRowSequence> build();
+  std::shared_ptr<RowSequence> build();
 
 private:
   std::shared_ptr<std::set<int64_t>> data_;

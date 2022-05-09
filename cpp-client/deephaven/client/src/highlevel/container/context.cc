@@ -1,5 +1,5 @@
-#include "deephaven/client/highlevel/sad/sad_context.h"
+#include "deephaven/client/highlevel/container/context.h"
 
-namespace deephaven::client::highlevel::sad {
-SadContext::~SadContext() = default;
-}  // namespace deephaven::client::highlevel::sad
+namespace deephaven::client::highlevel::container {
+}  // namespace deephaven::client::highlevel::container
+

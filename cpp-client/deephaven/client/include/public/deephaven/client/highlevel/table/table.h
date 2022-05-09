@@ -9,6 +9,9 @@
 
 namespace deephaven::client::highlevel::table {
 class Table {
+  typedef deephaven::client::highlevel::column::ColumnSource ColumnSource;
+  typedef deephaven::client::highlevel::container::RowSequence RowSequence;
+
 public:
   Table() = default;
   virtual ~Table() = default;

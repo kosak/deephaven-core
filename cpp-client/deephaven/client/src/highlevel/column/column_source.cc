@@ -1,47 +1,52 @@
-#include "deephaven/client/highlevel/sad/sad_column_source.h"
+#include "deephaven/client/highlevel/column/column_source.h"
+
+#include "deephaven/client/highlevel/chunk/chunk.h"
+#include "deephaven/client/highlevel/container/context.h"
 #include "deephaven/client/highlevel/impl/util.h"
-#include "deephaven/client/highlevel/sad/sad_chunk.h"
 
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 using deephaven::client::highlevel::impl::verboseCast;
+using deephaven::client::highlevel::column::ColumnSourceContext;
+using deephaven::client::highlevel::chunk::DoubleChunk;
+using deephaven::client::highlevel::chunk::IntChunk;
 
-namespace deephaven::client::highlevel::sad {
+namespace deephaven::client::highlevel::column {
 namespace {
-class MySadLongColumnSourceContext final : public SadColumnSourceContext {
+class MyLongColumnSourceContext final : public ColumnSourceContext {
 public:
 };
 
-class MySadDoubleColumnSourceContext final : public SadColumnSourceContext {
+class MyDoubleColumnSourceContext final : public ColumnSourceContext {
 public:
 };
 
 void assertFits(size_t size, size_t capacity);
 void assertInRange(size_t index, size_t size);
 }  // namespace
-SadColumnSource::~SadColumnSource() = default;
-SadMutableColumnSource::~SadMutableColumnSource() = default;
-SadIntColumnSource::~SadIntColumnSource() = default;
-SadLongColumnSource::~SadLongColumnSource() = default;
-SadDoubleColumnSource::~SadDoubleColumnSource() = default;
+ColumnSource::~ColumnSource() = default;
+MutableColumnSource::~MutableColumnSource() = default;
+IntColumnSource::~IntColumnSource() = default;
+LongColumnSource::~LongColumnSource() = default;
+DoubleColumnSource::~DoubleColumnSource() = default;
 
-std::shared_ptr<SadIntArrayColumnSource> SadIntArrayColumnSource::create() {
-  return std::make_shared<SadIntArrayColumnSource>(Private());
+std::shared_ptr<IntArrayColumnSource> IntArrayColumnSource::create() {
+  return std::make_shared<IntArrayColumnSource>(Private());
 }
 
-SadIntArrayColumnSource::SadIntArrayColumnSource(Private) {}
-SadIntArrayColumnSource::~SadIntArrayColumnSource() = default;
+IntArrayColumnSource::IntArrayColumnSource(Private) {}
+IntArrayColumnSource::~IntArrayColumnSource() = default;
 
-std::shared_ptr<SadColumnSourceContext> SadIntArrayColumnSource::createContext(size_t chunkSize) const {
+std::shared_ptr<ColumnSourceContext> IntArrayColumnSource::createContext(size_t chunkSize) const {
   // We're not really using contexts yet.
-  return std::make_shared<MySadLongColumnSourceContext>();
+  return std::make_shared<MyLongColumnSourceContext>();
 }
 
-void SadIntArrayColumnSource::fillChunkUnordered(SadContext *context, const SadLongChunk &rowKeys,
-    size_t size, SadChunk *dest) const {
-  auto *typedDest = verboseCast<SadIntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+void IntArrayColumnSource::fillChunkUnordered(Context *context, const LongChunk &rowKeys,
+    size_t size, Chunk *dest) const {
+  auto *typedDest = verboseCast<IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   assertFits(size, dest->capacity());
 
   for (size_t i = 0; i < size; ++i) {
@@ -51,8 +56,8 @@ void SadIntArrayColumnSource::fillChunkUnordered(SadContext *context, const SadL
   }
 }
 
-void SadIntArrayColumnSource::fillChunk(SadContext *context, const SadRowSequence &rows, SadChunk *dest) const {
-  auto *typedDest = verboseCast<SadIntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+void IntArrayColumnSource::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
+  auto *typedDest = verboseCast<IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   assertFits(rows.size(), dest->capacity());
 
   size_t destIndex = 0;
@@ -65,9 +70,9 @@ void SadIntArrayColumnSource::fillChunk(SadContext *context, const SadRowSequenc
   }
 }
 
-void SadIntArrayColumnSource::fillFromChunk(SadContext *context, const SadChunk &src,
-    const SadRowSequence &rows) {
-  auto *typedSrc = verboseCast<const SadIntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+void IntArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
+    const RowSequence &rows) {
+  auto *typedSrc = verboseCast<const IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(rows.size(), src.capacity());
 
   size_t srcIndex = 0;
@@ -80,9 +85,9 @@ void SadIntArrayColumnSource::fillFromChunk(SadContext *context, const SadChunk 
   }
 }
 
-void SadIntArrayColumnSource::fillFromChunkUnordered(SadContext *context, const SadChunk &src,
-    const SadLongChunk &rowKeys, size_t size) {
-  auto *typedSrc = verboseCast<const SadIntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+void IntArrayColumnSource::fillFromChunkUnordered(Context *context, const Chunk &src,
+    const LongChunk &rowKeys, size_t size) {
+  auto *typedSrc = verboseCast<const IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(size, src.capacity());
 
   for (size_t i = 0; i < size; ++i) {
@@ -92,31 +97,31 @@ void SadIntArrayColumnSource::fillFromChunkUnordered(SadContext *context, const 
   }
 }
 
-void SadIntArrayColumnSource::ensureSize(size_t size) {
+void IntArrayColumnSource::ensureSize(size_t size) {
   if (size > data_.size()) {
     data_.resize(size);
   }
 }
 
-void SadIntArrayColumnSource::acceptVisitor(SadColumnSourceVisitor *visitor) const {
+void IntArrayColumnSource::acceptVisitor(ColumnSourceVisitor *visitor) const {
   visitor->visit(this);
 }
 
-std::shared_ptr<SadLongArrayColumnSource> SadLongArrayColumnSource::create() {
-  return std::make_shared<SadLongArrayColumnSource>(Private());
+std::shared_ptr<LongArrayColumnSource> LongArrayColumnSource::create() {
+  return std::make_shared<LongArrayColumnSource>(Private());
 }
 
-SadLongArrayColumnSource::SadLongArrayColumnSource(Private) {}
-SadLongArrayColumnSource::~SadLongArrayColumnSource() = default;
+LongArrayColumnSource::LongArrayColumnSource(Private) {}
+LongArrayColumnSource::~LongArrayColumnSource() = default;
 
-std::shared_ptr<SadColumnSourceContext> SadLongArrayColumnSource::createContext(size_t chunkSize) const {
+std::shared_ptr<ColumnSourceContext> LongArrayColumnSource::createContext(size_t chunkSize) const {
   // We're not really using contexts yet.
-  return std::make_shared<MySadLongColumnSourceContext>();
+  return std::make_shared<MyLongColumnSourceContext>();
 }
 
-void SadLongArrayColumnSource::fillChunkUnordered(SadContext *context, const SadLongChunk &rowKeys,
-    size_t size, SadChunk *dest) const {
-  auto *typedDest = verboseCast<SadLongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+void LongArrayColumnSource::fillChunkUnordered(Context *context, const LongChunk &rowKeys,
+    size_t size, Chunk *dest) const {
+  auto *typedDest = verboseCast<LongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   assertFits(size, dest->capacity());
 
   for (size_t i = 0; i < size; ++i) {
@@ -126,8 +131,8 @@ void SadLongArrayColumnSource::fillChunkUnordered(SadContext *context, const Sad
   }
 }
 
-void SadLongArrayColumnSource::fillChunk(SadContext *context, const SadRowSequence &rows, SadChunk *dest) const {
-  auto *typedDest = verboseCast<SadLongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+void LongArrayColumnSource::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
+  auto *typedDest = verboseCast<LongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   assertFits(rows.size(), dest->capacity());
 
   size_t destIndex = 0;
@@ -140,9 +145,9 @@ void SadLongArrayColumnSource::fillChunk(SadContext *context, const SadRowSequen
   }
 }
 
-void SadLongArrayColumnSource::fillFromChunk(SadContext *context, const SadChunk &src,
-    const SadRowSequence &rows) {
-  auto *typedSrc = verboseCast<const SadLongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+void LongArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
+    const RowSequence &rows) {
+  auto *typedSrc = verboseCast<const LongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(rows.size(), src.capacity());
 
   size_t srcIndex = 0;
@@ -155,9 +160,9 @@ void SadLongArrayColumnSource::fillFromChunk(SadContext *context, const SadChunk
   }
 }
 
-void SadLongArrayColumnSource::fillFromChunkUnordered(SadContext *context, const SadChunk &src,
-    const SadLongChunk &rowKeys, size_t size) {
-  auto *typedSrc = verboseCast<const SadLongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+void LongArrayColumnSource::fillFromChunkUnordered(Context *context, const Chunk &src,
+    const LongChunk &rowKeys, size_t size) {
+  auto *typedSrc = verboseCast<const LongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(size, src.capacity());
 
   streamf(std::cout, "These are the rowKeys: %o\n", rowKeys);
@@ -169,31 +174,31 @@ void SadLongArrayColumnSource::fillFromChunkUnordered(SadContext *context, const
   }
 }
 
-void SadLongArrayColumnSource::ensureSize(size_t size) {
+void LongArrayColumnSource::ensureSize(size_t size) {
   if (size > data_.size()) {
     data_.resize(size);
   }
 }
 
-void SadLongArrayColumnSource::acceptVisitor(SadColumnSourceVisitor *visitor) const {
+void LongArrayColumnSource::acceptVisitor(ColumnSourceVisitor *visitor) const {
   visitor->visit(this);
 }
 
-std::shared_ptr<SadDoubleArrayColumnSource> SadDoubleArrayColumnSource::create() {
-  return std::make_shared<SadDoubleArrayColumnSource>(Private());
+std::shared_ptr<DoubleArrayColumnSource> DoubleArrayColumnSource::create() {
+  return std::make_shared<DoubleArrayColumnSource>(Private());
 }
 
-SadDoubleArrayColumnSource::SadDoubleArrayColumnSource(Private) {}
-SadDoubleArrayColumnSource::~SadDoubleArrayColumnSource() = default;
+DoubleArrayColumnSource::DoubleArrayColumnSource(Private) {}
+DoubleArrayColumnSource::~DoubleArrayColumnSource() = default;
 
-std::shared_ptr<SadColumnSourceContext> SadDoubleArrayColumnSource::createContext(size_t chunkSize) const {
+std::shared_ptr<ColumnSourceContext> DoubleArrayColumnSource::createContext(size_t chunkSize) const {
   // We're not really using contexts yet.
-  return std::make_shared<MySadDoubleColumnSourceContext>();
+  return std::make_shared<MyDoubleColumnSourceContext>();
 }
 
-void SadDoubleArrayColumnSource::fillChunkUnordered(SadContext *context, const SadLongChunk &rowKeys,
-    size_t size, SadChunk *dest) const {
-  auto *typedDest = verboseCast<SadDoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+void DoubleArrayColumnSource::fillChunkUnordered(Context *context, const LongChunk &rowKeys,
+    size_t size, Chunk *dest) const {
+  auto *typedDest = verboseCast<DoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   assertFits(size, dest->capacity());
 
   for (size_t i = 0; i < size; ++i) {
@@ -203,8 +208,8 @@ void SadDoubleArrayColumnSource::fillChunkUnordered(SadContext *context, const S
   }
 }
 
-void SadDoubleArrayColumnSource::fillChunk(SadContext *context, const SadRowSequence &rows, SadChunk *dest) const {
-  auto *typedDest = verboseCast<SadDoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+void DoubleArrayColumnSource::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
+  auto *typedDest = verboseCast<DoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   assertFits(rows.size(), dest->capacity());
 
   size_t destIndex = 0;
@@ -217,9 +222,9 @@ void SadDoubleArrayColumnSource::fillChunk(SadContext *context, const SadRowSequ
   }
 }
 
-void SadDoubleArrayColumnSource::fillFromChunk(SadContext *context, const SadChunk &src,
-    const SadRowSequence &rows) {
-  auto *typedSrc = verboseCast<const SadDoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+void DoubleArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
+    const RowSequence &rows) {
+  auto *typedSrc = verboseCast<const DoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(rows.size(), src.capacity());
 
   size_t srcIndex = 0;
@@ -232,9 +237,9 @@ void SadDoubleArrayColumnSource::fillFromChunk(SadContext *context, const SadChu
   }
 }
 
-void SadDoubleArrayColumnSource::fillFromChunkUnordered(SadContext *context, const SadChunk &src,
-    const SadLongChunk &rowKeys, size_t size) {
-  auto *typedSrc = verboseCast<const SadDoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+void DoubleArrayColumnSource::fillFromChunkUnordered(Context *context, const Chunk &src,
+    const LongChunk &rowKeys, size_t size) {
+  auto *typedSrc = verboseCast<const DoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   assertFits(size, src.capacity());
 
   for (size_t i = 0; i < size; ++i) {
@@ -244,17 +249,17 @@ void SadDoubleArrayColumnSource::fillFromChunkUnordered(SadContext *context, con
   }
 }
 
-void SadDoubleArrayColumnSource::ensureSize(size_t size) {
+void DoubleArrayColumnSource::ensureSize(size_t size) {
   if (size > data_.size()) {
     data_.resize(size);
   }
 }
 
-void SadDoubleArrayColumnSource::acceptVisitor(SadColumnSourceVisitor *visitor) const {
+void DoubleArrayColumnSource::acceptVisitor(ColumnSourceVisitor *visitor) const {
   visitor->visit(this);
 }
 
-SadColumnSourceContext::~SadColumnSourceContext() = default;
+ColumnSourceContext::~ColumnSourceContext() = default;
 
 namespace {
 void assertFits(size_t size, size_t capacity) {
@@ -271,4 +276,4 @@ void assertInRange(size_t index, size_t size) {
   }
 }
 }  // namespace
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::highlevel::column

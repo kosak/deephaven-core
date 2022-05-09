@@ -114,7 +114,7 @@ private:
   std::vector<double> data_;
 };
 
-class ColumnSourceContext : public Context {
+class ColumnSourceContext : public deephaven::client::highlevel::container::Context {
 public:
   virtual ~ColumnSourceContext();
 };

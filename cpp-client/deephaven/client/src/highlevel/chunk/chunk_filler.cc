@@ -1,10 +1,12 @@
 #include "deephaven/client/highlevel/chunk/chunk_filler.h"
 
+#include "deephaven/client/highlevel/container/row_sequence.h"
 #include "deephaven/client/highlevel/impl/util.h"
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::stringf;
+using deephaven::client::highlevel::container::RowSequence;
 using deephaven::client::highlevel::impl::verboseCast;
 
 namespace deephaven::client::highlevel::chunk {

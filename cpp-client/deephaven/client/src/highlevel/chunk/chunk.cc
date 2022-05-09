@@ -15,7 +15,7 @@ std::shared_ptr<LongChunk> LongChunk::slice(size_t begin, size_t end) {
     auto message = stringf("end (%o) > capacity (%o)", end, capacity());
     throw std::runtime_error(message);
   }
-  return std::make_shared<SadLongChunk>(Private(), buffer_, begin, end);
+  return std::make_shared<LongChunk>(Private(), buffer_, begin, end);
 }
 
 std::ostream &operator<<(std::ostream &s, const LongChunk &o) {

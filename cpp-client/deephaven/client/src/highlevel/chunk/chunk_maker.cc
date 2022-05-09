@@ -1,5 +1,7 @@
 #include "deephaven/client/highlevel/chunk/chunk_maker.h"
 
+#include "deephaven/client/highlevel/column/column_source.h"
+
 namespace deephaven::client::highlevel::chunk {
 namespace {
 struct Visitor final : ColumnSourceVisitor {
