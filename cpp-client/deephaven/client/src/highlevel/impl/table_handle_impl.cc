@@ -424,24 +424,24 @@ private:
   size_t size_ = 0;
 };
 
-std::shared_ptr<SadMutableColumnSource> makeColumnSource(const arrow::DataType &dataType);
+std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType);
 int64_t readValue(DataInput *in, int command);
 
-std::shared_ptr<SadRowSequence> readExternalCompressedDelta(DataInput *in);
+std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in);
 
 void processAddBatches(
     int64_t numAdds,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    SadTickingTable *table,
-    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns,
-    const SadRowSequence &addedRows);
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const RowSequence &addedRows);
 
 void processModBatches(int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    const std::vector<std::shared_ptr<SadRowSequence>> &modIndexes,
-    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns);
+    const std::vector<std::shared_ptr<RowSequence>> &modIndexes,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns);
 }  // namespace
 
 namespace {
@@ -550,8 +550,8 @@ void ThreadNubbin::runForeverHelperImpl() {
   // Create some MutableColumnSources and keep two views on them: a Mutable view which we
   // will keep around locally in order to effect changes, and a readonly view used to make the
   // table.
-  std::vector<std::shared_ptr<SadMutableColumnSource>> mutableColumns;
-  std::vector<std::shared_ptr<SadColumnSource>> tableColumns;
+  std::vector<std::shared_ptr<MutableColumnSource>> mutableColumns;
+  std::vector<std::shared_ptr<ColumnSource>> tableColumns;
   mutableColumns.reserve(vec.size());
   tableColumns.reserve(vec.size());
   for (const auto &entry : vec) {
@@ -560,7 +560,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     mutableColumns.push_back(std::move(cs));
   }
 
-  auto sadTable = SadTickingTable::create(std::move(tableColumns));
+  auto sadTable = TickingTable::create(std::move(tableColumns));
   arrow::flight::FlightStreamChunk flightStreamChunk;
   while (true) {
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
@@ -641,7 +641,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     // 4. Modifies
     if (numMods != 0) {
       const auto &modColumnNodes = *bmd->mod_column_nodes();
-      std::vector<std::shared_ptr<SadRowSequence>> modIndexes;
+      std::vector<std::shared_ptr<RowSequence>> modIndexes;
       for (size_t i = 0; i < modColumnNodes.size(); ++i) {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
@@ -654,7 +654,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     auto rowSequence = sadTable->getRowSequence();
     streamf(std::cerr, "Now my index looks like this: [%o]\n", *rowSequence);
 
-    // TODO(kosak): Do something about the sharing story for SadTable
+    // TODO(kosak): Do something about the sharing story for Table
     callback_->onTick(sadTable);
   }
 }
@@ -664,9 +664,9 @@ void processAddBatches(
     int64_t numAdds,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    SadTickingTable *table,
-    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns,
-    const SadRowSequence &addedRows) {
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const RowSequence &addedRows) {
   if (numAdds == 0) {
     return;
   }
@@ -689,7 +689,7 @@ void processAddBatches(
     }
 
     auto numRows = srcCols[0]->length();
-    auto sequentialRows = SadRowSequence::createSequential(0, numRows);
+    auto sequentialRows = RowSequence::createSequential(0, numRows);
     auto rowKeys = allRowKeys->slice(rowKeyBegin, rowKeyBegin + numRows);
     rowKeyBegin += numRows;
 
@@ -720,13 +720,13 @@ void processAddBatches(
 void processModBatches(int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    const std::vector<std::shared_ptr<SadRowSequence>> &modIndexes,
-    std::vector<std::shared_ptr<SadMutableColumnSource>> *mutableColumns) {
+    const std::vector<std::shared_ptr<RowSequence>> &modIndexes,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns) {
   if (numMods == 0) {
     return;
   }
 
-  std::vector<std::shared_ptr<SadRowSequenceIterator>> iterators;
+  std::vector<std::shared_ptr<RowSequenceIterator>> iterators;
   for (const auto &mi : modIndexes) {
     iterators.push_back(mi->getRowSequenceIterator());
   }
@@ -755,7 +755,7 @@ void processModBatches(int64_t numMods,
       auto context = destColDh->createContext(numRows);
       auto chunk = ChunkMaker::createChunkFor(*destColDh, numRows);
 
-      auto sequentialRows = SadRowSequence::createSequential(0, numRows);
+      auto sequentialRows = RowSequence::createSequential(0, numRows);
 
       ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
       auto destIndices = iterators[i]->getNextRowSequenceWithLength(numRows);
@@ -769,8 +769,8 @@ void processModBatches(int64_t numMods,
   }
 }
 
-std::shared_ptr<SadRowSequence> readExternalCompressedDelta(DataInput *in) {
-  SadRowSequenceBuilder builder;
+std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
+  RowSequenceBuilder builder;
 
   int64_t offset = 0;
 
@@ -838,24 +838,24 @@ std::shared_ptr<SadRowSequence> readExternalCompressedDelta(DataInput *in) {
 
 struct MyVisitor final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::Int32Type &type) final {
-    result_ = SadIntArrayColumnSource::create();
+    result_ = IntArrayColumnSource::create();
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int64Type &type) final {
-    result_ = SadLongArrayColumnSource::create();
+    result_ = LongArrayColumnSource::create();
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::DoubleType &type) final {
-    result_ = SadDoubleArrayColumnSource::create();
+    result_ = DoubleArrayColumnSource::create();
     return arrow::Status::OK();
   }
 
-  std::shared_ptr<SadMutableColumnSource> result_;
+  std::shared_ptr<MutableColumnSource> result_;
 };
 
-std::shared_ptr<SadMutableColumnSource> makeColumnSource(const arrow::DataType &dataType) {
+std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType) {
   MyVisitor v;
   okOrThrow(DEEPHAVEN_EXPR_MSG(dataType.Accept(&v)));
   return std::move(v.result_);
