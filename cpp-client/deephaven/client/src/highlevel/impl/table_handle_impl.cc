@@ -655,7 +655,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     streamf(std::cerr, "Now my index looks like this: [%o]\n", *rowSequence);
 
     // TODO(kosak): Do something about the sharing story for Table
-    callback_->onTick(sadTable);
+    // callback_->onTick(sadTable);
   }
 }
 

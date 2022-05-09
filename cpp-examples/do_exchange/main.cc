@@ -7,9 +7,11 @@
 
 #include "deephaven/client/highlevel/client.h"
 #include "deephaven/client/highlevel/ticking.h"
-#include "deephaven/client/highlevel/sad/chunk_maker.h"
-#include "deephaven/client/highlevel/sad/sad_chunk.h"
-#include "deephaven/client/highlevel/sad/sad_context.h"
+#include "deephaven/client/highlevel/chunk/chunk_maker.h"
+#include "deephaven/client/highlevel/chunk/chunk.h"
+#include "deephaven/client/highlevel/container/context.h"
+#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/highlevel/table/table.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/utility.h"
 
@@ -19,14 +21,17 @@ using deephaven::client::highlevel::SortPair;
 using deephaven::client::highlevel::TableHandle;
 using deephaven::client::highlevel::TableHandleManager;
 using deephaven::client::highlevel::TickingCallback;
-using deephaven::client::highlevel::sad::ChunkMaker;
-using deephaven::client::highlevel::sad::SadChunk;
-using deephaven::client::highlevel::sad::SadChunkVisitor;
-using deephaven::client::highlevel::sad::SadContext;
-using deephaven::client::highlevel::sad::SadDoubleChunk;
-using deephaven::client::highlevel::sad::SadIntChunk;
-using deephaven::client::highlevel::sad::SadLongChunk;
-using deephaven::client::highlevel::sad::SadSizeTChunk;
+using deephaven::client::highlevel::TickingUpdate;
+using deephaven::client::highlevel::chunk::ChunkMaker;
+using deephaven::client::highlevel::chunk::Chunk;
+using deephaven::client::highlevel::chunk::ChunkVisitor;
+using deephaven::client::highlevel::container::Context;
+using deephaven::client::highlevel::container::RowSequence;
+using deephaven::client::highlevel::chunk::DoubleChunk;
+using deephaven::client::highlevel::chunk::IntChunk;
+using deephaven::client::highlevel::chunk::LongChunk;
+using deephaven::client::highlevel::chunk::SizeTChunk;
+using deephaven::client::highlevel::table::Table;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::separatedList;
 using deephaven::client::utility::streamf;
@@ -38,6 +43,13 @@ using std::size_t;
 
 namespace {
 void millionRows(const TableHandleManager &manager);
+
+template<typename T>
+std::vector<T> makeVector(size_t n) {
+  std::vector<T> v;
+  v.reserve(n);
+  return v;
+}
 }  // namespace
 
 int main() {
@@ -74,23 +86,23 @@ void Callback::onFailure(std::exception_ptr ep) {
   failed_ = true;
 }
 
-class ElementStreamer final : public SadChunkVisitor {
+class ElementStreamer final : public ChunkVisitor {
 public:
   ElementStreamer(std::ostream &s, size_t index) : s_(s), index_(index) {}
 
-  void visit(const SadIntChunk &chunk) const final {
+  void visit(const IntChunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
-  void visit(const SadLongChunk &chunk) const final {
+  void visit(const LongChunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
-  void visit(const SadDoubleChunk &chunk) const final {
+  void visit(const DoubleChunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
-  void visit(const SadSizeTChunk &chunk) const final {
+  void visit(const SizeTChunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
@@ -99,20 +111,13 @@ private:
   size_t index_ = 0;
 };
 
-template<typename T>
-std::vector<T> reservedVector(size_t n) {
-  std::vector<T> v;
-  v.reserve(n);
-  return v;
-}
-
 void dumpTable(std::string_view what, const Table &table, const RowSequence &rows);
 
 void Callback::onTick(const std::shared_ptr<TickingUpdate> &update) {
-  dumpTable("removed", update.prevTable(), update.removed());
-  dumpTable("modified-prev", update.prevTable(), update.modified());
-  dumpTable("modified-this", update.thisTable(), update.modified());
-  dumpTable("added", update.thisTable(), update.added());
+  dumpTable("removed", *update->prevTable(), *update->removed());
+  dumpTable("modified-prev", *update->prevTable(), *update->modified());
+  dumpTable("modified-this", *update->thisTable(), *update->modified());
+  dumpTable("added", *update->thisTable(), *update->added());
 }
 
 void dumpTable(std::string_view what, const Table &table, const RowSequence &rows) {
@@ -127,17 +132,17 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     selectedCols.push_back(col);
   }
 
-  auto outerIter = table->getRowSequence()->getRowSequenceIterator();
+  auto outerIter = table.getRowSequence()->getRowSequenceIterator();
 
   for (size_t startRow = 0; startRow < nrows; startRow += chunkSize) {
     auto selectedRows = outerIter->getNextRowSequenceWithLength(chunkSize);
     auto thisSize = selectedRows->size();
 
-    auto unwrappedTable = table->unwrap(selectedRows, selectedCols);
+    auto unwrappedTable = table.unwrap(selectedRows, selectedCols);
     auto rowKeys = unwrappedTable->getUnorderedRowKeys();
 
-    auto contexts = reservedVector<std::shared_ptr<SadContext>>(ncols);
-    auto chunks = reservedVector<std::shared_ptr<SadChunk>>(ncols);
+    auto contexts = makeVector<std::shared_ptr<Context>>(ncols);
+    auto chunks = makeVector<std::shared_ptr<Chunk>>(ncols);
 
     for (size_t col = 0; col < ncols; ++col) {
       const auto &c = unwrappedTable->getColumn(col);
@@ -149,14 +154,13 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     }
     for (size_t j = 0; j < thisSize; ++j) {
       ElementStreamer es(std::cerr, j);
-      auto chunkAcceptor = [&es](std::ostream &s, const std::shared_ptr<SadChunk> &chunk) {
+      auto chunkAcceptor = [&es](std::ostream &s, const std::shared_ptr<Chunk> &chunk) {
         chunk->acceptVisitor(es);
       };
       std::cerr << separatedList(chunks.begin(), chunks.end(), ", ", chunkAcceptor) << '\n';
     }
   }
 }
-}  // namespace
 
 void doit(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -285,8 +289,6 @@ void millionRows(const TableHandleManager &manager) {
   std::cerr << "exiting\n";
 }
 
-
-namespace {
 std::string getWhat(std::exception_ptr ep) {
   try {
     std::rethrow_exception(std::move(ep));

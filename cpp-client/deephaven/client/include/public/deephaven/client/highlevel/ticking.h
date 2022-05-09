@@ -27,14 +27,25 @@ protected:
   typedef deephaven::client::highlevel::container::RowSequence RowSequence;
   typedef deephaven::client::highlevel::table::Table Table;
 
+public:
+  const std::shared_ptr<Table> &prevTable() const { return prevTable_; }
+  const std::shared_ptr<Table> &thisTable() const { return thisTable_; }
+  // In the key space of 'prevTable'
+  const std::shared_ptr<RowSequence> &removed() const { return removed_; }
+  // In the key space of 'thisTable'
+  const std::shared_ptr<RowSequence> &modified() const { return modified_; }
+  // In the key space of 'thisTable'
+  const std::shared_ptr<RowSequence> &added() const { return added_; }
+
+
 private:
   std::shared_ptr<Table> prevTable_;
   std::shared_ptr<Table> thisTable_;
   // In the key space of 'prevTable'
-  std::shared_ptr<RowSequence> removes_;
+  std::shared_ptr<RowSequence> removed_;
   // In the key space of 'thisTable'
-  std::shared_ptr<RowSequence> modifies_;
+  std::shared_ptr<RowSequence> modified_;
   // In the key space of 'thisTable'
-  std::shared_ptr<RowSequence> adds_;
+  std::shared_ptr<RowSequence> added_;
 };
 }  // namespace deephaven::client::highlevel
