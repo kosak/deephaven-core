@@ -19,32 +19,45 @@ public:
    * can be kept around for an arbitrary amount of time. On the other hand, it probably should be
    * processed and discard quickly so that the underlying resources can be reused.
    */
-  virtual void onTick(const std::shared_ptr<TickingUpdate> &update) = 0;
+  virtual void onTick(const TickingUpdate &update) = 0;
 };
 
-class TickingUpdate {
+class TickingUpdate final {
 protected:
   typedef deephaven::client::highlevel::container::RowSequence RowSequence;
   typedef deephaven::client::highlevel::table::Table Table;
 
 public:
-  const std::shared_ptr<Table> &prevTable() const { return prevTable_; }
-  const std::shared_ptr<Table> &thisTable() const { return thisTable_; }
+  TickingUpdate(std::shared_ptr<Table> beforeRemoves,
+      std::shared_ptr<Table> beforeModifies,
+      std::shared_ptr<Table> current,
+      std::shared_ptr<RowSequence> removed,
+      std::vector<std::shared_ptr<RowSequence>> perColumnModifies,
+      std::shared_ptr<RowSequence> added);
+  TickingUpdate(TickingUpdate &&other);
+  TickingUpdate &operator=(TickingUpdate &&other);
+  ~TickingUpdate();
+
+  const std::shared_ptr<Table> &beforeRemoves() const { return beforeRemoves_; }
+  const std::shared_ptr<Table> &beforeModifies() const { return beforeModifies_; }
+  const std::shared_ptr<Table> &current() const { return current_; }
   // In the key space of 'prevTable'
   const std::shared_ptr<RowSequence> &removed() const { return removed_; }
   // In the key space of 'thisTable'
-  const std::shared_ptr<RowSequence> &modified() const { return modified_; }
+  const std::vector<std::shared_ptr<RowSequence>> &perColumnModifies() const { return perColumnModifies_; }
   // In the key space of 'thisTable'
   const std::shared_ptr<RowSequence> &added() const { return added_; }
 
 private:
-  std::shared_ptr<Table> prevTable_;
-  std::shared_ptr<Table> thisTable_;
-  // In the key space of 'prevTable'
+  std::shared_ptr<Table> beforeRemoves_;
+  std::shared_ptr<Table> beforeModifies_;
+  std::shared_ptr<Table> current_;
+  // In the key space of 'beforeRemoves_'
   std::shared_ptr<RowSequence> removed_;
-  // In the key space of 'thisTable'
-  std::shared_ptr<RowSequence> modified_;
-  // In the key space of 'thisTable'
+  // In the key space of beforeModifies_ and current_, which have the same key space.
+  // Old values are in beforeModifies_; new values are in current_.
+  std::vector<std::shared_ptr<RowSequence>> perColumnModifies_;
+  // In the key space of current_.
   std::shared_ptr<RowSequence> added_;
 };
 }  // namespace deephaven::client::highlevel

@@ -20,6 +20,8 @@ public:
   explicit TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> columns);
   ~TickingTable() final;
 
+  std::shared_ptr<TickingTable> clone() const;
+
   /**
    * Adds the rows (which are assumed not to exist) to the table's index in the table's (source)
    * coordinate space and returns the target aka redirected row indices in the redirected
@@ -30,8 +32,8 @@ public:
   /**
    * Erases the rows (which are provided in the source coordinate space).
    */
-  void erase(const RowSequence &removedRows);
-  void shift(const RowSequence &startIndex, const RowSequence &endIndex,
+  void remove(const RowSequence &rowsToRemove);
+  void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
 
   std::shared_ptr<RowSequence> getRowSequence() const final;

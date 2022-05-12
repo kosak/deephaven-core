@@ -23,6 +23,7 @@
 #include "deephaven/client/highlevel/container/row_sequence.h"
 #include "deephaven/client/highlevel/table/table.h"
 #include "deephaven/client/highlevel/table/ticking_table.h"
+#include "deephaven/client/highlevel/ticking.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
@@ -33,6 +34,7 @@ using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::grpc::Ticket;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
 using deephaven::client::highlevel::SortDirection;
+using deephaven::client::highlevel::TickingUpdate;
 using deephaven::client::highlevel::impl::ColumnImpl;
 using deephaven::client::highlevel::impl::DateTimeColImpl;
 using deephaven::client::highlevel::impl::NumColImpl;
@@ -440,8 +442,9 @@ void processAddBatches(
 void processModBatches(int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    const std::vector<std::shared_ptr<RowSequence>> &modIndexes,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns);
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
 }  // namespace
 
 namespace {
@@ -560,7 +563,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     mutableColumns.push_back(std::move(cs));
   }
 
-  auto sadTable = TickingTable::create(std::move(tableColumns));
+  auto tickingTable = TickingTable::create(std::move(tableColumns));
   arrow::flight::FlightStreamChunk flightStreamChunk;
   while (true) {
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
@@ -583,7 +586,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     auto numMods = bmd->num_mod_batches();
     streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", numAdds, numMods);
 
-    streamf(std::cerr, "FYI, my row sequence is currently %o\n", *sadTable->getRowSequence());
+    streamf(std::cerr, "FYI, my row sequence is currently %o\n", *tickingTable->getRowSequence());
 
     DataInput diAdded(*bmd->added_rows());
     DataInput diRemoved(*bmd->removed_rows());
@@ -623,39 +626,48 @@ void ThreadNubbin::runForeverHelperImpl() {
     //    }
 
     // 1. Removes
-    sadTable->erase(*removedRows);
+    auto beforeRemoves = tickingTable->clone();
+    tickingTable->remove(*removedRows);
 
     // 2. Shifts
-    sadTable->shift(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
+    // Shifts only move keys around in key space but they don't reorder rows. Therefore the
+    // table (in index space) is not affected. Only the mapping from key to index is affected
+    tickingTable->applyShifts(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
 
     if (numAdds != 0 && numMods != 0) {
-      throw std::runtime_error("Message has both add batches and mod batches?");
+      throw std::runtime_error("Message has both add batches and mod batches?! "
+      "kosak thinks this is not allowed");
     }
 
+    auto beforeAddsOrModifies = tickingTable->clone();
     // 3. Adds
     if (numAdds != 0) {
-      processAddBatches(numAdds, fsr_.get(), &flightStreamChunk, sadTable.get(),
+      processAddBatches(numAdds, fsr_.get(), &flightStreamChunk, tickingTable.get(),
           &mutableColumns, *addedRows);
     }
 
     // 4. Modifies
+    std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
     if (numMods != 0) {
       const auto &modColumnNodes = *bmd->mod_column_nodes();
-      std::vector<std::shared_ptr<RowSequence>> modIndexes;
       for (size_t i = 0; i < modColumnNodes.size(); ++i) {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
         auto modIndex = readExternalCompressedDelta(&diModified);
-        modIndexes.push_back(std::move(modIndex));
+        perColumnModifies.push_back(std::move(modIndex));
       }
-      processModBatches(numMods, fsr_.get(), &flightStreamChunk, modIndexes, &mutableColumns);
+      processModBatches(numMods, fsr_.get(), &flightStreamChunk, tickingTable.get(),
+          &mutableColumns, perColumnModifies);
     }
 
-    auto rowSequence = sadTable->getRowSequence();
+    auto rowSequence = tickingTable->getRowSequence();
     streamf(std::cerr, "Now my index looks like this: [%o]\n", *rowSequence);
 
-    // TODO(kosak): Do something about the sharing story for Table
-    // callback_->onTick(sadTable);
+    auto current = tickingTable->clone();
+    TickingUpdate tickingUpdate(std::move(beforeRemoves), std::move(beforeAddsOrModifies),
+        std::move(current), std::move(removedRows), std::move(perColumnModifies),
+        std::move(addedRows));
+    callback_->onTick(tickingUpdate);
   }
 }
 
@@ -720,8 +732,9 @@ void processAddBatches(
 void processModBatches(int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    const std::vector<std::shared_ptr<RowSequence>> &modIndexes,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns) {
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const std::vector<std::shared_ptr<RowSequence>> &modIndexes) {
   if (numMods == 0) {
     return;
   }
