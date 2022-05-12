@@ -20,7 +20,19 @@ void processModBatches(int64_t numMods,
     const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
 }  // namespace
 
-void UpdateProcessor::runForeverHelperImpl() {
+void ProcessingThread::runForever(const std::shared_ptr<ProcessingThread> &self) {
+  std::cerr << "ProcessingThread is starting.\n";
+  std::exception_ptr eptr;
+  try {
+    runForeverHelper();
+  } catch (...) {
+    eptr = std::current_exception();
+    callback_->onFailure(eptr);
+  }
+  std::cerr << "ProcessingThread is exiting.\n";
+}
+
+void ProcessingThread::runForeverHelper() {
   const auto &vec = colDefs_->vec();
 
   // This is our private concept of "TickingTable" which keeps track of a Deephaven key to index

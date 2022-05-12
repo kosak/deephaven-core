@@ -468,27 +468,7 @@ ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fs
     std::shared_ptr<internal::ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
     fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
 
-void ThreadNubbin::runForever(const std::shared_ptr<ThreadNubbin> &self) {
-  std::cerr << "Hi, ThreadNubbin is awake\n";
-  try {
-    self->runForeverHelper();
-  } catch (const std::exception &e) {
-    streamf(std::cerr, "Caught exception in main table handle loop: %o\n", e.what());
-    self->callback_->onFailure(std::make_exception_ptr(e));
-  }
-  std::cerr << "ThreadNubbin is exiting. Bye.\n";
-}
 
-void ThreadNubbin::runForeverHelper() {
-    std::exception_ptr eptr;
-    try {
-        runForeverHelperImpl();
-    }
-    catch (...) {
-        eptr = std::current_exception();
-    }
-    callback_->onFailure(eptr);
-}
 
 
 // Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
