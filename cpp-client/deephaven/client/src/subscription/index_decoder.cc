@@ -93,3 +93,51 @@ std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
     }
   }
 }
+
+int64_t readValue(DataInput *in, int command) {
+  switch (command & Constants::VALUE_MASK) {
+    case Constants::LONG_VALUE: {
+      return in->readLong();
+    }
+    case Constants::INT_VALUE: {
+      return in->readInt();
+    }
+    case Constants::SHORT_VALUE: {
+      return in->readShort();
+    }
+    case Constants::BYTE_VALUE: {
+      return in->readByte();
+    }
+    default: {
+      throw std::runtime_error(stringf("Bad command: %o", command));
+    }
+  }
+}
+
+int8_t DataInput::readByte() {
+  int8_t result;
+  std::memcpy(&result, data_, sizeof(result));
+  data_ += sizeof(result);
+  return result;
+}
+
+int16_t DataInput::readShort() {
+  int16_t result;
+  std::memcpy(&result, data_, sizeof(result));
+  data_ += sizeof(result);
+  return result;
+}
+
+int32_t DataInput::readInt() {
+  int32_t result;
+  std::memcpy(&result, data_, sizeof(result));
+  data_ += sizeof(result);
+  return result;
+}
+
+int64_t DataInput::readLong() {
+  int64_t result;
+  std::memcpy(&result, data_, sizeof(result));
+  data_ += sizeof(result);
+  return result;
+}
