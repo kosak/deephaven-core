@@ -1,21 +1,23 @@
 #include "deephaven/client/subscription/update_processor.h"
 
+#include <iostream>
+#include <shared>
+
 void UpdateProcessor::runForeverHelperImpl() {
   const auto &vec = colDefs_->vec();
-  // Create some MutableColumnSources and keep two views on them: a Mutable view which we
-  // will keep around locally in order to effect changes, and a readonly view used to make the
-  // table.
+
+  // This is our private concept of "TickingTable" which keeps track of a Deephaven key to index
+  // mapping, and is able to perform operations like add, remove, shift, and so on. Also it is
+  // able to make "snapshots" of itself. These snapshots are what we pass back to the caller via
+  // the callback.
   auto mutableColumns = makeReservedVector<std::shared_ptr<MutableColumnSource>>(vec.size());
   for (const auto &entry : vec) {
     auto cs = makeColumnSource(*entry.second);
     mutableColumns.push_back(std::move(cs));
   }
-
-  // The mapping from Deephaven key space to index space. This data structure is private to this
-  // method.
-  SpaceMonster spaceMonster;
-
   auto tickingTable = TickingTable::create(std::move(mutableColumns));
+
+  // In this loop we process Arrow Flight messages until error or cancellation.
   arrow::flight::FlightStreamChunk flightStreamChunk;
   while (true) {
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
