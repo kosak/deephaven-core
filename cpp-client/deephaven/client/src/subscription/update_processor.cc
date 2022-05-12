@@ -18,7 +18,6 @@ void processModBatches(int64_t numMods,
     TickingTable *table,
     std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
     const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
-}  // namespace
 
 void ProcessingThread::runForever(const std::shared_ptr<ProcessingThread> &self) {
   std::cerr << "ProcessingThread is starting.\n";
@@ -157,3 +156,118 @@ void ProcessingThread::runForeverHelper() {
     callback_->onTick(tickingUpdate);
   }
 }
+
+// Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
+void processAddBatches(
+    int64_t numAdds,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const RowSequence &addedRows) {
+  if (numAdds == 0) {
+    return;
+  }
+  auto unwrappedTable = table->add(addedRows);
+  auto allRowKeys = unwrappedTable->getUnorderedRowKeys();
+  streamf(std::cout, "allRowKeys: %o\n", *allRowKeys);
+  int64_t rowKeyBegin = 0;
+
+  while (true) {
+    const auto &srcCols = flightStreamChunk->data->columns();
+    auto ncols = srcCols.size();
+    if (ncols != mutableColumns->size()) {
+      auto message = stringf("Received %o columns, but my table has %o columns", ncols,
+          mutableColumns->size());
+      throw std::runtime_error(message);
+    }
+
+    if (ncols == 0) {
+      return;
+    }
+
+    auto numRows = srcCols[0]->length();
+    auto sequentialRows = RowSequence::createSequential(0, numRows);
+    auto rowKeys = allRowKeys->slice(rowKeyBegin, rowKeyBegin + numRows);
+    rowKeyBegin += numRows;
+
+    for (size_t i = 0; i < ncols; ++i) {
+      const auto &srcColArrow = *srcCols[i];
+      auto &destColDh = (*mutableColumns)[i];
+
+      if (srcColArrow.length() != numRows) {
+        auto message = stringf(
+            "Inconsistent column lengths: Column 0 has %o rows, but column %o has %o rows",
+            numRows, i, srcColArrow.length());
+        throw std::runtime_error(message);
+      }
+
+      auto context = destColDh->createContext(numRows);
+      auto chunk = ChunkMaker::createChunkFor(*destColDh, numRows);
+      ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
+      destColDh->fillFromChunkUnordered(context.get(), *chunk, *rowKeys, numRows);
+    }
+
+    if (--numAdds == 0) {
+      return;
+    }
+    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
+  }
+}
+
+
+void processModBatches(int64_t numMods,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const std::vector<std::shared_ptr<RowSequence>> &modIndexes) {
+  if (numMods == 0) {
+    return;
+  }
+
+  std::vector<std::shared_ptr<RowSequenceIterator>> iterators;
+  for (const auto &mi : modIndexes) {
+    iterators.push_back(mi->getRowSequenceIterator());
+  }
+
+  while (true) {
+    // this is probably wrong. The modify probably only has a limited number of columns.
+    const auto &srcCols = flightStreamChunk->data->columns();
+    auto ncols = srcCols.size();
+    if (ncols != mutableColumns->size()) {
+      auto message = stringf("Received %o columns, but my table has %o columns", ncols,
+          mutableColumns->size());
+      throw std::runtime_error(message);
+    }
+
+    for (size_t i = 0; i < modIndexes.size(); ++i) {
+      const auto &modIndex = *modIndexes[i];
+      if (modIndex.empty()) {
+        continue;
+      }
+
+      const auto &srcColArrow = *srcCols[i];
+      auto numRows = srcColArrow.length();
+
+      auto &destColDh = (*mutableColumns)[i];
+
+      auto context = destColDh->createContext(numRows);
+      auto chunk = ChunkMaker::createChunkFor(*destColDh, numRows);
+
+      auto sequentialRows = RowSequence::createSequential(0, numRows);
+
+      ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
+      auto destIndices = iterators[i]->getNextRowSequenceWithLength(numRows);
+      destColDh->fillFromChunk(context.get(), *chunk, *destIndices);
+    }
+
+    if (--numMods == 0) {
+      return;
+    }
+    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
+  }
+}
+
+
+}  // namespace

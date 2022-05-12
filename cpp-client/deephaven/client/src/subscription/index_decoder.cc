@@ -27,3 +27,69 @@ private:
   size_t size_ = 0;
 };
 
+std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
+  RowSequenceBuilder builder;
+
+  int64_t offset = 0;
+
+  int64_t pending = -1;
+  auto consume = [&pending, &builder](int64_t v) {
+    auto s = pending;
+    if (s == -1) {
+      pending = v;
+    } else if (v < 0) {
+      builder.addRange(s, -v);
+      pending = -1;
+    } else {
+      builder.add(s);
+      pending = v;
+    }
+  };
+
+  while (true) {
+    int64_t actualValue;
+    int command = in->readByte();
+
+    switch (command & Constants::CMD_MASK) {
+      case Constants::OFFSET: {
+        int64_t value = readValue(in, command);
+        actualValue = offset + (value < 0 ? -value : value);
+        consume(value < 0 ? -actualValue : actualValue);
+        offset = actualValue;
+        break;
+      }
+
+      case Constants::SHORT_ARRAY: {
+        int shortCount = (int) readValue(in, command);
+        for (int ii = 0; ii < shortCount; ++ii) {
+          int16_t shortValue = in->readShort();
+          actualValue = offset + (shortValue < 0 ? -shortValue : shortValue);
+          consume(shortValue < 0 ? -actualValue : actualValue);
+          offset = actualValue;
+        }
+        break;
+      }
+
+      case Constants::BYTE_ARRAY: {
+        int byteCount = (int) readValue(in, command);
+        for (int ii = 0; ii < byteCount; ++ii) {
+          int8_t byteValue = in->readByte();
+          actualValue = offset + (byteValue < 0 ? -byteValue : byteValue);
+          consume(byteValue < 0 ? -actualValue : actualValue);
+          offset = actualValue;
+        }
+        break;
+      }
+
+      case Constants::END: {
+        if (pending >= 0) {
+          builder.add(pending);
+        }
+        return builder.build();
+      }
+
+      default:
+        throw std::runtime_error(stringf("Bad command: %o", command));
+    }
+  }
+}
