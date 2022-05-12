@@ -349,7 +349,6 @@ std::shared_ptr<TableHandleImpl> TableHandleImpl::asOfJoin(AsOfJoinTablesRequest
 }
 
 namespace {
-class ThreadNubbin;
 class SubscribeNubbin final : public Callback<> {
   typedef deephaven::client::lowlevel::Server Server;
 
@@ -405,8 +404,6 @@ void SubscribeNubbin::invoke() {
 
 constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
 
-std::shared_ptr<ThreadNubbin> SubscribeNubbin::sadClown_;
-
 void SubscribeNubbin::invokeHelper() {
   arrow::flight::FlightCallOptions fco;
   fco.headers.push_back(server_->makeBlessing());
@@ -435,7 +432,7 @@ void SubscribeNubbin::invokeHelper() {
   auto ticket = payloadBuilder.CreateVector(ticketBytes_);
   auto subreq = CreateBarrageSubscriptionRequest(payloadBuilder, ticket, {}, {}, subOptions);
   payloadBuilder.Finish(subreq);
-  // TODO: fix sad cast
+  // TODO(kosak): fix sad cast
   const auto *payloadp = (int8_t*)payloadBuilder.GetBufferPointer();
   const auto payloadSize = payloadBuilder.GetSize();
 
@@ -486,8 +483,6 @@ std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dat
   okOrThrow(DEEPHAVEN_EXPR_MSG(dataType.Accept(&v)));
   return std::move(v.result_);
 }
-
-
 } // namespace
 
 void TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
@@ -496,7 +491,6 @@ void TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
   // is an error in the DoExchange invocation, the caller will get an exception here. The
   // remainder of the interaction (namely, the sending of a BarrageSubscriptionRequest and the
   // parsing of all the replies) is done on a newly-created thread dedicated to that job.
-
   auto coldefs = lazyState_->getColumnDefinitions();
   std::vector<int8_t> ticketBytes(ticket_.ticket().begin(), ticket_.ticket().end());
 
