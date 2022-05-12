@@ -1,7 +1,24 @@
 #include "deephaven/client/subscription/update_processor.h"
 
 #include <iostream>
-#include <shared>
+#include <memory>
+
+namespace {
+void processAddBatches(
+    int64_t numAdds,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const RowSequence &addedRows);
+
+void processModBatches(int64_t numMods,
+    arrow::flight::FlightStreamReader *fsr,
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    TickingTable *table,
+    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
+    const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
+}  // namespace
 
 void UpdateProcessor::runForeverHelperImpl() {
   const auto &vec = colDefs_->vec();

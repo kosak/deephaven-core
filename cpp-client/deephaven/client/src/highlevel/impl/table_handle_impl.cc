@@ -380,39 +380,13 @@ private:
   flatbuffers::DetachedBuffer buffer_;
 };
 
-class DataInput {
-public:
-  explicit DataInput(const flatbuffers::Vector<int8_t> &vec) : DataInput(vec.data(), vec.size()) {}
-  DataInput(const void *start, size_t size) : data_(static_cast<const char*>(start)), size_(size) {}
-  int64_t readLong();
-  int32_t readInt();
-  int16_t readShort();
-  int8_t readByte();
 
-private:
-  const char *data_ = nullptr;
-  size_t size_ = 0;
-};
 
 std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType);
 int64_t readValue(DataInput *in, int command);
 
 std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in);
 
-void processAddBatches(
-    int64_t numAdds,
-    arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk,
-    TickingTable *table,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
-    const RowSequence &addedRows);
-
-void processModBatches(int64_t numMods,
-    arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk,
-    TickingTable *table,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
-    const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
 }  // namespace
 
 namespace {
