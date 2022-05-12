@@ -380,39 +380,6 @@ private:
   flatbuffers::DetachedBuffer buffer_;
 };
 
-class ThreadNubbin {
-public:
-  ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
-      std::shared_ptr<internal::ColumnDefinitions> colDefs,
-      std::shared_ptr<TickingCallback> callback);
-
-  static void runForever(const std::shared_ptr<ThreadNubbin> &self);
-
-private:
-  void runForeverHelper();
-  void runForeverHelperImpl();
-
-public:
-  std::unique_ptr<arrow::flight::FlightStreamReader> fsr_;
-  std::shared_ptr<internal::ColumnDefinitions> colDefs_;
-  std::shared_ptr<TickingCallback> callback_;
-};
-
-struct Constants {
-  static constexpr const int8_t SHORT_VALUE = 1;
-  static constexpr const int8_t INT_VALUE = 2;
-  static constexpr const int8_t LONG_VALUE = 3;
-  static constexpr const int8_t BYTE_VALUE = 4;
-
-  static constexpr const int8_t VALUE_MASK = 7;
-
-  static constexpr const int8_t OFFSET = 8;
-  static constexpr const int8_t SHORT_ARRAY = 16;
-  static constexpr const int8_t BYTE_ARRAY = 24;
-  static constexpr const int8_t END = 32;
-  static constexpr const int8_t CMD_MASK = 0x78;
-};
-
 class DataInput {
 public:
   explicit DataInput(const flatbuffers::Vector<int8_t> &vec) : DataInput(vec.data(), vec.size()) {}
