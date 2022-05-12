@@ -53,7 +53,6 @@ public:
 
 private:
   std::vector<std::shared_ptr<ImmerColumnSourceBase>> columns_;
-  CleverRowSequence rowKeys_;
 };
 }  // namespace deephaven::client::highlevel::table
 

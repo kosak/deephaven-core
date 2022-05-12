@@ -604,6 +604,7 @@ void ThreadNubbin::runForeverHelperImpl() {
     streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
     streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
 
+
     // Correct order to process all this info is:
     // 1. removes
     // 2. shifts
@@ -627,12 +628,12 @@ void ThreadNubbin::runForeverHelperImpl() {
 
     // 1. Removes
     auto beforeRemoves = tickingTable->clone();
-    tickingTable->remove(*removedRows);
+    auto removedRowsIndexSpace = convertSpaceWhatever(*removedRows);
+    // can clear removedRows here
+    tickingTable->remove(*removedRowsIndexSpace);
 
     // 2. Shifts
-    // Shifts only move keys around in key space but they don't reorder rows. Therefore the
-    // table (in index space) is not affected. Only the mapping from key to index is affected
-    tickingTable->applyShifts(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
+    spaceMonster->applyShifts(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
 
     if (numAdds != 0 && numMods != 0) {
       throw std::runtime_error("Message has both add batches and mod batches?! "
@@ -640,6 +641,8 @@ void ThreadNubbin::runForeverHelperImpl() {
     }
 
     auto beforeAddsOrModifies = tickingTable->clone();
+    auto addedRowsIndexSpace = convertSpaceWhatever(*addedRows);
+    // can clear addedRows here
     // 3. Adds
     if (numAdds != 0) {
       processAddBatches(numAdds, fsr_.get(), &flightStreamChunk, tickingTable.get(),
@@ -647,14 +650,15 @@ void ThreadNubbin::runForeverHelperImpl() {
     }
 
     // 4. Modifies
-    std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
+    std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
     if (numMods != 0) {
       const auto &modColumnNodes = *bmd->mod_column_nodes();
       for (size_t i = 0; i < modColumnNodes.size(); ++i) {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
-        auto modIndex = readExternalCompressedDelta(&diModified);
-        perColumnModifies.push_back(std::move(modIndex));
+        auto modRows = readExternalCompressedDelta(&diModified);
+        auto modRowsIndexSpace = convertSpaceWhatever(*modRows);
+        perColumnModifies.push_back(std::move(modRowsIndexSpace));
       }
       processModBatches(numMods, fsr_.get(), &flightStreamChunk, tickingTable.get(),
           &mutableColumns, perColumnModifies);
@@ -665,8 +669,8 @@ void ThreadNubbin::runForeverHelperImpl() {
 
     auto current = tickingTable->clone();
     TickingUpdate tickingUpdate(std::move(beforeRemoves), std::move(beforeAddsOrModifies),
-        std::move(current), std::move(removedRows), std::move(perColumnModifies),
-        std::move(addedRows));
+        std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
+        std::move(addedRowsIndexSpace));
     callback_->onTick(tickingUpdate);
   }
 }
