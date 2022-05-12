@@ -25,5 +25,4 @@ public:
   virtual size_t numRows() const = 0;
   virtual size_t numColumns() const = 0;
 };
-
 }  // namespace deephaven::client::highlevel::table
