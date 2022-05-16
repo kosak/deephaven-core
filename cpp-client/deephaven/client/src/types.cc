@@ -1,8 +1,6 @@
-#include "deephaven/client/highlevel/types.h"
+#include "deephaven/client/types.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 const char16_t DeephavenConstants::NULL_CHAR;
 
 const float DeephavenConstants::NULL_FLOAT;
@@ -42,8 +40,10 @@ const int64_t DeephavenConstants::MIN_LONG;
 const int64_t DeephavenConstants::MAX_LONG;
 
 DateTime::DateTime(int year, int month, int day) : DateTime(year, month, day, 0, 0, 0, 0) {}
+
 DateTime::DateTime(int year, int month, int day, int hour, int minute, int second) :
-DateTime(year, month, day, hour, minute, second, 0) {}
+    DateTime(year, month, day, hour, minute, second, 0) {}
+
 DateTime::DateTime(int year, int month, int day, int hour, int minute, int second,
     long nanos) {
   struct tm tm = {};
@@ -70,6 +70,4 @@ void DateTime::streamIrisRepresentation(std::ostream &s) const {
   snprintf(nanosBuffer, sizeof(nanosBuffer), "%09zd", nanos);
   s << dateBuffer << '.' << nanosBuffer << " UTC";
 }
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client

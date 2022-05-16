@@ -45,5 +45,4 @@ void IsNullExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
 void streamIris(std::ostream &s, const std::shared_ptr<IrisRepresentableImpl> &o) {
   o->streamIrisRepresentation(s);
 }
-}  // namespace impl
 }  // namespace deephaven::client::impl

@@ -1,9 +1,9 @@
-#include "deephaven/client/highlevel/impl/table_handle_manager_impl.h"
+#include "deephaven/client/impl/table_handle_manager_impl.h"
 
 #include <map>
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/client/utility/executor.h"
-#include "deephaven/client/highlevel/impl/table_handle_impl.h"
+#include "deephaven/client/impl/table_handle_impl.h"
 
 using deephaven::client::utility::Callback;
 using deephaven::client::utility::Executor;
@@ -12,10 +12,7 @@ using deephaven::client::utility::SFCallback;
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::highlevel::impl {
 std::shared_ptr<TableHandleManagerImpl> TableHandleManagerImpl::create(Ticket consoleId,
     std::shared_ptr<Server> server, std::shared_ptr<Executor> executor,
     std::shared_ptr<Executor> flightExecutor) {
@@ -55,12 +52,9 @@ std::shared_ptr<TableHandleImpl> TableHandleManagerImpl::timeTable(int64_t start
 
 std::tuple<std::shared_ptr<TableHandleImpl>, arrow::flight::FlightDescriptor>
 TableHandleManagerImpl::newTicket() const {
-  auto [ticket, fd] = server_->newTicketAndFlightDescriptor();
+  auto[ticket, fd] = server_->newTicketAndFlightDescriptor();
   auto cb = TableHandleImpl::createSatisfiedCallback(this, ticket);
   auto th = TableHandleImpl::create(self_.lock(), std::move(ticket), std::move(cb));
   return std::make_tuple(std::move(th), std::move(fd));
 }
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel::impl

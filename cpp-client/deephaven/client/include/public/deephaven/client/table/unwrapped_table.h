@@ -3,16 +3,17 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/chunk/chunk.h"
-#include "deephaven/client/highlevel/column/column_source.h"
-#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/chunk/chunk.h"
+#include "deephaven/client/column/column_source.h"
+#include "deephaven/client/container/row_sequence.h"
 
-namespace deephaven::client::highlevel::table {
+namespace deephaven::client::table {
 class UnwrappedTable {
-  struct Private {};
+  struct Private {
+  };
 
-  typedef deephaven::client::highlevel::chunk::LongChunk LongChunk;
-  typedef deephaven::client::highlevel::column::ColumnSource ColumnSource;
+  typedef deephaven::client::chunk::LongChunk LongChunk;
+  typedef deephaven::client::column::ColumnSource ColumnSource;
 
 public:
   static std::shared_ptr<UnwrappedTable> create(std::shared_ptr<LongChunk> rowKeys,
@@ -26,6 +27,7 @@ public:
   std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const;
 
   size_t numRows() const { return numRows_; }
+
   size_t numColumns() const { return columns_.size(); }
 
 private:
@@ -33,4 +35,4 @@ private:
   size_t numRows_ = 0;
   std::vector<std::shared_ptr<ColumnSource>> columns_;
 };
-}  // namespace deephaven::client::highlevel::table
+}  // namespace deephaven::client::table

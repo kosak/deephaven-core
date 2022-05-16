@@ -5,9 +5,7 @@
 #include <ostream>
 #include <math.h>
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 class DeephavenConstants {
 public:
   static constexpr const char16_t NULL_CHAR = std::numeric_limits<char16_t>::max();
@@ -20,7 +18,8 @@ public:
   static constexpr const float POS_INFINITY_FLOAT = std::numeric_limits<float>::infinity();
   static constexpr const float MIN_FLOAT = -std::numeric_limits<float>::infinity();
   static constexpr const float MAX_FLOAT = std::numeric_limits<float>::infinity();
-  static constexpr const float MIN_FINITE_FLOAT = std::nextafter(-std::numeric_limits<float>::max(), 0.0f);
+  static constexpr const float MIN_FINITE_FLOAT = std::nextafter(-std::numeric_limits<float>::max(),
+      0.0f);
   static constexpr const float MAX_FINITE_FLOAT = std::numeric_limits<float>::max();
   static constexpr const float MIN_POS_FLOAT = std::numeric_limits<float>::min();
 
@@ -30,7 +29,8 @@ public:
   static constexpr const double POS_INFINITY_DOUBLE = std::numeric_limits<double>::infinity();
   static constexpr const double MIN_DOUBLE = -std::numeric_limits<double>::infinity();
   static constexpr const double MAX_DOUBLE = std::numeric_limits<double>::infinity();
-  static constexpr const double MIN_FINITE_DOUBLE = std::nextafter(-std::numeric_limits<double>::max(), 0.0f);
+  static constexpr const double MIN_FINITE_DOUBLE = std::nextafter(
+      -std::numeric_limits<double>::max(), 0.0f);
   static constexpr const double MAX_FINITE_DOUBLE = std::numeric_limits<double>::max();
   static constexpr const double MIN_POS_DOUBLE = std::numeric_limits<double>::min();
 
@@ -74,11 +74,13 @@ public:
    * Default constructor. Sets the DateTime equal to the epoch.
    */
   DateTime() = default;
+
   /**
    * Sets the DateTime to the specified number of nanoseconds relative to the epoch.
    * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
    */
   explicit DateTime(int64_t nanos) : nanos_(nanos) {}
+
   /**
    * Sets the DateTime to the specified date, with a time component of zero.
    * @param year Year.
@@ -124,6 +126,4 @@ private:
     return s;
   }
 };
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client

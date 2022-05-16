@@ -1,8 +1,8 @@
 #pragma once
 
-namespace deephaven::client::highlevel::container {
+namespace deephaven::client::container {
 class Context {
 public:
   virtual ~Context() = default;
 };
-}  // namespace deephaven::client::highlevel::container
+}  // namespace deephaven::client::container

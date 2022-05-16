@@ -384,7 +384,7 @@ public:
 };
 
 class DateTimeExpression : public Expression {
-  typedef deephaven::client::highlevel::DateTime DateTime;
+  typedef deephaven::client::DateTime DateTime;
 
 public:
   /**

@@ -4,7 +4,7 @@
 #include <locale>
 #include <string>
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 std::string EscapeUtils::escapeJava(std::string_view s) {
   std::string result;
@@ -55,4 +55,4 @@ void EscapeUtils::appendEscapedJava(std::string_view s, std::string *result) {
   }
 }
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

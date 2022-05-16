@@ -1,15 +1,15 @@
-#include "deephaven/client/highlevel/chunk/chunk_filler.h"
+#include "deephaven/client/chunk/chunk_filler.h"
 
-#include "deephaven/client/highlevel/container/row_sequence.h"
-#include "deephaven/client/highlevel/impl/util.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/impl/util.h"
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::stringf;
 using deephaven::client::utility::verboseCast;
-using deephaven::client::highlevel::container::RowSequence;
+using deephaven::client::container::RowSequence;
 
-namespace deephaven::client::highlevel::chunk {
+namespace deephaven::client::chunk {
 namespace {
 struct Visitor final : arrow::ArrayVisitor {
   Visitor(const RowSequence &keys, Chunk *const dest) : keys_(keys), dest_(dest) {}
@@ -67,4 +67,5 @@ arrow::Status Visitor::Visit(const arrow::DoubleArray &array) {
   return arrow::Status::OK();
 }
 }  // namespace
-}  // namespace deephaven::client::highlevel::sad
+}  // namespace deephaven::client::chunk
+

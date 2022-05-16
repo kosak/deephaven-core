@@ -1,14 +1,14 @@
-#include "deephaven/client/highlevel/client.h"
+#include "deephaven/client/client.h"
 
 #include <arrow/array.h>
 #include <arrow/scalar.h>
-#include "deephaven/client/highlevel/impl/columns_impl.h"
-#include "deephaven/client/highlevel/impl/boolean_expression_impl.h"
-#include "deephaven/client/highlevel/impl/aggregate_impl.h"
-#include "deephaven/client/highlevel/impl/client_impl.h"
-#include "deephaven/client/highlevel/impl/table_handle_impl.h"
-#include "deephaven/client/highlevel/impl/table_handle_manager_impl.h"
-#include "deephaven/client/highlevel/columns.h"
+#include "deephaven/client/impl/columns_impl.h"
+#include "deephaven/client/impl/boolean_expression_impl.h"
+#include "deephaven/client/impl/aggregate_impl.h"
+#include "deephaven/client/impl/client_impl.h"
+#include "deephaven/client/impl/table_handle_impl.h"
+#include "deephaven/client/impl/table_handle_manager_impl.h"
+#include "deephaven/client/columns.h"
 #include "deephaven/client/utility/utility.h"
 
 using grpc::Channel;
@@ -18,15 +18,15 @@ using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using io::deephaven::proto::backplane::grpc::Ticket;
-using deephaven::client::lowlevel::Server;
-using deephaven::client::highlevel::Column;
-using deephaven::client::highlevel::DateTimeCol;
-using deephaven::client::highlevel::NumCol;
-using deephaven::client::highlevel::StrCol;
-using deephaven::client::highlevel::impl::StrColImpl;
-using deephaven::client::highlevel::impl::AggregateComboImpl;
-using deephaven::client::highlevel::impl::AggregateImpl;
-using deephaven::client::highlevel::impl::ClientImpl;
+using deephaven::client::server::Server;
+using deephaven::client::Column;
+using deephaven::client::DateTimeCol;
+using deephaven::client::NumCol;
+using deephaven::client::StrCol;
+using deephaven::client::impl::StrColImpl;
+using deephaven::client::impl::AggregateComboImpl;
+using deephaven::client::impl::AggregateImpl;
+using deephaven::client::impl::ClientImpl;
 using deephaven::client::utility::Executor;
 using deephaven::client::utility::SimpleOstringstream;
 using deephaven::client::utility::SFCallback;
@@ -34,9 +34,7 @@ using deephaven::client::utility::separatedList;
 using deephaven::client::utility::stringf;
 using deephaven::client::utility::okOrThrow;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 namespace {
 void printTableData(std::ostream &s, const TableHandle &tableHandle, bool wantHeaders);
 }  // namespace
@@ -583,6 +581,5 @@ void printTableData(std::ostream &s, const TableHandle &tableHandle, bool wantHe
   }
 }
 }  // namespace
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client
+

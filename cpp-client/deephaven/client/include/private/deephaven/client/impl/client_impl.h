@@ -10,7 +10,7 @@
 #include "deephaven/client/utility/executor.h"
 #include "deephaven/client/utility/utility.h"
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 
 class ClientImpl {
@@ -35,4 +35,4 @@ private:
   std::shared_ptr<TableHandleManagerImpl> managerImpl_;
 };
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

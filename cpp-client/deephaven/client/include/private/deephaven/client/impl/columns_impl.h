@@ -6,8 +6,7 @@
 #include "deephaven/client/impl/numeric_expression_impl.h"
 #include "deephaven/client/impl/string_expression_impl.h"
 
-namespace deephaven::client::highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 class ColumnImpl : public ExpressionImpl {
 protected:
   struct Private {
@@ -67,6 +66,4 @@ private:
   std::string name_;
   std::shared_ptr<ExpressionImpl> expr_;
 };
-
-}  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client::impl

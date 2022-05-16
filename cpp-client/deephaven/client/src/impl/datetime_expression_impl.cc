@@ -10,7 +10,7 @@
 
 using deephaven::client::DateTime;
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 namespace {
 class DateTimeLiteralImpl final : public DateTimeExpressionImpl {
@@ -96,4 +96,4 @@ void DateTimeComparisonImpl::streamIrisRepresentation(std::ostream &s) const {
 }
 }  // namespace
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

@@ -1,10 +1,8 @@
-#include "deephaven/client/highlevel/columns.h"
+#include "deephaven/client/columns.h"
 
-#include "deephaven/client/highlevel/impl/columns_impl.h"
+#include "deephaven/client/impl/columns_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 IrisRepresentable::~IrisRepresentable() = default;
 SelectColumn::~SelectColumn() = default;
 
@@ -12,10 +10,11 @@ MatchWithColumn::~MatchWithColumn() = default;
 
 Column::Column(std::shared_ptr<impl::ColumnImpl> impl) :
     IrisRepresentable(impl), SelectColumn(impl), MatchWithColumn(impl) {}
+
 Column::~Column() = default;
 
-const std::string & Column::name() const {
-  return dynamic_cast<const impl::ColumnImpl*>(impl_.get())->name();
+const std::string &Column::name() const {
+  return dynamic_cast<const impl::ColumnImpl *>(impl_.get())->name();
 }
 
 SortPair Column::ascending(bool abs) const {
@@ -44,6 +43,7 @@ SortPair SortPair::descending(const Column &column, bool abs) {
 
 SortPair::SortPair(std::string column, SortDirection direction, bool abs) :
     column_(std::move(column)), direction_(direction), abs_(abs) {}
+
 SortPair::~SortPair() = default;
 
 NumCol NumCol::create(std::string name) {
@@ -53,6 +53,7 @@ NumCol NumCol::create(std::string name) {
 
 NumCol::NumCol(std::shared_ptr<impl::NumColImpl> impl) : IrisRepresentable(impl),
     NumericExpression(impl), Column(std::move(impl)) {}
+
 NumCol::~NumCol() = default;
 
 StrCol StrCol::create(std::string name) {
@@ -62,14 +63,17 @@ StrCol StrCol::create(std::string name) {
 
 StrCol::StrCol(std::shared_ptr<impl::StrColImpl> impl) : IrisRepresentable(impl),
     StringExpression(impl), Column(std::move(impl)) {}
+
 StrCol::~StrCol() = default;
 
 DateTimeCol DateTimeCol::create(std::string name) {
   auto impl = impl::DateTimeColImpl::create(std::move(name));
   return DateTimeCol(std::move(impl));
 }
+
 DateTimeCol::DateTimeCol(std::shared_ptr<impl::DateTimeColImpl> impl) : IrisRepresentable(impl),
     DateTimeExpression(impl), Column(std::move(impl)) {}
+
 DateTimeCol::~DateTimeCol() = default;
 
 AssignedColumn AssignedColumn::create(std::string name,
@@ -80,8 +84,6 @@ AssignedColumn AssignedColumn::create(std::string name,
 
 AssignedColumn::AssignedColumn(std::shared_ptr<impl::AssignedColumnImpl> impl) :
     IrisRepresentable(impl), SelectColumn(impl), impl_(std::move(impl)) {}
-AssignedColumn::~AssignedColumn() = default;
 
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+AssignedColumn::~AssignedColumn() = default;
+}  // namespace deephaven::client

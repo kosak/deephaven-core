@@ -1,6 +1,6 @@
 #include "deephaven/client/impl/columns_impl.h"
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 std::shared_ptr<ColumnImpl> ColumnImpl::create(std::string name) {
   return std::make_shared<ColumnImpl>(Private(), std::move(name));
@@ -56,5 +56,4 @@ void AssignedColumnImpl::streamIrisRepresentation(std::ostream &s) const {
   expr_->streamIrisRepresentation(s);
 }
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
-
+}  // namespace deephaven::client

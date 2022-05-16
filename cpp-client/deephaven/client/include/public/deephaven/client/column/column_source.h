@@ -147,7 +147,7 @@ private:
   std::vector<double> data_;
 };
 
-class ColumnSourceContext : public deephaven::client::highlevel::container::Context {
+class ColumnSourceContext : public deephaven::client::container::Context {
 public:
   ~ColumnSourceContext() override;
 };

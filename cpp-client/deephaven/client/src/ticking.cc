@@ -1,4 +1,4 @@
-#include "deephaven/client/highlevel/ticking.h"
+#include "deephaven/client/ticking.h"
 
-namespace deephaven::client::highlevel {
-}  // namespace deephaven::client::highlevel
+namespace deephaven::client {
+}  // namespace deephaven::client
