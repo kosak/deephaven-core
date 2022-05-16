@@ -15,9 +15,8 @@ find_package(gRPC REQUIRED)
 find_package(Threads REQUIRED)
 
 set(ALL_FILES
-    src/lowlevel/server.cc
-
-    include/private/deephaven/client/lowlevel/server.h
+    src/server/server.cc
+    include/private/deephaven/client/server/server.h
 
     src/highlevel/impl/aggregate_impl.cc
     src/highlevel/impl/boolean_expression_impl.cc
@@ -72,7 +71,6 @@ set(ALL_FILES
     include/public/deephaven/client/highlevel/table/table.h
     include/public/deephaven/client/highlevel/table/unwrapped_table.h
 
-
     include/public/deephaven/client/immerutil/abstract_flex_vector.h
 
     src/subscription/index_decoder.cc
@@ -84,7 +82,9 @@ set(ALL_FILES
     include/private/deephaven/client/subscription/update_processor.h
 
     src/utility/executor.cc
+    src/utility/misc.cc
     include/private/deephaven/client/utility/executor.h
+    include/private/deephaven/client/utility/misc.h
 
     src/utility/cbfuture.cc
     src/utility/table_maker.cc
