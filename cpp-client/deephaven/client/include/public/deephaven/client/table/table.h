@@ -3,14 +3,14 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/column/column_source.h"
-#include "deephaven/client/highlevel/container/row_sequence.h"
-#include "deephaven/client/highlevel/table/unwrapped_table.h"
+#include "deephaven/client/column/column_source.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/table/unwrapped_table.h"
 
-namespace deephaven::client::highlevel::table {
+namespace deephaven::client::table {
 class Table {
-  typedef deephaven::client::highlevel::column::ColumnSource ColumnSource;
-  typedef deephaven::client::highlevel::container::RowSequence RowSequence;
+  typedef deephaven::client::column::ColumnSource ColumnSource;
+  typedef deephaven::client::container::RowSequence RowSequence;
 
 public:
   Table() = default;

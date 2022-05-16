@@ -3,15 +3,15 @@
 #include <string>
 #include <vector>
 #include <arrow/array.h>
-#include "deephaven/client/highlevel/chunk/chunk.h"
-#include "deephaven/client/highlevel/container/context.h"
-#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/chunk/chunk.h"
+#include "deephaven/client/container/context.h"
+#include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/utility/utility.h"
 
 #include "immer/flex_vector.hpp"
 
-namespace deephaven::client::highlevel::column {
+namespace deephaven::client::column {
 class ColumnSourceContext;
 class LongColumnSource;
 class ColumnSourceVisitor;
@@ -20,10 +20,10 @@ class ColumnSourceVisitor;
 
 class ColumnSource {
 protected:
-  typedef deephaven::client::highlevel::chunk::Chunk Chunk;
-  typedef deephaven::client::highlevel::chunk::LongChunk LongChunk;
-  typedef deephaven::client::highlevel::container::Context Context;
-  typedef deephaven::client::highlevel::container::RowSequence RowSequence;
+  typedef deephaven::client::chunk::Chunk Chunk;
+  typedef deephaven::client::chunk::LongChunk LongChunk;
+  typedef deephaven::client::container::Context Context;
+  typedef deephaven::client::container::RowSequence RowSequence;
 
 public:
   virtual ~ColumnSource();
@@ -158,4 +158,4 @@ public:
   virtual void visit(const LongColumnSource *) = 0;
   virtual void visit(const DoubleColumnSource *) = 0;
 };
-}  // namespace deephaven::client::highlevel::column
+}  // namespace deephaven::client::column

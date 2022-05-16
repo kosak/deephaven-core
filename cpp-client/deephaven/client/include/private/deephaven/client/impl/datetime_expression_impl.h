@@ -2,13 +2,10 @@
 
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/columns.h"
-#include "deephaven/client/highlevel/impl/expression_impl.h"
+#include "deephaven/client/columns.h"
+#include "deephaven/client/impl/expression_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 class DateTimeExpressionImpl : public ExpressionImpl {
 protected:
   typedef deephaven::client::highlevel::DateTime DateTime;
@@ -23,7 +20,4 @@ public:
 
   ~DateTimeExpressionImpl() override;
 };
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl

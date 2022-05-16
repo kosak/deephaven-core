@@ -6,7 +6,7 @@
 #include <ostream>
 #include <set>
 
-namespace deephaven::client::highlevel::container {
+namespace deephaven::client::container {
 class RowSequenceIterator;
 
 class RowSequence {
@@ -53,4 +53,4 @@ public:
 private:
   std::shared_ptr<std::set<int64_t>> data_;
 };
-}  // namespace deephaven::client::highlevel::container
+}  // namespace deephaven::client::container

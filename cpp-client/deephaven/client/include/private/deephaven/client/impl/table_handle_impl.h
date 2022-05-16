@@ -3,18 +3,19 @@
 #include <memory>
 #include <map>
 #include <string>
-#include "deephaven/client/highlevel/client.h"
-#include "deephaven/client/highlevel/ticking.h"
+#include "deephaven/client/client.h"
+#include "deephaven/client/ticking.h"
 #include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/cbfuture.h"
 #include "deephaven/client/utility/executor.h"
+#include "deephaven/client/utility/misc.h"
 #include "deephaven/proto/session.pb.h"
 #include "deephaven/proto/session.grpc.pb.h"
 #include "deephaven/proto/table.pb.h"
 #include "deephaven/proto/table.grpc.pb.h"
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 class SortPair;
 namespace impl {
 class BooleanExpressionImpl;
@@ -39,7 +40,8 @@ class LazyState final
 
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
   typedef io::deephaven::proto::backplane::grpc::Ticket Ticket;
-  typedef deephaven::client::lowlevel::Server Server;
+  typedef deephaven::client::server::Server Server;
+  typedef deephaven::client::utility::ColumnDefinitions ColumnDefinitions;
   typedef deephaven::client::utility::Executor Executor;
 
   template<typename T>
@@ -85,12 +87,12 @@ private:
 class TableHandleImpl {
   struct Private {
   };
-  typedef deephaven::client::highlevel::SortPair SortPair;
-  typedef deephaven::client::highlevel::impl::ColumnImpl ColumnImpl;
-  typedef deephaven::client::highlevel::impl::DateTimeColImpl DateTimeColImpl;
-  typedef deephaven::client::highlevel::impl::NumColImpl NumColImpl;
-  typedef deephaven::client::highlevel::impl::StrColImpl StrColImpl;
-  typedef deephaven::client::highlevel::impl::BooleanExpressionImpl BooleanExpressionImpl;
+  typedef deephaven::client::SortPair SortPair;
+  typedef deephaven::client::impl::ColumnImpl ColumnImpl;
+  typedef deephaven::client::impl::DateTimeColImpl DateTimeColImpl;
+  typedef deephaven::client::impl::NumColImpl NumColImpl;
+  typedef deephaven::client::impl::StrColImpl StrColImpl;
+  typedef deephaven::client::impl::BooleanExpressionImpl BooleanExpressionImpl;
   typedef deephaven::client::utility::Executor Executor;
   typedef io::deephaven::proto::backplane::grpc::AsOfJoinTablesRequest AsOfJoinTablesRequest;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
@@ -199,4 +201,4 @@ private:
   std::weak_ptr<TableHandleImpl> weakSelf_;
 };
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

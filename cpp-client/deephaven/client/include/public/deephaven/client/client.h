@@ -4,21 +4,27 @@
 #include <memory>
 #include <string_view>
 #include <arrow/flight/client.h>
-#include "deephaven/client/highlevel/columns.h"
-#include "deephaven/client/highlevel/expressions.h"
-#include "deephaven/client/highlevel/ticking.h"
+#include "deephaven/client/columns.h"
+#include "deephaven/client/expressions.h"
+#include "deephaven/client/ticking.h"
 #include "deephaven/client/utility/callbacks.h"
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 class AggregateComboImpl;
+
 class AggregateImpl;
+
 class ClientImpl;
+
 class TableHandleImpl;
+
 class TableHandleManagerImpl;
 }  // namespace impl
 class Client;
+
 class TableHandle;
+
 class TableHandleManager;
 
 namespace internal {
@@ -137,7 +143,8 @@ public:
    * This is used when the caller wants to do an Arrow DoPut operation.
    * @return A TableHandle and Arrow FlightDescriptor referring to the new table.
    */
-  std::tuple<TableHandle, arrow::flight::FlightDescriptor> newTableHandleAndFlightDescriptor() const;
+  std::tuple<TableHandle, arrow::flight::FlightDescriptor>
+  newTableHandleAndFlightDescriptor() const;
   /**
    * Creates a FlightWrapper that is used for Arrow Flight integration. Arrow Flight is the primary
    * way to push data into or pull data out of the system.
@@ -349,7 +356,9 @@ namespace internal {
 template<typename T>
 struct StringHolder {
   StringHolder(std::string s) : s_(std::move(s)) {}
+
   StringHolder(const char *s) : s_(s) {}
+
   StringHolder(std::string_view s) : s_(s) {}
 
   std::string s_;
@@ -362,14 +371,14 @@ struct StringHolder {
  * server resource is destructed, the resource will be released.
  */
 class TableHandle {
-  typedef deephaven::client::highlevel::BooleanExpression BooleanExpression;
-  typedef deephaven::client::highlevel::Column Column;
-  typedef deephaven::client::highlevel::DateTimeCol DateTimeCol;
-  typedef deephaven::client::highlevel::MatchWithColumn MatchWithColumn;
-  typedef deephaven::client::highlevel::NumCol NumCol;
-  typedef deephaven::client::highlevel::SelectColumn SelectColumn;
-  typedef deephaven::client::highlevel::SortPair SortPair;
-  typedef deephaven::client::highlevel::StrCol StrCol;
+  typedef deephaven::client::BooleanExpression BooleanExpression;
+  typedef deephaven::client::Column Column;
+  typedef deephaven::client::DateTimeCol DateTimeCol;
+  typedef deephaven::client::MatchWithColumn MatchWithColumn;
+  typedef deephaven::client::NumCol NumCol;
+  typedef deephaven::client::SelectColumn SelectColumn;
+  typedef deephaven::client::SortPair SortPair;
+  typedef deephaven::client::StrCol StrCol;
 
   template<typename... Args>
   using Callback = deephaven::client::utility::Callback<Args...>;
@@ -418,7 +427,7 @@ public:
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
-  TableHandle select(Args && ...args) const;
+  TableHandle select(Args &&...args) const;
   /**
    * Select columnSpecs from a table. The columnSpecs can be column names or formulas like
    * "NewCol = A + 12". See the Deephaven documentation for the difference between "select" and
@@ -729,7 +738,8 @@ public:
    * @param columnSpecs Columns to group by.
    * @return A TableHandle referencing the new table
    */
-  TableHandle percentileBy(double percentile, bool avgMedian, std::vector<std::string> columnSpecs) const;
+  TableHandle
+  percentileBy(double percentile, bool avgMedian, std::vector<std::string> columnSpecs) const;
 
   /**
    * A variadic form of percentileBy(double, std::vector<std::string>) const that takes a combination of
@@ -871,6 +881,7 @@ public:
   TableHandle ungroup(Args &&... args) const {
     return ungroup(false, std::forward<Args>(args)...);
   }
+
   /**
    * Creates a new table from this table with the column array data ungrouped. This is the inverse
    * of the by(std::vector<std::string>) const operation.
@@ -889,6 +900,7 @@ public:
    * @return A TableHandle referencing the new table
    */
   TableHandle merge(std::string keyColumn, std::vector<TableHandle> sources) const;
+
   /**
    * Creates a new table by merging `sources` together. The tables are essentially stacked on top
    * of each other.
@@ -1118,7 +1130,7 @@ template<typename... Cols>
 std::tuple<Cols...> TableHandle::getCols(internal::StringHolder<Cols>... names) {
   return std::make_tuple(
       internal::ColGetter<Cols>::getCol(*this, std::move(names.s_))...
-      );
+  );
 }
 
 namespace internal {
@@ -1149,7 +1161,7 @@ struct ConvertToString {
     return s;
   }
 
-  static std::string toString(const deephaven::client::highlevel::SelectColumn &selectColumn);
+  static std::string toString(const deephaven::client::SelectColumn &selectColumn);
 };
 }  // namespace internal
 
@@ -1455,4 +1467,4 @@ TableHandle TableHandle::ungroup(bool nullFill, Args &&... args) const {
   };
   return ungroup(nullFill, std::move(groupByColumns));
 }
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

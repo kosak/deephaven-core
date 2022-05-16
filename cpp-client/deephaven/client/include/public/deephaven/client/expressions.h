@@ -2,19 +2,22 @@
 
 #include <memory>
 #include <string_view>
-#include "deephaven/client/highlevel/types.h"
+#include "deephaven/client/types.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 class AssignedColumn;
+
 class BooleanExpression;
 
 namespace impl {
 class ExpressionImpl;
+
 class BooleanExpressionImpl;
+
 class NumericExpressionImpl;
+
 class StringExpressionImpl;
+
 class DateTimeExpressionImpl;
 }  // namespace impl
 
@@ -95,9 +98,11 @@ public:
   friend BooleanExpression operator!(const BooleanExpression &expr);
   friend BooleanExpression operator&(const BooleanExpression &lhs, const BooleanExpression &rhs);
   friend BooleanExpression operator|(const BooleanExpression &lhs, const BooleanExpression &rhs);
+
   friend BooleanExpression operator&&(const BooleanExpression &lhs, const BooleanExpression &rhs) {
     return lhs & rhs;
   }
+
   friend BooleanExpression operator||(const BooleanExpression &lhs, const BooleanExpression &rhs) {
     return lhs | rhs;
   }
@@ -467,6 +472,4 @@ public:
    */
   friend BooleanExpression operator>(const DateTimeExpression &lhs, const DateTimeExpression &rhs);
 };
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client

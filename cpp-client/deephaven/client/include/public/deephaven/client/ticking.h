@@ -5,11 +5,11 @@
 #include <set>
 #include <arrow/type.h>
 #include "deephaven/client/utility/callbacks.h"
-#include "deephaven/client/highlevel/container/row_sequence.h"
-#include "deephaven/client/highlevel/table/table.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/table/table.h"
 #include "immer/flex_vector.hpp"
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 class TickingUpdate;
 class TickingCallback : public deephaven::client::utility::FailureCallback {
 public:
@@ -24,8 +24,8 @@ public:
 
 class TickingUpdate final {
 protected:
-  typedef deephaven::client::highlevel::container::RowSequence RowSequence;
-  typedef deephaven::client::highlevel::table::Table Table;
+  typedef deephaven::client::container::RowSequence RowSequence;
+  typedef deephaven::client::table::Table Table;
 
 public:
   TickingUpdate(std::shared_ptr<Table> beforeRemoves,
@@ -60,4 +60,4 @@ private:
   // In the key space of current_.
   std::shared_ptr<RowSequence> added_;
 };
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

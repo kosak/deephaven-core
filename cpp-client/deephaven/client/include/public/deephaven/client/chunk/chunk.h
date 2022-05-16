@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 
-namespace deephaven::client::highlevel::chunk {
+namespace deephaven::client::chunk {
 class ChunkVisitor;
 class Chunk {
 public:
@@ -126,4 +126,4 @@ public:
     v.visit(*this);
   }
 };
-}  // namespace deephaven::client::highlevel::chunk
+}  // namespace deephaven::client::chunk
