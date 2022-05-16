@@ -18,30 +18,30 @@ set(ALL_FILES
     src/server/server.cc
     include/private/deephaven/client/server/server.h
 
-    src/highlevel/impl/aggregate_impl.cc
-    src/highlevel/impl/boolean_expression_impl.cc
-    src/highlevel/impl/client_impl.cc
-    src/highlevel/impl/columns_impl.cc
-    src/highlevel/impl/datetime_expression_impl.cc
-    src/highlevel/impl/escape_utils.cc
-    src/highlevel/impl/expression_impl.cc
-    src/highlevel/impl/numeric_expression_impl.cc
-    src/highlevel/impl/string_expression_impl.cc
-    src/highlevel/impl/table_handle_impl.cc
-    src/highlevel/impl/table_handle_manager_impl.cc
+    src/impl/aggregate_impl.cc
+    src/impl/boolean_expression_impl.cc
+    src/impl/client_impl.cc
+    src/impl/columns_impl.cc
+    src/impl/datetime_expression_impl.cc
+    src/impl/escape_utils.cc
+    src/impl/expression_impl.cc
+    src/impl/numeric_expression_impl.cc
+    src/impl/string_expression_impl.cc
+    src/impl/table_handle_impl.cc
+    src/impl/table_handle_manager_impl.cc
 
-    include/private/deephaven/client/highlevel/impl/aggregate_impl.h
-    include/private/deephaven/client/highlevel/impl/boolean_expression_impl.h
-    include/private/deephaven/client/highlevel/impl/client_impl.h
-    include/private/deephaven/client/highlevel/impl/columns_impl.h
-    include/private/deephaven/client/highlevel/impl/datetime_expression_impl.h
-    include/private/deephaven/client/highlevel/impl/escape_utils.h
-    include/private/deephaven/client/highlevel/impl/expression_impl.h
-    include/private/deephaven/client/highlevel/impl/numeric_expression_impl.h
-    include/private/deephaven/client/highlevel/impl/string_expression_impl.h
-    include/private/deephaven/client/highlevel/impl/table_handle_impl.h
-    include/private/deephaven/client/highlevel/impl/table_handle_manager_impl.h
-    include/private/deephaven/client/highlevel/impl/util.h
+    include/private/deephaven/client/impl/aggregate_impl.h
+    include/private/deephaven/client/impl/boolean_expression_impl.h
+    include/private/deephaven/client/impl/client_impl.h
+    include/private/deephaven/client/impl/columns_impl.h
+    include/private/deephaven/client/impl/datetime_expression_impl.h
+    include/private/deephaven/client/impl/escape_utils.h
+    include/private/deephaven/client/impl/expression_impl.h
+    include/private/deephaven/client/impl/numeric_expression_impl.h
+    include/private/deephaven/client/impl/string_expression_impl.h
+    include/private/deephaven/client/impl/table_handle_impl.h
+    include/private/deephaven/client/impl/table_handle_manager_impl.h
+    include/private/deephaven/client/impl/util.h
 
     src/highlevel/columns.cc
     src/highlevel/expressions.cc
@@ -74,12 +74,14 @@ set(ALL_FILES
     include/public/deephaven/client/immerutil/abstract_flex_vector.h
 
     src/subscription/index_decoder.cc
+    src/subscription/subscribe_thread.cc
     src/subscription/ticking_table.cc
     src/subscription/update_processor.cc
-
     include/private/deephaven/client/subscription/index_decoder.h
+    include/private/deephaven/client/subscription/subscribe_thread.h
     include/private/deephaven/client/subscription/ticking_table.h
     include/private/deephaven/client/subscription/update_processor.h
+
 
     src/utility/executor.cc
     src/utility/misc.cc
@@ -118,10 +120,6 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-
-    include/private/deephaven/client/subscription/index_decoder.h
-    src/subscription/subscribe_thread.cc
-    include/private/deephaven/client/subscription/subscribe_thread.h
     )
 
 add_library(client ${ALL_FILES})
