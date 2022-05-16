@@ -5,14 +5,12 @@
 
 #include <memory>
 #include "deephaven/client/highlevel/client.h"
-#include "deephaven/client/lowlevel/server.h"
+#include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/executor.h"
 #include "deephaven/client/utility/utility.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 namespace impl {
 
 class ClientImpl {

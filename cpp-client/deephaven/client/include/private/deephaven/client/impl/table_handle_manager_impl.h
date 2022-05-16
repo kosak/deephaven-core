@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "deephaven/client/lowlevel/server.h"
+#include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/executor.h"
 
 namespace deephaven {
@@ -12,7 +12,7 @@ class TableHandleImpl;
 
 class TableHandleManagerImpl {
   struct Private {};
-  typedef deephaven::client::lowlevel::Server Server;
+  typedef deephaven::client::server::Server Server;
   typedef deephaven::client::utility::Executor Executor;
   typedef io::deephaven::proto::backplane::grpc::AsOfJoinTablesRequest AsOfJoinTablesRequest;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;

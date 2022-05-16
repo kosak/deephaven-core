@@ -3,9 +3,9 @@
 #include <memory>
 #include <map>
 #include <string>
-#include "deephaven/client/lowlevel/server.h"
 #include "deephaven/client/highlevel/client.h"
 #include "deephaven/client/highlevel/ticking.h"
+#include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/cbfuture.h"
 #include "deephaven/client/utility/executor.h"
@@ -14,23 +14,28 @@
 #include "deephaven/proto/table.pb.h"
 #include "deephaven/proto/table.grpc.pb.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 class SortPair;
 namespace impl {
 class BooleanExpressionImpl;
+
 class ColumnImpl;
+
 class DateTimeColImpl;
+
 class NumColImpl;
+
 class StrColImpl;
+
 class TableHandleManagerImpl;
 
 namespace internal {
 class GetColumnDefsCallback;
 
-class LazyState final : public deephaven::client::utility::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
-  struct Private {};
+class LazyState final
+    : public deephaven::client::utility::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
+  struct Private {
+  };
 
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
   typedef io::deephaven::proto::backplane::grpc::Ticket Ticket;
@@ -59,7 +64,8 @@ public:
   void onFailure(std::exception_ptr ep) final;
 
   std::shared_ptr<ColumnDefinitions> getColumnDefinitions();
-  void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<std::shared_ptr<ColumnDefinitions>>> cb);
+  void
+  getColumnDefinitionsAsync(std::shared_ptr<SFCallback<std::shared_ptr<ColumnDefinitions>>> cb);
 
 private:
   std::shared_ptr<Server> server_;
@@ -77,7 +83,8 @@ private:
 }  // namespace internal
 
 class TableHandleImpl {
-  struct Private {};
+  struct Private {
+  };
   typedef deephaven::client::highlevel::SortPair SortPair;
   typedef deephaven::client::highlevel::impl::ColumnImpl ColumnImpl;
   typedef deephaven::client::highlevel::impl::DateTimeColImpl DateTimeColImpl;
@@ -94,7 +101,8 @@ class TableHandleImpl {
 public:
   static std::shared_ptr<internal::LazyState> createEtcCallback(const TableHandleManagerImpl *thm);
   // Create a callback that is already satisfied by "ticket".
-  static std::shared_ptr<internal::LazyState> createSatisfiedCallback(const TableHandleManagerImpl *thm,
+  static std::shared_ptr<internal::LazyState>
+  createSatisfiedCallback(const TableHandleManagerImpl *thm,
       Ticket ticket);
 
   static std::shared_ptr<TableHandleImpl> create(std::shared_ptr<TableHandleManagerImpl> thm,
@@ -127,9 +135,12 @@ public:
   std::shared_ptr<TableHandleImpl> medianBy(std::vector<std::string> columnSpecs);
   std::shared_ptr<TableHandleImpl> percentileBy(double percentile, bool avgMedian,
       std::vector<std::string> columnSpecs);
-  std::shared_ptr<TableHandleImpl> percentileBy(double percentile, std::vector<std::string> columnSpecs);
-  std::shared_ptr<TableHandleImpl> countBy(std::string countByColumn, std::vector<std::string> columnSpecs);
-  std::shared_ptr<TableHandleImpl> wAvgBy(std::string weightColumn, std::vector<std::string> columnSpecs);
+  std::shared_ptr<TableHandleImpl>
+  percentileBy(double percentile, std::vector<std::string> columnSpecs);
+  std::shared_ptr<TableHandleImpl>
+  countBy(std::string countByColumn, std::vector<std::string> columnSpecs);
+  std::shared_ptr<TableHandleImpl>
+  wAvgBy(std::string weightColumn, std::vector<std::string> columnSpecs);
   std::shared_ptr<TableHandleImpl> tailBy(int64_t n, std::vector<std::string> columnSpecs);
   std::shared_ptr<TableHandleImpl> headBy(int64_t n, std::vector<std::string> columnSpecs);
 
@@ -165,6 +176,7 @@ public:
   void observe();
 
   const std::shared_ptr<TableHandleManagerImpl> &managerImpl() const { return managerImpl_; }
+
   const Ticket &ticket() const { return ticket_; }
 
 private:
@@ -173,7 +185,8 @@ private:
 
   std::shared_ptr<TableHandleImpl> defaultAggregateByDescriptor(
       ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> groupByColumns);
-  std::shared_ptr<TableHandleImpl> defaultAggregateByType(ComboAggregateRequest::AggType aggregateType,
+  std::shared_ptr<TableHandleImpl>
+  defaultAggregateByType(ComboAggregateRequest::AggType aggregateType,
       std::vector<std::string> groupByColumns);
 
   std::shared_ptr<TableHandleImpl> headOrTailHelper(bool head, int64_t n);
@@ -186,6 +199,4 @@ private:
   std::weak_ptr<TableHandleImpl> weakSelf_;
 };
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel
