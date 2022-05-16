@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <immer/flex_vector.hpp>
 
 namespace deephaven::client::immerutil {
 template<typename T>
@@ -44,7 +45,7 @@ private:
 };
 
 template<typename T>
-std::shared_ptr<AbstractFlexVectorBase> AbstractFlexVectorBase::create(immer::flex_vector<T> vec) {
+std::unique_ptr<AbstractFlexVectorBase> AbstractFlexVectorBase::create(immer::flex_vector<T> vec) {
   return std::make_shared<AbstractFlexVector<T>>(std::move(vec));
 }
 }  // namespace deephaven::client::immerutil

@@ -22,7 +22,6 @@
 #include "deephaven/client/highlevel/container/context.h"
 #include "deephaven/client/highlevel/container/row_sequence.h"
 #include "deephaven/client/highlevel/table/table.h"
-#include "deephaven/client/highlevel/table/ticking_table.h"
 #include "deephaven/client/highlevel/ticking.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/utility.h"
@@ -51,7 +50,6 @@ using deephaven::client::highlevel::container::RowSequence;
 using deephaven::client::highlevel::container::RowSequenceBuilder;
 using deephaven::client::highlevel::container::RowSequenceIterator;
 using deephaven::client::highlevel::table::Table;
-using deephaven::client::highlevel::table::TickingTable;
 using deephaven::client::utility::Callback;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;

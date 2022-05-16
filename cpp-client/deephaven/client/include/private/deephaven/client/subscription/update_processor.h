@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <arrow/flight/client.h>
+
 namespace deephaven::client::subscription {
 class UpdateProcessor {
 public:

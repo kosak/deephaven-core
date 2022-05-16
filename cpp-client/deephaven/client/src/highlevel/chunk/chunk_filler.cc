@@ -6,8 +6,8 @@
 
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::stringf;
+using deephaven::client::utility::verboseCast;
 using deephaven::client::highlevel::container::RowSequence;
-using deephaven::client::highlevel::impl::verboseCast;
 
 namespace deephaven::client::highlevel::chunk {
 namespace {
