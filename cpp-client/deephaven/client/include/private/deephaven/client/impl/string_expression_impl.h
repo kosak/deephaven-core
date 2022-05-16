@@ -4,9 +4,7 @@
 #include <vector>
 #include "expression_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 namespace impl {
 class StringExpressionImpl : public ExpressionImpl {
 public:
@@ -20,6 +18,4 @@ public:
   ~StringExpressionImpl() override;
 };
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client

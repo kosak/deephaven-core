@@ -1,15 +1,12 @@
-#include "deephaven/client/highlevel/impl/numeric_expression_impl.h"
+#include "deephaven/client/impl/numeric_expression_impl.h"
 
 #include <iomanip>
-#include "deephaven/client/highlevel/impl/boolean_expression_impl.h"
+#include "deephaven/client/impl/boolean_expression_impl.h"
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::SimpleOstringstream;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 namespace {
 class NumericUnaryOperatorImpl final : public NumericExpressionImpl {
 public:
@@ -149,7 +146,4 @@ void DoubleLiteralImpl::streamIrisRepresentation(std::ostream &s) const {
   s << oss.str();
 }
 }  // namespace
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl

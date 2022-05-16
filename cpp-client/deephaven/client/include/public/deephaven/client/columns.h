@@ -2,17 +2,20 @@
 
 #include <memory>
 #include <string>
-#include "deephaven/client/highlevel/expressions.h"
+#include "deephaven/client/expressions.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 namespace impl {
 class ColumnImpl;
+
 class StrColImpl;
+
 class NumColImpl;
+
 class DateTimeColImpl;
+
 class IrisRepresentableImpl;
+
 class AssignedColumnImpl;
 }  // namespace impl
 
@@ -21,8 +24,11 @@ class AssignedColumnImpl;
  */
 class IrisRepresentable {
 public:
-  explicit IrisRepresentable(std::shared_ptr<impl::IrisRepresentableImpl> impl) : impl_(std::move(impl)) {}
+  explicit IrisRepresentable(std::shared_ptr<impl::IrisRepresentableImpl> impl) : impl_(
+      std::move(impl)) {}
+
   virtual ~IrisRepresentable();
+
   impl::IrisRepresentableImpl *getIrisRepresentableImpl() const {
     return impl_.get();
   }
@@ -38,7 +44,9 @@ protected:
  */
 class SelectColumn : public virtual IrisRepresentable {
 public:
-  explicit SelectColumn(std::shared_ptr<impl::IrisRepresentableImpl> impl) : IrisRepresentable(std::move(impl)) {}
+  explicit SelectColumn(std::shared_ptr<impl::IrisRepresentableImpl> impl) : IrisRepresentable(
+      std::move(impl)) {}
+
   ~SelectColumn() override;
 };
 
@@ -48,7 +56,9 @@ public:
  */
 class MatchWithColumn : public virtual IrisRepresentable {
 public:
-  explicit MatchWithColumn(std::shared_ptr<impl::IrisRepresentableImpl> impl) : IrisRepresentable(std::move(impl)) {}
+  explicit MatchWithColumn(std::shared_ptr<impl::IrisRepresentableImpl> impl) : IrisRepresentable(
+      std::move(impl)) {}
+
   ~MatchWithColumn() override;
 };
 
@@ -74,7 +84,9 @@ public:
 /**
  * Describes a sort direction
  */
-enum class SortDirection { Ascending, Descending };
+enum class SortDirection {
+  Ascending, Descending
+};
 
 /**
  * A tuple (not really a "pair", despite the name) representing a column to sort, the SortDirection,
@@ -125,6 +137,7 @@ public:
    * @return The column name
    */
   std::string &column() { return column_; }
+
   /**
    * Get the column name
    * @return The column name
@@ -136,6 +149,7 @@ public:
    * @return The SortDirection
    */
   SortDirection direction() const { return direction_; }
+
   /**
    * Get the "sort by absolute value" flag
    * @return
@@ -287,6 +301,4 @@ public:
 private:
   std::shared_ptr<impl::AssignedColumnImpl> impl_;
 };
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client

@@ -1,17 +1,15 @@
-#include "deephaven/client/highlevel/impl/string_expression_impl.h"
+#include "deephaven/client/impl/string_expression_impl.h"
 
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/impl/boolean_expression_impl.h"
-#include "deephaven/client/highlevel/impl/escape_utils.h"
-#include "deephaven/client/highlevel/impl/expression_impl.h"
+#include "deephaven/client/impl/boolean_expression_impl.h"
+#include "deephaven/client/impl/escape_utils.h"
+#include "deephaven/client/impl/expression_impl.h"
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::separatedList;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client {
 namespace impl {
 namespace {
 class StringLiteralImpl final : public StringExpressionImpl {
@@ -116,6 +114,4 @@ void StringComparisonImpl::streamIrisRepresentation(std::ostream &s) const {
 }
 }  // namespace
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client
