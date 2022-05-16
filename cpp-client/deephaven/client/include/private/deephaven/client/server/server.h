@@ -22,9 +22,7 @@
 #include "deephaven/proto/table.pb.h"
 #include "deephaven/proto/table.grpc.pb.h"
 
-namespace deephaven {
-namespace client {
-namespace lowlevel {
+namespace deephaven::client::server {
 struct CompletionQueueCallback {
   typedef deephaven::client::utility::FailureCallback FailureCallback;
 
@@ -54,7 +52,7 @@ public:
 
   void onSuccess() final {
     // The type is valid because this is how we set it in the constructor.
-    auto *typedCallback = static_cast<SFCallback<Response>*>(failureCallback_.get());
+    auto *typedCallback = static_cast<SFCallback<Response> *>(failureCallback_.get());
     typedCallback->onSuccess(std::move(response_));
   }
 
@@ -62,7 +60,8 @@ public:
 };
 
 class Server {
-  struct Private {};
+  struct Private {
+  };
 
   typedef io::deephaven::proto::backplane::grpc::ApplicationService ApplicationService;
   typedef io::deephaven::proto::backplane::grpc::AsOfJoinTablesRequest AsOfJoinTablesRequest;
@@ -97,9 +96,13 @@ public:
   ~Server();
 
   ApplicationService::Stub *applicationStub() const { return applicationStub_.get(); }
+
   ConsoleService::Stub *consoleStub() const { return consoleStub_.get(); }
+
   SessionService::Stub *sessionStub() const { return sessionStub_.get(); }
+
   TableService::Stub *tableStub() const { return tableStub_.get(); }
+
   // TODO(kosak): decide on the multithreaded story here
   arrow::flight::FlightClient *flightClient() const { return flightClient_.get(); }
 
@@ -196,8 +199,9 @@ public:
   std::pair<std::string, std::string> makeBlessing() const;
 
 private:
-  typedef std::unique_ptr< ::grpc::ClientAsyncResponseReader<ExportedTableCreationResponse>>
-    (TableService::Stub:: *selectOrUpdateMethod_t)(::grpc::ClientContext* context, const SelectOrUpdateRequest &request, ::grpc::CompletionQueue* cq);
+  typedef std::unique_ptr<::grpc::ClientAsyncResponseReader<ExportedTableCreationResponse>>
+  (TableService::Stub::*selectOrUpdateMethod_t)(::grpc::ClientContext *context,
+      const SelectOrUpdateRequest &request, ::grpc::CompletionQueue *cq);
 
   Ticket selectOrUpdateHelper(Ticket parentTicket, std::vector<std::string> columnSpecs,
       std::shared_ptr<EtcCallback> etcCallback, selectOrUpdateMethod_t method);
@@ -236,6 +240,4 @@ void Server::sendRpc(const TReq &req, std::shared_ptr<SFCallback<TResp>> respons
   auto rpc = (stub->*pm)(&response->ctx_, req, &completionQueue_);
   rpc->Finish(&response->response_, &response->status_, response);
 }
-}  // namespace lowlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::server
