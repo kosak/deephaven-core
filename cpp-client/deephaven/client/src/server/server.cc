@@ -1,4 +1,4 @@
-#include "deephaven/client/lowlevel/server.h"
+#include "deephaven/client/server/server.h"
 
 #include <exception>
 #include <grpcpp/grpcpp.h>
@@ -38,12 +38,11 @@ using io::deephaven::proto::backplane::grpc::Ticket;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableRequest;
 using io::deephaven::proto::backplane::script::grpc::StartConsoleRequest;
 
-namespace deephaven {
-namespace client {
-namespace lowlevel {
+namespace deephaven::client::server {
 namespace {
 Ticket makeScopeReference(std::string_view tableName);
-void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest);
+void
+moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest);
 }  // namespace
 
 std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
@@ -175,25 +174,29 @@ Ticket Server::timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
 
 Ticket Server::selectAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
     std::shared_ptr<EtcCallback> etcCallback) {
-  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs), std::move(etcCallback),
+  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs),
+      std::move(etcCallback),
       &TableService::Stub::AsyncSelect);
 }
 
 Ticket Server::updateAsync(Ticket parentTicket,
     std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback) {
-  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs), std::move(etcCallback),
+  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs),
+      std::move(etcCallback),
       &TableService::Stub::AsyncUpdate);
 }
 
 Ticket Server::viewAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
     std::shared_ptr<EtcCallback> etcCallback) {
-  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs), std::move(etcCallback),
+  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs),
+      std::move(etcCallback),
       &TableService::Stub::AsyncView);
 }
 
 Ticket Server::updateViewAsync(Ticket parentTicket,
     std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback) {
-  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs), std::move(etcCallback),
+  return selectOrUpdateHelper(std::move(parentTicket), std::move(columnSpecs),
+      std::move(etcCallback),
       &TableService::Stub::AsyncUpdateView);
 }
 
@@ -203,7 +206,7 @@ Ticket Server::selectOrUpdateHelper(Ticket parentTicket, std::vector<std::string
   SelectOrUpdateRequest req;
   *req.mutable_result_id() = result;
   *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
-  for (auto &cs : columnSpecs) {
+  for (auto &cs: columnSpecs) {
     *req.mutable_column_specs()->Add() = std::move(cs);
   }
   sendRpc(req, std::move(etcCallback), tableStub(), method, true);
@@ -239,7 +242,7 @@ Ticket Server::sortAsync(Ticket parentTicket, std::vector<SortDescriptor> sortDe
   SortTableRequest req;
   *req.mutable_result_id() = result;
   *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
-  for (auto &sd : sortDescriptors) {
+  for (auto &sd: sortDescriptors) {
     *req.mutable_sorts()->Add() = std::move(sd);
   }
   sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncSort, true);
@@ -255,10 +258,10 @@ Ticket Server::comboAggregateDescriptorAsync(Ticket parentTicket,
   ComboAggregateRequest req;
   *req.mutable_result_id() = result;
   *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
-  for (auto &agg : aggregates) {
+  for (auto &agg: aggregates) {
     *req.mutable_aggregates()->Add() = std::move(agg);
   }
-  for (auto &gbc : groupByColumns) {
+  for (auto &gbc: groupByColumns) {
     *req.mutable_group_by_columns()->Add() = std::move(gbc);
   }
   req.set_force_combo(forceCombo);
@@ -273,7 +276,7 @@ Ticket Server::headOrTailByAsync(Ticket parentTicket, bool head,
   *req.mutable_result_id() = result;
   *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
   req.set_num_rows(n);
-  for (auto &cs : columnSpecs) {
+  for (auto &cs: columnSpecs) {
     req.mutable_group_by_column_specs()->Add(std::move(cs));
   }
   const auto &which = head ? &TableService::Stub::AsyncHeadBy : &TableService::Stub::AsyncTailBy;
@@ -310,7 +313,7 @@ Ticket Server::mergeAsync(std::vector<Ticket> sourceTickets, std::string keyColu
   auto result = newTicket();
   MergeTablesRequest req;
   *req.mutable_result_id() = result;
-  for (auto &t : sourceTickets) {
+  for (auto &t: sourceTickets) {
     *req.mutable_source_ids()->Add()->mutable_ticket() = std::move(t);
   }
   req.set_key_column(std::move(keyColumn));
@@ -328,7 +331,8 @@ Ticket Server::crossJoinAsync(Ticket leftTableTicket, Ticket rightTableTicket,
   *req.mutable_right_id()->mutable_ticket() = std::move(rightTableTicket);
   moveVectorData(std::move(columnsToMatch), req.mutable_columns_to_match());
   moveVectorData(std::move(columnsToAdd), req.mutable_columns_to_add());
-  sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncCrossJoinTables, true);
+  sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncCrossJoinTables,
+      true);
   return result;
 }
 
@@ -342,7 +346,8 @@ Ticket Server::naturalJoinAsync(Ticket leftTableTicket, Ticket rightTableTicket,
   *req.mutable_right_id()->mutable_ticket() = std::move(rightTableTicket);
   moveVectorData(std::move(columnsToMatch), req.mutable_columns_to_match());
   moveVectorData(std::move(columnsToAdd), req.mutable_columns_to_add());
-  sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncNaturalJoinTables, true);
+  sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncNaturalJoinTables,
+      true);
   return result;
 }
 
@@ -356,7 +361,8 @@ Ticket Server::exactJoinAsync(Ticket leftTableTicket, Ticket rightTableTicket,
   *req.mutable_right_id()->mutable_ticket() = std::move(rightTableTicket);
   moveVectorData(std::move(columnsToMatch), req.mutable_columns_to_match());
   moveVectorData(std::move(columnsToAdd), req.mutable_columns_to_add());
-  sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncExactJoinTables, true);
+  sendRpc(req, std::move(etcCallback), tableStub(), &TableService::Stub::AsyncExactJoinTables,
+      true);
   return result;
 }
 
@@ -375,14 +381,16 @@ Ticket Server::asOfJoinAsync(AsOfJoinTablesRequest::MatchRule matchRule, Ticket 
   return result;
 }
 
-void Server::bindToVariableAsync(const Ticket &consoleId, const Ticket &tableId, std::string variable,
+void
+Server::bindToVariableAsync(const Ticket &consoleId, const Ticket &tableId, std::string variable,
     std::shared_ptr<SFCallback<BindTableToVariableResponse>> callback) {
   BindTableToVariableRequest req;
   *req.mutable_console_id() = consoleId;
   req.set_variable_name(std::move(variable));
   *req.mutable_table_id() = tableId;
 
-  sendRpc(req, std::move(callback), consoleStub(), &ConsoleService::Stub::AsyncBindTableToVariable, true);
+  sendRpc(req, std::move(callback), consoleStub(), &ConsoleService::Stub::AsyncBindTableToVariable,
+      true);
 }
 
 std::pair<std::string, std::string> Server::makeBlessing() const {
@@ -442,6 +450,7 @@ bool Server::processNextCompletionQueueItem() {
 
 CompletionQueueCallback::CompletionQueueCallback(std::shared_ptr<FailureCallback> failureCallback) :
     failureCallback_(std::move(failureCallback)) {}
+
 CompletionQueueCallback::~CompletionQueueCallback() = default;
 
 namespace {
@@ -455,11 +464,9 @@ Ticket makeScopeReference(std::string_view tableName) {
 
 void moveVectorData(std::vector<std::string> src,
     google::protobuf::RepeatedPtrField<std::string> *dest) {
-  for (auto &s : src) {
+  for (auto &s: src) {
     dest->Add(std::move(s));
   }
 }
 }  // namespace
-}  // namespace lowlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::server

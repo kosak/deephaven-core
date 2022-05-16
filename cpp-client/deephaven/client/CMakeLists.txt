@@ -87,10 +87,12 @@ set(ALL_FILES
     include/private/deephaven/client/utility/misc.h
 
     src/utility/cbfuture.cc
+    src/utility/misc.cc
     src/utility/table_maker.cc
     src/utility/utility.cc
     include/public/deephaven/client/utility/callbacks.h
     include/public/deephaven/client/utility/cbfuture.h
+    include/private/deephaven/client/utility/misc.h
     include/public/deephaven/client/utility/table_maker.h
     include/public/deephaven/client/utility/utility.h
 
@@ -117,7 +119,10 @@ set(ALL_FILES
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
 
-    include/private/deephaven/client/subscription/index_decoder.h src/subscription/subscribe_thread.cc include/private/deephaven/client/subscription/subscribe_thread.h include/private/deephaven/client/utility/misc.h)
+    include/private/deephaven/client/subscription/index_decoder.h
+    src/subscription/subscribe_thread.cc
+    include/private/deephaven/client/subscription/subscribe_thread.h
+    )
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config
