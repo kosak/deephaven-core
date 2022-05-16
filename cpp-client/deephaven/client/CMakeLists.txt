@@ -56,7 +56,6 @@ set(ALL_FILES
     src/highlevel/container/context.cc
     src/highlevel/container/row_sequence.cc
     src/highlevel/table/table.cc
-    src/highlevel/table/ticking_table.cc
     src/highlevel/table/unwrapped_table.cc
 
     include/public/deephaven/client/highlevel/columns.h
@@ -71,9 +70,18 @@ set(ALL_FILES
     include/public/deephaven/client/highlevel/container/context.h
     include/public/deephaven/client/highlevel/container/row_sequence.h
     include/public/deephaven/client/highlevel/table/table.h
-    include/public/deephaven/client/highlevel/table/ticking_table.h
     include/public/deephaven/client/highlevel/table/unwrapped_table.h
+
+
     include/public/deephaven/client/immerutil/abstract_flex_vector.h
+
+    src/subscription/index_decoder.cc
+    src/subscription/ticking_table.cc
+    src/subscription/update_processor.cc
+
+    include/private/deephaven/client/subscription/index_decoder.h
+    include/private/deephaven/client/subscription/ticking_table.h
+    include/private/deephaven/client/subscription/update_processor.h
 
     src/utility/executor.cc
     include/private/deephaven/client/utility/executor.h
@@ -108,7 +116,8 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    src/subscription/update_processor.cc src/subscription/update_processor.h src/subscription/index_decoder.cc)
+
+    include/private/deephaven/client/subscription/index_decoder.h)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config
