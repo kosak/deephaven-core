@@ -1,22 +1,20 @@
-#include "deephaven/client/highlevel/impl/client_impl.h"
+#include "deephaven/client/impl/client_impl.h"
 
 #include <stdexcept>
-#include "deephaven/client/highlevel/impl/table_handle_manager_impl.h"
+#include "deephaven/client/impl/table_handle_manager_impl.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/client/utility/callbacks.h"
 
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using io::deephaven::proto::backplane::script::grpc::StartConsoleResponse;
 using deephaven::client::highlevel::impl::TableHandleManagerImpl;
-using deephaven::client::lowlevel::Server;
+using deephaven::client::server::Server;
 using deephaven::client::utility::Executor;
 using deephaven::client::utility::SFCallback;
 using deephaven::client::utility::stringf;
 using deephaven::client::utility::streamf;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 namespace impl {
 std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<Server> server,
     std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor) {
@@ -41,8 +39,7 @@ std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<Server> server,
 
 ClientImpl::ClientImpl(Private, std::shared_ptr<TableHandleManagerImpl> &&managerImpl) :
     managerImpl_(std::move(managerImpl)) {}
+
 ClientImpl::~ClientImpl() = default;
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <memory>
-#include "deephaven/client/highlevel/client.h"
+#include "deephaven/client/client.h"
 #include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/executor.h"
@@ -14,8 +14,9 @@ namespace deephaven::client::highlevel {
 namespace impl {
 
 class ClientImpl {
-  struct Private {};
-  typedef deephaven::client::lowlevel::Server Server;
+  struct Private {
+  };
+  typedef deephaven::client::server::Server Server;
   typedef deephaven::client::utility::Executor Executor;
 
   template<typename... Args>
@@ -34,6 +35,4 @@ private:
   std::shared_ptr<TableHandleManagerImpl> managerImpl_;
 };
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel

@@ -1,18 +1,17 @@
 #pragma once
 
 #include <memory>
-#include "deephaven/client/highlevel/impl/datetime_expression_impl.h"
-#include "deephaven/client/highlevel/impl/expression_impl.h"
-#include "deephaven/client/highlevel/impl/numeric_expression_impl.h"
-#include "deephaven/client/highlevel/impl/string_expression_impl.h"
+#include "deephaven/client/impl/datetime_expression_impl.h"
+#include "deephaven/client/impl/expression_impl.h"
+#include "deephaven/client/impl/numeric_expression_impl.h"
+#include "deephaven/client/impl/string_expression_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 namespace impl {
 class ColumnImpl : public ExpressionImpl {
 protected:
-  struct Private {};
+  struct Private {
+  };
 
 public:
   static std::shared_ptr<ColumnImpl> create(std::string name);
@@ -53,7 +52,8 @@ public:
 };
 
 class AssignedColumnImpl final : public IrisRepresentableImpl {
-  struct Private {};
+  struct Private {
+  };
 
 public:
   static std::shared_ptr<AssignedColumnImpl> create(std::string name,
@@ -69,6 +69,4 @@ private:
 };
 
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel

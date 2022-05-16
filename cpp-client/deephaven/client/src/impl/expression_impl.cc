@@ -1,12 +1,9 @@
-#include "deephaven/client/highlevel/impl/expression_impl.h"
+#include "deephaven/client/impl/expression_impl.h"
 
 #include <memory>
-#include "deephaven/client/highlevel/impl/boolean_expression_impl.h"
+#include "deephaven/client/impl/boolean_expression_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 namespace {
 class IsNullExpressionImpl final : public BooleanExpressionImpl {
 public:
@@ -49,6 +46,4 @@ void streamIris(std::ostream &s, const std::shared_ptr<IrisRepresentableImpl> &o
   o->streamIrisRepresentation(s);
 }
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl

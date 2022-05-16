@@ -2,12 +2,9 @@
 
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/impl/expression_impl.h"
+#include "deephaven/client/impl/expression_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 class BooleanExpressionImpl : public ExpressionImpl {
 public:
   static std::shared_ptr<BooleanExpressionImpl> createNot(std::shared_ptr<BooleanExpressionImpl> item);
@@ -21,7 +18,4 @@ public:
 
   ~BooleanExpressionImpl() override;
 };
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl

@@ -1,23 +1,22 @@
-#include "deephaven/client/highlevel/impl/datetime_expression_impl.h"
+#include "deephaven/client/impl/datetime_expression_impl.h"
 
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/columns.h"
-#include "deephaven/client/highlevel/impl/boolean_expression_impl.h"
-#include "deephaven/client/highlevel/impl/expression_impl.h"
-#include "deephaven/client/highlevel/impl/escape_utils.h"
+#include "deephaven/client/columns.h"
+#include "deephaven/client/impl/boolean_expression_impl.h"
+#include "deephaven/client/impl/expression_impl.h"
+#include "deephaven/client/impl/escape_utils.h"
 #include "deephaven/client/utility/utility.h"
 
-using deephaven::client::highlevel::DateTime;
+using deephaven::client::DateTime;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 namespace impl {
 namespace {
 class DateTimeLiteralImpl final : public DateTimeExpressionImpl {
 public:
   explicit DateTimeLiteralImpl(std::string value) : value_(std::move(value)) {}
+
   ~DateTimeLiteralImpl() final = default;
 
   void streamIrisRepresentation(std::ostream &s) const final;
@@ -29,6 +28,7 @@ private:
 class DateTimeDateTimeImpl final : public DateTimeExpressionImpl {
 public:
   explicit DateTimeDateTimeImpl(const DateTime &value) : value_(value) {}
+
   ~DateTimeDateTimeImpl() final = default;
 
   void streamIrisRepresentation(std::ostream &s) const final;
@@ -42,6 +42,7 @@ public:
   DateTimeComparisonImpl(std::shared_ptr<DateTimeExpressionImpl> lhs, const char *compareOp,
       std::shared_ptr<DateTimeExpressionImpl> rhs) : lhs_(std::move(lhs)), compareOp_(compareOp),
       rhs_(std::move(rhs)) {}
+
   ~DateTimeComparisonImpl() final = default;
 
   void streamIrisRepresentation(std::ostream &s) const final;
@@ -53,11 +54,13 @@ private:
 };
 }  // namespace
 
-std::shared_ptr<DateTimeExpressionImpl> DateTimeExpressionImpl::createFromLiteral(std::string value) {
+std::shared_ptr<DateTimeExpressionImpl>
+DateTimeExpressionImpl::createFromLiteral(std::string value) {
   return std::make_shared<DateTimeLiteralImpl>(std::move(value));
 }
 
-std::shared_ptr<DateTimeExpressionImpl> DateTimeExpressionImpl::createFromDateTime(const DateTime &value) {
+std::shared_ptr<DateTimeExpressionImpl>
+DateTimeExpressionImpl::createFromDateTime(const DateTime &value) {
   return std::make_shared<DateTimeDateTimeImpl>(value);
 }
 
@@ -91,8 +94,6 @@ void DateTimeComparisonImpl::streamIrisRepresentation(std::ostream &s) const {
   rhs_->streamIrisRepresentation(s);
   s << ')';
 }
-}   // namespace
+}  // namespace
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel

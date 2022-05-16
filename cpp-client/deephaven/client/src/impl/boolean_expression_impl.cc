@@ -1,21 +1,20 @@
-#include "deephaven/client/highlevel/impl/boolean_expression_impl.h"
+#include "deephaven/client/impl/boolean_expression_impl.h"
 
 #include <memory>
 #include <vector>
-#include "deephaven/client/highlevel/impl/expression_impl.h"
+#include "deephaven/client/impl/expression_impl.h"
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::separatedList;
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 namespace {
 class NotExpressionImpl final : public BooleanExpressionImpl {
-  struct Private {};
+  struct Private {
+  };
 public:
-  static std::shared_ptr<BooleanExpressionImpl> create(std::shared_ptr<BooleanExpressionImpl> child);
+  static std::shared_ptr<BooleanExpressionImpl>
+  create(std::shared_ptr<BooleanExpressionImpl> child);
   NotExpressionImpl(Private, std::shared_ptr<BooleanExpressionImpl> &&child);
   ~NotExpressionImpl() final;
 
@@ -26,7 +25,8 @@ private:
 };
 
 class AndExpressionImpl final : public BooleanExpressionImpl {
-  struct Private {};
+  struct Private {
+  };
 public:
   static std::shared_ptr<BooleanExpressionImpl> create(std::shared_ptr<BooleanExpressionImpl> lhs,
       std::shared_ptr<BooleanExpressionImpl> rhs);
@@ -40,7 +40,8 @@ private:
 };
 
 class OrExpressionImpl final : public BooleanExpressionImpl {
-  struct Private {};
+  struct Private {
+  };
 public:
   static std::shared_ptr<BooleanExpressionImpl> create(std::shared_ptr<BooleanExpressionImpl> lhs,
       std::shared_ptr<BooleanExpressionImpl> rhs);
@@ -55,7 +56,8 @@ private:
 
 
 class BooleanValuedInstanceMethod final : public BooleanExpressionImpl {
-  struct Private {};
+  struct Private {
+  };
 public:
   static std::shared_ptr<BooleanExpressionImpl> create(std::shared_ptr<ExpressionImpl> lhs,
       std::string method, std::shared_ptr<ExpressionImpl> rhs);
@@ -108,6 +110,7 @@ std::shared_ptr<BooleanExpressionImpl> NotExpressionImpl::create(
 
 NotExpressionImpl::NotExpressionImpl(Private, std::shared_ptr<BooleanExpressionImpl> &&child) :
     child_(std::move(child)) {}
+
 NotExpressionImpl::~NotExpressionImpl() = default;
 
 void NotExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
@@ -118,14 +121,14 @@ void NotExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
 std::shared_ptr<BooleanExpressionImpl> AndExpressionImpl::create(
     std::shared_ptr<BooleanExpressionImpl> lhs, std::shared_ptr<BooleanExpressionImpl> rhs) {
   std::vector<std::shared_ptr<BooleanExpressionImpl>> children;
-  const auto *lhsAsAnd = dynamic_cast<const AndExpressionImpl*>(lhs.get());
+  const auto *lhsAsAnd = dynamic_cast<const AndExpressionImpl *>(lhs.get());
   if (lhsAsAnd != nullptr) {
     children.insert(children.end(), lhsAsAnd->children_.begin(), lhsAsAnd->children_.end());
   } else {
     children.push_back(std::move(lhs));
   }
 
-  const auto *rhsAsAnd = dynamic_cast<const AndExpressionImpl*>(rhs.get());
+  const auto *rhsAsAnd = dynamic_cast<const AndExpressionImpl *>(rhs.get());
   if (rhsAsAnd != nullptr) {
     children.insert(children.end(), rhsAsAnd->children_.begin(), rhsAsAnd->children_.end());
   } else {
@@ -136,7 +139,9 @@ std::shared_ptr<BooleanExpressionImpl> AndExpressionImpl::create(
 }
 
 AndExpressionImpl::AndExpressionImpl(Private,
-    std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children) : children_(std::move(children)) {}
+    std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children) : children_(
+    std::move(children)) {}
+
 AndExpressionImpl::~AndExpressionImpl() = default;
 
 void AndExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
@@ -148,14 +153,14 @@ void AndExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
 std::shared_ptr<BooleanExpressionImpl> OrExpressionImpl::create(
     std::shared_ptr<BooleanExpressionImpl> lhs, std::shared_ptr<BooleanExpressionImpl> rhs) {
   std::vector<std::shared_ptr<BooleanExpressionImpl>> children;
-  const auto *lhsAsOr = dynamic_cast<const OrExpressionImpl*>(lhs.get());
+  const auto *lhsAsOr = dynamic_cast<const OrExpressionImpl *>(lhs.get());
   if (lhsAsOr != nullptr) {
     children.insert(children.end(), lhsAsOr->children_.begin(), lhsAsOr->children_.end());
   } else {
     children.push_back(std::move(lhs));
   }
 
-  const auto *rhsAsOr = dynamic_cast<const OrExpressionImpl*>(lhs.get());
+  const auto *rhsAsOr = dynamic_cast<const OrExpressionImpl *>(lhs.get());
   if (rhsAsOr != nullptr) {
     children.insert(children.end(), rhsAsOr->children_.begin(), rhsAsOr->children_.end());
   } else {
@@ -166,7 +171,9 @@ std::shared_ptr<BooleanExpressionImpl> OrExpressionImpl::create(
 }
 
 OrExpressionImpl::OrExpressionImpl(Private,
-    std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children) : children_(std::move(children)) {}
+    std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children) : children_(
+    std::move(children)) {}
+
 OrExpressionImpl::~OrExpressionImpl() = default;
 
 void OrExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
@@ -185,6 +192,7 @@ BooleanValuedInstanceMethod::BooleanValuedInstanceMethod(Private,
     std::shared_ptr<ExpressionImpl> &&lhs, std::string &&method,
     std::shared_ptr<ExpressionImpl> &&rhs) : lhs_(std::move(lhs)), method_(std::move(method)),
     rhs_(std::move(rhs)) {}
+
 BooleanValuedInstanceMethod::~BooleanValuedInstanceMethod() = default;
 
 void BooleanValuedInstanceMethod::streamIrisRepresentation(std::ostream &s) const {
@@ -195,7 +203,4 @@ void BooleanValuedInstanceMethod::streamIrisRepresentation(std::ostream &s) cons
   s << "))";
 }
 }  // namespace
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl

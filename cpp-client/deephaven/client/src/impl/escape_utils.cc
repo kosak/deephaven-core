@@ -1,12 +1,10 @@
-#include "deephaven/client/highlevel/impl/escape_utils.h"
+#include "deephaven/client/impl/escape_utils.h"
 
 #include <codecvt>
 #include <locale>
 #include <string>
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 namespace impl {
 std::string EscapeUtils::escapeJava(std::string_view s) {
   std::string result;
@@ -18,7 +16,7 @@ void EscapeUtils::appendEscapedJava(std::string_view s, std::string *result) {
   typedef std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter_t;
   std::u16string u16s = converter_t().from_bytes(s.begin(), s.end());
 
-  for (auto u16ch : u16s) {
+  for (auto u16ch: u16s) {
     switch (u16ch) {
       case '\b':
         result->append("\\b");
@@ -57,6 +55,4 @@ void EscapeUtils::appendEscapedJava(std::string_view s, std::string *result) {
   }
 }
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel

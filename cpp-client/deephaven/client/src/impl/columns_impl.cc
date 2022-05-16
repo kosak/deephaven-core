@@ -1,14 +1,13 @@
-#include "deephaven/client/highlevel/impl/columns_impl.h"
+#include "deephaven/client/impl/columns_impl.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
+namespace deephaven::client::highlevel {
 namespace impl {
 std::shared_ptr<ColumnImpl> ColumnImpl::create(std::string name) {
   return std::make_shared<ColumnImpl>(Private(), std::move(name));
 }
 
 ColumnImpl::ColumnImpl(Private, std::string name) : name_(std::move(name)) {}
+
 ColumnImpl::~ColumnImpl() = default;
 
 void ColumnImpl::streamIrisRepresentation(std::ostream &s) const {
@@ -20,6 +19,7 @@ std::shared_ptr<NumColImpl> NumColImpl::create(std::string name) {
 }
 
 NumColImpl::NumColImpl(Private, std::string name) : ColumnImpl(Private(), std::move(name)) {}
+
 NumColImpl::~NumColImpl() = default;
 
 std::shared_ptr<StrColImpl> StrColImpl::create(std::string name) {
@@ -27,13 +27,16 @@ std::shared_ptr<StrColImpl> StrColImpl::create(std::string name) {
 }
 
 StrColImpl::StrColImpl(Private, std::string name) : ColumnImpl(Private(), std::move(name)) {}
+
 StrColImpl::~StrColImpl() = default;
 
 std::shared_ptr<DateTimeColImpl> DateTimeColImpl::create(std::string name) {
   return std::make_shared<DateTimeColImpl>(Private(), std::move(name));
 }
 
-DateTimeColImpl::DateTimeColImpl(Private, std::string name) : ColumnImpl(Private(), std::move(name)) {}
+DateTimeColImpl::DateTimeColImpl(Private, std::string name) : ColumnImpl(Private(),
+    std::move(name)) {}
+
 DateTimeColImpl::~DateTimeColImpl() = default;
 
 std::shared_ptr<AssignedColumnImpl> AssignedColumnImpl::create(std::string name,
@@ -41,8 +44,10 @@ std::shared_ptr<AssignedColumnImpl> AssignedColumnImpl::create(std::string name,
   return std::make_shared<AssignedColumnImpl>(Private(), std::move(name), std::move(expr));
 }
 
-AssignedColumnImpl::AssignedColumnImpl(Private, std::string name, std::shared_ptr<ExpressionImpl> expr)
+AssignedColumnImpl::AssignedColumnImpl(Private, std::string name,
+    std::shared_ptr<ExpressionImpl> expr)
     : name_(std::move(name)), expr_(std::move(expr)) {}
+
 AssignedColumnImpl::~AssignedColumnImpl() = default;
 
 void AssignedColumnImpl::streamIrisRepresentation(std::ostream &s) const {
@@ -51,6 +56,5 @@ void AssignedColumnImpl::streamIrisRepresentation(std::ostream &s) const {
   expr_->streamIrisRepresentation(s);
 }
 }  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::highlevel
+

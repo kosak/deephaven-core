@@ -3,10 +3,7 @@
 #include <iostream>
 #include <memory>
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 class BooleanExpressionImpl;
 
 class IrisRepresentableImpl {
@@ -22,7 +19,4 @@ public:
   static std::shared_ptr<BooleanExpressionImpl> createIsNull(std::shared_ptr<ExpressionImpl> impl);
   ~ExpressionImpl() override;
 };
-}  // namespace impl {
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl
