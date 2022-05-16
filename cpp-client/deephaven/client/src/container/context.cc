@@ -1,5 +1,5 @@
-#include "deephaven/client/highlevel/container/context.h"
+#include "deephaven/client/container/context.h"
 
-namespace deephaven::client::highlevel::container {
-}  // namespace deephaven::client::highlevel::container
+namespace deephaven::client::container {
+}  // namespace deephaven::client::container
 

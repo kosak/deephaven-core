@@ -1,6 +1,6 @@
-#include "deephaven/client/highlevel/container/row_sequence.h"
+#include "deephaven/client/container/row_sequence.h"
 
-namespace deephaven::client::highlevel::container {
+namespace deephaven::client::container {
 namespace {
 /**
  * Holds a slice of a set::set<int64_t>
@@ -142,4 +142,5 @@ MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
 }
 
 }  // namespace
-}  // namespace deephaven::client::highlevel::
+}  // namespace deephaven::client::container
+

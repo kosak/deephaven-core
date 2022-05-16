@@ -1,19 +1,19 @@
-#include "deephaven/client/highlevel/column/column_source.h"
+#include "deephaven/client/column/column_source.h"
 
-#include "deephaven/client/highlevel/chunk/chunk.h"
-#include "deephaven/client/highlevel/container/context.h"
-#include "deephaven/client/highlevel/impl/util.h"
+#include "deephaven/client/chunk/chunk.h"
+#include "deephaven/client/container/context.h"
+#include "deephaven/client/impl/util.h"
 
 #include "deephaven/client/utility/utility.h"
 
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
-using deephaven::client::highlevel::impl::verboseCast;
-using deephaven::client::highlevel::column::ColumnSourceContext;
-using deephaven::client::highlevel::chunk::DoubleChunk;
-using deephaven::client::highlevel::chunk::IntChunk;
+using deephaven::client::utility::verboseCast;
+using deephaven::client::column::ColumnSourceContext;
+using deephaven::client::chunk::DoubleChunk;
+using deephaven::client::chunk::IntChunk;
 
-namespace deephaven::client::highlevel::column {
+namespace deephaven::client::column {
 namespace {
 class MyLongColumnSourceContext final : public ColumnSourceContext {
 public:
@@ -276,4 +276,4 @@ void assertInRange(size_t index, size_t size) {
   }
 }
 }  // namespace
-}  // namespace deephaven::client::highlevel::column
+}  // namespace deephaven::client::column
