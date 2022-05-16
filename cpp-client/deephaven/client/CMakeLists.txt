@@ -117,7 +117,7 @@ set(ALL_FILES
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
 
-    include/private/deephaven/client/subscription/index_decoder.h)
+    include/private/deephaven/client/subscription/index_decoder.h src/subscription/subscribe_thread.cc include/private/deephaven/client/subscription/subscribe_thread.h)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config
