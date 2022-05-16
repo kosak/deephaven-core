@@ -43,33 +43,33 @@ set(ALL_FILES
     include/private/deephaven/client/impl/table_handle_manager_impl.h
     include/private/deephaven/client/impl/util.h
 
-    src/highlevel/columns.cc
-    src/highlevel/expressions.cc
-    src/highlevel/client.cc
-    src/highlevel/ticking.cc
-    src/highlevel/types.cc
-    src/highlevel/chunk/chunk.cc
-    src/highlevel/chunk/chunk_filler.cc
-    src/highlevel/chunk/chunk_maker.cc
-    src/highlevel/column/column_source.cc
-    src/highlevel/container/context.cc
-    src/highlevel/container/row_sequence.cc
-    src/highlevel/table/table.cc
-    src/highlevel/table/unwrapped_table.cc
+    src/columns.cc
+    src/expressions.cc
+    src/client.cc
+    src/ticking.cc
+    src/types.cc
+    src/chunk/chunk.cc
+    src/chunk/chunk_filler.cc
+    src/chunk/chunk_maker.cc
+    src/column/column_source.cc
+    src/container/context.cc
+    src/container/row_sequence.cc
+    src/table/table.cc
+    src/table/unwrapped_table.cc
 
-    include/public/deephaven/client/highlevel/columns.h
-    include/public/deephaven/client/highlevel/expressions.h
-    include/public/deephaven/client/highlevel/client.h
-    include/public/deephaven/client/highlevel/ticking.h
-    include/public/deephaven/client/highlevel/types.h
-    include/public/deephaven/client/highlevel/chunk/chunk.h
-    include/public/deephaven/client/highlevel/chunk/chunk_filler.h
-    include/public/deephaven/client/highlevel/chunk/chunk_maker.h
-    include/public/deephaven/client/highlevel/column/column_source.h
-    include/public/deephaven/client/highlevel/container/context.h
-    include/public/deephaven/client/highlevel/container/row_sequence.h
-    include/public/deephaven/client/highlevel/table/table.h
-    include/public/deephaven/client/highlevel/table/unwrapped_table.h
+    include/public/deephaven/client/columns.h
+    include/public/deephaven/client/expressions.h
+    include/public/deephaven/client/client.h
+    include/public/deephaven/client/ticking.h
+    include/public/deephaven/client/types.h
+    include/public/deephaven/client/chunk/chunk.h
+    include/public/deephaven/client/chunk/chunk_filler.h
+    include/public/deephaven/client/chunk/chunk_maker.h
+    include/public/deephaven/client/column/column_source.h
+    include/public/deephaven/client/container/context.h
+    include/public/deephaven/client/container/row_sequence.h
+    include/public/deephaven/client/table/table.h
+    include/public/deephaven/client/table/unwrapped_table.h
 
     include/public/deephaven/client/immerutil/abstract_flex_vector.h
 
