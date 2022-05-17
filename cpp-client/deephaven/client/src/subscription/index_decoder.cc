@@ -2,8 +2,13 @@
 
 #include <cstdlib>
 #include <memory>
-#include <flatbuffers/vector.h>
 #include "deephaven/flatbuf/Barrage_generated.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/utility/utility.h"
+
+using deephaven::client::container::RowSequence;
+using deephaven::client::container::RowSequenceBuilder;
+using deephaven::client::utility::stringf;
 
 namespace {
 struct Constants {
@@ -27,6 +32,8 @@ public:
 
   DataInput(const void *start, size_t size) : data_(static_cast<const char *>(start)),
       size_(size) {}
+
+  int64_t readValue(int command);
 
   int64_t readLong();
   int32_t readInt();
@@ -64,7 +71,7 @@ std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
 
     switch (command & Constants::CMD_MASK) {
       case Constants::OFFSET: {
-        int64_t value = readValue(in, command);
+        int64_t value = in->readValue(command);
         actualValue = offset + (value < 0 ? -value : value);
         consume(value < 0 ? -actualValue : actualValue);
         offset = actualValue;
@@ -72,7 +79,7 @@ std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
       }
 
       case Constants::SHORT_ARRAY: {
-        int shortCount = (int) readValue(in, command);
+        int shortCount = (int) in->readValue(command);
         for (int ii = 0; ii < shortCount; ++ii) {
           int16_t shortValue = in->readShort();
           actualValue = offset + (shortValue < 0 ? -shortValue : shortValue);
@@ -83,7 +90,7 @@ std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
       }
 
       case Constants::BYTE_ARRAY: {
-        int byteCount = (int) readValue(in, command);
+        int byteCount = (int) in->readValue(command);
         for (int ii = 0; ii < byteCount; ++ii) {
           int8_t byteValue = in->readByte();
           actualValue = offset + (byteValue < 0 ? -byteValue : byteValue);
@@ -106,19 +113,19 @@ std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
   }
 }
 
-int64_t readValue(DataInput *in, int command) {
+int64_t DataInput::readValue(int command) {
   switch (command & Constants::VALUE_MASK) {
     case Constants::LONG_VALUE: {
-      return in->readLong();
+      return readLong();
     }
     case Constants::INT_VALUE: {
-      return in->readInt();
+      return readInt();
     }
     case Constants::SHORT_VALUE: {
-      return in->readShort();
+      return readShort();
     }
     case Constants::BYTE_VALUE: {
-      return in->readByte();
+      return readByte();
     }
     default: {
       throw std::runtime_error(stringf("Bad command: %o", command));
