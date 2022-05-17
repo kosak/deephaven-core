@@ -7,14 +7,14 @@
 
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using io::deephaven::proto::backplane::script::grpc::StartConsoleResponse;
-using deephaven::client::highlevel::impl::TableHandleManagerImpl;
+using deephaven::client::impl::TableHandleManagerImpl;
 using deephaven::client::server::Server;
 using deephaven::client::utility::Executor;
 using deephaven::client::utility::SFCallback;
 using deephaven::client::utility::stringf;
 using deephaven::client::utility::streamf;
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<Server> server,
     std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor) {
@@ -42,4 +42,4 @@ ClientImpl::ClientImpl(Private, std::shared_ptr<TableHandleManagerImpl> &&manage
 
 ClientImpl::~ClientImpl() = default;
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

@@ -4,10 +4,7 @@
 #include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/executor.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
+namespace deephaven::client::impl {
 class TableHandleImpl;
 
 class TableHandleManagerImpl {
@@ -58,7 +55,4 @@ private:
   std::shared_ptr<Executor> flightExecutor_;
   std::weak_ptr<TableHandleManagerImpl> self_;
 };
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl

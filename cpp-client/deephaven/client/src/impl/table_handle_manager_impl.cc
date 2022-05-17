@@ -12,7 +12,7 @@ using deephaven::client::utility::SFCallback;
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
-namespace deephaven::client::highlevel::impl {
+namespace deephaven::client::impl {
 std::shared_ptr<TableHandleManagerImpl> TableHandleManagerImpl::create(Ticket consoleId,
     std::shared_ptr<Server> server, std::shared_ptr<Executor> executor,
     std::shared_ptr<Executor> flightExecutor) {
@@ -57,4 +57,4 @@ TableHandleManagerImpl::newTicket() const {
   auto th = TableHandleImpl::create(self_.lock(), std::move(ticket), std::move(cb));
   return std::make_tuple(std::move(th), std::move(fd));
 }
-}  // namespace deephaven::client::highlevel::impl
+}  // namespace deephaven::client::impl

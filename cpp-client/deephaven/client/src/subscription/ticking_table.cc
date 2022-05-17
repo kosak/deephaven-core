@@ -1,28 +1,29 @@
-#include "deephaven/client/highlevel/table/ticking_table.h"
+#include "deephaven/client/subscription/ticking_table.h"
 
-#include "deephaven/client/highlevel/chunk/chunk.h"
-#include "deephaven/client/highlevel/container/row_sequence.h"
-#include "deephaven/client/highlevel/column/column_source.h"
-#include "deephaven/client/highlevel/immerutil/abstract_flex_vector.h"
+#include <map>
+#include <optional>
+#include <utility>
+
+#include "deephaven/client/chunk/chunk.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/column/column_source.h"
+#include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/utility/utility.h"
 #include "immer/flex_vector.hpp"
 #include "immer/flex_vector_transient.hpp"
 
-#include <optional>
-#include <utility>
-
 #include "deephaven/client/utility/utility.h"
 
-using deephaven::client::highlevel::chunk::LongChunk;
-using deephaven::client::highlevel::column::ColumnSource;
-using deephaven::client::highlevel::container::RowSequence;
-using deephaven::client::highlevel::container::RowSequenceIterator;
-using deephaven::client::highlevel::immerutil::AbstractFlexVectorBase;
+using deephaven::client::chunk::LongChunk;
+using deephaven::client::column::ColumnSource;
+using deephaven::client::container::RowSequence;
+using deephaven::client::container::RowSequenceIterator;
+using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
-namespace deephaven::client::highlevel::table {
+namespace deephaven::client::subscription {
 namespace {
 void mapShifter(int64_t start, int64_t endInclusive, int64_t dest, std::map<int64_t, int64_t> *zm);
 void applyShiftData(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
@@ -37,6 +38,9 @@ public:
   ~MyRowSequence() final = default;
   std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
   std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
+
+  void forEachChunk(const std::function<void(int64_t firstKey, int64_t lastKey)> &f) const final;
+
   size_t size() const final {
     return size_;
   }
@@ -67,13 +71,16 @@ private:
 };
 }  // namespace
 
-std::shared_ptr<TickingTable> TickingTable::create(std::vector<std::shared_ptr<ColumnSource>> columns) {
+std::shared_ptr<TickingTable>
+TickingTable::create(std::vector<std::shared_ptr<ColumnSource>> columns) {
   return std::make_shared<TickingTable>(Private(), std::move(columns));
 }
+
 TickingTable::TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> columns) :
     columns_(std::move(columns)) {
   redirection_ = std::make_shared<std::map<int64_t, int64_t>>();
 }
+
 TickingTable::~TickingTable() = default;
 
 std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) {
@@ -87,7 +94,7 @@ std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) 
       nextRedirectedRow = slotsToReuse_.back();
       slotsToReuse_.pop_back();
     } else {
-      nextRedirectedRow = (int64_t)redirection_->size();
+      nextRedirectedRow = (int64_t) redirection_->size();
     }
     auto result = redirection_->insert(std::make_pair(row, nextRedirectedRow));
     if (!result.second) {
@@ -101,17 +108,19 @@ std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) 
 }
 
 void TickingTable::erase(const RowSequence &removedRows) {
-  auto existingInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
+  auto existingInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(
+      columns_.size());
   auto newInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
 
-  for (const auto &col : columns_) {
+  for (const auto &col: columns_) {
     auto existing = col->getInternals();
     // Easy way to get an empty column of the right type.
     newInternals.push_back(existing->take(0));
     existingInternals.push_back(std::move(existing));
   }
 
-  auto eraseChunk = [this, &existingInternals, &newInternals](const int64_t firstKey, const int64_t lastKey) {
+  auto eraseChunk = [this, &existingInternals, &newInternals](const int64_t firstKey,
+      const int64_t lastKey) {
     auto size = lastKey - firstKey + 1;
     auto beginIndex = rowKeys_.findIndexOf(firstKey);
     auto endIndex = beginIndex + size;
@@ -176,7 +185,7 @@ TickingTable::unwrap(const std::shared_ptr<RowSequence> &rows,
 
   std::vector<std::shared_ptr<ColumnSource>> columns;
   columns.reserve(cols.size());
-  for (auto colIndex : cols) {
+  for (auto colIndex: cols) {
     if (colIndex >= columns_.size()) {
       auto message = stringf("No such columnindex %o", colIndex);
       throw std::runtime_error(message);
@@ -284,8 +293,8 @@ MyRowSequence::MyRowSequence(std::shared_ptr<data_t> data,
     data_t::const_iterator begin, data_t::const_iterator end, size_t size)
     : data_(std::move(data)), begin_(begin), end_(end), size_(size) {}
 
-    std::shared_ptr<RowSequenceIterator>
-    MyRowSequence::getRowSequenceIterator() const {
+std::shared_ptr<RowSequenceIterator>
+MyRowSequence::getRowSequenceIterator() const {
   return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, true);
 }
 
@@ -297,7 +306,8 @@ MyRowSequence::getRowSequenceReverseIterator() const {
 MyRowSequenceIterator::MyRowSequenceIterator(std::shared_ptr<data_t> data,
     data_t::const_iterator begin, data_t::const_iterator end, size_t size, bool forward)
     : data_(std::move(data)), begin_(begin), end_(end), size_(size), forward_(forward) {}
-    MyRowSequenceIterator::~MyRowSequenceIterator() = default;
+
+MyRowSequenceIterator::~MyRowSequenceIterator() = default;
 
 bool MyRowSequenceIterator::tryGetNext(int64_t *result) {
   if (begin_ == end_) {
@@ -318,7 +328,7 @@ std::shared_ptr<RowSequence>
 MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
   // TODO(kosak): iterates whole set. ugh.
   auto remaining = std::distance(begin_, end_);
-  auto sizeToUse = std::min<ssize_t>((ssize_t)size, remaining);
+  auto sizeToUse = std::min<ssize_t>((ssize_t) size, remaining);
   data_t::const_iterator newBegin, newEnd;
   if (forward_) {
     newBegin = begin_;
@@ -333,4 +343,4 @@ MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
   return std::make_shared<MyRowSequence>(data_, newBegin, newEnd, sizeToUse);
 }
 }  // namespace
-}  // namespace deephaven::client::highlevel::table
+}  // namespace deephaven::client::subscription
