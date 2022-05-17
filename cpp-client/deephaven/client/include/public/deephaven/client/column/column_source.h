@@ -27,6 +27,7 @@ protected:
 
 public:
   virtual ~ColumnSource();
+
   virtual std::shared_ptr<ColumnSourceContext> createContext(size_t chunkSize) const = 0;
   virtual void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const = 0;
   virtual void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size, Chunk *dest) const = 0;
@@ -36,6 +37,8 @@ public:
 
 class MutableColumnSource : public ColumnSource {
 public:
+  ~MutableColumnSource() override;
+
   virtual void fillFromChunk(Context *context, const Chunk &src, const RowSequence &rows) = 0;
   virtual void fillFromChunkUnordered(Context *context, const Chunk &src, const LongChunk &rowKeys, size_t size) = 0;
 };
@@ -44,14 +47,17 @@ public:
 
 class IntColumnSource : public MutableColumnSource {
 public:
+  ~IntColumnSource() override;
 };
 
 class LongColumnSource : public MutableColumnSource {
 public:
+  ~LongColumnSource() override;
 };
 
 class DoubleColumnSource : public MutableColumnSource {
 public:
+  ~DoubleColumnSource() override;
 };
 
 class ImmerColumnSourceBase : public MutableColumnSource {

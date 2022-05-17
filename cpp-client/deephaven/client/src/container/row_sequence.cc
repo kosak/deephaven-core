@@ -13,6 +13,9 @@ public:
   ~MyRowSequence() final = default;
   std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
   std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
+
+  void forEachChunk(const std::function<void(int64_t firstKey, int64_t lastKey)> &f) const final;
+
   size_t size() const final {
     return size_;
   }
@@ -104,6 +107,11 @@ std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() con
 
 std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
   return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, false);
+}
+
+void MyRowSequence::forEachChunk(const std::function<void(int64_t firstKey,
+    int64_t lastKey)> &f) const {
+  throw std::runtime_error("TODO(kosak): forEachChunk");
 }
 
 MyRowSequenceIterator::MyRowSequenceIterator(

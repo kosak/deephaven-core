@@ -1,4 +1,4 @@
-#include "deephaven/client/highlevel/table/table.h"
+#include "deephaven/client/table/table.h"
 
-namespace deephaven::client::highlevel::sad {
-}  // namespace deephaven::client::highlevel::sad
+namespace deephaven::client::table {
+}  // namespace deephaven::client::table

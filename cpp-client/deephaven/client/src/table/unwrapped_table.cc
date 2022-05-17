@@ -1,12 +1,12 @@
-#include "deephaven/client/highlevel/table/unwrapped_table.h"
+#include "deephaven/client/table/unwrapped_table.h"
 
 #include <utility>
 #include "deephaven/client/utility/utility.h"
 
-using deephaven::client::highlevel::chunk::LongChunk;
-using deephaven::client::highlevel::column::ColumnSource;
+using deephaven::client::chunk::LongChunk;
+using deephaven::client::column::ColumnSource;
 
-namespace deephaven::client::highlevel::table {
+namespace deephaven::client::table {
 std::shared_ptr<UnwrappedTable> UnwrappedTable::create(std::shared_ptr<LongChunk> rowKeys,
     size_t numRows, std::vector<std::shared_ptr<ColumnSource>> columns) {
   return std::make_shared<UnwrappedTable>(Private(), std::move(rowKeys), numRows, std::move(columns));

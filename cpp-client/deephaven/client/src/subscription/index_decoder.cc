@@ -1,3 +1,11 @@
+#include "deephaven/client/subscription/index_decoder.h"
+
+#include <cstdlib>
+#include <memory>
+#include <flatbuffers/vector.h>
+#include "deephaven/flatbuf/Barrage_generated.h"
+
+namespace {
 struct Constants {
   static constexpr const int8_t SHORT_VALUE = 1;
   static constexpr const int8_t INT_VALUE = 2;
@@ -15,8 +23,11 @@ struct Constants {
 
 class DataInput {
 public:
-  explicit DataInput(const flatbuffers::Vector<int8_t> &vec) : DataInput(vec.data(), vec.size()) {}
-  DataInput(const void *start, size_t size) : data_(static_cast<const char*>(start)), size_(size) {}
+  explicit DataInput(const flatbuffers::Vector <int8_t> &vec) : DataInput(vec.data(), vec.size()) {}
+
+  DataInput(const void *start, size_t size) : data_(static_cast<const char *>(start)),
+      size_(size) {}
+
   int64_t readLong();
   int32_t readInt();
   int16_t readShort();
@@ -26,6 +37,7 @@ private:
   const char *data_ = nullptr;
   size_t size_ = 0;
 };
+}  // namespace
 
 std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
   RowSequenceBuilder builder;
