@@ -25,6 +25,7 @@
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/subscription/subscribe_thread.h"
 #include "deephaven/client/utility/callbacks.h"
+#include "deephaven/client/utility/misc.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
 
@@ -53,6 +54,7 @@ using deephaven::client::container::RowSequenceIterator;
 using deephaven::client::table::Table;
 using deephaven::client::subscription::startSubscribeThread;
 using deephaven::client::utility::Callback;
+using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::separatedList;
@@ -70,7 +72,7 @@ using io::deephaven::barrage::flatbuf::CreateBarrageMessageWrapper;
 using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionOptions;
 using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
 
 const io::deephaven::barrage::flatbuf::BarrageMessageWrapper *GetBarrageMessageWrapper(const void *buf) {
@@ -354,7 +356,7 @@ std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dat
 constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
 
 ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
-    std::shared_ptr<internal::ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
+    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
     fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
 
 struct MyVisitor final : public arrow::TypeVisitor {
@@ -391,7 +393,7 @@ void TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
   // parsing of all the replies) is done on a newly-created thread dedicated to that job.
   auto colDefs = lazyState_->getColumnDefinitions();
   std::vector<int8_t> ticketBytes(ticket_.ticket().begin(), ticket_.ticket().end());
-  auto cancelCallback = startSubscribeThread(managerImpl_->server().get(), colDefs, ticket_,
+  auto cancelCallback = startSubscribeThread(managerImpl_->server().get(), *colDefs, ticket_,
       std::move(callback));
 
   auto something = allocateMyOwnCookie();
@@ -636,9 +638,6 @@ void LazyState::getColumnDefinitionsAsync(
   ticketFuture_.invoke(std::move(innerCb));
 }
 
-ColumnDefinitions::ColumnDefinitions(vec_t vec, map_t map) : vec_(std::move(vec)),
-    map_(std::move(map)) {}
-ColumnDefinitions::~ColumnDefinitions() = default;
 }  // namespace internal
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

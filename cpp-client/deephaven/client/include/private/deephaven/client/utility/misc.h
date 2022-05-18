@@ -1,12 +1,16 @@
 #pragma once
 
-namespace deephaven::client::utility {
+#include <map>
+#include <memory>
+#include <vector>
+#include <arrow/type.h>
 
+namespace deephaven::client::utility {
 class ColumnDefinitions {
 public:
-  typedef std::map <std::string, std::shared_ptr<arrow::DataType>> map_t;
-  typedef std::vector <std::pair<std::string, std::shared_ptr < arrow::DataType>>>
-  vec_t;
+  typedef std::map<std::string, std::shared_ptr<arrow::DataType>> map_t;
+  typedef std::vector<std::pair<std::string, std::shared_ptr<arrow::DataType>>>
+      vec_t;
 
   ColumnDefinitions(vec_t vec, map_t map);
   ~ColumnDefinitions();
@@ -20,4 +24,3 @@ private:
   map_t map_;
 };
 }  // namespace deephaven::client::utility
-

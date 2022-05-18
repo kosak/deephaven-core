@@ -198,7 +198,7 @@ private:
   std::shared_ptr<TableHandleManagerImpl> managerImpl_;
   Ticket ticket_;
   std::shared_ptr<internal::LazyState> lazyState_;
-  std::weak_ptr<TableHandleImpl> weakSelf_;
+  std::map<MyOwnCookie, std::shared_ptr<CancelCallbackWhatever>> subscriptions_;
 };
 }  // namespace impl
 }  // namespace deephaven::client
