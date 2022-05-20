@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 
+namespace deephaven::client::subscription {
 namespace {
 void processAddBatches(
     int64_t numAdds,
@@ -18,20 +19,32 @@ void processModBatches(int64_t numMods,
     TickingTable *table,
     std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
     const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
+}  // namespace
 
-void ProcessingThread::runForever(const std::shared_ptr<ProcessingThread> &self) {
-  std::cerr << "ProcessingThread is starting.\n";
-  std::exception_ptr eptr;
-  try {
-    runForeverHelper();
-  } catch (...) {
-    eptr = std::current_exception();
-    callback_->onFailure(eptr);
-  }
-  std::cerr << "ProcessingThread is exiting.\n";
+std::shared_ptr<UpdateProcessor> UpdateProcessor::startThread(
+    std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
+    std::shared_ptr<ColumnDefinitions> colDefs,
+    std::shared_ptr<TickingCallback> callback) {
+  auto result = std::make_shared<UpdateProcessor>(std::move(fsr),
+      std::move(colDefs), std::move(callback));
+  std::thread t(&UpdateProcessor::runForever, result);
+  t.detach();
+  return result;
 }
 
-void ProcessingThread::runForeverHelper() {
+void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
+  std::cerr << "UpdateProcessor is starting.\n";
+  std::exception_ptr eptr;
+  try {
+    self->runForeverHelper();
+  } catch (...) {
+    eptr = std::current_exception();
+    self->callback_->onFailure(eptr);
+  }
+  std::cerr << "UpdateProcessor is exiting.\n";
+}
+
+void UpdateProcessor::runForeverHelper() {
   const auto &vec = colDefs_->vec();
 
   // This is our private concept of "TickingTable" which keeps track of a Deephaven key to index
@@ -269,3 +282,4 @@ void processModBatches(int64_t numMods,
 }
 
 }  // namespace
+}  // namespace deephaven::client::subscription

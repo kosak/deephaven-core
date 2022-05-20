@@ -3,12 +3,14 @@
 #include <flatbuffers/detached_buffer.h>
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/server/server.h"
+#include "deephaven/client/subscription/update_processor.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/executor.h"
 #include "deephaven/client/utility/misc.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
 
 using deephaven::client::TickingCallback;
+using deephaven::client::subscription::UpdateProcessor;
 using deephaven::client::utility::Callback;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::Executor;
@@ -43,6 +45,7 @@ private:
 class OwningBuffer : public arrow::Buffer {
 public:
   explicit OwningBuffer(flatbuffers::DetachedBuffer buffer);
+  ~OwningBuffer();
 
 private:
   flatbuffers::DetachedBuffer buffer_;
@@ -57,14 +60,13 @@ std::shared_ptr<SubscriptionHandle> startSubscribeThread(
     std::shared_ptr<ColumnDefinitions> columnDefinitions,
     const Ticket &ticket,
     std::shared_ptr<TickingCallback> callback) {
-  std::promise<void> promise;
+  std::promise<std::shared_ptr<SubscriptionHandle>> promise;
   auto future = promise.get_future();
   std::vector<int8_t> ticketBytes(ticket.ticket().begin(), ticket.ticket().end());
   auto ss = std::make_shared<SubscribeState>(std::move(server), std::move(ticketBytes),
       std::move(columnDefinitions), std::move(promise), std::move(callback));
   flightExecutor->invoke(std::move(ss));
-  future.wait();
-  return zamboniTime;
+  return future.get();
 }
 
 namespace {
@@ -76,9 +78,9 @@ SubscribeState::SubscribeState(std::shared_ptr<Server> server, std::vector<int8_
 
 void SubscribeState::invoke() {
   try {
-    invokeHelper();
+    auto handle = invokeHelper();
     // If you made it this far, then you have been successful!
-    promise_.set_value();
+    promise_.set_value(std::move(handle));
   } catch (const std::exception &e) {
     promise_.set_exception(std::make_exception_ptr(e));
   }
@@ -128,10 +130,9 @@ void SubscribeState::invokeHelper() {
   auto buffer = std::make_shared<OwningBuffer>(std::move(wrapperBuffer));
   okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->WriteMetadata(std::move(buffer))));
 
-  auto threadNubbin = std::make_shared<ThreadNubbin>(std::move(fsr),
-      std::move(colDefs_), std::move(callback_));
-  std::thread t(&ThreadNubbin::runForever, std::move(threadNubbin));
-  t.detach();
+  // Run forever (until error or cancellation)
+  auto processor = UpdateProcessor::startThread(std::move(fsr), std::move(colDefs_), std::move(callback_));
+  return zamboniWrap(std::move(processor));
 }
 
 OwningBuffer::OwningBuffer(flatbuffers::DetachedBuffer buffer) :

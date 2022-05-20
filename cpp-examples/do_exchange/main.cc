@@ -255,10 +255,10 @@ void makeModifiesHappen(const TableHandleManager &manager) {
   tt1.bindToVariable("showme");
 
   auto myCallback = std::make_shared<Callback>();
-  tt1.subscribe(myCallback);
+  auto handle = tt1.subscribe(myCallback);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
-  tt1.unsubscribe(std::move(myCallback));
+  tt1.unsubscribe(std::move(handle));
   std::this_thread::sleep_for(std::chrono::seconds(5));
   std::cerr << "exiting\n";
 }

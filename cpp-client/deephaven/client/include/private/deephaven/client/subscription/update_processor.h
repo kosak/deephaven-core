@@ -2,26 +2,31 @@
 
 #include <memory>
 #include <arrow/flight/client.h>
+#include "deephaven/client/ticking.h"
+#include "deephaven/client/utility/misc.h"
 
 namespace deephaven::client::subscription {
 class UpdateProcessor {
-public:
-  UpdateProcessor(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
-  std::shared_ptr <internal::ColumnDefinitions> colDefs,
-      std::shared_ptr<TickingCallback>
-  callback);
+  typedef deephaven::client::utility::ColumnDefinitions ColumnDefinitions;
 
-  static void runForever(const std::shared_ptr <ThreadNubbin> &self);
+  struct Private {};
+public:
+  static std::shared_ptr<UpdateProcessor> startThread(
+      std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
+      std::shared_ptr<ColumnDefinitions> colDefs,
+      std::shared_ptr<TickingCallback> callback);
+
+  UpdateProcessor(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
+    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback);
 
 private:
+  static void runForever(const std::shared_ptr <UpdateProcessor> &self);
   void runForeverHelper();
   void runForeverHelperImpl();
 
 public:
   std::unique_ptr <arrow::flight::FlightStreamReader> fsr_;
-  std::shared_ptr <internal::ColumnDefinitions> colDefs_;
+  std::shared_ptr <ColumnDefinitions> colDefs_;
   std::shared_ptr <TickingCallback> callback_;
 };
-
-
 }  // namespace deephaven::client::subscription
