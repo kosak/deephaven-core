@@ -355,9 +355,9 @@ std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dat
 
 constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
 
-ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
-    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
-    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
+//ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
+//    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
+//    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
 
 struct MyVisitor final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::Int32Type &type) final {
@@ -396,22 +396,23 @@ std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<T
   auto handle = startSubscribeThread(managerImpl_->server().get(), *colDefs, ticket_,
       std::move(callback));
 
-  subscriptions_[handle->id()] = handle;
+  subscriptions_.insert(handle);
   return handle;
 
-  std::promise<void> promise;
-  auto future = promise.get_future();
-  auto innerCb = std::make_shared<SubscribeNubbin>(managerImpl_->server(), std::move(ticketBytes),
-      std::move(coldefs), std::move(promise), std::move(callback));
-  managerImpl_->flightExecutor()->invoke(std::move(innerCb));
-  future.wait();
+//  std::promise<void> promise;
+//  auto future = promise.get_future();
+//  auto innerCb = std::make_shared<SubscribeNubbin>(managerImpl_->server(), std::move(ticketBytes),
+//      std::move(coldefs), std::move(promise), std::move(callback));
+//  managerImpl_->flightExecutor()->invoke(std::move(innerCb));
+//  future.wait();
 }
 
 void TableHandleImpl::unsubscribe(std::shared_ptr<SubscriptionHandle> handle) {
-  if (subscriptions_.erase(handle) == 0) {
+  auto node = subscriptions_.extract(handle);
+  if (node.empty()) {
     return;
   }
-  handle->cancel();
+  node.value()->cancel();
 //  std::cerr << "TODO(kosak) -- unsubscribe\n";
 //  std::cerr << "I'm kind of worried about this\n";
 //  SubscribeNubbin::sadClown_->fsr_->Cancel();
