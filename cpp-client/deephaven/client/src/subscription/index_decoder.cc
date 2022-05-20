@@ -10,6 +10,7 @@ using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::utility::stringf;
 
+namespace deephaven::client::subscription {
 namespace {
 struct Constants {
   static constexpr const int8_t SHORT_VALUE = 1;
@@ -25,28 +26,9 @@ struct Constants {
   static constexpr const int8_t END = 32;
   static constexpr const int8_t CMD_MASK = 0x78;
 };
-
-class DataInput {
-public:
-  explicit DataInput(const flatbuffers::Vector <int8_t> &vec) : DataInput(vec.data(), vec.size()) {}
-
-  DataInput(const void *start, size_t size) : data_(static_cast<const char *>(start)),
-      size_(size) {}
-
-  int64_t readValue(int command);
-
-  int64_t readLong();
-  int32_t readInt();
-  int16_t readShort();
-  int8_t readByte();
-
-private:
-  const char *data_ = nullptr;
-  size_t size_ = 0;
-};
 }  // namespace
 
-std::shared_ptr<RowSequence> readExternalCompressedDelta(DataInput *in) {
+std::shared_ptr<RowSequence> IndexDecoder::readExternalCompressedDelta(DataInput *in) {
   RowSequenceBuilder builder;
 
   int64_t offset = 0;
@@ -160,3 +142,4 @@ int64_t DataInput::readLong() {
   data_ += sizeof(result);
   return result;
 }
+}  // namespace deephaven::client::subscription

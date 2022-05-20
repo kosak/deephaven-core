@@ -8,6 +8,7 @@
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
+using deephaven::client::utility::stringf;
 
 namespace deephaven::client::subscription {
 namespace {
