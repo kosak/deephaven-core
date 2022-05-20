@@ -1,11 +1,12 @@
 #pragma once
 
 #include <memory>
-#include <map>
+#include <set>
 #include <string>
 #include "deephaven/client/client.h"
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/server/server.h"
+#include "deephaven/client/subscription/subscription_handle.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/cbfuture.h"
 #include "deephaven/client/utility/executor.h"
@@ -171,8 +172,8 @@ public:
 
   void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<>> callback);
 
-  void subscribe(std::shared_ptr<TickingCallback> callback);
-  void unsubscribe(std::shared_ptr<TickingCallback> callback);
+  std::shared_ptr<SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback);
+  void unsubscribe(std::shared_ptr<SubscriptionHandle> handle);
 
   // For debugging
   void observe();
@@ -198,7 +199,7 @@ private:
   std::shared_ptr<TableHandleManagerImpl> managerImpl_;
   Ticket ticket_;
   std::shared_ptr<internal::LazyState> lazyState_;
-  std::map<MyOwnCookie, std::shared_ptr<CancelCallbackWhatever>> subscriptions_;
+  std::set<std::shared_ptr<SubscriptionHandle>> subscriptions_;
 };
 }  // namespace impl
 }  // namespace deephaven::client

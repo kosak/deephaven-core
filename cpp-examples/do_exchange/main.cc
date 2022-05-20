@@ -45,25 +45,12 @@ using deephaven::client::utility::valueOrThrow;
 using std::size_t;
 
 namespace {
+void doit(const TableHandleManager &manager);
 void millionRows(const TableHandleManager &manager);
 }  // namespace
 
 int main() {
   const char *server = "localhost:10000";
-
-  immer::flex_vector<int> v;
-  for (int i = 0; i < 1000; ++i) {
-    v = std::move(v).push_back(i);
-  }
-  auto b = v.begin() + 500;
-  auto e = v.begin() + 550;
-
-  auto doit = [](const int *b, const int *e) {
-    std::cerr << "processing a chunk of size " << e - b << '\n';
-  };
-  immer::for_each_chunk(b, e, doit);
-  v.take()
-
   try {
     auto client = Client::connect(server);
     auto manager = client.getManager();
@@ -294,10 +281,10 @@ void millionRows(const TableHandleManager &manager) {
   table.bindToVariable("showme");
 
   auto myCallback = std::make_shared<Callback>();
-  table.subscribe(myCallback);
+  auto handle = table.subscribe(myCallback);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
-  table.unsubscribe(std::move(myCallback));
+  table.unsubscribe(handle);
   std::this_thread::sleep_for(std::chrono::seconds(5));
   std::cerr << "exiting\n";
 }

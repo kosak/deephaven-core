@@ -120,7 +120,7 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    )
+    include/private/deephaven/client/subscription/subscription_handle.h)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config

@@ -24,6 +24,7 @@
 #include "deephaven/client/table/table.h"
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/subscription/subscribe_thread.h"
+#include "deephaven/client/subscription/subscription_handle.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/misc.h"
 #include "deephaven/client/utility/utility.h"
@@ -53,6 +54,7 @@ using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::container::RowSequenceIterator;
 using deephaven::client::table::Table;
 using deephaven::client::subscription::startSubscribeThread;
+using deephaven::client::subscription::SubscriptionHandle;
 using deephaven::client::utility::Callback;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
@@ -91,10 +93,8 @@ std::shared_ptr<internal::LazyState> TableHandleImpl::createSatisfiedCallback(
 
 std::shared_ptr<TableHandleImpl> TableHandleImpl::create(std::shared_ptr<TableHandleManagerImpl> thm,
     Ticket ticket, std::shared_ptr<internal::LazyState> etcCallback) {
-  auto result = std::make_shared<TableHandleImpl>(Private(), std::move(thm), std::move(ticket),
+  return std::make_shared<TableHandleImpl>(Private(), std::move(thm), std::move(ticket),
       std::move(etcCallback));
-  result->weakSelf_ = result;
-  return result;
 }
 
 TableHandleImpl::TableHandleImpl(Private, std::shared_ptr<TableHandleManagerImpl> &&thm,
@@ -385,7 +385,7 @@ std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dat
 }
 } // namespace
 
-void TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
+std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
   // On the flight executor thread, we invoke DoExchange (waiting for a successful response).
   // We wait for that response here. That makes the first part of this call synchronous. If there
   // is an error in the DoExchange invocation, the caller will get an exception here. The
@@ -393,12 +393,11 @@ void TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
   // parsing of all the replies) is done on a newly-created thread dedicated to that job.
   auto colDefs = lazyState_->getColumnDefinitions();
   std::vector<int8_t> ticketBytes(ticket_.ticket().begin(), ticket_.ticket().end());
-  auto cancelCallback = startSubscribeThread(managerImpl_->server().get(), *colDefs, ticket_,
+  auto handle = startSubscribeThread(managerImpl_->server().get(), *colDefs, ticket_,
       std::move(callback));
 
-  auto something = allocateMyOwnCookie();
-  subscriptions_[something] = std::move(cancelCallback);
-  return something;
+  subscriptions_[handle->id()] = handle;
+  return handle;
 
   std::promise<void> promise;
   auto future = promise.get_future();
@@ -408,12 +407,11 @@ void TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
   future.wait();
 }
 
-void TableHandleImpl::unsubscribe(MyOwnCookie cookie) {
-  auto node = subscriptions_.remove(cookie);
-  if (node.empty()) {
+void TableHandleImpl::unsubscribe(std::shared_ptr<SubscriptionHandle> handle) {
+  if (subscriptions_.erase(handle) == 0) {
     return;
   }
-  node->second.cancel();
+  handle->cancel();
 //  std::cerr << "TODO(kosak) -- unsubscribe\n";
 //  std::cerr << "I'm kind of worried about this\n";
 //  SubscribeNubbin::sadClown_->fsr_->Cancel();

@@ -2,13 +2,14 @@
 
 #include <arrow/array.h>
 #include <arrow/scalar.h>
+#include "deephaven/client/columns.h"
 #include "deephaven/client/impl/columns_impl.h"
 #include "deephaven/client/impl/boolean_expression_impl.h"
 #include "deephaven/client/impl/aggregate_impl.h"
 #include "deephaven/client/impl/client_impl.h"
 #include "deephaven/client/impl/table_handle_impl.h"
 #include "deephaven/client/impl/table_handle_manager_impl.h"
-#include "deephaven/client/columns.h"
+#include "deephaven/client/subscription/subscription_handle.h"
 #include "deephaven/client/utility/utility.h"
 
 using grpc::Channel;
@@ -516,11 +517,12 @@ std::shared_ptr<arrow::flight::FlightStreamReader> TableHandle::getFlightStreamR
   return getManager().createFlightWrapper().getFlightStreamReader(*this);
 }
 
-void TableHandle::subscribe(std::shared_ptr<TickingCallback> callback) {
-  impl_->subscribe(std::move(callback));
+std::shared_ptr<impl::SubscriptionHandle> TableHandle::subscribe(
+    std::shared_ptr<TickingCallback> callback) {
+  return impl_->subscribe(std::move(callback));
 }
 
-void TableHandle::unsubscribe(std::shared_ptr<TickingCallback> callback) {
+void TableHandle::unsubscribe(std::shared_ptr<impl::SubscriptionHandle> callback) {
   impl_->unsubscribe(std::move(callback));
 }
 
