@@ -2,6 +2,12 @@
 
 #include <iostream>
 #include <memory>
+#include "deephaven/client/column/column_source.h"
+#include "deephaven/client/utility/utility.h"
+
+using deephaven::client::column::MutableColumnSource;
+using deephaven::client::utility::makeReservedVector;
+using deephaven::client::utility::okOrThrow;
 
 namespace deephaven::client::subscription {
 namespace {
@@ -280,6 +286,5 @@ void processModBatches(int64_t numMods,
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
   }
 }
-
 }  // namespace
 }  // namespace deephaven::client::subscription
