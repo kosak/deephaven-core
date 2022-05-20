@@ -26,18 +26,19 @@ class SubscribeState final : public Callback<> {
   typedef deephaven::client::server::Server Server;
 
 public:
-  SubscribeState(std::shared_ptr <Server> server, std::vector <int8_t> ticketBytes,
-      std::shared_ptr <ColumnDefinitions> colDefs,
-      std::promise<void> promise, std::shared_ptr <TickingCallback> callback);
+  SubscribeState(std::shared_ptr<Server> server, std::vector<int8_t> ticketBytes,
+      std::shared_ptr<ColumnDefinitions> colDefs,
+      std::promise<std::shared_ptr<SubscriptionHandle>> promise,
+      std::shared_ptr <TickingCallback> callback);
   void invoke() final;
 
 private:
-  void invokeHelper();
+  std::shared_ptr<SubscriptionHandle> invokeHelper();
 
   std::shared_ptr<Server> server_;
   std::vector<int8_t> ticketBytes_;
   std::shared_ptr<ColumnDefinitions> colDefs_;
-  std::promise<void> promise_;
+  std::promise<std::shared_ptr<SubscriptionHandle>> promise_;
   std::shared_ptr<TickingCallback> callback_;
 };
 
@@ -71,7 +72,7 @@ std::shared_ptr<SubscriptionHandle> startSubscribeThread(
 
 namespace {
 SubscribeState::SubscribeState(std::shared_ptr<Server> server, std::vector<int8_t> ticketBytes,
-    std::shared_ptr<ColumnDefinitions> colDefs, std::promise<void> promise,
+    std::shared_ptr<ColumnDefinitions> colDefs, std::promise<std::shared_ptr<SubscriptionHandle>> promise,
     std::shared_ptr<TickingCallback> callback) :
     server_(std::move(server)), ticketBytes_(std::move(ticketBytes)), colDefs_(std::move(colDefs)),
     promise_(std::move(promise)), callback_(std::move(callback)) {}
@@ -86,7 +87,21 @@ void SubscribeState::invoke() {
   }
 }
 
-void SubscribeState::invokeHelper() {
+namespace {
+// Wrapper class that forwards the "cancel" call from SubscriptionHandle to the UpdateProcessor
+struct CancelWrapper final : SubscriptionHandle {
+  explicit CancelWrapper(std::shared_ptr<UpdateProcessor> updateProcessor) :
+      updateProcessor_(std::move(updateProcessor)) {}
+
+  void cancel() final {
+    updateProcessor_->cancel();
+  }
+
+  std::shared_ptr<UpdateProcessor> updateProcessor_;
+};
+}  // namespace
+
+std::shared_ptr<SubscriptionHandle> SubscribeState::invokeHelper() {
   arrow::flight::FlightCallOptions fco;
   fco.headers.push_back(server_->makeBlessing());
   auto *client = server_->flightClient();
@@ -131,8 +146,9 @@ void SubscribeState::invokeHelper() {
   okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->WriteMetadata(std::move(buffer))));
 
   // Run forever (until error or cancellation)
-  auto processor = UpdateProcessor::startThread(std::move(fsr), std::move(colDefs_), std::move(callback_));
-  return zamboniWrap(std::move(processor));
+  auto processor = UpdateProcessor::startThread(std::move(fsr), std::move(colDefs_),
+      std::move(callback_));
+  return std::make_shared<CancelWrapper>(std::move(processor));
 }
 
 OwningBuffer::OwningBuffer(flatbuffers::DetachedBuffer buffer) :

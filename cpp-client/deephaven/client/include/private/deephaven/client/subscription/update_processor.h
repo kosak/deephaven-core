@@ -19,6 +19,8 @@ public:
   UpdateProcessor(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
     std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback);
 
+  void cancel();
+
 private:
   static void runForever(const std::shared_ptr <UpdateProcessor> &self);
   void runForeverHelper();
