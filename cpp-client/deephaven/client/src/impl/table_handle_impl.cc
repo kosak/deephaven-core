@@ -392,7 +392,6 @@ std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<T
   // remainder of the interaction (namely, the sending of a BarrageSubscriptionRequest and the
   // parsing of all the replies) is done on a newly-created thread dedicated to that job.
   auto colDefs = lazyState_->getColumnDefinitions();
-  std::vector<int8_t> ticketBytes(ticket_.ticket().begin(), ticket_.ticket().end());
   auto handle = startSubscribeThread(managerImpl_->server().get(), *colDefs, ticket_,
       std::move(callback));
 

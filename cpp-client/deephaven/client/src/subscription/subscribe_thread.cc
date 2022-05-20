@@ -1,12 +1,19 @@
+#include "deephaven/client/subscription/subscribe_thread.h"
+
+#include <flatbuffers/detached_buffer.h>
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/server/server.h"
-#include "deephaven/client/subscription/subscribe_thread.h"
 #include "deephaven/client/utility/callbacks.h"
+#include "deephaven/client/utility/executor.h"
 #include "deephaven/client/utility/misc.h"
+#include "deephaven/flatbuf/Barrage_generated.h"
 
 using deephaven::client::TickingCallback;
 using deephaven::client::utility::Callback;
 using deephaven::client::utility::ColumnDefinitions;
+using deephaven::client::utility::Executor;
+using deephaven::client::server::Server;
+using io::deephaven::proto::backplane::grpc::Ticket;
 
 namespace {
 class SubscribeState final : public Callback<> {
@@ -21,11 +28,11 @@ public:
 private:
   void invokeHelper();
 
-  std::shared_ptr <Server> server_;
-  std::vector <int8_t> ticketBytes_;
-  std::shared_ptr <ColumnDefinitions> colDefs_;
+  std::shared_ptr<Server> server_;
+  std::vector<int8_t> ticketBytes_;
+  std::shared_ptr<ColumnDefinitions> colDefs_;
   std::promise<void> promise_;
-  std::shared_ptr <TickingCallback> callback_;
+  std::shared_ptr<TickingCallback> callback_;
 };
 
 // A simple extension to arrow::Buffer that owns its DetachedBuffer storage
@@ -40,15 +47,17 @@ private:
 
 namespace deephaven::client::subscription {
 std::shared_ptr<SubscriptionHandle> startSubscribeThread(
-    deephaven::client::server::Server *server,
-    const deephaven::client::utility::ColumnDefinitions &columnDefinitions,
-    const io::deephaven::proto::backplane::grpc::Ticket &ticket,
+    std::shared_ptr<Server> server,
+    Executor *flightExecutor,
+    std::shared_ptr<ColumnDefinitions> columnDefinitions,
+    const Ticket &ticket,
     std::shared_ptr<TickingCallback> callback) {
   std::promise<void> promise;
   auto future = promise.get_future();
-  auto innerCb = std::make_shared<SubscribeNubbin>(managerImpl_->server(), std::move(ticketBytes),
-      std::move(coldefs), std::move(promise), std::move(callback));
-  managerImpl_->flightExecutor()->invoke(std::move(innerCb));
+  std::vector<int8_t> ticketBytes(ticket.ticket().begin(), ticket.ticket().end());
+  auto ss = std::make_shared<SubscribeState>(std::move(server), std::move(ticketBytes),
+      std::move(columnDefinitions), std::move(promise), std::move(callback));
+  flightExecutor->invoke(std::move(ss));
   future.wait();
 }
 }  // namespace deephaven::client::subscription
