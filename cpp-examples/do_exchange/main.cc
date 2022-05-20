@@ -5,35 +5,36 @@
 #include <set>
 #include <thread>
 
-#include "deephaven/client/highlevel/client.h"
-#include "deephaven/client/highlevel/ticking.h"
-#include "deephaven/client/highlevel/chunk/chunk_maker.h"
-#include "deephaven/client/highlevel/chunk/chunk.h"
-#include "deephaven/client/highlevel/container/context.h"
-#include "deephaven/client/highlevel/container/row_sequence.h"
-#include "deephaven/client/highlevel/table/table.h"
+#include "deephaven/client/client.h"
+#include "deephaven/client/ticking.h"
+#include "deephaven/client/chunk/chunk_maker.h"
+#include "deephaven/client/chunk/chunk.h"
+#include "deephaven/client/container/context.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/table/table.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/utility.h"
 #include "immer/flex_vector.hpp"
 #include "immer/algorithm.hpp"
 
-using deephaven::client::highlevel::Client;
-using deephaven::client::highlevel::NumCol;
-using deephaven::client::highlevel::SortPair;
-using deephaven::client::highlevel::TableHandle;
-using deephaven::client::highlevel::TableHandleManager;
-using deephaven::client::highlevel::TickingCallback;
-using deephaven::client::highlevel::TickingUpdate;
-using deephaven::client::highlevel::chunk::ChunkMaker;
-using deephaven::client::highlevel::chunk::Chunk;
-using deephaven::client::highlevel::chunk::ChunkVisitor;
-using deephaven::client::highlevel::container::Context;
-using deephaven::client::highlevel::container::RowSequence;
-using deephaven::client::highlevel::chunk::DoubleChunk;
-using deephaven::client::highlevel::chunk::IntChunk;
-using deephaven::client::highlevel::chunk::LongChunk;
-using deephaven::client::highlevel::chunk::SizeTChunk;
-using deephaven::client::highlevel::table::Table;
+using deephaven::client::Client;
+using deephaven::client::NumCol;
+using deephaven::client::SortPair;
+using deephaven::client::TableHandle;
+using deephaven::client::TableHandleManager;
+using deephaven::client::TickingCallback;
+using deephaven::client::TickingUpdate;
+using deephaven::client::chunk::ChunkMaker;
+using deephaven::client::chunk::Chunk;
+using deephaven::client::chunk::ChunkVisitor;
+using deephaven::client::container::Context;
+using deephaven::client::container::RowSequence;
+using deephaven::client::chunk::DoubleChunk;
+using deephaven::client::chunk::IntChunk;
+using deephaven::client::chunk::LongChunk;
+using deephaven::client::chunk::SizeTChunk;
+using deephaven::client::table::Table;
+using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::separatedList;
 using deephaven::client::utility::streamf;
@@ -78,7 +79,7 @@ namespace {
 class Callback final : public TickingCallback {
 public:
   void onFailure(std::exception_ptr ep) final;
-  void onTick(const std::shared_ptr<TickingUpdate> &table) final;
+  void onTick(const TickingUpdate &update) final;
 
   bool failed() const { return failed_; }
 
@@ -121,11 +122,15 @@ private:
 
 void dumpTable(std::string_view what, const Table &table, const RowSequence &rows);
 
-void Callback::onTick(const std::shared_ptr<TickingUpdate> &update) {
-  dumpTable("removed", *update->prevTable(), *update->removed());
-  dumpTable("modified-prev", *update->prevTable(), *update->modified());
-  dumpTable("modified-this", *update->thisTable(), *update->modified());
-  dumpTable("added", *update->thisTable(), *update->added());
+void Callback::onTick(const TickingUpdate &update) {
+  dumpTable("removed", *update.beforeRemoves(), *update.removed());
+  for (size_t i = 0; i < update.perColumnModifies().size(); ++i) {
+    auto prev = stringf("Col%d-prev", i);
+    auto curr = stringf("Col%d-curr", i);
+    dumpTable(prev, *update.beforeModifies(), *update.perColumnModifies()[i]);
+    dumpTable(prev, *update.current(), *update.perColumnModifies()[i]);
+  }
+  dumpTable("added", *update.current(), *update.added());
 }
 
 void dumpTable(std::string_view what, const Table &table, const RowSequence &rows) {
@@ -134,7 +139,7 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
 
   auto nrows = table.numRows();
   auto ncols = table.numColumns();
-  auto selectedCols = makeVector<size_t>(ncols);
+  auto selectedCols = makeReservedVector<size_t>(ncols);
 
   for (size_t col = 0; col < ncols; ++col) {
     selectedCols.push_back(col);
@@ -149,8 +154,8 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     auto unwrappedTable = table.unwrap(selectedRows, selectedCols);
     auto rowKeys = unwrappedTable->getUnorderedRowKeys();
 
-    auto contexts = makeVector<std::shared_ptr<Context>>(ncols);
-    auto chunks = makeVector<std::shared_ptr<Chunk>>(ncols);
+    auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
+    auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
 
     for (size_t col = 0; col < ncols; ++col) {
       const auto &c = unwrappedTable->getColumn(col);
