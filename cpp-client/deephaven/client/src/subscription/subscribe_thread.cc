@@ -12,9 +12,13 @@ using deephaven::client::TickingCallback;
 using deephaven::client::utility::Callback;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::Executor;
+using deephaven::client::utility::okOrThrow;
 using deephaven::client::server::Server;
+using io::deephaven::barrage::flatbuf::BarrageMessageType;
+using io::deephaven::barrage::flatbuf::ColumnConversionMode;
 using io::deephaven::proto::backplane::grpc::Ticket;
 
+namespace deephaven::client::subscription {
 namespace {
 class SubscribeState final : public Callback<> {
   typedef deephaven::client::server::Server Server;
@@ -43,9 +47,10 @@ public:
 private:
   flatbuffers::DetachedBuffer buffer_;
 };
+
+constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
 }  // namespace
 
-namespace deephaven::client::subscription {
 std::shared_ptr<SubscriptionHandle> startSubscribeThread(
     std::shared_ptr<Server> server,
     Executor *flightExecutor,
@@ -59,17 +64,15 @@ std::shared_ptr<SubscriptionHandle> startSubscribeThread(
       std::move(columnDefinitions), std::move(promise), std::move(callback));
   flightExecutor->invoke(std::move(ss));
   future.wait();
+  return zamboniTime;
 }
-}  // namespace deephaven::client::subscription
 
 namespace {
 SubscribeState::SubscribeState(std::shared_ptr<Server> server, std::vector<int8_t> ticketBytes,
-    std::shared_ptr<internal::ColumnDefinitions> colDefs, std::promise<void> promise,
+    std::shared_ptr<ColumnDefinitions> colDefs, std::promise<void> promise,
     std::shared_ptr<TickingCallback> callback) :
     server_(std::move(server)), ticketBytes_(std::move(ticketBytes)), colDefs_(std::move(colDefs)),
     promise_(std::move(promise)), callback_(std::move(callback)) {}
-
-
 
 void SubscribeState::invoke() {
   try {
@@ -122,12 +125,11 @@ void SubscribeState::invokeHelper() {
   wrapperBuilder.Finish(messageWrapper);
   auto wrapperBuffer = wrapperBuilder.Release();
 
-  auto buffer = std::make_shared<ZamboniBuffer>(std::move(wrapperBuffer));
+  auto buffer = std::make_shared<OwningBuffer>(std::move(wrapperBuffer));
   okOrThrow(DEEPHAVEN_EXPR_MSG(fsw->WriteMetadata(std::move(buffer))));
 
   auto threadNubbin = std::make_shared<ThreadNubbin>(std::move(fsr),
       std::move(colDefs_), std::move(callback_));
-  sadClown_ = threadNubbin;
   std::thread t(&ThreadNubbin::runForever, std::move(threadNubbin));
   t.detach();
 }
@@ -135,3 +137,4 @@ void SubscribeState::invokeHelper() {
 OwningBuffer::OwningBuffer(flatbuffers::DetachedBuffer buffer) :
     arrow::Buffer(buffer.data(), int64_t(buffer.size())), buffer_(std::move(buffer)) {}
 }  // namespace
+}  // namespace deephaven::client::subscription

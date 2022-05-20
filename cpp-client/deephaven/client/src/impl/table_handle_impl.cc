@@ -353,8 +353,6 @@ std::shared_ptr<TableHandleImpl> TableHandleImpl::asOfJoin(AsOfJoinTablesRequest
 namespace {
 std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType);
 
-constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
-
 //ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
 //    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
 //    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
