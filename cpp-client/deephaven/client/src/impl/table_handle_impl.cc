@@ -398,13 +398,6 @@ std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<T
 
   subscriptions_.insert(handle);
   return handle;
-
-//  std::promise<void> promise;
-//  auto future = promise.get_future();
-//  auto innerCb = std::make_shared<SubscribeNubbin>(managerImpl_->server(), std::move(ticketBytes),
-//      std::move(coldefs), std::move(promise), std::move(callback));
-//  managerImpl_->flightExecutor()->invoke(std::move(innerCb));
-//  future.wait();
 }
 
 void TableHandleImpl::unsubscribe(std::shared_ptr<SubscriptionHandle> handle) {

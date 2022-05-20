@@ -1,23 +1,29 @@
+#include "deephaven/client/ticking.h"
+#include "deephaven/client/server/server.h"
 #include "deephaven/client/subscription/subscribe_thread.h"
+#include "deephaven/client/utility/callbacks.h"
+#include "deephaven/client/utility/misc.h"
+
+using deephaven::client::TickingCallback;
+using deephaven::client::utility::Callback;
+using deephaven::client::utility::ColumnDefinitions;
 
 namespace {
 class SubscribeState final : public Callback<> {
-  typedef deephaven::client::lowlevel::Server Server;
+  typedef deephaven::client::server::Server Server;
 
 public:
   SubscribeState(std::shared_ptr <Server> server, std::vector <int8_t> ticketBytes,
-      std::shared_ptr <internal::ColumnDefinitions> colDefs,
+      std::shared_ptr <ColumnDefinitions> colDefs,
       std::promise<void> promise, std::shared_ptr <TickingCallback> callback);
   void invoke() final;
-
-  static std::shared_ptr <ThreadNubbin> sadClown_;
 
 private:
   void invokeHelper();
 
   std::shared_ptr <Server> server_;
   std::vector <int8_t> ticketBytes_;
-  std::shared_ptr <internal::ColumnDefinitions> colDefs_;
+  std::shared_ptr <ColumnDefinitions> colDefs_;
   std::promise<void> promise_;
   std::shared_ptr <TickingCallback> callback_;
 };
@@ -32,6 +38,20 @@ private:
 };
 }  // namespace
 
+namespace deephaven::client::subscription {
+std::shared_ptr<SubscriptionHandle> startSubscribeThread(
+    deephaven::client::server::Server *server,
+    const deephaven::client::utility::ColumnDefinitions &columnDefinitions,
+    const io::deephaven::proto::backplane::grpc::Ticket &ticket,
+    std::shared_ptr<TickingCallback> callback) {
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  auto innerCb = std::make_shared<SubscribeNubbin>(managerImpl_->server(), std::move(ticketBytes),
+      std::move(coldefs), std::move(promise), std::move(callback));
+  managerImpl_->flightExecutor()->invoke(std::move(innerCb));
+  future.wait();
+}
+}  // namespace deephaven::client::subscription
 
 namespace {
 SubscribeState::SubscribeState(std::shared_ptr<Server> server, std::vector<int8_t> ticketBytes,

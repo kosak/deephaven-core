@@ -215,7 +215,6 @@ void processAddBatches(
   }
 }
 
-
 void processModBatches(int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
@@ -268,6 +267,5 @@ void processModBatches(int64_t numMods,
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
   }
 }
-
 
 }  // namespace
