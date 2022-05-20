@@ -5,7 +5,6 @@
 #include <vector>
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
-#include "deephaven/client/table/unwrapped_table.h"
 
 namespace deephaven::client::table {
 class Table {
@@ -18,9 +17,6 @@ public:
 
   virtual std::shared_ptr<RowSequence> getRowSequence() const = 0;
   virtual std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const = 0;
-
-  virtual std::shared_ptr<UnwrappedTable> unwrap(const std::shared_ptr<RowSequence> &rows,
-      const std::vector<size_t> &cols) const = 0;
 
   virtual size_t numRows() const = 0;
   virtual size_t numColumns() const = 0;

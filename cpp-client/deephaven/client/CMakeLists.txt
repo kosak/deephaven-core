@@ -55,7 +55,6 @@ set(ALL_FILES
     src/container/context.cc
     src/container/row_sequence.cc
     src/table/table.cc
-    src/table/unwrapped_table.cc
 
     include/public/deephaven/client/columns.h
     include/public/deephaven/client/expressions.h
@@ -69,7 +68,6 @@ set(ALL_FILES
     include/public/deephaven/client/container/context.h
     include/public/deephaven/client/container/row_sequence.h
     include/public/deephaven/client/table/table.h
-    include/public/deephaven/client/table/unwrapped_table.h
 
     include/public/deephaven/client/immerutil/abstract_flex_vector.h
 

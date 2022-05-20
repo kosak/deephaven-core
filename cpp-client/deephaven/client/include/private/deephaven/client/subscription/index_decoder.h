@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdlib>
-#include <flatbuffers/vector.h>
+#include <flatbuffers/flatbuffers.h>
 #include "deephaven/client/container/row_sequence.h"
 
 namespace deephaven::client::subscription {
