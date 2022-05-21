@@ -4,7 +4,6 @@
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/table/table.h"
-#include "deephaven/client/table/unwrapped_table.h"
 
 namespace deephaven::client::subscription {
 class TickingTable final : public deephaven::client::table::Table {
