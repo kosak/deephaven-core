@@ -203,7 +203,6 @@ void processAddBatches(
     int64_t numAdds,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    TickingTable *table,
     std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
     const RowSequence &addedRows) {
   if (numAdds == 0) {
