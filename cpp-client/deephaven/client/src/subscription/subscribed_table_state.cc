@@ -84,79 +84,33 @@ TickingTable::TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> c
 TickingTable::~TickingTable() = default;
 
 void SubscribedTableState::add(const RowSequence &addedRows) {
-  auto existingInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(
-      columns_.size());
-  auto newInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
-
+  auto internals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
   for (const auto &col: columns_) {
-    auto existing = col->getInternals();
-    existingInternals.push_back(std::move(existing));
-    // Easy way to get an empty column of the right type.
-    newInternals.push_back(existingInternals.back()->take(0));
+    internals.push_back(col->getInternals());
   }
 
-  auto addChunk = [this, &existingInternals, &newInternals](const uint64_t beginKey,
-      const uint64_t endKey) {
+  auto *sm = &spaceMapper_;
+  auto addChunk = [sm, &internals](const uint64_t beginKey, const uint64_t endKey) {
     auto size = endKey - beginKey;
-    auto beginIndex = spaceMapper_.addRange(beginKey, endKey);
+    auto beginIndex = sm->addRange(beginKey, endKey);
 
-    for (size_t i = 0; i < existingInternals.size(); ++i) {
-      auto &src = existingInternals[i];
-      auto &dest = newInternals[i];
-
-      // Split src at 'beginIndex'. Call this before, after
-      // Create a new immer vector which is before + newdata + after
-
-
-      // Take the items in src up to 'beginIndex' (these are the items before our added range).
-      // Then drop the items in src up to 'endIndex' (this includes the items we are not erasing,
-      // followed by the items we *are* erasing).
-      dest->mutatingAppend(src->take(beginIndex));
-      src->mutatingDrop(endIndex);
+    for (auto &col : internals) {
+      auto temp = std::move(col);
+      col = temp->take(beginIndex);
+      temp->inPlaceDrop(beginIndex);
+      // uh oh, where do we get an appropriately-sized "newData"?
+      col->inPlaceAppend(newData);
+      col->inPlaceAppend(std::move(temp));
     }
-    // Note spaceMapper_ has already been updated, so it is already consistent with the coordinate
-    // space of the columns.
   };
-  removedRows.forEachChunk(eraseChunk);
-
-  // Residual: add back whatever is left in "existingInternals"
-  for (size_t i = 0; i < existingInternals.size(); ++i) {
-    // Take the trailing matter if any and set source column
-    auto &src = existingInternals[i];
-    auto &dest = newInternals[i];
-    dest->mutatingAppend(std::move(src));
-    // I'm doing this to keep the identity of the same ColumnSource
-    columns_[i]->setInternals(std::move(dest));
-  }
-  auto rowKeys = LongChunk::create(addedRows.size());
-  auto iter = addedRows.getRowSequenceIterator();
-  int64_t row;
-  size_t destIndex = 0;
-  while (iter->tryGetNext(&row)) {
-    int64_t nextRedirectedRow;
-    if (!slotsToReuse_.empty()) {
-      nextRedirectedRow = slotsToReuse_.back();
-      slotsToReuse_.pop_back();
-    } else {
-      nextRedirectedRow = (int64_t) redirection_->size();
-    }
-    auto result = redirection_->insert(std::make_pair(row, nextRedirectedRow));
-    if (!result.second) {
-      auto message = stringf("Row %o already exists", row);
-      throw std::runtime_error(message);
-    }
-    rowKeys->data()[destIndex] = nextRedirectedRow;
-    ++destIndex;
-  }
-  return UnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
+  addedRows.forEachChunk(addChunk);
 }
 
 void SubscribedTableState::erase(const RowSequence &removedRows) {
   auto internals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
 
   for (const auto &col: columns_) {
-    auto existing = col->getInternals();
-    internals.push_back(std::move(existing));
+    internals.push_back(col->getInternals());
   }
 
   auto *sm = &spaceMapper_;
@@ -166,13 +120,10 @@ void SubscribedTableState::erase(const RowSequence &removedRows) {
     auto endIndex = beginIndex + size;
 
     for (auto &col : internals) {
-      // Take the items in col up to 'beginIndex' (these are the items we are not erasing).
-      // Then drop the items in src up to 'endIndex' (this includes the items we are not erasing,
-      // followed by the items we *are* erasing).
       auto residual = std::move(col);
       col = residual->take(beginIndex);
-      residual->mutatingDrop(endIndex);
-      col->mutatingAppend(std::move(residual));
+      residual->inPlaceDrop(endIndex);
+      col->inPlaceAppend(std::move(residual));
     }
     // Note spaceMapper_ has already been updated, so it is already consistent with the coordinate
     // space of the columns.
@@ -183,7 +134,7 @@ void SubscribedTableState::erase(const RowSequence &removedRows) {
   }
 }
 
-void TickingTable::shift(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
+void SubscribedTableState::applyShifts(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
     const RowSequence &destIndex) {
   auto processShift = [this](int64_t s, int64_t ei, int64_t dest) {
     mapShifter(s, ei, dest, redirection_.get());
