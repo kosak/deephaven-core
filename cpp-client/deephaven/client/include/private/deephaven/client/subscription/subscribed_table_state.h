@@ -16,7 +16,7 @@ class SubscribedTableState final {
   typedef deephaven::client::table::Table Table;
 
 public:
-  explicit SubscribedTableState(std::vector<std::shared_ptr<ImmerColumnSourceBase>> columns);
+  explicit SubscribedTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors);
   ~SubscribedTableState();
 
   std::shared_ptr<Table> snapshot() const;

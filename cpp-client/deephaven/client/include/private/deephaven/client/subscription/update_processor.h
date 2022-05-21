@@ -27,8 +27,8 @@ private:
   void runForeverHelperImpl();
 
 public:
-  std::unique_ptr <arrow::flight::FlightStreamReader> fsr_;
-  std::shared_ptr <ColumnDefinitions> colDefs_;
-  std::shared_ptr <TickingCallback> callback_;
+  std::unique_ptr<arrow::flight::FlightStreamReader> fsr_;
+  std::shared_ptr<ColumnDefinitions> colDefs_;
+  std::shared_ptr<TickingCallback> callback_;
 };
 }  // namespace deephaven::client::subscription

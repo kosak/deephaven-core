@@ -46,6 +46,6 @@ private:
 
 template<typename T>
 std::unique_ptr<AbstractFlexVectorBase> AbstractFlexVectorBase::create(immer::flex_vector<T> vec) {
-  return std::make_shared<AbstractFlexVector<T>>(std::move(vec));
+  return std::unique_ptr<AbstractFlexVector<T>>(std::move(vec));
 }
 }  // namespace deephaven::client::immerutil

@@ -18,6 +18,7 @@ using deephaven::client::column::ImmerColumnSourceBase;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
+using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::streamf;
@@ -34,6 +35,8 @@ using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 
 namespace deephaven::client::subscription {
 namespace {
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
+    const ColumnDefinitions &colDefs);
 std::shared_ptr<ImmerColumnSourceBase> makeColumnSource(const arrow::DataType &dataType);
 
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
@@ -46,7 +49,6 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
 void processModBatches(int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    TickingTable *table,
     std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
     const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
 }  // namespace
@@ -75,8 +77,7 @@ void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
 }
 
 void UpdateProcessor::runForeverHelper() {
-  const auto &colDefsVec = colDefs_->vec();
-  SubscribedTableState state(makeEmptyColumnSources(colDefsVec));
+  SubscribedTableState state(makeEmptyFlexVectors(*colDefs_));
 
   // In this loop we process Arrow Flight messages until error or cancellation.
   arrow::flight::FlightStreamChunk flightStreamChunk;
@@ -197,11 +198,11 @@ void UpdateProcessor::runForeverHelper() {
 namespace {
 // Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
-    const SubscribedTableState &state,
+    const ColumnDefinitions &colDefs,
     int64_t numAdds,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk) {
-  auto result = makeEmptyFlexVectorsOfAppropriateType(state);
+  auto result = makeEmptyFlexVectors(colDefs);
   if (numAdds == 0) {
     return result;
   }
@@ -303,27 +304,36 @@ void processModBatches(int64_t numMods,
 
 struct MyVisitor final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::Int32Type &type) final {
-    result_ = IntArrayColumnSource::create();
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int64Type &type) final {
-    result_ = LongArrayColumnSource::create();
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::DoubleType &type) final {
-    result_ = DoubleArrayColumnSource::create();
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
     return arrow::Status::OK();
   }
 
-  std::shared_ptr<MutableColumnSource> result_;
+  std::unique_ptr<AbstractFlexVectorBase> result_;
 };
 
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
+    const ColumnDefinitions &colDefs) {
+  const auto &vec = colDefs.vec();
+  auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(vec.size());
+  for (const auto &[name, dataType] : vec) {
+    MyVisitor v;
+    okOrThrow(DEEPHAVEN_EXPR_MSG(dataType->Accept(&v)));
+    result.push_back(std::move(v.result_));
+  }
+  return result;
+}
+
 std::shared_ptr<ImmerColumnSourceBase> makeColumnSource(const arrow::DataType &dataType) {
-  MyVisitor v;
-  okOrThrow(DEEPHAVEN_EXPR_MSG(dataType.Accept(&v)));
-  return std::move(v.result_);
 }
 
 }  // namespace
