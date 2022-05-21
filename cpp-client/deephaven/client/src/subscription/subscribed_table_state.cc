@@ -83,24 +83,29 @@ TickingTable::TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> c
 
 TickingTable::~TickingTable() = default;
 
-void SubscribedTableState::add(const RowSequence &addedRows) {
+void SubscribedTableState::add(const RowSequence &addedRows,
+    std::vector<std::unique_ptr<AbstractFlexVectorBase>> newData) {
   auto internals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
   for (const auto &col: columns_) {
     internals.push_back(col->getInternals());
   }
 
   auto *sm = &spaceMapper_;
-  auto addChunk = [sm, &internals](const uint64_t beginKey, const uint64_t endKey) {
+  auto addChunk = [sm, &internals, &newData](const uint64_t beginKey, const uint64_t endKey) {
     auto size = endKey - beginKey;
     auto beginIndex = sm->addRange(beginKey, endKey);
 
-    for (auto &col : internals) {
-      auto temp = std::move(col);
-      col = temp->take(beginIndex);
-      temp->inPlaceDrop(beginIndex);
-      // uh oh, where do we get an appropriately-sized "newData"?
-      col->inPlaceAppend(newData);
-      col->inPlaceAppend(std::move(temp));
+    for (size_t i = 0; i < internals.size(); ++i) {
+      auto &col = internals[i];
+      auto &nd = newData[i];
+
+      auto colTemp = std::move(col);
+      col = colTemp->take(beginIndex);
+      colTemp->inPlaceDrop(beginIndex);
+
+      col->inPlaceAppend(nd->take(size));
+      nd->inPlaceDrop(size);
+      col->inPlaceAppend(std::move(colTemp));
     }
   };
   addedRows.forEachChunk(addChunk);
@@ -125,8 +130,6 @@ void SubscribedTableState::erase(const RowSequence &removedRows) {
       residual->inPlaceDrop(endIndex);
       col->inPlaceAppend(std::move(residual));
     }
-    // Note spaceMapper_ has already been updated, so it is already consistent with the coordinate
-    // space of the columns.
   };
   removedRows.forEachChunk(eraseChunk);
   for (size_t i = 0; i < internals.size(); ++i) {
@@ -140,43 +143,6 @@ void SubscribedTableState::applyShifts(const RowSequence &startIndex, const RowS
     mapShifter(s, ei, dest, redirection_.get());
   };
   applyShiftData(startIndex, endInclusiveIndex, destIndex, processShift);
-}
-
-std::shared_ptr<RowSequence> TickingTable::getRowSequence() const {
-  return std::make_shared<MyRowSequence>(redirection_, redirection_->begin(), redirection_->end(),
-      redirection_->size());
-}
-
-std::shared_ptr<UnwrappedTable>
-TickingTable::unwrap(const std::shared_ptr<RowSequence> &rows,
-    const std::vector<size_t> &cols) const {
-  auto rowKeys = LongChunk::create(rows->size());
-  auto iter = rows->getRowSequenceIterator();
-  size_t destIndex = 0;
-  int64_t rowKey;
-  while (iter->tryGetNext(&rowKey)) {
-    auto ip = redirection_->find(rowKey);
-    if (ip == redirection_->end()) {
-      auto message = stringf("Can't find rowkey %o", rowKey);
-      throw std::runtime_error(message);
-    }
-    rowKeys->data()[destIndex++] = ip->second;
-  }
-
-  std::vector<std::shared_ptr<ColumnSource>> columns;
-  columns.reserve(cols.size());
-  for (auto colIndex: cols) {
-    if (colIndex >= columns_.size()) {
-      auto message = stringf("No such columnindex %o", colIndex);
-      throw std::runtime_error(message);
-    }
-    columns.push_back(columns_[colIndex]);
-  }
-  return UnwrappedTable::create(std::move(rowKeys), destIndex, std::move(columns));
-}
-
-std::shared_ptr<ColumnSource> TickingTable::getColumn(size_t columnIndex) const {
-  throw std::runtime_error("TickingTable: getColumn [redirected]: not implemented yet");
 }
 
 namespace {
