@@ -10,6 +10,7 @@
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
 
+using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
