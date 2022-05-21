@@ -51,8 +51,6 @@ public:
 private:
   flatbuffers::DetachedBuffer buffer_;
 };
-
-constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
 }  // namespace
 
 std::shared_ptr<SubscriptionHandle> startSubscribeThread(

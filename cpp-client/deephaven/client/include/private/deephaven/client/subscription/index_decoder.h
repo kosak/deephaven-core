@@ -5,6 +5,8 @@
 #include "deephaven/client/container/row_sequence.h"
 
 namespace deephaven::client::subscription {
+constexpr const uint32_t deephavenMagicNumber = 0x6E687064U;
+
 class DataInput {
 public:
   explicit DataInput(const flatbuffers::Vector<int8_t> &vec) : DataInput(vec.data(), vec.size()) {}

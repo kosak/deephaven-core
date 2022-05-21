@@ -3,12 +3,26 @@
 #include <iostream>
 #include <memory>
 #include "deephaven/client/column/column_source.h"
+#include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/subscription/index_decoder.h"
 #include "deephaven/client/utility/utility.h"
+#include "deephaven/flatbuf/Barrage_generated.h"
 
 using deephaven::client::column::MutableColumnSource;
+using deephaven::client::container::RowSequence;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
+using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
+
+using io::deephaven::barrage::flatbuf::BarrageMessageType;
+using io::deephaven::barrage::flatbuf::BarrageMessageWrapper;
+using io::deephaven::barrage::flatbuf::BarrageModColumnMetadata;
+using io::deephaven::barrage::flatbuf::BarrageUpdateMetadata;
+using io::deephaven::barrage::flatbuf::ColumnConversionMode;
+using io::deephaven::barrage::flatbuf::CreateBarrageMessageWrapper;
+using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionOptions;
+using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 
 namespace deephaven::client::subscription {
 namespace {
@@ -75,7 +89,7 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     const auto *barrageWrapperRaw = flightStreamChunk.app_metadata->data();
-    const auto *barrageWrapper = GetBarrageMessageWrapper(barrageWrapperRaw);
+    const auto *barrageWrapper = flatbuffers::GetRoot<BarrageMessageWrapper>(barrageWrapperRaw);
     if (barrageWrapper->magic() != deephavenMagicNumber) {
       continue;
     }
