@@ -2,12 +2,15 @@
 
 #include <iostream>
 #include <memory>
+#include "deephaven/client/chunk/chunk_filler.h"
+#include "deephaven/client/chunk/chunk_maker.h"
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/subscription/index_decoder.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
 
+using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::utility::makeReservedVector;
@@ -26,6 +29,8 @@ using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 
 namespace deephaven::client::subscription {
 namespace {
+std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType);
+
 void processAddBatches(
     int64_t numAdds,
     arrow::flight::FlightStreamReader *fsr,
@@ -108,11 +113,11 @@ void UpdateProcessor::runForeverHelper() {
     DataInput diRemoved(*bmd->removed_rows());
     DataInput diThreeShiftIndexes(*bmd->shift_data());
 
-    auto addedRows = readExternalCompressedDelta(&diAdded);
-    auto removedRows = readExternalCompressedDelta(&diRemoved);
-    auto shiftStartIndex = readExternalCompressedDelta(&diThreeShiftIndexes);
-    auto shiftEndIndex = readExternalCompressedDelta(&diThreeShiftIndexes);
-    auto shiftDestIndex = readExternalCompressedDelta(&diThreeShiftIndexes);
+    auto addedRows = IndexDecoder::readExternalCompressedDelta(&diAdded);
+    auto removedRows = IndexDecoder::readExternalCompressedDelta(&diRemoved);
+    auto shiftStartIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
+    auto shiftEndIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
+    auto shiftDestIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
 
     streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
     streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
@@ -172,7 +177,7 @@ void UpdateProcessor::runForeverHelper() {
       for (size_t i = 0; i < modColumnNodes.size(); ++i) {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
-        auto modRows = readExternalCompressedDelta(&diModified);
+        auto modRows = IndexDecoder::readExternalCompressedDelta(&diModified);
         auto modRowsIndexSpace = convertSpaceWhatever(*modRows);
         perColumnModifiesIndexSpace.push_back(std::move(modRowsIndexSpace));
       }
@@ -191,6 +196,7 @@ void UpdateProcessor::runForeverHelper() {
   }
 }
 
+namespace {
 // Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
 void processAddBatches(
     int64_t numAdds,
@@ -301,5 +307,35 @@ void processModBatches(int64_t numMods,
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
   }
 }
+
+//ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
+//    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
+//    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
+
+struct MyVisitor final : public arrow::TypeVisitor {
+  arrow::Status Visit(const arrow::Int32Type &type) final {
+    result_ = IntArrayColumnSource::create();
+    return arrow::Status::OK();
+  }
+
+  arrow::Status Visit(const arrow::Int64Type &type) final {
+    result_ = LongArrayColumnSource::create();
+    return arrow::Status::OK();
+  }
+
+  arrow::Status Visit(const arrow::DoubleType &type) final {
+    result_ = DoubleArrayColumnSource::create();
+    return arrow::Status::OK();
+  }
+
+  std::shared_ptr<MutableColumnSource> result_;
+};
+
+std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType) {
+  MyVisitor v;
+  okOrThrow(DEEPHAVEN_EXPR_MSG(dataType.Accept(&v)));
+  return std::move(v.result_);
+}
+
 }  // namespace
 }  // namespace deephaven::client::subscription

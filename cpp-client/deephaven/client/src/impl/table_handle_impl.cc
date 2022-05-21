@@ -350,39 +350,6 @@ std::shared_ptr<TableHandleImpl> TableHandleImpl::asOfJoin(AsOfJoinTablesRequest
   return TableHandleImpl::create(managerImpl_, std::move(resultTicket), std::move(cb));
 }
 
-namespace {
-std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType);
-
-//ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
-//    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
-//    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
-
-struct MyVisitor final : public arrow::TypeVisitor {
-  arrow::Status Visit(const arrow::Int32Type &type) final {
-    result_ = IntArrayColumnSource::create();
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::Int64Type &type) final {
-    result_ = LongArrayColumnSource::create();
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::DoubleType &type) final {
-    result_ = DoubleArrayColumnSource::create();
-    return arrow::Status::OK();
-  }
-
-  std::shared_ptr<MutableColumnSource> result_;
-};
-
-std::shared_ptr<MutableColumnSource> makeColumnSource(const arrow::DataType &dataType) {
-  MyVisitor v;
-  okOrThrow(DEEPHAVEN_EXPR_MSG(dataType.Accept(&v)));
-  return std::move(v.result_);
-}
-} // namespace
-
 std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
   // On the flight executor thread, we invoke DoExchange (waiting for a successful response).
   // We wait for that response here. That makes the first part of this call synchronous. If there
