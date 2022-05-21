@@ -83,7 +83,51 @@ TickingTable::TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> c
 
 TickingTable::~TickingTable() = default;
 
-std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) {
+void SubscribedTableState::add(const RowSequence &addedRows) {
+  auto existingInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(
+      columns_.size());
+  auto newInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
+
+  for (const auto &col: columns_) {
+    auto existing = col->getInternals();
+    existingInternals.push_back(std::move(existing));
+    // Easy way to get an empty column of the right type.
+    newInternals.push_back(existingInternals.back()->take(0));
+  }
+
+  auto addChunk = [this, &existingInternals, &newInternals](const uint64_t beginKey,
+      const uint64_t endKey) {
+    auto size = endKey - beginKey;
+    auto beginIndex = spaceMapper_.addRange(beginKey, endKey);
+
+    for (size_t i = 0; i < existingInternals.size(); ++i) {
+      auto &src = existingInternals[i];
+      auto &dest = newInternals[i];
+
+      // Split src at 'beginIndex'. Call this before, after
+      // Create a new immer vector which is before + newdata + after
+
+
+      // Take the items in src up to 'beginIndex' (these are the items before our added range).
+      // Then drop the items in src up to 'endIndex' (this includes the items we are not erasing,
+      // followed by the items we *are* erasing).
+      dest->mutatingAppend(src->take(beginIndex));
+      src->mutatingDrop(endIndex);
+    }
+    // Note spaceMapper_ has already been updated, so it is already consistent with the coordinate
+    // space of the columns.
+  };
+  removedRows.forEachChunk(eraseChunk);
+
+  // Residual: add back whatever is left in "existingInternals"
+  for (size_t i = 0; i < existingInternals.size(); ++i) {
+    // Take the trailing matter if any and set source column
+    auto &src = existingInternals[i];
+    auto &dest = newInternals[i];
+    dest->mutatingAppend(std::move(src));
+    // I'm doing this to keep the identity of the same ColumnSource
+    columns_[i]->setInternals(std::move(dest));
+  }
   auto rowKeys = LongChunk::create(addedRows.size());
   auto iter = addedRows.getRowSequenceIterator();
   int64_t row;
@@ -108,46 +152,34 @@ std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) 
 }
 
 void SubscribedTableState::erase(const RowSequence &removedRows) {
-  auto existingInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(
-      columns_.size());
-  auto newInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
+  auto internals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
 
   for (const auto &col: columns_) {
     auto existing = col->getInternals();
-    existingInternals.push_back(std::move(existing));
-    // Easy way to get an empty column of the right type.
-    newInternals.push_back(existingInternals.back()->take(0));
+    internals.push_back(std::move(existing));
   }
 
-  auto eraseChunk = [this, &existingInternals, &newInternals](const uint64_t beginKey,
-      const uint64_t endKey) {
+  auto *sm = &spaceMapper_;
+  auto eraseChunk = [sm, &internals](const uint64_t beginKey, const uint64_t endKey) {
     auto size = endKey - beginKey;
-    auto beginIndex = spaceMapper_.eraseRange(beginKey, endKey);
+    auto beginIndex = sm->eraseRange(beginKey, endKey);
     auto endIndex = beginIndex + size;
 
-    for (size_t i = 0; i < existingInternals.size(); ++i) {
-      auto &src = existingInternals[i];
-      auto &dest = newInternals[i];
-
-      // Take the items in src up to 'beginIndex' (these are the items we are not erasing).
+    for (auto &col : internals) {
+      // Take the items in col up to 'beginIndex' (these are the items we are not erasing).
       // Then drop the items in src up to 'endIndex' (this includes the items we are not erasing,
       // followed by the items we *are* erasing).
-      dest->mutatingAppend(src->take(beginIndex));
-      src->mutatingDrop(endIndex);
+      auto residual = std::move(col);
+      col = residual->take(beginIndex);
+      residual->mutatingDrop(endIndex);
+      col->mutatingAppend(std::move(residual));
     }
     // Note spaceMapper_ has already been updated, so it is already consistent with the coordinate
     // space of the columns.
   };
   removedRows.forEachChunk(eraseChunk);
-
-  // Residual: add back whatever is left in "existingInternals"
-  for (size_t i = 0; i < existingInternals.size(); ++i) {
-    // Take the trailing matter if any and set source column
-    auto &src = existingInternals[i];
-    auto &dest = newInternals[i];
-    dest->mutatingAppend(std::move(src));
-    // I'm doing this to keep the identity of the same ColumnSource
-    columns_[i]->setInternals(std::move(dest));
+  for (size_t i = 0; i < internals.size(); ++i) {
+    columns_[i]->setInternals(std::move(internals[i]));
   }
 }
 
