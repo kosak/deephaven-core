@@ -3,20 +3,16 @@
 #include <vector>
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/subscription/space_mapper.h"
 #include "deephaven/client/table/table.h"
 
 namespace deephaven::client::subscription {
-class TickingTable final : public deephaven::client::table::Table {
-  struct Private {
-  };
-
+class SubscribedTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::column::ImmerColumnSourceBase ImmerColumnSourceBase;
   typedef deephaven::client::container::RowSequence RowSequence;
 
 public:
-  static std::shared_ptr<TickingTable> create(std::vector<std::shared_ptr<ColumnSource>> columns);
-
   explicit TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> columns);
   ~TickingTable() final;
 
@@ -32,7 +28,7 @@ public:
   /**
    * Erases the rows (which are provided in the source coordinate space).
    */
-  void remove(const RowSequence &rowsToRemove);
+  void erase(const RowSequence &rowsToRemove);
   void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
 
@@ -53,5 +49,7 @@ public:
 
 private:
   std::vector<std::shared_ptr<ImmerColumnSourceBase>> columns_;
+  // Keeps track of keyspace -> index space mapping
+  SpaceMapper spaceMapper_;
 };
 }  // namespace deephaven::client::subscription

@@ -19,8 +19,8 @@ public:
   virtual ~AbstractFlexVectorBase();
 
   virtual std::unique_ptr<AbstractFlexVectorBase> take(size_t n) = 0;
-  virtual std::unique_ptr<AbstractFlexVectorBase> drop(size_t n) = 0;
-  virtual std::unique_ptr<AbstractFlexVectorBase> append(const AbstractFlexVectorBase &other) = 0;
+  virtual void mutatingDrop(size_t n) = 0;
+  virtual void mutatingAppend(std::unique_ptr<AbstractFlexVectorBase> other) = 0;
 };
 
 template<typename T>

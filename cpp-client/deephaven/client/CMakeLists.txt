@@ -73,11 +73,11 @@ set(ALL_FILES
 
     src/subscription/index_decoder.cc
     src/subscription/subscribe_thread.cc
-    src/subscription/ticking_table.cc
+    src/subscription/subscribed_table_state.cc
     src/subscription/update_processor.cc
     include/private/deephaven/client/subscription/index_decoder.h
     include/private/deephaven/client/subscription/subscribe_thread.h
-    include/private/deephaven/client/subscription/ticking_table.h
+    include/private/deephaven/client/subscription/subscribed_table_state.h
     include/private/deephaven/client/subscription/update_processor.h
 
 
@@ -118,7 +118,7 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    include/private/deephaven/client/subscription/subscription_handle.h)
+    include/private/deephaven/client/subscription/subscription_handle.h include/private/deephaven/client/subscription/space_mapper.h src/subscription/space_mapper.cc)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config

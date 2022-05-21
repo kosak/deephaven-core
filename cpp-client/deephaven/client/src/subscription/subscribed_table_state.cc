@@ -1,4 +1,4 @@
-#include "deephaven/client/subscription/ticking_table.h"
+#include "deephaven/client/subscription/subscribed_table_state.h"
 
 #include <map>
 #include <optional>
@@ -107,50 +107,47 @@ std::shared_ptr<UnwrappedTable> TickingTable::add(const RowSequence &addedRows) 
   return UnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
 }
 
-void TickingTable::erase(const RowSequence &removedRows) {
+void SubscribedTableState::erase(const RowSequence &removedRows) {
   auto existingInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(
       columns_.size());
   auto newInternals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
 
   for (const auto &col: columns_) {
     auto existing = col->getInternals();
-    // Easy way to get an empty column of the right type.
-    newInternals.push_back(existing->take(0));
     existingInternals.push_back(std::move(existing));
+    // Easy way to get an empty column of the right type.
+    newInternals.push_back(existingInternals.back()->take(0));
   }
 
-  auto eraseChunk = [this, &existingInternals, &newInternals](const int64_t firstKey,
-      const int64_t lastKey) {
-    auto size = lastKey - firstKey + 1;
-    auto beginIndex = rowKeys_.findIndexOf(firstKey);
+  auto eraseChunk = [this, &existingInternals, &newInternals](const uint64_t beginKey,
+      const uint64_t endKey) {
+    auto size = endKey - beginKey;
+    auto beginIndex = spaceMapper_.eraseRange(beginKey, endKey);
     auto endIndex = beginIndex + size;
-    rowKeys_.removeRange(firstKey, lastKey);
 
     for (size_t i = 0; i < existingInternals.size(); ++i) {
-      auto &src = *existingInternals[i];
-      auto &dest = *newInternals[i];
+      auto &src = existingInternals[i];
+      auto &dest = newInternals[i];
 
-      // Take the items in src up to 'beginIndex' (these are the items we are NOT erasing, up to this point)
-      // Then drop the items in src up to 'endIndex' (these are the items we have processed (both not erasing and erasing), up to this point)
-
-      note_youll_have_a_more_efficient_better_time_if_you_do_this_in_a_mutating_fashion(); // so you can use transients
-      // take would make a immer copy
-      // but append and drop don't need to
-      dest.mutatingAppend(src.take(beginIndex));
-      src.mutatingDrop(endIndex);
+      // Take the items in src up to 'beginIndex' (these are the items we are not erasing).
+      // Then drop the items in src up to 'endIndex' (this includes the items we are not erasing,
+      // followed by the items we *are* erasing).
+      dest->mutatingAppend(src->take(beginIndex));
+      src->mutatingDrop(endIndex);
     }
+    // Note spaceMapper_ has already been updated, so it is already consistent with the coordinate
+    // space of the columns.
   };
   removedRows.forEachChunk(eraseChunk);
 
-  // Add back whatever is left in "existingImpls" and then restore
+  // Residual: add back whatever is left in "existingInternals"
   for (size_t i = 0; i < existingInternals.size(); ++i) {
     // Take the trailing matter if any and set source column
-    auto &srcCol = *existingInternals[i];
-    auto &destCol = *newInternals[i];
-
-    destCol.mutatingAppend(srcCol);
+    auto &src = existingInternals[i];
+    auto &dest = newInternals[i];
+    dest->mutatingAppend(std::move(src));
     // I'm doing this to keep the identity of the same ColumnSource
-    columns_[i]->setInternals(std::move(destCol));
+    columns_[i]->setInternals(std::move(dest));
   }
 }
 
