@@ -151,10 +151,13 @@ void UpdateProcessor::runForeverHelper() {
     // 1. Removes
     auto beforeRemoves = tickingTable->snapshot();
     auto removedRowsIndexSpace = convertSpaceWhatever(*removedRows);
-    // can clear removedRows here
+    // (a) splice out the data
+    // (b) remove these items from your key-to-index data structure.
+    // BTW can clear removedRows here
     tickingTable->remove(*removedRowsIndexSpace);
 
     // 2. Shifts
+    // (a) apply only to your key-to-index data structure.
     spaceMonster->applyShifts(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
 
     if (numAdds != 0 && numMods != 0) {
@@ -164,8 +167,10 @@ void UpdateProcessor::runForeverHelper() {
 
     auto beforeAddsOrModifies = tickingTable->snapshot();
     auto addedRowsIndexSpace = convertSpaceWhatever(*addedRows);
-    // can clear addedRows here
+    // BTW can clear addedRows here
     // 3. Adds
+    // (a) splice in the data
+    // (b) add these items to your key-to-index data structure
     if (numAdds != 0) {
       processAddBatches(numAdds, fsr_.get(), &flightStreamChunk, tickingTable.get(),
           &mutableColumns, *addedRows);
