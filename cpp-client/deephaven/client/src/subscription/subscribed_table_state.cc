@@ -84,49 +84,39 @@ void SubscribedTableState::add(std::vector<std::unique_ptr<AbstractFlexVectorBas
     auto beginIndex = spaceMapper_.addRange(beginKey, endKey);
 
     for (size_t i = 0; i < flexVectors_.size(); ++i) {
-      auto &col = flexVectors_[i];
+      auto &fv = flexVectors_[i];
       auto &ad = addedData[i];
 
-      auto colTemp = std::move(col);
+      auto fvTemp = std::move(fv);
       // Give "col" its original values up to 'beginIndex'; leave colTemp with the rest.
-      col = colTemp->take(beginIndex);
-      colTemp->inPlaceDrop(beginIndex);
+      fv = fvTemp->take(beginIndex);
+      fvTemp->inPlaceDrop(beginIndex);
 
       // Append the next 'size' values from 'addedData' to 'col' and drop them from 'addedData'.
-      col->inPlaceAppend(ad->take(size));
+      fv->inPlaceAppend(ad->take(size));
       ad->inPlaceDrop(size);
 
       // Append the residual items back from colTemp.
-      col->inPlaceAppend(std::move(colTemp));
+      fv->inPlaceAppend(std::move(fvTemp));
     }
   };
-  addedData.forEachChunk(addChunk);
+  addedIndexes.forEachChunk(addChunk);
 }
 
 void SubscribedTableState::erase(const RowSequence &removedRows) {
-  auto internals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
-
-  for (const auto &col: columns_) {
-    internals.push_back(col->getInternals());
-  }
-
-  auto *sm = &spaceMapper_;
-  auto eraseChunk = [sm, &internals](const uint64_t beginKey, const uint64_t endKey) {
+  auto eraseChunk = [this](uint64_t beginKey, uint64_t endKey) {
     auto size = endKey - beginKey;
-    auto beginIndex = sm->eraseRange(beginKey, endKey);
+    auto beginIndex = spaceMapper_.eraseRange(beginKey, endKey);
     auto endIndex = beginIndex + size;
 
-    for (auto &col : internals) {
-      auto residual = std::move(col);
-      col = residual->take(beginIndex);
-      residual->inPlaceDrop(endIndex);
-      col->inPlaceAppend(std::move(residual));
+    for (auto &fv : flexVectors_) {
+      auto fvTemp = std::move(fv);
+      fv = fvTemp->take(beginIndex);
+      fvTemp->inPlaceDrop(endIndex);
+      fv->inPlaceAppend(std::move(fvTemp));
     }
   };
   removedRows.forEachChunk(eraseChunk);
-  for (size_t i = 0; i < internals.size(); ++i) {
-    columns_[i]->setInternals(std::move(internals[i]));
-  }
 }
 
 void SubscribedTableState::applyShifts(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
