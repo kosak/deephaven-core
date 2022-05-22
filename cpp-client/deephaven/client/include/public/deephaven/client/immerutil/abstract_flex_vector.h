@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <immer/flex_vector.hpp>
+#include <arrow/array.h>
 
 namespace deephaven::client::immerutil {
 template<typename T>
@@ -21,6 +22,7 @@ public:
   virtual std::unique_ptr<AbstractFlexVectorBase> take(size_t n) = 0;
   virtual void inPlaceDrop(size_t n) = 0;
   virtual void inPlaceAppend(std::unique_ptr<AbstractFlexVectorBase> other) = 0;
+  virtual void inPlaceAppendArrow(const arrow::Array &data) = 0;
 };
 
 template<typename T>
@@ -46,6 +48,6 @@ private:
 
 template<typename T>
 std::unique_ptr<AbstractFlexVectorBase> AbstractFlexVectorBase::create(immer::flex_vector<T> vec) {
-  return std::unique_ptr<AbstractFlexVector<T>>(std::move(vec));
+  return std::make_unique<AbstractFlexVector<T>>(std::move(vec));
 }
 }  // namespace deephaven::client::immerutil

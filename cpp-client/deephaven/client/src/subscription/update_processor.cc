@@ -40,17 +40,16 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
 std::shared_ptr<ImmerColumnSourceBase> makeColumnSource(const arrow::DataType &dataType);
 
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
+    const ColumnDefinitions &colDefs,
     int64_t numAdds,
     arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
-    const RowSequence &addedRows);
+    arrow::flight::FlightStreamChunk *flightStreamChunk);
 
-void processModBatches(int64_t numMods,
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseModBatches(
+    const ColumnDefinitions &colDefs,
+    int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
-    const std::vector<std::shared_ptr<RowSequence>> &modIndexes);
+    arrow::flight::FlightStreamChunk *flightStreamChunk);
 }  // namespace
 
 std::shared_ptr<UpdateProcessor> UpdateProcessor::startThread(
@@ -206,7 +205,6 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
   if (numAdds == 0) {
     return result;
   }
-  int64_t rowKeyBegin = 0;
 
   while (true) {
     const auto &srcCols = flightStreamChunk->data->columns();
@@ -245,28 +243,24 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
   }
 }
 
-void processModBatches(int64_t numMods,
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseModBatches(
+    const ColumnDefinitions &colDefs,
+    int64_t numMods,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,
-    TickingTable *table,
-    std::vector<std::shared_ptr<MutableColumnSource>> *mutableColumns,
-    const std::vector<std::shared_ptr<RowSequence>> &modIndexes) {
+    ) {
+  auto result = makeEmptyFlexVectors(colDefs);
   if (numMods == 0) {
-    return;
-  }
-
-  std::vector<std::shared_ptr<RowSequenceIterator>> iterators;
-  for (const auto &mi : modIndexes) {
-    iterators.push_back(mi->getRowSequenceIterator());
+    return result;
   }
 
   while (true) {
     // this is probably wrong. The modify probably only has a limited number of columns.
     const auto &srcCols = flightStreamChunk->data->columns();
     auto ncols = srcCols.size();
-    if (ncols != mutableColumns->size()) {
+    if (ncols != result.size()) {
       auto message = stringf("Received %o columns, but my table has %o columns", ncols,
-          mutableColumns->size());
+          result.size());
       throw std::runtime_error(message);
     }
 
