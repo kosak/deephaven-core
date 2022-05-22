@@ -132,23 +132,21 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     selectedCols.push_back(col);
   }
 
+  // Tables are dense now so this isn't really necessary. Well at least the immer tables are dense.
   auto outerIter = table.getRowSequence()->getRowSequenceIterator();
 
   for (size_t startRow = 0; startRow < nrows; startRow += chunkSize) {
     auto selectedRows = outerIter->getNextRowSequenceWithLength(chunkSize);
     auto thisSize = selectedRows->size();
 
-    auto unwrappedTable = table.unwrap(selectedRows, selectedCols);
-    auto rowKeys = unwrappedTable->getUnorderedRowKeys();
-
     auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
     auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
 
     for (size_t col = 0; col < ncols; ++col) {
-      const auto &c = unwrappedTable->getColumn(col);
+      const auto &c = table.getColumn(col);
       auto context = c->createContext(thisSize);
       auto chunk = ChunkMaker::createChunkFor(*c, thisSize);
-      c->fillChunkUnordered(context.get(), *rowKeys, thisSize, chunk.get());
+      c->fillChunk(context.get(), *selectedRows, chunk.get());
       chunks.push_back(std::move(chunk));
       contexts.push_back(std::move(context));
     }
@@ -189,7 +187,7 @@ void doit(const TableHandleManager &manager) {
   //      .head(10);
 
   auto myCallback = std::make_shared<Callback>();
-  tt1.subscribe(myCallback);
+  auto subscriptionHandle = tt1.subscribe(myCallback);
   uint32_t tens_of_seconds_to_run = 50000;
   while (tens_of_seconds_to_run-- > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds (100));
@@ -199,7 +197,7 @@ void doit(const TableHandleManager &manager) {
       }
   }
   std::cerr << "I unsubscribed here.\n";
-  tt1.unsubscribe(std::move(myCallback));
+  tt1.unsubscribe(std::move(subscriptionHandle));
   std::this_thread::sleep_for(std::chrono::seconds(5));
   std::cerr << "exiting.\n";
 }
