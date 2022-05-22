@@ -37,17 +37,10 @@ namespace deephaven::client::subscription {
 namespace {
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
     const ColumnDefinitions &colDefs);
-std::shared_ptr<ImmerColumnSourceBase> makeColumnSource(const arrow::DataType &dataType);
 
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
     const ColumnDefinitions &colDefs,
-    int64_t numAdds,
-    arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk);
-
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseModBatches(
-    const ColumnDefinitions &colDefs,
-    int64_t numMods,
+    int64_t numBatches,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk);
 }  // namespace
@@ -165,9 +158,8 @@ void UpdateProcessor::runForeverHelper() {
     // (a) splice in the data
     // (b) add these items to your key-to-index data structure
     if (numAdds != 0) {
-      auto addedRowData = parseAddBatches(numAdds, fsr_.get(), &flightStreamChunk,
-          &mutableColumns, *addedRows);
-      state.add(*addedRowsIndexSpace, addedRowData);
+      auto addedRowData = parseBatches(*colDefs_, numAdds, fsr_.get(), &flightStreamChunk);
+      state.add(addedRowData, *addedRowsIndexSpace);
     }
 
     // 4. Modifies
@@ -181,9 +173,8 @@ void UpdateProcessor::runForeverHelper() {
         auto modRowsIndexSpace = state.convertKeysToIndices(*modRows);
         perColumnModifiesIndexSpace.push_back(std::move(modRowsIndexSpace));
       }
-      auto modifiedRowData = processModBatches(numMods, fsr_.get(), &flightStreamChunk, tickingTable.get(),
-          &mutableColumns, perColumnModifiesIndexSpace);
-      state.modify(perColumnModifiesIndexSpace, modifiedRowData);
+      auto modifiedRowData = parseBatches(*colDefs_, numMods, fsr_.get(), &flightStreamChunk);
+      state.modify(std::move(modifiedRowData), perColumnModifiesIndexSpace);
     }
 
     auto current = state.snapshot();
@@ -196,13 +187,13 @@ void UpdateProcessor::runForeverHelper() {
 
 namespace {
 // Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
     const ColumnDefinitions &colDefs,
-    int64_t numAdds,
+    int64_t numBatches,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk) {
   auto result = makeEmptyFlexVectors(colDefs);
-  if (numAdds == 0) {
+  if (numBatches == 0) {
     return result;
   }
 
@@ -222,6 +213,8 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
     auto numRows = srcCols[0]->length();
     for (size_t i = 1; i < ncols; ++i) {
       const auto &srcColArrow = *srcCols[i];
+      // I think you do not want this check for the modify case. When you are parsing modify
+      // messages, the columns may indeed be of different sizes.
       if (srcColArrow.length() != numRows) {
         auto message = stringf(
             "Inconsistent column lengths: Column 0 has %o rows, but column %o has %o rows",
@@ -232,61 +225,11 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseAddBatches(
 
     for (size_t i = 0; i < ncols; ++i) {
       const auto &srcColArrow = *srcCols[i];
-      auto &destColDh = result[i];
       result[i]->inPlaceAppendArrow(srcColArrow);
     }
 
-    if (--numAdds == 0) {
+    if (--numBatches == 0) {
       return result;
-    }
-    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
-  }
-}
-
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseModBatches(
-    const ColumnDefinitions &colDefs,
-    int64_t numMods,
-    arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk,
-    ) {
-  auto result = makeEmptyFlexVectors(colDefs);
-  if (numMods == 0) {
-    return result;
-  }
-
-  while (true) {
-    // this is probably wrong. The modify probably only has a limited number of columns.
-    const auto &srcCols = flightStreamChunk->data->columns();
-    auto ncols = srcCols.size();
-    if (ncols != result.size()) {
-      auto message = stringf("Received %o columns, but my table has %o columns", ncols,
-          result.size());
-      throw std::runtime_error(message);
-    }
-
-    for (size_t i = 0; i < modIndexes.size(); ++i) {
-      const auto &modIndex = *modIndexes[i];
-      if (modIndex.empty()) {
-        continue;
-      }
-
-      const auto &srcColArrow = *srcCols[i];
-      auto numRows = srcColArrow.length();
-
-      auto &destColDh = (*mutableColumns)[i];
-
-      auto context = destColDh->createContext(numRows);
-      auto chunk = ChunkMaker::createChunkFor(*destColDh, numRows);
-
-      auto sequentialRows = RowSequence::createSequential(0, numRows);
-
-      ChunkFiller::fillChunk(srcColArrow, *sequentialRows, chunk.get());
-      auto destIndices = iterators[i]->getNextRowSequenceWithLength(numRows);
-      destColDh->fillFromChunk(context.get(), *chunk, *destIndices);
-    }
-
-    if (--numMods == 0) {
-      return;
     }
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
   }

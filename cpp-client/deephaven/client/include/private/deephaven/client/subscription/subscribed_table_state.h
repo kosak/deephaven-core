@@ -27,6 +27,10 @@ public:
    * Erases the rows (which are provided in the source coordinate space).
    */
   void erase(const RowSequence &rowsToRemove);
+
+  void modify(std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
+      const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn);
+
   void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
 
