@@ -1,8 +1,7 @@
 #include "deephaven/client/impl/aggregate_impl.h"
 
-namespace deephaven::client::highlevel {
+namespace deephaven::client {
 namespace impl {
-
 std::shared_ptr<AggregateImpl> AggregateImpl::create(
     ComboAggregateRequest::Aggregate descriptor) {
   return std::make_shared<AggregateImpl>(Private(), std::move(descriptor));
@@ -20,4 +19,4 @@ AggregateComboImpl::AggregateComboImpl(Private,
     std::vector<ComboAggregateRequest::Aggregate> aggregates) :
     aggregates_(std::move(aggregates)) {}
 }  // namespace impl
-}  // namespace deephaven::client::highlevel
+}  // namespace deephaven::client

@@ -378,6 +378,7 @@ class TableHandle {
   typedef deephaven::client::SelectColumn SelectColumn;
   typedef deephaven::client::SortPair SortPair;
   typedef deephaven::client::StrCol StrCol;
+  typedef deephaven::client::subscription::SubscriptionHandle SubscriptionHandle;
 
   template<typename... Args>
   using Callback = deephaven::client::utility::Callback<Args...>;
@@ -1081,11 +1082,11 @@ public:
    * append-only tables and will call back with an error if the table changes in a way that is not
    * append-only.
    */
-  std::shared_ptr<subscription::SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback);
+  std::shared_ptr<SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback);
   /**
    * Unsubscribe from the table.
    */
-  void unsubscribe(std::shared_ptr<subscription::SubscriptionHandle> callback);
+  void unsubscribe(std::shared_ptr<SubscriptionHandle> callback);
 
   /**
    * Get access to the bytes of the Deephaven "Ticket" type (without having to reference the

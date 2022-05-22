@@ -28,6 +28,7 @@ using deephaven::client::impl::StrColImpl;
 using deephaven::client::impl::AggregateComboImpl;
 using deephaven::client::impl::AggregateImpl;
 using deephaven::client::impl::ClientImpl;
+using deephaven::client::subscription::SubscriptionHandle;
 using deephaven::client::utility::Executor;
 using deephaven::client::utility::SimpleOstringstream;
 using deephaven::client::utility::SFCallback;
@@ -517,12 +518,12 @@ std::shared_ptr<arrow::flight::FlightStreamReader> TableHandle::getFlightStreamR
   return getManager().createFlightWrapper().getFlightStreamReader(*this);
 }
 
-std::shared_ptr<impl::SubscriptionHandle> TableHandle::subscribe(
+std::shared_ptr<SubscriptionHandle> TableHandle::subscribe(
     std::shared_ptr<TickingCallback> callback) {
   return impl_->subscribe(std::move(callback));
 }
 
-void TableHandle::unsubscribe(std::shared_ptr<impl::SubscriptionHandle> callback) {
+void TableHandle::unsubscribe(std::shared_ptr<SubscriptionHandle> callback) {
   impl_->unsubscribe(std::move(callback));
 }
 
@@ -541,7 +542,7 @@ std::ostream &operator<<(std::ostream &s, const TableHandleStreamAdaptor &o) {
 }
 
 std::string ConvertToString::toString(
-    const deephaven::client::highlevel::SelectColumn &selectColumn) {
+    const deephaven::client::SelectColumn &selectColumn) {
   SimpleOstringstream oss;
   selectColumn.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
   return std::move(oss.str());

@@ -3,6 +3,7 @@
 #include <flatbuffers/detached_buffer.h>
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/server/server.h"
+#include "deephaven/client/subscription/index_decoder.h"
 #include "deephaven/client/subscription/update_processor.h"
 #include "deephaven/client/utility/callbacks.h"
 #include "deephaven/client/utility/executor.h"
@@ -151,5 +152,6 @@ std::shared_ptr<SubscriptionHandle> SubscribeState::invokeHelper() {
 
 OwningBuffer::OwningBuffer(flatbuffers::DetachedBuffer buffer) :
     arrow::Buffer(buffer.data(), int64_t(buffer.size())), buffer_(std::move(buffer)) {}
+OwningBuffer::~OwningBuffer() = default;
 }  // namespace
 }  // namespace deephaven::client::subscription

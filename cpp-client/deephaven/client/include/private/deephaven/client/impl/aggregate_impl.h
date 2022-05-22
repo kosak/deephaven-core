@@ -9,14 +9,11 @@
 #include "deephaven/proto/table.pb.h"
 #include "deephaven/proto/table.grpc.pb.h"
 
-namespace deephaven {
-namespace client {
-namespace highlevel {
-namespace impl {
-
+namespace deephaven::client::impl {
 class AggregateImpl {
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
-  struct Private {};
+  struct Private {
+  };
 
 public:
   static std::shared_ptr<AggregateImpl> create(ComboAggregateRequest::Aggregate descriptor);
@@ -36,7 +33,8 @@ private:
 
 class AggregateComboImpl {
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
-  struct Private {};
+  struct Private {
+  };
 
 public:
   static std::shared_ptr<AggregateComboImpl> create(
@@ -50,8 +48,4 @@ public:
 private:
   std::vector<ComboAggregateRequest::Aggregate> aggregates_;
 };
-
-}  // namespace impl
-}  // namespace highlevel
-}  // namespace client
-}  // namespace deephaven
+}  // namespace deephaven::client::impl
