@@ -3,6 +3,7 @@
 #include <memory>
 #include <immer/flex_vector.hpp>
 #include <arrow/array.h>
+#include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::immerutil {
 template<typename T>
@@ -34,13 +35,19 @@ public:
     return create(vec_.take(n));
   }
 
-  std::unique_ptr<AbstractFlexVectorBase> drop(size_t n) final {
-    return create(vec_.drop(n));
+  void inPlaceDrop(size_t n) final {
+    auto temp = std::move(vec_).drop(n);
+    vec_ = std::move(temp);
   }
 
-  std::unique_ptr<AbstractFlexVectorBase> append(const AbstractFlexVectorBase &other) final {
-    return create(vec_ + other);
+  void inPlaceAppend(std::unique_ptr<AbstractFlexVectorBase> other) final {
+    auto *otherVec = deephaven::client::utility::verboseCast<AbstractFlexVector*>(
+        DEEPHAVEN_PRETTY_FUNCTION, other.get());
+    auto temp = std::move(vec_) + std::move(otherVec->vec_);
+    vec_ = std::move(temp);
   }
+
+  void inPlaceAppendArrow(const arrow::Array &data) final;
 
 private:
   immer::flex_vector<T> vec_;

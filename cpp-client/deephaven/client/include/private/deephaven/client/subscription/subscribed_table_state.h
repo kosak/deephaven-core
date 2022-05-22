@@ -36,10 +36,6 @@ public:
 
   std::shared_ptr<RowSequence> convertKeysToIndices(const RowSequence &keys) const;
 
-  std::shared_ptr<RowSequence> getRowSequence() const final;
-
-  std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const final;
-
   const std::vector<std::unique_ptr<AbstractFlexVectorBase>> &flexVectors() const;
 
 private:

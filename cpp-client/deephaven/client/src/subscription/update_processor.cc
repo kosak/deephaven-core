@@ -159,7 +159,7 @@ void UpdateProcessor::runForeverHelper() {
     // (b) add these items to your key-to-index data structure
     if (numAdds != 0) {
       auto addedRowData = parseBatches(*colDefs_, numAdds, fsr_.get(), &flightStreamChunk);
-      state.add(addedRowData, *addedRowsIndexSpace);
+      state.add(std::move(addedRowData), *addedRowsIndexSpace);
     }
 
     // 4. Modifies
@@ -269,9 +269,5 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
   }
   return result;
 }
-
-std::shared_ptr<ImmerColumnSourceBase> makeColumnSource(const arrow::DataType &dataType) {
-}
-
 }  // namespace
 }  // namespace deephaven::client::subscription
