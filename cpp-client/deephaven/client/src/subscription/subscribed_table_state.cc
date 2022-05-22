@@ -71,44 +71,36 @@ private:
 };
 }  // namespace
 
-std::shared_ptr<TickingTable>
-TickingTable::create(std::vector<std::shared_ptr<ColumnSource>> columns) {
-  return std::make_shared<TickingTable>(Private(), std::move(columns));
-}
+SubscribedTableState::SubscribedTableState(
+    std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors) :
+    flexVectors_(std::move(flexVectors)) {}
 
-TickingTable::TickingTable(Private, std::vector<std::shared_ptr<ColumnSource>> columns) :
-    columns_(std::move(columns)) {
-  redirection_ = std::make_shared<std::map<int64_t, int64_t>>();
-}
+SubscribedTableState::~SubscribedTableState() = default;
 
-TickingTable::~TickingTable() = default;
-
-void SubscribedTableState::add(const RowSequence &addedRows,
-    std::vector<std::unique_ptr<AbstractFlexVectorBase>> newData) {
-  auto internals = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(columns_.size());
-  for (const auto &col: columns_) {
-    internals.push_back(col->getInternals());
-  }
-
-  auto *sm = &spaceMapper_;
-  auto addChunk = [sm, &internals, &newData](const uint64_t beginKey, const uint64_t endKey) {
+void SubscribedTableState::add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
+    const RowSequence &addedIndexes) {
+  auto addChunk = [this, &addedData](uint64_t beginKey, uint64_t endKey) {
     auto size = endKey - beginKey;
-    auto beginIndex = sm->addRange(beginKey, endKey);
+    auto beginIndex = spaceMapper_.addRange(beginKey, endKey);
 
-    for (size_t i = 0; i < internals.size(); ++i) {
-      auto &col = internals[i];
-      auto &nd = newData[i];
+    for (size_t i = 0; i < flexVectors_.size(); ++i) {
+      auto &col = flexVectors_[i];
+      auto &ad = addedData[i];
 
       auto colTemp = std::move(col);
+      // Give "col" its original values up to 'beginIndex'; leave colTemp with the rest.
       col = colTemp->take(beginIndex);
       colTemp->inPlaceDrop(beginIndex);
 
-      col->inPlaceAppend(nd->take(size));
-      nd->inPlaceDrop(size);
+      // Append the next 'size' values from 'addedData' to 'col' and drop them from 'addedData'.
+      col->inPlaceAppend(ad->take(size));
+      ad->inPlaceDrop(size);
+
+      // Append the residual items back from colTemp.
       col->inPlaceAppend(std::move(colTemp));
     }
   };
-  addedRows.forEachChunk(addChunk);
+  addedData.forEachChunk(addChunk);
 }
 
 void SubscribedTableState::erase(const RowSequence &removedRows) {

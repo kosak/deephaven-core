@@ -94,6 +94,7 @@ class TableHandleImpl {
   typedef deephaven::client::impl::NumColImpl NumColImpl;
   typedef deephaven::client::impl::StrColImpl StrColImpl;
   typedef deephaven::client::impl::BooleanExpressionImpl BooleanExpressionImpl;
+  typedef deephaven::client::subscription::SubscriptionHandle SubscriptionHandle;
   typedef deephaven::client::utility::Executor Executor;
   typedef io::deephaven::proto::backplane::grpc::AsOfJoinTablesRequest AsOfJoinTablesRequest;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
