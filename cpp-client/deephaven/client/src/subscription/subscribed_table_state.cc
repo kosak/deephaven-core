@@ -119,6 +119,12 @@ void SubscribedTableState::erase(const RowSequence &removedRows) {
   removedRows.forEachChunk(eraseChunk);
 }
 
+void SubscribedTableState::modify(std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
+    const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn) {
+  throw new std::runtime_error("TODO(kosak)");
+}
+
+
 void SubscribedTableState::applyShifts(const RowSequence &startIndex, const RowSequence &endInclusiveIndex,
     const RowSequence &destIndex) {
   auto processShift = [this](int64_t s, int64_t ei, int64_t dest) {
