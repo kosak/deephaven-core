@@ -9,8 +9,9 @@
 
 namespace deephaven::client::subscription {
 std::shared_ptr<SubscriptionHandle> startSubscribeThread(
-    deephaven::client::server::Server *server,
-    const deephaven::client::utility::ColumnDefinitions &columnDefinitions,
+    std::shared_ptr<deephaven::client::server::Server> server,
+    deephaven::client::utility::Executor *flightExecutor,
+    std::shared_ptr<deephaven::client::utility::ColumnDefinitions> columnDefinitions,
     const io::deephaven::proto::backplane::grpc::Ticket &ticket,
     std::shared_ptr<TickingCallback> callback);
 }  // namespace deephaven::client::subscription
