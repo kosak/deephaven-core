@@ -18,6 +18,7 @@ using deephaven::client::column::ColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceIterator;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
+using deephaven::client::table::Table;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
@@ -82,7 +83,6 @@ void SubscribedTableState::modify(std::vector<std::unique_ptr<AbstractFlexVector
   throw std::runtime_error("TODO(kosak)");
 }
 
-
 void SubscribedTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
     const RowSequence &destIndex) {
   auto processShift = [this](int64_t first, int64_t last, int64_t dest) {
@@ -92,6 +92,10 @@ void SubscribedTableState::applyShifts(const RowSequence &firstIndex, const RowS
     spaceMapper_.applyShift(begin, end, destBegin);
   };
   applyShiftData(firstIndex, lastIndex, destIndex, processShift);
+}
+
+std::shared_ptr<Table> SubscribedTableState::snapshot() const {
+
 }
 
 namespace {
@@ -137,51 +141,5 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
     }
   }
 }
-
-//void mapShifter(int64_t start, int64_t endInclusive, int64_t dest, std::map<int64_t, int64_t> *zm) {
-//  auto delta = dest - start;
-//  if (delta < 0) {
-//    auto currentp = zm->lower_bound(start);
-//    while (true) {
-//      if (currentp == zm->end() || currentp->first > endInclusive) {
-//        return;
-//      }
-//      auto nextp = std::next(currentp);
-//      auto node = zm->extract(currentp);
-//      auto newKey = node.key() + delta;
-//      streamf(std::cerr, "Working forwards, moving key from %o to %o\n", node.key(), newKey);
-//      node.key() = newKey;
-//      zm->insert(std::move(node));
-//      currentp = nextp;
-//      ++dest;
-//    }
-//  }
-//
-//  // delta >= 0 so move in the reverse direction
-//  auto currentp = zm->upper_bound(endInclusive);
-//  if (currentp == zm->begin()) {
-//    return;
-//  }
-//  --currentp;
-//  while (true) {
-//    if (currentp->first < start) {
-//      return;
-//    }
-//    std::optional<std::map<int64_t, int64_t>::iterator> nextp;
-//    if (currentp != zm->begin()) {
-//      nextp = std::prev(currentp);
-//    }
-//    auto node = zm->extract(currentp);
-//    auto newKey = node.key() + delta;
-//    streamf(std::cerr, "Working backwards, moving key from %o to %o\n", node.key(), newKey);
-//    node.key() = newKey;
-//    zm->insert(std::move(node));
-//    if (!nextp.has_value()) {
-//      return;
-//    }
-//    currentp = *nextp;
-//    --dest;
-//  }
-//}
 }  // namespace
 }  // namespace deephaven::client::subscription

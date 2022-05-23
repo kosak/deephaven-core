@@ -19,8 +19,6 @@ public:
   explicit SubscribedTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors);
   ~SubscribedTableState();
 
-  std::shared_ptr<Table> snapshot() const;
-
   void add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
       const RowSequence &addedIndexes);
   /**
@@ -34,7 +32,8 @@ public:
   void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
 
-  const std::vector<std::unique_ptr<AbstractFlexVectorBase>> &flexVectors() const;
+  std::shared_ptr<Table> snapshot() const;
+
   const SpaceMapper &spaceMapper() const { return spaceMapper_; }
 
 private:

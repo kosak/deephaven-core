@@ -60,7 +60,7 @@ public:
   ~DoubleColumnSource() override;
 };
 
-class ImmerColumnSourceBase : public MutableColumnSource {
+class ImmerColumnSourceBase : public ColumnSource {
 protected:
   typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
 
@@ -90,7 +90,6 @@ public:
 private:
   immer::flex_vector<T> data_;
 };
-
 
 class IntArrayColumnSource final : public IntColumnSource, std::enable_shared_from_this<IntArrayColumnSource> {
   struct Private {};
