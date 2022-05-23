@@ -12,8 +12,6 @@ class RowSequenceIterator;
 
 class RowSequence {
 public:
-  static std::shared_ptr<RowSequence> createSequential(int64_t begin, int64_t end);
-
   virtual ~RowSequence();
 
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
@@ -52,7 +50,9 @@ public:
   std::shared_ptr<RowSequence> build();
 
 private:
-  // map of ranges begin to end
-  std::map<uint64_t, uint64_t> data_;
+  typedef std::map<uint64_t, uint64_t> ranges_t;
+  // maps range.begin to range.end. We ensure that ranges never overlap and that contiguous ranges
+  // are collapsed.
+  ranges_t ranges_;
 };
 }  // namespace deephaven::client::container

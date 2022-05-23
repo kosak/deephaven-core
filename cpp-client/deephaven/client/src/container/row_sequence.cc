@@ -1,4 +1,7 @@
 #include "deephaven/client/container/row_sequence.h"
+#include "deephaven/client/utility/utility.h"
+
+using deephaven::client::utility::stringf;
 
 namespace deephaven::client::container {
 namespace {
@@ -45,24 +48,13 @@ private:
 };
 } // namespace
 
-std::shared_ptr<RowSequence> RowSequence::createSequential(int64_t begin, int64_t end) {
-  // Inefficient hack for now. The efficient thing to do would be to make a special implementation
-  // that just iterates over the range.
-  RowSequenceBuilder builder;
-  if (begin != end) {
-    // : decide on whether you want half-open or fully-closed intervals.
-    builder.addRange(begin, end - 1);
-  }
-  return builder.build();
-}
-
 RowSequence::~RowSequence() = default;
 
 std::ostream &operator<<(std::ostream &s, const RowSequence &o) {
   s << '[';
   auto iter = o.getRowSequenceIterator();
   const char *sep = "";
-  int64_t item;
+  uint64_t item;
   while (iter->tryGetNext(&item)) {
     s << sep << item;
     sep = ", ";
@@ -72,28 +64,66 @@ std::ostream &operator<<(std::ostream &s, const RowSequence &o) {
 }
 
 RowSequenceIterator::~RowSequenceIterator() = default;
-
-RowSequenceBuilder::RowSequenceBuilder() : data_(std::make_shared<std::set<int64_t>>()) {}
+RowSequenceBuilder::RowSequenceBuilder() = default;
 RowSequenceBuilder::~RowSequenceBuilder() = default;
 
-void RowSequenceBuilder::addRange(int64_t first, int64_t last) {
-  if (first > last) {
+void RowSequenceBuilder::addRange(uint64_t begin, uint64_t end, const char *zamboniFactor) {
+  if (begin >= end) {
     return;
   }
-  while (true) {
-    data_->insert(first);
-    if (first == last) {
-      return;
+  map_t::node_type node;
+  auto ip = ranges_.upper_bound(begin);
+  if (ip != ranges_.end()) {
+    // ip points to the first element greater than begin, or it is end()
+    if (end > ip->first) {
+      auto message = stringf("Looking right: new range [%o,%o) would overlap with existing range [%o, %o)",
+          begin, end, ip->first, ip->second);
+      throw std::runtime_error(message);
     }
-    ++first;
+    if (end == ip->first) {
+      // Extend the range we are adding to include this node
+      end = ip->second;
+      // Reuse the storage for this node.
+      node = ranges_.extract(ip);
+    }
+  }
+
+  if (ip != ranges_.begin()) {
+    --ip;
+    // ip points to last element not greater than begin (i.e. <=, and it had better not be equal)
+    if (begin < ip->second) {
+      auto message = stringf("Looking left: new range [%o,%o) would overlap with existing range [%o, %o)",
+          begin, end, ip->first, ip->second);
+      throw std::runtime_error(message);
+    }
+
+    if (begin == ip->second) {
+      // Extend the range we are adding to include this node
+      begin = ip->first;
+      // Reuse the storage for this node. But if we already were intending to reuse the storage
+      // for the node on the right side, then throw that one away and reuse this one.
+      node = ranges_.extract(ip);
+    }
+  }
+
+  if (node.empty()) {
+    // We were not able to reuse any nodes
+    ranges_.insert(std::make_pair(begin, end));
+  } else {
+    // We were able to reuse at least one node (if we merged on both sides, then we can reuse
+    // one node and discard one node).
+    node.key() = begin;
+    node.mapped() = end;
+    ranges_.insert(std::move(node));
   }
 }
 
 std::shared_ptr<RowSequence> RowSequenceBuilder::build() {
-  auto begin = data_->begin();
-  auto end = data_->end();
-  auto size = data_->size();
-  return std::make_shared<MyRowSequence>(std::move(data_), begin, end, size);
+  auto sp = std::make_shared<ranges_t>(std::move(ranges_));
+  auto begin = sp->begin();
+  auto end = sp->end();
+  auto size = sp->size();
+  return std::make_shared<MyRowSequence>(std::move(sp), begin, end, size);
 }
 
 namespace {
