@@ -2,10 +2,30 @@
 
 #include <memory>
 #include <immer/flex_vector.hpp>
+#include <immer/flex_vector_transient.hpp>
 #include <arrow/array.h>
 #include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::immerutil {
+namespace internal {
+template<typename T>
+struct CorrespondingArrowArrayType {};
+
+template<>
+struct CorrespondingArrowArrayType<int32_t> {
+  typedef arrow::Int32Array type_t;
+};
+
+template<>
+struct CorrespondingArrowArrayType<int64_t> {
+  typedef arrow::Int64Array type_t;
+};
+
+template<>
+struct CorrespondingArrowArrayType<double> {
+  typedef arrow::DoubleArray type_t;
+};
+}  // namespace internal
 template<typename T>
 class AbstractFlexVector;
 
@@ -47,7 +67,19 @@ public:
     vec_ = std::move(temp);
   }
 
-  void inPlaceAppendArrow(const arrow::Array &data) final;
+  void inPlaceAppendArrow(const arrow::Array &data) final {
+    typedef typename internal::CorrespondingArrowArrayType<T>::type_t arrowArrayType_t;
+    auto *typedArrow = deephaven::client::utility::verboseCast<const arrowArrayType_t*>(
+        __PRETTY_FUNCTION__, &data);
+    auto transient = vec_.transient();
+    for (auto element : *typedArrow) {
+      if (!element.has_value()) {
+        throw std::runtime_error("TODO(kosak): we are not dealing with null values yet");
+      }
+      transient.push_back(*element);
+    }
+    vec_ = transient.persistent();
+  }
 
 private:
   immer::flex_vector<T> vec_;

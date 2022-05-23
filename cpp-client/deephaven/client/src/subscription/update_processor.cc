@@ -146,7 +146,7 @@ void UpdateProcessor::runForeverHelper() {
 
     // 1. Removes
     auto beforeRemoves = state.snapshot();
-    auto removedRowsIndexSpace = state.convertKeysToIndices(*removedRows);
+    auto removedRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*removedRows);
     // (a) splice out the data
     // (b) remove these items from your key-to-index data structure.
     // BTW can clear removedRows here
@@ -162,7 +162,7 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto beforeAddsOrModifies = state.snapshot();
-    auto addedRowsIndexSpace = state.convertKeysToIndices(*addedRows);
+    auto addedRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*addedRows);
     // BTW can clear addedRows here
     // 3. Adds
     // (a) splice in the data
@@ -180,7 +180,7 @@ void UpdateProcessor::runForeverHelper() {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
         auto modRows = IndexDecoder::readExternalCompressedDelta(&diModified);
-        auto modRowsIndexSpace = state.convertKeysToIndices(*modRows);
+        auto modRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*modRows);
         perColumnModifiesIndexSpace.push_back(std::move(modRowsIndexSpace));
       }
       auto modifiedRowData = parseBatches(*colDefs_, numMods, fsr_.get(), &flightStreamChunk);

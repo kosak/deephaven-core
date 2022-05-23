@@ -1,5 +1,6 @@
 #pragma once
 
+#include "deephaven/client/container/row_sequence.h"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/ranked_index.hpp>
@@ -8,6 +9,8 @@
 
 namespace deephaven::client::subscription {
 class SpaceMapper {
+  typedef deephaven::client::container::RowSequence RowSequence;
+
   typedef boost::multi_index_container<
       uint64_t,
       boost::multi_index::indexed_by<
@@ -24,6 +27,8 @@ public:
   uint64_t addRange(uint64_t beginKey, uint64_t endKey);
   uint64_t eraseRange(uint64_t beginKey, uint64_t endKey);
   void applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKey);
+
+  std::shared_ptr<RowSequence> convertKeysToIndices(const RowSequence &keys) const;
 
 private:
   set_t set_;

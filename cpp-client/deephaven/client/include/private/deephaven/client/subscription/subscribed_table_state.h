@@ -34,9 +34,8 @@ public:
   void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
 
-  std::shared_ptr<RowSequence> convertKeysToIndices(const RowSequence &keys) const;
-
   const std::vector<std::unique_ptr<AbstractFlexVectorBase>> &flexVectors() const;
+  const SpaceMapper &spaceMapper() const { return spaceMapper_; }
 
 private:
   std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors_;

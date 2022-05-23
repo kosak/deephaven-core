@@ -34,8 +34,8 @@ public:
       std::shared_ptr<RowSequence> removed,
       std::vector<std::shared_ptr<RowSequence>> perColumnModifies,
       std::shared_ptr<RowSequence> added);
-  TickingUpdate(TickingUpdate &&other);
-  TickingUpdate &operator=(TickingUpdate &&other);
+  TickingUpdate(TickingUpdate &&other) noexcept;
+  TickingUpdate &operator=(TickingUpdate &&other) noexcept;
   ~TickingUpdate();
 
   const std::shared_ptr<Table> &beforeRemoves() const { return beforeRemoves_; }
