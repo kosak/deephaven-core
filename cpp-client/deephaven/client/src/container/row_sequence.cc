@@ -6,7 +6,7 @@ namespace {
  * Holds a slice of a set::set<int64_t>
  */
 class MyRowSequence final : public RowSequence {
-  typedef std::set<int64_t> data_t;
+  typedef std::set<uint64_t> data_t;
 public:
   MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
       data_t::const_iterator end, size_t size);
@@ -14,7 +14,7 @@ public:
   std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
   std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
 
-  void forEachChunk(const std::function<void(int64_t firstKey, int64_t lastKey)> &f) const final;
+  void forEachChunk(const std::function<void(uint64_t firstKey, uint64_t lastKey)> &f) const final;
 
   size_t size() const final {
     return size_;
@@ -28,13 +28,13 @@ private:
 };
 
 class MyRowSequenceIterator final : public RowSequenceIterator {
-  typedef std::set<int64_t> data_t;
+  typedef std::set<uint64_t> data_t;
 public:
   MyRowSequenceIterator(std::shared_ptr<data_t> data, data_t::const_iterator begin,
       data_t::const_iterator end, size_t size, bool forward);
   ~MyRowSequenceIterator() final = default;
   std::shared_ptr<RowSequence> getNextRowSequenceWithLength(size_t size) final;
-  bool tryGetNext(int64_t *result) final;
+  bool tryGetNext(uint64_t *result) final;
 
 private:
   std::shared_ptr<data_t> data_;
