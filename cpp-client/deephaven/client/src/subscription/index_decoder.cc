@@ -39,7 +39,9 @@ std::shared_ptr<RowSequence> IndexDecoder::readExternalCompressedDelta(DataInput
     if (s == -1) {
       pending = v;
     } else if (v < 0) {
-      builder.addRange(s, -v);
+      auto begin = (uint64_t)s;
+      auto end = ((uint64_t)-v) + 1;
+      builder.addRange(begin, end, "zamboni time");
       pending = -1;
     } else {
       builder.add(s);

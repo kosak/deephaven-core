@@ -31,8 +31,6 @@ public:
 class RowSequenceIterator {
 public:
   virtual ~RowSequenceIterator();
-
-  virtual std::shared_ptr<RowSequence> getNextRowSequenceWithLength(size_t size) = 0;
   virtual bool tryGetNext(uint64_t *result) = 0;
 };
 

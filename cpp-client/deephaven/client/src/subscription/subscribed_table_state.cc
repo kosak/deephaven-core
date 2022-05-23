@@ -1,6 +1,5 @@
 #include "deephaven/client/subscription/subscribed_table_state.h"
 
-#include <map>
 #include <optional>
 #include <utility>
 
@@ -27,7 +26,7 @@ namespace deephaven::client::subscription {
 namespace {
 // void mapShifter(int64_t start, int64_t endInclusive, int64_t dest, std::map<int64_t, int64_t> *zm);
 void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex, const RowSequence &destIndex,
-    const std::function<void(int64_t, int64_t, int64_t)> &processShift);
+    const std::function<void(uint64_t, uint64_t, uint64_t)> &processShift);
 }  // namespace
 
 SubscribedTableState::SubscribedTableState(
@@ -98,7 +97,7 @@ void SubscribedTableState::applyShifts(const RowSequence &firstIndex, const RowS
 namespace {
 void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
     const RowSequence &destIndex,
-    const std::function<void(int64_t, int64_t, int64_t)> &processShift) {
+    const std::function<void(uint64_t, uint64_t, uint64_t)> &processShift) {
   if (firstIndex.empty()) {
     return;
   }
@@ -116,7 +115,7 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
       endIter = lastIndex.getRowSequenceReverseIterator();
       destIter = destIndex.getRowSequenceReverseIterator();
     }
-    int64_t first, last, dest;
+    uint64_t first, last, dest;
     while (startIter->tryGetNext(&first)) {
       if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
         throw std::runtime_error("Sequences not of same size");

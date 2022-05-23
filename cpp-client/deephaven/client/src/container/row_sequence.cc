@@ -36,7 +36,6 @@ public:
   MyRowSequenceIterator(std::shared_ptr<data_t> data, data_t::const_iterator begin,
       data_t::const_iterator end, size_t size, bool forward);
   ~MyRowSequenceIterator() final = default;
-  std::shared_ptr<RowSequence> getNextRowSequenceWithLength(size_t size) final;
   bool tryGetNext(uint64_t *result) final;
 
 private:
@@ -71,7 +70,7 @@ void RowSequenceBuilder::addRange(uint64_t begin, uint64_t end, const char *zamb
   if (begin >= end) {
     return;
   }
-  map_t::node_type node;
+  ranges_t::node_type node;
   auto ip = ranges_.upper_bound(begin);
   if (ip != ranges_.end()) {
     // ip points to the first element greater than begin, or it is end()
@@ -127,20 +126,20 @@ std::shared_ptr<RowSequence> RowSequenceBuilder::build() {
 }
 
 namespace {
-MyRowSequence::MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
-    data_t::const_iterator end, size_t size) : data_(std::move(data)), begin_(begin),
-    end_(end), size_(size) {}
+//MyRowSequence::MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
+//    data_t::const_iterator end, size_t size) : data_(std::move(data)), begin_(begin),
+//    end_(end), size_(size) {}
+//
+//std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() const {
+//  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, true);
+//}
+//
+//std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
+//  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, false);
+//}
 
-std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() const {
-  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, true);
-}
-
-std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
-  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, false);
-}
-
-void MyRowSequence::forEachChunk(const std::function<void(int64_t firstKey,
-    int64_t lastKey)> &f) const {
+void MyRowSequence::forEachChunk(const std::function<void(uint64_t firstKey,
+    uint64_t lastKey)> &f) const {
   throw std::runtime_error("TODO(kosak): forEachChunk");
 }
 
@@ -149,7 +148,7 @@ MyRowSequenceIterator::MyRowSequenceIterator(
     data_t::const_iterator end, size_t size, bool forward) : data_(std::move(data)), begin_(begin),
     end_(end), size_(size), forward_(forward) {}
 
-bool MyRowSequenceIterator::tryGetNext(int64_t *result) {
+bool MyRowSequenceIterator::tryGetNext(uint64_t *result) {
   if (begin_ == end_) {
     return false;
   }
@@ -161,24 +160,6 @@ bool MyRowSequenceIterator::tryGetNext(int64_t *result) {
   --size_;
   return true;
 }
-
-std::shared_ptr<RowSequence>
-MyRowSequenceIterator::getNextRowSequenceWithLength(size_t size) {
-  auto sizeToUse = std::min(size, size_);
-  data_t::const_iterator newBegin, newEnd;
-  if (forward_) {
-    newBegin = begin_;
-    std::advance(begin_, sizeToUse);
-    newEnd = begin_;
-  } else {
-    newEnd = end_;
-    std::advance(end_, -(ssize_t)sizeToUse);
-    newBegin = end_;
-  }
-  size_ -= sizeToUse;
-  return std::make_shared<MyRowSequence>(data_, newBegin, newEnd, sizeToUse);
-}
-
 }  // namespace
 }  // namespace deephaven::client::container
 
