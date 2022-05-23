@@ -116,17 +116,16 @@ std::shared_ptr<RowSequence> RowSequenceBuilder::build() {
 }
 
 namespace {
-//MyRowSequence::MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
-//    data_t::const_iterator end, size_t size) : data_(std::move(data)), begin_(begin),
-//    end_(end), size_(size) {}
-//
-//std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() const {
-//  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, true);
-//}
-//
-//std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
-//  return std::make_shared<MyRowSequenceIterator>(data_, begin_, end_, size_, false);
-//}
+MyRowSequence::MyRowSequence(std::shared_ptr<ranges_t> ranges, size_t size) :
+    ranges_(std::move(ranges)), size_(size) {}
+
+std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() const {
+  return std::make_shared<MyRowSequenceIterator>(ranges_, true);
+}
+
+std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
+  return std::make_shared<MyRowSequenceIterator>(ranges_, false);
+}
 
 void MyRowSequence::forEachChunk(const std::function<void(uint64_t firstKey,
     uint64_t lastKey)> &f) const {
