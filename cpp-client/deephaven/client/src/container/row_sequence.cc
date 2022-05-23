@@ -5,14 +5,10 @@ using deephaven::client::utility::stringf;
 
 namespace deephaven::client::container {
 namespace {
-/**
- * Holds a slice of a set::set<int64_t>
- */
 class MyRowSequence final : public RowSequence {
   typedef std::map<uint64_t, uint64_t> ranges_t;
 public:
-  MyRowSequence(std::shared_ptr<ranges_t> ranges, ranges_t::const_iterator begin,
-      ranges_t::const_iterator end, size_t size);
+  MyRowSequence(std::shared_ptr<ranges_t> ranges, size_t size);
   ~MyRowSequence() final = default;
   std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
   std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
@@ -25,24 +21,20 @@ public:
 
 private:
   std::shared_ptr<ranges_t> ranges_;
-  ranges_t::const_iterator begin_;
-  ranges_t::const_iterator end_;
   size_t size_ = 0;
 };
 
 class MyRowSequenceIterator final : public RowSequenceIterator {
-  typedef std::set<uint64_t> data_t;
+  typedef std::map<uint64_t, uint64_t> ranges_t;
 public:
-  MyRowSequenceIterator(std::shared_ptr<data_t> data, data_t::const_iterator begin,
-      data_t::const_iterator end, size_t size, bool forward);
+  MyRowSequenceIterator(std::shared_ptr<ranges_t> ranges, bool forward);
   ~MyRowSequenceIterator() final = default;
   bool tryGetNext(uint64_t *result) final;
 
 private:
-  std::shared_ptr<data_t> data_;
-  data_t::const_iterator begin_;
-  data_t::const_iterator end_;
-  size_t size_ = 0;
+  std::shared_ptr<ranges_t> ranges_;
+  ranges_t::const_iterator current_;
+  size_t nextVal_ = 0;
   bool forward_ = true;
 };
 } // namespace
@@ -115,14 +107,12 @@ void RowSequenceBuilder::addRange(uint64_t begin, uint64_t end, const char *zamb
     node.mapped() = end;
     ranges_.insert(std::move(node));
   }
+  size_ += end - begin;
 }
 
 std::shared_ptr<RowSequence> RowSequenceBuilder::build() {
   auto sp = std::make_shared<ranges_t>(std::move(ranges_));
-  auto begin = sp->begin();
-  auto end = sp->end();
-  auto size = sp->size();
-  return std::make_shared<MyRowSequence>(std::move(sp), begin, end, size);
+  return std::make_shared<MyRowSequence>(std::move(sp), size_);
 }
 
 namespace {
@@ -143,22 +133,80 @@ void MyRowSequence::forEachChunk(const std::function<void(uint64_t firstKey,
   throw std::runtime_error("TODO(kosak): forEachChunk");
 }
 
-MyRowSequenceIterator::MyRowSequenceIterator(
-    std::shared_ptr<data_t> data, data_t::const_iterator begin,
-    data_t::const_iterator end, size_t size, bool forward) : data_(std::move(data)), begin_(begin),
-    end_(end), size_(size), forward_(forward) {}
+MyRowSequenceIterator::MyRowSequenceIterator(std::shared_ptr<ranges_t> ranges, bool forward) :
+    ranges_(std::move(ranges)), forward_(forward) {
+  if (forward_) {
+    current_ = ranges_->begin();
+    while (true) {
+      if (current_ == ranges_->end()) {
+        return;
+      }
+      if (current_->first != current_->second) {
+        nextVal_ = current_->first;
+        return;
+      }
+      ++current_;
+    }
+  }
+
+  current_ = ranges_->end();
+  while (true) {
+    if (current_ == ranges_->begin()) {
+      // We use ranges_->end() as the "exhausted" sentinal, regardless of direction.
+      current_ = ranges_->end();
+      return;
+    }
+    --current_;
+    if (current_->first != current_->second) {
+      nextVal_ = current_->second - 1;
+      return;
+    }
+  }
+}
 
 bool MyRowSequenceIterator::tryGetNext(uint64_t *result) {
-  if (begin_ == end_) {
+  // still using ranges_->end() as a sentinel, even though going backwards
+  if (current_ == ranges_->end()) {
     return false;
   }
   if (forward_) {
-    *result = *begin_++;
-  } else {
-    *result = *--end_;
+    *result = nextVal_;
+    ++nextVal_;
+    if (nextVal_ != current_->second) {
+      return true;
+    }
+    while (true) {
+      ++current_;
+      if (current_ == ranges_->end()) {
+        // Exhausted. Return one last value, already in *result.
+        return true;
+      }
+      if (current_->first != current_->second) {
+        // Set up next value and return current value, already in *result.
+        nextVal_ = current_->first;
+        return true;
+      }
+    }
   }
-  --size_;
-  return true;
+
+  // Reverse
+  *result = nextVal_;
+  if (nextVal_ != current_->first) {
+    --nextVal_;
+    return true;
+  }
+  while (true) {
+    if (current_ == ranges_->begin()) {
+      // Exhausted. Return one last value, already in *result.
+      return true;
+    }
+    --current_;
+    if (current_->first != current_->second) {
+      // Set up next value and return current value, already in *result.
+      nextVal_ = current_->second - 1;
+      return true;
+    }
+  }
 }
 }  // namespace
 }  // namespace deephaven::client::container

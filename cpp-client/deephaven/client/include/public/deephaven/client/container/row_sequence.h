@@ -52,5 +52,6 @@ private:
   // maps range.begin to range.end. We ensure that ranges never overlap and that contiguous ranges
   // are collapsed.
   ranges_t ranges_;
+  size_t size_ = 0;
 };
 }  // namespace deephaven::client::container
