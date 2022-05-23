@@ -61,13 +61,16 @@ void IntArrayColumnSource::fillChunk(Context *context, const RowSequence &rows, 
   assertFits(rows.size(), dest->capacity());
 
   size_t destIndex = 0;
-  int64_t srcIndex;
-  auto iter = rows.getRowSequenceIterator();
-  while (iter->tryGetNext(&srcIndex)) {
-    assertInRange(srcIndex, data_.size());
-    typedDest->data()[destIndex] = data_[srcIndex];
-    ++destIndex;
-  }
+  auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
+    if (end < data_.size()) {
+      throw std::runtime_error(stringf("end (%o) < data_.size (%o)", end, data_.size()));
+    }
+    for (auto current = begin; current != end; ++current) {
+      typedDest->data()[destIndex] = data_[current];
+      ++destIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
 }
 
 void IntArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
@@ -76,13 +79,14 @@ void IntArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
   assertFits(rows.size(), src.capacity());
 
   size_t srcIndex = 0;
-  int64_t destIndex;
-  auto iter = rows.getRowSequenceIterator();
-  while (iter->tryGetNext(&destIndex)) {
-    ensureSize(destIndex + 1);
-    data_[destIndex] = typedSrc->data()[srcIndex];
-    ++srcIndex;
-  }
+  auto applyChunk = [this, typedSrc, &srcIndex](uint64_t begin, uint64_t end) {
+    ensureSize(end);
+    for (auto current = begin; current != end; ++current) {
+      data_[current] = typedSrc->data()[srcIndex];
+      ++srcIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
 }
 
 void IntArrayColumnSource::fillFromChunkUnordered(Context *context, const Chunk &src,
@@ -136,13 +140,16 @@ void LongArrayColumnSource::fillChunk(Context *context, const RowSequence &rows,
   assertFits(rows.size(), dest->capacity());
 
   size_t destIndex = 0;
-  int64_t srcIndex;
-  auto iter = rows.getRowSequenceIterator();
-  while (iter->tryGetNext(&srcIndex)) {
-    assertInRange(srcIndex, data_.size());
-    typedDest->data()[destIndex] = data_[srcIndex];
-    ++destIndex;
-  }
+  auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
+    if (end < data_.size()) {
+      throw std::runtime_error(stringf("end (%o) < data_.size (%o)", end, data_.size()));
+    }
+    for (auto current = begin; current != end; ++current) {
+      typedDest->data()[destIndex] = data_[current];
+      ++destIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
 }
 
 void LongArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
@@ -151,13 +158,14 @@ void LongArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
   assertFits(rows.size(), src.capacity());
 
   size_t srcIndex = 0;
-  int64_t destIndex;
-  auto iter = rows.getRowSequenceIterator();
-  while (iter->tryGetNext(&destIndex)) {
-    ensureSize(destIndex + 1);
-    data_[destIndex] = typedSrc->data()[srcIndex];
-    ++srcIndex;
-  }
+  auto applyChunk = [this, typedSrc, &srcIndex](uint64_t begin, uint64_t end) {
+    ensureSize(end);
+    for (auto current = begin; current != end; ++current) {
+      data_[current] = typedSrc->data()[srcIndex];
+      ++srcIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
 }
 
 void LongArrayColumnSource::fillFromChunkUnordered(Context *context, const Chunk &src,
@@ -213,13 +221,16 @@ void DoubleArrayColumnSource::fillChunk(Context *context, const RowSequence &row
   assertFits(rows.size(), dest->capacity());
 
   size_t destIndex = 0;
-  int64_t srcIndex;
-  auto iter = rows.getRowSequenceIterator();
-  while (iter->tryGetNext(&srcIndex)) {
-    assertInRange(srcIndex, data_.size());
-    typedDest->data()[destIndex] = data_[srcIndex];
-    ++destIndex;
-  }
+  auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
+    if (end < data_.size()) {
+      throw std::runtime_error(stringf("end (%o) < data_.size (%o)", end, data_.size()));
+    }
+    for (auto current = begin; current != end; ++current) {
+      typedDest->data()[destIndex] = data_[current];
+      ++destIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
 }
 
 void DoubleArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
@@ -228,13 +239,14 @@ void DoubleArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
   assertFits(rows.size(), src.capacity());
 
   size_t srcIndex = 0;
-  int64_t destIndex;
-  auto iter = rows.getRowSequenceIterator();
-  while (iter->tryGetNext(&destIndex)) {
-    ensureSize(destIndex + 1);
-    data_[destIndex] = typedSrc->data()[srcIndex];
-    ++srcIndex;
-  }
+  auto applyChunk = [this, typedSrc, &srcIndex](uint64_t begin, uint64_t end) {
+    ensureSize(end);
+    for (auto current = begin; current != end; ++current) {
+      data_[current] = typedSrc->data()[srcIndex];
+      ++srcIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
 }
 
 void DoubleArrayColumnSource::fillFromChunkUnordered(Context *context, const Chunk &src,

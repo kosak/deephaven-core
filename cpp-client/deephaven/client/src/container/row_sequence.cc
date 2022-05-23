@@ -9,10 +9,10 @@ namespace {
  * Holds a slice of a set::set<int64_t>
  */
 class MyRowSequence final : public RowSequence {
-  typedef std::set<uint64_t> data_t;
+  typedef std::map<uint64_t, uint64_t> ranges_t;
 public:
-  MyRowSequence(std::shared_ptr<data_t> data, data_t::const_iterator begin,
-      data_t::const_iterator end, size_t size);
+  MyRowSequence(std::shared_ptr<ranges_t> ranges, ranges_t::const_iterator begin,
+      ranges_t::const_iterator end, size_t size);
   ~MyRowSequence() final = default;
   std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const final;
   std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const final;
@@ -24,9 +24,9 @@ public:
   }
 
 private:
-  std::shared_ptr<data_t> data_;
-  data_t::const_iterator begin_;
-  data_t::const_iterator end_;
+  std::shared_ptr<ranges_t> ranges_;
+  ranges_t::const_iterator begin_;
+  ranges_t::const_iterator end_;
   size_t size_ = 0;
 };
 
