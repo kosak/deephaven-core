@@ -1,6 +1,8 @@
 #include "deephaven/client/subscription/space_mapper.h"
 #include "deephaven/client/utility/utility.h"
 
+using deephaven::client::container::RowSequence;
+using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::subscription {
@@ -109,5 +111,28 @@ void SpaceMapper::applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKe
     set_.insert(std::move(node));
     ip = nextp;
   }
+}
+
+std::shared_ptr<RowSequence> SpaceMapper::convertKeysToIndices(const RowSequence &keys) const {
+  RowSequenceBuilder builder;
+  auto convertChunk = [this, &builder](uint64_t begin, uint64_t end) {
+    auto beginp = set_.find(begin);
+    if (beginp == set_.end()) {
+      throw std::runtime_error(stringf("key %o is not the src map", begin));
+    }
+    auto nextRank = set_.rank(beginp);
+    // Confirm we have entries for everything in the range.
+    auto currentp = beginp;
+    for (auto current = begin; current != end; ++current) {
+      if (current != *currentp) {
+        throw std::runtime_error(stringf("key %o is not the src map", begin));
+      }
+      ++currentp;
+    }
+    auto size = end - begin;
+    builder.addRange(nextRank, nextRank + size, "TODO(kosak): super nubbin");
+  };
+  keys.forEachChunk(convertChunk);
+  return builder.build();
 }
 }  // namespace deephaven::client::subscription
