@@ -68,21 +68,28 @@ void SpaceMapper::applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKe
     auto amountToAdd = destKey - beginKey;
     // positive shift: work backwards
     auto ip = set_.lower_bound(endKey);
-    // ip == end, or the first element >= endKey
+    // ip is the first element >= endKey, or it is end()
+    if (ip == set_.begin()) {
+      return;
+    }
+    --ip;
+    // ip is the last element < endKey
     while (true) {
-      if (ip == set_.begin()) {
-        return;
-      }
-      // moving to the left, starting with is the last element < endKey
-      --ip;
       if (*ip < beginKey) {
         // exceeded range
         return;
       }
-      // We have a live one: adjust its key
+      std::optional<decltype(ip)> prev;
+      if (ip != set_.begin()) {
+        prev = std::prev(ip);
+      }
       auto node = set_.extract(ip);
       node.value() = node.value() + amountToAdd;
       set_.insert(std::move(node));
+      if (!prev.has_value()) {
+        return;
+      }
+      ip = *prev;
     }
     return;
   }
@@ -96,10 +103,11 @@ void SpaceMapper::applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKe
     if (ip == set_.end() || *ip >= endKey) {
       return;
     }
+    auto nextp = std::next(ip);
     auto node = set_.extract(ip);
     node.value() = node.value() - amountToSubtract;
     set_.insert(std::move(node));
-    ++ip;
+    ip = nextp;
   }
 }
 }  // namespace deephaven::client::subscription
