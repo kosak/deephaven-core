@@ -8,6 +8,7 @@ include(GNUInstallDirs)
 
 find_package(Arrow REQUIRED)
 find_package(ArrowFlight REQUIRED HINTS ${Arrow_DIR})
+find_package(Boost REQUIRED)
 find_package(Flatbuffers REQUIRED)
 find_package(Immer REQUIRED)
 find_package(Protobuf REQUIRED)
@@ -71,15 +72,17 @@ set(ALL_FILES
 
     include/public/deephaven/client/immerutil/abstract_flex_vector.h
 
+    include/private/deephaven/client/subscription/index_decoder.h
+    include/private/deephaven/client/subscription/space_mapper.h
+    include/private/deephaven/client/subscription/subscribe_thread.h
+    include/private/deephaven/client/subscription/subscribed_table_state.h
+    include/private/deephaven/client/subscription/subscription_handle.h
+    include/private/deephaven/client/subscription/update_processor.h
     src/subscription/index_decoder.cc
+    src/subscription/space_mapper.cc
     src/subscription/subscribe_thread.cc
     src/subscription/subscribed_table_state.cc
     src/subscription/update_processor.cc
-    include/private/deephaven/client/subscription/index_decoder.h
-    include/private/deephaven/client/subscription/subscribe_thread.h
-    include/private/deephaven/client/subscription/subscribed_table_state.h
-    include/private/deephaven/client/subscription/update_processor.h
-
 
     src/utility/executor.cc
     src/utility/misc.cc
@@ -118,7 +121,7 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    include/private/deephaven/client/subscription/subscription_handle.h include/private/deephaven/client/subscription/space_mapper.h src/subscription/space_mapper.cc)
+    src/immerutil/abstract_flex_vector.cc)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config
@@ -127,6 +130,7 @@ add_library(deephaven::client ALIAS client)
 target_compile_options(client PRIVATE -Wall -Werror)
 
 target_include_directories(client PRIVATE include/private)
+target_include_directories(client PRIVATE ${Boost_INCLUDE_DIR})
 target_include_directories(client PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>)
 
 # Protos and flatbuf are doing their own thing.
@@ -135,6 +139,7 @@ target_include_directories(client PRIVATE "./flatbuf")
 
 target_link_libraries(client PUBLIC arrow_flight_static)
 target_link_libraries(client PUBLIC arrow_static)
+target_link_libraries(client PUBLIC Boost::boost)
 target_link_libraries(client PUBLIC immer)
 target_link_libraries(client PUBLIC protobuf::libprotobuf)
 target_link_libraries(client PUBLIC flatbuffers::flatbuffers)

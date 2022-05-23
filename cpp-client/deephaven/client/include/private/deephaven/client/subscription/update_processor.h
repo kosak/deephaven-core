@@ -6,7 +6,7 @@
 #include "deephaven/client/utility/misc.h"
 
 namespace deephaven::client::subscription {
-class UpdateProcessor {
+class UpdateProcessor final {
   typedef deephaven::client::utility::ColumnDefinitions ColumnDefinitions;
 
   struct Private {};
@@ -18,13 +18,13 @@ public:
 
   UpdateProcessor(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
     std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback);
+  ~UpdateProcessor();
 
   void cancel();
 
 private:
   static void runForever(const std::shared_ptr <UpdateProcessor> &self);
   void runForeverHelper();
-  void runForeverHelperImpl();
 
 public:
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr_;

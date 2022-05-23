@@ -29,7 +29,7 @@ public:
 template<typename T>
 class AbstractFlexVector final : public AbstractFlexVectorBase {
 public:
-  AbstractFlexVector(immer::flex_vector<T> vec) : vec_(std::move(vec)) {}
+  explicit AbstractFlexVector(immer::flex_vector<T> vec) : vec_(std::move(vec)) {}
 
   std::unique_ptr<AbstractFlexVectorBase> take(size_t n) final {
     return create(vec_.take(n));

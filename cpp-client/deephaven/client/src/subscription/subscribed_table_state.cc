@@ -123,12 +123,12 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
       }
       if (direction == 0) {
         // If forward, only process negative shifts.
-        if (dest >= 0) {
+        if (dest >= first) {
           continue;
         }
       } else {
         // If reverse, only process positive shifts.
-        if (dest <= 0) {
+        if (dest <= first) {
           continue;
         }
       }

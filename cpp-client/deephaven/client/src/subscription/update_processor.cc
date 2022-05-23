@@ -56,6 +56,16 @@ std::shared_ptr<UpdateProcessor> UpdateProcessor::startThread(
   return result;
 }
 
+UpdateProcessor::UpdateProcessor(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
+    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
+    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
+
+UpdateProcessor::~UpdateProcessor() = default;
+
+void UpdateProcessor::cancel() {
+  fsr_->Cancel();
+}
+
 void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
   std::cerr << "UpdateProcessor is starting.\n";
   std::exception_ptr eptr;
