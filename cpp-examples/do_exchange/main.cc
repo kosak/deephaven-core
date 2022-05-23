@@ -29,6 +29,7 @@ using deephaven::client::chunk::Chunk;
 using deephaven::client::chunk::ChunkVisitor;
 using deephaven::client::container::Context;
 using deephaven::client::container::RowSequence;
+using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::chunk::DoubleChunk;
 using deephaven::client::chunk::IntChunk;
 using deephaven::client::chunk::LongChunk;
@@ -136,7 +137,11 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
   auto outerIter = table.getRowSequence()->getRowSequenceIterator();
 
   for (size_t startRow = 0; startRow < nrows; startRow += chunkSize) {
-    auto selectedRows = outerIter->getNextRowSequenceWithLength(chunkSize);
+    // hack for now
+    auto endRow = std::min(startRow + chunkSize, nrows);
+    RowSequenceBuilder builder;
+    builder.addRange(0, endRow, "zamboni factor");
+    auto selectedRows = builder.build();
     auto thisSize = selectedRows->size();
 
     auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
