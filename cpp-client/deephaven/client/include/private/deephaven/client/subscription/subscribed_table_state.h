@@ -10,7 +10,6 @@
 namespace deephaven::client::subscription {
 class SubscribedTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
-  typedef deephaven::client::column::ImmerColumnSourceBase ImmerColumnSourceBase;
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
   typedef deephaven::client::table::Table Table;

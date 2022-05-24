@@ -30,6 +30,10 @@ public:
 
   std::shared_ptr<RowSequence> convertKeysToIndices(const RowSequence &keys) const;
 
+  size_t size() const {
+    return set_.size();
+  }
+
 private:
   set_t set_;
 };

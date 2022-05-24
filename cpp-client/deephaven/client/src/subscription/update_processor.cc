@@ -7,6 +7,7 @@
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/immerutil/abstract_flex_vector.h"
+#include "deephaven/client/immerutil/immer_column_source.h"
 #include "deephaven/client/subscription/index_decoder.h"
 #include "deephaven/client/subscription/subscribed_table_state.h"
 #include "deephaven/client/utility/utility.h"
@@ -14,10 +15,10 @@
 
 using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
-using deephaven::client::column::ImmerColumnSourceBase;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
+using deephaven::client::immerutil::ImmerColumnSourceBase;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;

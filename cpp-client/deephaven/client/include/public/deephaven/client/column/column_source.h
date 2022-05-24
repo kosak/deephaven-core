@@ -6,10 +6,7 @@
 #include "deephaven/client/chunk/chunk.h"
 #include "deephaven/client/container/context.h"
 #include "deephaven/client/container/row_sequence.h"
-#include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/utility/utility.h"
-
-#include "immer/flex_vector.hpp"
 
 namespace deephaven::client::column {
 class ColumnSourceContext;
@@ -58,37 +55,6 @@ public:
 class DoubleColumnSource : public MutableColumnSource {
 public:
   ~DoubleColumnSource() override;
-};
-
-class ImmerColumnSourceBase : public ColumnSource {
-protected:
-  typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
-
-  template<typename T>
-  using AbstractFlexVector = deephaven::client::immerutil::AbstractFlexVector<T>;
-
-public:
-  virtual std::unique_ptr<AbstractFlexVectorBase> getInternals() const = 0;
-  virtual void setInternals(std::unique_ptr<AbstractFlexVectorBase> internals) = 0;
-};
-
-template<typename T>
-class ImmerColumnSource final : public ImmerColumnSourceBase, std::enable_shared_from_this<ImmerColumnSource<T>> {
-public:
-  ~ImmerColumnSource() final;
-
-  std::unique_ptr<AbstractFlexVectorBase> getInternals() const final {
-    return AbstractFlexVectorBase::create(data_);
-  }
-
-  void setInternals(std::unique_ptr<AbstractFlexVectorBase> internals) final {
-    using deephaven::client::utility::verboseCast;
-    auto *afv = verboseCast<AbstractFlexVector<T>*>(DEEPHAVEN_EXPR_MSG(&internals));
-    data_ = std::move(afv->data());
-  }
-
-private:
-  immer::flex_vector<T> data_;
 };
 
 class IntArrayColumnSource final : public IntColumnSource, std::enable_shared_from_this<IntArrayColumnSource> {
