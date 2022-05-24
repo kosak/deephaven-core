@@ -8,6 +8,7 @@
 
 namespace deephaven::client::table {
 class Table {
+protected:
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
 

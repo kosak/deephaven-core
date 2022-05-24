@@ -16,6 +16,7 @@
 using deephaven::client::chunk::LongChunk;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::container::RowSequence;
+using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::container::RowSequenceIterator;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::table::Table;
@@ -28,6 +29,26 @@ namespace {
 // void mapShifter(int64_t start, int64_t endInclusive, int64_t dest, std::map<int64_t, int64_t> *zm);
 void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex, const RowSequence &destIndex,
     const std::function<void(uint64_t, uint64_t, uint64_t)> &processShift);
+class MyTable final : public Table {
+public:
+  explicit MyTable(std::vector<std::shared_ptr<ColumnSource>> sources, size_t numRows);
+  ~MyTable() final;
+
+  std::shared_ptr<RowSequence> getRowSequence() const final;
+  std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const final {
+    return sources_[columnIndex];
+  }
+  size_t numRows() const final {
+    return numRows_;
+  }
+  size_t numColumns() const final {
+    return sources_.size();
+  }
+
+private:
+  std::vector<std::shared_ptr<ColumnSource>> sources_;
+  size_t numRows_ = 0;
+};
 }  // namespace
 
 SubscribedTableState::SubscribedTableState(
@@ -95,7 +116,11 @@ void SubscribedTableState::applyShifts(const RowSequence &firstIndex, const RowS
 }
 
 std::shared_ptr<Table> SubscribedTableState::snapshot() const {
-
+  auto columnSources = makeReservedVector<std::shared_ptr<ColumnSource>>(flexVectors_.size());
+  for (const auto &fv : flexVectors_) {
+    columnSources.push_back(fv->makeColumnSource());
+  }
+  return std::make_shared<MyTable>(std::move(columnSources), spaceMapper_.size());
 }
 
 namespace {
@@ -140,6 +165,16 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
       processShift(first, last, dest);
     }
   }
+}
+MyTable::MyTable(std::vector<std::shared_ptr<ColumnSource>> sources, size_t numRows) :
+    sources_(std::move(sources)), numRows_(numRows) {}
+MyTable::~MyTable() = default;
+
+std::shared_ptr<RowSequence> MyTable::getRowSequence() const {
+  // Need a utility for this
+  RowSequenceBuilder rb;
+  rb.addRange(0, numRows_, "zamboni time");
+  return rb.build();
 }
 }  // namespace
 }  // namespace deephaven::client::subscription

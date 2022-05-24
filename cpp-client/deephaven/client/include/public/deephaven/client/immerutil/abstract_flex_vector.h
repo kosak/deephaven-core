@@ -5,6 +5,7 @@
 #include <immer/flex_vector_transient.hpp>
 #include <arrow/array.h>
 #include "deephaven/client/utility/utility.h"
+#include "deephaven/client/column/column_source.h"
 
 namespace deephaven::client::immerutil {
 namespace internal {
@@ -34,6 +35,7 @@ class AbstractFlexVector;
  * it's instantiated on.
  */
 class AbstractFlexVectorBase {
+  typedef deephaven::client::column::ColumnSource ColumnSource;
 public:
   template<typename T>
   static std::unique_ptr<AbstractFlexVectorBase> create(immer::flex_vector<T> vec);
@@ -44,6 +46,8 @@ public:
   virtual void inPlaceDrop(size_t n) = 0;
   virtual void inPlaceAppend(std::unique_ptr<AbstractFlexVectorBase> other) = 0;
   virtual void inPlaceAppendArrow(const arrow::Array &data) = 0;
+
+  virtual std::shared_ptr<ColumnSource> makeColumnSource() const = 0;
 };
 
 template<typename T>
