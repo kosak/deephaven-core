@@ -37,6 +37,10 @@ uint64_t SpaceMapper::addRange(uint64_t beginKey, uint64_t endKey) {
   }
   auto initialSize = set_.size();
   set_.insert(SimpleRangeIterator(beginKey), SimpleRangeIterator(endKey));
+  auto q1 = set_.size();
+  auto q2 = initialSize + size;
+  (void)q1;
+  (void)q2;
   if (set_.size() != initialSize + size) {
     throw std::runtime_error(stringf("Some elements of [%o,%o) were already in the set", beginKey,
         endKey));
