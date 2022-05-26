@@ -270,7 +270,8 @@ void millionRows(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
 
-  const size_t topAndBottomSize = 500'000;
+//   const size_t topAndBottomSize = 500'000;
+  const size_t topAndBottomSize = 10;
   auto tTop = manager.emptyTable(topAndBottomSize).select("Value = ii");
   auto tBottom = manager.emptyTable(topAndBottomSize).select("Value = 10_000_000 + ii");
   auto pulsatingMiddle =  manager.timeTable(start, 1 * 1'000'000'000L)
