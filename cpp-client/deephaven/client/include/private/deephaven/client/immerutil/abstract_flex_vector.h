@@ -4,9 +4,9 @@
 #include <immer/flex_vector.hpp>
 #include <immer/flex_vector_transient.hpp>
 #include <arrow/array.h>
-#include "deephaven/client/utility/utility.h"
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/immerutil/immer_column_source.h"
+#include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::immerutil {
 namespace internal {
@@ -87,7 +87,9 @@ public:
     vec_ = transient.persistent();
   }
 
-  virtual std::shared_ptr<ColumnSource> makeColumnSource() const;
+  std::shared_ptr<ColumnSource> makeColumnSource() const final {
+    return std::make_shared<ImmerColumnSource<T>>(vec_);
+  }
 
 private:
   immer::flex_vector<T> vec_;
