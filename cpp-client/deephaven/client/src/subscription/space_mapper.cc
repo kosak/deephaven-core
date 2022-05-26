@@ -118,14 +118,14 @@ std::shared_ptr<RowSequence> SpaceMapper::convertKeysToIndices(const RowSequence
   auto convertChunk = [this, &builder](uint64_t begin, uint64_t end) {
     auto beginp = set_.find(begin);
     if (beginp == set_.end()) {
-      throw std::runtime_error(stringf("key %o is not the src map", begin));
+      throw std::runtime_error(stringf("begin key %o is not in the src map", begin));
     }
     auto nextRank = set_.rank(beginp);
     // Confirm we have entries for everything in the range.
     auto currentp = beginp;
     for (auto current = begin; current != end; ++current) {
       if (current != *currentp) {
-        throw std::runtime_error(stringf("key %o is not the src map", begin));
+        throw std::runtime_error(stringf("current key %o is in not the src map", begin));
       }
       ++currentp;
     }
