@@ -59,20 +59,19 @@ SubscribedTableState::~SubscribedTableState() = default;
 
 void SubscribedTableState::add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
     const RowSequence &addedIndexes) {
-  auto addChunk = [this, &addedData](uint64_t beginKey, uint64_t endKey) {
-    auto size = endKey - beginKey;
-    auto beginIndex = spaceMapper_.addRange(beginKey, endKey);
+  auto addChunk = [this, &addedData](uint64_t beginIndex, uint64_t endIndex) {
+    auto size = endIndex - beginIndex;
 
     for (size_t i = 0; i < flexVectors_.size(); ++i) {
       auto &fv = flexVectors_[i];
       auto &ad = addedData[i];
 
       auto fvTemp = std::move(fv);
-      // Give "col" its original values up to 'beginIndex'; leave colTemp with the rest.
+      // Give "col" its original values up to 'beginIndex'; leave fvTemp with the rest.
       fv = fvTemp->take(beginIndex);
       fvTemp->inPlaceDrop(beginIndex);
 
-      // Append the next 'size' values from 'addedData' to 'col' and drop them from 'addedData'.
+      // Append the next 'size' values from 'addedData' to 'fv' and drop them from 'addedData'.
       fv->inPlaceAppend(ad->take(size));
       ad->inPlaceDrop(size);
 
