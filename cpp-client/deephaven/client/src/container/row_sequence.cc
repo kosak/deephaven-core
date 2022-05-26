@@ -127,8 +127,7 @@ std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterato
   return std::make_shared<MyRowSequenceIterator>(ranges_, false);
 }
 
-void MyRowSequence::forEachChunk(const std::function<void(uint64_t firstKey,
-    uint64_t lastKey)> &f) const {
+void MyRowSequence::forEachChunk(const std::function<void(uint64_t beginKey, uint64_t endKey)> &f) const {
   throw std::runtime_error("TODO(kosak): forEachChunk");
 }
 
