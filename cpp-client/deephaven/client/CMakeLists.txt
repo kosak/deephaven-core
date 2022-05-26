@@ -123,7 +123,7 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    )
+    src/immerutil/immer_column_source.cc)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config
