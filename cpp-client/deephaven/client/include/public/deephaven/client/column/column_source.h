@@ -10,7 +10,6 @@
 
 namespace deephaven::client::column {
 class ColumnSourceContext;
-class LongColumnSource;
 class ColumnSourceVisitor;
 
 // the column source interfaces
@@ -45,7 +44,12 @@ template<typename T>
 class NumericColumnSource : public ColumnSource {
 };
 
-// the per-type interfaces
+// convenience typedefs
+typedef NumericColumnSource<int32_t> IntColumnSource;
+typedef NumericColumnSource<int64_t> LongColumnSource;
+typedef NumericColumnSource<double> DoubleColumnSource;
+
+// the mutable per-type interfaces
 template<typename T>
 class MutableNumericColumnSource : public MutableColumnSource {
 };
