@@ -113,6 +113,17 @@ void SpaceMapper::applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKe
   }
 }
 
+std::shared_ptr<RowSequence> SpaceMapper::addKeys(const RowSequence &keys) {
+  RowSequenceBuilder builder;
+  auto addChunk = [this, &builder](uint64_t beginKey, uint64_t endKey) {
+    auto size = endKey - beginKey;
+    auto beginIndex = addRange(beginKey, endKey);
+    builder.addRange(beginIndex, beginIndex + size, "kosak town");
+  };
+  keys.forEachChunk(addChunk);
+  return builder.build();
+}
+
 std::shared_ptr<RowSequence> SpaceMapper::convertKeysToIndices(const RowSequence &keys) const {
   RowSequenceBuilder builder;
   auto convertChunk = [this, &builder](uint64_t begin, uint64_t end) {

@@ -28,6 +28,7 @@ public:
   uint64_t eraseRange(uint64_t beginKey, uint64_t endKey);
   void applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKey);
 
+  std::shared_ptr<RowSequence> addKeys(const RowSequence &keys);
   std::shared_ptr<RowSequence> convertKeysToIndices(const RowSequence &keys) const;
 
   size_t size() const {

@@ -163,7 +163,7 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto beforeAddsOrModifies = state.snapshot();
-    auto addedRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*addedRows);
+    auto addedRowsIndexSpace = state.spaceMapper().addKeys(*addedRows);
     // BTW can clear addedRows here
     // 3. Adds
     // (a) splice in the data

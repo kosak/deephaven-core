@@ -33,6 +33,7 @@ public:
 
   std::shared_ptr<Table> snapshot() const;
 
+  SpaceMapper &spaceMapper() { return spaceMapper_; }
   const SpaceMapper &spaceMapper() const { return spaceMapper_; }
 
 private:
