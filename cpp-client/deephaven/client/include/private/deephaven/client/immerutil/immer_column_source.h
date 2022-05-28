@@ -6,32 +6,9 @@
 #include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::immerutil {
-namespace internal {
-// TODO(kosak): need to do this differently
-template<typename T>
-struct TypeToChunk {};
-
-template<>
-struct TypeToChunk<int32_t> {
-  typedef deephaven::client::chunk::IntChunk type_t;
-};
-
-template<>
-struct TypeToChunk<int64_t> {
-  typedef deephaven::client::chunk::LongChunk type_t;
-};
-
-template<>
-struct TypeToChunk<double> {
-  typedef deephaven::client::chunk::DoubleChunk type_t;
-};
-}  // namespace internal
 class ImmerColumnSourceBase : public deephaven::client::column::ColumnSource {
-protected:
-
-  typedef deephaven::client::column::ColumnSourceContext ColumnSourceContext;
 public:
-  std::shared_ptr<ColumnSourceContext> createContext(size_t chunkSize) const final;
+  std::shared_ptr<Context> createContext(size_t chunkSize) const final;
   void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size,
       Chunk *dest) const final;
   void acceptVisitor(column::ColumnSourceVisitor *visitor) const final;
@@ -40,8 +17,6 @@ public:
 template<typename T>
 class ImmerColumnSource final
     : public ImmerColumnSourceBase, std::enable_shared_from_this<ImmerColumnSource<T>> {
-  typedef deephaven::client::column::ColumnSourceContext ColumnSourceContext;
-
 public:
   explicit ImmerColumnSource(immer::flex_vector<T> data) : data_(std::move(data)) {}
 

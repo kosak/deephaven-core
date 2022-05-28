@@ -95,4 +95,27 @@ template<typename T>
 void NumericChunk<T>::acceptVisitor(const ChunkVisitor &v) const {
   v.visit(*this);
 }
+
+template<typename T>
+struct TypeToChunk {};
+
+template<>
+struct TypeToChunk<int32_t> {
+  typedef deephaven::client::chunk::IntChunk type_t;
+};
+
+template<>
+struct TypeToChunk<int64_t> {
+  typedef deephaven::client::chunk::LongChunk type_t;
+};
+
+template<>
+struct TypeToChunk<double> {
+  typedef deephaven::client::chunk::DoubleChunk type_t;
+};
+
+template<>
+struct TypeToChunk<size_t> {
+  typedef deephaven::client::chunk::SizeTChunk type_t;
+};
 }  // namespace deephaven::client::chunk

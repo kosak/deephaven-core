@@ -32,23 +32,6 @@ void IntArrayColumnSource::fillChunkUnordered(Context *context, const LongChunk 
   }
 }
 
-void IntArrayColumnSource::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
-  auto *typedDest = verboseCast<IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
-  assertFits(rows.size(), dest->capacity());
-
-  size_t destIndex = 0;
-  auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
-    if (end < data_.size()) {
-      throw std::runtime_error(stringf("end (%o) < data_.size (%o)", end, data_.size()));
-    }
-    for (auto current = begin; current != end; ++current) {
-      typedDest->data()[destIndex] = data_[current];
-      ++destIndex;
-    }
-  };
-  rows.forEachChunk(applyChunk);
-}
-
 void IntArrayColumnSource::fillFromChunk(Context *context, const Chunk &src,
     const RowSequence &rows) {
   auto *typedSrc = verboseCast<const IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, &src);

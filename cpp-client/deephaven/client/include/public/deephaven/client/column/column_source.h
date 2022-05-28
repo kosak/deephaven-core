@@ -96,20 +96,42 @@ auto NumericArrayColumnSource<T>::createContext(size_t chunkSize) const -> std::
 template<typename T>
 void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence &rows,
     Chunk *dest) const {
-  auto *typedDest = verboseCast<IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
-  assertFits(rows.size(), dest->capacity());
+  using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::verboseCast;
+
+  typedef typename TypeToChunk<T>::type_t chunkType_t;
+  auto *typedDest = verboseCast<chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+  // assert rows.size() <= dest->capacity()
+  assertLessEq(rows.size(), dest->capacity(), "rows.size()", "dest->capacity()", __PRETTY_FUNCTION__);
 
   size_t destIndex = 0;
   auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
-    if (end < data_.size()) {
-      throw std::runtime_error(stringf("end (%o) < data_.size (%o)", end, data_.size()));
-    }
+    // assert end <= data_.size()
+    assertLessEq(end, data_.size(), "end", "data_.size()", __PRETTY_FUNCTION__, );
     for (auto current = begin; current != end; ++current) {
       typedDest->data()[destIndex] = data_[current];
       ++destIndex;
     }
   };
   rows.forEachChunk(applyChunk);
+}
+
+template<typename T>
+void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const LongChunk &rowKeys,
+    size_t size, Chunk *dest) const {
+  using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::verboseCast;
+
+  typedef typename TypeToChunk<T>::type_t chunkType_t;
+  auto *typedDest = verboseCast<chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+  // assert size <= dest->capacity()
+  assertLessEq(size, dest->capacity(), "size", "dest->capacity()", __PRETTY_FUNCTION__);
+
+  for (size_t i = 0; i < size; ++i) {
+    auto srcIndex = rowKeys.data()[i];
+    assertInRange(srcIndex, data_.size());
+    typedDest->data()[i] = this->data_[srcIndex];
+  }
 }
 
 class ColumnSourceVisitor {
