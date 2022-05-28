@@ -63,7 +63,7 @@ class NumericArrayColumnSource final : public MutableNumericColumnSource<T>,
 
 public:
   static std::shared_ptr<NumericArrayColumnSource> create();
-  explicit NumericArrayColumnSource(Private) = default;
+  explicit NumericArrayColumnSource(Private) {}
   ~NumericArrayColumnSource() final = default;
 
   std::shared_ptr<Context> createContext(size_t chunkSize) const final;
@@ -98,8 +98,8 @@ void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence 
     Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::verboseCast;
-
   typedef typename TypeToChunk<T>::type_t chunkType_t;
+
   auto *typedDest = verboseCast<chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   // assert rows.size() <= dest->capacity()
   assertLessEq(rows.size(), dest->capacity(), "rows.size()", "dest->capacity()", __PRETTY_FUNCTION__);
@@ -107,7 +107,7 @@ void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence 
   size_t destIndex = 0;
   auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
     // assert end <= data_.size()
-    assertLessEq(end, data_.size(), "end", "data_.size()", __PRETTY_FUNCTION__, );
+    assertLessEq(end, data_.size(), "end", "data_.size()", __PRETTY_FUNCTION__);
     for (auto current = begin; current != end; ++current) {
       typedDest->data()[destIndex] = data_[current];
       ++destIndex;
@@ -121,8 +121,8 @@ void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const Lon
     size_t size, Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::verboseCast;
-
   typedef typename TypeToChunk<T>::type_t chunkType_t;
+
   auto *typedDest = verboseCast<chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   // assert size <= dest->capacity()
   assertLessEq(size, dest->capacity(), "size", "dest->capacity()", __PRETTY_FUNCTION__);
@@ -134,10 +134,63 @@ void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const Lon
   }
 }
 
+template<typename T>
+void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const Chunk &src,
+    const RowSequence &rows) {
+  using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::verboseCast;
+  typedef typename TypeToChunk<T>::type_t chunkType_t;
+
+  auto *typedSrc = verboseCast<const chunkType_t *>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+  // assert size <= src.capacity()
+  assertLessEq(rows.size(), src.capacity(), "rows.size()", "src.capacity()", __PRETTY_FUNCTION__);
+
+  size_t srcIndex = 0;
+  auto applyChunk = [this, typedSrc, &srcIndex](uint64_t begin, uint64_t end) {
+    ensureSize(end);
+    for (auto current = begin; current != end; ++current) {
+      data_[current] = typedSrc->data()[srcIndex];
+      ++srcIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
+}
+
+template<typename T>
+void NumericArrayColumnSource<T>::fillFromChunkUnordered(Context *context, const Chunk &src,
+    const LongChunk &rowKeys, size_t size) {
+  using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::verboseCast;
+  typedef typename TypeToChunk<T>::type_t chunkType_t;
+
+  auto *typedSrc = verboseCast<const chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
+  // assert rowKeys.size() <= src.capacity()
+  assertLessEq(size, rowKeys.capacity(), "size", "rowKeys.capacity()", __PRETTY_FUNCTION__);
+  assertLessEq(size, src.capacity(), "size", "src.capacity()", __PRETTY_FUNCTION__);
+
+  for (size_t i = 0; i < size; ++i) {
+    auto destIndex = rowKeys.data()[i];
+    ensureSize(destIndex + 1);
+    data_[destIndex] = typedSrc->data()[i];
+  }
+}
+
+template<typename T>
+void NumericArrayColumnSource<T>::ensureSize(size_t size) {
+  if (size > data_.size()) {
+    data_.resize(size);
+  }
+}
+
 class ColumnSourceVisitor {
 public:
-  virtual void visit(const IntColumnSource *) = 0;
-  virtual void visit(const LongColumnSource *) = 0;
-  virtual void visit(const DoubleColumnSource *) = 0;
+  virtual void visit(const IntColumnSource &) = 0;
+  virtual void visit(const LongColumnSource &) = 0;
+  virtual void visit(const DoubleColumnSource &) = 0;
 };
+
+template<typename T>
+void NumericArrayColumnSource<T>::acceptVisitor(ColumnSourceVisitor *visitor) const {
+  visitor->visit(*this);
+}
 }  // namespace deephaven::client::column
