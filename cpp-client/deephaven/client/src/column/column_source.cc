@@ -9,37 +9,16 @@
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 using deephaven::client::utility::verboseCast;
-using deephaven::client::column::ColumnSourceContext;
 using deephaven::client::chunk::DoubleChunk;
 using deephaven::client::chunk::IntChunk;
 
 namespace deephaven::client::column {
 namespace {
-class MyLongColumnSourceContext final : public ColumnSourceContext {
-public:
-};
-
-class MyDoubleColumnSourceContext final : public ColumnSourceContext {
-public:
-};
-
 void assertFits(size_t size, size_t capacity);
 void assertInRange(size_t index, size_t size);
 }  // namespace
 ColumnSource::~ColumnSource() = default;
 MutableColumnSource::~MutableColumnSource() = default;
-
-std::shared_ptr<IntArrayColumnSource> IntArrayColumnSource::create() {
-  return std::make_shared<IntArrayColumnSource>(Private());
-}
-
-IntArrayColumnSource::IntArrayColumnSource(Private) {}
-IntArrayColumnSource::~IntArrayColumnSource() = default;
-
-std::shared_ptr<ColumnSourceContext> IntArrayColumnSource::createContext(size_t chunkSize) const {
-  // We're not really using contexts yet.
-  return std::make_shared<MyLongColumnSourceContext>();
-}
 
 void IntArrayColumnSource::fillChunkUnordered(Context *context, const LongChunk &rowKeys,
     size_t size, Chunk *dest) const {

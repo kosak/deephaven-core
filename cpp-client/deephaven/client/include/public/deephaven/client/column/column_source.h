@@ -9,11 +9,9 @@
 #include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::column {
-class ColumnSourceContext;
 class ColumnSourceVisitor;
 
 // the column source interfaces
-
 class ColumnSource {
 public:
   typedef deephaven::client::chunk::Chunk Chunk;
@@ -24,7 +22,7 @@ public:
 public:
   virtual ~ColumnSource();
 
-  virtual std::shared_ptr<ColumnSourceContext> createContext(size_t chunkSize) const = 0;
+  virtual std::shared_ptr<Context> createContext(size_t chunkSize) const = 0;
   virtual void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const = 0;
   virtual void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size, Chunk *dest) const = 0;
 
@@ -65,10 +63,10 @@ class NumericArrayColumnSource final : public MutableNumericColumnSource<T>,
 
 public:
   static std::shared_ptr<NumericArrayColumnSource> create();
-  explicit NumericArrayColumnSource(Private);
-  ~NumericArrayColumnSource() final;
+  explicit NumericArrayColumnSource(Private) = default;
+  ~NumericArrayColumnSource() final = default;
 
-  std::shared_ptr<ColumnSourceContext> createContext(size_t chunkSize) const final;
+  std::shared_ptr<Context> createContext(size_t chunkSize) const final;
   void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const final;
   void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size,
       Chunk *dest) const final;
@@ -80,13 +78,39 @@ public:
 
 private:
   void ensureSize(size_t size);
-  std::vector<int32_t> data_;
+
+  std::vector<T> data_;
 };
 
-class ColumnSourceContext : public deephaven::client::container::Context {
-public:
-  ~ColumnSourceContext() override;
-};
+template<typename T>
+std::shared_ptr<NumericArrayColumnSource<T>> NumericArrayColumnSource<T>::create() {
+  return std::make_shared<NumericArrayColumnSource<T>>(Private());
+}
+
+template<typename T>
+auto NumericArrayColumnSource<T>::createContext(size_t chunkSize) const -> std::shared_ptr<Context> {
+  // Contexts not used yet.
+  return std::make_shared<Context>();
+}
+
+template<typename T>
+void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence &rows,
+    Chunk *dest) const {
+  auto *typedDest = verboseCast<IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
+  assertFits(rows.size(), dest->capacity());
+
+  size_t destIndex = 0;
+  auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
+    if (end < data_.size()) {
+      throw std::runtime_error(stringf("end (%o) < data_.size (%o)", end, data_.size()));
+    }
+    for (auto current = begin; current != end; ++current) {
+      typedDest->data()[destIndex] = data_[current];
+      ++destIndex;
+    }
+  };
+  rows.forEachChunk(applyChunk);
+}
 
 class ColumnSourceVisitor {
 public:

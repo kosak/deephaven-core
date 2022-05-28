@@ -25,8 +25,6 @@ template<>
 struct TypeToChunk<double> {
   typedef deephaven::client::chunk::DoubleChunk type_t;
 };
-
-
 }  // namespace internal
 class ImmerColumnSourceBase : public deephaven::client::column::ColumnSource {
 protected:
