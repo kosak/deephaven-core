@@ -6,7 +6,7 @@ using deephaven::client::utility::separatedList;
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::chunk {
-std::shared_ptr<LongChunk> LongChunk::slice(size_t begin, size_t end) {
+void Chunk::checkSliceBounds(size_t begin, size_t end) const {
   if (begin > end) {
     auto message = stringf("begin (%o) > end (%o)", begin, end);
     throw std::runtime_error(message);
@@ -15,7 +15,6 @@ std::shared_ptr<LongChunk> LongChunk::slice(size_t begin, size_t end) {
     auto message = stringf("end (%o) > capacity (%o)", end, capacity());
     throw std::runtime_error(message);
   }
-  return std::make_shared<LongChunk>(Private(), buffer_, begin, end);
 }
 
 std::ostream &operator<<(std::ostream &s, const LongChunk &o) {

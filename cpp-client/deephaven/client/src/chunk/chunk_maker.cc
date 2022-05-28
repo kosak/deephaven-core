@@ -27,7 +27,6 @@ std::shared_ptr<Chunk> ChunkMaker::createChunkFor(const ColumnSource &columnSour
   columnSource.acceptVisitor(&v);
   return std::move(v.result_);
 }
-
 namespace {
 void Visitor::visit(const IntColumnSource *source) {
   result_ = IntChunk::create(chunkSize_);

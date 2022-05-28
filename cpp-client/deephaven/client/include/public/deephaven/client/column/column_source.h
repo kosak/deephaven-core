@@ -57,8 +57,11 @@ class MutableNumericColumnSource : public MutableColumnSource {
 template<typename T>
 class NumericArrayColumnSource final : public MutableNumericColumnSource<T>,
     std::enable_shared_from_this<NumericArrayColumnSource<T>> {
-  struct Private {
-  };
+  struct Private {};
+  typedef deephaven::client::chunk::Chunk Chunk;
+  typedef deephaven::client::chunk::LongChunk LongChunk;
+  typedef deephaven::client::container::Context Context;
+  typedef deephaven::client::container::RowSequence RowSequence;
 
 public:
   static std::shared_ptr<NumericArrayColumnSource> create();
