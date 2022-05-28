@@ -28,9 +28,6 @@ void assertInRange(size_t index, size_t size);
 }  // namespace
 ColumnSource::~ColumnSource() = default;
 MutableColumnSource::~MutableColumnSource() = default;
-IntColumnSource::~IntColumnSource() = default;
-LongColumnSource::~LongColumnSource() = default;
-DoubleColumnSource::~DoubleColumnSource() = default;
 
 std::shared_ptr<IntArrayColumnSource> IntArrayColumnSource::create() {
   return std::make_shared<IntArrayColumnSource>(Private());

@@ -51,6 +51,7 @@ public:
 
 protected:
   std::ostream &streamTo(std::ostream &s) const final {
+    using deephaven::client::utility::separatedList;
     return s << '[' << separatedList(begin(), end()) << ']';
   }
 
@@ -61,8 +62,7 @@ template<typename T>
 std::shared_ptr<NumericChunk<T>> NumericChunk<T>::create(size_t size) {
   // Note: wanted to use make_shared, but std::make_shared<T[]>(size) doesn't DTRT until C++20
   auto data = std::shared_ptr<T[]>(new T[size]);
-  auto *end = data.get() + size;
-  return std::make_shared<NumericChunk<T>>(Private(), std::move(data), end);
+  return std::make_shared<NumericChunk<T>>(Private(), std::move(data), size);
 }
 
 template<typename T>
@@ -93,6 +93,6 @@ public:
 
 template<typename T>
 void NumericChunk<T>::acceptVisitor(const ChunkVisitor &v) const {
-  v.visit(this);
+  v.visit(*this);
 }
 }  // namespace deephaven::client::chunk
