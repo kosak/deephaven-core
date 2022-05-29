@@ -6,23 +6,34 @@
 #include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::immerutil {
-class ImmerColumnSourceBase : public deephaven::client::column::ColumnSource {
-public:
-  std::shared_ptr<Context> createContext(size_t chunkSize) const final;
-  void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size,
-      Chunk *dest) const final;
-  void acceptVisitor(column::ColumnSourceVisitor *visitor) const final;
-};
-
 template<typename T>
-class ImmerColumnSource final
-    : public ImmerColumnSourceBase, std::enable_shared_from_this<ImmerColumnSource<T>> {
+class ImmerColumnSource final : public deephaven::client::column::NumericColumnSource<T>,
+    std::enable_shared_from_this<ImmerColumnSource<T>> {
+protected:
+  typedef deephaven::client::chunk::Chunk Chunk;
+  typedef deephaven::client::chunk::LongChunk LongChunk;
+  typedef deephaven::client::column::ColumnSourceVisitor ColumnSourceVisitor;
+  typedef deephaven::client::container::Context Context;
+  typedef deephaven::client::container::RowSequence RowSequence;
+
 public:
   explicit ImmerColumnSource(immer::flex_vector<T> data) : data_(std::move(data)) {}
 
   ~ImmerColumnSource() final = default;
 
+  std::shared_ptr<Context> createContext(size_t chunkSize) const {
+    return std::make_shared<Context>();
+  }
+
+  void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size,
+      Chunk *dest) const {
+    using deephaven::client::utility::stringf;
+    throw std::runtime_error(stringf("TODO(kosak): %o", __PRETTY_FUNCTION__));
+  }
+
   void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const final;
+
+  void acceptVisitor(ColumnSourceVisitor *visitor) const final;
 
 private:
   immer::flex_vector<T> data_;
@@ -51,5 +62,10 @@ void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, 
     immer::for_each_chunk(srcBeginp, srcEndp, copyDataInner);
   };
   rows.forEachChunk(copyDataOuter);
+}
+
+template<typename T>
+void ImmerColumnSource<T>::acceptVisitor(ColumnSourceVisitor *visitor) const {
+  visitor->visit(this);
 }
 }  // namespace deephaven::client::immerutil

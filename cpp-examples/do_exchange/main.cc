@@ -122,6 +122,8 @@ void Callback::onTick(const TickingUpdate &update) {
 }
 
 void dumpTable(std::string_view what, const Table &table, const RowSequence &rows) {
+  streamf(std::cout, "===== THIS IS %o =====\n", what);
+  streamf(std::cout, "num rows is %o\n", rows.size());
   // Deliberately chosen to be small so I can test chunking.
   const size_t chunkSize = 16;
 
@@ -140,7 +142,7 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     // hack for now
     auto endRow = std::min(startRow + chunkSize, nrows);
     RowSequenceBuilder builder;
-    builder.addRange(0, endRow, "zamboni factor");
+    builder.addRange(startRow, endRow, "zamboni factor");
     auto selectedRows = builder.build();
     auto thisSize = selectedRows->size();
 
@@ -156,11 +158,11 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
       contexts.push_back(std::move(context));
     }
     for (size_t j = 0; j < thisSize; ++j) {
-      ElementStreamer es(std::cerr, j);
+      ElementStreamer es(std::cout, j);
       auto chunkAcceptor = [&es](std::ostream &s, const std::shared_ptr<Chunk> &chunk) {
         chunk->acceptVisitor(es);
       };
-      std::cerr << separatedList(chunks.begin(), chunks.end(), ", ", chunkAcceptor) << '\n';
+      std::cout << separatedList(chunks.begin(), chunks.end(), ", ", chunkAcceptor) << '\n';
     }
   }
 }

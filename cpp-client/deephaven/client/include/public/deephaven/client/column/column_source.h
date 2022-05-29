@@ -13,7 +13,7 @@ class ColumnSourceVisitor;
 
 // the column source interfaces
 class ColumnSource {
-public:
+protected:
   typedef deephaven::client::chunk::Chunk Chunk;
   typedef deephaven::client::chunk::LongChunk LongChunk;
   typedef deephaven::client::container::Context Context;

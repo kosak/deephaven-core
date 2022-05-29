@@ -18,7 +18,6 @@ using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
-using deephaven::client::immerutil::ImmerColumnSourceBase;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
