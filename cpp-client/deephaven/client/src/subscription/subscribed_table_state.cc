@@ -130,41 +130,36 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
     return;
   }
 
-  // Loop twice: once in the forward direction (applying negative shifts), and once in the reverse direction
-  // (applying positive shifts).
-  for (auto direction = 0; direction < 2; ++direction) {
-    std::shared_ptr<RowSequenceIterator> startIter, endIter, destIter;
-    if (direction == 0) {
-      startIter = firstIndex.getRowSequenceIterator();
-      endIter = lastIndex.getRowSequenceIterator();
-      destIter = destIndex.getRowSequenceIterator();
-    } else {
-      startIter = firstIndex.getRowSequenceReverseIterator();
-      endIter = lastIndex.getRowSequenceReverseIterator();
-      destIter = destIndex.getRowSequenceReverseIterator();
+  // Loop twice: once in the forward direction (applying negative shifts), and once in the reverse
+  // direction (applying positive shifts). Because we don't have a reverse iterator at the moment,
+  // we save up the reverse tuples for processing in a separate step.
+  std::vector<std::tuple<size_t, size_t, size_t>> positiveShifts;
+  auto startIter = firstIndex.getRowSequenceIterator();
+  auto endIter = lastIndex.getRowSequenceIterator();
+  auto destIter = destIndex.getRowSequenceIterator();
+  uint64_t first, last, dest;
+  auto showMessage = [](size_t first, size_t last, size_t dest) {
+    const char *which = dest >= last ? "positive" : "negative";
+    streamf(std::cerr, "Processing %o shift src [%o..%o] dest %o\n", "negative", which, first, last,
+        dest);
+  };
+  while (startIter->tryGetNext(&first)) {
+    if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
+      throw std::runtime_error("Sequences not of same size");
     }
-    uint64_t first, last, dest;
-    while (startIter->tryGetNext(&first)) {
-      if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
-        throw std::runtime_error("Sequences not of same size");
-      }
-      if (direction == 0) {
-        // If forward, only process negative shifts.
-        if (dest >= first) {
-          continue;
-        }
-      } else {
-        // If reverse, only process positive shifts.
-        if (dest <= first) {
-          continue;
-        }
-      }
-      const char *dirText = direction == 0 ? "(positive)" : "(negative)";
-      streamf(std::cerr, "Processing %o shift src [%o..%o] dest %o\n", dirText, first, last, dest);
-      processShift(first, last, dest);
+    if (dest >= first) {
+      positiveShifts.emplace_back(first, last, dest);
+      continue;
     }
+    showMessage(first, last, dest);
+    processShift(first, last, dest);
   }
-}
+
+  for (auto ip = positiveShifts.rbegin(); ip != positiveShifts.rend(); ++ip) {
+    showMessage(first, last, dest);
+    processShift(first, last, dest);
+  }
+ }
 MyTable::MyTable(std::vector<std::shared_ptr<ColumnSource>> sources, size_t numRows) :
     sources_(std::move(sources)), numRows_(numRows) {}
 MyTable::~MyTable() = default;

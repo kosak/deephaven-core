@@ -169,11 +169,7 @@ MyRowSequence::MyRowSequence(std::shared_ptr<ranges_t> ranges, ranges_t::const_i
     entryOffset_(entryOffset), size_(size) {}
 
 std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceIterator() const {
-  return std::make_shared<MyRowSequenceIterator>(ranges_, true);
-}
-
-std::shared_ptr<RowSequenceIterator> MyRowSequence::getRowSequenceReverseIterator() const {
-  return std::make_shared<MyRowSequenceIterator>(ranges_, false);
+  return std::make_shared<MyRowSequenceIterator>(ranges_, beginp_, entryOffset_, size_);
 }
 
 std::shared_ptr<RowSequence> MyRowSequence::take(size_t size) const {

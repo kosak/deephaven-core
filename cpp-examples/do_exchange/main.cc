@@ -108,17 +108,17 @@ private:
   size_t index_ = 0;
 };
 
-void dumpTable(std::string_view what, const Table &table, const RowSequence &rows);
+void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSequence> rows);
 
 void Callback::onTick(const TickingUpdate &update) {
-  dumpTable("removed", *update.beforeRemoves(), *update.removed());
+  dumpTable("removed", *update.beforeRemoves(), update.removed());
   for (size_t i = 0; i < update.perColumnModifies().size(); ++i) {
     auto prev = stringf("Col%d-prev", i);
     auto curr = stringf("Col%d-curr", i);
-    dumpTable(prev, *update.beforeModifies(), *update.perColumnModifies()[i]);
-    dumpTable(prev, *update.current(), *update.perColumnModifies()[i]);
+    dumpTable(prev, *update.beforeModifies(), update.perColumnModifies()[i]);
+    dumpTable(prev, *update.current(), update.perColumnModifies()[i]);
   }
-  dumpTable("added", *update.current(), *update.added());
+  dumpTable("added", *update.current(), update.added());
 }
 
 void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSequence> rows) {
