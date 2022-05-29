@@ -159,8 +159,7 @@ void RowSequenceBuilder::addRange(uint64_t begin, uint64_t end, const char *zamb
 std::shared_ptr<RowSequence> RowSequenceBuilder::build() {
   auto sp = std::make_shared<ranges_t>(std::move(ranges_));
   auto begin = sp->begin();
-  auto size = sp->size();
-  return std::make_shared<MyRowSequence>(std::move(sp), begin, 0, size);
+  return std::make_shared<MyRowSequence>(std::move(sp), begin, 0, size_);
 }
 
 namespace {
