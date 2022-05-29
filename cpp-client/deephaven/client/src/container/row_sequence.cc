@@ -179,21 +179,21 @@ std::shared_ptr<RowSequence> MyRowSequence::take(size_t size) const {
 std::shared_ptr<RowSequence> MyRowSequence::drop(size_t size) const {
   auto current = beginp_;
   auto currentOffset = entryOffset_;
-  auto remaining = std::min(size, size_);
-  while (remaining != 0) {
+  auto sizeToDrop = std::min(size, size_);
+  auto newSize = size_ - sizeToDrop;
+  while (sizeToDrop != 0) {
     auto entrySize = current->second - current->first;
-    auto entryRemaining = entrySize - currentOffset;
-    if (remaining < entryRemaining) {
-      auto difference = entryRemaining - remaining;
-      currentOffset += difference;
-      break;
+    if (currentOffset == entrySize) {
+      ++current;
+      currentOffset = 0;
+      continue;
     }
-    // use up whole entry
-    remaining -= entryRemaining;
-    ++current;
-    currentOffset = 0;
+    auto entryRemaining = entrySize - currentOffset;
+    auto amountToConsume = std::min(entryRemaining, sizeToDrop);
+    currentOffset += amountToConsume;
+    sizeToDrop -= amountToConsume;
   }
-  return std::make_shared<MyRowSequence>(ranges_, current, currentOffset, remaining);
+  return std::make_shared<MyRowSequence>(ranges_, current, currentOffset, newSize);
 }
 
 void MyRowSequence::forEachChunk(const std::function<void(uint64_t beginKey, uint64_t endKey)> &f)
@@ -204,18 +204,18 @@ void MyRowSequence::forEachChunk(const std::function<void(uint64_t beginKey, uin
   auto remaining = size_;
   while (remaining != 0) {
     auto entrySize = current->second - current->first;
-    auto entryRemaining = entrySize - currentOffset;
-    if (remaining < entryRemaining) {
-      auto begin = current->first + currentOffset;
-      auto end = begin + remaining;
-      f(begin, end);
-      return;
+    if (currentOffset == entrySize) {
+      ++current;
+      currentOffset = 0;
+      continue;
     }
-    f(current->first, current->second);
-    // use up whole entry
-    remaining -= entryRemaining;
-    ++current;
-    currentOffset = 0;
+    auto entryRemaining = entrySize - currentOffset;
+    auto amountToConsume = std::min(entryRemaining, remaining);
+    auto begin = current->first + currentOffset;
+    auto end = begin + amountToConsume;
+    currentOffset += amountToConsume;
+    remaining -= amountToConsume;
+    f(begin, end);
   }
 }
 

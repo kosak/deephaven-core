@@ -133,6 +133,17 @@ void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSeq
     selectedCols.push_back(col);
   }
 
+  auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
+  auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
+  for (size_t col = 0; col < ncols; ++col) {
+    const auto &c = table.getColumn(col);
+    auto context = c->createContext(chunkSize);
+    auto chunk = ChunkMaker::createChunkFor(*c, chunkSize);
+    chunks.push_back(std::move(chunk));
+    contexts.push_back(std::move(context));
+  }
+
+
   while (true) {
     auto chunkOfRows = rows->take(chunkSize);
     rows = rows->drop(chunkSize);
@@ -141,17 +152,13 @@ void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSeq
       break;
     }
 
-    auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
-    auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
-
     for (size_t col = 0; col < ncols; ++col) {
       const auto &c = table.getColumn(col);
-      auto context = c->createContext(thisSize);
-      auto chunk = ChunkMaker::createChunkFor(*c, thisSize);
+      const auto &context = contexts[col];
+      const auto &chunk = chunks[col];
       c->fillChunk(context.get(), *chunkOfRows, chunk.get());
-      chunks.push_back(std::move(chunk));
-      contexts.push_back(std::move(context));
     }
+
     for (size_t j = 0; j < thisSize; ++j) {
       ElementStreamer es(std::cout, j);
       auto chunkAcceptor = [&es](std::ostream &s, const std::shared_ptr<Chunk> &chunk) {
