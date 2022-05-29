@@ -15,7 +15,6 @@ public:
   virtual ~RowSequence();
 
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
-  virtual std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const = 0;
 
   virtual std::shared_ptr<RowSequence> take(size_t size) const = 0;
   virtual std::shared_ptr<RowSequence> drop(size_t size) const = 0;
