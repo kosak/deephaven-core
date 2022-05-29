@@ -123,11 +123,10 @@ void Callback::onTick(const TickingUpdate &update) {
 
 void dumpTable(std::string_view what, const Table &table, const RowSequence &rows) {
   streamf(std::cout, "===== THIS IS %o =====\n", what);
-  streamf(std::cout, "num rows is %o\n", rows.size());
   // Deliberately chosen to be small so I can test chunking.
   const size_t chunkSize = 16;
 
-  auto nrows = table.numRows();
+  auto nrows = rows.size();
   auto ncols = table.numColumns();
   auto selectedCols = makeReservedVector<size_t>(ncols);
 
@@ -136,7 +135,7 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
   }
 
   // Tables are dense now so this isn't really necessary. Well at least the immer tables are dense.
-  auto outerIter = table.getRowSequence()->getRowSequenceIterator();
+  auto outerIter = rows.getRowSequenceIterator();
 
   for (size_t startRow = 0; startRow < nrows; startRow += chunkSize) {
     // hack for now
