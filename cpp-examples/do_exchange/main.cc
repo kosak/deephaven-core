@@ -121,12 +121,11 @@ void Callback::onTick(const TickingUpdate &update) {
   dumpTable("added", *update.current(), *update.added());
 }
 
-void dumpTable(std::string_view what, const Table &table, const RowSequence &rows) {
+void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSequence> rows) {
   streamf(std::cout, "===== THIS IS %o =====\n", what);
   // Deliberately chosen to be small so I can test chunking.
   const size_t chunkSize = 16;
 
-  auto nrows = rows.size();
   auto ncols = table.numColumns();
   auto selectedCols = makeReservedVector<size_t>(ncols);
 
@@ -134,16 +133,13 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
     selectedCols.push_back(col);
   }
 
-  // Tables are dense now so this isn't really necessary. Well at least the immer tables are dense.
-  auto outerIter = rows.getRowSequenceIterator();
-
-  for (size_t startRow = 0; startRow < nrows; startRow += chunkSize) {
-    // hack for now
-    auto endRow = std::min(startRow + chunkSize, nrows);
-    RowSequenceBuilder builder;
-    builder.addRange(startRow, endRow, "zamboni factor");
-    auto selectedRows = builder.build();
-    auto thisSize = selectedRows->size();
+  while (true) {
+    auto chunkOfRows = rows->take(chunkSize);
+    rows = rows->drop(chunkSize);
+    auto thisSize = chunkOfRows->size();
+    if (thisSize == 0) {
+      break;
+    }
 
     auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
     auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
@@ -152,7 +148,7 @@ void dumpTable(std::string_view what, const Table &table, const RowSequence &row
       const auto &c = table.getColumn(col);
       auto context = c->createContext(thisSize);
       auto chunk = ChunkMaker::createChunkFor(*c, thisSize);
-      c->fillChunk(context.get(), *selectedRows, chunk.get());
+      c->fillChunk(context.get(), *chunkOfRows, chunk.get());
       chunks.push_back(std::move(chunk));
       contexts.push_back(std::move(context));
     }

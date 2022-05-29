@@ -17,6 +17,9 @@ public:
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceReverseIterator() const = 0;
 
+  virtual std::shared_ptr<RowSequence> take(size_t size) const = 0;
+  virtual std::shared_ptr<RowSequence> drop(size_t size) const = 0;
+
   virtual void forEachChunk(const std::function<void(uint64_t beginKey, uint64_t endKey)> &f) const = 0;
 
   virtual size_t size() const = 0;
