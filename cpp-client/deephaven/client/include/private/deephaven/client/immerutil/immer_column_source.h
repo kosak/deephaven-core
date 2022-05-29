@@ -30,12 +30,11 @@ private:
 
 template<typename T>
 void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
-  if (rows.size() > dest->capacity()) {
-    auto message = deephaven::client::utility::stringf(
-        "rows.size() > dest->capacity() (%o > %o)", rows.size(), dest->capacity());
-    throw std::runtime_error(message);
-  }
-  typedef typename internal::TypeToChunk<T>::type_t chunkType_t;
+  using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::assertLessEq;
+
+  assertLessEq(rows.size(), dest->capacity(), __PRETTY_FUNCTION__, "rows.size()", "dest->capacity()");
+  typedef typename TypeToChunk<T>::type_t chunkType_t;
   auto *typedDest = deephaven::client::utility::verboseCast<chunkType_t*>(__PRETTY_FUNCTION__ , dest);
   auto *destp = typedDest->data();
 

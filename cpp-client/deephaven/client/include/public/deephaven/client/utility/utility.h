@@ -22,6 +22,9 @@ std::vector<T> makeReservedVector(size_t n) {
   return v;
 }
 
+void assertLessEq(size_t lhs, size_t rhs, std::string_view context, std::string_view lhsName,
+  std::string_view rhsName);
+
 // A more efficient ostringstream that also allows you to grab the internal buffer if you want it.
 // Or, if you don't want to use the internal buffer, it allows you to provide your own.
 class SimpleOstringstream final : private std::basic_streambuf<char>, public std::ostream {

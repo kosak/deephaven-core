@@ -184,9 +184,9 @@ void NumericArrayColumnSource<T>::ensureSize(size_t size) {
 
 class ColumnSourceVisitor {
 public:
-  virtual void visit(const IntColumnSource &) = 0;
-  virtual void visit(const LongColumnSource &) = 0;
-  virtual void visit(const DoubleColumnSource &) = 0;
+  virtual void visit(const IntColumnSource *) = 0;
+  virtual void visit(const LongColumnSource *) = 0;
+  virtual void visit(const DoubleColumnSource *) = 0;
 };
 
 template<typename T>
