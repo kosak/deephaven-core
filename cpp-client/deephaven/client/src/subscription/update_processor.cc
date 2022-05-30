@@ -17,6 +17,7 @@ using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
+using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
@@ -41,6 +42,7 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
     const ColumnDefinitions &colDefs,
     int64_t numBatches,
+    bool allowInconsistentColumnSizes,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk);
 }  // namespace
@@ -148,7 +150,7 @@ void UpdateProcessor::runForeverHelper() {
     // streamf(std::cout, "removed rows key space: %o\n", *removedRows);
     // (a) splice out the data
     // (b) remove these items from your key-to-index data structure.
-    auto removedRowsIndexSpace = state.erase(*removedRows);
+    auto removedRowsIndexSpace = state.erase(std::move(removedRows));
     // streamf(std::cout, "removed rows index space: %o\n", *removedRowsIndexSpace);
 
     // 2. Shifts
@@ -165,23 +167,28 @@ void UpdateProcessor::runForeverHelper() {
     // 3. Adds
     // (a) splice in the data
     // (b) add these items to your key-to-index data structure
-   auto addedRowData = parseBatches(*colDefs_, numAdds, fsr_.get(), &flightStreamChunk);
-   auto addedRowsIndexSpace = state.add(std::move(addedRowData), *addedRows);
+    std::shared_ptr<RowSequence> addedRowsIndexSpace;
+    if (numAdds != 0) {
+      auto addedRowData = parseBatches(*colDefs_, numAdds, false, fsr_.get(), &flightStreamChunk);
+      addedRowsIndexSpace = state.add(std::move(addedRowData), std::move(addedRows));
+    } else {
+      addedRowsIndexSpace = RowSequenceBuilder().build();
+    }
    // streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
 
     // 4. Modifies
     std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
     if (numMods != 0) {
+      std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
       const auto &modColumnNodes = *bmd->mod_column_nodes();
       for (size_t i = 0; i < modColumnNodes.size(); ++i) {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
         auto modRows = IndexDecoder::readExternalCompressedDelta(&diModified);
-        auto modRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*modRows);
-        perColumnModifiesIndexSpace.push_back(std::move(modRowsIndexSpace));
+        perColumnModifies.push_back(std::move(modRows));
       }
-      auto modifiedRowData = parseBatches(*colDefs_, numMods, fsr_.get(), &flightStreamChunk);
-      state.modify(std::move(modifiedRowData), perColumnModifiesIndexSpace);
+      auto modifiedRowData = parseBatches(*colDefs_, numMods, true, fsr_.get(), &flightStreamChunk);
+      perColumnModifiesIndexSpace = state.modify(std::move(modifiedRowData), perColumnModifies);
     }
 
     auto current = state.snapshot();
@@ -197,6 +204,7 @@ namespace {
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
     const ColumnDefinitions &colDefs,
     int64_t numBatches,
+    bool allowInconsistentColumnSizes,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk) {
   auto result = makeEmptyFlexVectors(colDefs);
@@ -217,16 +225,18 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
       return result;
     }
 
-    auto numRows = srcCols[0]->length();
-    for (size_t i = 1; i < ncols; ++i) {
-      const auto &srcColArrow = *srcCols[i];
-      // I think you do not want this check for the modify case. When you are parsing modify
-      // messages, the columns may indeed be of different sizes.
-      if (srcColArrow.length() != numRows) {
-        auto message = stringf(
-            "Inconsistent column lengths: Column 0 has %o rows, but column %o has %o rows",
-            numRows, i, srcColArrow.length());
-        throw std::runtime_error(message);
+    if (!allowInconsistentColumnSizes) {
+      auto numRows = srcCols[0]->length();
+      for (size_t i = 1; i < ncols; ++i) {
+        const auto &srcColArrow = *srcCols[i];
+        // I think you do not want this check for the modify case. When you are parsing modify
+        // messages, the columns may indeed be of different sizes.
+        if (srcColArrow.length() != numRows) {
+          auto message = stringf(
+              "Inconsistent column lengths: Column 0 has %o rows, but column %o has %o rows",
+              numRows, i, srcColArrow.length());
+          throw std::runtime_error(message);
+        }
       }
     }
 

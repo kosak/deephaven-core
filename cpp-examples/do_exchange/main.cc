@@ -114,8 +114,8 @@ void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSeq
 void Callback::onTick(const TickingUpdate &update) {
   dumpTable("removed", *update.beforeRemoves(), update.removed());
   for (size_t i = 0; i < update.perColumnModifies().size(); ++i) {
-    auto prev = stringf("Col%d-prev", i);
-    auto curr = stringf("Col%d-curr", i);
+    auto prev = stringf("Col%o-prev", i);
+    auto curr = stringf("Col%o-curr", i);
     dumpTable(prev, *update.beforeModifies(), update.perColumnModifies()[i]);
     dumpTable(prev, *update.current(), update.perColumnModifies()[i]);
   }

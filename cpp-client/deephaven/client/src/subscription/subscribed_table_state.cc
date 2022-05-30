@@ -59,8 +59,8 @@ SubscribedTableState::~SubscribedTableState() = default;
 
 std::shared_ptr<RowSequence> SubscribedTableState::add(
     std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
-    const RowSequence &rowsToAddKeySpace) {
-  auto rowsToAddIndexSpace = spaceMapper_.addKeys(rowsToAddKeySpace);
+    std::shared_ptr<RowSequence> rowsToAddKeySpace) {
+  auto rowsToAddIndexSpace = spaceMapper_.addKeys(*rowsToAddKeySpace);
   auto addChunk = [this, &addedData](uint64_t beginIndex, uint64_t endIndex) {
     auto size = endIndex - beginIndex;
 
@@ -69,7 +69,7 @@ std::shared_ptr<RowSequence> SubscribedTableState::add(
       auto &ad = addedData[i];
 
       auto fvTemp = std::move(fv);
-      // Give "col" its original values up to 'beginIndex'; leave fvTemp with the rest.
+      // Give "fv" its original values up to 'beginIndex'; leave fvTemp with the rest.
       fv = fvTemp->take(beginIndex);
       fvTemp->inPlaceDrop(beginIndex);
 
@@ -77,7 +77,7 @@ std::shared_ptr<RowSequence> SubscribedTableState::add(
       fv->inPlaceAppend(ad->take(size));
       ad->inPlaceDrop(size);
 
-      // Append the residual items back from colTemp.
+      // Append the residual items back from 'fvTemp'.
       fv->inPlaceAppend(std::move(fvTemp));
     }
   };
@@ -85,8 +85,8 @@ std::shared_ptr<RowSequence> SubscribedTableState::add(
   return rowsToAddIndexSpace;
 }
 
-std::shared_ptr<RowSequence> SubscribedTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
-  auto result = spaceMapper_.convertKeysToIndices(rowsToRemoveKeySpace);
+std::shared_ptr<RowSequence> SubscribedTableState::erase(std::shared_ptr<RowSequence> rowsToRemoveKeySpace) {
+  auto result = spaceMapper_.convertKeysToIndices(*rowsToRemoveKeySpace);
 
   auto eraseChunk = [this](uint64_t beginKey, uint64_t endKey) {
     auto size = endKey - beginKey;
@@ -100,13 +100,49 @@ std::shared_ptr<RowSequence> SubscribedTableState::erase(const RowSequence &rows
       fv->inPlaceAppend(std::move(fvTemp));
     }
   };
-  rowsToRemoveKeySpace.forEachChunk(eraseChunk);
+  rowsToRemoveKeySpace->forEachChunk(eraseChunk);
   return result;
 }
 
-void SubscribedTableState::modify(std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
-    const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn) {
-  throw std::runtime_error("TODO(kosak)");
+std::vector<std::shared_ptr<RowSequence>> SubscribedTableState::modify(
+    std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
+    std::vector<std::shared_ptr<RowSequence>> rowsToModifyPerColumnKeySpace) {
+  if (modifiedData.size() != rowsToModifyPerColumnKeySpace.size()) {
+    throw std::runtime_error(stringf("modifiedData.size() != modifiedIndicesPerColumn.size() (%o != %o)",
+        modifiedData.size(), rowsToModifyPerColumnKeySpace.size()));
+  }
+  auto rowsToModifyPerColumnIndexSpace =
+      makeReservedVector<std::shared_ptr<RowSequence>>(rowsToModifyPerColumnKeySpace.size());
+  for (size_t i = 0; i < modifiedData.size(); ++i) {
+    auto mipc = modifyColumn(i, std::move(modifiedData[i]), std::move(rowsToModifyPerColumnKeySpace[i]));
+    rowsToModifyPerColumnIndexSpace.push_back(std::move(mipc));
+  }
+  return rowsToModifyPerColumnIndexSpace;
+}
+
+std::shared_ptr<RowSequence> SubscribedTableState::modifyColumn(
+    size_t colNum,
+    std::unique_ptr<AbstractFlexVectorBase> modifiedData,
+    std::shared_ptr<RowSequence> rowsToModifyKeySpace) {
+  auto rowsToModifyIndexSpace = spaceMapper_.convertKeysToIndices(*rowsToModifyKeySpace);
+  auto &fv = flexVectors_[colNum];
+  auto modifyChunk = [&fv, &modifiedData](uint64_t beginIndex, uint64_t endIndex) {
+    auto size = endIndex - beginIndex;
+    auto fvTemp = std::move(fv);
+
+    // Give 'fv' its original values up to 'beginIndex'; but drop values up to 'endIndex'
+    fv = fvTemp->take(beginIndex);
+    fvTemp->inPlaceDrop(endIndex);
+
+    // Take 'size' values from 'modifiedData' and drop them from 'modifiedData'
+    fv->inPlaceAppend(modifiedData->take(size));
+    modifiedData->inPlaceDrop(size);
+
+    // Append the residual items back from 'fvTemp'.
+    fv->inPlaceAppend(std::move(fvTemp));
+  };
+  rowsToModifyIndexSpace->forEachChunk(modifyChunk);
+  return rowsToModifyIndexSpace;
 }
 
 void SubscribedTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
@@ -165,7 +201,8 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
     showMessage(first, last, dest);
     processShift(first, last, dest);
   }
- }
+}
+
 MyTable::MyTable(std::vector<std::shared_ptr<ColumnSource>> sources, size_t numRows) :
     sources_(std::move(sources)), numRows_(numRows) {}
 MyTable::~MyTable() = default;

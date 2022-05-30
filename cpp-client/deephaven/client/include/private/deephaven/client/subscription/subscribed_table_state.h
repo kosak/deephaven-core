@@ -19,11 +19,12 @@ public:
   ~SubscribedTableState();
 
   std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
-      const RowSequence &rowsToAddKeySpace);
-  std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
+      std::shared_ptr<RowSequence> rowsToAddKeySpace);
+  std::shared_ptr<RowSequence> erase(std::shared_ptr<RowSequence> rowsToRemoveKeySpace);
 
-  void modify(std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
-      const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn);
+  std::vector<std::shared_ptr<RowSequence>> modify(
+      std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
+      std::vector<std::shared_ptr<RowSequence>> modifiedIndicesPerColumn);
 
   void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
@@ -34,6 +35,10 @@ public:
   const SpaceMapper &spaceMapper() const { return spaceMapper_; }
 
 private:
+  std::shared_ptr<RowSequence> modifyColumn(size_t colNum,
+      std::unique_ptr<AbstractFlexVectorBase> modifiedData,
+      std::shared_ptr<RowSequence> rowsToModifyKeySpace);
+
   std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors_;
   // Keeps track of keyspace -> index space mapping
   SpaceMapper spaceMapper_;
