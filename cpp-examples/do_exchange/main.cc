@@ -56,7 +56,7 @@ int main() {
   try {
     auto client = Client::connect(server);
     auto manager = client.getManager();
-    makeModifiesHappen(manager);
+    millionRows(manager);
   } catch (const std::exception &e) {
     std::cerr << "Caught exception: " << e.what() << '\n';
   }
@@ -118,18 +118,22 @@ void Callback::onTick(const TickingUpdate &update) {
   for (size_t i = 0; i < ncols; ++i) {
     allCols.push_back(i);
   }
-  dumpTable("removed", *update.beforeRemoves(), update.removed());
+  dumpTable("removed", *update.beforeRemoves(), allCols, update.removed());
   for (size_t i = 0; i < update.perColumnModifies().size(); ++i) {
-    auto prev = stringf("Col%o-prev", i);
-    auto curr = stringf("Col%o-curr", i);
-    dumpTable(prev, *update.beforeModifies(), update.perColumnModifies()[i]);
-    dumpTable(prev, *update.current(), update.perColumnModifies()[i]);
+    std::vector<size_t> oneCol{i};
+    auto prevText = stringf("Col%o-prev", i);
+    auto currText = stringf("Col%o-curr", i);
+    dumpTable(prevText, *update.beforeModifies(), oneCol, update.perColumnModifies()[i]);
+    dumpTable(currText, *update.current(), oneCol, update.perColumnModifies()[i]);
   }
-  dumpTable("added", *update.current(), update.added());
+  dumpTable("added", *update.current(), allCols, update.added());
 }
 
 void dumpTable(std::string_view what, const Table &table, const std::vector<size_t> &whichCols,
     std::shared_ptr<RowSequence> rows) {
+  if (rows->empty()) {
+    return;
+  }
   streamf(std::cout, "===== THIS IS %o =====\n", what);
   // Deliberately chosen to be small so I can test chunking.
   const size_t chunkSize = 16;
@@ -153,10 +157,10 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
       break;
     }
 
-    for (auto col : whichCols) {
-      const auto &c = table.getColumn(col);
-      const auto &context = contexts[col];
-      const auto &chunk = chunks[col];
+    for (size_t i = 0; i < ncols; ++i) {
+      const auto &c = table.getColumn(whichCols[i]);
+      const auto &context = contexts[i];
+      const auto &chunk = chunks[i];
       c->fillChunk(context.get(), *chunkOfRows, chunk.get());
     }
 
