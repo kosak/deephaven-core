@@ -146,10 +146,12 @@ void UpdateProcessor::runForeverHelper() {
 
     // 1. Removes
     auto beforeRemoves = state.snapshot();
+    streamf(std::cout, "removed rows key space: %o\n", *removedRows);
     auto removedRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*removedRows);
     // (a) splice out the data
     // (b) remove these items from your key-to-index data structure.
     // BTW can clear removedRows here
+    streamf(std::cout, "removed rows index space: %o\n", *removedRowsIndexSpace);
     state.erase(*removedRowsIndexSpace);
 
     // 2. Shifts
@@ -162,7 +164,9 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto beforeAddsOrModifies = state.snapshot();
+    streamf(std::cout, "added rows key space: %o\n", *addedRows);
     auto addedRowsIndexSpace = state.spaceMapper().addKeys(*addedRows);
+    streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
     // BTW can clear addedRows here
     // 3. Adds
     // (a) splice in the data
