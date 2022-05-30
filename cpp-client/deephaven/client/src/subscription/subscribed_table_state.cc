@@ -57,8 +57,10 @@ SubscribedTableState::SubscribedTableState(
 
 SubscribedTableState::~SubscribedTableState() = default;
 
-void SubscribedTableState::add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
-    const RowSequence &addedIndexes) {
+std::shared_ptr<RowSequence> SubscribedTableState::add(
+    std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
+    const RowSequence &rowsToAddKeySpace) {
+  auto rowsToAddIndexSpace = spaceMapper_.addKeys(rowsToAddKeySpace);
   auto addChunk = [this, &addedData](uint64_t beginIndex, uint64_t endIndex) {
     auto size = endIndex - beginIndex;
 
@@ -79,10 +81,13 @@ void SubscribedTableState::add(std::vector<std::unique_ptr<AbstractFlexVectorBas
       fv->inPlaceAppend(std::move(fvTemp));
     }
   };
-  addedIndexes.forEachChunk(addChunk);
+  rowsToAddIndexSpace->forEachChunk(addChunk);
+  return rowsToAddIndexSpace;
 }
 
-void SubscribedTableState::erase(const RowSequence &removedRows) {
+std::shared_ptr<RowSequence> SubscribedTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
+  auto result = spaceMapper_.convertKeysToIndices(rowsToRemoveKeySpace);
+
   auto eraseChunk = [this](uint64_t beginKey, uint64_t endKey) {
     auto size = endKey - beginKey;
     auto beginIndex = spaceMapper_.eraseRange(beginKey, endKey);
@@ -95,7 +100,8 @@ void SubscribedTableState::erase(const RowSequence &removedRows) {
       fv->inPlaceAppend(std::move(fvTemp));
     }
   };
-  removedRows.forEachChunk(eraseChunk);
+  rowsToRemoveKeySpace.forEachChunk(eraseChunk);
+  return result;
 }
 
 void SubscribedTableState::modify(std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,

@@ -18,12 +18,9 @@ public:
   explicit SubscribedTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors);
   ~SubscribedTableState();
 
-  void add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
-      const RowSequence &addedIndexes);
-  /**
-   * Erases the rows (which are provided in the source coordinate space).
-   */
-  void erase(const RowSequence &rowsToRemove);
+  std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
+      const RowSequence &rowsToAddKeySpace);
+  std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
 
   void modify(std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
       const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn);

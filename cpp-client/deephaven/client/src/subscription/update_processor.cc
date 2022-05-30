@@ -102,8 +102,7 @@ void UpdateProcessor::runForeverHelper() {
     const auto *bmd = flatbuffers::GetRoot<BarrageUpdateMetadata>(bmdRaw);
     auto numAdds = bmd->num_add_batches();
     auto numMods = bmd->num_mod_batches();
-    streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", numAdds, numMods);
-
+    // streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", numAdds, numMods);
     // streamf(std::cerr, "FYI, my row sequence is currently %o\n", *tickingTable->getRowSequence());
 
     DataInput diAdded(*bmd->added_rows());
@@ -116,11 +115,11 @@ void UpdateProcessor::runForeverHelper() {
     auto shiftEndIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
     auto shiftDestIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
 
-    streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
-    streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
-    streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
-    streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
-    streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
+//    streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
+//    streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
+//    streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
+//    streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
+//    streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
 
 
     // Correct order to process all this info is:
@@ -146,13 +145,11 @@ void UpdateProcessor::runForeverHelper() {
 
     // 1. Removes
     auto beforeRemoves = state.snapshot();
-    streamf(std::cout, "removed rows key space: %o\n", *removedRows);
-    auto removedRowsIndexSpace = state.spaceMapper().convertKeysToIndices(*removedRows);
+    // streamf(std::cout, "removed rows key space: %o\n", *removedRows);
     // (a) splice out the data
     // (b) remove these items from your key-to-index data structure.
-    // BTW can clear removedRows here
-    streamf(std::cout, "removed rows index space: %o\n", *removedRowsIndexSpace);
-    state.erase(*removedRowsIndexSpace);
+    auto removedRowsIndexSpace = state.erase(*removedRows);
+    // streamf(std::cout, "removed rows index space: %o\n", *removedRowsIndexSpace);
 
     // 2. Shifts
     // (a) apply only to your key-to-index data structure.
@@ -164,17 +161,13 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto beforeAddsOrModifies = state.snapshot();
-    streamf(std::cout, "added rows key space: %o\n", *addedRows);
-    auto addedRowsIndexSpace = state.spaceMapper().addKeys(*addedRows);
-    streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
-    // BTW can clear addedRows here
+    // streamf(std::cout, "added rows key space: %o\n", *addedRows);
     // 3. Adds
     // (a) splice in the data
     // (b) add these items to your key-to-index data structure
-    if (numAdds != 0) {
-      auto addedRowData = parseBatches(*colDefs_, numAdds, fsr_.get(), &flightStreamChunk);
-      state.add(std::move(addedRowData), *addedRowsIndexSpace);
-    }
+   auto addedRowData = parseBatches(*colDefs_, numAdds, fsr_.get(), &flightStreamChunk);
+   auto addedRowsIndexSpace = state.add(std::move(addedRowData), *addedRows);
+   // streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
 
     // 4. Modifies
     std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
