@@ -109,9 +109,15 @@ private:
   size_t index_ = 0;
 };
 
-void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSequence> rows);
+void dumpTable(std::string_view what, const Table &table, const std::vector<size_t> &whichCols,
+    std::shared_ptr<RowSequence> rows);
 
 void Callback::onTick(const TickingUpdate &update) {
+  auto ncols = update.current()->numColumns();
+  auto allCols = makeReservedVector<size_t>(update.current()->numColumns());
+  for (size_t i = 0; i < ncols; ++i) {
+    allCols.push_back(i);
+  }
   dumpTable("removed", *update.beforeRemoves(), update.removed());
   for (size_t i = 0; i < update.perColumnModifies().size(); ++i) {
     auto prev = stringf("Col%o-prev", i);
@@ -122,28 +128,22 @@ void Callback::onTick(const TickingUpdate &update) {
   dumpTable("added", *update.current(), update.added());
 }
 
-void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSequence> rows) {
+void dumpTable(std::string_view what, const Table &table, const std::vector<size_t> &whichCols,
+    std::shared_ptr<RowSequence> rows) {
   streamf(std::cout, "===== THIS IS %o =====\n", what);
   // Deliberately chosen to be small so I can test chunking.
   const size_t chunkSize = 16;
 
-  auto ncols = table.numColumns();
-  auto selectedCols = makeReservedVector<size_t>(ncols);
-
-  for (size_t col = 0; col < ncols; ++col) {
-    selectedCols.push_back(col);
-  }
-
+  auto ncols = whichCols.size();
   auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
   auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
-  for (size_t col = 0; col < ncols; ++col) {
+  for (auto col : whichCols) {
     const auto &c = table.getColumn(col);
     auto context = c->createContext(chunkSize);
     auto chunk = ChunkMaker::createChunkFor(*c, chunkSize);
     chunks.push_back(std::move(chunk));
     contexts.push_back(std::move(context));
   }
-
 
   while (true) {
     auto chunkOfRows = rows->take(chunkSize);
@@ -153,7 +153,7 @@ void dumpTable(std::string_view what, const Table &table, std::shared_ptr<RowSeq
       break;
     }
 
-    for (size_t col = 0; col < ncols; ++col) {
+    for (auto col : whichCols) {
       const auto &c = table.getColumn(col);
       const auto &context = contexts[col];
       const auto &chunk = chunks[col];
