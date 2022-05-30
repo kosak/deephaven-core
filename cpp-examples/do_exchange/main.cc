@@ -47,6 +47,7 @@ using std::size_t;
 
 namespace {
 void doit(const TableHandleManager &manager);
+void makeModifiesHappen(const TableHandleManager &manager);
 void millionRows(const TableHandleManager &manager);
 }  // namespace
 
@@ -55,7 +56,7 @@ int main() {
   try {
     auto client = Client::connect(server);
     auto manager = client.getManager();
-    millionRows(manager);
+    makeModifiesHappen(manager);
   } catch (const std::exception &e) {
     std::cerr << "Caught exception: " << e.what() << '\n';
   }
