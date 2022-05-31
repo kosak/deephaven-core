@@ -132,7 +132,6 @@ void Callback::onTick(const TickingUpdate &update) {
 
 void dumpTable(std::string_view what, const Table &table, const std::vector<size_t> &whichCols,
     std::shared_ptr<RowSequence> rows) {
-  streamf(std::cout, "Dealing with this row sequence: %o\n", *rows);
   if (rows->empty()) {
     return;
   }

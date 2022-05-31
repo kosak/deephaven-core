@@ -58,7 +58,6 @@ void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, 
   };
 
   auto copyDataOuter = [this, typedDest, &copyDataInner](uint64_t srcBegin, uint64_t srcEnd) {
-    streamf(std::cout, "copy data [%o..%o) whereas data_.size() is %o and dest size is %o\n", srcBegin, srcEnd, data_.size(), typedDest->capacity());
     auto srcBeginp = data_.begin() + srcBegin;
     auto srcEndp = data_.begin() + srcEnd;
     immer::for_each_chunk(srcBeginp, srcEndp, copyDataInner);
