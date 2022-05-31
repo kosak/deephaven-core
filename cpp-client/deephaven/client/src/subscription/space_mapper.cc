@@ -3,6 +3,8 @@
 
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
+using deephaven::client::utility::separatedList;
+using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::subscription {
@@ -63,6 +65,17 @@ uint64_t SpaceMapper::eraseRange(uint64_t beginKey, uint64_t endKey) {
 }
 
 void SpaceMapper::applyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKey) {
+  auto what = stringf("[%o,%o) -> %o", beginKey, endKey, destKey);
+  dumpSelf("before " + what);
+  doApplyShift(beginKey, endKey, destKey);
+  dumpSelf("after " + what);
+}
+
+void SpaceMapper::dumpSelf(std::string_view what) const {
+  streamf(std::cout, "### %o: %o\n", what, separatedList(set_.begin(), set_.end(), ", "));
+}
+
+void SpaceMapper::doApplyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKey) {
   if (beginKey == endKey) {
     return;
   }

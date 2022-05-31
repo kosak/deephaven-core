@@ -36,6 +36,9 @@ public:
   }
 
 private:
+  void dumpSelf(std::string_view what) const;
+  void doApplyShift(uint64_t beginKey, uint64_t endKey, uint64_t destKey);
+
   set_t set_;
 };
 }  // namespace deephaven::client::subscription

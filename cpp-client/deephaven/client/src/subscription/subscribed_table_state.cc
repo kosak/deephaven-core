@@ -179,24 +179,29 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
   auto startIter = firstIndex.getRowSequenceIterator();
   auto endIter = lastIndex.getRowSequenceIterator();
   auto destIter = destIndex.getRowSequenceIterator();
-  uint64_t first, last, dest;
   auto showMessage = [](size_t first, size_t last, size_t dest) {
 //    const char *which = dest >= last ? "positive" : "negative";
 //    streamf(std::cerr, "Processing %o shift src [%o..%o] dest %o\n", which, first, last, dest);
   };
-  while (startIter->tryGetNext(&first)) {
-    if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
-      throw std::runtime_error("Sequences not of same size");
+  {
+    uint64_t first, last, dest;
+    while (startIter->tryGetNext(&first)) {
+      if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
+        throw std::runtime_error("Sequences not of same size");
+      }
+      if (dest >= first) {
+        positiveShifts.emplace_back(first, last, dest);
+        continue;
+      }
+      showMessage(first, last, dest);
+      processShift(first, last, dest);
     }
-    if (dest >= first) {
-      positiveShifts.emplace_back(first, last, dest);
-      continue;
-    }
-    showMessage(first, last, dest);
-    processShift(first, last, dest);
   }
 
   for (auto ip = positiveShifts.rbegin(); ip != positiveShifts.rend(); ++ip) {
+    auto first = std::get<0>(*ip);
+    auto last = std::get<1>(*ip);
+    auto dest = std::get<2>(*ip);
     showMessage(first, last, dest);
     processShift(first, last, dest);
   }
