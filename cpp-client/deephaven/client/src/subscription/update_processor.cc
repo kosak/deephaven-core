@@ -117,11 +117,11 @@ void UpdateProcessor::runForeverHelper() {
     auto shiftEndIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
     auto shiftDestIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
 
-//    streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
-//    streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
-//    streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
-//    streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
-//    streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
+    streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
+    streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
+    streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
+    streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
+    streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
 
 
     // Correct order to process all this info is:
@@ -158,11 +158,11 @@ void UpdateProcessor::runForeverHelper() {
     state.applyShifts(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
 
     if (numAdds != 0 && numMods != 0) {
-      throw std::runtime_error("Message has both add batches and mod batches?! "
-                               "kosak thinks this is not allowed");
+      auto message = stringf("numAdds %o, numMods %o", numAdds, numMods);
+      std::cout << message << '\n';
+      // throw std::runtime_error(message);
     }
 
-    auto beforeAddsOrModifies = state.snapshot();
     // streamf(std::cout, "added rows key space: %o\n", *addedRows);
     // 3. Adds
     // (a) splice in the data
@@ -174,17 +174,25 @@ void UpdateProcessor::runForeverHelper() {
     } else {
       addedRowsIndexSpace = RowSequenceBuilder().build();
     }
-   // streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
+    // streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
+
+    auto beforeModifies = state.snapshot();
 
     // 4. Modifies
     std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
     if (numMods != 0) {
+      if (numAdds != 0) {
+        std::cout << "ZAMBONI TIME DO THIS BETTER\n";
+        // because the invariant is that the fsr is preloaded
+        okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
+      }
       std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
       const auto &modColumnNodes = *bmd->mod_column_nodes();
       for (size_t i = 0; i < modColumnNodes.size(); ++i) {
         const auto &elt = modColumnNodes.Get(i);
         DataInput diModified(*elt->modified_rows());
         auto modRows = IndexDecoder::readExternalCompressedDelta(&diModified);
+        streamf(std::cout, "column %o mod rows %o\n", i, *modRows);
         perColumnModifies.push_back(std::move(modRows));
       }
       auto modifiedRowData = parseBatches(*colDefs_, numMods, true, fsr_.get(), &flightStreamChunk);
@@ -192,7 +200,7 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto current = state.snapshot();
-    TickingUpdate tickingUpdate(std::move(beforeRemoves), std::move(beforeAddsOrModifies),
+    TickingUpdate tickingUpdate(std::move(beforeRemoves), std::move(beforeModifies),
         std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
         std::move(addedRowsIndexSpace));
     callback_->onTick(tickingUpdate);

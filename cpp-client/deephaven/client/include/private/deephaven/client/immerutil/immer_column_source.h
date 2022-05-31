@@ -43,6 +43,7 @@ template<typename T>
 void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::assertLessEq;
+  using deephaven::client::utility::streamf;
 
   assertLessEq(rows.size(), dest->capacity(), __PRETTY_FUNCTION__, "rows.size()", "dest->capacity()");
   typedef typename TypeToChunk<T>::type_t chunkType_t;
@@ -56,7 +57,8 @@ void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, 
     }
   };
 
-  auto copyDataOuter = [this, &copyDataInner](uint64_t srcBegin, uint64_t srcEnd) {
+  auto copyDataOuter = [this, typedDest, &copyDataInner](uint64_t srcBegin, uint64_t srcEnd) {
+    streamf(std::cout, "copy data [%o..%o) whereas data_.size() is %o and dest size is %o\n", srcBegin, srcEnd, data_.size(), typedDest->capacity());
     auto srcBeginp = data_.begin() + srcBegin;
     auto srcEndp = data_.begin() + srcEnd;
     immer::for_each_chunk(srcBeginp, srcEndp, copyDataInner);

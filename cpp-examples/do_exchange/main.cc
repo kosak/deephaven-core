@@ -124,14 +124,15 @@ void Callback::onTick(const TickingUpdate &update) {
     std::vector<size_t> oneCol{i};
     auto prevText = stringf("Col%o-prev", i);
     auto currText = stringf("Col%o-curr", i);
-    dumpTable(prevText, *update.beforeModifies(), oneCol, update.perColumnModifies()[i]);
-    dumpTable(currText, *update.current(), oneCol, update.perColumnModifies()[i]);
+    dumpTable(prevText, *update.beforeModifies(), allCols, update.perColumnModifies()[i]);
+    dumpTable(currText, *update.current(), allCols, update.perColumnModifies()[i]);
   }
   dumpTable("added", *update.current(), allCols, update.added());
 }
 
 void dumpTable(std::string_view what, const Table &table, const std::vector<size_t> &whichCols,
     std::shared_ptr<RowSequence> rows) {
+  streamf(std::cout, "Dealing with this row sequence: %o\n", *rows);
   if (rows->empty()) {
     return;
   }
@@ -307,8 +308,8 @@ void lastBy(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
 
-  const long modSize = 10;
-  auto table = manager.timeTable(start, 1 * 1'000'000'000L)
+  const long modSize = 1000;
+  auto table = manager.timeTable(start, 1 * 10'000'000L)
       .select("Nanos = Timestamp.getNanos()",
           "Temp1 = (Nanos ^ (long)(Nanos / 65536)) * 0x8febca6b",
           "Temp2 = (Temp1 ^ ((long)(Temp1 / 8192))) * 0xc2b2ae35",
@@ -317,6 +318,7 @@ void lastBy(const TableHandleManager &manager) {
   // might as well use this interface once in a while
   auto [hv, nanos] = table.getCols<NumCol, NumCol>("HashValue", "Nanos");
   auto t2 = table.select((hv % modSize).as("Key"), nanos.as("Value"));
+  // auto t2 = table.select(hv.as("Key"), nanos.as("Value"));
   auto key = t2.getNumCol("Key");
   auto lb = t2.lastBy(key).sort({key.ascending()});
 
