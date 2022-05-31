@@ -181,9 +181,8 @@ void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
   auto destIter = destIndex.getRowSequenceIterator();
   uint64_t first, last, dest;
   auto showMessage = [](size_t first, size_t last, size_t dest) {
-    const char *which = dest >= last ? "positive" : "negative";
-    streamf(std::cerr, "Processing %o shift src [%o..%o] dest %o\n", "negative", which, first, last,
-        dest);
+//    const char *which = dest >= last ? "positive" : "negative";
+//    streamf(std::cerr, "Processing %o shift src [%o..%o] dest %o\n", which, first, last, dest);
   };
   while (startIter->tryGetNext(&first)) {
     if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
