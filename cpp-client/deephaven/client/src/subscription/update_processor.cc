@@ -41,10 +41,34 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
 
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
     const ColumnDefinitions &colDefs,
-    int64_t numBatches,
+    size_t numBatches,
     bool allowInconsistentColumnSizes,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk);
+
+struct ExtractedMetadata {
+  ExtractedMetadata(size_t numAdds,
+      size_t numMods,
+      std::shared_ptr<RowSequence> removedRows,
+      std::shared_ptr<RowSequence> shiftStartIndex,
+      std::shared_ptr<RowSequence> shiftEndIndex,
+      std::shared_ptr<RowSequence> shiftDestIndex,
+      std::shared_ptr<RowSequence> addedRows,
+      std::vector<std::shared_ptr<RowSequence>> perColumnModifiedRows);
+  ~ExtractedMetadata();
+
+  size_t numAdds_ = 0;
+  size_t numMods_ = 0;
+  std::shared_ptr<RowSequence> addedRows_;
+  std::shared_ptr<RowSequence> removedRows_;
+  std::vector<std::shared_ptr<RowSequence>> perColumnModifiedRows_;
+  std::shared_ptr<RowSequence> shiftStartIndex_;
+  std::shared_ptr<RowSequence> shiftEndIndex_;
+  std::shared_ptr<RowSequence> shiftDestIndex_;
+
+};
+
+ExtractedMetadata extractMetadata(const int8_t *raw);
 }  // namespace
 
 std::shared_ptr<UpdateProcessor> UpdateProcessor::startThread(
@@ -82,6 +106,7 @@ void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
 
 void UpdateProcessor::runForeverHelper() {
   SubscribedTableState state(makeEmptyFlexVectors(*colDefs_));
+  auto classic = std::make_unique<ClassicTableState>();
 
   // In this loop we process Arrow Flight messages until error or cancellation.
   arrow::flight::FlightStreamChunk flightStreamChunk;
@@ -97,32 +122,14 @@ void UpdateProcessor::runForeverHelper() {
     if (barrageWrapper->magic() != deephavenMagicNumber) {
       continue;
     }
-    if (barrageWrapper->msg_type() != BarrageMessageType::BarrageMessageType_BarrageUpdateMetadata) {
+    if (barrageWrapper->msg_type() !=
+        BarrageMessageType::BarrageMessageType_BarrageUpdateMetadata) {
       continue;
     }
-    const auto *bmdRaw = barrageWrapper->msg_payload()->data();
-    const auto *bmd = flatbuffers::GetRoot<BarrageUpdateMetadata>(bmdRaw);
-    auto numAdds = bmd->num_add_batches();
-    auto numMods = bmd->num_mod_batches();
-    // streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", numAdds, numMods);
-    // streamf(std::cerr, "FYI, my row sequence is currently %o\n", *tickingTable->getRowSequence());
 
-    DataInput diAdded(*bmd->added_rows());
-    DataInput diRemoved(*bmd->removed_rows());
-    DataInput diThreeShiftIndexes(*bmd->shift_data());
+    // Parse all the metadata out of the Barrage message before we advance the cursor past it.
 
-    auto addedRows = IndexDecoder::readExternalCompressedDelta(&diAdded);
-    auto removedRows = IndexDecoder::readExternalCompressedDelta(&diRemoved);
-    auto shiftStartIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
-    auto shiftEndIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
-    auto shiftDestIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
-
-    streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
-    streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
-    streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
-    streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
-    streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
-
+    auto md = extractMetadata(barrageWrapper->msg_payload()->data());
 
     // Correct order to process all this info is:
     // 1. removes
@@ -130,65 +137,33 @@ void UpdateProcessor::runForeverHelper() {
     // 3. adds
     // 4. modifies
 
-    // informational
-    //    if (!addedRows->empty()) {
-    //      streamf(std::cerr, "There was some new data: %o rows, %o columns:\n",
-    //          flightStreamChunk.data->num_rows(), flightStreamChunk.data->num_columns());
-    //      const auto &srcCols = flightStreamChunk.data->columns();
-    //      for (size_t colNum = 0; colNum < srcCols.size(); ++colNum) {
-    //        streamf(std::cerr, "Column %o\n", colNum);
-    //        const auto &srcCol = srcCols[colNum];
-    //        for (uint32_t ii = 0; ii < addedRows->size(); ++ii) {
-    //          const auto &res = srcCol->GetScalar(ii);
-    //          streamf(std::cerr, "%o: %o\n", ii, res.ValueOrDie()->ToString());
-    //        }
-    //      }
-    //    }
-
     // 1. Removes
     auto beforeRemoves = state.snapshot();
-    // streamf(std::cout, "removed rows key space: %o\n", *removedRows);
-    // (a) splice out the data
-    // (b) remove these items from your key-to-index data structure.
-    auto removedRowsIndexSpace = state.erase(std::move(removedRows));
-    // streamf(std::cout, "removed rows index space: %o\n", *removedRowsIndexSpace);
+    auto removedRowsIndexSpace = state.erase(std::move(md.removedRows_));
 
     // 2. Shifts
-    // (a) apply only to your key-to-index data structure.
-    state.applyShifts(*shiftStartIndex, *shiftEndIndex, *shiftDestIndex);
+    state.applyShifts(*md.shiftStartIndex_, *md.shiftEndIndex_, *md.shiftDestIndex_);
 
-    // streamf(std::cout, "added rows key space: %o\n", *addedRows);
     // 3. Adds
-    // (a) splice in the data
-    // (b) add these items to your key-to-index data structure
-    std::shared_ptr<RowSequence> addedRowsIndexSpace;
-    if (numAdds != 0) {
-      auto addedRowData = parseBatches(*colDefs_, numAdds, false, fsr_.get(), &flightStreamChunk);
-      addedRowsIndexSpace = state.add(std::move(addedRowData), std::move(addedRows));
-    } else {
-      addedRowsIndexSpace = RowSequenceBuilder().build();
+    auto addedRowsIndexSpace = RowSequence::createEmpty();
+    if (md.numAdds_ != 0) {
+      auto addedRowData = parseBatches(*colDefs_, md.numAdds_, false, fsr_.get(), &flightStreamChunk);
+      addedRowsIndexSpace = state.add(std::move(addedRowData), std::move(md.addedRows_));
+
+      if (md.numMods_ != 0) {
+        // because the invariant is that the FlightStreamReader is already pointing to the first
+        // record.
+        okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
+      }
     }
-    // streamf(std::cout, "added rows index space: %o\n", *addedRowsIndexSpace);
 
     auto beforeModifies = state.snapshot();
 
     // 4. Modifies
     std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
-    if (numMods != 0) {
+    if (md.numMods_ != 0) {
       std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
-      const auto &modColumnNodes = *bmd->mod_column_nodes();
-      for (size_t i = 0; i < modColumnNodes.size(); ++i) {
-        const auto &elt = modColumnNodes.Get(i);
-        DataInput diModified(*elt->modified_rows());
-        auto modRows = IndexDecoder::readExternalCompressedDelta(&diModified);
-        perColumnModifies.push_back(std::move(modRows));
-      }
-      if (numAdds != 0) {
-        std::cout << "ZAMBONI TIME DO THIS BETTER\n";
-        // because the invariant is that the fsr is preloaded
-        okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
-      }
-      auto modifiedRowData = parseBatches(*colDefs_, numMods, true, fsr_.get(), &flightStreamChunk);
+      auto modifiedRowData = parseBatches(*colDefs_, md.numMods_, true, fsr_.get(), &flightStreamChunk);
       perColumnModifiesIndexSpace = state.modify(std::move(modifiedRowData), perColumnModifies);
     }
 
@@ -201,6 +176,50 @@ void UpdateProcessor::runForeverHelper() {
 }
 
 namespace {
+ExtractedMetadata extractMetadata(const int8_t *bmdRaw) {
+  const auto *bmd = flatbuffers::GetRoot<BarrageUpdateMetadata>(bmdRaw);
+  auto numAdds = bmd->num_add_batches();
+  auto numMods = bmd->num_mod_batches();
+  // streamf(std::cerr, "num_add_batches=%o, num_mod_batches=%o\n", numAdds, numMods);
+  // streamf(std::cerr, "FYI, my row sequence is currently %o\n", *tickingTable->getRowSequence());
+
+  DataInput diAdded(*bmd->added_rows());
+  DataInput diRemoved(*bmd->removed_rows());
+  DataInput diThreeShiftIndexes(*bmd->shift_data());
+
+  auto addedRows = IndexDecoder::readExternalCompressedDelta(&diAdded);
+  auto removedRows = IndexDecoder::readExternalCompressedDelta(&diRemoved);
+  auto shiftStartIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
+  auto shiftEndIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
+  auto shiftDestIndex = IndexDecoder::readExternalCompressedDelta(&diThreeShiftIndexes);
+
+  std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
+  if (numMods != 0) {
+    const auto &modColumnNodes = *bmd->mod_column_nodes();
+    perColumnModifies.reserve(modColumnNodes.size());
+    for (size_t i = 0; i < modColumnNodes.size(); ++i) {
+      const auto &elt = modColumnNodes.Get(i);
+      DataInput diModified(*elt->modified_rows());
+      auto modRows = IndexDecoder::readExternalCompressedDelta(&diModified);
+      perColumnModifies.push_back(std::move(modRows));
+    }
+  }
+  streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
+  streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
+  streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
+  streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
+  streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
+
+  return ExtractedMetadata(numAdds,
+      numMods,
+      std::move(removedRows),
+      std::move(shiftStartIndex),
+      std::move(shiftEndIndex),
+      std::move(shiftDestIndex),
+      std::move(addedRows),
+      std::move(perColumnModifies));
+}
+
 // Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
     const ColumnDefinitions &colDefs,
