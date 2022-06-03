@@ -8,16 +8,15 @@
 #include "deephaven/client/table/table.h"
 
 namespace deephaven::client::subscription {
-class SubscribedTableState final {
+class ClassicTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
   typedef deephaven::client::table::Table Table;
 
 public:
-  explicit SubscribedTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors,
-      const char *zamboniTimeShouldTakeColumnDefinitions);
-  ~SubscribedTableState();
+  ClassicTableState();
+  ~ClassicTableState();
 
   std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
       std::shared_ptr<RowSequence> rowsToAddKeySpace);
@@ -39,6 +38,5 @@ private:
 
   std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors_;
   // Keeps track of keyspace -> index space mapping
-  SpaceMapper spaceMapper_;
 };
 }  // namespace deephaven::client::subscription

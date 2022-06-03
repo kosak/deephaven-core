@@ -9,6 +9,7 @@
 #include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/immerutil/immer_column_source.h"
 #include "deephaven/client/subscription/index_decoder.h"
+#include "deephaven/client/subscription/classic_table_state.h"
 #include "deephaven/client/subscription/subscribed_table_state.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
@@ -105,8 +106,7 @@ void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
 }
 
 void UpdateProcessor::runForeverHelper() {
-  SubscribedTableState state(makeEmptyFlexVectors(*colDefs_));
-  auto classic = std::make_unique<ClassicTableState>();
+  SubscribedTableState state(*colDefs_);
 
   // In this loop we process Arrow Flight messages until error or cancellation.
   arrow::flight::FlightStreamChunk flightStreamChunk;
@@ -117,19 +117,9 @@ void UpdateProcessor::runForeverHelper() {
       continue;
     }
 
-    const auto *barrageWrapperRaw = flightStreamChunk.app_metadata->data();
-    const auto *barrageWrapper = flatbuffers::GetRoot<BarrageMessageWrapper>(barrageWrapperRaw);
-    if (barrageWrapper->magic() != deephavenMagicNumber) {
-      continue;
-    }
-    if (barrageWrapper->msg_type() !=
-        BarrageMessageType::BarrageMessageType_BarrageUpdateMetadata) {
-      continue;
-    }
-
     // Parse all the metadata out of the Barrage message before we advance the cursor past it.
-
-    auto md = extractMetadata(barrageWrapper->msg_payload()->data());
+    const auto *barrageWrapperRaw = flightStreamChunk.app_metadata->data();
+    auto md = extractMetadata(barrageWrapperRaw);
 
     // Correct order to process all this info is:
     // 1. removes
@@ -151,8 +141,8 @@ void UpdateProcessor::runForeverHelper() {
       addedRowsIndexSpace = state.add(std::move(addedRowData), std::move(md.addedRows_));
 
       if (md.numMods_ != 0) {
-        // because the invariant is that the FlightStreamReader is already pointing to the first
-        // record.
+        // Currently the FlightStreamReader is pointing to the last add record. We need to advance
+        // it so it points to the first mod record.
         okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
       }
     }
@@ -176,7 +166,17 @@ void UpdateProcessor::runForeverHelper() {
 }
 
 namespace {
-ExtractedMetadata extractMetadata(const int8_t *bmdRaw) {
+std::optional<ExtractedMetadata> extractMetadata(const int8_t *barrageWrapperRaw) {
+  const auto *barrageWrapper = flatbuffers::GetRoot<BarrageMessageWrapper>(barrageWrapperRaw);
+  if (barrageWrapper->magic() != deephavenMagicNumber) {
+    return {};
+  }
+  if (barrageWrapper->msg_type() !=
+      BarrageMessageType::BarrageMessageType_BarrageUpdateMetadata) {
+    return {};
+  }
+
+  const auto *bmdRaw = barrageWrapper->msg_payload()->data();
   const auto *bmd = flatbuffers::GetRoot<BarrageUpdateMetadata>(bmdRaw);
   auto numAdds = bmd->num_add_batches();
   auto numMods = bmd->num_mod_batches();
