@@ -36,6 +36,31 @@ std::shared_ptr<RowSequence> ClassicTableState::erase(const RowSequence &rowsToR
   return resultBuilder.build();
 }
 
+std::shared_ptr<SadUnwrappedTable> SadTickingTable::add(const SadRowSequence &addedRows) {
+  auto rowKeys = SadLongChunk::create(addedRows.size());
+  auto iter = addedRows.getRowSequenceIterator();
+  int64_t row;
+  size_t destIndex = 0;
+  while (iter->tryGetNext(&row)) {
+    int64_t nextRedirectedRow;
+    if (!slotsToReuse_.empty()) {
+      nextRedirectedRow = slotsToReuse_.back();
+      slotsToReuse_.pop_back();
+    } else {
+      nextRedirectedRow = (int64_t)redirection_->size();
+    }
+    auto result = redirection_->insert(std::make_pair(row, nextRedirectedRow));
+    if (!result.second) {
+      auto message = stringf("Row %o already exists", row);
+      throw std::runtime_error(message);
+    }
+    rowKeys->data()[destIndex] = nextRedirectedRow;
+    ++destIndex;
+  }
+  return SadUnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
+}
+
+
 void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
     const RowSequence &destIndex) {
   auto *redir = redirection_.get();
