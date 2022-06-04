@@ -6,8 +6,10 @@
 namespace deephaven::client::subscription {
 class ShiftProcessor {
   typedef deephaven::client::container::RowSequence RowSequence;
+public:
+  ShiftProcessor() = delete;  // static-only class
 
-  void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
+  static void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
       const RowSequence &destIndex,
       const std::function<void(uint64_t, uint64_t, uint64_t)> &processShift);
 };

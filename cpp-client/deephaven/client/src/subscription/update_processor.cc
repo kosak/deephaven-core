@@ -128,8 +128,7 @@ void UpdateProcessor::classicRunForeverHelper() {
     // 4. modifies
 
     // 1. Removes
-    auto beforeRemoves = state.snapshot();
-    auto removedRowsIndexSpace = state.erase(std::move(md.removedRows_));
+    auto removedRowsIndexSpace = state.erase(*md.removedRows_);
 
     // 2. Shifts
     state.applyShifts(*md.shiftStartIndex_, *md.shiftEndIndex_, *md.shiftDestIndex_);
