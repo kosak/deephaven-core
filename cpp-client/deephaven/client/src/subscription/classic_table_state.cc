@@ -9,7 +9,7 @@ using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::subscription {
-std::shared_ptr<RowSequence> ClassicTableState::erase(std::shared_ptr<RowSequence> rowsToRemoveKeySpace) {
+std::shared_ptr<RowSequence> ClassicTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
   RowSequenceBuilder resultBuilder;
   auto removeRange = [this, &resultBuilder](uint64_t beginKey, uint64_t endKey) {
     auto beginp = redirection_->find(beginKey);
@@ -27,7 +27,19 @@ std::shared_ptr<RowSequence> ClassicTableState::erase(std::shared_ptr<RowSequenc
     }
     redirection_->erase(beginp, currentp);
   };
-  rowsToRemoveKeySpace->forEachChunk(removeRange);
+  rowsToRemoveKeySpace.forEachChunk(removeRange);
   return resultBuilder.build();
+}
+
+void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
+    const RowSequence &destIndex) {
+  auto *redir = redirection_.get();
+  auto processShift = [redir](uint64_t first, uint64_t last, uint64_t dest) {
+    uint64_t begin = first;
+    uint64_t end = ((uint64_t)last) + 1;
+    uint64_t destBegin = dest;
+    mapShifter(begin, end, destBegin, redir);
+  };
+  applyShiftData(firstIndex, lastIndex, destIndex, processShift);
 }
 }  // namespace deephaven::client::subscription

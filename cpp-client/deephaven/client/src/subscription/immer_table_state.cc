@@ -145,7 +145,7 @@ std::shared_ptr<RowSequence> SubscribedTableState::modifyColumn(
   return rowsToModifyIndexSpace;
 }
 
-void SubscribedTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
+void ImmerTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
     const RowSequence &destIndex) {
   auto processShift = [this](int64_t first, int64_t last, int64_t dest) {
     uint64_t begin = first;
@@ -165,47 +165,6 @@ std::shared_ptr<Table> SubscribedTableState::snapshot() const {
 }
 
 namespace {
-void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex,
-    const RowSequence &destIndex,
-    const std::function<void(uint64_t, uint64_t, uint64_t)> &processShift) {
-  if (firstIndex.empty()) {
-    return;
-  }
-
-  // Loop twice: once in the forward direction (applying negative shifts), and once in the reverse
-  // direction (applying positive shifts). Because we don't have a reverse iterator at the moment,
-  // we save up the reverse tuples for processing in a separate step.
-  std::vector<std::tuple<size_t, size_t, size_t>> positiveShifts;
-  auto startIter = firstIndex.getRowSequenceIterator();
-  auto endIter = lastIndex.getRowSequenceIterator();
-  auto destIter = destIndex.getRowSequenceIterator();
-  auto showMessage = [](size_t first, size_t last, size_t dest) {
-//    const char *which = dest >= last ? "positive" : "negative";
-//    streamf(std::cerr, "Processing %o shift src [%o..%o] dest %o\n", which, first, last, dest);
-  };
-  {
-    uint64_t first, last, dest;
-    while (startIter->tryGetNext(&first)) {
-      if (!endIter->tryGetNext(&last) || !destIter->tryGetNext(&dest)) {
-        throw std::runtime_error("Sequences not of same size");
-      }
-      if (dest >= first) {
-        positiveShifts.emplace_back(first, last, dest);
-        continue;
-      }
-      showMessage(first, last, dest);
-      processShift(first, last, dest);
-    }
-  }
-
-  for (auto ip = positiveShifts.rbegin(); ip != positiveShifts.rend(); ++ip) {
-    auto first = std::get<0>(*ip);
-    auto last = std::get<1>(*ip);
-    auto dest = std::get<2>(*ip);
-    showMessage(first, last, dest);
-    processShift(first, last, dest);
-  }
-}
 
 MyTable::MyTable(std::vector<std::shared_ptr<ColumnSource>> sources, size_t numRows) :
     sources_(std::move(sources)), numRows_(numRows) {}

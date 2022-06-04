@@ -18,13 +18,13 @@ public:
 
   std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
       std::shared_ptr<RowSequence> rowsToAddKeySpace);
-  std::shared_ptr<RowSequence> erase(std::shared_ptr<RowSequence> rowsToRemoveKeySpace);
+  std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
 
   std::vector<std::shared_ptr<RowSequence>> modify(
       std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
       std::vector<std::shared_ptr<RowSequence>> modifiedIndicesPerColumn);
 
-  void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
+  void applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
       const RowSequence &destIndex);
 
   std::shared_ptr<Table> snapshot() const;
