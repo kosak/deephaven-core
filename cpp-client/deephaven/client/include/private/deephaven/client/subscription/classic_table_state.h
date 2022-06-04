@@ -16,8 +16,11 @@ public:
   ClassicTableState();
   ~ClassicTableState();
 
-  std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
+  std::shared_ptr<RowSequence> addKeys(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
       std::shared_ptr<RowSequence> rowsToAddKeySpace);
+  std::shared_ptr<RowSequence> addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
+      const RowSequence &rowsToAddIndexSpace);
+
   std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
 
   std::vector<std::shared_ptr<RowSequence>> modify(

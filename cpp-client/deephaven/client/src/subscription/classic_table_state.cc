@@ -36,30 +36,35 @@ std::shared_ptr<RowSequence> ClassicTableState::erase(const RowSequence &rowsToR
   return resultBuilder.build();
 }
 
-std::shared_ptr<SadUnwrappedTable> SadTickingTable::add(const SadRowSequence &addedRows) {
-  auto rowKeys = SadLongChunk::create(addedRows.size());
-  auto iter = addedRows.getRowSequenceIterator();
-  int64_t row;
-  size_t destIndex = 0;
-  while (iter->tryGetNext(&row)) {
-    int64_t nextRedirectedRow;
-    if (!slotsToReuse_.empty()) {
-      nextRedirectedRow = slotsToReuse_.back();
-      slotsToReuse_.pop_back();
-    } else {
-      nextRedirectedRow = (int64_t)redirection_->size();
-    }
-    auto result = redirection_->insert(std::make_pair(row, nextRedirectedRow));
-    if (!result.second) {
-      auto message = stringf("Row %o already exists", row);
-      throw std::runtime_error(message);
-    }
-    rowKeys->data()[destIndex] = nextRedirectedRow;
-    ++destIndex;
-  }
-  return SadUnwrappedTable::create(std::move(rowKeys), destIndex, columns_);
-}
+std::shared_ptr<RowSequence> ClassicTableState::add(const RowSequence &addedRowsKeySpace) {
+  // In order to give back an ordered row sequence (because at the moment we don't have an
+  // unordered row sequence), we sort the keys we're going to reuse.
+  auto numKeysToReuse = std::min(addedRowsKeySpace.size(), slotsToReuse_.size());
+  auto reuseBegin = slotsToReuse_.end() - static_cast<ssize_t>(numKeysToReuse);
+  auto reuseEnd = slotsToReuse_.end();
+  std::sort(reuseBegin, reuseEnd);
 
+  auto reuseCurrent = reuseBegin;
+
+  RowSequenceBuilder resultBuilder;
+  auto addRange = [this, &reuseCurrent, reuseEnd](uint64_t beginKey, uint64_t endKey) {
+    for (auto current = beginKey; current != endKey; ++current) {
+      uint64_t keyPositionSpace;
+      if (reuseCurrent != reuseEnd) {
+        keyPositionSpace = *reuseCurrent++;
+      } else {
+        keyPositionSpace = redirection_->size();
+      }
+      auto result = redirection_->insert(std::make_pair(current, keyPositionSpace));
+      if (!result.second) {
+        throw std::runtime_error(stringf("Can't add because key %o already exists", current));
+      }
+    }
+  };
+  addedRowsKeySpace.forEachChunk(addRange);
+  slotsToReuse_.erase(reuseBegin, reuseEnd);
+  return resultBuilder.build();
+}
 
 void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
     const RowSequence &destIndex) {

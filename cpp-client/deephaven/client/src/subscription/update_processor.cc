@@ -8,9 +8,10 @@
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/immerutil/immer_column_source.h"
-#include "deephaven/client/subscription/index_decoder.h"
+#include "deephaven/client/subscription/batch_parser.h"
 #include "deephaven/client/subscription/classic_table_state.h"
 #include "deephaven/client/subscription/immer_table_state.h"
+#include "deephaven/client/subscription/index_decoder.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/client/ticking.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
@@ -22,6 +23,7 @@ using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
+using deephaven::client::subscription::BatchParser;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
@@ -41,13 +43,6 @@ namespace deephaven::client::subscription {
 namespace {
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
     const ColumnDefinitions &colDefs);
-
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> parseBatches(
-    const ColumnDefinitions &colDefs,
-    size_t numBatches,
-    bool allowInconsistentColumnSizes,
-    arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk);
 
 struct ExtractedMetadata {
   ExtractedMetadata(size_t numAdds,
@@ -136,8 +131,21 @@ void UpdateProcessor::classicRunForeverHelper() {
     // 3. Adds
     auto addedRowsIndexSpace = RowSequence::createEmpty();
     if (md.numAdds_ != 0) {
-      auto addedRowData = parseBatches(*colDefs_, md.numAdds_, false, fsr_.get(), &flightStreamChunk);
-      addedRowsIndexSpace = state.add(std::move(addedRowData), std::move(md.addedRows_));
+      addedRowsIndexSpace = state.addKeys(*md.addedRows_);
+
+      auto rowsRemaining = addedRowsIndexSpace->take(addedRowsIndexSpace.size());
+
+      auto processBatch = [](const std::vector<std::shared_ptr<arrow::Array>> &data) {
+        if (data.empty()) {
+          return;
+        }
+        auto size = data[0]->length();
+        auto rowsToAddThisTime = rowsRemaining.take(size);
+        rowsRemaining = rowsRemaining->drop(size);
+        state.addData(data, *rowsToAddThisTime);
+      };
+      BatchParser::parseBatches(*colDefs_, md.numAdds_, false, fsr_.get(), &flightStreamChunk,
+          processBatch);
 
       if (md.numMods_ != 0) {
         // Currently the FlightStreamReader is pointing to the last add record. We need to advance
