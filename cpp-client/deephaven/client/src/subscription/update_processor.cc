@@ -12,8 +12,10 @@
 #include "deephaven/client/subscription/classic_table_state.h"
 #include "deephaven/client/subscription/subscribed_table_state.h"
 #include "deephaven/client/utility/utility.h"
+#include "deephaven/client/ticking.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
 
+using deephaven::client::ClassicTickingUpdate;
 using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::MutableColumnSource;
@@ -105,8 +107,66 @@ void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
   std::cerr << "UpdateProcessor is exiting.\n";
 }
 
+void UpdateProcessor::classicRunForever() {
+  ClassicTableState state(*colDefs_);
+
+  // In this loop we process Arrow Flight messages until error or cancellation.
+  arrow::flight::FlightStreamChunk flightStreamChunk;
+  while (true) {
+    okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
+
+    // Parse all the metadata out of the Barrage message before we advance the cursor past it.
+    auto md = extractMetadata(flightStreamChunk);
+    if (md.whateverSad()) {
+      continue;
+    }
+
+    // Correct order to process all this info is:
+    // 1. removes
+    // 2. shifts
+    // 3. adds
+    // 4. modifies
+
+    // 1. Removes
+    auto beforeRemoves = state.snapshot();
+    auto removedRowsIndexSpace = state.erase(std::move(md.removedRows_));
+
+    // 2. Shifts
+    state.applyShifts(*md.shiftStartIndex_, *md.shiftEndIndex_, *md.shiftDestIndex_);
+
+    // 3. Adds
+    auto addedRowsIndexSpace = RowSequence::createEmpty();
+    if (md.numAdds_ != 0) {
+      auto addedRowData = parseBatches(*colDefs_, md.numAdds_, false, fsr_.get(), &flightStreamChunk);
+      addedRowsIndexSpace = state.add(std::move(addedRowData), std::move(md.addedRows_));
+
+      if (md.numMods_ != 0) {
+        // Currently the FlightStreamReader is pointing to the last add record. We need to advance
+        // it so it points to the first mod record.
+        okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
+      }
+    }
+
+    auto beforeModifies = state.snapshot();
+
+    // 4. Modifies
+    std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
+    if (md.numMods_ != 0) {
+      std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
+      auto modifiedRowData = parseBatches(*colDefs_, md.numMods_, true, fsr_.get(), &flightStreamChunk);
+      perColumnModifiesIndexSpace = state.modify(std::move(modifiedRowData), perColumnModifies);
+    }
+
+    auto current = state.snapshot();
+    ClassicTickingUpdate update(std::move(beforeRemoves), std::move(beforeModifies),
+        std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
+        std::move(addedRowsIndexSpace));
+    callback_->onTick(update);
+  }
+}
+
 void UpdateProcessor::runForeverHelper() {
-  SubscribedTableState state(*colDefs_);
+  ImmerTableState state(*colDefs_);
 
   // In this loop we process Arrow Flight messages until error or cancellation.
   arrow::flight::FlightStreamChunk flightStreamChunk;
@@ -158,15 +218,20 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto current = state.snapshot();
-    TickingUpdate tickingUpdate(std::move(beforeRemoves), std::move(beforeModifies),
+    TickingUpdate update(std::move(beforeRemoves), std::move(beforeModifies),
         std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
         std::move(addedRowsIndexSpace));
-    callback_->onTick(tickingUpdate);
+    callback_->onTick(update);
   }
 }
 
 namespace {
 std::optional<ExtractedMetadata> extractMetadata(const int8_t *barrageWrapperRaw) {
+  if (flightStreamChunk.app_metadata == nullptr) {
+    std::cerr << "TODO(kosak) -- unexpected - chunk.app_metdata == nullptr\n";
+    continue;
+  }
+
   const auto *barrageWrapper = flatbuffers::GetRoot<BarrageMessageWrapper>(barrageWrapperRaw);
   if (barrageWrapper->magic() != deephavenMagicNumber) {
     return {};

@@ -22,7 +22,42 @@ public:
   virtual void onTick(const TickingUpdate &update) = 0;
 };
 
-class TickingUpdate final {
+class ClassicTickingUpdate final {
+protected:
+  typedef deephaven::client::column::ColumnSource ColumnSource;
+  typedef deephaven::client::container::RowSequence RowSequence;
+  typedef deephaven::client::table::Table Table;
+
+public:
+  ClassicTickingUpdate(std::shared_ptr<Table> beforeRemoves,
+      std::shared_ptr<Table> beforeModifies,
+      std::shared_ptr<Table> current,
+      std::shared_ptr<RowSequence> removed,
+      std::vector<std::shared_ptr<RowSequence>> perColumnModifies,
+      std::shared_ptr<RowSequence> added);
+  ClassicTickingUpdate(TickingUpdate &&other) noexcept;
+  ClassicTickingUpdate &operator=(TickingUpdate &&other) noexcept;
+  ~ClassicTickingUpdate();
+
+  const std::shared_ptr<Table> &beforeRemoves() const { return beforeRemoves_; }
+  const std::shared_ptr<Table> &beforeModifies() const { return beforeModifies_; }
+  const std::shared_ptr<Table> &current() const { return current_; }
+  // In the key space of 'prevTable'
+  const std::shared_ptr<RowSequence> &removed() const { return removed_; }
+  // In the key space of 'thisTable'
+  const std::vector<std::shared_ptr<RowSequence>> &perColumnModifies() const { return perColumnModifies_; }
+  // In the key space of 'thisTable'
+  const std::shared_ptr<RowSequence> &added() const { return added_; }
+
+private:
+  std::shared_ptr<RowSequence> removedRows_;
+  std::shared_ptr<RowSequence> addedRows_;
+  std::shared_ptr<RowSequence> modifiedRows_;
+  std::shared_ptr<Table> current_;
+  std::shared_ptr<Table> tableLock_;
+};
+
+class ImmerTickingUpdate final {
 protected:
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::table::Table Table;
