@@ -1,4 +1,4 @@
-#include "deephaven/client/subscription/subscribed_table_state.h"
+#include "deephaven/client/subscription/immer_table_state.h"
 
 #include <optional>
 #include <utility>

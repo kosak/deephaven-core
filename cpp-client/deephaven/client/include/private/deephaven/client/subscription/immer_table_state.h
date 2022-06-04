@@ -8,16 +8,16 @@
 #include "deephaven/client/table/table.h"
 
 namespace deephaven::client::subscription {
-class SubscribedTableState final {
+class ImmerTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
   typedef deephaven::client::table::Table Table;
 
 public:
-  explicit SubscribedTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors,
+  explicit ImmerTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors,
       const char *zamboniTimeShouldTakeColumnDefinitions);
-  ~SubscribedTableState();
+  ~ImmerTableState();
 
   std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
       std::shared_ptr<RowSequence> rowsToAddKeySpace);

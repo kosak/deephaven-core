@@ -3,7 +3,6 @@
 #include <vector>
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
-#include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/subscription/space_mapper.h"
 #include "deephaven/client/table/table.h"
 
@@ -11,7 +10,6 @@ namespace deephaven::client::subscription {
 class ClassicTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
-  typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
   typedef deephaven::client::table::Table Table;
 
 public:
@@ -32,11 +30,12 @@ public:
   std::shared_ptr<Table> snapshot() const;
 
 private:
-  std::shared_ptr<RowSequence> modifyColumn(size_t colNum,
-      std::unique_ptr<AbstractFlexVectorBase> modifiedData,
-      std::shared_ptr<RowSequence> rowsToModifyKeySpace);
-
-  std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors_;
-  // Keeps track of keyspace -> index space mapping
+  std::vector<std::shared_ptr<ColumnSource>> columns_;
+  std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;
+  /**
+   * These are slots (in the target, aka the redirected space) that we once allocated but
+   * then subsequently removed, so they're available for reuse.
+   */
+  std::vector<uint64_t> slotsToReuse_;
 };
 }  // namespace deephaven::client::subscription

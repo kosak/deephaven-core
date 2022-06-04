@@ -10,7 +10,7 @@
 #include "deephaven/client/immerutil/immer_column_source.h"
 #include "deephaven/client/subscription/index_decoder.h"
 #include "deephaven/client/subscription/classic_table_state.h"
-#include "deephaven/client/subscription/subscribed_table_state.h"
+#include "deephaven/client/subscription/immer_table_state.h"
 #include "deephaven/client/utility/utility.h"
 #include "deephaven/client/ticking.h"
 #include "deephaven/flatbuf/Barrage_generated.h"
@@ -95,7 +95,7 @@ void UpdateProcessor::cancel() {
   fsr_->Cancel();
 }
 
-void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
+void UpdateProcessor::classicRunForever(const std::shared_ptr<UpdateProcessor> &self) {
   std::cerr << "UpdateProcessor is starting.\n";
   std::exception_ptr eptr;
   try {
@@ -107,7 +107,7 @@ void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self) {
   std::cerr << "UpdateProcessor is exiting.\n";
 }
 
-void UpdateProcessor::classicRunForever() {
+void UpdateProcessor::classicRunForeverHelper() {
   ClassicTableState state(*colDefs_);
 
   // In this loop we process Arrow Flight messages until error or cancellation.
@@ -165,7 +165,7 @@ void UpdateProcessor::classicRunForever() {
   }
 }
 
-void UpdateProcessor::runForeverHelper() {
+void UpdateProcessor::immerRunForeverHelper() {
   ImmerTableState state(*colDefs_);
 
   // In this loop we process Arrow Flight messages until error or cancellation.
@@ -218,7 +218,7 @@ void UpdateProcessor::runForeverHelper() {
     }
 
     auto current = state.snapshot();
-    TickingUpdate update(std::move(beforeRemoves), std::move(beforeModifies),
+    ImmerTickingUpdate update(std::move(beforeRemoves), std::move(beforeModifies),
         std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
         std::move(addedRowsIndexSpace));
     callback_->onTick(update);

@@ -39,22 +39,22 @@ public:
   ClassicTickingUpdate &operator=(TickingUpdate &&other) noexcept;
   ~ClassicTickingUpdate();
 
-  const std::shared_ptr<Table> &beforeRemoves() const { return beforeRemoves_; }
-  const std::shared_ptr<Table> &beforeModifies() const { return beforeModifies_; }
+  // In the pre-shift key space
+  const std::shared_ptr<RowSequence> &removedRows() const { return removedRows_; }
+  // In the post-shift key space
+  const std::shared_ptr<RowSequence> &addedRows() const { return addedRows_; }
+  // In the post-shift key space
+  const std::shared_ptr<RowSequence> &modifiedRows() const { return modifiedRows_; }
   const std::shared_ptr<Table> &current() const { return current_; }
-  // In the key space of 'prevTable'
-  const std::shared_ptr<RowSequence> &removed() const { return removed_; }
-  // In the key space of 'thisTable'
-  const std::vector<std::shared_ptr<RowSequence>> &perColumnModifies() const { return perColumnModifies_; }
-  // In the key space of 'thisTable'
-  const std::shared_ptr<RowSequence> &added() const { return added_; }
 
 private:
+  // In the pre-shift key space
   std::shared_ptr<RowSequence> removedRows_;
+  // In the post-shift key space
   std::shared_ptr<RowSequence> addedRows_;
+  // In the post-shift key space
   std::shared_ptr<RowSequence> modifiedRows_;
   std::shared_ptr<Table> current_;
-  std::shared_ptr<Table> tableLock_;
 };
 
 class ImmerTickingUpdate final {
