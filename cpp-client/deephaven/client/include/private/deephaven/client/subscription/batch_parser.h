@@ -16,6 +16,7 @@ public:
       int64_t numBatches,
       bool allowInconsistentColumnSizes,
       arrow::flight::FlightStreamReader *fsr,
-      arrow::flight::FlightStreamChunk *flightStreamChunk);
+      arrow::flight::FlightStreamChunk *flightStreamChunk,
+      const std::function<void(const std::vector<std::shared_ptr<arrow::Array>> &)> &callback);
 };
 }  // namespace deephaven::client::subscription

@@ -1,5 +1,6 @@
 #include "deephaven/client/subscription/batch_parser.h"
 
+#include <functional>
 #include <arrow/array.h>
 #include "deephaven/client/utility/utility.h"
 
@@ -13,23 +14,19 @@ void BatchParser::parseBatches(
     int64_t numBatches,
     bool allowInconsistentColumnSizes,
     arrow::flight::FlightStreamReader *fsr,
-    arrow::flight::FlightStreamChunk *flightStreamChunk) {
-  auto result = makeEmptyFlexVectors(colDefs);
+    arrow::flight::FlightStreamChunk *flightStreamChunk,
+    const std::function<void(const std::vector<std::shared_ptr<arrow::Array>> &)> &callback) {
+  auto colDefsSize = colDefs.vec().size();
   if (numBatches == 0) {
-    return result;
+    return;
   }
 
   while (true) {
     const auto &srcCols = flightStreamChunk->data->columns();
     auto ncols = srcCols.size();
-    if (ncols != result.size()) {
-      auto message = stringf("Received %o columns, but my table has %o columns", ncols,
-          result.size());
-      throw std::runtime_error(message);
-    }
-
-    if (ncols == 0) {
-      return result;
+    if (ncols != colDefsSize) {
+      throw std::runtime_error(stringf("Received %o columns, but my table has %o columns", ncols,
+          colDefsSize));
     }
 
     if (!allowInconsistentColumnSizes) {
@@ -47,13 +44,10 @@ void BatchParser::parseBatches(
       }
     }
 
-    for (size_t i = 0; i < ncols; ++i) {
-      const auto &srcColArrow = *srcCols[i];
-      result[i]->inPlaceAppendArrow(srcColArrow);
-    }
+    callback(srcCols);
 
     if (--numBatches == 0) {
-      return result;
+      return;
     }
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr->Next(flightStreamChunk)));
   }
