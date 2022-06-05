@@ -5,15 +5,17 @@
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/subscription/space_mapper.h"
 #include "deephaven/client/table/table.h"
+#include "deephaven/client/utility/misc.h"
 
 namespace deephaven::client::subscription {
 class ClassicTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::table::Table Table;
+  typedef deephaven::client::utility::ColumnDefinitions ColumnDefinitions;
 
 public:
-  ClassicTableState();
+  explicit ClassicTableState(const ColumnDefinitions &colDefs);
   ~ClassicTableState();
 
   std::shared_ptr<RowSequence> addKeys(const RowSequence &rowsToAddKeySpace);

@@ -13,7 +13,7 @@ public:
 
   static void parseBatches(
       const ColumnDefinitions &colDefs,
-      int64_t numBatches,
+      size_t numBatches,
       bool allowInconsistentColumnSizes,
       arrow::flight::FlightStreamReader *fsr,
       arrow::flight::FlightStreamChunk *flightStreamChunk,

@@ -11,7 +11,7 @@ namespace deephaven::client::subscription {
 // Processes all of the adds in this add batch. Will invoke (numAdds - 1) additional calls to GetNext().
 void BatchParser::parseBatches(
     const ColumnDefinitions &colDefs,
-    int64_t numBatches,
+    size_t numBatches,
     bool allowInconsistentColumnSizes,
     arrow::flight::FlightStreamReader *fsr,
     arrow::flight::FlightStreamChunk *flightStreamChunk,

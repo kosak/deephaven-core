@@ -52,21 +52,21 @@ struct ExtractedMetadata {
       std::shared_ptr<RowSequence> shiftEndIndex,
       std::shared_ptr<RowSequence> shiftDestIndex,
       std::shared_ptr<RowSequence> addedRows,
-      std::vector<std::shared_ptr<RowSequence>> perColumnModifiedRows);
+      std::vector<std::shared_ptr<RowSequence>> modifiedRows);
   ~ExtractedMetadata();
 
   size_t numAdds_ = 0;
   size_t numMods_ = 0;
-  std::shared_ptr<RowSequence> addedRows_;
   std::shared_ptr<RowSequence> removedRows_;
-  std::vector<std::shared_ptr<RowSequence>> perColumnModifiedRows_;
   std::shared_ptr<RowSequence> shiftStartIndex_;
   std::shared_ptr<RowSequence> shiftEndIndex_;
   std::shared_ptr<RowSequence> shiftDestIndex_;
-
+  std::shared_ptr<RowSequence> addedRows_;
+  std::vector<std::shared_ptr<RowSequence>> modifiedRows_;
 };
 
-ExtractedMetadata extractMetadata(const int8_t *raw);
+std::optional<ExtractedMetadata> extractMetadata(
+    const arrow::flight::FlightStreamChunk &flightStreamChunk);
 }  // namespace
 
 std::shared_ptr<UpdateProcessor> UpdateProcessor::startThread(
@@ -94,7 +94,7 @@ void UpdateProcessor::classicRunForever(const std::shared_ptr<UpdateProcessor> &
   std::cerr << "UpdateProcessor is starting.\n";
   std::exception_ptr eptr;
   try {
-    self->runForeverHelper();
+    self->classicRunForeverHelper();
   } catch (...) {
     eptr = std::current_exception();
     self->callback_->onFailure(eptr);
@@ -111,10 +111,11 @@ void UpdateProcessor::classicRunForeverHelper() {
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
 
     // Parse all the metadata out of the Barrage message before we advance the cursor past it.
-    auto md = extractMetadata(flightStreamChunk);
-    if (md.whateverSad()) {
+    auto mdo = extractMetadata(flightStreamChunk);
+    if (!mdo.has_value()) {
       continue;
     }
+    auto &md = *mdo;
 
     // Correct order to process all this info is:
     // 1. removes
@@ -123,8 +124,8 @@ void UpdateProcessor::classicRunForeverHelper() {
     // 4. modifies
 
     // 1. Removes
-    auto removedRowsKeySpace = std::move(*md.removedRows_);
-    auto removedRowsIndexSpace = state.erase(removedRowsKeySpace);
+    auto removedRowsKeySpace = std::move(md.removedRows_);
+    auto removedRowsIndexSpace = state.erase(*removedRowsKeySpace);
 
     // 2. Shifts
     state.applyShifts(*md.shiftStartIndex_, *md.shiftEndIndex_, *md.shiftDestIndex_);
@@ -133,10 +134,11 @@ void UpdateProcessor::classicRunForeverHelper() {
     auto addedRowsKeySpace = RowSequence::createEmpty();
     auto addedRowsIndexSpace = RowSequence::createEmpty();
     if (md.numAdds_ != 0) {
-      addedRowsKeySpace = std::move(*md.addedRows_);
-      addedRowsIndexSpace = state.addKeys(addedRowsKeySpace);
+      addedRowsKeySpace = std::move(md.addedRows_);
+      addedRowsIndexSpace = state.addKeys(*addedRowsKeySpace);
 
-      auto rowsRemaining = addedRowsIndexSpace->take(addedRowsIndexSpace.size());
+      // Copy everything.
+      auto rowsRemaining = addedRowsIndexSpace->take(addedRowsIndexSpace->size());
 
       auto processAddBatch = [&state, &rowsRemaining](
           const std::vector<std::shared_ptr<arrow::Array>> &data) {
@@ -144,7 +146,7 @@ void UpdateProcessor::classicRunForeverHelper() {
           return;
         }
         auto size = data[0]->length();
-        auto rowsToAddThisTime = rowsRemaining.take(size);
+        auto rowsToAddThisTime = rowsRemaining->take(size);
         rowsRemaining = rowsRemaining->drop(size);
         state.addData(data, *rowsToAddThisTime);
       };
@@ -161,12 +163,13 @@ void UpdateProcessor::classicRunForeverHelper() {
     auto ncols = colDefs_->vec().size();
 
     // 4. Modifies
-    auto modifiedRowsKeySpace = std::move(*md.modifiedRows_);
-    auto modifiedRowsIndexSpace = state.modifyKeys(*modifiedRowsKeySpace);
+    auto modifiedRowsKeySpace = std::move(md.modifiedRows_);
+    auto modifiedRowsIndexSpace = state.modifyKeys(modifiedRowsKeySpace);
     if (md.numMods_ != 0) {
+      // Local copy of modifiedRowsIndexSpace
       auto keysRemaining = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
       for (const auto &keys : modifiedRowsIndexSpace) {
-        keysRemaining.push_back(keys.take(keys.size()));
+        keysRemaining.push_back(keys->take(keys->size()));
       }
 
       std::vector<std::shared_ptr<RowSequence>> keysToModifyThisTime(ncols);
@@ -185,7 +188,8 @@ void UpdateProcessor::classicRunForeverHelper() {
         state.modifyData(data, keysToModifyThisTime);
       };
 
-      auto modifiedRowData = parseBatches(*colDefs_, md.numMods_, true, fsr_.get(), &flightStreamChunk);
+      BatchParser::parseBatches(*colDefs_, md.numMods_, true, fsr_.get(), &flightStreamChunk,
+          processModifyBatch);
     }
 
     ClassicTickingUpdate update(std::move(removedRowsKeySpace),
@@ -255,12 +259,14 @@ void UpdateProcessor::immerRunForeverHelper() {
 }
 
 namespace {
-std::optional<ExtractedMetadata> extractMetadata(const int8_t *barrageWrapperRaw) {
+std::optional<ExtractedMetadata> extractMetadata(
+    const arrow::flight::FlightStreamChunk &flightStreamChunk) {
   if (flightStreamChunk.app_metadata == nullptr) {
     std::cerr << "TODO(kosak) -- unexpected - chunk.app_metdata == nullptr\n";
-    continue;
+    return {};
   }
 
+  const auto *barrageWrapperRaw = flightStreamChunk.app_metadata->data();
   const auto *barrageWrapper = flatbuffers::GetRoot<BarrageMessageWrapper>(barrageWrapperRaw);
   if (barrageWrapper->magic() != deephavenMagicNumber) {
     return {};

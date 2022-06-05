@@ -23,8 +23,10 @@ public:
   void cancel();
 
 private:
+  static void classicRunForever(const std::shared_ptr <UpdateProcessor> &self);
+  void classicRunForeverHelper();
+
   static void runForever(const std::shared_ptr <UpdateProcessor> &self);
-  void runForeverHelper();
 
 public:
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr_;

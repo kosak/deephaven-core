@@ -12,6 +12,7 @@ class RowSequenceIterator;
 
 class RowSequence {
 public:
+  static std::shared_ptr<RowSequence> createEmpty();
   virtual ~RowSequence();
 
   virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
