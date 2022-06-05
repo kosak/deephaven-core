@@ -6,6 +6,7 @@
 #include "deephaven/client/immerutil/abstract_flex_vector.h"
 #include "deephaven/client/subscription/space_mapper.h"
 #include "deephaven/client/table/table.h"
+#include "deephaven/client/utility/misc.h"
 
 namespace deephaven::client::subscription {
 class ImmerTableState final {
@@ -13,10 +14,10 @@ class ImmerTableState final {
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::immerutil::AbstractFlexVectorBase AbstractFlexVectorBase;
   typedef deephaven::client::table::Table Table;
+  typedef deephaven::client::utility::ColumnDefinitions ColumnDefinitions;
 
 public:
-  explicit ImmerTableState(std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors,
-      const char *zamboniTimeShouldTakeColumnDefinitions);
+  explicit ImmerTableState(const ColumnDefinitions &colDefs);
   ~ImmerTableState();
 
   std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,

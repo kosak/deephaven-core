@@ -26,7 +26,8 @@ private:
   static void classicRunForever(const std::shared_ptr <UpdateProcessor> &self);
   void classicRunForeverHelper();
 
-  static void runForever(const std::shared_ptr <UpdateProcessor> &self);
+  static void immerRunForever(const std::shared_ptr <UpdateProcessor> &self);
+  void immerRunForeverHelper();
 
 public:
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr_;

@@ -205,14 +205,13 @@ void UpdateProcessor::immerRunForeverHelper() {
   arrow::flight::FlightStreamChunk flightStreamChunk;
   while (true) {
     okOrThrow(DEEPHAVEN_EXPR_MSG(fsr_->Next(&flightStreamChunk)));
-    if (flightStreamChunk.app_metadata == nullptr) {
-      std::cerr << "TODO(kosak) -- unexpected - chunk.app_metdata == nullptr\n";
-      continue;
-    }
 
     // Parse all the metadata out of the Barrage message before we advance the cursor past it.
-    const auto *barrageWrapperRaw = flightStreamChunk.app_metadata->data();
-    auto md = extractMetadata(barrageWrapperRaw);
+    auto mdo = extractMetadata(flightStreamChunk);
+    if (!mdo.has_value()) {
+      continue;
+    }
+    auto &md = *mdo;
 
     // Correct order to process all this info is:
     // 1. removes
