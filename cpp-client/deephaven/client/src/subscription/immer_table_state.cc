@@ -51,16 +51,25 @@ private:
 };
 }  // namespace
 
-SubscribedTableState::SubscribedTableState(
-    std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors) :
-    flexVectors_(std::move(flexVectors)) {}
+//ImmerTableState::ImmerTableState(const ColumnDefinitions &colDefs)
+//    std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors) :
+//    flexVectors_(std::move(flexVectors)) {}
 
-SubscribedTableState::~SubscribedTableState() = default;
+ImmerTableState::~ImmerTableState() = default;
 
-std::shared_ptr<RowSequence> SubscribedTableState::add(
-    std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
-    std::shared_ptr<RowSequence> rowsToAddKeySpace) {
-  auto rowsToAddIndexSpace = spaceMapper_.addKeys(*rowsToAddKeySpace);
+std::shared_ptr<RowSequence> ImmerTableState::addKeys(const RowSequence &rowsToAddKeySpace) {
+  return spaceMapper_.addKeys(rowsToAddKeySpace);
+}
+
+void ImmerTableState::addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
+    const RowSequence &rowsToAddIndexSpace) {
+  auto ncols = data.size();
+  myAssert(data.size() == flexVectors_.size());
+  std::vector<std::shared_ptr<AbstractFlexVectorBase>> addedData(ncols);
+  for (const auto &array : data) {
+    addedData.push_back(makeFlexVector(array));
+  }
+
   auto addChunk = [this, &addedData](uint64_t beginIndex, uint64_t endIndex) {
     auto size = endIndex - beginIndex;
 
@@ -81,12 +90,11 @@ std::shared_ptr<RowSequence> SubscribedTableState::add(
       fv->inPlaceAppend(std::move(fvTemp));
     }
   };
-  rowsToAddIndexSpace->forEachChunk(addChunk);
-  return rowsToAddIndexSpace;
+  rowsToAddIndexSpace.forEachChunk(addChunk);
 }
 
-std::shared_ptr<RowSequence> SubscribedTableState::erase(std::shared_ptr<RowSequence> rowsToRemoveKeySpace) {
-  auto result = spaceMapper_.convertKeysToIndices(*rowsToRemoveKeySpace);
+std::shared_ptr<RowSequence> ImmerTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
+  auto result = spaceMapper_.convertKeysToIndices(rowsToRemoveKeySpace);
 
   auto eraseChunk = [this](uint64_t beginKey, uint64_t endKey) {
     auto size = endKey - beginKey;
@@ -100,7 +108,7 @@ std::shared_ptr<RowSequence> SubscribedTableState::erase(std::shared_ptr<RowSequ
       fv->inPlaceAppend(std::move(fvTemp));
     }
   };
-  rowsToRemoveKeySpace->forEachChunk(eraseChunk);
+  rowsToRemoveKeySpace.forEachChunk(eraseChunk);
   return result;
 }
 

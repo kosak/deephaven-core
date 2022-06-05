@@ -10,7 +10,8 @@
 #include "immer/flex_vector.hpp"
 
 namespace deephaven::client {
-class TickingUpdate;
+class ClassicTickingUpdate;
+class ImmerTickingUpdate;
 class TickingCallback : public deephaven::client::utility::FailureCallback {
 public:
   /**
@@ -19,7 +20,8 @@ public:
    * can be kept around for an arbitrary amount of time. On the other hand, it probably should be
    * processed and discard quickly so that the underlying resources can be reused.
    */
-  virtual void onTick(const TickingUpdate &update) = 0;
+  virtual void onTick(const ClassicTickingUpdate &update) = 0;
+  virtual void onTick(const ImmerTickingUpdate &update) = 0;
 };
 
 class ClassicTickingUpdate final {
@@ -33,8 +35,8 @@ public:
       std::shared_ptr<RowSequence> addedRows,
       std::shared_ptr<RowSequence> modifiedRows,
       std::shared_ptr<Table> current);
-  ClassicTickingUpdate(TickingUpdate &&other) noexcept;
-  ClassicTickingUpdate &operator=(TickingUpdate &&other) noexcept;
+  ClassicTickingUpdate(ClassicTickingUpdate &&other) noexcept;
+  ClassicTickingUpdate &operator=(ClassicTickingUpdate &&other) noexcept;
   ~ClassicTickingUpdate();
 
   // In the pre-shift key space
