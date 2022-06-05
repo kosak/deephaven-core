@@ -61,15 +61,15 @@ protected:
   typedef deephaven::client::table::Table Table;
 
 public:
-  TickingUpdate(std::shared_ptr<Table> beforeRemoves,
+  ImmerTickingUpdate(std::shared_ptr<Table> beforeRemoves,
       std::shared_ptr<Table> beforeModifies,
       std::shared_ptr<Table> current,
       std::shared_ptr<RowSequence> removed,
-      std::vector<std::shared_ptr<RowSequence>> perColumnModifies,
+      std::vector<std::shared_ptr<RowSequence>> modified,
       std::shared_ptr<RowSequence> added);
-  TickingUpdate(TickingUpdate &&other) noexcept;
-  TickingUpdate &operator=(TickingUpdate &&other) noexcept;
-  ~TickingUpdate();
+  ImmerTickingUpdate(ImmerTickingUpdate &&other) noexcept;
+  ImmerTickingUpdate &operator=(ImmerTickingUpdate &&other) noexcept;
+  ~ImmerTickingUpdate();
 
   const std::shared_ptr<Table> &beforeRemoves() const { return beforeRemoves_; }
   const std::shared_ptr<Table> &beforeModifies() const { return beforeModifies_; }
@@ -77,7 +77,7 @@ public:
   // In the key space of 'prevTable'
   const std::shared_ptr<RowSequence> &removed() const { return removed_; }
   // In the key space of 'thisTable'
-  const std::vector<std::shared_ptr<RowSequence>> &perColumnModifies() const { return perColumnModifies_; }
+  const std::vector<std::shared_ptr<RowSequence>> &modified() const { return modified_; }
   // In the key space of 'thisTable'
   const std::shared_ptr<RowSequence> &added() const { return added_; }
 
@@ -89,7 +89,7 @@ private:
   std::shared_ptr<RowSequence> removed_;
   // In the key space of beforeModifies_ and current_, which have the same key space.
   // Old values are in beforeModifies_; new values are in current_.
-  std::vector<std::shared_ptr<RowSequence>> perColumnModifies_;
+  std::vector<std::shared_ptr<RowSequence>> modified_;
   // In the key space of current_.
   std::shared_ptr<RowSequence> added_;
 };

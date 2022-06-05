@@ -20,13 +20,16 @@ public:
   explicit ImmerTableState(const ColumnDefinitions &colDefs);
   ~ImmerTableState();
 
-  std::shared_ptr<RowSequence> add(std::vector<std::unique_ptr<AbstractFlexVectorBase>> addedData,
-      std::shared_ptr<RowSequence> rowsToAddKeySpace);
-  std::shared_ptr<RowSequence> erase(std::shared_ptr<RowSequence> rowsToRemoveKeySpace);
+  std::shared_ptr<RowSequence> addKeys(const RowSequence &rowsToAddKeySpace);
+  void addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
+      const RowSequence &rowsToAddIndexSpace);
 
-  std::vector<std::shared_ptr<RowSequence>> modify(
-      std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
-      std::vector<std::shared_ptr<RowSequence>> modifiedIndicesPerColumn);
+  std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
+
+  std::vector<std::shared_ptr<RowSequence>> modifyKeys(
+      const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn);
+  void modifyData(const std::vector<std::shared_ptr<arrow::Array>> &data,
+      const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace);
 
   void applyShifts(const RowSequence &startIndex, const RowSequence &endIndex,
       const RowSequence &destIndex);
