@@ -123,15 +123,18 @@ void UpdateProcessor::classicRunForeverHelper() {
     // 4. modifies
 
     // 1. Removes
-    auto removedRowsIndexSpace = state.erase(*md.removedRows_);
+    auto removedRowsKeySpace = std::move(*md.removedRows_);
+    auto removedRowsIndexSpace = state.erase(removedRowsKeySpace);
 
     // 2. Shifts
     state.applyShifts(*md.shiftStartIndex_, *md.shiftEndIndex_, *md.shiftDestIndex_);
 
     // 3. Adds
+    auto addedRowsKeySpace = RowSequence::createEmpty();
     auto addedRowsIndexSpace = RowSequence::createEmpty();
     if (md.numAdds_ != 0) {
-      addedRowsIndexSpace = state.addKeys(*md.addedRows_);
+      addedRowsKeySpace = std::move(*md.addedRows_);
+      addedRowsIndexSpace = state.addKeys(addedRowsKeySpace);
 
       auto rowsRemaining = addedRowsIndexSpace->take(addedRowsIndexSpace.size());
 
@@ -155,26 +158,29 @@ void UpdateProcessor::classicRunForeverHelper() {
       }
     }
 
+    auto ncols = colDefs_->vec().size();
+
     // 4. Modifies
-    auto perColumnModifiesKeySpace = std::move(*md.modifiedRows_);
-    auto perColumnModifiesIndexSpace = state.modifyKeys(*perColumnModifiesKeySpace);
+    auto modifiedRowsKeySpace = std::move(*md.modifiedRows_);
+    auto modifiedRowsIndexSpace = state.modifyKeys(*modifiedRowsKeySpace);
     if (md.numMods_ != 0) {
       auto keysRemaining = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
-      auto keysToModifyThisTime = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
-      for (const auto &keys : perColumnModifiesKeySpace) {
+      for (const auto &keys : modifiedRowsIndexSpace) {
         keysRemaining.push_back(keys.take(keys.size()));
-        keysToModifyThisTime.push_back(nullptr);
       }
 
-      auto processModifyBatch = [&state](const std::vector<std::shared_ptr<arrow::Array>> &data) {
+      std::vector<std::shared_ptr<RowSequence>> keysToModifyThisTime(ncols);
+
+      auto processModifyBatch = [&state, &keysRemaining, &keysToModifyThisTime, ncols](
+          const std::vector<std::shared_ptr<arrow::Array>> &data) {
         if (data.size() != ncols) {
           throw std::runtime_error(stringf("data.size() != ncols (%o != %o)", data.size(), ncols));
         }
         for (size_t i = 0; i < data.size(); ++i) {
           const auto &src = data[i];
           auto &krm = keysRemaining[i];
-          keysToModifyThisTime[i] = krm.take(src->length());
-          krm.drop(src->length());
+          keysToModifyThisTime[i] = krm->take(src->length());
+          krm->drop(src->length());
         }
         state.modifyData(data, keysToModifyThisTime);
       };
@@ -182,9 +188,8 @@ void UpdateProcessor::classicRunForeverHelper() {
       auto modifiedRowData = parseBatches(*colDefs_, md.numMods_, true, fsr_.get(), &flightStreamChunk);
     }
 
-    ClassicTickingUpdate update(std::move(beforeRemoves), std::move(beforeModifies),
-        std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
-        std::move(addedRowsIndexSpace));
+    ClassicTickingUpdate update(std::move(removedRowsKeySpace),
+        std::move(addedRowsKeySpace), std::move(modifiedRowsKeySpace));
     callback_->onTick(update);
   }
 }

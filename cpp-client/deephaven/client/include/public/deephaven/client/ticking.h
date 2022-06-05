@@ -29,12 +29,10 @@ protected:
   typedef deephaven::client::table::Table Table;
 
 public:
-  ClassicTickingUpdate(std::shared_ptr<Table> beforeRemoves,
-      std::shared_ptr<Table> beforeModifies,
-      std::shared_ptr<Table> current,
-      std::shared_ptr<RowSequence> removed,
-      std::vector<std::shared_ptr<RowSequence>> perColumnModifies,
-      std::shared_ptr<RowSequence> added);
+  ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRows,
+      std::shared_ptr<RowSequence> addedRows,
+      std::shared_ptr<RowSequence> modifiedRows,
+      std::shared_ptr<Table> current);
   ClassicTickingUpdate(TickingUpdate &&other) noexcept;
   ClassicTickingUpdate &operator=(TickingUpdate &&other) noexcept;
   ~ClassicTickingUpdate();
