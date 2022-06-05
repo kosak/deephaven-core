@@ -135,7 +135,8 @@ void UpdateProcessor::classicRunForeverHelper() {
 
       auto rowsRemaining = addedRowsIndexSpace->take(addedRowsIndexSpace.size());
 
-      auto processBatch = [](const std::vector<std::shared_ptr<arrow::Array>> &data) {
+      auto processAddBatch = [&state, &rowsRemaining](
+          const std::vector<std::shared_ptr<arrow::Array>> &data) {
         if (data.empty()) {
           return;
         }
@@ -145,7 +146,7 @@ void UpdateProcessor::classicRunForeverHelper() {
         state.addData(data, *rowsToAddThisTime);
       };
       BatchParser::parseBatches(*colDefs_, md.numAdds_, false, fsr_.get(), &flightStreamChunk,
-          processBatch);
+          processAddBatch);
 
       if (md.numMods_ != 0) {
         // Currently the FlightStreamReader is pointing to the last add record. We need to advance
@@ -154,17 +155,33 @@ void UpdateProcessor::classicRunForeverHelper() {
       }
     }
 
-    auto beforeModifies = state.snapshot();
-
     // 4. Modifies
-    std::vector<std::shared_ptr<RowSequence>> perColumnModifiesIndexSpace;
+    auto perColumnModifiesKeySpace = std::move(*md.modifiedRows_);
+    auto perColumnModifiesIndexSpace = state.modifyKeys(*perColumnModifiesKeySpace);
     if (md.numMods_ != 0) {
-      std::vector<std::shared_ptr<RowSequence>> perColumnModifies;
+      auto keysRemaining = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
+      auto keysToModifyThisTime = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
+      for (const auto &keys : perColumnModifiesKeySpace) {
+        keysRemaining.push_back(keys.take(keys.size()));
+        keysToModifyThisTime.push_back(nullptr);
+      }
+
+      auto processModifyBatch = [&state](const std::vector<std::shared_ptr<arrow::Array>> &data) {
+        if (data.size() != ncols) {
+          throw std::runtime_error(stringf("data.size() != ncols (%o != %o)", data.size(), ncols));
+        }
+        for (size_t i = 0; i < data.size(); ++i) {
+          const auto &src = data[i];
+          auto &krm = keysRemaining[i];
+          keysToModifyThisTime[i] = krm.take(src->length());
+          krm.drop(src->length());
+        }
+        state.modifyData(data, keysToModifyThisTime);
+      };
+
       auto modifiedRowData = parseBatches(*colDefs_, md.numMods_, true, fsr_.get(), &flightStreamChunk);
-      perColumnModifiesIndexSpace = state.modify(std::move(modifiedRowData), perColumnModifies);
     }
 
-    auto current = state.snapshot();
     ClassicTickingUpdate update(std::move(beforeRemoves), std::move(beforeModifies),
         std::move(current), std::move(removedRowsIndexSpace), std::move(perColumnModifiesIndexSpace),
         std::move(addedRowsIndexSpace));
