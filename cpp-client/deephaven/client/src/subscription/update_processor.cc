@@ -365,35 +365,6 @@ std::optional<ExtractedMetadata> extractMetadata(
 //    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
 //    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
 
-struct MyVisitor final : public arrow::TypeVisitor {
-  arrow::Status Visit(const arrow::Int32Type &type) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
-    return arrow::Status::OK();
-  }
 
-  arrow::Status Visit(const arrow::Int64Type &type) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::DoubleType &type) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
-    return arrow::Status::OK();
-  }
-
-  std::unique_ptr<AbstractFlexVectorBase> result_;
-};
-
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
-    const ColumnDefinitions &colDefs) {
-  const auto &vec = colDefs.vec();
-  auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(vec.size());
-  for (const auto &[name, dataType] : vec) {
-    MyVisitor v;
-    okOrThrow(DEEPHAVEN_EXPR_MSG(dataType->Accept(&v)));
-    result.push_back(std::move(v.result_));
-  }
-  return result;
-}
 }  // namespace
 }  // namespace deephaven::client::subscription

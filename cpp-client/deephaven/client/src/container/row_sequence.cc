@@ -65,7 +65,7 @@ RowSequenceIterator::~RowSequenceIterator() = default;
 RowSequenceBuilder::RowSequenceBuilder() = default;
 RowSequenceBuilder::~RowSequenceBuilder() = default;
 
-void RowSequenceBuilder::addRange(uint64_t begin, uint64_t end, const char *zamboniFactor) {
+void RowSequenceBuilder::addRange(uint64_t begin, uint64_t end) {
   if (begin > end) {
     throw std::runtime_error(stringf("Malformed range [%o,%o)", begin, end));
   }

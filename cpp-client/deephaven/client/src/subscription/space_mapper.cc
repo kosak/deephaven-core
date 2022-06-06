@@ -120,7 +120,7 @@ std::shared_ptr<RowSequence> SpaceMapper::addKeys(const RowSequence &keys) {
   auto addChunk = [this, &builder](uint64_t beginKey, uint64_t endKey) {
     auto size = endKey - beginKey;
     auto beginIndex = addRange(beginKey, endKey);
-    builder.addRange(beginIndex, beginIndex + size, "kosak town");
+    builder.addRange(beginIndex, beginIndex + size);
   };
   keys.forEachChunk(addChunk);
   return builder.build();
@@ -143,7 +143,7 @@ std::shared_ptr<RowSequence> SpaceMapper::convertKeysToIndices(const RowSequence
       ++currentp;
     }
     auto size = end - begin;
-    builder.addRange(nextRank, nextRank + size, "TODO(kosak): super nubbin");
+    builder.addRange(nextRank, nextRank + size);
   };
   keys.forEachChunk(convertChunk);
   return builder.build();

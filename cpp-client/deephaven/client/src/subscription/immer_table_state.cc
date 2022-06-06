@@ -21,6 +21,7 @@ using deephaven::client::container::RowSequenceIterator;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::table::Table;
 using deephaven::client::utility::makeReservedVector;
+using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
@@ -49,6 +50,9 @@ private:
   std::vector<std::shared_ptr<ColumnSource>> sources_;
   size_t numRows_ = 0;
 };
+
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectors(
+    const std::vector<std::shared_ptr<arrow::Array>> &array);
 }  // namespace
 
 //ImmerTableState::ImmerTableState(const ColumnDefinitions &colDefs)
@@ -64,11 +68,11 @@ std::shared_ptr<RowSequence> ImmerTableState::addKeys(const RowSequence &rowsToA
 void ImmerTableState::addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
     const RowSequence &rowsToAddIndexSpace) {
   auto ncols = data.size();
-  myAssert(data.size() == flexVectors_.size());
-  std::vector<std::shared_ptr<AbstractFlexVectorBase>> addedData(ncols);
-  for (const auto &array : data) {
-    addedData.push_back(makeFlexVector(array));
+  if (ncols != flexVectors_.size()) {
+    throw std::runtime_error(stringf("ncols != flexVectors_.size() (%o != %o)",
+        ncols, flexVectors_.size()));
   }
+  auto addedData = makeFlexVectors(data);
 
   auto addChunk = [this, &addedData](uint64_t beginIndex, uint64_t endIndex) {
     auto size = endIndex - beginIndex;
@@ -112,27 +116,33 @@ std::shared_ptr<RowSequence> ImmerTableState::erase(const RowSequence &rowsToRem
   return result;
 }
 
-std::vector<std::shared_ptr<RowSequence>> SubscribedTableState::modify(
-    std::vector<std::unique_ptr<AbstractFlexVectorBase>> modifiedData,
-    std::vector<std::shared_ptr<RowSequence>> rowsToModifyPerColumnKeySpace) {
-  if (modifiedData.size() != rowsToModifyPerColumnKeySpace.size()) {
-    throw std::runtime_error(stringf("modifiedData.size() != modifiedIndicesPerColumn.size() (%o != %o)",
-        modifiedData.size(), rowsToModifyPerColumnKeySpace.size()));
+std::vector<std::shared_ptr<RowSequence>> ImmerTableState::modifyKeys(
+    const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace) {
+  auto ncols = rowsToModifyKeySpace.size();
+  auto result = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
+  for (const auto &rs : rowsToModifyKeySpace) {
+    result.push_back(spaceMapper_.convertKeysToIndices(*rs));
   }
-  auto rowsToModifyPerColumnIndexSpace =
-      makeReservedVector<std::shared_ptr<RowSequence>>(rowsToModifyPerColumnKeySpace.size());
-  for (size_t i = 0; i < modifiedData.size(); ++i) {
-    auto mipc = modifyColumn(i, std::move(modifiedData[i]), std::move(rowsToModifyPerColumnKeySpace[i]));
-    rowsToModifyPerColumnIndexSpace.push_back(std::move(mipc));
-  }
-  return rowsToModifyPerColumnIndexSpace;
+  return result;
 }
 
-std::shared_ptr<RowSequence> SubscribedTableState::modifyColumn(
-    size_t colNum,
+void ImmerTableState::modifyData(const std::vector<std::shared_ptr<arrow::Array>> &data,
+    const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace) {
+  auto ncols = data.size();
+  if (ncols != rowsToModifyIndexSpace.size()) {
+    throw std::runtime_error(stringf("data.size() != rowsToModifyIndexSpace.size() (%o != %o)",
+        ncols, rowsToModifyIndexSpace.size()));
+  }
+  auto modifiedData = makeFlexVectors(data);
+
+  for (size_t i = 0; i < ncols; ++i) {
+    modifyColumn(i, std::move(modifiedData[i]), *rowsToModifyIndexSpace[i]);
+  }
+}
+
+void ImmerTableState::modifyColumn(size_t colNum,
     std::unique_ptr<AbstractFlexVectorBase> modifiedData,
-    std::shared_ptr<RowSequence> rowsToModifyKeySpace) {
-  auto rowsToModifyIndexSpace = spaceMapper_.convertKeysToIndices(*rowsToModifyKeySpace);
+    const RowSequence &rowsToModifyIndexSpace) {
   auto &fv = flexVectors_[colNum];
   auto modifyChunk = [&fv, &modifiedData](uint64_t beginIndex, uint64_t endIndex) {
     auto size = endIndex - beginIndex;
@@ -149,8 +159,7 @@ std::shared_ptr<RowSequence> SubscribedTableState::modifyColumn(
     // Append the residual items back from 'fvTemp'.
     fv->inPlaceAppend(std::move(fvTemp));
   };
-  rowsToModifyIndexSpace->forEachChunk(modifyChunk);
-  return rowsToModifyIndexSpace;
+  rowsToModifyIndexSpace.forEachChunk(modifyChunk);
 }
 
 void ImmerTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
@@ -164,7 +173,7 @@ void ImmerTableState::applyShifts(const RowSequence &firstIndex, const RowSequen
   applyShiftData(firstIndex, lastIndex, destIndex, processShift);
 }
 
-std::shared_ptr<Table> SubscribedTableState::snapshot() const {
+std::shared_ptr<Table> ImmerTableState::snapshot() const {
   auto columnSources = makeReservedVector<std::shared_ptr<ColumnSource>>(flexVectors_.size());
   for (const auto &fv : flexVectors_) {
     columnSources.push_back(fv->makeColumnSource());
@@ -181,8 +190,40 @@ MyTable::~MyTable() = default;
 std::shared_ptr<RowSequence> MyTable::getRowSequence() const {
   // Need a utility for this
   RowSequenceBuilder rb;
-  rb.addRange(0, numRows_, "zamboni time");
+  rb.addRange(0, numRows_);
   return rb.build();
+}
+
+struct MyVisitor final : public arrow::ArrayVisitor {
+  arrow::Status Visit(const arrow::Int32Array &type) final {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
+    return arrow::Status::OK();
+  }
+
+  arrow::Status Visit(const arrow::Int64Array &type) final {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
+    return arrow::Status::OK();
+  }
+
+  arrow::Status Visit(const arrow::DoubleArray &type) final {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
+    return arrow::Status::OK();
+  }
+
+  std::unique_ptr<AbstractFlexVectorBase> result_;
+};
+
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectors(
+    const std::vector<std::shared_ptr<arrow::Array>> &arrays) {
+  auto ncols = arrays.size();
+  auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
+  for (const auto &a : arrays) {
+    MyVisitor v;
+    okOrThrow(DEEPHAVEN_EXPR_MSG(a->Accept(&v)));
+    v.result_->inPlaceAppendArrow(*a);
+    result.push_back(std::move(v.result_));
+  }
+  return result;
 }
 }  // namespace
 }  // namespace deephaven::client::subscription

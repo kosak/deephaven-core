@@ -27,7 +27,7 @@ public:
   std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
 
   std::vector<std::shared_ptr<RowSequence>> modifyKeys(
-      const std::vector<std::shared_ptr<RowSequence>> &modifiedIndicesPerColumn);
+      const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace);
   void modifyData(const std::vector<std::shared_ptr<arrow::Array>> &data,
       const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace);
 
@@ -37,9 +37,9 @@ public:
   std::shared_ptr<Table> snapshot() const;
 
 private:
-  std::shared_ptr<RowSequence> modifyColumn(size_t colNum,
+  void modifyColumn(size_t colNum,
       std::unique_ptr<AbstractFlexVectorBase> modifiedData,
-      std::shared_ptr<RowSequence> rowsToModifyKeySpace);
+      const RowSequence &rowsToModifyKeySpace);
 
   std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors_;
   // Keeps track of keyspace -> index space mapping

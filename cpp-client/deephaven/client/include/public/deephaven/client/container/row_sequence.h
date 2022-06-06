@@ -42,10 +42,10 @@ public:
   RowSequenceBuilder();
   ~RowSequenceBuilder();
 
-  void addRange(uint64_t begin, uint64_t end, const char *superNubbin);
+  void addRange(uint64_t begin, uint64_t end);
 
   void add(uint64_t key) {
-    addRange(key, key + 1, "super nubbin");
+    addRange(key, key + 1);
   }
 
   std::shared_ptr<RowSequence> build();
