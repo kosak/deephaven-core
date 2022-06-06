@@ -120,20 +120,18 @@ void mapShifter(uint64_t begin, uint64_t end, uint64_t dest, std::map<uint64_t, 
     if (currentp->first < begin) {
       return;
     }
-    std::optional<std::map<uint64_t, uint64_t>::iterator> nextp;
-    if (currentp != map->begin()) {
-      nextp = std::prev(currentp);
-    }
+    // using map->end() as a sentinel, sort of viewing it as "wrapping around".
+    auto nextp = currentp != map->begin() ? std::prev(currentp) : map->end();
     auto node = map->extract(currentp);
     auto newKey = node.key() + delta;
     streamf(std::cerr, "Shifting up, working backwards, moving key from %o to %o\n", node.key(),
         newKey);
     node.key() = newKey;
     map->insert(std::move(node));
-    if (!nextp.has_value()) {
+    if (nextp == map->end()) {
       return;
     }
-    currentp = *nextp;
+    currentp = nextp;
   }
 }
 }  // namespace
