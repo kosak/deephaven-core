@@ -7,6 +7,7 @@
 
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
+using deephaven::client::utility::streamf;
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::subscription {
@@ -36,7 +37,7 @@ std::shared_ptr<RowSequence> ClassicTableState::erase(const RowSequence &rowsToR
   return resultBuilder.build();
 }
 
-std::shared_ptr<RowSequence> ClassicTableState::add(const RowSequence &addedRowsKeySpace) {
+std::shared_ptr<RowSequence> ClassicTableState::addKeys(const RowSequence &addedRowsKeySpace) {
   // In order to give back an ordered row sequence (because at the moment we don't have an
   // unordered row sequence), we sort the keys we're going to reuse.
   auto numKeysToReuse = std::min(addedRowsKeySpace.size(), slotsToReuse_.size());
@@ -66,6 +67,11 @@ std::shared_ptr<RowSequence> ClassicTableState::add(const RowSequence &addedRows
   return resultBuilder.build();
 }
 
+void ClassicTableState::addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
+    const RowSequence &rowsToAddIndexSpace) {
+
+}
+
 void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
     const RowSequence &destIndex) {
   auto *redir = redirection_.get();
@@ -80,48 +86,54 @@ void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequ
 
 namespace {
 void mapShifter(uint64_t begin, uint64_t end, uint64_t dest, std::map<uint64_t, uint64_t> *map) {
-  auto delta = dest - start;
-  if (delta < 0) {
-    auto currentp = zm->lower_bound(start);
+  if (dest < begin) {
+    // dest < begin, so shift down, moving forwards.
+    auto delta = begin - dest;
+    auto currentp = map->lower_bound(begin);
+    // currentp points to map->end(), or to the first key >= begin
     while (true) {
-      if (currentp == zm->end() || currentp->first > endInclusive) {
+      if (currentp == map->end() || currentp->first >= end) {
         return;
       }
       auto nextp = std::next(currentp);
-      auto node = zm->extract(currentp);
-      auto newKey = node.key() + delta;
-      streamf(std::cerr, "Working forwards, moving key from %o to %o\n", node.key(), newKey);
+      auto node = map->extract(currentp);
+      auto newKey = node.key() - delta;
+      streamf(std::cerr, "Shifting down, working forwards, moving key from %o to %o\n", node.key(),
+          newKey);
       node.key() = newKey;
-      zm->insert(std::move(node));
+      map->insert(std::move(node));
       currentp = nextp;
-      ++dest;
     }
+    return;
   }
 
-  // delta >= 0 so move in the reverse direction
-  auto currentp = zm->upper_bound(endInclusive);
-  if (currentp == zm->begin()) {
+  // dest >= begin, so shift up, moving backwards.
+  auto delta = dest - begin;
+  auto currentp = map->lower_bound(end);
+  // currentp points to map->begin(), or to the first key >= end
+  if (currentp == map->begin()) {
     return;
   }
   --currentp;
+  // now currentp points to the last key < end
   while (true) {
-    if (currentp->first < start) {
+    if (currentp->first < begin) {
       return;
     }
-    std::optional<std::map<int64_t, int64_t>::iterator> nextp;
-    if (currentp != zm->begin()) {
+    std::optional<std::map<uint64_t, uint64_t>::iterator> nextp;
+    if (currentp != map->begin()) {
       nextp = std::prev(currentp);
     }
-    auto node = zm->extract(currentp);
+    auto node = map->extract(currentp);
     auto newKey = node.key() + delta;
-    streamf(std::cerr, "Working backwards, moving key from %o to %o\n", node.key(), newKey);
+    streamf(std::cerr, "Shifting up, working backwards, moving key from %o to %o\n", node.key(),
+        newKey);
     node.key() = newKey;
-    zm->insert(std::move(node));
+    map->insert(std::move(node));
     if (!nextp.has_value()) {
       return;
     }
     currentp = *nextp;
-    --dest;
   }
 }
 }  // namespace
