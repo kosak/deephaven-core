@@ -10,6 +10,7 @@
 namespace deephaven::client::subscription {
 class ClassicTableState final {
   typedef deephaven::client::column::ColumnSource ColumnSource;
+  typedef deephaven::client::column::MutableColumnSource MutableColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::table::Table Table;
   typedef deephaven::client::utility::ColumnDefinitions ColumnDefinitions;
@@ -35,7 +36,7 @@ public:
   std::shared_ptr<Table> snapshot() const;
 
 private:
-  std::vector<std::shared_ptr<ColumnSource>> columns_;
+  std::vector<std::shared_ptr<MutableColumnSource>> columns_;
   std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;
   /**
    * These are slots (in the target, aka the redirected space) that we once allocated but

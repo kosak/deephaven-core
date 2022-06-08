@@ -1,11 +1,16 @@
 #include "deephaven/client/subscription/classic_table_state.h"
 
 #include <memory>
+#include "deephaven/client/chunk/chunk_filler.h"
+#include "deephaven/client/chunk/chunk_maker.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/subscription/shift_processor.h"
 #include "deephaven/client/utility/utility.h"
 
+using deephaven::client::chunk::ChunkFiller;
+using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::ColumnSource;
+using deephaven::client::column::MutableColumnSource;
 using deephaven::client::column::NumericArrayColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
@@ -18,7 +23,7 @@ namespace deephaven::client::subscription {
 namespace {
 void mapShifter(uint64_t begin, uint64_t end, uint64_t dest, std::map<uint64_t, uint64_t> *map);
 
-std::vector<std::shared_ptr<ColumnSource>> makeColumnSources(const ColumnDefinitions &colDefs);
+std::vector<std::shared_ptr<MutableColumnSource>> makeColumnSources(const ColumnDefinitions &colDefs);
 }
 
 ClassicTableState::ClassicTableState(const ColumnDefinitions &colDefs) {
@@ -81,7 +86,17 @@ std::shared_ptr<RowSequence> ClassicTableState::addKeys(const RowSequence &added
 
 void ClassicTableState::addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
     const RowSequence &rowsToAddIndexSpace) {
-
+  auto ncols = data.size();
+  auto nrows = rowsToAddIndexSpace.size();
+  auto sequentialRows = RowSequence::createSequential(0, nrows);
+  for (size_t i = 0; i < ncols; ++i) {
+    const auto &src = *data[i];
+    auto *dest = columns_[i].get();
+    auto context = dest->createContext(nrows);
+    auto chunk = ChunkMaker::createChunkFor(*dest, nrows);
+    ChunkFiller::fillChunk(src, *sequentialRows, chunk.get());
+    dest->fillFromChunk(context.get(), *chunk, rowsToAddIndexSpace);
+  }
 }
 
 void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
@@ -166,7 +181,7 @@ struct MyVisitor final : public arrow::TypeVisitor {
   std::shared_ptr<ColumnSource> columnSource_;
 };
 
-std::vector<std::shared_ptr<ColumnSource>> makeColumnSources(const ColumnDefinitions &colDefs) {
+std::vector<std::shared_ptr<MutableColumnSource>> makeColumnSources(const ColumnDefinitions &colDefs) {
   std::vector<std::shared_ptr<ColumnSource>> result;
   for (const auto &[name, arrowType] : colDefs.vec()) {
     MyVisitor v;
