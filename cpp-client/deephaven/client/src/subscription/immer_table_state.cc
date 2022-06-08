@@ -28,8 +28,6 @@ using deephaven::client::utility::stringf;
 namespace deephaven::client::subscription {
 namespace {
 // void mapShifter(int64_t start, int64_t endInclusive, int64_t dest, std::map<int64_t, int64_t> *zm);
-void applyShiftData(const RowSequence &firstIndex, const RowSequence &lastIndex, const RowSequence &destIndex,
-    const std::function<void(uint64_t, uint64_t, uint64_t)> &processShift);
 class MyTable final : public Table {
 public:
   explicit MyTable(std::vector<std::shared_ptr<ColumnSource>> sources, size_t numRows);
@@ -170,7 +168,7 @@ void ImmerTableState::applyShifts(const RowSequence &firstIndex, const RowSequen
     uint64_t destBegin = dest;
     spaceMapper_.applyShift(begin, end, destBegin);
   };
-  applyShiftData(firstIndex, lastIndex, destIndex, processShift);
+  ShiftProcessor::applyShiftData(firstIndex, lastIndex, destIndex, processShift);
 }
 
 std::shared_ptr<Table> ImmerTableState::snapshot() const {
