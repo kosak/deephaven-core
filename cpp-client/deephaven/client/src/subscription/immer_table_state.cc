@@ -4,9 +4,10 @@
 #include <utility>
 
 #include "deephaven/client/chunk/chunk.h"
-#include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/column/column_source.h"
+#include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/immerutil/abstract_flex_vector.h"
+#include "deephaven/client/subscription/shift_processor.h"
 #include "deephaven/client/utility/utility.h"
 #include "immer/flex_vector.hpp"
 #include "immer/flex_vector_transient.hpp"
@@ -18,6 +19,7 @@ using deephaven::client::column::ColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::container::RowSequenceIterator;
+using deephaven::client::subscription::ShiftProcessor;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::table::Table;
 using deephaven::client::utility::makeReservedVector;
