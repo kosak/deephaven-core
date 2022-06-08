@@ -32,6 +32,8 @@ public:
   void applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
       const RowSequence &destIndex);
 
+  std::shared_ptr<Table> snapshot() const;
+
 private:
   std::vector<std::shared_ptr<ColumnSource>> columns_;
   std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;

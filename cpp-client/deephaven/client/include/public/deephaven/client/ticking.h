@@ -33,7 +33,7 @@ protected:
 public:
   ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRows,
       std::shared_ptr<RowSequence> addedRows,
-      std::shared_ptr<RowSequence> modifiedRows,
+      std::vector<std::shared_ptr<RowSequence>> modifiedRows,
       std::shared_ptr<Table> current);
   ClassicTickingUpdate(ClassicTickingUpdate &&other) noexcept;
   ClassicTickingUpdate &operator=(ClassicTickingUpdate &&other) noexcept;
@@ -44,7 +44,7 @@ public:
   // In the post-shift key space
   const std::shared_ptr<RowSequence> &addedRows() const { return addedRows_; }
   // In the post-shift key space
-  const std::shared_ptr<RowSequence> &modifiedRows() const { return modifiedRows_; }
+  const std::vector<std::shared_ptr<RowSequence>> &modifiedRows() const { return modifiedRows_; }
   const std::shared_ptr<Table> &current() const { return current_; }
 
 private:
@@ -53,7 +53,7 @@ private:
   // In the post-shift key space
   std::shared_ptr<RowSequence> addedRows_;
   // In the post-shift key space
-  std::shared_ptr<RowSequence> modifiedRows_;
+  std::vector<std::shared_ptr<RowSequence>> modifiedRows_;
   std::shared_ptr<Table> current_;
 };
 

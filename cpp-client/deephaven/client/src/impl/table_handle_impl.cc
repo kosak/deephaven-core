@@ -36,7 +36,6 @@ using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::grpc::Ticket;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
 using deephaven::client::SortDirection;
-using deephaven::client::TickingUpdate;
 using deephaven::client::impl::ColumnImpl;
 using deephaven::client::impl::DateTimeColImpl;
 using deephaven::client::impl::NumColImpl;

@@ -72,10 +72,11 @@ std::optional<ExtractedMetadata> extractMetadata(
 std::shared_ptr<UpdateProcessor> UpdateProcessor::startThread(
     std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
     std::shared_ptr<ColumnDefinitions> colDefs,
-    std::shared_ptr<TickingCallback> callback) {
+    std::shared_ptr<TickingCallback> callback,
+    bool wantImmer) {
   auto result = std::make_shared<UpdateProcessor>(std::move(fsr),
       std::move(colDefs), std::move(callback));
-  std::thread t(&UpdateProcessor::runForever, result);
+  std::thread t(&UpdateProcessor::runForever, result, wantImmer);
   t.detach();
   return result;
 }
@@ -90,11 +91,15 @@ void UpdateProcessor::cancel() {
   fsr_->Cancel();
 }
 
-void UpdateProcessor::classicRunForever(const std::shared_ptr<UpdateProcessor> &self) {
+void UpdateProcessor::runForever(const std::shared_ptr<UpdateProcessor> &self, bool wantImmer) {
   std::cerr << "UpdateProcessor is starting.\n";
   std::exception_ptr eptr;
   try {
-    self->classicRunForeverHelper();
+    if (wantImmer) {
+      self->immerRunForeverHelper();
+    } else {
+      self->classicRunForeverHelper();
+    }
   } catch (...) {
     eptr = std::current_exception();
     self->callback_->onFailure(eptr);
@@ -192,8 +197,10 @@ void UpdateProcessor::classicRunForeverHelper() {
           processModifyBatch);
     }
 
+    auto table = state.snapshot();
+
     ClassicTickingUpdate update(std::move(removedRowsKeySpace),
-        std::move(addedRowsKeySpace), std::move(modifiedRowsKeySpace));
+        std::move(addedRowsKeySpace), std::move(modifiedRowsKeySpace), std::move(table));
     callback_->onTick(update);
   }
 }
@@ -364,7 +371,5 @@ std::optional<ExtractedMetadata> extractMetadata(
 //ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
 //    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :
 //    fsr_(std::move(fsr)), colDefs_(std::move(colDefs)), callback_(std::move(callback)) {}
-
-
 }  // namespace
 }  // namespace deephaven::client::subscription

@@ -12,8 +12,6 @@
 #include "immer/flex_vector.hpp"
 #include "immer/flex_vector_transient.hpp"
 
-#include "deephaven/client/utility/utility.h"
-
 using deephaven::client::chunk::LongChunk;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::container::RowSequence;

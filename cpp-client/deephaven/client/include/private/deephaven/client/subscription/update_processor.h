@@ -14,7 +14,8 @@ public:
   static std::shared_ptr<UpdateProcessor> startThread(
       std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
       std::shared_ptr<ColumnDefinitions> colDefs,
-      std::shared_ptr<TickingCallback> callback);
+      std::shared_ptr<TickingCallback> callback,
+      bool wantImmer);
 
   UpdateProcessor(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
     std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback);
@@ -23,10 +24,8 @@ public:
   void cancel();
 
 private:
-  static void classicRunForever(const std::shared_ptr <UpdateProcessor> &self);
+  static void runForever(const std::shared_ptr <UpdateProcessor> &self, bool wantImmer);
   void classicRunForeverHelper();
-
-  static void immerRunForever(const std::shared_ptr <UpdateProcessor> &self);
   void immerRunForeverHelper();
 
 public:
