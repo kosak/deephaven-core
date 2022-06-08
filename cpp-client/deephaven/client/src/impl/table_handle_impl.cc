@@ -346,7 +346,8 @@ std::shared_ptr<TableHandleImpl> TableHandleImpl::asOfJoin(AsOfJoinTablesRequest
   return TableHandleImpl::create(managerImpl_, std::move(resultTicket), std::move(cb));
 }
 
-std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<TickingCallback> callback) {
+std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(
+    std::shared_ptr<TickingCallback> callback, bool wantImmer) {
   // On the flight executor thread, we invoke DoExchange (waiting for a successful response).
   // We wait for that response here. That makes the first part of this call synchronous. If there
   // is an error in the DoExchange invocation, the caller will get an exception here. The
@@ -354,7 +355,7 @@ std::shared_ptr<SubscriptionHandle> TableHandleImpl::subscribe(std::shared_ptr<T
   // parsing of all the replies) is done on a newly-created thread dedicated to that job.
   auto colDefs = lazyState_->getColumnDefinitions();
   auto handle = startSubscribeThread(managerImpl_->server(), managerImpl_->flightExecutor().get(),
-      colDefs, ticket_, std::move(callback));
+      colDefs, ticket_, std::move(callback), wantImmer);
 
   subscriptions_.insert(handle);
   return handle;
@@ -366,9 +367,6 @@ void TableHandleImpl::unsubscribe(std::shared_ptr<SubscriptionHandle> handle) {
     return;
   }
   node.value()->cancel();
-//  std::cerr << "TODO(kosak) -- unsubscribe\n";
-//  std::cerr << "I'm kind of worried about this\n";
-//  SubscribeNubbin::sadClown_->fsr_->Cancel();
 }
 
 std::vector<std::shared_ptr<ColumnImpl>> TableHandleImpl::getColumnImpls() {

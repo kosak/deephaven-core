@@ -14,7 +14,6 @@
 #include "deephaven/client/table/table.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/utility.h"
-#include "immer/flex_vector.hpp"
 #include "immer/algorithm.hpp"
 
 using deephaven::client::Client;
@@ -23,7 +22,8 @@ using deephaven::client::SortPair;
 using deephaven::client::TableHandle;
 using deephaven::client::TableHandleManager;
 using deephaven::client::TickingCallback;
-using deephaven::client::TickingUpdate;
+using deephaven::client::ClassicTickingUpdate;
+using deephaven::client::ImmerTickingUpdate;
 using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::chunk::Chunk;
 using deephaven::client::chunk::ChunkVisitor;
@@ -69,7 +69,8 @@ namespace {
 class Callback final : public TickingCallback {
 public:
   void onFailure(std::exception_ptr ep) final;
-  void onTick(const TickingUpdate &update) final;
+  void onTick(const ClassicTickingUpdate &update) final;
+  void onTick(const ImmerTickingUpdate &update) final;
 
   bool failed() const { return failed_; }
 
@@ -113,19 +114,23 @@ private:
 void dumpTable(std::string_view what, const Table &table, const std::vector<size_t> &whichCols,
     std::shared_ptr<RowSequence> rows);
 
-void Callback::onTick(const TickingUpdate &update) {
+void Callback::onTick(const ClassicTickingUpdate &update) {
+  std::cerr << "TODO(kosak)\n";
+}
+
+void Callback::onTick(const ImmerTickingUpdate &update) {
   auto ncols = update.current()->numColumns();
   auto allCols = makeReservedVector<size_t>(update.current()->numColumns());
   for (size_t i = 0; i < ncols; ++i) {
     allCols.push_back(i);
   }
   dumpTable("removed", *update.beforeRemoves(), allCols, update.removed());
-  for (size_t i = 0; i < update.perColumnModifies().size(); ++i) {
+  for (size_t i = 0; i < update.modified().size(); ++i) {
     std::vector<size_t> oneCol{i};
     auto prevText = stringf("Col%o-prev", i);
     auto currText = stringf("Col%o-curr", i);
-    dumpTable(prevText, *update.beforeModifies(), allCols, update.perColumnModifies()[i]);
-    dumpTable(currText, *update.current(), allCols, update.perColumnModifies()[i]);
+    dumpTable(prevText, *update.beforeModifies(), allCols, update.modified()[i]);
+    dumpTable(currText, *update.current(), allCols, update.modified()[i]);
   }
   dumpTable("added", *update.current(), allCols, update.added());
 }
@@ -202,7 +207,7 @@ void doit(const TableHandleManager &manager) {
   //      .head(10);
 
   auto myCallback = std::make_shared<Callback>();
-  auto subscriptionHandle = tt1.subscribe(myCallback);
+  auto subscriptionHandle = tt1.subscribe(myCallback, true);
   uint32_t tens_of_seconds_to_run = 50000;
   while (tens_of_seconds_to_run-- > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds (100));
@@ -268,7 +273,7 @@ void makeModifiesHappen(const TableHandleManager &manager) {
   tt1.bindToVariable("showme");
 
   auto myCallback = std::make_shared<Callback>();
-  auto handle = tt1.subscribe(myCallback);
+  auto handle = tt1.subscribe(myCallback, true);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
   tt1.unsubscribe(std::move(handle));
@@ -295,7 +300,7 @@ void millionRows(const TableHandleManager &manager) {
   table.bindToVariable("showme");
 
   auto myCallback = std::make_shared<Callback>();
-  auto handle = table.subscribe(myCallback);
+  auto handle = table.subscribe(myCallback, true);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
   table.unsubscribe(handle);
@@ -324,7 +329,7 @@ void lastBy(const TableHandleManager &manager) {
   lb.bindToVariable("showme");
 
   auto myCallback = std::make_shared<Callback>();
-  auto handle = lb.subscribe(myCallback);
+  auto handle = lb.subscribe(myCallback, true);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
   lb.unsubscribe(handle);

@@ -519,8 +519,8 @@ std::shared_ptr<arrow::flight::FlightStreamReader> TableHandle::getFlightStreamR
 }
 
 std::shared_ptr<SubscriptionHandle> TableHandle::subscribe(
-    std::shared_ptr<TickingCallback> callback) {
-  return impl_->subscribe(std::move(callback));
+    std::shared_ptr<TickingCallback> callback, bool wantImmer) {
+  return impl_->subscribe(std::move(callback), wantImmer);
 }
 
 void TableHandle::unsubscribe(std::shared_ptr<SubscriptionHandle> callback) {

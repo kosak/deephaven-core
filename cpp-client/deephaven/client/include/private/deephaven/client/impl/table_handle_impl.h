@@ -173,7 +173,8 @@ public:
 
   void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<>> callback);
 
-  std::shared_ptr<SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback);
+  std::shared_ptr<SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback,
+      bool wantImmer);
   void unsubscribe(std::shared_ptr<SubscriptionHandle> handle);
 
   // For debugging

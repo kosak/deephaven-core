@@ -41,9 +41,6 @@ using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 
 namespace deephaven::client::subscription {
 namespace {
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeEmptyFlexVectors(
-    const ColumnDefinitions &colDefs);
-
 struct ExtractedMetadata {
   ExtractedMetadata(size_t numAdds,
       size_t numMods,
@@ -367,6 +364,18 @@ std::optional<ExtractedMetadata> extractMetadata(
       std::move(addedRows),
       std::move(perColumnModifies));
 }
+
+ExtractedMetadata::ExtractedMetadata(size_t numAdds, size_t numMods,
+    std::shared_ptr<RowSequence> removedRows, std::shared_ptr<RowSequence> shiftStartIndex,
+    std::shared_ptr<RowSequence> shiftEndIndex, std::shared_ptr<RowSequence> shiftDestIndex,
+    std::shared_ptr<RowSequence> addedRows,
+    std::vector<std::shared_ptr<RowSequence>> modifiedRows) :
+    numAdds_(numAdds), numMods_(numMods),
+    removedRows_(std::move(removedRows)), shiftStartIndex_(std::move(shiftStartIndex)),
+    shiftEndIndex_(std::move(shiftEndIndex)), shiftDestIndex_(std::move(shiftDestIndex)),
+    addedRows_(std::move(addedRows)), modifiedRows_(std::move(modifiedRows)) {}
+
+ExtractedMetadata::~ExtractedMetadata() noexcept = default;
 
 //ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
 //    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :

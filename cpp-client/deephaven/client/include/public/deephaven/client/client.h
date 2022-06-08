@@ -1082,7 +1082,8 @@ public:
    * append-only tables and will call back with an error if the table changes in a way that is not
    * append-only.
    */
-  std::shared_ptr<SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback);
+  std::shared_ptr<SubscriptionHandle> subscribe(std::shared_ptr<TickingCallback> callback,
+      bool wantImmer);
   /**
    * Unsubscribe from the table.
    */
