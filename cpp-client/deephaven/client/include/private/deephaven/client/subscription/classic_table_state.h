@@ -36,6 +36,10 @@ public:
   std::shared_ptr<Table> snapshot() const;
 
 private:
+  std::shared_ptr<RowSequence> modifyKeysHelper(const RowSequence &rowsToModifyKeySpace);
+  static void modifyDataHelper(const arrow::Array &src, MutableColumnSource *dest,
+      const RowSequence &rowsToModifyIndexSpace);
+
   std::vector<std::shared_ptr<MutableColumnSource>> columns_;
   std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;
   /**

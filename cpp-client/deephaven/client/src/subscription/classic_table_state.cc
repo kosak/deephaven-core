@@ -124,26 +124,46 @@ std::vector<std::shared_ptr<RowSequence>> ClassicTableState::modifyKeys(
   return result;
 }
 
-vector<std::shared_ptr<RowSequence> ClassicTableState::modifyKeysHelper(
-const RowSequence
-&rowsToModifyKeySpace) {
-RowSequenceBuilder resultBuilder;
-auto removeRange = [this, &resultBuilder](uint64_t beginKey, uint64_t endKey) {
-  auto beginp = redirection_->find(beginKey);
-  if (beginp == redirection_->end()) {
-    throw std::runtime_error(stringf("Can't find beginKey %o", beginKey));
-  }
-
-  auto currentp = beginp;
-  for (auto current = beginKey; current != endKey; ++current) {
-    if (currentp->first != current) {
-      throw std::runtime_error(stringf("Can't find key %o", current));
+std::shared_ptr<RowSequence> ClassicTableState::modifyKeysHelper(
+    const RowSequence &rowsToModifyKeySpace) {
+  // TODO(kosak): This is very similar to the code for erase but we're not erasing the range.
+  RowSequenceBuilder resultBuilder;
+  auto modifyRange = [this, &resultBuilder](uint64_t beginKey, uint64_t endKey) {
+    auto beginp = redirection_->find(beginKey);
+    if (beginp == redirection_->end()) {
+      throw std::runtime_error(stringf("Can't find beginKey %o", beginKey));
     }
-    resultBuilder.add(currentp->second);
-    ++currentp;
+
+    auto currentp = beginp;
+    for (auto current = beginKey; current != endKey; ++current) {
+      if (currentp->first != current) {
+        throw std::runtime_error(stringf("Can't find key %o", current));
+      }
+      // TODO(kosak): put in some hinting here to acknowledge that we might be appending sequentially
+      resultBuilder.add(currentp->second);
+      ++currentp;
+    }
+  };
+  rowsToModifyKeySpace.forEachChunk(modifyRange);
+  return resultBuilder.build();
+}
+
+void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Array>> &src,
+    const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace) {
+  auto ncols = rowsToModifyIndexSpace.size();
+  for (size_t i = 0; i < ncols; ++i) {
+    modifyDataHelper(*src[i], columns_[i].get(), *rowsToModifyIndexSpace[i]);
   }
-  redirection_->erase(beginp, currentp);
-};
+}
+
+void ClassicTableState::modifyDataHelper(const arrow::Array &src, MutableColumnSource *dest,
+    const RowSequence &rowsToModifyIndexSpace) {
+  auto nrows = rowsToModifyIndexSpace.size();
+  auto sequentialRows = RowSequence::createSequential(0, nrows);
+  auto context = dest->createContext(nrows);
+  auto chunk = ChunkMaker::createChunkFor(*dest, nrows);
+  ChunkFiller::fillChunk(src, *sequentialRows, chunk.get());
+  dest->fillFromChunk(context.get(), *chunk, rowsToModifyIndexSpace);
 }
 
 namespace {
