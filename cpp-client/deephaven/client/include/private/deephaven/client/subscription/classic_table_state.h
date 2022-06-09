@@ -26,7 +26,7 @@ public:
   std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
 
   std::vector<std::shared_ptr<RowSequence>> modifyKeys(
-      const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace);
+      const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace);
   void modifyData(const std::vector<std::shared_ptr<arrow::Array>> &data,
       const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace);
 
