@@ -15,7 +15,7 @@ class ColumnSourceVisitor;
 class ColumnSource {
 protected:
   typedef deephaven::client::chunk::Chunk Chunk;
-  typedef deephaven::client::chunk::LongChunk LongChunk;
+  typedef deephaven::client::chunk::UnsignedLongChunk UnsignedLongChunk;
   typedef deephaven::client::container::Context Context;
   typedef deephaven::client::container::RowSequence RowSequence;
 
@@ -24,7 +24,8 @@ public:
 
   virtual std::shared_ptr<Context> createContext(size_t chunkSize) const = 0;
   virtual void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const = 0;
-  virtual void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size, Chunk *dest) const = 0;
+  virtual void fillChunkUnordered(Context *context, const UnsignedLongChunk &rowKeys, size_t size,
+      Chunk *dest) const = 0;
 
   virtual void acceptVisitor(ColumnSourceVisitor *visitor) const = 0;
 };
@@ -34,7 +35,8 @@ public:
   ~MutableColumnSource() override;
 
   virtual void fillFromChunk(Context *context, const Chunk &src, const RowSequence &rows) = 0;
-  virtual void fillFromChunkUnordered(Context *context, const Chunk &src, const LongChunk &rowKeys, size_t size) = 0;
+  virtual void fillFromChunkUnordered(Context *context, const Chunk &src,
+      const UnsignedLongChunk &rowKeys, size_t size) = 0;
 };
 
 // the per-type interfaces

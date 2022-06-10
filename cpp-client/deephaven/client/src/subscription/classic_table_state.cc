@@ -9,6 +9,7 @@
 
 using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
+using deephaven::client::chunk::UnsignedLongChunk;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::column::NumericArrayColumnSource;
@@ -113,10 +114,10 @@ void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequ
   ShiftProcessor::applyShiftData(firstIndex, lastIndex, destIndex, processShift);
 }
 
-std::vector<std::shared_ptr<RowSequence>> ClassicTableState::modifyKeys(
+std::vector<std::shared_ptr<UnsignedLongChunk>> ClassicTableState::modifyKeys(
     const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace) {
   auto ncols = rowsToModifyKeySpace.size();
-  auto result = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
+  auto result = makeReservedVector<std::shared_ptr<UnsignedLongChunk>>(ncols);
   for (size_t i = 0; i < ncols; ++i) {
     auto rowSequence = modifyKeysHelper(*rowsToModifyKeySpace[i]);
     result.push_back(std::move(rowSequence));
@@ -124,11 +125,12 @@ std::vector<std::shared_ptr<RowSequence>> ClassicTableState::modifyKeys(
   return result;
 }
 
-std::shared_ptr<RowSequence> ClassicTableState::modifyKeysHelper(
+std::shared_ptr<UnsignedLongChunk> ClassicTableState::modifyKeysHelper(
     const RowSequence &rowsToModifyKeySpace) {
-  // TODO(kosak): This is very similar to the code for erase but we're not erasing the range.
-  RowSequenceBuilder resultBuilder;
-  auto modifyRange = [this, &resultBuilder](uint64_t beginKey, uint64_t endKey) {
+  auto nrows = rowsToModifyKeySpace.size();
+  auto result = UnsignedLongChunk::create(nrows);
+  auto *destp = result->data();
+  auto modifyRange = [this, &destp](uint64_t beginKey, uint64_t endKey) {
     auto beginp = redirection_->find(beginKey);
     if (beginp == redirection_->end()) {
       throw std::runtime_error(stringf("Can't find beginKey %o", beginKey));
@@ -139,31 +141,32 @@ std::shared_ptr<RowSequence> ClassicTableState::modifyKeysHelper(
       if (currentp->first != current) {
         throw std::runtime_error(stringf("Can't find key %o", current));
       }
-      // TODO(kosak): put in some hinting here to acknowledge that we might be appending sequentially
-      resultBuilder.add(currentp->second);
+      *destp = currentp->second;
       ++currentp;
+      ++destp;
     }
   };
   rowsToModifyKeySpace.forEachChunk(modifyRange);
-  return resultBuilder.build();
+  if (destp != result->data() + nrows) {
+    throw std::runtime_error("destp != result->data() + nrows");
+  }
+  return result;
 }
 
 void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Array>> &src,
-    const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace) {
+    const std::vector<std::shared_ptr<UnsignedLongChunk>> &rowsToModifyIndexSpace) {
   auto ncols = rowsToModifyIndexSpace.size();
   for (size_t i = 0; i < ncols; ++i) {
-    modifyDataHelper(*src[i], columns_[i].get(), *rowsToModifyIndexSpace[i]);
+    const auto &rows = *rowsToModifyIndexSpace[i];
+    const auto &srcArray = *src[i];
+    auto *destCol = columns_[i].get();
+    auto nrows = rows.capacity();
+    auto sequentialRows = RowSequence::createSequential(0, nrows);
+    auto context = destCol->createContext(nrows);
+    auto chunk = ChunkMaker::createChunkFor(*destCol, nrows);
+    ChunkFiller::fillChunk(srcArray, *sequentialRows, chunk.get());
+    destCol->fillFromChunkUnordered(context.get(), *chunk, rows, nrows);
   }
-}
-
-void ClassicTableState::modifyDataHelper(const arrow::Array &src, MutableColumnSource *dest,
-    const RowSequence &rowsToModifyIndexSpace) {
-  auto nrows = rowsToModifyIndexSpace.size();
-  auto sequentialRows = RowSequence::createSequential(0, nrows);
-  auto context = dest->createContext(nrows);
-  auto chunk = ChunkMaker::createChunkFor(*dest, nrows);
-  ChunkFiller::fillChunk(src, *sequentialRows, chunk.get());
-  dest->fillFromChunk(context.get(), *chunk, rowsToModifyIndexSpace);
 }
 
 namespace {

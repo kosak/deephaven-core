@@ -68,20 +68,27 @@ set(ALL_FILES
     include/public/deephaven/client/column/column_source.h
     include/public/deephaven/client/container/context.h
     include/public/deephaven/client/container/row_sequence.h
+    include/public/deephaven/client/container/unordered_row_sequence.h
     include/public/deephaven/client/table/table.h
 
+    include/private/deephaven/client/subscription/batch_parser.h
     include/private/deephaven/client/subscription/classic_table_state.h
+    include/private/deephaven/client/subscription/immer_table_state.h
     include/private/deephaven/client/subscription/index_decoder.h
+    include/private/deephaven/client/subscription/shift_processor.h
     include/private/deephaven/client/subscription/space_mapper.h
     include/private/deephaven/client/subscription/subscribe_thread.h
-    include/private/deephaven/client/subscription/immer_table_state.h
     include/private/deephaven/client/subscription/subscription_handle.h
     include/private/deephaven/client/subscription/update_processor.h
+    src/subscription/batch_parser.cc
+    src/subscription/classic_table_state.cc
+    src/subscription/immer_table_state.cc
     src/subscription/index_decoder.cc
+    src/subscription/shift_processor.cc
     src/subscription/space_mapper.cc
     src/subscription/subscribe_thread.cc
-    src/subscription/immer_table_state.cc
     src/subscription/update_processor.cc
+
 
     src/immerutil/abstract_flex_vector.cc
     src/immerutil/immer_column_source.cc
@@ -125,7 +132,7 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    src/subscription/classic_table_state.cc include/private/deephaven/client/subscription/shift_processor.h src/subscription/shift_processor.cc include/private/deephaven/client/subscription/batch_parser.h src/subscription/batch_parser.cc)
+    )
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config

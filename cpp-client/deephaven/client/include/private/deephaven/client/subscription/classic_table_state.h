@@ -9,6 +9,7 @@
 
 namespace deephaven::client::subscription {
 class ClassicTableState final {
+  typedef deephaven::client::chunk::UnsignedLongChunk UnsignedLongChunk;
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::column::MutableColumnSource MutableColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
@@ -25,10 +26,10 @@ public:
 
   std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
 
-  std::vector<std::shared_ptr<RowSequence>> modifyKeys(
+  std::vector<std::shared_ptr<UnsignedLongChunk>> modifyKeys(
       const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace);
   void modifyData(const std::vector<std::shared_ptr<arrow::Array>> &data,
-      const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyIndexSpace);
+      const std::vector<std::shared_ptr<UnsignedLongChunk>> &rowsToModifyIndexSpace);
 
   void applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
       const RowSequence &destIndex);
@@ -36,9 +37,7 @@ public:
   std::shared_ptr<Table> snapshot() const;
 
 private:
-  std::shared_ptr<RowSequence> modifyKeysHelper(const RowSequence &rowsToModifyKeySpace);
-  static void modifyDataHelper(const arrow::Array &src, MutableColumnSource *dest,
-      const RowSequence &rowsToModifyIndexSpace);
+  std::shared_ptr<UnsignedLongChunk> modifyKeysHelper(const RowSequence &rowsToModifyKeySpace);
 
   std::vector<std::shared_ptr<MutableColumnSource>> columns_;
   std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;

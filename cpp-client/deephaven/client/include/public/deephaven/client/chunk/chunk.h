@@ -80,6 +80,7 @@ std::shared_ptr<NumericChunk<T>> NumericChunk<T>::slice(size_t begin, size_t end
 
 typedef NumericChunk<int32_t> IntChunk;
 typedef NumericChunk<int64_t> LongChunk;
+typedef NumericChunk<uint64_t> UnsignedLongChunk;
 typedef NumericChunk<double> DoubleChunk;
 typedef NumericChunk<size_t> SizeTChunk;
 
