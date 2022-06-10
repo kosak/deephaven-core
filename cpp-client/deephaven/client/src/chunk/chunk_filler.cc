@@ -25,8 +25,8 @@ struct Visitor final : arrow::ArrayVisitor {
 }  // namespace
 
 void ChunkFiller::fillChunk(const arrow::Array &src, const RowSequence &keys, Chunk *const dest) {
-  if (keys.size() < dest->capacity()) {
-    auto message = stringf("keys.size() < dest->capacity() (%d < %d)", keys.size(), dest->capacity());
+  if (keys.size() < dest->size()) {
+    auto message = stringf("keys.size() < dest->capacity() (%d < %d)", keys.size(), dest->size());
     throw std::runtime_error(message);
   }
   Visitor visitor(keys, dest);

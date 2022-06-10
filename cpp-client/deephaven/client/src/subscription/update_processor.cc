@@ -19,6 +19,7 @@
 using deephaven::client::ClassicTickingUpdate;
 using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
+using deephaven::client::chunk::UnsignedLongChunk;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
@@ -169,12 +170,12 @@ void UpdateProcessor::classicRunForeverHelper() {
     auto modifiedRowsIndexSpace = state.modifyKeys(modifiedRowsKeySpace);
     if (md.numMods_ != 0) {
       // Local copy of modifiedRowsIndexSpace
-      auto keysRemaining = makeReservedVector<std::shared_ptr<RowSequence>>(ncols);
+      auto keysRemaining = makeReservedVector<std::shared_ptr<UnsignedLongChunk>>(ncols);
       for (const auto &keys : modifiedRowsIndexSpace) {
         keysRemaining.push_back(keys->take(keys->size()));
       }
 
-      std::vector<std::shared_ptr<RowSequence>> keysToModifyThisTime(ncols);
+      std::vector<std::shared_ptr<UnsignedLongChunk>> keysToModifyThisTime(ncols);
 
       auto processModifyBatch = [&state, &keysRemaining, &keysToModifyThisTime, ncols](
           const std::vector<std::shared_ptr<arrow::Array>> &data) {
@@ -185,7 +186,7 @@ void UpdateProcessor::classicRunForeverHelper() {
           const auto &src = data[i];
           auto &krm = keysRemaining[i];
           keysToModifyThisTime[i] = krm->take(src->length());
-          krm->drop(src->length());
+          krm = krm->drop(src->length());
         }
         state.modifyData(data, keysToModifyThisTime);
       };
@@ -375,7 +376,7 @@ ExtractedMetadata::ExtractedMetadata(size_t numAdds, size_t numMods,
     shiftEndIndex_(std::move(shiftEndIndex)), shiftDestIndex_(std::move(shiftDestIndex)),
     addedRows_(std::move(addedRows)), modifiedRows_(std::move(modifiedRows)) {}
 
-ExtractedMetadata::~ExtractedMetadata() noexcept = default;
+ExtractedMetadata::~ExtractedMetadata() = default;
 
 //ThreadNubbin::ThreadNubbin(std::unique_ptr<arrow::flight::FlightStreamReader> fsr,
 //    std::shared_ptr<ColumnDefinitions> colDefs, std::shared_ptr<TickingCallback> callback) :

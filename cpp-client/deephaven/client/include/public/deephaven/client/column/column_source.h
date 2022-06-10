@@ -104,7 +104,7 @@ void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence 
 
   auto *typedDest = verboseCast<chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   // assert rows.size() <= dest->capacity()
-  assertLessEq(rows.size(), dest->capacity(), "rows.size()", "dest->capacity()", __PRETTY_FUNCTION__);
+  assertLessEq(rows.size(), dest->size(), "rows.size()", "dest->size()", __PRETTY_FUNCTION__);
 
   size_t destIndex = 0;
   auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
@@ -127,7 +127,7 @@ void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const Lon
 
   auto *typedDest = verboseCast<chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, dest);
   // assert size <= dest->capacity()
-  assertLessEq(size, dest->capacity(), "size", "dest->capacity()", __PRETTY_FUNCTION__);
+  assertLessEq(size, dest->size(), "size", "dest->size()", __PRETTY_FUNCTION__);
 
   for (size_t i = 0; i < size; ++i) {
     auto srcIndex = rowKeys.data()[i];
@@ -145,7 +145,7 @@ void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const Chunk &s
 
   auto *typedSrc = verboseCast<const chunkType_t *>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   // assert size <= src.capacity()
-  assertLessEq(rows.size(), src.capacity(), "rows.size()", "src.capacity()", __PRETTY_FUNCTION__);
+  assertLessEq(rows.size(), src.size(), "rows.size()", "src.size()", __PRETTY_FUNCTION__);
 
   size_t srcIndex = 0;
   auto applyChunk = [this, typedSrc, &srcIndex](uint64_t begin, uint64_t end) {
@@ -167,8 +167,8 @@ void NumericArrayColumnSource<T>::fillFromChunkUnordered(Context *context, const
 
   auto *typedSrc = verboseCast<const chunkType_t*>(DEEPHAVEN_PRETTY_FUNCTION, &src);
   // assert rowKeys.size() <= src.capacity()
-  assertLessEq(size, rowKeys.capacity(), "size", "rowKeys.capacity()", __PRETTY_FUNCTION__);
-  assertLessEq(size, src.capacity(), "size", "src.capacity()", __PRETTY_FUNCTION__);
+  assertLessEq(size, rowKeys.size(), "size", "rowKeys.size()", __PRETTY_FUNCTION__);
+  assertLessEq(size, src.size(), "size", "src.size()", __PRETTY_FUNCTION__);
 
   for (size_t i = 0; i < size; ++i) {
     auto destIndex = rowKeys.data()[i];

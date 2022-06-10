@@ -68,7 +68,6 @@ set(ALL_FILES
     include/public/deephaven/client/column/column_source.h
     include/public/deephaven/client/container/context.h
     include/public/deephaven/client/container/row_sequence.h
-    include/public/deephaven/client/container/unordered_row_sequence.h
     include/public/deephaven/client/table/table.h
 
     include/private/deephaven/client/subscription/batch_parser.h
