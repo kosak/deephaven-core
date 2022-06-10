@@ -4,6 +4,31 @@
 using deephaven::client::utility::stringf;
 
 namespace deephaven::client::container {
+std::shared_ptr<RowSequence> RowSequence::createEmpty() {
+  return RowSequenceBuilder().build();
+}
+
+std::shared_ptr<RowSequence> RowSequence::createSequential(uint64_t begin, uint64_t end) {
+  RowSequenceBuilder builder;
+  builder.addRange(begin, end);
+  return builder.build();
+}
+
+RowSequence::~RowSequence() = default;
+
+std::ostream &operator<<(std::ostream &s, const RowSequence &o) {
+  s << '[';
+  auto iter = o.getRowSequenceIterator();
+  const char *sep = "";
+  uint64_t item;
+  while (iter->tryGetNext(&item)) {
+    s << sep << item;
+    sep = ", ";
+  }
+  s << ']';
+  return s;
+}
+
 namespace {
 class MyRowSequence final : public RowSequence {
   // begin->end
@@ -45,21 +70,6 @@ private:
   size_t size_ = 0;
 };
 } // namespace
-
-RowSequence::~RowSequence() = default;
-
-std::ostream &operator<<(std::ostream &s, const RowSequence &o) {
-  s << '[';
-  auto iter = o.getRowSequenceIterator();
-  const char *sep = "";
-  uint64_t item;
-  while (iter->tryGetNext(&item)) {
-    s << sep << item;
-    sep = ", ";
-  }
-  s << ']';
-  return s;
-}
 
 RowSequenceIterator::~RowSequenceIterator() = default;
 RowSequenceBuilder::RowSequenceBuilder() = default;

@@ -30,7 +30,7 @@ public:
   virtual void acceptVisitor(ColumnSourceVisitor *visitor) const = 0;
 };
 
-class MutableColumnSource : public ColumnSource {
+class MutableColumnSource : public virtual ColumnSource {
 public:
   ~MutableColumnSource() override;
 
@@ -41,7 +41,7 @@ public:
 
 // the per-type interfaces
 template<typename T>
-class NumericColumnSource : public ColumnSource {
+class NumericColumnSource : public virtual ColumnSource {
 };
 
 // convenience typedefs
@@ -51,7 +51,7 @@ typedef NumericColumnSource<double> DoubleColumnSource;
 
 // the mutable per-type interfaces
 template<typename T>
-class MutableNumericColumnSource : public MutableColumnSource {
+class MutableNumericColumnSource : public NumericColumnSource<T>, public MutableColumnSource {
 };
 
 template<typename T>

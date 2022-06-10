@@ -15,6 +15,7 @@ using deephaven::client::column::MutableColumnSource;
 using deephaven::client::column::NumericArrayColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
+using deephaven::client::table::Table;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
@@ -27,6 +28,31 @@ void mapShifter(uint64_t begin, uint64_t end, uint64_t dest, std::map<uint64_t, 
 
 std::vector<std::shared_ptr<MutableColumnSource>>
 makeColumnSources(const ColumnDefinitions &colDefs);
+
+class TableView final : public Table {
+public:
+  TableView(std::vector<std::shared_ptr<MutableColumnSource>> columns,
+      std::shared_ptr<std::map<uint64_t, uint64_t>> redirection);
+  ~TableView() final;
+
+  std::shared_ptr<RowSequence> getRowSequence() const final;
+
+  std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const final {
+    return columns_[columnIndex];
+  }
+
+  size_t numRows() const final {
+    return redirection_->size();
+  }
+
+  size_t numColumns() const override {
+    return columns_.size();
+  }
+
+private:
+  std::vector<std::shared_ptr<MutableColumnSource>> columns_;
+  std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;
+};
 }
 
 ClassicTableState::ClassicTableState(const ColumnDefinitions &colDefs) {
@@ -112,6 +138,10 @@ void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequ
     mapShifter(begin, end, destBegin, redir);
   };
   ShiftProcessor::applyShiftData(firstIndex, lastIndex, destIndex, processShift);
+}
+
+std::shared_ptr<Table> ClassicTableState::snapshot() const {
+  return std::make_shared<TableView>(columns_, redirection_);
 }
 
 std::vector<std::shared_ptr<UnsignedLongChunk>> ClassicTableState::modifyKeys(
@@ -249,5 +279,15 @@ std::vector<std::shared_ptr<MutableColumnSource>> makeColumnSources(const Column
 
   return result;
 }
+
+TableView::TableView(std::vector<std::shared_ptr<MutableColumnSource>> columns,
+    std::shared_ptr<std::map<uint64_t, uint64_t>> redirection) : columns_(std::move(columns)),
+    redirection_(std::move(redirection)) {}
+TableView::~TableView() = default;
+
+std::shared_ptr<RowSequence> TableView::getRowSequence() const {
+  throw std::runtime_error("TODO(kosak)");
+}
+
 }  // namespace
 }  // namespace deephaven::client::subscription

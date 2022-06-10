@@ -1,6 +1,15 @@
 #include "deephaven/client/ticking.h"
 
 namespace deephaven::client {
+ClassicTickingUpdate::ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRows,
+    std::shared_ptr<RowSequence> addedRows, std::vector<std::shared_ptr<RowSequence>> modifiedRows,
+    std::shared_ptr<Table> current) : removedRows_(std::move(removedRows)),
+    addedRows_(std::move(addedRows)), modifiedRows_(std::move(modifiedRows)),
+    current_(std::move(current)) {}
+ClassicTickingUpdate::ClassicTickingUpdate(ClassicTickingUpdate &&other) noexcept = default;
+ClassicTickingUpdate &ClassicTickingUpdate::operator=(ClassicTickingUpdate &&other) noexcept = default;
+ClassicTickingUpdate::~ClassicTickingUpdate() = default;
+
 ImmerTickingUpdate::ImmerTickingUpdate(std::shared_ptr<Table> beforeRemoves,
     std::shared_ptr<Table> beforeModifies,
     std::shared_ptr<Table> current,

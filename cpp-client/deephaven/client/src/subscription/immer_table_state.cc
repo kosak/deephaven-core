@@ -20,6 +20,7 @@ using deephaven::client::container::RowSequenceIterator;
 using deephaven::client::subscription::ShiftProcessor;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::table::Table;
+using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::streamf;
@@ -49,13 +50,19 @@ private:
   size_t numRows_ = 0;
 };
 
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectors(
-    const std::vector<std::shared_ptr<arrow::Array>> &array);
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectorsFromColDefs(
+    const ColumnDefinitions &colDefs);
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectorsFromArrays(
+    const std::vector<std::shared_ptr<arrow::Array>> &arrays);
 }  // namespace
 
 //ImmerTableState::ImmerTableState(const ColumnDefinitions &colDefs)
 //    std::vector<std::unique_ptr<AbstractFlexVectorBase>> flexVectors) :
 //    flexVectors_(std::move(flexVectors)) {}
+
+ImmerTableState::ImmerTableState(const ColumnDefinitions &colDefs) {
+  flexVectors_ = makeFlexVectorsFromColDefs(colDefs);
+}
 
 ImmerTableState::~ImmerTableState() = default;
 
@@ -70,7 +77,7 @@ void ImmerTableState::addData(const std::vector<std::shared_ptr<arrow::Array>> &
     throw std::runtime_error(stringf("ncols != flexVectors_.size() (%o != %o)",
         ncols, flexVectors_.size()));
   }
-  auto addedData = makeFlexVectors(data);
+  auto addedData = makeFlexVectorsFromArrays(data);
 
   auto addChunk = [this, &addedData](uint64_t beginIndex, uint64_t endIndex) {
     auto size = endIndex - beginIndex;
@@ -131,7 +138,7 @@ void ImmerTableState::modifyData(const std::vector<std::shared_ptr<arrow::Array>
     throw std::runtime_error(stringf("data.size() != rowsToModifyIndexSpace.size() (%o != %o)",
         ncols, rowsToModifyIndexSpace.size()));
   }
-  auto modifiedData = makeFlexVectors(data);
+  auto modifiedData = makeFlexVectorsFromArrays(data);
 
   for (size_t i = 0; i < ncols; ++i) {
     modifyColumn(i, std::move(modifiedData[i]), *rowsToModifyIndexSpace[i]);
@@ -192,18 +199,18 @@ std::shared_ptr<RowSequence> MyTable::getRowSequence() const {
   return rb.build();
 }
 
-struct MyVisitor final : public arrow::ArrayVisitor {
-  arrow::Status Visit(const arrow::Int32Array &type) final {
+struct MyTypeVisitor final : public arrow::TypeVisitor {
+  arrow::Status Visit(const arrow::Int32Type &) final {
     result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
     return arrow::Status::OK();
   }
 
-  arrow::Status Visit(const arrow::Int64Array &type) final {
+  arrow::Status Visit(const arrow::Int64Type &) final {
     result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
     return arrow::Status::OK();
   }
 
-  arrow::Status Visit(const arrow::DoubleArray &type) final {
+  arrow::Status Visit(const arrow::DoubleType &type) final {
     result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
     return arrow::Status::OK();
   }
@@ -211,12 +218,43 @@ struct MyVisitor final : public arrow::ArrayVisitor {
   std::unique_ptr<AbstractFlexVectorBase> result_;
 };
 
-std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectors(
+struct MyArrayVisitor final : public arrow::ArrayVisitor {
+  arrow::Status Visit(const arrow::Int32Array &) final {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
+    return arrow::Status::OK();
+  }
+
+  arrow::Status Visit(const arrow::Int64Array &) final {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
+    return arrow::Status::OK();
+  }
+
+  arrow::Status Visit(const arrow::DoubleArray &) final {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
+    return arrow::Status::OK();
+  }
+
+  std::unique_ptr<AbstractFlexVectorBase> result_;
+};
+
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectorsFromColDefs(
+    const ColumnDefinitions &colDefs) {
+  auto ncols = colDefs.vec().size();
+  auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
+  for (const auto &colDef : colDefs.vec()) {
+    MyTypeVisitor v;
+    okOrThrow(DEEPHAVEN_EXPR_MSG(colDef.second->Accept(&v)));
+    result.push_back(std::move(v.result_));
+  }
+  return result;
+}
+
+std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectorsFromArrays(
     const std::vector<std::shared_ptr<arrow::Array>> &arrays) {
   auto ncols = arrays.size();
   auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
   for (const auto &a : arrays) {
-    MyVisitor v;
+    MyArrayVisitor v;
     okOrThrow(DEEPHAVEN_EXPR_MSG(a->Accept(&v)));
     v.result_->inPlaceAppendArrow(*a);
     result.push_back(std::move(v.result_));
