@@ -11,17 +11,13 @@ namespace deephaven::client::container {
 
 class UnorderedRowSequence {
 public:
-  static std::shared_ptr<UnorderedRowSequence> createEmpty();
-  static std::shared_ptr<UnorderedRowSequence> createSequential(uint64_t begin, uint64_t end);
+  std::shared_ptr<UnorderedRowSequence> createEmpty();
+  std::shared_ptr<UnorderedRowSequence> createSequential(uint64_t begin, uint64_t end);
 
   virtual ~UnorderedRowSequence();
 
-  virtual std::shared_ptr<RowSequenceIterator> getRowSequenceIterator() const = 0;
-
-  virtual std::shared_ptr<RowSequence> take(size_t size) const = 0;
-  virtual std::shared_ptr<RowSequence> drop(size_t size) const = 0;
-
-  virtual void forEachChunk(const std::function<void(uint64_t beginKey, uint64_t endKey)> &f) const = 0;
+  virtual std::shared_ptr<UnorderedRowSequence> take(size_t size) const = 0;
+  virtual std::shared_ptr<UnorderedRowSequence> drop(size_t size) const = 0;
 
   virtual size_t size() const = 0;
 
@@ -29,33 +25,20 @@ public:
     return size() == 0;
   }
 
-  friend std::ostream &operator<<(std::ostream &s, const RowSequence &o);
+  friend std::ostream &operator<<(std::ostream &s, const UnorderedRowSequence &o);
 };
 
-class RowSequenceIterator {
+class UnorderedRowSequenceBuilder {
 public:
-  virtual ~RowSequenceIterator();
-  virtual bool tryGetNext(uint64_t *result) = 0;
-};
+  UnorderedRowSequenceBuilder();
+  ~UnorderedRowSequenceBuilder();
 
-class RowSequenceBuilder {
-public:
-  RowSequenceBuilder();
-  ~RowSequenceBuilder();
+  void add(uint64_t key);
 
-  void addRange(uint64_t begin, uint64_t end);
-
-  void add(uint64_t key) {
-    addRange(key, key + 1);
-  }
-
-  std::shared_ptr<RowSequence> build();
+  std::shared_ptr<UnorderedRowSequence> build();
 
 private:
-  typedef std::map<uint64_t, uint64_t> ranges_t;
-  // maps range.begin to range.end. We ensure that ranges never overlap and that contiguous ranges
-  // are collapsed.
-  ranges_t ranges_;
-  size_t size_ = 0;
+  typedef std::vector<uint64_t> values_t;
+  values_t values_;
 };
 }  // namespace deephaven::client::container
