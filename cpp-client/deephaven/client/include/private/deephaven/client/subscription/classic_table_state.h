@@ -9,7 +9,7 @@
 
 namespace deephaven::client::subscription {
 class ClassicTableState final {
-  typedef deephaven::client::chunk::UnsignedLongChunk UnsignedLongChunk;
+  typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::column::MutableColumnSource MutableColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
@@ -20,16 +20,16 @@ public:
   explicit ClassicTableState(const ColumnDefinitions &colDefs);
   ~ClassicTableState();
 
-  std::shared_ptr<RowSequence> addKeys(const RowSequence &rowsToAddKeySpace);
+  std::shared_ptr<UInt64Chunk> addKeys(const RowSequence &rowsToAddKeySpace);
   void addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
-      const RowSequence &rowsToAddIndexSpace);
+      const UInt64Chunk &rowsToAddIndexSpace);
 
-  std::shared_ptr<RowSequence> erase(const RowSequence &rowsToRemoveKeySpace);
+  std::shared_ptr<UInt64Chunk> erase(const RowSequence &rowsToRemoveKeySpace);
 
-  std::vector<std::shared_ptr<UnsignedLongChunk>> modifyKeys(
+  std::vector<std::shared_ptr<UInt64Chunk>> modifyKeys(
       const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace);
   void modifyData(const std::vector<std::shared_ptr<arrow::Array>> &data,
-      const std::vector<std::shared_ptr<UnsignedLongChunk>> &rowsToModifyIndexSpace);
+      const std::vector<std::shared_ptr<UInt64Chunk>> &rowsToModifyIndexSpace);
 
   void applyShifts(const RowSequence &firstIndex, const RowSequence &lastIndex,
       const RowSequence &destIndex);
@@ -37,7 +37,7 @@ public:
   std::shared_ptr<Table> snapshot() const;
 
 private:
-  std::shared_ptr<UnsignedLongChunk> modifyKeysHelper(const RowSequence &rowsToModifyKeySpace);
+  std::shared_ptr<UInt64Chunk> modifyKeysHelper(const RowSequence &rowsToModifyKeySpace);
 
   std::vector<std::shared_ptr<MutableColumnSource>> columns_;
   std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;

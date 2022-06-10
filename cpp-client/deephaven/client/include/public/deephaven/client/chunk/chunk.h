@@ -104,18 +104,17 @@ std::shared_ptr<NumericChunk<T>> NumericChunk<T>::drop(size_t size) const {
   return std::make_shared<NumericChunk<T>>(Private(), std::move(newBegin), newSize);
 }
 
-typedef NumericChunk<int32_t> IntChunk;
-typedef NumericChunk<int64_t> LongChunk;
-typedef NumericChunk<uint64_t> UnsignedLongChunk;
+typedef NumericChunk<int32_t> Int32Chunk;
+typedef NumericChunk<int64_t> Int64Chunk;
+typedef NumericChunk<uint64_t> UInt64Chunk;
 typedef NumericChunk<double> DoubleChunk;
-typedef NumericChunk<size_t> SizeTChunk;
 
 class ChunkVisitor {
 public:
-  virtual void visit(const IntChunk &) const = 0;
-  virtual void visit(const LongChunk &) const = 0;
+  virtual void visit(const Int32Chunk &) const = 0;
+  virtual void visit(const Int64Chunk &) const = 0;
+  virtual void visit(const UInt64Chunk &) const = 0;
   virtual void visit(const DoubleChunk &) const = 0;
-  virtual void visit(const SizeTChunk &) const = 0;
 };
 
 template<typename T>
@@ -128,21 +127,22 @@ struct TypeToChunk {};
 
 template<>
 struct TypeToChunk<int32_t> {
-  typedef deephaven::client::chunk::IntChunk type_t;
+  typedef deephaven::client::chunk::Int32Chunk type_t;
 };
 
 template<>
 struct TypeToChunk<int64_t> {
-  typedef deephaven::client::chunk::LongChunk type_t;
+  typedef deephaven::client::chunk::Int64Chunk type_t;
 };
+
+template<>
+struct TypeToChunk<uint64_t> {
+  typedef deephaven::client::chunk::UInt64Chunk type_t;
+};
+
 
 template<>
 struct TypeToChunk<double> {
   typedef deephaven::client::chunk::DoubleChunk type_t;
-};
-
-template<>
-struct TypeToChunk<size_t> {
-  typedef deephaven::client::chunk::SizeTChunk type_t;
 };
 }  // namespace deephaven::client::chunk

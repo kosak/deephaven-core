@@ -9,7 +9,7 @@
 
 using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
-using deephaven::client::chunk::UnsignedLongChunk;
+using deephaven::client::chunk::UInt64Chunk;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::column::NumericArrayColumnSource;
@@ -62,9 +62,11 @@ ClassicTableState::ClassicTableState(const ColumnDefinitions &colDefs) :
 
 ClassicTableState::~ClassicTableState() = default;
 
-std::shared_ptr<RowSequence> ClassicTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
-  RowSequenceBuilder resultBuilder;
-  auto removeRange = [this, &resultBuilder](uint64_t beginKey, uint64_t endKey) {
+std::shared_ptr<UInt64Chunk> ClassicTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
+  auto nrows = rowsToRemoveKeySpace.size();
+  auto result = UInt64Chunk::create(nrows);
+  auto *destp = result->data();
+  auto removeRange = [this, &destp](uint64_t beginKey, uint64_t endKey) {
     auto beginp = redirection_->find(beginKey);
     if (beginp == redirection_->end()) {
       throw std::runtime_error(stringf("Can't find beginKey %o", beginKey));
@@ -75,27 +77,30 @@ std::shared_ptr<RowSequence> ClassicTableState::erase(const RowSequence &rowsToR
       if (currentp->first != current) {
         throw std::runtime_error(stringf("Can't find key %o", current));
       }
-      resultBuilder.add(currentp->second);
+      *destp = currentp->second;
+      ++destp;
       ++currentp;
     }
     redirection_->erase(beginp, currentp);
   };
   rowsToRemoveKeySpace.forEachChunk(removeRange);
-  return resultBuilder.build();
+  return result;
 }
 
-std::shared_ptr<RowSequence> ClassicTableState::addKeys(const RowSequence &addedRowsKeySpace) {
+std::shared_ptr<UInt64Chunk> ClassicTableState::addKeys(const RowSequence &addedRowsKeySpace) {
   // In order to give back an ordered row sequence (because at the moment we don't have an
   // unordered row sequence), we sort the keys we're going to reuse.
-  auto numKeysToReuse = std::min(addedRowsKeySpace.size(), slotsToReuse_.size());
+  auto nrows = addedRowsKeySpace.size();
+  auto numKeysToReuse = std::min(nrows, slotsToReuse_.size());
   auto reuseBegin = slotsToReuse_.end() - static_cast<ssize_t>(numKeysToReuse);
   auto reuseEnd = slotsToReuse_.end();
   std::sort(reuseBegin, reuseEnd);
 
   auto reuseCurrent = reuseBegin;
 
-  RowSequenceBuilder resultBuilder;
-  auto addRange = [this, &reuseCurrent, reuseEnd](uint64_t beginKey, uint64_t endKey) {
+  auto result = UInt64Chunk::create(nrows);
+  auto *destp = result->data();
+  auto addRange = [this, &reuseCurrent, reuseEnd, &destp](uint64_t beginKey, uint64_t endKey) {
     for (auto current = beginKey; current != endKey; ++current) {
       uint64_t keyPositionSpace;
       if (reuseCurrent != reuseEnd) {
@@ -107,15 +112,16 @@ std::shared_ptr<RowSequence> ClassicTableState::addKeys(const RowSequence &added
       if (!result.second) {
         throw std::runtime_error(stringf("Can't add because key %o already exists", current));
       }
+      *destp++ = keyPositionSpace;
     }
   };
   addedRowsKeySpace.forEachChunk(addRange);
   slotsToReuse_.erase(reuseBegin, reuseEnd);
-  return resultBuilder.build();
+  return result;
 }
 
 void ClassicTableState::addData(const std::vector<std::shared_ptr<arrow::Array>> &data,
-    const RowSequence &rowsToAddIndexSpace) {
+    const UInt64Chunk &rowsToAddIndexSpace) {
   auto ncols = data.size();
   auto nrows = rowsToAddIndexSpace.size();
   auto sequentialRows = RowSequence::createSequential(0, nrows);
@@ -125,7 +131,7 @@ void ClassicTableState::addData(const std::vector<std::shared_ptr<arrow::Array>>
     auto context = dest->createContext(nrows);
     auto chunk = ChunkMaker::createChunkFor(*dest, nrows);
     ChunkFiller::fillChunk(src, *sequentialRows, chunk.get());
-    dest->fillFromChunk(context.get(), *chunk, rowsToAddIndexSpace);
+    dest->fillFromChunkUnordered(context.get(), *chunk, rowsToAddIndexSpace);
   }
 }
 
@@ -145,10 +151,13 @@ std::shared_ptr<Table> ClassicTableState::snapshot() const {
   return std::make_shared<TableView>(columns_, redirection_);
 }
 
-std::vector<std::shared_ptr<UnsignedLongChunk>> ClassicTableState::modifyKeys(
+std::vector<std::shared_ptr<UInt64Chunk>> ClassicTableState::modifyKeys(
     const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace) {
+  auto nrows = rowsToModifyKeySpace.size();
+  auto sequentialRows = RowSequence::createSequential(0, nrows);
+
   auto ncols = rowsToModifyKeySpace.size();
-  auto result = makeReservedVector<std::shared_ptr<UnsignedLongChunk>>(ncols);
+  auto result = makeReservedVector<std::shared_ptr<UInt64Chunk>>(ncols);
   for (size_t i = 0; i < ncols; ++i) {
     auto rowSequence = modifyKeysHelper(*rowsToModifyKeySpace[i]);
     result.push_back(std::move(rowSequence));
@@ -156,10 +165,10 @@ std::vector<std::shared_ptr<UnsignedLongChunk>> ClassicTableState::modifyKeys(
   return result;
 }
 
-std::shared_ptr<UnsignedLongChunk> ClassicTableState::modifyKeysHelper(
+std::shared_ptr<UInt64Chunk> ClassicTableState::modifyKeysHelper(
     const RowSequence &rowsToModifyKeySpace) {
   auto nrows = rowsToModifyKeySpace.size();
-  auto result = UnsignedLongChunk::create(nrows);
+  auto result = UInt64Chunk::create(nrows);
   auto *destp = result->data();
   auto modifyRange = [this, &destp](uint64_t beginKey, uint64_t endKey) {
     auto beginp = redirection_->find(beginKey);
@@ -185,7 +194,7 @@ std::shared_ptr<UnsignedLongChunk> ClassicTableState::modifyKeysHelper(
 }
 
 void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Array>> &src,
-    const std::vector<std::shared_ptr<UnsignedLongChunk>> &rowsToModifyIndexSpace) {
+    const std::vector<std::shared_ptr<UInt64Chunk>> &rowsToModifyIndexSpace) {
   auto ncols = rowsToModifyIndexSpace.size();
   for (size_t i = 0; i < ncols; ++i) {
     const auto &rows = *rowsToModifyIndexSpace[i];
@@ -196,7 +205,7 @@ void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Arra
     auto context = destCol->createContext(nrows);
     auto chunk = ChunkMaker::createChunkFor(*destCol, nrows);
     ChunkFiller::fillChunk(srcArray, *sequentialRows, chunk.get());
-    destCol->fillFromChunkUnordered(context.get(), *chunk, rows, nrows);
+    destCol->fillFromChunkUnordered(context.get(), *chunk, rows);
   }
 }
 

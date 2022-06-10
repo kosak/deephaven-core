@@ -26,35 +26,55 @@ public:
 
 class ClassicTickingUpdate final {
 protected:
+  typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
   typedef deephaven::client::column::ColumnSource ColumnSource;
   typedef deephaven::client::container::RowSequence RowSequence;
   typedef deephaven::client::table::Table Table;
 
 public:
-  ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRows,
-      std::shared_ptr<RowSequence> addedRows,
-      std::vector<std::shared_ptr<RowSequence>> modifiedRows,
-      std::shared_ptr<Table> current);
+  ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRowsKeySpace,
+      std::shared_ptr<UInt64Chunk> removedRowsIndexSpace,
+      std::shared_ptr<RowSequence> addedRowsKeySpace,
+      std::shared_ptr<UInt64Chunk> addedRowsIndexSpace,
+      std::vector<std::shared_ptr<RowSequence>> modifiedRowsKeySpace,
+      std::vector<std::shared_ptr<UInt64Chunk>> modifiedRowsIndexSpace,
+      std::shared_ptr<Table> currentTableKeySpace,
+      std::shared_ptr<Table> currentTableIndexSpace);
+//  : removedRowsKeySpace_(
+//      removedRowsKeySpace), removedRowsIndexSpace_(removedRowsIndexSpace),
+//      addedRowsKeySpace_(addedRowsKeySpace), addedRowsIndexSpace_(addedRowsIndexSpace),
+//      modifiedRowsKeySpace_(modifiedRowsKeySpace), modifiedRowsIndexSpace_(modifiedRowsIndexSpace),
+//      currentTableKeySpace_(currentTableKeySpace),
+//      currentTableIndexSpace_(currentTableIndexSpace) {}
   ClassicTickingUpdate(ClassicTickingUpdate &&other) noexcept;
   ClassicTickingUpdate &operator=(ClassicTickingUpdate &&other) noexcept;
   ~ClassicTickingUpdate();
 
-  // In the pre-shift key space
-  const std::shared_ptr<RowSequence> &removedRows() const { return removedRows_; }
-  // In the post-shift key space
-  const std::shared_ptr<RowSequence> &addedRows() const { return addedRows_; }
-  // In the post-shift key space
-  const std::vector<std::shared_ptr<RowSequence>> &modifiedRows() const { return modifiedRows_; }
-  const std::shared_ptr<Table> &current() const { return current_; }
+  const std::shared_ptr<RowSequence> &removedRowsKeySpace() const { return removedRowsKeySpace_; }
+  const std::shared_ptr<UInt64Chunk> &removedRowsIndexSpace() const { return removedRowsIndexSpace_; }
+  const std::shared_ptr<RowSequence> &addedRowsKeySpace() const { return addedRowsKeySpace_; }
+  const std::shared_ptr<UInt64Chunk> &addedRowsIndexSpace() const { return addedRowsIndexSpace_; }
+  const std::vector<std::shared_ptr<RowSequence>> &modifiedRowsKeySpace() const { return modifiedRowsKeySpace_; }
+  const std::vector<std::shared_ptr<UInt64Chunk>> &modifiedRowsIndexSpace() const { return modifiedRowsIndexSpace_; }
+  const std::shared_ptr<Table> &currentTableKeySpace() const { return currentTableKeySpace_; }
+  const std::shared_ptr<Table> &currentTableIndexSpace() const { return currentTableIndexSpace_; }
 
 private:
   // In the pre-shift key space
-  std::shared_ptr<RowSequence> removedRows_;
+  std::shared_ptr<RowSequence> removedRowsKeySpace_;
+  // In the pre-shift index space
+  std::shared_ptr<UInt64Chunk> removedRowsIndexSpace_;
   // In the post-shift key space
-  std::shared_ptr<RowSequence> addedRows_;
+  std::shared_ptr<RowSequence> addedRowsKeySpace_;
+  // In the post-shift index space
+  std::shared_ptr<UInt64Chunk> addedRowsIndexSpace_;
   // In the post-shift key space
-  std::vector<std::shared_ptr<RowSequence>> modifiedRows_;
-  std::shared_ptr<Table> current_;
+  std::vector<std::shared_ptr<RowSequence>> modifiedRowsKeySpace_;
+  // In the post-shift index space
+  std::vector<std::shared_ptr<UInt64Chunk>> modifiedRowsIndexSpace_;
+
+  std::shared_ptr<Table> currentTableKeySpace_;
+  std::shared_ptr<Table> currentTableIndexSpace_;
 };
 
 class ImmerTickingUpdate final {
