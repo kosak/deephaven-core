@@ -210,6 +210,19 @@ DESTP verboseCast(std::string_view caller, SRCP ptr) {
 }
 
 /**
+ * TODO(kosak): Do something else here. Maybe.
+ */
+template<typename T>
+void assertLessEq(const T &lhs, const T &rhs, std::string_view lhsText, std::string_view rhsText,
+  std::string_view func) {
+  if (lhs <= rhs) {
+    return;
+  }
+  throw std::runtime_error(stringf("assertion failed: %o: %o <= %o (%o <= %o)", func, lhs, rhs,
+      lhsText, rhsText));
+}
+
+/**
  * If result's status is OK, do nothing. Otherwise throw a runtime error with an informative message.
  * @param result an arrow::Result
  * @param optionalMessage An optional message to be included in the exception message.

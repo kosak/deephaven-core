@@ -59,7 +59,7 @@ class NumericArrayColumnSource final : public MutableNumericColumnSource<T>,
     std::enable_shared_from_this<NumericArrayColumnSource<T>> {
   struct Private {};
   typedef deephaven::client::chunk::Chunk Chunk;
-  typedef deephaven::client::chunk::LongChunk LongChunk;
+  typedef deephaven::client::chunk::UnsignedLongChunk UnsignedLongChunk;
   typedef deephaven::client::container::Context Context;
   typedef deephaven::client::container::RowSequence RowSequence;
 
@@ -70,10 +70,10 @@ public:
 
   std::shared_ptr<Context> createContext(size_t chunkSize) const final;
   void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const final;
-  void fillChunkUnordered(Context *context, const LongChunk &rowKeys, size_t size,
+  void fillChunkUnordered(Context *context, const UnsignedLongChunk &rowKeys, size_t size,
       Chunk *dest) const final;
   void fillFromChunk(Context *context, const Chunk &src, const RowSequence &rows) final;
-  void fillFromChunkUnordered(Context *context, const Chunk &src, const LongChunk &rowKeys,
+  void fillFromChunkUnordered(Context *context, const Chunk &src, const UnsignedLongChunk &rowKeys,
       size_t size) final;
 
   void acceptVisitor(ColumnSourceVisitor *visitor) const final;
@@ -99,6 +99,7 @@ template<typename T>
 void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence &rows,
     Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
@@ -119,9 +120,10 @@ void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence 
 }
 
 template<typename T>
-void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const LongChunk &rowKeys,
+void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const UnsignedLongChunk &rowKeys,
     size_t size, Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
@@ -131,7 +133,7 @@ void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const Lon
 
   for (size_t i = 0; i < size; ++i) {
     auto srcIndex = rowKeys.data()[i];
-    assertInRange(srcIndex, data_.size());
+    assertLessEq(srcIndex, data_.size(), "srcIndex", "data_.size()", DEEPHAVEN_PRETTY_FUNCTION);
     typedDest->data()[i] = this->data_[srcIndex];
   }
 }
@@ -140,6 +142,7 @@ template<typename T>
 void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const Chunk &src,
     const RowSequence &rows) {
   using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
@@ -160,8 +163,9 @@ void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const Chunk &s
 
 template<typename T>
 void NumericArrayColumnSource<T>::fillFromChunkUnordered(Context *context, const Chunk &src,
-    const LongChunk &rowKeys, size_t size) {
+    const UnsignedLongChunk &rowKeys, size_t size) {
   using deephaven::client::chunk::TypeToChunk;
+  using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
@@ -186,9 +190,9 @@ void NumericArrayColumnSource<T>::ensureSize(size_t size) {
 
 class ColumnSourceVisitor {
 public:
-  virtual void visit(const IntColumnSource *) = 0;
-  virtual void visit(const LongColumnSource *) = 0;
-  virtual void visit(const DoubleColumnSource *) = 0;
+  virtual void visit(const IntColumnSource &) = 0;
+  virtual void visit(const LongColumnSource &) = 0;
+  virtual void visit(const DoubleColumnSource &) = 0;
 };
 
 template<typename T>

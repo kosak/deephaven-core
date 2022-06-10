@@ -45,7 +45,7 @@ void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, 
   using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::streamf;
 
-  assertLessEq(rows.size(), dest->capacity(), __PRETTY_FUNCTION__, "rows.size()", "dest->capacity()");
+  assertLessEq(rows.size(), dest->size(), __PRETTY_FUNCTION__, "rows.size()", "dest->size()");
   typedef typename TypeToChunk<T>::type_t chunkType_t;
   auto *typedDest = deephaven::client::utility::verboseCast<chunkType_t*>(__PRETTY_FUNCTION__ , dest);
   auto *destp = typedDest->data();

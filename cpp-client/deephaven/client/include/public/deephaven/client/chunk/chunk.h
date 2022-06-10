@@ -92,16 +92,16 @@ template<typename T>
 std::shared_ptr<NumericChunk<T>> NumericChunk<T>::take(size_t size) const {
   checkSize(DEEPHAVEN_PRETTY_FUNCTION, size);
   // Share ownership of data_ but yield different value
-  return std::make_shared<NumericChunk<T>>(data_, size);
+  return std::make_shared<NumericChunk<T>>(Private(), data_, size);
 }
 
 template<typename T>
 std::shared_ptr<NumericChunk<T>> NumericChunk<T>::drop(size_t size) const {
   checkSize(DEEPHAVEN_PRETTY_FUNCTION, size);
   // Share ownership of data_ but yield different value
-  std::shared_ptr newBegin(data_, this->begin() + size);
+  std::shared_ptr<T[]> newBegin(data_, data_.get() + size);
   auto newSize = size_ - size;
-  return std::make_shared<NumericChunk<T>>(std::move(newBegin), newSize);
+  return std::make_shared<NumericChunk<T>>(Private(), std::move(newBegin), newSize);
 }
 
 typedef NumericChunk<int32_t> IntChunk;

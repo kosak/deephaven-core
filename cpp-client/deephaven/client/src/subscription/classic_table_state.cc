@@ -160,7 +160,7 @@ void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Arra
     const auto &rows = *rowsToModifyIndexSpace[i];
     const auto &srcArray = *src[i];
     auto *destCol = columns_[i].get();
-    auto nrows = rows.capacity();
+    auto nrows = rows.size();
     auto sequentialRows = RowSequence::createSequential(0, nrows);
     auto context = destCol->createContext(nrows);
     auto chunk = ChunkMaker::createChunkFor(*destCol, nrows);
@@ -236,11 +236,11 @@ struct MyVisitor final : public arrow::TypeVisitor {
     return arrow::Status::OK();
   }
 
-  std::shared_ptr<ColumnSource> columnSource_;
+  std::shared_ptr<MutableColumnSource> columnSource_;
 };
 
 std::vector<std::shared_ptr<MutableColumnSource>> makeColumnSources(const ColumnDefinitions &colDefs) {
-  std::vector<std::shared_ptr<ColumnSource>> result;
+  std::vector<std::shared_ptr<MutableColumnSource>> result;
   for (const auto &[name, arrowType] : colDefs.vec()) {
     MyVisitor v;
     okOrThrow(DEEPHAVEN_EXPR_MSG(arrowType->Accept(&v)));
