@@ -115,7 +115,12 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
     std::shared_ptr<RowSequence> rows);
 
 void Callback::onTick(const ClassicTickingUpdate &update) {
-  std::cerr << "TODO(kosak)\n";
+  streamf(std::cout, "adds: %o\n", *update.addedRows());
+  auto render = [](std::ostream &s, const std::shared_ptr<RowSequence> &rs) {
+    s << *rs;
+  };
+  streamf(std::cout, "modifies: %o\n", separatedList(update.modifiedRows().begin(),
+      update.modifiedRows().end(), " === ", render));
 }
 
 void Callback::onTick(const ImmerTickingUpdate &update) {
@@ -329,7 +334,7 @@ void lastBy(const TableHandleManager &manager) {
   lb.bindToVariable("showme");
 
   auto myCallback = std::make_shared<Callback>();
-  auto handle = lb.subscribe(myCallback, true);
+  auto handle = lb.subscribe(myCallback, false);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
   lb.unsubscribe(handle);

@@ -55,7 +55,8 @@ private:
 };
 }
 
-ClassicTableState::ClassicTableState(const ColumnDefinitions &colDefs) {
+ClassicTableState::ClassicTableState(const ColumnDefinitions &colDefs) :
+    redirection_(std::make_shared<std::map<uint64_t, uint64_t>>()) {
   columns_ = makeColumnSources(colDefs);
 }
 

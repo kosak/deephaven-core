@@ -350,11 +350,11 @@ std::optional<ExtractedMetadata> extractMetadata(
       perColumnModifies.push_back(std::move(modRows));
     }
   }
-  streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
-  streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
-  streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
-  streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
-  streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
+//  streamf(std::cerr, "RemovedRows: {%o}\n", *removedRows);
+//  streamf(std::cerr, "AddedRows: {%o}\n", *addedRows);
+//  streamf(std::cerr, "shift start: {%o}\n", *shiftStartIndex);
+//  streamf(std::cerr, "shift end: {%o}\n", *shiftEndIndex);
+//  streamf(std::cerr, "shift dest: {%o}\n", *shiftDestIndex);
 
   return ExtractedMetadata(numAdds,
       numMods,
