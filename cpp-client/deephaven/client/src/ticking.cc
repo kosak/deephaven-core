@@ -1,11 +1,22 @@
 #include "deephaven/client/ticking.h"
 
 namespace deephaven::client {
-ClassicTickingUpdate::ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRows,
-    std::shared_ptr<RowSequence> addedRows, std::vector<std::shared_ptr<RowSequence>> modifiedRows,
-    std::shared_ptr<Table> current) : removedRows_(std::move(removedRows)),
-    addedRows_(std::move(addedRows)), modifiedRows_(std::move(modifiedRows)),
-    current_(std::move(current)) {}
+ClassicTickingUpdate::ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRowsKeySpace,
+    std::shared_ptr<UInt64Chunk> removedRowsIndexSpace,
+    std::shared_ptr<RowSequence> addedRowsKeySpace,
+    std::shared_ptr<UInt64Chunk> addedRowsIndexSpace,
+    std::vector<std::shared_ptr<RowSequence>> modifiedRowsKeySpace,
+    std::vector<std::shared_ptr<UInt64Chunk>> modifiedRowsIndexSpace,
+    std::shared_ptr<Table> currentTableKeySpace,
+    std::shared_ptr<Table> currentTableIndexSpace) :
+    removedRowsKeySpace_(std::move(removedRowsKeySpace)),
+    removedRowsIndexSpace_(std::move(removedRowsIndexSpace)),
+    addedRowsKeySpace_(std::move(addedRowsKeySpace)),
+    addedRowsIndexSpace_(std::move(addedRowsIndexSpace)),
+    modifiedRowsKeySpace_(std::move(modifiedRowsKeySpace)),
+    modifiedRowsIndexSpace_(std::move(modifiedRowsIndexSpace)),
+    currentTableKeySpace_(std::move(currentTableKeySpace)),
+    currentTableIndexSpace_(std::move(currentTableIndexSpace)) {}
 ClassicTickingUpdate::ClassicTickingUpdate(ClassicTickingUpdate &&other) noexcept = default;
 ClassicTickingUpdate &ClassicTickingUpdate::operator=(ClassicTickingUpdate &&other) noexcept = default;
 ClassicTickingUpdate::~ClassicTickingUpdate() = default;

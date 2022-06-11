@@ -12,7 +12,7 @@
 #include "immer/flex_vector.hpp"
 #include "immer/flex_vector_transient.hpp"
 
-using deephaven::client::chunk::LongChunk;
+using deephaven::client::chunk::Int64Chunk;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;

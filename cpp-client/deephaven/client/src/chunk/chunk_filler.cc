@@ -35,7 +35,7 @@ void ChunkFiller::fillChunk(const arrow::Array &src, const RowSequence &keys, Ch
 
 namespace {
 arrow::Status Visitor::Visit(const arrow::Int32Array &array) {
-  auto *typedDest = verboseCast<IntChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
+  auto *typedDest = verboseCast<Int32Chunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
   int64_t destIndex = 0;
   auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
     for (auto current = begin; current != end; ++current) {
@@ -52,7 +52,7 @@ arrow::Status Visitor::Visit(const arrow::Int32Array &array) {
 }
 
 arrow::Status Visitor::Visit(const arrow::Int64Array &array) {
-  auto *typedDest = verboseCast<LongChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
+  auto *typedDest = verboseCast<Int64Chunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
   int64_t destIndex = 0;
   auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
     for (auto current = begin; current != end; ++current) {

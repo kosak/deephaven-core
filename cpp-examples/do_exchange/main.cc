@@ -31,9 +31,9 @@ using deephaven::client::container::Context;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::chunk::DoubleChunk;
-using deephaven::client::chunk::IntChunk;
-using deephaven::client::chunk::LongChunk;
-using deephaven::client::chunk::SizeTChunk;
+using deephaven::client::chunk::Int32Chunk;
+using deephaven::client::chunk::Int64Chunk;
+using deephaven::client::chunk::UInt64Chunk;
 using deephaven::client::table::Table;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
@@ -90,19 +90,19 @@ class ElementStreamer final : public ChunkVisitor {
 public:
   ElementStreamer(std::ostream &s, size_t index) : s_(s), index_(index) {}
 
-  void visit(const IntChunk &chunk) const final {
+  void visit(const Int32Chunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
-  void visit(const LongChunk &chunk) const final {
+  void visit(const Int64Chunk &chunk) const final {
+    s_ << chunk.data()[index_];
+  }
+
+  void visit(const UInt64Chunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
   void visit(const DoubleChunk &chunk) const final {
-    s_ << chunk.data()[index_];
-  }
-
-  void visit(const SizeTChunk &chunk) const final {
     s_ << chunk.data()[index_];
   }
 
@@ -115,12 +115,12 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
     std::shared_ptr<RowSequence> rows);
 
 void Callback::onTick(const ClassicTickingUpdate &update) {
-  streamf(std::cout, "adds: %o\n", *update.addedRows());
+  streamf(std::cout, "adds: %o\n", *update.addedRowsKeySpace());
   auto render = [](std::ostream &s, const std::shared_ptr<RowSequence> &rs) {
     s << *rs;
   };
-  streamf(std::cout, "modifies: %o\n", separatedList(update.modifiedRows().begin(),
-      update.modifiedRows().end(), " === ", render));
+  streamf(std::cout, "modifies: %o\n", separatedList(update.modifiedRowsKeySpace().begin(),
+      update.modifiedRowsKeySpace().end(), " === ", render));
 }
 
 void Callback::onTick(const ImmerTickingUpdate &update) {

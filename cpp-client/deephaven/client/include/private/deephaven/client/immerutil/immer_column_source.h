@@ -11,7 +11,7 @@ class ImmerColumnSource final : public deephaven::client::column::NumericColumnS
     std::enable_shared_from_this<ImmerColumnSource<T>> {
 protected:
   typedef deephaven::client::chunk::Chunk Chunk;
-  typedef deephaven::client::chunk::UnsignedLongChunk UnsignedLongChunk;
+  typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
   typedef deephaven::client::column::ColumnSourceVisitor ColumnSourceVisitor;
   typedef deephaven::client::container::Context Context;
   typedef deephaven::client::container::RowSequence RowSequence;
@@ -25,8 +25,7 @@ public:
     return std::make_shared<Context>();
   }
 
-  void fillChunkUnordered(Context *context, const UnsignedLongChunk &rowKeys, size_t size,
-      Chunk *dest) const {
+  void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys, Chunk *dest) const {
     using deephaven::client::utility::stringf;
     throw std::runtime_error(stringf("TODO(kosak): %o", __PRETTY_FUNCTION__));
   }

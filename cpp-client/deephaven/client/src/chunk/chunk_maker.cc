@@ -4,16 +4,16 @@
 
 using deephaven::client::column::ColumnSourceVisitor;
 using deephaven::client::column::DoubleColumnSource;
-using deephaven::client::column::IntColumnSource;
-using deephaven::client::column::LongColumnSource;
+using deephaven::client::column::Int32ColumnSource;
+using deephaven::client::column::Int64ColumnSource;
 
 namespace deephaven::client::chunk {
 namespace {
 struct Visitor final : ColumnSourceVisitor {
   explicit Visitor(size_t chunkSize) : chunkSize_(chunkSize) {}
 
-  void visit(const IntColumnSource &source) final;
-  void visit(const LongColumnSource &source) final;
+  void visit(const Int32ColumnSource &source) final;
+  void visit(const Int64ColumnSource &source) final;
   void visit(const DoubleColumnSource &source) final;
 
   size_t chunkSize_;
@@ -28,12 +28,12 @@ std::shared_ptr<Chunk> ChunkMaker::createChunkFor(const ColumnSource &columnSour
   return std::move(v.result_);
 }
 namespace {
-void Visitor::visit(const IntColumnSource &source) {
-  result_ = IntChunk::create(chunkSize_);
+void Visitor::visit(const Int32ColumnSource &source) {
+  result_ = Int32Chunk::create(chunkSize_);
 }
 
-void Visitor::visit(const LongColumnSource &source) {
-  result_ = LongChunk::create(chunkSize_);
+void Visitor::visit(const Int64ColumnSource &source) {
+  result_ = Int64Chunk::create(chunkSize_);
 }
 
 void Visitor::visit(const DoubleColumnSource &source) {

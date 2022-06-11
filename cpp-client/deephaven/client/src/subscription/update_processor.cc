@@ -19,12 +19,13 @@
 using deephaven::client::ClassicTickingUpdate;
 using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
-using deephaven::client::chunk::UnsignedLongChunk;
+using deephaven::client::chunk::UInt64Chunk;
 using deephaven::client::column::MutableColumnSource;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::immerutil::AbstractFlexVectorBase;
 using deephaven::client::subscription::BatchParser;
+using deephaven::client::table::Table;
 using deephaven::client::utility::ColumnDefinitions;
 using deephaven::client::utility::makeReservedVector;
 using deephaven::client::utility::okOrThrow;
@@ -135,7 +136,7 @@ void UpdateProcessor::classicRunForeverHelper() {
 
     // 3. Adds
     auto addedRowsKeySpace = RowSequence::createEmpty();
-    auto addedRowsIndexSpace = RowSequence::createEmpty();
+    auto addedRowsIndexSpace = UInt64Chunk::create(0);
     if (md.numAdds_ != 0) {
       addedRowsKeySpace = std::move(md.addedRows_);
       addedRowsIndexSpace = state.addKeys(*addedRowsKeySpace);
@@ -170,12 +171,12 @@ void UpdateProcessor::classicRunForeverHelper() {
     auto modifiedRowsIndexSpace = state.modifyKeys(modifiedRowsKeySpace);
     if (md.numMods_ != 0) {
       // Local copy of modifiedRowsIndexSpace
-      auto keysRemaining = makeReservedVector<std::shared_ptr<UnsignedLongChunk>>(ncols);
+      auto keysRemaining = makeReservedVector<std::shared_ptr<UInt64Chunk>>(ncols);
       for (const auto &keys : modifiedRowsIndexSpace) {
         keysRemaining.push_back(keys->take(keys->size()));
       }
 
-      std::vector<std::shared_ptr<UnsignedLongChunk>> keysToModifyThisTime(ncols);
+      std::vector<std::shared_ptr<UInt64Chunk>> keysToModifyThisTime(ncols);
 
       auto processModifyBatch = [&state, &keysRemaining, &keysToModifyThisTime, ncols](
           const std::vector<std::shared_ptr<arrow::Array>> &data) {
@@ -195,10 +196,14 @@ void UpdateProcessor::classicRunForeverHelper() {
           processModifyBatch);
     }
 
-    auto table = state.snapshot();
+    auto currentTableKeySpace = state.snapshot();
+    // TODO
+    std::shared_ptr<Table> currentTableIndexSpace;
 
-    ClassicTickingUpdate update(std::move(removedRowsKeySpace),
-        std::move(addedRowsKeySpace), std::move(modifiedRowsKeySpace), std::move(table));
+    ClassicTickingUpdate update(std::move(removedRowsKeySpace), std::move(removedRowsIndexSpace),
+        std::move(addedRowsKeySpace), std::move(addedRowsIndexSpace),
+        std::move(modifiedRowsKeySpace), std::move(modifiedRowsIndexSpace),
+        std::move(currentTableKeySpace), std::move(currentTableIndexSpace));
     callback_->onTick(update);
   }
 }

@@ -24,7 +24,7 @@ public:
 
   virtual std::shared_ptr<Context> createContext(size_t chunkSize) const = 0;
   virtual void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const = 0;
-  virtual void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys, size_t size,
+  virtual void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys,
       Chunk *dest) const = 0;
 
   virtual void acceptVisitor(ColumnSourceVisitor *visitor) const = 0;
@@ -45,8 +45,8 @@ class NumericColumnSource : public virtual ColumnSource {
 };
 
 // convenience typedefs
-typedef NumericColumnSource<int32_t> IntColumnSource;
-typedef NumericColumnSource<int64_t> LongColumnSource;
+typedef NumericColumnSource<int32_t> Int32ColumnSource;
+typedef NumericColumnSource<int64_t> Int64ColumnSource;
 typedef NumericColumnSource<double> DoubleColumnSource;
 
 // the mutable per-type interfaces
@@ -187,8 +187,8 @@ void NumericArrayColumnSource<T>::ensureSize(size_t size) {
 
 class ColumnSourceVisitor {
 public:
-  virtual void visit(const IntColumnSource &) = 0;
-  virtual void visit(const LongColumnSource &) = 0;
+  virtual void visit(const Int32ColumnSource &) = 0;
+  virtual void visit(const Int64ColumnSource &) = 0;
   virtual void visit(const DoubleColumnSource &) = 0;
 };
 
