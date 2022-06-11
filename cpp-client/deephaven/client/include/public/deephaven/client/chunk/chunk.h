@@ -15,10 +15,10 @@ class NumericChunk final {
 public:
   static NumericChunk<T> create(size_t size);
 
-  NumericChunk();
-  NumericChunk(NumericChunk &&other) noexcept;
-  NumericChunk &operator=(const NumericChunk &other) noexcept;
-  ~NumericChunk();
+  NumericChunk() = default;
+  NumericChunk(NumericChunk &&other) noexcept = default;
+  NumericChunk &operator=(const NumericChunk &other) noexcept = default;
+  ~NumericChunk() = default;
 
   NumericChunk take(size_t size) const;
   NumericChunk drop(size_t size) const;
@@ -90,11 +90,6 @@ NumericChunk<T> NumericChunk<T>::create(size_t size) {
   auto data = std::shared_ptr<T[]>(new T[size]);
   return NumericChunk<T>(std::move(data), size);
 }
-
-template<typename T>
-NumericChunk<T>::NumericChunk() = default;
-template<typename T>
-NumericChunk<T>::~NumericChunk() = default;
 
 template<typename T>
 NumericChunk<T>::NumericChunk(std::shared_ptr<T[]> data, size_t size) :
