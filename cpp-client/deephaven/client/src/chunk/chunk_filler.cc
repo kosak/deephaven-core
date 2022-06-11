@@ -12,78 +12,56 @@ using deephaven::client::container::RowSequence;
 namespace deephaven::client::chunk {
 namespace {
 struct Visitor final : arrow::ArrayVisitor {
-  Visitor(const RowSequence &keys, Chunk *const dest) : keys_(keys), dest_(dest) {}
+  Visitor(const RowSequence &keys, AnyChunk *const dest) : keys_(keys), dest_(dest) {}
 
-  arrow::Status Visit(const arrow::Int32Array &array) final;
-  arrow::Status Visit(const arrow::Int64Array &array) final;
-  arrow::Status Visit(const arrow::DoubleArray &array) final;
+  arrow::Status Visit(const arrow::Int32Array &array) final {
+    return fillNumericChunk<int32_t>(array);
+  }
+
+  arrow::Status Visit(const arrow::Int64Array &array) final {
+    return fillNumericChunk<int64_t>(array);
+  }
+
+  arrow::Status Visit(const arrow::UInt64Array &array) final {
+    return fillNumericChunk<uint64_t>(array);
+  }
+
+  arrow::Status Visit(const arrow::DoubleArray &array) final {
+    return fillNumericChunk<double>(array);
+  }
+
+  template<typename T, typename TArrowAray>
+  arrow::Status fillNumericChunk(const TArrowAray &array) {
+    auto *typedDest = &dest_->template get<NumericChunk<T>>();
+    checkSize(typedDest->size());
+    size_t destIndex = 0;
+    auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
+      for (auto current = begin; current != end; ++current) {
+        auto val = array[(int64_t)current];
+        if (!val.has_value()) {
+          throw std::runtime_error(stringf("%o: Not handling nulls yet", __PRETTY_FUNCTION__));
+        }
+        typedDest->data()[destIndex] = *val;
+        ++destIndex;
+      }
+    };
+    keys_.forEachChunk(copyChunk);
+    return arrow::Status::OK();
+  }
+
+  void checkSize(size_t destSize) {
+    if (destSize < keys_.size()) {
+      throw std::runtime_error(stringf("destSize < keys_.size() (%d < %d)", destSize, keys_.size()));
+    }
+  }
 
   const RowSequence &keys_;
-  Chunk *const dest_;
-  std::shared_ptr<Chunk> result_;
+  AnyChunk *const dest_;
 };
 }  // namespace
 
-void ChunkFiller::fillChunk(const arrow::Array &src, const RowSequence &keys, Chunk *const dest) {
-  if (keys.size() < dest->size()) {
-    auto message = stringf("keys.size() < dest->capacity() (%d < %d)", keys.size(), dest->size());
-    throw std::runtime_error(message);
-  }
+void ChunkFiller::fillChunk(const arrow::Array &src, const RowSequence &keys, AnyChunk *const dest) {
   Visitor visitor(keys, dest);
   okOrThrow(DEEPHAVEN_EXPR_MSG(src.Accept(&visitor)));
 }
-
-namespace {
-arrow::Status Visitor::Visit(const arrow::Int32Array &array) {
-  auto *typedDest = verboseCast<Int32Chunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
-  int64_t destIndex = 0;
-  auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
-    for (auto current = begin; current != end; ++current) {
-      auto val = array[(int64_t)current];
-      if (!val.has_value()) {
-        auto message = stringf("%o: Not handling nulls yet", __PRETTY_FUNCTION__);
-        throw std::runtime_error(message);
-      }
-      typedDest->data()[destIndex++] = *val;
-    }
-  };
-  keys_.forEachChunk(copyChunk);
-  return arrow::Status::OK();
-}
-
-arrow::Status Visitor::Visit(const arrow::Int64Array &array) {
-  auto *typedDest = verboseCast<Int64Chunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
-  int64_t destIndex = 0;
-  auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
-    for (auto current = begin; current != end; ++current) {
-      auto val = array[(int64_t)current];
-      if (!val.has_value()) {
-        auto message = stringf("%o: Not handling nulls yet", __PRETTY_FUNCTION__);
-        throw std::runtime_error(message);
-      }
-      typedDest->data()[destIndex++] = *val;
-    }
-  };
-  keys_.forEachChunk(copyChunk);
-  return arrow::Status::OK();
-}
-
-arrow::Status Visitor::Visit(const arrow::DoubleArray &array) {
-  auto *typedDest = verboseCast<DoubleChunk*>(DEEPHAVEN_PRETTY_FUNCTION, dest_);
-  int64_t destIndex = 0;
-  auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
-    for (auto current = begin; current != end; ++current) {
-      auto val = array[(int64_t)current];
-      if (!val.has_value()) {
-        auto message = stringf("%o: Not handling nulls yet", __PRETTY_FUNCTION__);
-        throw std::runtime_error(message);
-      }
-      typedDest->data()[destIndex++] = *val;
-    }
-  };
-  keys_.forEachChunk(copyChunk);
-  return arrow::Status::OK();
-}
-}  // namespace
 }  // namespace deephaven::client::chunk
-

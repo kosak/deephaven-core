@@ -25,7 +25,7 @@ using deephaven::client::TickingCallback;
 using deephaven::client::ClassicTickingUpdate;
 using deephaven::client::ImmerTickingUpdate;
 using deephaven::client::chunk::ChunkMaker;
-using deephaven::client::chunk::Chunk;
+using deephaven::client::chunk::AnyChunk;
 using deephaven::client::chunk::ChunkVisitor;
 using deephaven::client::container::Context;
 using deephaven::client::container::RowSequence;
@@ -151,7 +151,7 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
 
   auto ncols = whichCols.size();
   auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
-  auto chunks = makeReservedVector<std::shared_ptr<Chunk>>(ncols);
+  auto chunks = makeReservedVector<AnyChunk>(ncols);
   for (auto col : whichCols) {
     const auto &c = table.getColumn(col);
     auto context = c->createContext(chunkSize);

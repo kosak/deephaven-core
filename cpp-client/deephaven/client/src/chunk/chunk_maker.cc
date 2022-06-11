@@ -17,11 +17,11 @@ struct Visitor final : ColumnSourceVisitor {
   void visit(const DoubleColumnSource &source) final;
 
   size_t chunkSize_;
-  std::shared_ptr<Chunk> result_;
+  AnyChunk result_;
 };
 }  // namespace
 
-std::shared_ptr<Chunk> ChunkMaker::createChunkFor(const ColumnSource &columnSource,
+AnyChunk ChunkMaker::createChunkFor(const ColumnSource &columnSource,
     size_t chunkSize) {
   Visitor v(chunkSize);
   columnSource.acceptVisitor(&v);
