@@ -86,23 +86,12 @@ void Callback::onFailure(std::exception_ptr ep) {
   failed_ = true;
 }
 
-class ElementStreamer final : public ChunkVisitor {
+class ElementStreamer final {
 public:
   ElementStreamer(std::ostream &s, size_t index) : s_(s), index_(index) {}
 
-  void visit(const Int32Chunk &chunk) const final {
-    s_ << chunk.data()[index_];
-  }
-
-  void visit(const Int64Chunk &chunk) const final {
-    s_ << chunk.data()[index_];
-  }
-
-  void visit(const UInt64Chunk &chunk) const final {
-    s_ << chunk.data()[index_];
-  }
-
-  void visit(const DoubleChunk &chunk) const final {
+  template<typename T>
+  void operator()(const T &chunk) const {
     s_ << chunk.data()[index_];
   }
 
@@ -171,14 +160,14 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
     for (size_t i = 0; i < ncols; ++i) {
       const auto &c = table.getColumn(whichCols[i]);
       const auto &context = contexts[i];
-      const auto &chunk = chunks[i];
-      c->fillChunk(context.get(), *chunkOfRows, chunk.get());
+      auto &chunk = chunks[i];
+      c->fillChunk(context.get(), *chunkOfRows, &chunk);
     }
 
     for (size_t j = 0; j < thisSize; ++j) {
       ElementStreamer es(std::cout, j);
-      auto chunkAcceptor = [&es](std::ostream &s, const std::shared_ptr<Chunk> &chunk) {
-        chunk->acceptVisitor(es);
+      auto chunkAcceptor = [&es](std::ostream &s, const AnyChunk &chunk) {
+        chunk.visit(es);
       };
       std::cout << separatedList(chunks.begin(), chunks.end(), ", ", chunkAcceptor) << '\n';
     }
@@ -319,7 +308,7 @@ void lastBy(const TableHandleManager &manager) {
 
   const long modSize = 10;
   auto table = manager.timeTable(start, 1 * 1'000'000'000L)
-      .select("Nanos = Timestamp.getNanos()",
+      .select("Nanos = ii",
           "Temp1 = (Nanos ^ (long)(Nanos / 65536)) * 0x8febca6b",
           "Temp2 = (Temp1 ^ ((long)(Temp1 / 8192))) * 0xc2b2ae35",
           "HashValue = Temp2 ^ (long)(Temp2 / 65536)");

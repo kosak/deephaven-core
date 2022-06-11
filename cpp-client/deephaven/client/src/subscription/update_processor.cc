@@ -142,7 +142,7 @@ void UpdateProcessor::classicRunForeverHelper() {
       addedRowsIndexSpace = state.addKeys(*addedRowsKeySpace);
 
       // Copy everything.
-      auto rowsRemaining = addedRowsIndexSpace->take(addedRowsIndexSpace->size());
+      auto rowsRemaining = addedRowsIndexSpace.take(addedRowsIndexSpace.size());
 
       auto processAddBatch = [&state, &rowsRemaining](
           const std::vector<std::shared_ptr<arrow::Array>> &data) {
@@ -150,9 +150,9 @@ void UpdateProcessor::classicRunForeverHelper() {
           return;
         }
         auto size = data[0]->length();
-        auto rowsToAddThisTime = rowsRemaining->take(size);
-        rowsRemaining = rowsRemaining->drop(size);
-        state.addData(data, *rowsToAddThisTime);
+        auto rowsToAddThisTime = rowsRemaining.take(size);
+        rowsRemaining = rowsRemaining.drop(size);
+        state.addData(data, rowsToAddThisTime);
       };
       BatchParser::parseBatches(*colDefs_, md.numAdds_, false, fsr_.get(), &flightStreamChunk,
           processAddBatch);
@@ -171,12 +171,12 @@ void UpdateProcessor::classicRunForeverHelper() {
     auto modifiedRowsIndexSpace = state.modifyKeys(modifiedRowsKeySpace);
     if (md.numMods_ != 0) {
       // Local copy of modifiedRowsIndexSpace
-      auto keysRemaining = makeReservedVector<std::shared_ptr<UInt64Chunk>>(ncols);
+      auto keysRemaining = makeReservedVector<UInt64Chunk>(ncols);
       for (const auto &keys : modifiedRowsIndexSpace) {
-        keysRemaining.push_back(keys->take(keys->size()));
+        keysRemaining.push_back(keys.take(keys.size()));
       }
 
-      std::vector<std::shared_ptr<UInt64Chunk>> keysToModifyThisTime(ncols);
+      std::vector<UInt64Chunk> keysToModifyThisTime(ncols);
 
       auto processModifyBatch = [&state, &keysRemaining, &keysToModifyThisTime, ncols](
           const std::vector<std::shared_ptr<arrow::Array>> &data) {
@@ -186,8 +186,8 @@ void UpdateProcessor::classicRunForeverHelper() {
         for (size_t i = 0; i < data.size(); ++i) {
           const auto &src = data[i];
           auto &krm = keysRemaining[i];
-          keysToModifyThisTime[i] = krm->take(src->length());
-          krm = krm->drop(src->length());
+          keysToModifyThisTime[i] = krm.take(src->length());
+          krm = krm.drop(src->length());
         }
         state.modifyData(data, keysToModifyThisTime);
       };

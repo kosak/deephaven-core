@@ -2,11 +2,11 @@
 
 namespace deephaven::client {
 ClassicTickingUpdate::ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRowsKeySpace,
-    std::shared_ptr<UInt64Chunk> removedRowsIndexSpace,
+    UInt64Chunk removedRowsIndexSpace,
     std::shared_ptr<RowSequence> addedRowsKeySpace,
-    std::shared_ptr<UInt64Chunk> addedRowsIndexSpace,
+    UInt64Chunk addedRowsIndexSpace,
     std::vector<std::shared_ptr<RowSequence>> modifiedRowsKeySpace,
-    std::vector<std::shared_ptr<UInt64Chunk>> modifiedRowsIndexSpace,
+    std::vector<UInt64Chunk> modifiedRowsIndexSpace,
     std::shared_ptr<Table> currentTableKeySpace,
     std::shared_ptr<Table> currentTableIndexSpace) :
     removedRowsKeySpace_(std::move(removedRowsKeySpace)),

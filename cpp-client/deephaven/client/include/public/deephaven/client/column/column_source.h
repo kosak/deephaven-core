@@ -47,6 +47,7 @@ class NumericColumnSource : public virtual ColumnSource {
 // convenience typedefs
 typedef NumericColumnSource<int32_t> Int32ColumnSource;
 typedef NumericColumnSource<int64_t> Int64ColumnSource;
+typedef NumericColumnSource<uint64_t> UInt64ColumnSource;
 typedef NumericColumnSource<double> DoubleColumnSource;
 
 // the mutable per-type interfaces
@@ -101,9 +102,9 @@ void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence 
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
-  auto &typedDest = dest->get<chunkType_t>();
+  auto *typedDest = &dest->get<chunkType_t>();
   // assert rows.size() <= dest->capacity()
-  assertLessEq(rows.size(), typedDest.size(), "rows.size()", "dest->size()", __PRETTY_FUNCTION__);
+  assertLessEq(rows.size(), typedDest->size(), "rows.size()", "typedDest->size()", __PRETTY_FUNCTION__);
 
   size_t destIndex = 0;
   auto applyChunk = [this, typedDest, &destIndex](uint64_t begin, uint64_t end) {
@@ -125,9 +126,9 @@ void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const UIn
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
-  auto &typedDest = dest->get<chunkType_t>();
+  auto *typedDest = &dest->get<chunkType_t>();
   // assert size <= dest->capacity()
-  assertLessEq(rowKeys.size(), typedDest.size(), "rowKeys.size()", "dest->size()", __PRETTY_FUNCTION__);
+  assertLessEq(rowKeys.size(), typedDest->size(), "rowKeys.size()", "typedDest->size()", __PRETTY_FUNCTION__);
 
   for (size_t i = 0; i < rowKeys.size(); ++i) {
     auto srcIndex = rowKeys.data()[i];
@@ -145,15 +146,13 @@ void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const AnyChunk
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
   const auto &typedSrc = src.get<chunkType_t>();
-  // assert size <= src.capacity()
   assertLessEq(rows.size(), typedSrc.size(), "rows.size()", "src.size()", __PRETTY_FUNCTION__);
 
-  size_t srcIndex = 0;
-  auto applyChunk = [this, typedSrc, &srcIndex](uint64_t begin, uint64_t end) {
+  const auto *srcp = typedSrc.data();
+  auto applyChunk = [this, &srcp](uint64_t begin, uint64_t end) {
     ensureSize(end);
     for (auto current = begin; current != end; ++current) {
-      data_[current] = typedSrc->data()[srcIndex];
-      ++srcIndex;
+      data_[current] = *srcp++;
     }
   };
   rows.forEachChunk(applyChunk);
@@ -174,7 +173,7 @@ void NumericArrayColumnSource<T>::fillFromChunkUnordered(Context *context, const
   for (size_t i = 0; i < typedSrc.size(); ++i) {
     auto destIndex = rowKeys.data()[i];
     ensureSize(destIndex + 1);
-    data_[destIndex] = typedSrc->data()[i];
+    data_[destIndex] = typedSrc.data()[i];
   }
 }
 
@@ -189,6 +188,7 @@ class ColumnSourceVisitor {
 public:
   virtual void visit(const Int32ColumnSource &) = 0;
   virtual void visit(const Int64ColumnSource &) = 0;
+  virtual void visit(const UInt64ColumnSource &) = 0;
   virtual void visit(const DoubleColumnSource &) = 0;
 };
 

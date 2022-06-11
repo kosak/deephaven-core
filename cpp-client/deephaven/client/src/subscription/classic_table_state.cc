@@ -62,10 +62,10 @@ ClassicTableState::ClassicTableState(const ColumnDefinitions &colDefs) :
 
 ClassicTableState::~ClassicTableState() = default;
 
-std::shared_ptr<UInt64Chunk> ClassicTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
+UInt64Chunk ClassicTableState::erase(const RowSequence &rowsToRemoveKeySpace) {
   auto nrows = rowsToRemoveKeySpace.size();
   auto result = UInt64Chunk::create(nrows);
-  auto *destp = result->data();
+  auto *destp = result.data();
   auto removeRange = [this, &destp](uint64_t beginKey, uint64_t endKey) {
     auto beginp = redirection_->find(beginKey);
     if (beginp == redirection_->end()) {
@@ -87,7 +87,7 @@ std::shared_ptr<UInt64Chunk> ClassicTableState::erase(const RowSequence &rowsToR
   return result;
 }
 
-std::shared_ptr<UInt64Chunk> ClassicTableState::addKeys(const RowSequence &addedRowsKeySpace) {
+UInt64Chunk ClassicTableState::addKeys(const RowSequence &addedRowsKeySpace) {
   // In order to give back an ordered row sequence (because at the moment we don't have an
   // unordered row sequence), we sort the keys we're going to reuse.
   auto nrows = addedRowsKeySpace.size();
@@ -99,7 +99,7 @@ std::shared_ptr<UInt64Chunk> ClassicTableState::addKeys(const RowSequence &added
   auto reuseCurrent = reuseBegin;
 
   auto result = UInt64Chunk::create(nrows);
-  auto *destp = result->data();
+  auto *destp = result.data();
   auto addRange = [this, &reuseCurrent, reuseEnd, &destp](uint64_t beginKey, uint64_t endKey) {
     for (auto current = beginKey; current != endKey; ++current) {
       uint64_t keyPositionSpace;
@@ -130,8 +130,8 @@ void ClassicTableState::addData(const std::vector<std::shared_ptr<arrow::Array>>
     auto *dest = columns_[i].get();
     auto context = dest->createContext(nrows);
     auto chunk = ChunkMaker::createChunkFor(*dest, nrows);
-    ChunkFiller::fillChunk(src, *sequentialRows, chunk.get());
-    dest->fillFromChunkUnordered(context.get(), *chunk, rowsToAddIndexSpace);
+    ChunkFiller::fillChunk(src, *sequentialRows, &chunk);
+    dest->fillFromChunkUnordered(context.get(), chunk, rowsToAddIndexSpace);
   }
 }
 
@@ -151,13 +151,13 @@ std::shared_ptr<Table> ClassicTableState::snapshot() const {
   return std::make_shared<TableView>(columns_, redirection_);
 }
 
-std::vector<std::shared_ptr<UInt64Chunk>> ClassicTableState::modifyKeys(
+std::vector<UInt64Chunk> ClassicTableState::modifyKeys(
     const std::vector<std::shared_ptr<RowSequence>> &rowsToModifyKeySpace) {
   auto nrows = rowsToModifyKeySpace.size();
   auto sequentialRows = RowSequence::createSequential(0, nrows);
 
   auto ncols = rowsToModifyKeySpace.size();
-  auto result = makeReservedVector<std::shared_ptr<UInt64Chunk>>(ncols);
+  auto result = makeReservedVector<UInt64Chunk>(ncols);
   for (size_t i = 0; i < ncols; ++i) {
     auto rowSequence = modifyKeysHelper(*rowsToModifyKeySpace[i]);
     result.push_back(std::move(rowSequence));
@@ -165,11 +165,11 @@ std::vector<std::shared_ptr<UInt64Chunk>> ClassicTableState::modifyKeys(
   return result;
 }
 
-std::shared_ptr<UInt64Chunk> ClassicTableState::modifyKeysHelper(
+UInt64Chunk ClassicTableState::modifyKeysHelper(
     const RowSequence &rowsToModifyKeySpace) {
   auto nrows = rowsToModifyKeySpace.size();
   auto result = UInt64Chunk::create(nrows);
-  auto *destp = result->data();
+  auto *destp = result.data();
   auto modifyRange = [this, &destp](uint64_t beginKey, uint64_t endKey) {
     auto beginp = redirection_->find(beginKey);
     if (beginp == redirection_->end()) {
@@ -187,25 +187,25 @@ std::shared_ptr<UInt64Chunk> ClassicTableState::modifyKeysHelper(
     }
   };
   rowsToModifyKeySpace.forEachChunk(modifyRange);
-  if (destp != result->data() + nrows) {
+  if (destp != result.data() + nrows) {
     throw std::runtime_error("destp != result->data() + nrows");
   }
   return result;
 }
 
 void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Array>> &src,
-    const std::vector<std::shared_ptr<UInt64Chunk>> &rowsToModifyIndexSpace) {
+    const std::vector<UInt64Chunk> &rowsToModifyIndexSpace) {
   auto ncols = rowsToModifyIndexSpace.size();
   for (size_t i = 0; i < ncols; ++i) {
-    const auto &rows = *rowsToModifyIndexSpace[i];
+    const auto &rows = rowsToModifyIndexSpace[i];
     const auto &srcArray = *src[i];
     auto *destCol = columns_[i].get();
     auto nrows = rows.size();
     auto sequentialRows = RowSequence::createSequential(0, nrows);
     auto context = destCol->createContext(nrows);
     auto chunk = ChunkMaker::createChunkFor(*destCol, nrows);
-    ChunkFiller::fillChunk(srcArray, *sequentialRows, chunk.get());
-    destCol->fillFromChunkUnordered(context.get(), *chunk, rows);
+    ChunkFiller::fillChunk(srcArray, *sequentialRows, &chunk);
+    destCol->fillFromChunkUnordered(context.get(), chunk, rows);
   }
 }
 

@@ -12,15 +12,16 @@ void checkSize(size_t proposedSize, size_t size, std::string_view what);
 }
 template<typename T>
 class NumericChunk final {
-  struct Private {};
 public:
   static NumericChunk<T> create(size_t size);
 
-  NumericChunk(Private, std::shared_ptr<T[]> data, size_t size);
+  NumericChunk();
+  NumericChunk(NumericChunk &&other) noexcept;
+  NumericChunk &operator=(const NumericChunk &other) noexcept;
   ~NumericChunk();
 
-  std::shared_ptr<NumericChunk> take(size_t size) const;
-  std::shared_ptr<NumericChunk> drop(size_t size) const;
+  NumericChunk take(size_t size) const;
+  NumericChunk drop(size_t size) const;
 
   T *data() { return data_.get(); }
   const T *data() const { return data_.get(); }
@@ -33,7 +34,9 @@ public:
 
   size_t size() const { return size_; }
 
-protected:
+private:
+  NumericChunk(std::shared_ptr<T[]> data, size_t size);
+
   friend std::ostream &operator<<(std::ostream &s, const NumericChunk &o) {
     using deephaven::client::utility::separatedList;
     return s << '[' << separatedList(o.begin(), o.end()) << ']';
@@ -61,6 +64,11 @@ public:
     return *this;
   }
 
+  template<typename Visitor>
+  void visit(Visitor &&visitor) const {
+    std::visit(std::forward<Visitor>(visitor), variant_);
+  }
+
   template<typename T>
   const T &get() const {
     return std::get<T>(variant_);
@@ -80,29 +88,34 @@ template<typename T>
 NumericChunk<T> NumericChunk<T>::create(size_t size) {
   // Note: wanted to use make_shared, but std::make_shared<T[]>(size) doesn't DTRT until C++20
   auto data = std::shared_ptr<T[]>(new T[size]);
-  return NumericChunk<T>(Private(), std::move(data), size);
+  return NumericChunk<T>(std::move(data), size);
 }
 
 template<typename T>
-NumericChunk<T>::NumericChunk(Private, std::shared_ptr<T[]> data, size_t size) :
+NumericChunk<T>::NumericChunk() = default;
+template<typename T>
+NumericChunk<T>::~NumericChunk() = default;
+
+template<typename T>
+NumericChunk<T>::NumericChunk(std::shared_ptr<T[]> data, size_t size) :
   data_(std::move(data)), size_(size) {}
 
 template<typename T>
-std::shared_ptr<NumericChunk<T>> NumericChunk<T>::take(size_t size) const {
+NumericChunk<T> NumericChunk<T>::take(size_t size) const {
   internal::checkSize(size, size_, DEEPHAVEN_PRETTY_FUNCTION);
-  // Share ownership of data_ but yield different value
-  return std::make_shared<NumericChunk<T>>(Private(), data_, size);
+  // Share ownership of data_.
+  return NumericChunk<T>(data_, size);
 }
 
 template<typename T>
-std::shared_ptr<NumericChunk<T>> NumericChunk<T>::drop(size_t size) const {
-  checkSize(DEEPHAVEN_PRETTY_FUNCTION, size);
-  // Share ownership of data_ but yield different value
+NumericChunk<T> NumericChunk<T>::drop(size_t size) const {
+  internal::checkSize(size, size_, DEEPHAVEN_PRETTY_FUNCTION);
+  // Share ownership of data_, but the value of the pointer yielded by std::shared_ptr<T>::get()
+  // is actually data_.get() + size.
   std::shared_ptr<T[]> newBegin(data_, data_.get() + size);
   auto newSize = size_ - size;
-  return std::make_shared<NumericChunk<T>>(Private(), std::move(newBegin), newSize);
+  return NumericChunk<T>(std::move(newBegin), newSize);
 }
-
 
 class ChunkVisitor {
 public:

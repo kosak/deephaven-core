@@ -33,29 +33,23 @@ protected:
 
 public:
   ClassicTickingUpdate(std::shared_ptr<RowSequence> removedRowsKeySpace,
-      std::shared_ptr<UInt64Chunk> removedRowsIndexSpace,
+      UInt64Chunk removedRowsIndexSpace,
       std::shared_ptr<RowSequence> addedRowsKeySpace,
-      std::shared_ptr<UInt64Chunk> addedRowsIndexSpace,
+      UInt64Chunk addedRowsIndexSpace,
       std::vector<std::shared_ptr<RowSequence>> modifiedRowsKeySpace,
-      std::vector<std::shared_ptr<UInt64Chunk>> modifiedRowsIndexSpace,
+      std::vector<UInt64Chunk> modifiedRowsIndexSpace,
       std::shared_ptr<Table> currentTableKeySpace,
       std::shared_ptr<Table> currentTableIndexSpace);
-//  : removedRowsKeySpace_(
-//      removedRowsKeySpace), removedRowsIndexSpace_(removedRowsIndexSpace),
-//      addedRowsKeySpace_(addedRowsKeySpace), addedRowsIndexSpace_(addedRowsIndexSpace),
-//      modifiedRowsKeySpace_(modifiedRowsKeySpace), modifiedRowsIndexSpace_(modifiedRowsIndexSpace),
-//      currentTableKeySpace_(currentTableKeySpace),
-//      currentTableIndexSpace_(currentTableIndexSpace) {}
   ClassicTickingUpdate(ClassicTickingUpdate &&other) noexcept;
   ClassicTickingUpdate &operator=(ClassicTickingUpdate &&other) noexcept;
   ~ClassicTickingUpdate();
 
   const std::shared_ptr<RowSequence> &removedRowsKeySpace() const { return removedRowsKeySpace_; }
-  const std::shared_ptr<UInt64Chunk> &removedRowsIndexSpace() const { return removedRowsIndexSpace_; }
+  const UInt64Chunk &removedRowsIndexSpace() const { return removedRowsIndexSpace_; }
   const std::shared_ptr<RowSequence> &addedRowsKeySpace() const { return addedRowsKeySpace_; }
-  const std::shared_ptr<UInt64Chunk> &addedRowsIndexSpace() const { return addedRowsIndexSpace_; }
+  const UInt64Chunk &addedRowsIndexSpace() const { return addedRowsIndexSpace_; }
   const std::vector<std::shared_ptr<RowSequence>> &modifiedRowsKeySpace() const { return modifiedRowsKeySpace_; }
-  const std::vector<std::shared_ptr<UInt64Chunk>> &modifiedRowsIndexSpace() const { return modifiedRowsIndexSpace_; }
+  const std::vector<UInt64Chunk> &modifiedRowsIndexSpace() const { return modifiedRowsIndexSpace_; }
   const std::shared_ptr<Table> &currentTableKeySpace() const { return currentTableKeySpace_; }
   const std::shared_ptr<Table> &currentTableIndexSpace() const { return currentTableIndexSpace_; }
 
@@ -63,15 +57,15 @@ private:
   // In the pre-shift key space
   std::shared_ptr<RowSequence> removedRowsKeySpace_;
   // In the pre-shift index space
-  std::shared_ptr<UInt64Chunk> removedRowsIndexSpace_;
+  UInt64Chunk removedRowsIndexSpace_;
   // In the post-shift key space
   std::shared_ptr<RowSequence> addedRowsKeySpace_;
   // In the post-shift index space
-  std::shared_ptr<UInt64Chunk> addedRowsIndexSpace_;
+  UInt64Chunk addedRowsIndexSpace_;
   // In the post-shift key space
   std::vector<std::shared_ptr<RowSequence>> modifiedRowsKeySpace_;
   // In the post-shift index space
-  std::vector<std::shared_ptr<UInt64Chunk>> modifiedRowsIndexSpace_;
+  std::vector<UInt64Chunk> modifiedRowsIndexSpace_;
 
   std::shared_ptr<Table> currentTableKeySpace_;
   std::shared_ptr<Table> currentTableIndexSpace_;
