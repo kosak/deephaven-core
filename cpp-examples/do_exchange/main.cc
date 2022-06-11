@@ -86,6 +86,12 @@ public:
   void onTick(const ImmerTickingUpdate &update) final;
 
 private:
+  void processClassicCommon(const Table &table, const UInt64Chunk &affectedRows);
+  void processImmerCommon(const Table &table, const RowSequence &affectedRows);
+  void updateCache(const Int64Chunk &tableContentsKeys, const Int64Chunk &tableContentsValues);
+  void periodicCheck();
+  void ensure(size_t size);
+
   std::vector<int64_t> latestValues_;
 };
 
@@ -375,25 +381,14 @@ void lastBy(const TableHandleManager &manager) {
 }
 
 void DemoCallback::onTick(const ClassicTickingUpdate &update) {
-  processClassicAdds(*currentTableIndexSpace, update.addedRowsIndexSpace());
-  processClassicModifies(*currentTableIndexSpace, update.modifiedRowsIndexSpace());
-  if (zamboniTime - lastTime > 1 sec) {
-    lastTime = zamboniTime;
-    showUpdate();
-  }
-}
-
-void DemoCallback::processClassicAdds(const Table &table, const UInt64Chunk &addedRows) {
+  const auto &table = *update.currentTableIndexSpace();
+  const auto &addedRows = update.addedRowsIndexSpace();
   if (table.numColumns() != 2) {
     throw std::runtime_error(stringf("Expected 2 columns, got %o", table.numColumns()));
   }
   processClassicCommon(table, addedRows);
-}
 
-void DemoCallback::processClassicModifies(const Table &table, const std::vector<UInt64Chunk> &modifiedRows) {
-  if (table.numColumns() != 2) {
-    throw std::runtime_error(stringf("Expected 2 columns, got %o", table.numColumns()));
-  }
+  const auto &modifiedRows = update.modifiedRowsIndexSpace();
   if (modifiedRows.size() != 2) {
     throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modifiedRows.size()));
   }
@@ -403,6 +398,7 @@ void DemoCallback::processClassicModifies(const Table &table, const std::vector<
     throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o", tableContentsKeyMods.size()));
   }
   processClassicCommon(table, tableContenstsValueMods);
+  periodicCheck();
 }
 
 void DemoCallback::processClassicCommon(const Table &table, const UInt64Chunk &affectedRows) {
@@ -421,34 +417,25 @@ void DemoCallback::processClassicCommon(const Table &table, const UInt64Chunk &a
 }
 
 void DemoCallback::onTick(const ImmerTickingUpdate &update) {
-  processImmerAdds(*update.current(), update.added());
-  processImmerModifies(*update.current(), update.modified());
-  if (zamboniTime - lastTime > 1 sec) {
-    lastTime = zamboniTime;
-    showUpdate();
-  }
-}
-
-void DemoCallback::processImmerAdds(const Table &table, const RowSequence &addedRows) {
+  const auto &table = *update.current();
+  const auto &added = *update.added();
   if (table.numColumns() != 2) {
     throw std::runtime_error(stringf("Expected 2 columns, got %o", table.numColumns()));
   }
-  processImmerCommon(table, addedRows);
-}
+  processImmerCommon(table, added);
 
-void DemoCallback::processImmerModifies(const Table &table, const std::vector<RowSequence> &modifiedRows) {
-  if (table.numColumns() != 2) {
-    throw std::runtime_error(stringf("Expected 2 columns, got %o", table.numColumns()));
+  const auto &modified = update.modified();
+  if (modified.size() != 2) {
+    throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modified.size()));
   }
-  if (modifiedRows.size() != 2) {
-    throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modifiedRows.size()));
-  }
-  const auto &tableContentsKeyMods = modifiedRows[0];
-  const auto &tableContenstsValueMods = modifiedRows[1];
+  const auto &tableContentsKeyMods = *modified[0];
+  const auto &tableContenstsValueMods = *modified[1];
   if (tableContentsKeyMods.size() != 0) {
-    throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o", tableContentsKeyMods.size()));
+    throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o",
+        tableContentsKeyMods.size()));
   }
   processImmerCommon(table, tableContenstsValueMods);
+  periodicCheck();
 }
 
 void DemoCallback::processImmerCommon(const Table &table, const RowSequence &affectedRows) {
@@ -469,7 +456,8 @@ void DemoCallback::processImmerCommon(const Table &table, const RowSequence &aff
 void DemoCallback::updateCache(const Int64Chunk &tableContentsKeys, const Int64Chunk &tableContentsValues) {
   auto size = tableContentsKeys.size();
   if (size != tableContentsValues.size()) {
-    throw std::runtime_error(stringf("Expected tableContentsKeys.size() == tableContentsValues.size(), got (%o != %o)",
+    throw std::runtime_error(
+        stringf("Expected tableContentsKeys.size() == tableContentsValues.size(), got (%o != %o)",
         size, tableContentsValues.size()));
   }
   for (size_t i = 0; i < size; ++i) {
