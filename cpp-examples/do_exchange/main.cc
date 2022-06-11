@@ -50,6 +50,7 @@ void doit(const TableHandleManager &manager);
 void makeModifiesHappen(const TableHandleManager &manager);
 void millionRows(const TableHandleManager &manager);
 void lastBy(const TableHandleManager &manager);
+void demo(const TableHandleManager &manager);
 }  // namespace
 
 int main() {
@@ -57,7 +58,7 @@ int main() {
   try {
     auto client = Client::connect(server);
     auto manager = client.getManager();
-    lastBy(manager);
+    demo(manager);
   } catch (const std::exception &e) {
     std::cerr << "Caught exception: " << e.what() << '\n';
   }
@@ -302,22 +303,53 @@ void millionRows(const TableHandleManager &manager) {
   std::cerr << "exiting\n";
 }
 
+void demo(const TableHandleManager &manager) {
+  auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+
+  const long modSize = 1000;
+  auto table = manager.timeTable(start, 1 * 10'000'000L)
+      .select("II = ii")
+      .where("II < 2000")
+      .select("Temp1 = (II ^ (long)(II / 65536)) * 0x8febca6b",
+          "Temp2 = (Temp1 ^ ((long)(Temp1 / 8192))) * 0xc2b2ae35",
+          "HashValue = Temp2 ^ (long)(Temp2 / 65536)",
+          "II");
+
+  // might as well use this interface once in a while
+  auto [hv, ii] = table.getCols<NumCol, NumCol>("HashValue", "II");
+  auto t2 = table.select((hv % modSize).as("Key"), "Value = II");
+  auto key = t2.getNumCol("Key");
+  auto lb = t2.lastBy(key).sort({key.ascending()});
+
+  lb.bindToVariable("showme");
+
+  auto myCallback = std::make_shared<Callback>();
+  auto handle = lb.subscribe(myCallback, true);
+  std::this_thread::sleep_for(std::chrono::seconds(5'000));
+  std::cerr << "I unsubscribed here\n";
+  lb.unsubscribe(handle);
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::cerr << "exiting\n";
+}
+
+
 void lastBy(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
 
   const long modSize = 10;
-  auto table = manager.timeTable(start, 1 * 1'000'000'000L)
-      .select("Nanos = Timestamp.getNanos()",
-          "SuperNubbin = ii",
-          "Temp1 = (Nanos ^ (long)(Nanos / 65536)) * 0x8febca6b",
+  auto table = manager.timeTable(start, 1 * 10'000'000L)
+      .select("II = ii")
+      .where("II < 2000")
+      .select("Temp1 = (II ^ (long)(II / 65536)) * 0x8febca6b",
           "Temp2 = (Temp1 ^ ((long)(Temp1 / 8192))) * 0xc2b2ae35",
-          "HashValue = Temp2 ^ (long)(Temp2 / 65536)");
+          "HashValue = Temp2 ^ (long)(Temp2 / 65536)",
+          "II");
 
   // might as well use this interface once in a while
-  auto [hv, nanos] = table.getCols<NumCol, NumCol>("HashValue", "Nanos");
-  auto t2 = table.select((hv % modSize).as("Key"), "Value = (long)(Nanos / 1_000_000_000)", "Value2 = SuperNubbin");
-  // auto t2 = table.select(hv.as("Key"), nanos.as("Value"));
+  auto [hv, ii] = table.getCols<NumCol, NumCol>("HashValue", "II");
+  auto t2 = table.select((hv % modSize).as("Key"), "Value = II");
   auto key = t2.getNumCol("Key");
   auto lb = t2.lastBy(key).sort({key.ascending()});
 
