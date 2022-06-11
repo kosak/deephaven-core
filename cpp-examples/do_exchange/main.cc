@@ -64,7 +64,7 @@ int main() {
   }
 }
 
-// Hey, we should standardize on either deephaven or io::deephaven
+// TODO(kosaK): we should standardize on either deephaven or io::deephaven
 
 namespace {
 class Callback final : public TickingCallback {
@@ -77,6 +77,16 @@ public:
 
 private:
   std::atomic<bool> failed_ = false;
+};
+
+class DemoCallback final : public TickingCallback {
+public:
+  void onFailure(std::exception_ptr ep) final;
+  void onTick(const ClassicTickingUpdate &update) final;
+  void onTick(const ImmerTickingUpdate &update) final;
+
+private:
+  std::vector<int64_t> latestValues_;
 };
 
 // or maybe make a stream manipulator
@@ -308,17 +318,17 @@ void demo(const TableHandleManager &manager) {
       std::chrono::system_clock::now().time_since_epoch()).count();
 
   const long modSize = 1000;
-  auto table = manager.timeTable(start, 1 * 10'000'000L)
-      .select("II = ii")
-      .where("II < 2000")
-      .select("Temp1 = (II ^ (long)(II / 65536)) * 0x8febca6b",
+  auto table = manager.timeTable(start, 1 * 1'000'000L)
+      .view("II = ii")
+      .where("II < 10_000")
+      .view("Temp1 = (II ^ (long)(II / 65536)) * 0x8febca6b",
           "Temp2 = (Temp1 ^ ((long)(Temp1 / 8192))) * 0xc2b2ae35",
           "HashValue = Temp2 ^ (long)(Temp2 / 65536)",
           "II");
 
   // might as well use this interface once in a while
   auto [hv, ii] = table.getCols<NumCol, NumCol>("HashValue", "II");
-  auto t2 = table.select((hv % modSize).as("Key"), "Value = II");
+  auto t2 = table.view((hv % modSize).as("Key"), "Value = II");
   auto key = t2.getNumCol("Key");
   auto lb = t2.lastBy(key).sort({key.ascending()});
 
@@ -362,6 +372,33 @@ void lastBy(const TableHandleManager &manager) {
   lb.unsubscribe(handle);
   std::this_thread::sleep_for(std::chrono::seconds(5));
   std::cerr << "exiting\n";
+}
+
+void DemoCallback::onTick(const ClassicTickingUpdate &update) {
+  processClassicAdds(*currentTableIndexSpace, update.addedRowsIndexSpace());
+  processClassicModifies(*currentTableIndexSpace, update.modifiedRowsIndexSpace());
+  if (zamboniTime - lastTime > 1 sec) {
+    lastTime = zamboniTime;
+    showUpdate();
+  }
+}
+
+void DemoCallback::processClassicAdds() {
+
+}
+
+
+void DemoCallback::onTick(const ImmerTickingUpdate &update) {
+  const auto &adds = update.added();
+  const auto &mods = update.modified();
+  adds->forEachChunk(processAdd);
+  for (size_t i = 0; i < update.modified().size(); ++i) {
+    mods[i]->forEachChunk(processModified);
+  }
+  if (zamboniTime - lastTime > 1 sec) {
+    lastTime = zamboniTime;
+    showUpdate();
+  }
 }
 
 std::string getWhat(std::exception_ptr ep) {

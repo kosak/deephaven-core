@@ -87,14 +87,17 @@ public:
   ImmerTickingUpdate &operator=(ImmerTickingUpdate &&other) noexcept;
   ~ImmerTickingUpdate();
 
+  // Note: the table is flat.
   const std::shared_ptr<Table> &beforeRemoves() const { return beforeRemoves_; }
+  // Note: the table is flat.
   const std::shared_ptr<Table> &beforeModifies() const { return beforeModifies_; }
+  // Note: the table is flat.
   const std::shared_ptr<Table> &current() const { return current_; }
   // In the key space of 'prevTable'
   const std::shared_ptr<RowSequence> &removed() const { return removed_; }
-  // In the key space of 'thisTable'
+  // In the key space of 'current'
   const std::vector<std::shared_ptr<RowSequence>> &modified() const { return modified_; }
-  // In the key space of 'thisTable'
+  // In the key space of 'current'
   const std::shared_ptr<RowSequence> &added() const { return added_; }
 
 private:
