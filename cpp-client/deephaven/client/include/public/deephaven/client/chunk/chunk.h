@@ -140,7 +140,6 @@ struct TypeToChunk<uint64_t> {
   typedef deephaven::client::chunk::UInt64Chunk type_t;
 };
 
-
 template<>
 struct TypeToChunk<double> {
   typedef deephaven::client::chunk::DoubleChunk type_t;
