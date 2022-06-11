@@ -420,6 +420,52 @@ void DemoCallback::processClassicCommon(const Table &table, const UInt64Chunk &a
   updateCache(tableContentsKeys, tableContentsValues);
 }
 
+void DemoCallback::onTick(const ImmerTickingUpdate &update) {
+  processImmerAdds(*update.current(), update.added());
+  processImmerModifies(*update.current(), update.modified());
+  if (zamboniTime - lastTime > 1 sec) {
+    lastTime = zamboniTime;
+    showUpdate();
+  }
+}
+
+void DemoCallback::processImmerAdds(const Table &table, const RowSequence &addedRows) {
+  if (table.numColumns() != 2) {
+    throw std::runtime_error(stringf("Expected 2 columns, got %o", table.numColumns()));
+  }
+  processImmerCommon(table, addedRows);
+}
+
+void DemoCallback::processImmerModifies(const Table &table, const std::vector<RowSequence> &modifiedRows) {
+  if (table.numColumns() != 2) {
+    throw std::runtime_error(stringf("Expected 2 columns, got %o", table.numColumns()));
+  }
+  if (modifiedRows.size() != 2) {
+    throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modifiedRows.size()));
+  }
+  const auto &tableContentsKeyMods = modifiedRows[0];
+  const auto &tableContenstsValueMods = modifiedRows[1];
+  if (tableContentsKeyMods.size() != 0) {
+    throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o", tableContentsKeyMods.size()));
+  }
+  processImmerCommon(table, tableContenstsValueMods);
+}
+
+void DemoCallback::processImmerCommon(const Table &table, const RowSequence &affectedRows) {
+  auto nrows = affectedRows.size();
+  auto tableContentsKeys = Int64Chunk::create(nrows);
+  auto tableContentsValues = Int64Chunk::create(nrows);
+  AnyChunk tcKeysWrapper(tableContentsKeys);
+  AnyChunk tcValuesWrapper(tableContentsValues);
+  const auto &keyCol = table.getColumn(0);
+  const auto &valueCol = table.getColumn(1);
+  auto keyContext = keyCol->createContext(nrows);
+  auto valueContext = keyCol->createContext(nrows);
+  keyCol->fillChunk(keyContext.get(), affectedRows, &tcKeysWrapper);
+  keyCol->fillChunk(valueContext.get(), affectedRows, &tcValuesWrapper);
+  updateCache(tableContentsKeys, tableContentsValues);
+}
+
 void DemoCallback::updateCache(const Int64Chunk &tableContentsKeys, const Int64Chunk &tableContentsValues) {
   auto size = tableContentsKeys.size();
   if (size != tableContentsValues.size()) {
@@ -434,16 +480,9 @@ void DemoCallback::updateCache(const Int64Chunk &tableContentsKeys, const Int64C
   }
 }
 
-void DemoCallback::onTick(const ImmerTickingUpdate &update) {
-  const auto &adds = update.added();
-  const auto &mods = update.modified();
-  adds->forEachChunk(processAdd);
-  for (size_t i = 0; i < update.modified().size(); ++i) {
-    mods[i]->forEachChunk(processModified);
-  }
-  if (zamboniTime - lastTime > 1 sec) {
-    lastTime = zamboniTime;
-    showUpdate();
+void DemoCallback::ensure(size_t size) {
+  if (size < latestValues_.size()) {
+    latestValues_.resize(size);
   }
 }
 
