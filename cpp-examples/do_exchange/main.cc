@@ -177,7 +177,7 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
     for (size_t i = 0; i < ncols; ++i) {
       const auto &c = table.getColumn(whichCols[i]);
       const auto &context = contexts[i];
-      auto &chunk = chunks[i];
+      auto &chunk = chunks[i].unwrap();
       c->fillChunk(context.get(), *chunkOfRows, &chunk);
     }
 
@@ -405,14 +405,12 @@ void DemoCallback::processClassicCommon(const Table &table, const UInt64Chunk &a
   auto nrows = affectedRows.size();
   auto tableContentsKeys = Int64Chunk::create(nrows);
   auto tableContentsValues = Int64Chunk::create(nrows);
-  AnyChunk tcKeysWrapper(tableContentsKeys);
-  AnyChunk tcValuesWrapper(tableContentsValues);
   const auto &keyCol = table.getColumn(0);
   const auto &valueCol = table.getColumn(1);
   auto keyContext = keyCol->createContext(nrows);
   auto valueContext = keyCol->createContext(nrows);
-  keyCol->fillChunkUnordered(keyContext.get(), affectedRows, &tcKeysWrapper);
-  keyCol->fillChunkUnordered(valueContext.get(), affectedRows, &tcValuesWrapper);
+  keyCol->fillChunkUnordered(keyContext.get(), affectedRows, &tableContentsKeys);
+  keyCol->fillChunkUnordered(valueContext.get(), affectedRows, &tableContentsValues);
   updateCache(tableContentsKeys, tableContentsValues);
 }
 
@@ -442,14 +440,12 @@ void DemoCallback::processImmerCommon(const Table &table, const RowSequence &aff
   auto nrows = affectedRows.size();
   auto tableContentsKeys = Int64Chunk::create(nrows);
   auto tableContentsValues = Int64Chunk::create(nrows);
-  AnyChunk tcKeysWrapper(tableContentsKeys);
-  AnyChunk tcValuesWrapper(tableContentsValues);
   const auto &keyCol = table.getColumn(0);
   const auto &valueCol = table.getColumn(1);
   auto keyContext = keyCol->createContext(nrows);
   auto valueContext = keyCol->createContext(nrows);
-  keyCol->fillChunk(keyContext.get(), affectedRows, &tcKeysWrapper);
-  keyCol->fillChunk(valueContext.get(), affectedRows, &tcValuesWrapper);
+  keyCol->fillChunk(keyContext.get(), affectedRows, &tableContentsKeys);
+  keyCol->fillChunk(valueContext.get(), affectedRows, &tableContentsValues);
   updateCache(tableContentsKeys, tableContentsValues);
 }
 

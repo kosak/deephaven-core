@@ -10,7 +10,7 @@ template<typename T>
 class ImmerColumnSource final : public deephaven::client::column::NumericColumnSource<T>,
     std::enable_shared_from_this<ImmerColumnSource<T>> {
 protected:
-  typedef deephaven::client::chunk::AnyChunk AnyChunk;
+  typedef deephaven::client::chunk::Chunk Chunk;
   typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
   typedef deephaven::client::column::ColumnSourceVisitor ColumnSourceVisitor;
   typedef deephaven::client::container::Context Context;
@@ -25,12 +25,12 @@ public:
     return std::make_shared<Context>();
   }
 
-  void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys, AnyChunk *dest) const {
+  void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys, Chunk *dest) const final {
     using deephaven::client::utility::stringf;
-    throw std::runtime_error(stringf("TODO(kosak): %o", __PRETTY_FUNCTION__));
+    throw std::runtime_error(stringf("TODO(kosak): %o", DEEPHAVEN_PRETTY_FUNCTION));
   }
 
-  void fillChunk(Context *context, const RowSequence &rows, AnyChunk *dest) const final;
+  void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const final;
 
   void acceptVisitor(ColumnSourceVisitor *visitor) const final;
 
@@ -39,14 +39,16 @@ private:
 };
 
 template<typename T>
-void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, AnyChunk *dest) const {
+void ImmerColumnSource<T>::fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::streamf;
+  using deephaven::client::utility::verboseCast;
 
   typedef typename TypeToChunk<T>::type_t chunkType_t;
-  auto *typedDest = &dest->template get<chunkType_t>();
-  assertLessEq(rows.size(), typedDest->size(), __PRETTY_FUNCTION__, "rows.size()", "typedDest->size()");
+
+  auto *typedDest = verboseCast<chunkType_t*>(dest, DEEPHAVEN_PRETTY_FUNCTION);
+  assertLessEq(rows.size(), typedDest->size(), DEEPHAVEN_PRETTY_FUNCTION, "rows.size()", "typedDest->size()");
   auto *destp = typedDest->data();
 
   auto copyDataInner = [&destp](const T *dataBegin, const T *dataEnd) {

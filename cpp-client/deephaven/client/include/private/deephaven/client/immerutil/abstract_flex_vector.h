@@ -67,16 +67,16 @@ public:
   }
 
   void inPlaceAppend(std::unique_ptr<AbstractFlexVectorBase> other) final {
-    auto *otherVec = deephaven::client::utility::verboseCast<AbstractFlexVector*>(
-        DEEPHAVEN_PRETTY_FUNCTION, other.get());
+    auto *otherVec = deephaven::client::utility::verboseCast<AbstractFlexVector*>(other.get(),
+        DEEPHAVEN_PRETTY_FUNCTION);
     auto temp = std::move(vec_) + std::move(otherVec->vec_);
     vec_ = std::move(temp);
   }
 
   void inPlaceAppendArrow(const arrow::Array &data) final {
     typedef typename internal::CorrespondingArrowArrayType<T>::type_t arrowArrayType_t;
-    auto *typedArrow = deephaven::client::utility::verboseCast<const arrowArrayType_t*>(
-        __PRETTY_FUNCTION__, &data);
+    auto *typedArrow = deephaven::client::utility::verboseCast<const arrowArrayType_t*>(&data,
+        DEEPHAVEN_PRETTY_FUNCTION);
     auto transient = vec_.transient();
     for (auto element : *typedArrow) {
       if (!element.has_value()) {

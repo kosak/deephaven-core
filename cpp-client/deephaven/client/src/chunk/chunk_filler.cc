@@ -12,7 +12,7 @@ using deephaven::client::container::RowSequence;
 namespace deephaven::client::chunk {
 namespace {
 struct Visitor final : arrow::ArrayVisitor {
-  Visitor(const RowSequence &keys, AnyChunk *const dest) : keys_(keys), dest_(dest) {}
+  Visitor(const RowSequence &keys, Chunk *dest) : keys_(keys), dest_(dest) {}
 
   arrow::Status Visit(const arrow::Int32Array &array) final {
     return fillNumericChunk<int32_t>(array);
@@ -32,7 +32,7 @@ struct Visitor final : arrow::ArrayVisitor {
 
   template<typename T, typename TArrowAray>
   arrow::Status fillNumericChunk(const TArrowAray &array) {
-    auto *typedDest = &dest_->template get<NumericChunk<T>>();
+    auto *typedDest = verboseCast<NumericChunk<T>*>(dest_, DEEPHAVEN_PRETTY_FUNCTION);
     checkSize(typedDest->size());
     size_t destIndex = 0;
     auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {
@@ -56,11 +56,11 @@ struct Visitor final : arrow::ArrayVisitor {
   }
 
   const RowSequence &keys_;
-  AnyChunk *const dest_;
+  Chunk *const dest_;
 };
 }  // namespace
 
-void ChunkFiller::fillChunk(const arrow::Array &src, const RowSequence &keys, AnyChunk *const dest) {
+void ChunkFiller::fillChunk(const arrow::Array &src, const RowSequence &keys, Chunk *dest) {
   Visitor visitor(keys, dest);
   okOrThrow(DEEPHAVEN_EXPR_MSG(src.Accept(&visitor)));
 }

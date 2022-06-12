@@ -7,18 +7,35 @@
 #include "deephaven/client/utility/utility.h"
 
 namespace deephaven::client::chunk {
-namespace internal {
-void checkSize(size_t proposedSize, size_t size, std::string_view what);
-}
+/**
+ * Base type for Chunks
+ */
+class Chunk {
+protected:
+  Chunk() = default;
+  explicit Chunk(size_t size) : size_(size) {}
+  Chunk(Chunk &&other) noexcept = default;
+  Chunk &operator=(Chunk &&other) noexcept = default;
+  virtual ~Chunk() = default;
+
+public:
+  size_t size() const { return size_; }
+
+protected:
+  void checkSize(size_t proposedSize, std::string_view what) const;
+
+  size_t size_ = 0;
+};
+
 template<typename T>
-class NumericChunk final {
+class NumericChunk final : public Chunk {
 public:
   static NumericChunk<T> create(size_t size);
 
   NumericChunk() = default;
   NumericChunk(NumericChunk &&other) noexcept = default;
-  NumericChunk &operator=(const NumericChunk &other) noexcept = default;
-  ~NumericChunk() = default;
+  NumericChunk &operator=(NumericChunk &&other) noexcept = default;
+  ~NumericChunk() final = default;
 
   NumericChunk take(size_t size) const;
   NumericChunk drop(size_t size) const;
@@ -32,8 +49,6 @@ public:
   T *end() { return data_.get() + size_; }
   const T *end() const { return data_.get() + size_; }
 
-  size_t size() const { return size_; }
-
 private:
   NumericChunk(std::shared_ptr<T[]> data, size_t size);
 
@@ -43,7 +58,6 @@ private:
   }
 
   std::shared_ptr<T[]> data_;
-  size_t size_ = 0;
 };
 
 typedef NumericChunk<int32_t> Int32Chunk;
@@ -69,6 +83,9 @@ public:
     std::visit(std::forward<Visitor>(visitor), variant_);
   }
 
+  const Chunk &unwrap() const;
+  Chunk &unwrap();
+
   template<typename T>
   const T &get() const {
     return std::get<T>(variant_);
@@ -83,7 +100,6 @@ private:
   variant_t variant_;
 };
 
-
 template<typename T>
 NumericChunk<T> NumericChunk<T>::create(size_t size) {
   // Note: wanted to use make_shared, but std::make_shared<T[]>(size) doesn't DTRT until C++20
@@ -92,19 +108,19 @@ NumericChunk<T> NumericChunk<T>::create(size_t size) {
 }
 
 template<typename T>
-NumericChunk<T>::NumericChunk(std::shared_ptr<T[]> data, size_t size) :
-  data_(std::move(data)), size_(size) {}
+NumericChunk<T>::NumericChunk(std::shared_ptr<T[]> data, size_t size) : Chunk(size),
+  data_(std::move(data)) {}
 
 template<typename T>
 NumericChunk<T> NumericChunk<T>::take(size_t size) const {
-  internal::checkSize(size, size_, DEEPHAVEN_PRETTY_FUNCTION);
+  checkSize(size, DEEPHAVEN_PRETTY_FUNCTION);
   // Share ownership of data_.
   return NumericChunk<T>(data_, size);
 }
 
 template<typename T>
 NumericChunk<T> NumericChunk<T>::drop(size_t size) const {
-  internal::checkSize(size, size_, DEEPHAVEN_PRETTY_FUNCTION);
+  checkSize(size, DEEPHAVEN_PRETTY_FUNCTION);
   // Share ownership of data_, but the value of the pointer yielded by std::shared_ptr<T>::get()
   // is actually data_.get() + size.
   std::shared_ptr<T[]> newBegin(data_, data_.get() + size);

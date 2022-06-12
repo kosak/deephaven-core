@@ -196,7 +196,7 @@ constexpr std::string_view getTypeName() {
 }
 
 template<typename DESTP, typename SRCP>
-DESTP verboseCast(std::string_view caller, SRCP ptr) {
+DESTP verboseCast(SRCP ptr, std::string_view caller) {
   using deephaven::client::utility::stringf;
 
   auto *typedPtr = dynamic_cast<DESTP>(ptr);

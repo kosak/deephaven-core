@@ -10,6 +10,6 @@ namespace deephaven::client::chunk {
 class ChunkFiller {
   typedef deephaven::client::container::RowSequence RowSequence;
 public:
-  static void fillChunk(const arrow::Array &src, const RowSequence &keys, AnyChunk *dest);
+  static void fillChunk(const arrow::Array &src, const RowSequence &keys, Chunk *dest);
 };
 }  // namespace deephaven::client::chunk
