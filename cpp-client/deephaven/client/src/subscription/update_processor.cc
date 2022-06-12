@@ -292,7 +292,7 @@ void UpdateProcessor::immerRunForeverHelper() {
           const auto &src = data[i];
           auto &krm = keysRemaining[i];
           keysToModifyThisTime[i] = krm->take(src->length());
-          krm->drop(src->length());
+          krm = krm->drop(src->length());
         }
         state.modifyData(data, keysToModifyThisTime);
       };
