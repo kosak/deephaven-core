@@ -464,6 +464,10 @@ void DemoCallback::updateCache(const Int64Chunk &tableContentsKeys, const Int64C
   }
 }
 
+void DemoCallback::periodicCheck() {
+  std::cerr << "hello, I am doing period check\n";
+}
+
 void DemoCallback::ensure(size_t size) {
   if (size < latestValues_.size()) {
     latestValues_.resize(size);
