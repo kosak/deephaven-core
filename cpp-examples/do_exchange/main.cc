@@ -52,6 +52,25 @@ void makeModifiesHappen(const TableHandleManager &manager);
 void millionRows(const TableHandleManager &manager);
 void lastBy(const TableHandleManager &manager);
 void demo(const TableHandleManager &manager);
+template<typename T>
+void ensure(std::vector<T> *vec, size_t size);
+template<typename T>
+struct optionalAdaptor_t {
+  explicit optionalAdaptor_t(const std::optional<T> &value) : value_(value) {}
+  const std::optional<T> &value_;
+
+  friend std::ostream &operator<<(std::ostream &s, const optionalAdaptor_t &o) {
+    if (!o.value_.has_value()) {
+      return s << "[none]";
+    }
+    return s << *o.value_;
+  }
+};
+
+template<typename T>
+optionalAdaptor_t<T> adaptOptional(const std::optional<T> &value) {
+  return optionalAdaptor_t(value);
+}
 }  // namespace
 
 int main() {
@@ -91,10 +110,11 @@ private:
   void processImmerCommon(const Table &table, const RowSequence &affectedRows);
   void updateCache(const Int64Chunk &tableContentsKeys, const Int64Chunk &tableContentsValues);
   void periodicCheck();
-  void ensure(size_t size);
 
-  std::vector<std::optional<int64_t>> latestValues_;
-  int64_t maxValueSeen_ = -1;
+  std::vector<std::optional<int64_t>> receivedValues_;
+  std::vector<std::optional<int64_t>> recalcedValues_;
+  int64_t maxValueReceived_ = -1;
+  int64_t nextValueToRecalc_ = 0;
 };
 
 // or maybe make a stream manipulator
@@ -472,19 +492,47 @@ void DemoCallback::updateCache(const Int64Chunk &tableContentsKeys, const Int64C
     auto key = tableContentsKeys.data()[i];
     auto value = tableContentsValues.data()[i];
     streamf(std::cout, "%o - %o\n", key, value);
-    ensure(key + 1);
-    latestValues_[key] = value;
-    maxValueSeen_ = std::max(maxValueSeen_, value);
+    ensure(&receivedValues_, key + 1);
+    receivedValues_[key] = value;
+    maxValueReceived_ = std::max(maxValueReceived_, value);
   }
 }
 
 void DemoCallback::periodicCheck() {
-  streamf(std::cout, "hello, max value seen is %o\n", maxValueSeen_);
+  streamf(std::cout, "hello, max value seen is %o\n", maxValueReceived_);
+
+  auto end = maxValueReceived_ + 1;
+  for (auto ii = nextValueToRecalc_; ii != end; ++ii) {
+    // We need to do these divides as floating point because that's what the server is doing.
+    auto temp1 = (ii ^ (int64_t)(ii / 65536.0)) * 0x8febca6b;
+    auto temp2 = (temp1 ^ ((int64_t)(temp1 / 8192.0))) * 0xc2b2ae35;
+    auto hashValue = temp2 ^ (int64_t)(temp2 / 65536.0);
+    auto key = hashValue % 1000;
+    auto value = ii;
+    ensure(&recalcedValues_, key + 1);
+    recalcedValues_[key] = value;
+  }
+
+  if (receivedValues_.size() != recalcedValues_.size()) {
+    throw std::runtime_error(stringf("receivedValues_.size() != recalcedValues_.size() (%o != %o)",
+        receivedValues_.size(), recalcedValues_.size()));
+  }
+
+  for (auto ii = nextValueToRecalc_; ii != end; ++ii) {
+    if (receivedValues_[ii] == recalcedValues_[ii]) {
+      continue;
+    }
+    throw std::runtime_error(stringf("At offset %o, received != recalc (%o != %o)",
+      ii, adaptOptional(receivedValues_[ii]), adaptOptional(recalcedValues_[ii])));
+  }
+
+  nextValueToRecalc_ = end;
 }
 
-void DemoCallback::ensure(size_t size) {
-  if (size > latestValues_.size()) {
-    latestValues_.resize(size);
+template<typename T>
+void ensure(std::vector<T> *vec, size_t size) {
+  if (size > vec->size()) {
+    vec->resize(size);
   }
 }
 
