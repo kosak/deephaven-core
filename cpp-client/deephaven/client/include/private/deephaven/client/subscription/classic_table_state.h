@@ -35,6 +35,7 @@ public:
       const RowSequence &destIndex);
 
   std::shared_ptr<Table> snapshot() const;
+  std::shared_ptr<Table> snapshotUnwrapped() const;
 
 private:
   UInt64Chunk modifyKeysHelper(const RowSequence &rowsToModifyKeySpace);

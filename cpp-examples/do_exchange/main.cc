@@ -363,7 +363,7 @@ void demo(const TableHandleManager &manager) {
   lb.bindToVariable("showme");
 
   auto myCallback = std::make_shared<DemoCallback>();
-  auto handle = lb.subscribe(myCallback, true);
+  auto handle = lb.subscribe(myCallback, false);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
   lb.unsubscribe(handle);

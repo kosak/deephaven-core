@@ -197,8 +197,7 @@ void UpdateProcessor::classicRunForeverHelper() {
     }
 
     auto currentTableKeySpace = state.snapshot();
-    // TODO
-    std::shared_ptr<Table> currentTableIndexSpace;
+    auto currentTableIndexSpace = state.snapshotUnwrapped();
 
     ClassicTickingUpdate update(std::move(removedRowsKeySpace), std::move(removedRowsIndexSpace),
         std::move(addedRowsKeySpace), std::move(addedRowsIndexSpace),

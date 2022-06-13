@@ -38,7 +38,9 @@ public:
   std::shared_ptr<RowSequence> getRowSequence() const final;
 
   std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const final {
-    return columns_[columnIndex];
+    // This is actually wrong. It needs to return a redirected column.
+    // return columns_[columnIndex];
+    throw std::runtime_error("TODO(kosak): need to make a redirected column.");
   }
 
   size_t numRows() const final {
@@ -52,6 +54,30 @@ public:
 private:
   std::vector<std::shared_ptr<MutableColumnSource>> columns_;
   std::shared_ptr<std::map<uint64_t, uint64_t>> redirection_;
+};
+
+class UnwrappedTableView final : public Table {
+public:
+  UnwrappedTableView(std::vector<std::shared_ptr<MutableColumnSource>> columns, size_t numRows);
+  ~UnwrappedTableView() final;
+
+  std::shared_ptr<RowSequence> getRowSequence() const final;
+
+  std::shared_ptr<ColumnSource> getColumn(size_t columnIndex) const final {
+    return columns_[columnIndex];
+  }
+
+  size_t numRows() const final {
+    return numRows_;
+  }
+
+  size_t numColumns() const override {
+    return columns_.size();
+  }
+
+private:
+  std::vector<std::shared_ptr<MutableColumnSource>> columns_;
+  size_t numRows_ = 0;
 };
 }
 
@@ -150,6 +176,10 @@ void ClassicTableState::applyShifts(const RowSequence &firstIndex, const RowSequ
 
 std::shared_ptr<Table> ClassicTableState::snapshot() const {
   return std::make_shared<TableView>(columns_, redirection_);
+}
+
+std::shared_ptr<Table> ClassicTableState::snapshotUnwrapped() const {
+  return std::make_shared<UnwrappedTableView>(columns_, redirection_->size());
 }
 
 std::vector<UInt64Chunk> ClassicTableState::modifyKeys(
@@ -301,5 +331,12 @@ std::shared_ptr<RowSequence> TableView::getRowSequence() const {
   throw std::runtime_error("TODO(kosak)");
 }
 
+UnwrappedTableView::UnwrappedTableView(std::vector<std::shared_ptr<MutableColumnSource>> columns,
+    size_t numRows) : columns_(std::move(columns)), numRows_(numRows) {}
+UnwrappedTableView::~UnwrappedTableView() = default;
+
+std::shared_ptr<RowSequence> UnwrappedTableView::getRowSequence() const {
+  throw std::runtime_error("TODO(kosak)");
+}
 }  // namespace
 }  // namespace deephaven::client::subscription
