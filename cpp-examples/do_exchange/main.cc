@@ -325,8 +325,8 @@ void demo(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
 
-  const long modSize = 100;
-  auto table = manager.timeTable(start, 1 * 1'000'000'000L)
+  const long modSize = 1000;
+  auto table = manager.timeTable(start, 1 * 100'000'000L)
       .view("II = ii")
       .where("II < 500")
       .view("Temp1 = (II ^ (long)(II / 65536)) * 0x8febca6b",
@@ -403,7 +403,8 @@ void DemoCallback::onTick(const ClassicTickingUpdate &update) {
     const auto &tableContenstsValueMods = modifiedRows[1];
     if (tableContentsKeyMods.size() != 0) {
       throw std::runtime_error(
-          stringf("Wasn't expecting any key mods (ever), got %o", tableContentsKeyMods.size()));
+          stringf("Our application doesn't modify the key column, but got %o",
+              tableContentsKeyMods.size()));
     }
     processClassicCommon(table, tableContenstsValueMods);
   }
@@ -438,8 +439,8 @@ void DemoCallback::onTick(const ImmerTickingUpdate &update) {
     }
     const auto &tableContentsKeyMods = *modified[0];
     const auto &tableContenstsValueMods = *modified[1];
-    if (tableContentsKeyMods.size() != 0) {
-      throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o",
+    if (!tableContentsKeyMods.empty()) {
+      throw std::runtime_error(stringf("Our application doesn't modify the key column, but got %o",
           tableContentsKeyMods.size()));
     }
     processImmerCommon(table, tableContenstsValueMods);
