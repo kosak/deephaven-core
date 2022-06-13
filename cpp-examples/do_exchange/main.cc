@@ -2,6 +2,7 @@
  * Copyright (c) 2016-2020 Deephaven Data Labs and Patent Pending
  */
 #include <iostream>
+#include <optional>
 #include <set>
 #include <thread>
 
@@ -92,7 +93,8 @@ private:
   void periodicCheck();
   void ensure(size_t size);
 
-  std::vector<int64_t> latestValues_;
+  std::vector<std::optional<int64_t>> latestValues_;
+  int64_t maxValueSeen_ = -1;
 };
 
 // or maybe make a stream manipulator
@@ -323,10 +325,10 @@ void demo(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
 
-  const long modSize = 1000;
-  auto table = manager.timeTable(start, 1 * 1'000'000L)
+  const long modSize = 100;
+  auto table = manager.timeTable(start, 1 * 1'000'000'000L)
       .view("II = ii")
-      .where("II < 10_000")
+      .where("II < 500")
       .view("Temp1 = (II ^ (long)(II / 65536)) * 0x8febca6b",
           "Temp2 = (Temp1 ^ ((long)(Temp1 / 8192))) * 0xc2b2ae35",
           "HashValue = Temp2 ^ (long)(Temp2 / 65536)",
@@ -340,7 +342,7 @@ void demo(const TableHandleManager &manager) {
 
   lb.bindToVariable("showme");
 
-  auto myCallback = std::make_shared<Callback>();
+  auto myCallback = std::make_shared<DemoCallback>();
   auto handle = lb.subscribe(myCallback, true);
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
@@ -380,6 +382,10 @@ void lastBy(const TableHandleManager &manager) {
   std::cerr << "exiting\n";
 }
 
+void DemoCallback::onFailure(std::exception_ptr ep) {
+  streamf(std::cerr, "Callback reported failure: %o\n", getWhat(std::move(ep)));
+}
+
 void DemoCallback::onTick(const ClassicTickingUpdate &update) {
   const auto &table = *update.currentTableIndexSpace();
   const auto &addedRows = update.addedRowsIndexSpace();
@@ -389,15 +395,18 @@ void DemoCallback::onTick(const ClassicTickingUpdate &update) {
   processClassicCommon(table, addedRows);
 
   const auto &modifiedRows = update.modifiedRowsIndexSpace();
-  if (modifiedRows.size() != 2) {
-    throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modifiedRows.size()));
+  if (!modifiedRows.empty()) {
+    if (modifiedRows.size() != 2) {
+      throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modifiedRows.size()));
+    }
+    const auto &tableContentsKeyMods = modifiedRows[0];
+    const auto &tableContenstsValueMods = modifiedRows[1];
+    if (tableContentsKeyMods.size() != 0) {
+      throw std::runtime_error(
+          stringf("Wasn't expecting any key mods (ever), got %o", tableContentsKeyMods.size()));
+    }
+    processClassicCommon(table, tableContenstsValueMods);
   }
-  const auto &tableContentsKeyMods = modifiedRows[0];
-  const auto &tableContenstsValueMods = modifiedRows[1];
-  if (tableContentsKeyMods.size() != 0) {
-    throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o", tableContentsKeyMods.size()));
-  }
-  processClassicCommon(table, tableContenstsValueMods);
   periodicCheck();
 }
 
@@ -410,7 +419,7 @@ void DemoCallback::processClassicCommon(const Table &table, const UInt64Chunk &a
   auto keyContext = keyCol->createContext(nrows);
   auto valueContext = keyCol->createContext(nrows);
   keyCol->fillChunkUnordered(keyContext.get(), affectedRows, &tableContentsKeys);
-  keyCol->fillChunkUnordered(valueContext.get(), affectedRows, &tableContentsValues);
+  valueCol->fillChunkUnordered(valueContext.get(), affectedRows, &tableContentsValues);
   updateCache(tableContentsKeys, tableContentsValues);
 }
 
@@ -423,16 +432,18 @@ void DemoCallback::onTick(const ImmerTickingUpdate &update) {
   processImmerCommon(table, added);
 
   const auto &modified = update.modified();
-  if (modified.size() != 2) {
-    throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modified.size()));
+  if (!modified.empty()) {
+    if (modified.size() != 2) {
+      throw std::runtime_error(stringf("Expected 2 modified rows, got %o", modified.size()));
+    }
+    const auto &tableContentsKeyMods = *modified[0];
+    const auto &tableContenstsValueMods = *modified[1];
+    if (tableContentsKeyMods.size() != 0) {
+      throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o",
+          tableContentsKeyMods.size()));
+    }
+    processImmerCommon(table, tableContenstsValueMods);
   }
-  const auto &tableContentsKeyMods = *modified[0];
-  const auto &tableContenstsValueMods = *modified[1];
-  if (tableContentsKeyMods.size() != 0) {
-    throw std::runtime_error(stringf("Wasn't expecting any key mods (ever), got %o",
-        tableContentsKeyMods.size()));
-  }
-  processImmerCommon(table, tableContenstsValueMods);
   periodicCheck();
 }
 
@@ -445,7 +456,7 @@ void DemoCallback::processImmerCommon(const Table &table, const RowSequence &aff
   auto keyContext = keyCol->createContext(nrows);
   auto valueContext = keyCol->createContext(nrows);
   keyCol->fillChunk(keyContext.get(), affectedRows, &tableContentsKeys);
-  keyCol->fillChunk(valueContext.get(), affectedRows, &tableContentsValues);
+  valueCol->fillChunk(valueContext.get(), affectedRows, &tableContentsValues);
   updateCache(tableContentsKeys, tableContentsValues);
 }
 
@@ -459,17 +470,19 @@ void DemoCallback::updateCache(const Int64Chunk &tableContentsKeys, const Int64C
   for (size_t i = 0; i < size; ++i) {
     auto key = tableContentsKeys.data()[i];
     auto value = tableContentsValues.data()[i];
+    streamf(std::cout, "%o - %o\n", key, value);
     ensure(key + 1);
     latestValues_[key] = value;
+    maxValueSeen_ = std::max(maxValueSeen_, value);
   }
 }
 
 void DemoCallback::periodicCheck() {
-  std::cerr << "hello, I am doing period check\n";
+  streamf(std::cout, "hello, max value seen is %o\n", maxValueSeen_);
 }
 
 void DemoCallback::ensure(size_t size) {
-  if (size < latestValues_.size()) {
+  if (size > latestValues_.size()) {
     latestValues_.resize(size);
   }
 }
