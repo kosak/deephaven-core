@@ -34,6 +34,16 @@ set -eux
 : ${BUILD_ZLIB:=yes}
 : ${BUILD_GRPC:=yes}
 : ${BUILD_ARROW:=yes}
+: ${BUILD_IMMER:=yes}
+: ${BUILD_BOOST:=yes}
+
+: ${BOOST_VERSION:=1_79_0}
+
+# At the point of this writing, the latest immer release is pretty old.
+# We want something a lot more recent, but don't want to track head as is a moving
+# target and we can't guarantee things will continue to compile/be consistent.
+# So we select a particular SHA.
+: ${IMMER_SHA:=95889a7aa293d2caff5002bdbcbe7d10b87ec684}
 
 #
 # End of user customization section; you should not need to modify the code below
@@ -41,18 +51,18 @@ set -eux
 #
 
 # How many CPUs to use in -j arguments to make.
-NCPUS=$(getconf _NPROCESSORS_ONLN)
+: ${NCPUS:=$(getconf _NPROCESSORS_ONLN)}
 
 # Where the checked out sources for dependencies will go
-SRC=$DHDEPS_HOME/src
+: ${SRC:=$DHDEPS_HOME/src}
 
 # Where the install prefix paths will go
-PFX=$DHDEPS_HOME/local
+: ${PFX:=$DHDEPS_HOME/local}
 
 # Let's get make to print out commands as they run
 export VERBOSE=1
 
-export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gflags:${PFX}/protobuf:${PFX}/re2:${PFX}/zlib:${PFX}/grpc:${PFX}/arrow:${PFX}/deephaven
+export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gflags:${PFX}/protobuf:${PFX}/re2:${PFX}/zlib:${PFX}/grpc:${PFX}/arrow:${PFX}/boost:${PFX}/deephaven
 
 if [ ! -d $SRC ]; then
   mkdir -p $SRC
@@ -67,17 +77,21 @@ fi
 # there is no guarantee where the CWD is after a prior phase.
 #
 
+: ${GIT_FLAGS:="--quiet -c advice.detachedHead=false"}
+
 if [ "$CHECKOUT" = "yes" ]; then
   cd $SRC
-  git clone -b v3.20.1 --depth 1 https://github.com/protocolbuffers/protobuf.git
-  git clone -b 2022-04-01 --depth 1 https://github.com/google/re2.git
-  git clone -b v2.2.2 --depth 1 https://github.com/gflags/gflags.git
-  git clone -b 20210324.2 --depth 1 https://github.com/abseil/abseil-cpp.git
-  git clone -b v2.0.6 --depth 1 https://github.com/google/flatbuffers.git
-  git clone -b cares-1_18_1 --depth 1 https://github.com/c-ares/c-ares.git
-  git clone -b v1.2.11 --depth 1 https://github.com/madler/zlib
-  git clone -b v1.45.2 --depth 1 https://github.com/grpc/grpc
-  git clone -b apache-arrow-7.0.0 --depth 1 https://github.com/apache/arrow
+  git clone $GIT_FLAGS -b v3.20.1 --depth 1 https://github.com/protocolbuffers/protobuf.git
+  git clone $GIT_FLAGS -b 2022-04-01 --depth 1 https://github.com/google/re2.git
+  git clone $GIT_FLAGS -b v2.2.2 --depth 1 https://github.com/gflags/gflags.git
+  git clone $GIT_FLAGS -b 20210324.2 --depth 1 https://github.com/abseil/abseil-cpp.git
+  git clone $GIT_FLAGS -b v2.0.6 --depth 1 https://github.com/google/flatbuffers.git
+  git clone $GIT_FLAGS -b cares-1_18_1 --depth 1 https://github.com/c-ares/c-ares.git
+  git clone $GIT_FLAGS -b v1.2.11 --depth 1 https://github.com/madler/zlib
+  git clone $GIT_FLAGS -b v1.45.2 --depth 1 https://github.com/grpc/grpc
+  git clone $GIT_FLAGS -b apache-arrow-7.0.0 --depth 1 https://github.com/apache/arrow
+  git clone $GIT_FLAGS --depth 1 https://github.com/arximboldi/immer.git && (cd immer && git checkout "${IMMER_SHA}")
+  curl -sL https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_"${BOOST_VERSION}".tar.bz2 | tar jxf -
   # Apply apache arrow patch.
   (cd arrow && patch -p1 <<EOF
 diff --git a/cpp/src/arrow/ipc/reader.cc b/cpp/src/arrow/ipc/reader.cc
@@ -201,4 +215,25 @@ if [ "$BUILD_ARROW" = "yes" ]; then
   make install
 fi
 
+### immer
+if [ "$BUILD_IMMER" = "yes" ]; then
+  echo
+  echo "*** Building immer"
+  cd $SRC/immer
+  mkdir -p build && cd build
+  cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PFX}/immer ..
+  make -j$NCPUS
+  make install
+fi
+
+### boost
+if [ "$BUILD_BOOST" = "yes" ]; then
+  echo
+  echo "*** Building boost"
+  cd $SRC/boost_"${BOOST_VERSION}"
+  ./bootstrap.sh --prefix=${PFX}/boost
+  ./b2 install
+fi    
+
 echo DONE.
+echo "Use CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
