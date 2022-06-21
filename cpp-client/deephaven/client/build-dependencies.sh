@@ -62,7 +62,19 @@ set -eux
 # Let's get make to print out commands as they run
 export VERBOSE=1
 
-export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gflags:${PFX}/protobuf:${PFX}/re2:${PFX}/zlib:${PFX}/grpc:${PFX}/arrow:${PFX}/boost:${PFX}/deephaven
+export CMAKE_PREFIX_PATH=\
+${PFX}/abseil:\
+${PFX}/cares:\
+${PFX}/flatbuffers:\
+${PFX}/gflags:\
+${PFX}/protobuf:\
+${PFX}/re2:\
+${PFX}/zlib:\
+${PFX}/grpc:\
+${PFX}/arrow:\
+${PFX}/boost:\
+${PFX}/immer:\
+${PFX}/deephaven
 
 if [ ! -d $SRC ]; then
   mkdir -p $SRC
