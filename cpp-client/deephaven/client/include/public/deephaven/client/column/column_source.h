@@ -5,7 +5,6 @@
 #include <vector>
 #include <arrow/array.h>
 #include "deephaven/client/chunk/chunk.h"
-#include "deephaven/client/container/context.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/utility/utility.h"
 
@@ -17,16 +16,13 @@ class ColumnSource {
 protected:
   typedef deephaven::client::chunk::Chunk Chunk;
   typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
-  typedef deephaven::client::container::Context Context;
   typedef deephaven::client::container::RowSequence RowSequence;
 
 public:
   virtual ~ColumnSource();
 
-  virtual std::shared_ptr<Context> createContext(size_t chunkSize) const = 0;
-  virtual void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const = 0;
-  virtual void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys,
-      Chunk *dest) const = 0;
+  virtual void fillChunk(const RowSequence &rows, Chunk *dest) const = 0;
+  virtual void fillChunkUnordered(const UInt64Chunk &rowKeys, Chunk *dest) const = 0;
 
   virtual void acceptVisitor(ColumnSourceVisitor *visitor) const = 0;
 
@@ -39,9 +35,8 @@ class MutableColumnSource : public virtual ColumnSource {
 public:
   ~MutableColumnSource() override;
 
-  virtual void fillFromChunk(Context *context, const Chunk &src, const RowSequence &rows) = 0;
-  virtual void fillFromChunkUnordered(Context *context, const Chunk &src,
-      const UInt64Chunk &rowKeys) = 0;
+  virtual void fillFromChunk(const Chunk &src, const RowSequence &rows) = 0;
+  virtual void fillFromChunkUnordered(const Chunk &src, const UInt64Chunk &rowKeys) = 0;
 };
 
 // the per-type interfaces
@@ -49,15 +44,24 @@ template<typename T>
 class NumericColumnSource : public virtual ColumnSource {
 };
 
+// TODO(kosak): it's not obvious to me that String needs to be handled separately.
+class StringColumnSource : public virtual ColumnSource {
+};
+
 // convenience typedefs
+typedef NumericColumnSource<int8_t> Int8ColumnSource;
+typedef NumericColumnSource<int16_t> Int16ColumnSource;
 typedef NumericColumnSource<int32_t> Int32ColumnSource;
 typedef NumericColumnSource<int64_t> Int64ColumnSource;
-typedef NumericColumnSource<uint64_t> UInt64ColumnSource;
+typedef NumericColumnSource<float> FloatColumnSource;
 typedef NumericColumnSource<double> DoubleColumnSource;
 
 // the mutable per-type interfaces
 template<typename T>
 class MutableNumericColumnSource : public NumericColumnSource<T>, public MutableColumnSource {
+};
+
+class MutableStringColumnSource : public StringColumnSource, public MutableColumnSource {
 };
 
 template<typename T>
@@ -66,7 +70,6 @@ class NumericArrayColumnSource final : public MutableNumericColumnSource<T>,
   struct Private {};
   typedef deephaven::client::chunk::Chunk Chunk;
   typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
-  typedef deephaven::client::container::Context Context;
   typedef deephaven::client::container::RowSequence RowSequence;
 
 public:
@@ -74,11 +77,10 @@ public:
   explicit NumericArrayColumnSource(Private) {}
   ~NumericArrayColumnSource() final = default;
 
-  std::shared_ptr<Context> createContext(size_t chunkSize) const final;
-  void fillChunk(Context *context, const RowSequence &rows, Chunk *dest) const final;
-  void fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys, Chunk *dest) const final;
-  void fillFromChunk(Context *context, const Chunk &src, const RowSequence &rows) final;
-  void fillFromChunkUnordered(Context *context, const Chunk &src, const UInt64Chunk &rowKeys) final;
+  void fillChunk(const RowSequence &rows, Chunk *dest) const final;
+  void fillChunkUnordered(const UInt64Chunk &rowKeys, Chunk *dest) const final;
+  void fillFromChunk(const Chunk &src, const RowSequence &rows) final;
+  void fillFromChunkUnordered(const Chunk &src, const UInt64Chunk &rowKeys) final;
 
   void acceptVisitor(ColumnSourceVisitor *visitor) const final;
 
@@ -88,27 +90,45 @@ private:
   std::vector<T> data_;
 };
 
+class StringArrayColumnSource final : public MutableStringColumnSource,
+    std::enable_shared_from_this<StringArrayColumnSource> {
+  struct Private {};
+  typedef deephaven::client::chunk::Chunk Chunk;
+  typedef deephaven::client::chunk::UInt64Chunk UInt64Chunk;
+  typedef deephaven::client::container::RowSequence RowSequence;
+
+public:
+  static std::shared_ptr<StringArrayColumnSource> create();
+  explicit StringArrayColumnSource(Private) {}
+  ~StringArrayColumnSource() final = default;
+
+  void fillChunk(const RowSequence &rows, Chunk *dest) const final;
+  void fillChunkUnordered(const UInt64Chunk &rowKeys, Chunk *dest) const final;
+  void fillFromChunk(const Chunk &src, const RowSequence &rows) final;
+  void fillFromChunkUnordered(const Chunk &src, const UInt64Chunk &rowKeys) final;
+
+  void acceptVisitor(ColumnSourceVisitor *visitor) const final;
+
+private:
+  void ensureSize(size_t size);
+
+  std::vector<std::string> data_;
+};
+
 template<typename T>
 std::shared_ptr<NumericArrayColumnSource<T>> NumericArrayColumnSource<T>::create() {
   return std::make_shared<NumericArrayColumnSource<T>>(Private());
 }
 
 template<typename T>
-auto NumericArrayColumnSource<T>::createContext(size_t chunkSize) const -> std::shared_ptr<Context> {
-  // Contexts not used yet.
-  return std::make_shared<Context>();
-}
-
-template<typename T>
-void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence &rows,
-    Chunk *dest) const {
+void NumericArrayColumnSource<T>::fillChunk(const RowSequence &rows, Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
   typedef typename TypeToChunk<T>::type_t chunkType_t;
 
   auto *typedDest = verboseCast<chunkType_t*>(dest, DEEPHAVEN_PRETTY_FUNCTION);
-  // assert rows.size() <= dest->capacity()
+  // assert rows.size() <= typedDest->size()
   assertLessEq(rows.size(), typedDest->size(), "rows.size()", "typedDest->size()", __PRETTY_FUNCTION__);
 
   size_t destIndex = 0;
@@ -124,8 +144,7 @@ void NumericArrayColumnSource<T>::fillChunk(Context *context, const RowSequence 
 }
 
 template<typename T>
-void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const UInt64Chunk &rowKeys,
-    Chunk *dest) const {
+void NumericArrayColumnSource<T>::fillChunkUnordered(const UInt64Chunk &rowKeys, Chunk *dest) const {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
@@ -143,8 +162,7 @@ void NumericArrayColumnSource<T>::fillChunkUnordered(Context *context, const UIn
 }
 
 template<typename T>
-void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const Chunk &src,
-    const RowSequence &rows) {
+void NumericArrayColumnSource<T>::fillFromChunk(const Chunk &src, const RowSequence &rows) {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::assertLessEq;
   using deephaven::client::utility::verboseCast;
@@ -164,7 +182,7 @@ void NumericArrayColumnSource<T>::fillFromChunk(Context *context, const Chunk &s
 }
 
 template<typename T>
-void NumericArrayColumnSource<T>::fillFromChunkUnordered(Context *context, const Chunk &src,
+void NumericArrayColumnSource<T>::fillFromChunkUnordered(const Chunk &src,
     const UInt64Chunk &rowKeys) {
   using deephaven::client::chunk::TypeToChunk;
   using deephaven::client::utility::assertLessEq;
@@ -191,10 +209,13 @@ void NumericArrayColumnSource<T>::ensureSize(size_t size) {
 
 class ColumnSourceVisitor {
 public:
+  virtual void visit(const Int8ColumnSource &) = 0;
+  virtual void visit(const Int16ColumnSource &) = 0;
   virtual void visit(const Int32ColumnSource &) = 0;
   virtual void visit(const Int64ColumnSource &) = 0;
-  virtual void visit(const UInt64ColumnSource &) = 0;
+  virtual void visit(const FloatColumnSource &) = 0;
   virtual void visit(const DoubleColumnSource &) = 0;
+  virtual void visit(const StringColumnSource &) = 0;
 };
 
 template<typename T>

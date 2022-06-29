@@ -53,7 +53,6 @@ set(ALL_FILES
     src/chunk/chunk_filler.cc
     src/chunk/chunk_maker.cc
     src/column/column_source.cc
-    src/container/context.cc
     src/container/row_sequence.cc
     src/table/table.cc
 
@@ -66,7 +65,6 @@ set(ALL_FILES
     include/public/deephaven/client/chunk/chunk_filler.h
     include/public/deephaven/client/chunk/chunk_maker.h
     include/public/deephaven/client/column/column_source.h
-    include/public/deephaven/client/container/context.h
     include/public/deephaven/client/container/row_sequence.h
     include/public/deephaven/client/table/table.h
 
@@ -131,7 +129,7 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.pb.h
 
     flatbuf/deephaven/flatbuf/Barrage_generated.h
-    )
+    include/private/deephaven/client/arrowutil/arrow_visitors.h)
 
 add_library(client ${ALL_FILES})
 # This is so deephaven::client works both when using the installed CMake config

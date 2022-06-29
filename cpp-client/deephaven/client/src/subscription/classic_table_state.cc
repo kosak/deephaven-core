@@ -154,11 +154,10 @@ void ClassicTableState::addData(const std::vector<std::shared_ptr<arrow::Array>>
   for (size_t i = 0; i < ncols; ++i) {
     const auto &src = *data[i];
     auto *dest = columns_[i].get();
-    auto context = dest->createContext(nrows);
     auto anyChunk = ChunkMaker::createChunkFor(*dest, nrows);
     auto &chunk = anyChunk.unwrap();
     ChunkFiller::fillChunk(src, *sequentialRows, &chunk);
-    dest->fillFromChunkUnordered(context.get(), chunk, rowsToAddIndexSpace);
+    dest->fillFromChunkUnordered(chunk, rowsToAddIndexSpace);
   }
 }
 
@@ -233,11 +232,10 @@ void ClassicTableState::modifyData(const std::vector<std::shared_ptr<arrow::Arra
     auto *destCol = columns_[i].get();
     auto nrows = rows.size();
     auto sequentialRows = RowSequence::createSequential(0, nrows);
-    auto context = destCol->createContext(nrows);
     auto anyChunk = ChunkMaker::createChunkFor(*destCol, nrows);
     auto &chunk = anyChunk.unwrap();
     ChunkFiller::fillChunk(srcArray, *sequentialRows, &chunk);
-    destCol->fillFromChunkUnordered(context.get(), chunk, rows);
+    destCol->fillFromChunkUnordered(chunk, rows);
   }
 }
 

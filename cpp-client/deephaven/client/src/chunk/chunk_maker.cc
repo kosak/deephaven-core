@@ -4,14 +4,25 @@
 
 using deephaven::client::column::ColumnSourceVisitor;
 using deephaven::client::column::DoubleColumnSource;
+using deephaven::client::column::FloatColumnSource;
+using deephaven::client::column::Int8ColumnSource;
+using deephaven::client::column::Int16ColumnSource;
 using deephaven::client::column::Int32ColumnSource;
 using deephaven::client::column::Int64ColumnSource;
-using deephaven::client::column::UInt64ColumnSource;
+using deephaven::client::column::StringColumnSource;
 
 namespace deephaven::client::chunk {
 namespace {
 struct Visitor final : ColumnSourceVisitor {
   explicit Visitor(size_t chunkSize) : chunkSize_(chunkSize) {}
+
+  void visit(const Int8ColumnSource &source) final {
+    result_ = Int8Chunk::create(chunkSize_);
+  }
+
+  void visit(const Int16ColumnSource &source) final {
+    result_ = Int16Chunk::create(chunkSize_);
+  }
 
   void visit(const Int32ColumnSource &source) final {
     result_ = Int32Chunk::create(chunkSize_);
@@ -21,12 +32,16 @@ struct Visitor final : ColumnSourceVisitor {
     result_ = Int64Chunk::create(chunkSize_);
   }
 
-  void visit(const UInt64ColumnSource &source) final {
-    result_ = UInt64Chunk::create(chunkSize_);
+  void visit(const FloatColumnSource &source) final {
+    result_ = FloatChunk::create(chunkSize_);
   }
 
   void visit(const DoubleColumnSource &source) final {
     result_ = DoubleChunk::create(chunkSize_);
+  }
+
+  void visit(const StringColumnSource &source) final {
+    result_ = StringChunk::create(chunkSize_);
   }
 
   size_t chunkSize_;

@@ -2,18 +2,35 @@
  * Copyright (c) 2016-2020 Deephaven Data Labs and Patent Pending
  */
 #include <iostream>
-#include "deephaven/client/highlevel/client.h"
+#include "deephaven/client/client.h"
 #include "deephaven/client/utility/table_maker.h"
 
-using deephaven::client::highlevel::NumCol;
-using deephaven::client::highlevel::Client;
-using deephaven::client::highlevel::TableHandle;
-using deephaven::client::highlevel::TableHandleManager;
+using deephaven::client::NumCol;
+using deephaven::client::Client;
+using deephaven::client::TableHandle;
+using deephaven::client::TableHandleManager;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::valueOrThrow;
 using deephaven::client::utility::TableMaker;
 
+namespace {
+void doit(const TableHandleManager &manager);
+}  // namespace
+
 // This example shows how to use the Arrow Flight client to make a simple table.
+int main() {
+  const char *server = "localhost:10000";
+
+  try {
+    auto client = Client::connect(server);
+    auto manager = client.getManager();
+    doit(manager);
+  } catch (const std::exception &e) {
+    std::cerr << "Caught exception: " << e.what() << '\n';
+  }
+}
+
+namespace {
 void doit(const TableHandleManager &manager) {
   // 1. Build schema
   arrow::SchemaBuilder schemaBuilder;
@@ -84,15 +101,4 @@ void doit(const TableHandleManager &manager) {
   // 14. Use Deephaven high level operations to fetch the table and print it
   std::cout << "table is:\n" << table.stream(true) << std::endl;
 }
-
-int main() {
-  const char *server = "localhost:10000";
-
-  try {
-    auto client = Client::connect(server);
-    auto manager = client.getManager();
-    doit(manager);
-  } catch (const std::exception &e) {
-    std::cerr << "Caught exception: " << e.what() << '\n';
-  }
-}
+}  // namespace

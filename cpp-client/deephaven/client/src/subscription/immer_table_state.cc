@@ -3,6 +3,7 @@
 #include <optional>
 #include <utility>
 
+#include "deephaven/client/arrowutil/arrow_visitors.h"
 #include "deephaven/client/chunk/chunk.h"
 #include "deephaven/client/column/column_source.h"
 #include "deephaven/client/container/row_sequence.h"
@@ -12,6 +13,8 @@
 #include "immer/flex_vector.hpp"
 #include "immer/flex_vector_transient.hpp"
 
+using deephaven::client::arrowutil::ArrowTypeVisitor;
+using deephaven::client::arrowutil::ArrowArrayTypeVisitor;
 using deephaven::client::chunk::Int64Chunk;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::container::RowSequence;
@@ -199,39 +202,10 @@ std::shared_ptr<RowSequence> MyTable::getRowSequence() const {
   return rb.build();
 }
 
-struct MyTypeVisitor final : public arrow::TypeVisitor {
-  arrow::Status Visit(const arrow::Int32Type &) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::Int64Type &) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::DoubleType &type) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
-    return arrow::Status::OK();
-  }
-
-  std::unique_ptr<AbstractFlexVectorBase> result_;
-};
-
-struct MyArrayVisitor final : public arrow::ArrayVisitor {
-  arrow::Status Visit(const arrow::Int32Array &) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int32_t>());
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::Int64Array &) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<int64_t>());
-    return arrow::Status::OK();
-  }
-
-  arrow::Status Visit(const arrow::DoubleArray &) final {
-    result_ = AbstractFlexVectorBase::create(immer::flex_vector<double>());
-    return arrow::Status::OK();
+struct FlexVectorMaker final {
+  template<typename T>
+  void operator()() {
+    result_ = AbstractFlexVectorBase::create(immer::flex_vector<T>());
   }
 
   std::unique_ptr<AbstractFlexVectorBase> result_;
@@ -242,9 +216,9 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectorsFromColDefs(
   auto ncols = colDefs.vec().size();
   auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
   for (const auto &colDef : colDefs.vec()) {
-    MyTypeVisitor v;
+    ArrowTypeVisitor<FlexVectorMaker> v;
     okOrThrow(DEEPHAVEN_EXPR_MSG(colDef.second->Accept(&v)));
-    result.push_back(std::move(v.result_));
+    result.push_back(std::move(v.inner().result_));
   }
   return result;
 }
@@ -254,10 +228,10 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> makeFlexVectorsFromArrays(
   auto ncols = arrays.size();
   auto result = makeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
   for (const auto &a : arrays) {
-    MyArrayVisitor v;
+    ArrowArrayTypeVisitor<FlexVectorMaker> v;
     okOrThrow(DEEPHAVEN_EXPR_MSG(a->Accept(&v)));
-    v.result_->inPlaceAppendArrow(*a);
-    result.push_back(std::move(v.result_));
+    v.inner().result_->inPlaceAppendArrow(*a);
+    result.push_back(std::move(v.inner().result_));
   }
   return result;
 }

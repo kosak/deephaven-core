@@ -32,7 +32,7 @@ struct Visitor final : arrow::ArrayVisitor {
 
   template<typename T, typename TArrowAray>
   arrow::Status fillNumericChunk(const TArrowAray &array) {
-    auto *typedDest = verboseCast<NumericChunk<T>*>(dest_, DEEPHAVEN_PRETTY_FUNCTION);
+    auto *typedDest = verboseCast<GenericChunk<T>*>(dest_, DEEPHAVEN_PRETTY_FUNCTION);
     checkSize(typedDest->size());
     size_t destIndex = 0;
     auto copyChunk = [&destIndex, &array, typedDest](uint64_t begin, uint64_t end) {

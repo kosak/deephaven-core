@@ -19,7 +19,6 @@
 #include "deephaven/client/columns.h"
 #include "deephaven/client/chunk/chunk_filler.h"
 #include "deephaven/client/chunk/chunk_maker.h"
-#include "deephaven/client/container/context.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/table/table.h"
 #include "deephaven/client/ticking.h"
@@ -44,7 +43,6 @@ using deephaven::client::chunk::ChunkFiller;
 using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::column::ColumnSource;
 using deephaven::client::column::MutableColumnSource;
-using deephaven::client::container::Context;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::container::RowSequenceIterator;
@@ -72,11 +70,6 @@ using io::deephaven::barrage::flatbuf::CreateBarrageSubscriptionRequest;
 
 namespace deephaven::client {
 namespace impl {
-
-const io::deephaven::barrage::flatbuf::BarrageMessageWrapper *GetBarrageMessageWrapper(const void *buf) {
-  return flatbuffers::GetRoot<io::deephaven::barrage::flatbuf::BarrageMessageWrapper>(buf);
-}
-
 std::shared_ptr<internal::LazyState> TableHandleImpl::createEtcCallback(const TableHandleManagerImpl *thm) {
   return internal::LazyState::create(thm->server(), thm->flightExecutor());
 }

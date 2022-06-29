@@ -2,17 +2,36 @@
  * Copyright (c) 2016-2020 Deephaven Data Labs and Patent Pending
  */
 #include <iostream>
-#include "deephaven/client/highlevel/client.h"
+#include "deephaven/client/client.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/utility.h"
 
-using deephaven::client::highlevel::NumCol;
-using deephaven::client::highlevel::Client;
-using deephaven::client::highlevel::TableHandle;
-using deephaven::client::highlevel::TableHandleManager;
+using deephaven::client::NumCol;
+using deephaven::client::Client;
+using deephaven::client::TableHandle;
+using deephaven::client::TableHandleManager;
 using deephaven::client::utility::okOrThrow;
 using deephaven::client::utility::TableMaker;
 
+namespace {
+TableHandle makeTable(const TableHandleManager &manager);
+void dumpSymbolColumn(const TableHandle &tableHandle);
+}  // namespace
+
+int main() {
+  const char *server = "localhost:10000";
+
+  try {
+    auto client = Client::connect(server);
+    auto manager = client.getManager();
+    auto table = makeTable(manager);
+    dumpSymbolColumn(table);
+  } catch (const std::exception &e) {
+    std::cerr << "Caught exception: " << e.what() << '\n';
+  }
+}
+
+namespace {
 TableHandle makeTable(const TableHandleManager &manager) {
   TableMaker tm;
   std::vector<std::string> symbols{"FB", "AAPL", "NFLX", "GOOG"};
@@ -60,16 +79,4 @@ void dumpSymbolColumn(const TableHandle &tableHandle) {
     }
   }
 }
-
-int main() {
-  const char *server = "localhost:10000";
-
-  try {
-    auto client = Client::connect(server);
-    auto manager = client.getManager();
-    auto table = makeTable(manager);
-    dumpSymbolColumn(table);
-  } catch (const std::exception &e) {
-    std::cerr << "Caught exception: " << e.what() << '\n';
-  }
-}
+}  // namespace

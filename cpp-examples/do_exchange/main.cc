@@ -10,7 +10,6 @@
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/chunk/chunk_maker.h"
 #include "deephaven/client/chunk/chunk.h"
-#include "deephaven/client/container/context.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/table/table.h"
 #include "deephaven/client/utility/table_maker.h"
@@ -28,7 +27,6 @@ using deephaven::client::ImmerTickingUpdate;
 using deephaven::client::chunk::ChunkMaker;
 using deephaven::client::chunk::AnyChunk;
 using deephaven::client::chunk::ChunkVisitor;
-using deephaven::client::container::Context;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::chunk::DoubleChunk;
@@ -51,6 +49,7 @@ void doit(const TableHandleManager &manager);
 void makeModifiesHappen(const TableHandleManager &manager);
 void millionRows(const TableHandleManager &manager);
 void lastBy(const TableHandleManager &manager);
+void varietyOfTypes(const TableHandleManager &manager);
 void demo(const TableHandleManager &manager);
 template<typename T>
 void ensure(std::vector<T> *vec, size_t size);
@@ -78,7 +77,7 @@ int main() {
   try {
     auto client = Client::connect(server);
     auto manager = client.getManager();
-    demo(manager);
+    varietyOfTypes(manager);
   } catch (const std::exception &e) {
     std::cerr << "Caught exception: " << e.what() << '\n';
   }
@@ -91,7 +90,7 @@ class Callback final : public TickingCallback {
 public:
   void onFailure(std::exception_ptr ep) final;
   void onTick(const ClassicTickingUpdate &update) final;
-  void onTick(const ImmerTickingUpdate &update) final;
+  void onTick(ImmerTickingUpdate update) final;
 
   bool failed() const { return failed_; }
 
@@ -103,7 +102,7 @@ class DemoCallback final : public TickingCallback {
 public:
   void onFailure(std::exception_ptr ep) final;
   void onTick(const ClassicTickingUpdate &update) final;
-  void onTick(const ImmerTickingUpdate &update) final;
+  void onTick(ImmerTickingUpdate update) final;
 
 private:
   void processClassicCommon(const Table &table, const UInt64Chunk &affectedRows);
@@ -151,7 +150,7 @@ void Callback::onTick(const ClassicTickingUpdate &update) {
       update.modifiedRowsKeySpace().end(), " === ", render));
 }
 
-void Callback::onTick(const ImmerTickingUpdate &update) {
+void Callback::onTick(ImmerTickingUpdate update) {
   auto ncols = update.current()->numColumns();
   auto allCols = makeReservedVector<size_t>(update.current()->numColumns());
   for (size_t i = 0; i < ncols; ++i) {
@@ -178,14 +177,11 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
   const size_t chunkSize = 16;
 
   auto ncols = whichCols.size();
-  auto contexts = makeReservedVector<std::shared_ptr<Context>>(ncols);
   auto chunks = makeReservedVector<AnyChunk>(ncols);
   for (auto col : whichCols) {
     const auto &c = table.getColumn(col);
-    auto context = c->createContext(chunkSize);
     auto chunk = ChunkMaker::createChunkFor(*c, chunkSize);
     chunks.push_back(std::move(chunk));
-    contexts.push_back(std::move(context));
   }
 
   while (true) {
@@ -198,9 +194,8 @@ void dumpTable(std::string_view what, const Table &table, const std::vector<size
 
     for (size_t i = 0; i < ncols; ++i) {
       const auto &c = table.getColumn(whichCols[i]);
-      const auto &context = contexts[i];
       auto &chunk = chunks[i].unwrap();
-      c->fillChunk(context.get(), *chunkOfRows, &chunk);
+      c->fillChunk(*chunkOfRows, &chunk);
     }
 
     for (size_t j = 0; j < thisSize; ++j) {
@@ -371,7 +366,6 @@ void demo(const TableHandleManager &manager) {
   std::cerr << "exiting\n";
 }
 
-
 void lastBy(const TableHandleManager &manager) {
   auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
@@ -398,6 +392,24 @@ void lastBy(const TableHandleManager &manager) {
   std::this_thread::sleep_for(std::chrono::seconds(5'000));
   std::cerr << "I unsubscribed here\n";
   lb.unsubscribe(handle);
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::cerr << "exiting\n";
+}
+
+void varietyOfTypes(const TableHandleManager &manager) {
+  auto start = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+
+  auto table = manager.timeTable(start, 1 * 1'000'000'000L)
+      .select("XXX = `hello`", "YYY = (short)12", "ZZZ = (byte)65", "QQ = `true`");
+
+  table.bindToVariable("showme");
+
+  auto myCallback = std::make_shared<Callback>();
+  auto handle = table.subscribe(myCallback, true);
+  std::this_thread::sleep_for(std::chrono::seconds(5'000));
+  std::cerr << "I unsubscribed here\n";
+  table.unsubscribe(handle);
   std::this_thread::sleep_for(std::chrono::seconds(5));
   std::cerr << "exiting\n";
 }
@@ -437,14 +449,12 @@ void DemoCallback::processClassicCommon(const Table &table, const UInt64Chunk &a
   auto tableContentsValues = Int64Chunk::create(nrows);
   const auto &keyCol = table.getColumn(0);
   const auto &valueCol = table.getColumn(1);
-  auto keyContext = keyCol->createContext(nrows);
-  auto valueContext = keyCol->createContext(nrows);
-  keyCol->fillChunkUnordered(keyContext.get(), affectedRows, &tableContentsKeys);
-  valueCol->fillChunkUnordered(valueContext.get(), affectedRows, &tableContentsValues);
+  keyCol->fillChunkUnordered(affectedRows, &tableContentsKeys);
+  valueCol->fillChunkUnordered(affectedRows, &tableContentsValues);
   updateCache(tableContentsKeys, tableContentsValues);
 }
 
-void DemoCallback::onTick(const ImmerTickingUpdate &update) {
+void DemoCallback::onTick(ImmerTickingUpdate update) {
   const auto &table = *update.current();
   const auto &added = *update.added();
   if (table.numColumns() != 2) {
@@ -474,10 +484,8 @@ void DemoCallback::processImmerCommon(const Table &table, const RowSequence &aff
   auto tableContentsValues = Int64Chunk::create(nrows);
   const auto &keyCol = table.getColumn(0);
   const auto &valueCol = table.getColumn(1);
-  auto keyContext = keyCol->createContext(nrows);
-  auto valueContext = keyCol->createContext(nrows);
-  keyCol->fillChunk(keyContext.get(), affectedRows, &tableContentsKeys);
-  valueCol->fillChunk(valueContext.get(), affectedRows, &tableContentsValues);
+  keyCol->fillChunk(affectedRows, &tableContentsKeys);
+  valueCol->fillChunk(affectedRows, &tableContentsValues);
   updateCache(tableContentsKeys, tableContentsValues);
 }
 

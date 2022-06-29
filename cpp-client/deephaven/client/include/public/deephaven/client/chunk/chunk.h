@@ -28,17 +28,17 @@ protected:
 };
 
 template<typename T>
-class NumericChunk final : public Chunk {
+class GenericChunk final : public Chunk {
 public:
-  static NumericChunk<T> create(size_t size);
+  static GenericChunk<T> create(size_t size);
 
-  NumericChunk() = default;
-  NumericChunk(NumericChunk &&other) noexcept = default;
-  NumericChunk &operator=(NumericChunk &&other) noexcept = default;
-  ~NumericChunk() final = default;
+  GenericChunk() = default;
+  GenericChunk(GenericChunk &&other) noexcept = default;
+  GenericChunk &operator=(GenericChunk &&other) noexcept = default;
+  ~GenericChunk() final = default;
 
-  NumericChunk take(size_t size) const;
-  NumericChunk drop(size_t size) const;
+  GenericChunk take(size_t size) const;
+  GenericChunk drop(size_t size) const;
 
   T *data() { return data_.get(); }
   const T *data() const { return data_.get(); }
@@ -50,9 +50,9 @@ public:
   const T *end() const { return data_.get() + size_; }
 
 private:
-  NumericChunk(std::shared_ptr<T[]> data, size_t size);
+  GenericChunk(std::shared_ptr<T[]> data, size_t size);
 
-  friend std::ostream &operator<<(std::ostream &s, const NumericChunk &o) {
+  friend std::ostream &operator<<(std::ostream &s, const GenericChunk &o) {
     using deephaven::client::utility::separatedList;
     return s << '[' << separatedList(o.begin(), o.end()) << ']';
   }
@@ -60,16 +60,21 @@ private:
   std::shared_ptr<T[]> data_;
 };
 
-typedef NumericChunk<int32_t> Int32Chunk;
-typedef NumericChunk<int64_t> Int64Chunk;
-typedef NumericChunk<uint64_t> UInt64Chunk;
-typedef NumericChunk<double> DoubleChunk;
+typedef GenericChunk<int8_t> Int8Chunk;
+typedef GenericChunk<int16_t> Int16Chunk;
+typedef GenericChunk<int32_t> Int32Chunk;
+typedef GenericChunk<int64_t> Int64Chunk;
+typedef GenericChunk<uint64_t> UInt64Chunk;
+typedef GenericChunk<float> FloatChunk;
+typedef GenericChunk<double> DoubleChunk;
+typedef GenericChunk<std::string> StringChunk;
 
 /**
  * Typesafe union of all the Chunk types.
  */
 class AnyChunk {
-  typedef std::variant<Int32Chunk, Int64Chunk, UInt64Chunk, DoubleChunk> variant_t;
+  typedef std::variant<Int8Chunk, Int16Chunk, Int32Chunk, Int64Chunk, UInt64Chunk,
+  FloatChunk, DoubleChunk, StringChunk> variant_t;
 
 public:
   template<typename T>
@@ -101,43 +106,57 @@ private:
 };
 
 template<typename T>
-NumericChunk<T> NumericChunk<T>::create(size_t size) {
+GenericChunk<T> GenericChunk<T>::create(size_t size) {
   // Note: wanted to use make_shared, but std::make_shared<T[]>(size) doesn't DTRT until C++20
   auto data = std::shared_ptr<T[]>(new T[size]);
-  return NumericChunk<T>(std::move(data), size);
+  return GenericChunk<T>(std::move(data), size);
 }
 
 template<typename T>
-NumericChunk<T>::NumericChunk(std::shared_ptr<T[]> data, size_t size) : Chunk(size),
+GenericChunk<T>::GenericChunk(std::shared_ptr<T[]> data, size_t size) : Chunk(size),
   data_(std::move(data)) {}
 
 template<typename T>
-NumericChunk<T> NumericChunk<T>::take(size_t size) const {
+GenericChunk<T> GenericChunk<T>::take(size_t size) const {
   checkSize(size, DEEPHAVEN_PRETTY_FUNCTION);
   // Share ownership of data_.
-  return NumericChunk<T>(data_, size);
+  return GenericChunk<T>(data_, size);
 }
 
 template<typename T>
-NumericChunk<T> NumericChunk<T>::drop(size_t size) const {
+GenericChunk<T> GenericChunk<T>::drop(size_t size) const {
   checkSize(size, DEEPHAVEN_PRETTY_FUNCTION);
   // Share ownership of data_, but the value of the pointer yielded by std::shared_ptr<T>::get()
   // is actually data_.get() + size.
   std::shared_ptr<T[]> newBegin(data_, data_.get() + size);
   auto newSize = size_ - size;
-  return NumericChunk<T>(std::move(newBegin), newSize);
+  return GenericChunk<T>(std::move(newBegin), newSize);
 }
 
 class ChunkVisitor {
 public:
+  virtual void visit(const Int8Chunk &) const = 0;
+  virtual void visit(const Int16Chunk &) const = 0;
   virtual void visit(const Int32Chunk &) const = 0;
   virtual void visit(const Int64Chunk &) const = 0;
   virtual void visit(const UInt64Chunk &) const = 0;
+  virtual void visit(const FloatChunk &) const = 0;
   virtual void visit(const DoubleChunk &) const = 0;
+  virtual void visit(const StringChunk &) const = 0;
 };
 
 template<typename T>
 struct TypeToChunk {};
+
+template<>
+struct TypeToChunk<int8_t> {
+  typedef deephaven::client::chunk::Int8Chunk type_t;
+};
+
+template<>
+struct TypeToChunk<int16_t> {
+  typedef deephaven::client::chunk::Int16Chunk type_t;
+};
 
 template<>
 struct TypeToChunk<int32_t> {
@@ -155,7 +174,17 @@ struct TypeToChunk<uint64_t> {
 };
 
 template<>
+struct TypeToChunk<float> {
+  typedef deephaven::client::chunk::FloatChunk type_t;
+};
+
+template<>
 struct TypeToChunk<double> {
   typedef deephaven::client::chunk::DoubleChunk type_t;
+};
+
+template<>
+struct TypeToChunk<std::string> {
+  typedef deephaven::client::chunk::StringChunk type_t;
 };
 }  // namespace deephaven::client::chunk

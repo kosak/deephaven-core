@@ -15,7 +15,6 @@
 #include "deephaven/client/ticking.h"
 #include "deephaven/client/chunk/chunk_maker.h"
 #include "deephaven/client/chunk/chunk.h"
-#include "deephaven/client/container/context.h"
 #include "deephaven/client/container/row_sequence.h"
 #include "deephaven/client/table/table.h"
 #include "deephaven/client/utility/table_maker.h"
@@ -39,7 +38,6 @@ using deephaven::client::chunk::Int32Chunk;
 using deephaven::client::chunk::Int64Chunk;
 using deephaven::client::chunk::UInt64Chunk;
 using deephaven::client::column::ColumnSource;
-using deephaven::client::container::Context;
 using deephaven::client::container::RowSequence;
 using deephaven::client::container::RowSequenceBuilder;
 using deephaven::client::table::Table;
@@ -395,11 +393,8 @@ void ClassicProcessor::processSerialNumber(const ClassicTickingUpdate &update) {
   auto addSlice = totalChunk.take(addedRows.size());
   auto modSlice = totalChunk.drop(addedRows.size());
 
-  auto addContext = serialNumberCol->createContext(addedRows.size());
-  auto modContext = serialNumberCol->createContext(modifiedRowsToUse->size());
-
-  serialNumberCol->fillChunkUnordered(addContext.get(), addedRows, &addSlice);
-  serialNumberCol->fillChunkUnordered(modContext.get(), *modifiedRowsToUse, &modSlice);
+  serialNumberCol->fillChunkUnordered(addedRows, &addSlice);
+  serialNumberCol->fillChunkUnordered(*modifiedRowsToUse, &modSlice);
 
   serialNumberProcessor_.process(&totalChunk);
 }
@@ -497,11 +492,8 @@ void ImmerProcessor::processSerialNumber(const ImmerTickingUpdate &update) {
   auto addSlice = totalChunk.take(addedRows->size());
   auto modSlice = totalChunk.drop(addedRows->size());
 
-  auto addContext = serialNumberCol->createContext(addedRows->size());
-  auto modContext = serialNumberCol->createContext(modifiedRowsToUse->size());
-
-  serialNumberCol->fillChunk(addContext.get(), *addedRows, &addSlice);
-  serialNumberCol->fillChunk(modContext.get(), *modifiedRowsToUse, &modSlice);
+  serialNumberCol->fillChunk(*addedRows, &addSlice);
+  serialNumberCol->fillChunk(*modifiedRowsToUse, &modSlice);
 
   serialNumberProcessor_.process(&totalChunk);
 }
@@ -577,9 +569,8 @@ void TableScanner::scanTable(const Table &table) {
   auto allRows = RowSequence::createSequential(0, nrows);
   for (size_t colNum = 0; colNum < ncols; ++colNum) {
     const auto &col = table.getColumn(colNum);
-    auto ctx = col->createContext(nrows);
     auto chunk = ChunkMaker::createChunkFor(*col, nrows);
-    col->fillChunk(ctx.get(), *allRows, &chunk.unwrap());
+    col->fillChunk(*allRows, &chunk.unwrap());
 
     // Assume for now that all the columns are int64_t
     const auto &typedChunk = chunk.get<Int64Chunk>();

@@ -14,6 +14,16 @@ template<typename T>
 struct CorrespondingArrowArrayType {};
 
 template<>
+struct CorrespondingArrowArrayType<int8_t> {
+  typedef arrow::Int8Array type_t;
+};
+
+template<>
+struct CorrespondingArrowArrayType<int16_t> {
+  typedef arrow::Int16Array type_t;
+};
+
+template<>
 struct CorrespondingArrowArrayType<int32_t> {
   typedef arrow::Int32Array type_t;
 };
@@ -24,8 +34,43 @@ struct CorrespondingArrowArrayType<int64_t> {
 };
 
 template<>
+struct CorrespondingArrowArrayType<float> {
+  typedef arrow::FloatArray type_t;
+};
+
+template<>
 struct CorrespondingArrowArrayType<double> {
   typedef arrow::DoubleArray type_t;
+};
+
+template<>
+struct CorrespondingArrowArrayType<std::string> {
+  typedef arrow::StringArray type_t;
+};
+
+struct FlexVectorAppender {
+  template<typename ARROW_SRC, typename T>
+  static void append(const ARROW_SRC &src, immer::flex_vector<T> *dest) {
+    auto transient = dest->transient();
+    for (auto element : src) {
+      if (!element.has_value()) {
+        throw std::runtime_error("TODO(kosak): we are not dealing with null values yet");
+      }
+      transient.push_back(*element);
+    }
+    *dest = transient.persistent();
+  }
+
+  static void append(const arrow::StringArray &src, immer::flex_vector<std::string> *dest) {
+    auto transient = dest->transient();
+    for (auto element : src) {
+      if (!element.has_value()) {
+        throw std::runtime_error("TODO(kosak): we are not dealing with null values yet");
+      }
+      transient.push_back(std::string(*element));
+    }
+    *dest = transient.persistent();
+  }
 };
 }  // namespace internal
 template<typename T>
@@ -77,18 +122,11 @@ public:
     typedef typename internal::CorrespondingArrowArrayType<T>::type_t arrowArrayType_t;
     auto *typedArrow = deephaven::client::utility::verboseCast<const arrowArrayType_t*>(&data,
         DEEPHAVEN_PRETTY_FUNCTION);
-    auto transient = vec_.transient();
-    for (auto element : *typedArrow) {
-      if (!element.has_value()) {
-        throw std::runtime_error("TODO(kosak): we are not dealing with null values yet");
-      }
-      transient.push_back(*element);
-    }
-    vec_ = transient.persistent();
+    internal::FlexVectorAppender::append(*typedArrow, &vec_);
   }
 
   std::shared_ptr<ColumnSource> makeColumnSource() const final {
-    return std::make_shared<ImmerColumnSource<T>>(vec_);
+    return deephaven::client::immerutil::ImmerColumnSource::create(vec_);
   }
 
 private:
