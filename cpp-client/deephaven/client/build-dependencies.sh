@@ -43,7 +43,7 @@ set -eux
 # We want something a lot more recent, but don't want to track head as is a moving
 # target and we can't guarantee things will continue to compile/be consistent.
 # So we select a particular SHA.
-: ${IMMER_SHA:=95889a7aa293d2caff5002bdbcbe7d10b87ec684}
+: ${IMMER_SHA:=e5d79ed80ec74d511cc4f52fb68feeac66507f2c}
 
 #
 # End of user customization section; you should not need to modify the code below
@@ -102,7 +102,7 @@ if [ "$CHECKOUT" = "yes" ]; then
   git clone $GIT_FLAGS -b v1.2.11 --depth 1 https://github.com/madler/zlib
   git clone $GIT_FLAGS -b v1.45.2 --depth 1 https://github.com/grpc/grpc
   git clone $GIT_FLAGS -b apache-arrow-7.0.0 --depth 1 https://github.com/apache/arrow
-  git clone $GIT_FLAGS --depth 1 https://github.com/arximboldi/immer.git && (cd immer && git checkout "${IMMER_SHA}")
+  git clone $GIT_FLAGS https://github.com/arximboldi/immer.git && (cd immer && git checkout "${IMMER_SHA}")
   curl -sL https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_"${BOOST_VERSION}".tar.bz2 | tar jxf -
   # Apply apache arrow patch.
   (cd arrow && patch -p1 <<EOF
