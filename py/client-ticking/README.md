@@ -11,6 +11,9 @@ are working on unifying these two libraries.
 
 ## Prerequisites
 
+# *CRISTIAN*: need python3 installed and specifically the package python3-dev ???
+
+
 Clone the Deephaven Core repository. For the remainder of this document we will assume that your
 clone is at the location specified by `${DHROOT}`.
 
@@ -50,8 +53,7 @@ Then run these commands to build the Deephaven shared library:
 
 ```
 export DEEPHAVEN_LOCAL=/usr/local/dhcpp-230313/local # Or where your build of the deephaven C++ client is installed.
-export LD_LIBRARY_PATH=${DEEPHAVEN_LOCAL}/arrow/lib:$PFX/cares/lib
-rm -rf build *.so && CFLAGS="-I${DEEPHAVEN_LOCAL}/deephaven/include" LDFLAGS="-L${DEEPHAVEN_LOCAL}/deephaven/lib -L${DEEPHAVEN_LOCAL}/protobuf/lib -L${DEEPHAVEN_LOCAL}/arrow/lib -L${DEEPHAVEN_LOCAL}/grpc/lib -L${DEEPHAVEN_LOCAL}/abseil/lib -L${DEEPHAVEN_LOCAL}/re2/lib -L${DEEPHAVEN_LOCAL}/cares/lib" python setup.py build_ext -i
+rm -rf build *.so && CFLAGS="-I${DEEPHAVEN_LOCAL}/deephaven/include" LDFLAGS="-L${DEEPHAVEN_LOCAL}/deephaven/lib" python setup.py build_ext -i
 ```
 
 Once built, a shared object with the binary python module should show up, named like
@@ -59,16 +61,7 @@ Once built, a shared object with the binary python module should show up, named 
 
 ## Testing the library
 
-Most of the Deephaven client's library dependencies were linked statically and so they are already
-included in the library. However, there are a couple that are linked dynamically. These need to be
-included in your `LD_LIBRARY_PATH`:
-
-```
-export LD_LIBRARY_PATH=${DHLIB}/arrow/lib:${DHLIB}/cares/lib
-```
-
-Then run python from the venv while in this directory, and try this sample
-program:
+Run python from the venv while in this directory, and try this sample Python program:
 ```
 import deephaven_client as dh
 client = dh.Client.connect("localhost:10000")

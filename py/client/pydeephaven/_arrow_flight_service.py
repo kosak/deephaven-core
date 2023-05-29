@@ -48,3 +48,14 @@ class ArrowFlightService:
             return reader.read_all()
         except Exception as e:
             raise DHError("failed to perform a flight DoGet on the table.") from e
+
+    def do_exchange(self):
+        try:
+            desc =  pa.flight.FlightDescriptor.for_command(b"dphn")
+            options = paflight.FlightCallOptions(headers=self.session.grpc_metadata)
+            writer, reader = self._flight_client.do_exchange(desc, options)
+            return writer, reader
+
+        except Exception as e:
+            raise DHError("failed to perform a flight DoExchange on the table.") from e
+            
