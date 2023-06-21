@@ -27,9 +27,6 @@ class MyListener(TableListener):
         self._show_deltas("modified-prev", update.modified_prev())
         self._show_deltas("modified", update.modified())
 
-    def on_error(self, error: str):
-        print(f"Error happened: {error}")
-
     def _show_deltas(self, what: str, dict: Dict[str, pa.Array]):
         if len(dict) == 0:
             return

@@ -147,6 +147,8 @@ cdef class ClientTable:
         return result.decode()
 
 
+# A wrapper of the corresponding C++ schema class. This wrapper also determines the corresponding pyarrow types
+# and stores them here, in case that is useful for some low-level caller.
 cdef class Schema:
     cdef shared_ptr[CSchema] _schema
     _names: Sequence[str]
@@ -210,7 +212,7 @@ cdef class RowSequence:
     def empty(self) -> bool:
         return deref(self.row_sequence).empty()
 
-# The "primitive" subset of the above. i.e. everything except object and uint16_t
+# The "primitive" set of types, used for the method _fill_primitive_chunk.
 ctypedef fused nparray_primitive_dtype_t:
     int8_t
     int16_t
@@ -220,8 +222,9 @@ ctypedef fused nparray_primitive_dtype_t:
     double
     bool
 
-# Python-friendly wrapper of the corresponding C++ ColumnSource class.
-# Provides a get_chunk() method that returns a pyarrow array of the appropriate type.
+# A wrapper of the corresponding C++ ColumnSource class. In order to be Python-friendly, provides a get_chunk()
+# method not available in C++: this method allocates a PyArrow array of the right type, populates it (including
+# correct values for nulls), and returns it.
 cdef class ColumnSource:
     cdef shared_ptr[CColumnSource] column_source
 
@@ -330,6 +333,8 @@ cdef class ColumnSource:
         dest_chunk = CGenericChunk[CDateTime].createView(<CDateTime*>&dest_data[0], rsSize)
         deref(self.column_source).fillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
 
+# Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.Array) except +:
     if isinstance(array, pa.lib.StringArray):
         return _convert_arrow_string_array_to_column_source(cast(pa.lib.StringArray, array))
@@ -368,6 +373,8 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
 
     return move(result)
 
+# Converts an Arrow BooleanArray to a C++ BooleanColumnSource. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_boolean_array_to_column_source(array: pa.BooleanArray) except +:
     num_elements = len(array)
     buffers = array.buffers()
@@ -388,6 +395,8 @@ cdef shared_ptr[CColumnSource] _convert_arrow_boolean_array_to_column_source(arr
     return CCythonSupport.createBooleanColumnSource(data_begin, data_end, validity_begin, validity_end,
         num_elements)
 
+# Converts an Arrow StringArray to a C++ StringColumnSource. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_string_array_to_column_source(array: pa.StringArray) except +:
     num_elements = len(array)
     buffers = array.buffers()
@@ -412,6 +421,8 @@ cdef shared_ptr[CColumnSource] _convert_arrow_string_array_to_column_source(arra
     return CCythonSupport.createStringColumnSource(text_begin, text_end, starts_begin, starts_end,
         validity_begin, validity_end, num_elements)
 
+# Converts an Arrow TimestampArray to a C++ DateTimeColumnSource. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_timestamp_array_to_column_source(array: pa.TimestampArray) except +:
     num_elements = len(array)
     buffers = array.buffers()
@@ -432,6 +443,7 @@ cdef shared_ptr[CColumnSource] _convert_arrow_timestamp_array_to_column_source(a
     return CCythonSupport.createDateTimeColumnSource(data_begin, data_end, validity_begin, validity_end,
                                                      num_elements)
 
+# This method converts a PyArrow Schema object to a C++ Schema object.
 cdef shared_ptr[CSchema] _pyarrow_schema_to_deephaven_schema(src: pa.Schema) except +:
     if len(src.names) != len(src.types):
         raise RuntimeError("Unexpected: schema lengths are inconsistent")
@@ -447,9 +459,19 @@ cdef shared_ptr[CSchema] _pyarrow_schema_to_deephaven_schema(src: pa.Schema) exc
 
     return CSchema.create(names, types)
 
+# Code to support processing of Barrage messages. The reason this is somewhat complicated is because there is a
+# sharp division of responsibilities: the Python side does all the Arrow interactions and knows Arrow data types;
+# meanwhile the C++ side does not know anything about Arrow and only works with Column Sources. For example, when
+# a Barrage message comes in, the Python code will turn it into ColumnSources for consumption by the C++ library.
+# Meanwhile when client code wants to access data in a ClientTable, C++ will return it as ColumnSources and this
+# library will need to translate it back into Arrow arrays for consumption by the user.
 cdef class BarrageProcessor:
     cdef CBarrageProcessor _barrage_processor
 
+    # The Python code that drives the Arrow interaction by doing a do_exchange() needs to send a
+    # BarrageSubscriptionRequest. However the Python code knows nothing about Barrage and the C++ code knows
+    # nothing about Arrow. This method is used to format a BarrageSubscriptionRequest as an array of bytes and
+    # give it to the Python code so that it can send it to the server over Arrow.
     @staticmethod
     def create_subscription_request(const unsigned char [::1] ticket_bytes) -> bytearray:
         res = CBarrageProcessor.createSubscriptionRequestCython(&ticket_bytes[0],
@@ -463,6 +485,22 @@ cdef class BarrageProcessor:
         result._barrage_processor = CBarrageProcessor(move(dh_schema))
         return result
 
+    # The Python code that drives the Arrow interaction does not know how to interpret the metadata message
+    # (which contain Deephaven indices) nor does it know how to properly interpret the Arrow column data it is getting.
+    # (You can't know, without looking at the metadata, where the incoming data is meant to be adds or modifies, and
+    # in what row positions it belongs in).
+    # Instead the Python code driving the interaction repeatedly waits for incoming Barrage messages, forwards them
+    # here, and we in turn forward them to C++. C++ uses these messages to build a TickingUpdate message. An update
+    # might be spread out over multiple Barrage messages, so it's possible we could push several Barrage massages to
+    # the C++ client before getting a reply. See TableListenerHandle._process_data() for an example of how we are
+    # called. The relevant part is reproduced here:
+    #
+    # while True:
+    #   data, metadata = self._reader.read_chunk()
+    #   ticking_update = self._bp.process_next_chunk(data.columns, metadata)
+    #   if ticking_update is not None:
+    #     table_update = TableUpdate(ticking_update)
+    #     self._listener.on_update(table_update)
     def process_next_chunk(self, sources: [], const char [::1] raw_metadata) -> TickingUpdate | None:
         cdef vector[shared_ptr[CColumnSource]] column_sources
         cdef vector[size_t] sizes
@@ -477,6 +515,7 @@ cdef class BarrageProcessor:
             return TickingUpdate.create(deref(result))
         return None
 
+# A class representing the relationship between a Deephaven type and a PyArrow type.
 cdef class _EquivalentTypes:
     cdef ElementTypeId dh_type
     pa_type: pa.DataType
@@ -501,6 +540,7 @@ cdef _equivalentTypes = [
     _EquivalentTypes.create(ElementTypeId.TIMESTAMP, pa.timestamp("ns", "UTC"))
 ]
 
+# Converts a Deephaven type (an enum) into the corresponding PyArrow type.
 cdef _dh_type_to_pa_type(dh_type: ElementTypeId) except +:
     for et_python in _equivalentTypes:
         et = <_EquivalentTypes>et_python
@@ -508,6 +548,7 @@ cdef _dh_type_to_pa_type(dh_type: ElementTypeId) except +:
             return et.pa_type
     raise RuntimeError(f"Can't convert Deephaven type {<int>dh_type} to pyarrow type type")
 
+# Converts a PyArrow type into the corresponding PyArrow type.
 cdef ElementTypeId _pa_type_to_dh_type(pa_type: pa.DataType) except +:
     for et_python in _equivalentTypes:
         et = <_EquivalentTypes>et_python
