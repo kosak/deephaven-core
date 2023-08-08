@@ -5,6 +5,7 @@ plugins {
     id 'io.deephaven.project.register'
     id 'io.deephaven.deephaven-in-docker'
     id 'license'
+    id 'com.diffplug.spotless'
 }
 
 evaluationDependsOn Docker.registryProject('cpp-client-base')
@@ -126,3 +127,10 @@ def testCppClient = Docker.registerDockerTask(project, 'testCppClient') {
 }
 deephavenDocker.shouldLogIfTaskFails testCppClient
 tasks.check.dependsOn(testCppClient)
+
+spotless {
+  cpp {
+    target 'deephaven/**/*.cc', 'deephaven/**/*.h'
+    clangFormat('14.0.0-1ubuntu1.1').style('Google')
+  }
+}
