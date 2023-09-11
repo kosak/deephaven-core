@@ -1517,71 +1517,71 @@ public:
    * Examples:
    *   Match on the same column name in both tables:
    *     "common_column"
- *   Match on different column names in each table:
- *     "left_column = right_column"
- *       or
- *    "left_column == right_column"
- *
- * The range match expression is expressed as a ternary logical expression, expressing the relationship between
- * the left start column, the right range column, and the left end column. Each column name pair is separated by
- * a logical operator, either < or <=. Additionally, the entire expression may be preceded by a left arrow <-
- * and/or followed by a right arrow ->.  The arrows indicate that range match can 'allow preceding' or 'allow
- * following' to match values outside the explicit range. 'Allow preceding' means that if no matching right
- * range column value is equal to the left start column value, the immediately preceding matching right row
- * should be included in the aggregation if such a row exists. 'Allow following' means that if no matching right
- * range column value is equal to the left end column value, the immediately following matching right row should
- * be included in the aggregation if such a row exists.
- *
- * Examples:
- *   For less than paired with greater than:
- *     "left_start_column < right_range_column < left_end_column"
- *   For less than or equal paired with greater than or equal:
- *     "left_start_column <= right_range_column <= left_end_column"
- *   For less than or equal (allow preceding) paired with greater than or equal (allow following):
- *     "<- left_start_column <= right_range_column <= left_end_column ->"
- *
- * Special Cases
- *   In order to produce aggregated output, range match expressions must define a range of values to aggregate
- *   over. There are a few noteworthy special cases of ranges.
- *
- *   Empty Range
- *     An empty range occurs for any left row with no matching right rows. That is, no non-null, non-NaN right
- *     rows were found using the exact join matches, or none were in range according to the range join match.
- *
- *   Single-value Ranges
- *     A single-value range is a range where the left row's values for the left start column and left end
- *     column are equal and both relative matches are inclusive (<= and >=, respectively). For a single-value
- *     range, only rows within the bucket where the right range column matches the single value are included in
- *     the output aggregations.
- *
- *   Invalid Ranges
- *   An invalid range occurs in two scenarios:
- *   (1) When the range is inverted, i.e., when the value of the left start column is greater than the value
- *       of the left end column.
- *   (2) When either relative-match is exclusive (< or >) and the value in the left start column is equal to
- *       the value in the left end column.
- *   For invalid ranges, the result row will be null for all aggregation output columns.
- *
- *   Undefined Ranges
- *     An undefined range occurs when either the left start column or the left end column is NaN. For rows with an
- *     undefined range, the corresponding output values will be null (as with invalid ranges).
- *
- *   Unbounded Ranges
- *     A partially or fully unbounded range occurs when either the left start column or the left end column is
- *     null. If the left start column value is null and the left end column value is non-null, the range is
- *     unbounded at the beginning, and only the left end column subexpression will be used for the match. If the
- *     left start column value is non-null and the left end column value is null, the range is unbounded at the
- *     end, and only the left start column subexpression will be used for the match. If the left start column
- *     and left end column values are null, the range is unbounded, and all rows will be included.
- *
- * Note: At this time, implementations only support static tables. This operation remains under active development.
- * @param table the right table of the join
- * @param on the match expression(s) that must include zero-or-more exact match expression,
- *        and exactly one range match expression as described above
- * @param aggs the aggregation(s) to perform over the responsive ranges from
- *             the right table for each row from this Table
- * @return A TableHandle referencing the new table
- */
+   *   Match on different column names in each table:
+   *     "left_column = right_column"
+   *       or
+   *    "left_column == right_column"
+   *
+   * The range match expression is expressed as a ternary logical expression, expressing the relationship between
+   * the left start column, the right range column, and the left end column. Each column name pair is separated by
+   * a logical operator, either < or <=. Additionally, the entire expression may be preceded by a left arrow <-
+   * and/or followed by a right arrow ->.  The arrows indicate that range match can 'allow preceding' or 'allow
+   * following' to match values outside the explicit range. 'Allow preceding' means that if no matching right
+   * range column value is equal to the left start column value, the immediately preceding matching right row
+   * should be included in the aggregation if such a row exists. 'Allow following' means that if no matching right
+   * range column value is equal to the left end column value, the immediately following matching right row should
+   * be included in the aggregation if such a row exists.
+   *
+   * Examples:
+   *   For less than paired with greater than:
+   *     "left_start_column < right_range_column < left_end_column"
+   *   For less than or equal paired with greater than or equal:
+   *     "left_start_column <= right_range_column <= left_end_column"
+   *   For less than or equal (allow preceding) paired with greater than or equal (allow following):
+   *     "<- left_start_column <= right_range_column <= left_end_column ->"
+   *
+   * Special Cases
+   *   In order to produce aggregated output, range match expressions must define a range of values to aggregate
+   *   over. There are a few noteworthy special cases of ranges.
+   *
+   *   Empty Range
+   *     An empty range occurs for any left row with no matching right rows. That is, no non-null, non-NaN right
+   *     rows were found using the exact join matches, or none were in range according to the range join match.
+   *
+   *   Single-value Ranges
+   *     A single-value range is a range where the left row's values for the left start column and left end
+   *     column are equal and both relative matches are inclusive (<= and >=, respectively). For a single-value
+   *     range, only rows within the bucket where the right range column matches the single value are included in
+   *     the output aggregations.
+   *
+   *   Invalid Ranges
+   *   An invalid range occurs in two scenarios:
+   *   (1) When the range is inverted, i.e., when the value of the left start column is greater than the value
+   *       of the left end column.
+   *   (2) When either relative-match is exclusive (< or >) and the value in the left start column is equal to
+   *       the value in the left end column.
+   *   For invalid ranges, the result row will be null for all aggregation output columns.
+   *
+   *   Undefined Ranges
+   *     An undefined range occurs when either the left start column or the left end column is NaN. For rows with an
+   *     undefined range, the corresponding output values will be null (as with invalid ranges).
+   *
+   *   Unbounded Ranges
+   *     A partially or fully unbounded range occurs when either the left start column or the left end column is
+   *     null. If the left start column value is null and the left end column value is non-null, the range is
+   *     unbounded at the beginning, and only the left end column subexpression will be used for the match. If the
+   *     left start column value is non-null and the left end column value is null, the range is unbounded at the
+   *     end, and only the left start column subexpression will be used for the match. If the left start column
+   *     and left end column values are null, the range is unbounded, and all rows will be included.
+   *
+   * Note: At this time, implementations only support static tables. This operation remains under active development.
+   * @param table the right table of the join
+   * @param on the match expression(s) that must include zero-or-more exact match expression,
+   *        and exactly one range match expression as described above
+   * @param aggs the aggregation(s) to perform over the responsive ranges from
+   *             the right table for each row from this Table
+   * @return A TableHandle referencing the new table
+   */
   [[nodiscard]]
   TableHandle RangeJoin(const TableHandle &right_side, std::vector<std::string> columnsToMatch,
       std::vector<std::string> columns_to_add) const;
