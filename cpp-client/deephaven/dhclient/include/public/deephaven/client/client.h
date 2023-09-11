@@ -1583,8 +1583,8 @@ public:
    * @return A TableHandle referencing the new table
    */
   [[nodiscard]]
-  TableHandle RangeJoin(const TableHandle &right_side, std::vector<std::string> columnsToMatch,
-      std::vector<std::string> columns_to_add) const;
+  TableHandle RangeJoin(const TableHandle &right_side, std::vector<std::string> on,
+      std::vector<Aggregate> aggs) const;
 
   /**
    * Performs one or more UpdateByOperation ops grouped by zero or more key columns to calculate

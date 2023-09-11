@@ -17,5 +17,6 @@ TEST_CASE("Range Join: Example", "[range_join]") {
   auto lt = thm.EmptyTable(20).UpdateView({"X=ii", "Y=X % 5", "LStartValue=ii / 0.7", "LEndValue=ii / 0.1"});
   auto rt = thm.EmptyTable(20).UpdateView({"X=ii", "Y=X % 5", "RValue=ii / 0.3"});
 
-  auto result = lt.RangeJoin(rt, {"Y", "LStartValue < RValue < LEndValue"}, Aggregate::Group({"X"}));}
+  auto result = lt.RangeJoin(rt, {"Y", "LStartValue < RValue < LEndValue"}, {Aggregate::Group({"X"})});
+}
 }  // namespace deephaven::client::tests
