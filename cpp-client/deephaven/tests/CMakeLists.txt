@@ -20,6 +20,7 @@ add_executable(tests
     merge_tables_test.cc
     new_table_test.cc
     on_close_cb_test.cc
+    range_join_test.cc
     script_test.cc
     select_test.cc
     sort_test.cc
