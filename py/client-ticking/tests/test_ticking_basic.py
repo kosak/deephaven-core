@@ -19,6 +19,8 @@ class TickingBasicTestCase(unittest.TestCase):
         def update_table_added(added):
             nonlocal table_added_update_count
             nonlocal table_added_last_col1_seen
+            if not added:
+                return
             for value in added['Col1'].to_pylist():
                 prev = table_added_last_col1_seen
                 table_added_last_col1_seen = value
