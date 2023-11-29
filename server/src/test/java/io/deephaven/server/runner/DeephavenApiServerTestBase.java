@@ -6,10 +6,12 @@ package io.deephaven.server.runner;
 import dagger.BindsInstance;
 import dagger.Component;
 import io.deephaven.client.ClientDefaultsModule;
+import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.context.TestExecutionContext;
 import io.deephaven.engine.liveness.LivenessScope;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.updategraph.impl.PeriodicUpdateGraph;
+import io.deephaven.engine.util.ScriptSession;
 import io.deephaven.io.logger.LogBuffer;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.proto.DeephavenChannel;
@@ -19,7 +21,10 @@ import io.deephaven.server.auth.CommunityAuthorizationProvider;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.console.NoConsoleSessionModule;
 import io.deephaven.server.log.LogModule;
+import io.deephaven.server.plugin.js.JsPluginNoopConsumerModule;
+import io.deephaven.server.runner.scheduler.SchedulerDelegatingImplModule;
 import io.deephaven.server.session.ObfuscatingErrorTransformerModule;
+import io.deephaven.server.util.Scheduler;
 import io.deephaven.util.SafeCloseable;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -28,7 +33,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 
+import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.PrintStream;
 import java.time.Duration;
@@ -39,6 +46,7 @@ import java.util.concurrent.TimeUnit;
  * Manages a single instance of {@link DeephavenApiServer}.
  */
 public abstract class DeephavenApiServerTestBase {
+
     @Singleton
     @Component(modules = {
             DeephavenApiServerModule.class,
@@ -49,12 +57,12 @@ public abstract class DeephavenApiServerTestBase {
             ExecutionContextUnitTestModule.class,
             ClientDefaultsModule.class,
             ObfuscatingErrorTransformerModule.class,
+            JsPluginNoopConsumerModule.class,
+            SchedulerDelegatingImplModule.class
     })
     public interface TestComponent {
 
-        DeephavenApiServer getServer();
-
-        ManagedChannelBuilder<?> channelBuilder();
+        void injectFields(DeephavenApiServerTestBase instance);
 
         @Component.Builder
         interface Builder {
@@ -78,12 +86,23 @@ public abstract class DeephavenApiServerTestBase {
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
-    private SafeCloseable executionContext;
+    private ExecutionContext executionContext;
+    private SafeCloseable executionContextCloseable;
 
-    private TestComponent serverComponent;
     private LogBuffer logBuffer;
-    private DeephavenApiServer server;
     private SafeCloseable scopeCloseable;
+
+    @Inject
+    DeephavenApiServer server;
+
+    @Inject
+    Scheduler.DelegatingImpl scheduler;
+
+    @Inject
+    Provider<ScriptSession> scriptSessionProvider;
+
+    @Inject
+    Provider<ManagedChannelBuilder<?>> managedChannelBuilderProvider;
 
     @Before
     public void setUp() throws Exception {
@@ -101,17 +120,17 @@ public abstract class DeephavenApiServerTestBase {
                 .port(-1)
                 .build();
 
-        serverComponent = DaggerDeephavenApiServerTestBase_TestComponent.builder()
+        DaggerDeephavenApiServerTestBase_TestComponent.builder()
                 .withServerConfig(config)
                 .withAuthorizationProvider(new CommunityAuthorizationProvider())
                 .withOut(System.out)
                 .withErr(System.err)
-                .build();
-
-        server = serverComponent.getServer();
+                .build()
+                .injectFields(this);
 
         final PeriodicUpdateGraph updateGraph = server.getUpdateGraph().cast();
-        executionContext = TestExecutionContext.createForUnitTests().withUpdateGraph(updateGraph).open();
+        executionContext = TestExecutionContext.createForUnitTests().withUpdateGraph(updateGraph);
+        executionContextCloseable = executionContext.open();
         if (updateGraph.isUnitTestModeAllowed()) {
             updateGraph.enableUnitTestMode();
             updateGraph.resetForUnitTests(false);
@@ -137,7 +156,9 @@ public abstract class DeephavenApiServerTestBase {
         if (updateGraph.isUnitTestModeAllowed()) {
             updateGraph.resetForUnitTests(true);
         }
-        executionContext.close();
+        executionContextCloseable.close();
+
+        scheduler.shutdown();
     }
 
     public DeephavenApiServer server() {
@@ -146,6 +167,14 @@ public abstract class DeephavenApiServerTestBase {
 
     public LogBuffer logBuffer() {
         return logBuffer;
+    }
+
+    public ScriptSession getScriptSession() {
+        return scriptSessionProvider.get();
+    }
+
+    public ExecutionContext getExecutionContext() {
+        return executionContext;
     }
 
     /**
@@ -160,7 +189,7 @@ public abstract class DeephavenApiServerTestBase {
     }
 
     public ManagedChannelBuilder<?> channelBuilder() {
-        return serverComponent.channelBuilder();
+        return managedChannelBuilderProvider.get();
     }
 
     public void register(ManagedChannel managedChannel) {

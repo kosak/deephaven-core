@@ -61,9 +61,11 @@ bool DumpFormat(std::ostream &s, const char **fmt, bool placeholder_expected);
 std::ostream &Streamf(std::ostream &s, const char *fmt);
 
 template<typename HEAD, typename... REST>
-std::ostream &Streamf(std::ostream &s, const char *fmt, const HEAD &head, REST &&... rest) {
-  (void) deephaven::dhcore::utility::internal::DumpFormat(s, &fmt, true);
-  s << head;
+std::ostream &Streamf(std::ostream &s, const char *fmt, HEAD &&head, REST &&... rest) {
+  if (!deephaven::dhcore::utility::internal::DumpFormat(s, &fmt, true)) {
+    return s;
+  }
+  s << std::forward<HEAD>(head);
   return Streamf(s, fmt, std::forward<REST>(rest)...);
 }
 
@@ -157,10 +159,10 @@ internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin,
 #define DEEPHAVEN_PRETTY_FUNCTION __PRETTY_FUNCTION__
 #elif defined(__GNUC__)
 #define DEEPHAVEN_PRETTY_FUNCTION __PRETTY_FUNCTION__
-#elif defined(__MSC_VER)
+#elif defined(_MSC_VER)
 #define DEEPHAVEN_PRETTY_FUNCTION __FUNCSIG__
 #else
-# error Unsupported compiler
+#error "Don't have a specialization of DEEPHAVEN_PRETTY_FUNCTION for your compiler"
 #endif
 
 class DebugInfo {
@@ -184,8 +186,8 @@ std::string FormatDebugString(const char *func, const char *file, size_t line,
  * containing with __PRETTY_FUNCTION__, __FILE__, __LINE__ and the stringified arguments. This is
  * useful for functions who want to throw an exception with caller information.
  */
-#define DEEPHAVEN_LOCATION_EXPR(ARGS...) \
-  ::deephaven::dhcore::utility::DebugInfo(DEEPHAVEN_PRETTY_FUNCTION, __FILE__, __LINE__, #ARGS),ARGS
+#define DEEPHAVEN_LOCATION_EXPR(...) \
+  ::deephaven::dhcore::utility::DebugInfo(DEEPHAVEN_PRETTY_FUNCTION, __FILE__, __LINE__, #__VA_ARGS__),__VA_ARGS__
 
 #define DEEPHAVEN_LOCATION_STR(MESSAGE) \
   ::deephaven::dhcore::utility::FormatDebugString( \

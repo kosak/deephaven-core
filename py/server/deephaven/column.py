@@ -11,13 +11,15 @@ from typing import Sequence, Any
 import jpy
 
 import deephaven.dtypes as dtypes
-from deephaven import DHError, time
+from deephaven import DHError
 from deephaven.dtypes import DType
+from deephaven.dtypes import _instant_array
 
 _JColumnHeader = jpy.get_type("io.deephaven.qst.column.header.ColumnHeader")
 _JColumn = jpy.get_type("io.deephaven.qst.column.Column")
 _JColumnDefinition = jpy.get_type("io.deephaven.engine.table.ColumnDefinition")
 _JColumnDefinitionType = jpy.get_type("io.deephaven.engine.table.ColumnDefinition$ColumnType")
+_JPrimitiveArrayConversionUtility = jpy.get_type("io.deephaven.integrations.common.PrimitiveArrayConversionUtility")
 
 
 class ColumnType(Enum):
@@ -202,12 +204,12 @@ def datetime_col(name: str, data: Sequence) -> InputColumn:
     Returns:
         a new input column
     """
-    data = [time.to_j_instant(d) for d in data]
+    data = _instant_array(data)
     return InputColumn(name=name, data_type=dtypes.Instant, input_data=data)
 
 
 def pyobj_col(name: str, data: Sequence) -> InputColumn:
-    """ Creates an input column containing complex, non-primitive-like Python objects.
+    """Creates an input column containing complex, non-primitive-like Python objects.
 
     Args:
         name (str): the column name

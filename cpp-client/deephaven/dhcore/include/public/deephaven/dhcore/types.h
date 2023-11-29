@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <ostream>
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/ostream.h"
 
 namespace deephaven::dhcore {
 struct ElementTypeId {
@@ -332,6 +333,11 @@ public:
     return DateTime(nanos);
   }
 
+  /**
+   * Parses a string in ISO 8601 format into a DateTime.
+   * @param iso_8601_timestamp The timestamp, in ISO 8601 format.
+   * @return The corresponding DateTime.
+   */
   static DateTime Parse(std::string_view iso_8601_timestamp);
 
   /**
@@ -381,17 +387,11 @@ public:
   [[nodiscard]]
   int64_t Nanos() const { return nanos_; }
 
-  /**
-   * Used internally to serialize this object to Deephaven.
-   */
-  void StreamIrisRepresentation(std::ostream &result) const;
-
 private:
   int64_t nanos_ = 0;
 
-  friend std::ostream &operator<<(std::ostream &s, const DateTime &o) {
-    o.StreamIrisRepresentation(s);
-    return s;
-  }
+  friend std::ostream &operator<<(std::ostream &s, const DateTime &o);
 };
 }  // namespace deephaven::dhcore
+
+template<> struct fmt::formatter<deephaven::dhcore::DateTime> : ostream_formatter {};

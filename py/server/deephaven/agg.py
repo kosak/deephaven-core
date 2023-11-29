@@ -44,6 +44,10 @@ class Aggregation:
             raise DHError(message="unsupported aggregation operation.")
         return self._j_agg_spec
 
+    @property
+    def is_formula(self):
+        return isinstance(self._j_agg_spec, jpy.get_type("io.deephaven.api.agg.spec.AggSpecFormula"))
+
 
 def sum_(cols: Union[str, List[str]] = None) -> Aggregation:
     """Creates a Sum aggregation.
@@ -106,6 +110,8 @@ def count_(col: str) -> Aggregation:
     Returns:
         an aggregation
     """
+    if not isinstance(col, str):
+        raise DHError(message="count_ aggregation requires a string value for the 'col' argument.")
     return Aggregation(j_aggregation=_JAggregation.AggCount(col))
 
 
@@ -119,6 +125,8 @@ def partition(col: str, include_by_columns: bool = True) -> Aggregation:
     Returns:
         an aggregation
     """
+    if not isinstance(col, str):
+        raise DHError(message="partition aggregation requires a string value for the 'col' argument.")
     return Aggregation(j_aggregation=_JAggregation.AggPartition(col, include_by_columns))
 
 
@@ -268,7 +276,11 @@ def sorted_last(order_by: str, cols: Union[str, List[str]] = None) -> Aggregatio
 
 
 def std(cols: Union[str, List[str]] = None) -> Aggregation:
-    """Creates a Std aggregation.
+    """Creates a Std (sample standard deviation) aggregation.
+
+    Sample standard deviation is computed using `Bessel's correction <https://en.wikipedia.org/wiki/Bessel%27s_correction>`_,
+    which ensures that the sample variance will be an unbiased estimator of population variance.
+
 
     Args:
         cols (Union[str, List[str]]): the column(s) to aggregate on, can be renaming expressions, i.e. "new_col = col";
@@ -308,7 +320,11 @@ def unique(cols: Union[str, List[str]] = None, include_nulls: bool = False, non_
 
 
 def var(cols: Union[str, List[str]] = None) -> Aggregation:
-    """Creates a Var aggregation.
+    """Creates a sample Var aggregation.
+
+    Sample standard deviation is computed using `Bessel's correction <https://en.wikipedia.org/wiki/Bessel%27s_correction>`_,
+    which ensures that the sample variance will be an unbiased estimator of population variance.
+
 
     Args:
         cols (Union[str, List[str]]): the column(s) to aggregate on, can be renaming expressions, i.e. "new_col = col";

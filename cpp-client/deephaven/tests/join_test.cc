@@ -15,22 +15,15 @@ TEST_CASE("Join", "[join]") {
   auto tm = TableMakerForTests::Create();
   auto table = tm.Table();
 
-  auto import_date = table.GetStrCol("ImportDate");
-  auto ticker = table.GetStrCol("Ticker");
-  auto volume = table.GetNumCol("Volume");
-  auto close = table.GetNumCol("Close");
-
-  table = table.Where(import_date == "2017-11-01");
-  auto last_close = table.LastBy(ticker);
-  auto avg_view = table.View(ticker, volume).AvgBy(ticker);
+  table = table.Where("ImportDate == `2017-11-01`");
+  auto last_close = table.LastBy("Ticker");
+  auto avg_view = table.View("Ticker", "Volume").AvgBy("Ticker");
 
   auto joined = last_close.NaturalJoin(avg_view,
-      {ticker},
-      {volume.as("ADV")});
+      {"Ticker"},
+      {"ADV = Volume"});
 
-  auto adv = joined.GetNumCol("ADV");
-  auto filtered = joined.Select(ticker, close, adv);
-  std::cout << filtered.Stream(true) << '\n';
+  auto filtered = joined.Select("Ticker", "Close", "ADV");
 
   std::vector<std::string> ticker_data = {"XRX", "XYZZY", "IBM", "GME", "AAPL", "ZNGA"};
   std::vector<double> close_data = {53.8, 88.5, 38.7, 453, 26.7, 544.9};
@@ -47,9 +40,6 @@ TEST_CASE("Join", "[join]") {
 TEST_CASE("Aj", "[join]") {
   auto tm = TableMakerForTests::Create();
   auto q = arrow::timestamp(arrow::TimeUnit::NANO, "UTC");
-  arrow::TimestampBuilder tb(q, arrow::default_memory_pool());
-  // tb.Append(DateTime::Parse("2021-04-05T09:10:00-0500"));
-  tb.Finish();
 
   TableHandle trades;
   {
@@ -146,9 +136,6 @@ TEST_CASE("Aj", "[join]") {
 TEST_CASE("Raj", "[join]") {
   auto tm = TableMakerForTests::Create();
   auto q = arrow::timestamp(arrow::TimeUnit::NANO, "UTC");
-  arrow::TimestampBuilder tb(q, arrow::default_memory_pool());
-  // tb.Append(DateTime::Parse("2021-04-05T09:10:00-0500"));
-  tb.Finish();
 
   TableHandle trades;
   {

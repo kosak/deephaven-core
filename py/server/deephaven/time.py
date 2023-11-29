@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Union, Optional
+from typing import Union, Optional, Literal
 
 import jpy
 import numpy
@@ -17,6 +17,7 @@ from deephaven import DHError
 from deephaven.dtypes import Instant, LocalDate, LocalTime, ZonedDateTime, Duration, Period, TimeZone
 
 _JDateTimeUtils = jpy.get_type("io.deephaven.time.DateTimeUtils")
+_JPythonTimeComponents = jpy.get_type("io.deephaven.integrations.python.PythonTimeComponents")
 _JLocalDate = jpy.get_type("java.time.LocalDate")
 _JLocalTime = jpy.get_type("java.time.LocalTime")
 _JInstant = jpy.get_type("java.time.Instant")
@@ -24,14 +25,14 @@ _JZonedDateTime = jpy.get_type("java.time.ZonedDateTime")
 _JDuration = jpy.get_type("java.time.Duration")
 _JPeriod = jpy.get_type("java.time.Period")
 
-_nanos_per_second = 1000000000
-_nanos_per_micro = 1000
+_NANOS_PER_SECOND = 1000000000
+_NANOS_PER_MICRO = 1000
 
 
 # region Clock
 
 
-def dh_now(system: bool = False, resolution: str = 'ns') -> Instant:
+def dh_now(system: bool = False, resolution: Literal["ns", "ms"] = "ns") -> Instant:
     """ Provides the current datetime according to the current Deephaven clock.
 
     Query strings should use the built-in "now" function instead of this function.
@@ -42,9 +43,8 @@ def dh_now(system: bool = False, resolution: str = 'ns') -> Instant:
         system (bool): True to use the system clock; False to use the default clock.  Under most circumstances,
             the default clock will return the current system time, but during replay simulations, the default
             clock can return the replay time.
-
-        resolution (str): The resolution of the returned time.  The default 'ns' will return nanosecond resolution times
-            if possible. 'ms' will return millisecond resolution times.
+        resolution (str): The resolution of the returned time.  The default "ns" will return nanosecond resolution times
+            if possible. "ms" will return millisecond resolution times.
 
     Returns:
         Instant
@@ -206,18 +206,18 @@ def to_j_time_zone(tz: Union[None, TimeZone, str, datetime.tzinfo, datetime.date
         raise DHError(e) from e
 
 
-def to_j_local_date(dt: Union[None, LocalDate, str, datetime.date, datetime.time, datetime.datetime,
+def to_j_local_date(dt: Union[None, LocalDate, str, datetime.date, datetime.datetime,
                               numpy.datetime64, pandas.Timestamp]) -> Optional[LocalDate]:
     """
     Converts a date time value to a Java LocalDate.
-    Date time values can be None, a Java LocalDate, a string, a datetime.date, a datetime.time, a datetime.datetime,
+    Date time values can be None, a Java LocalDate, a string, a datetime.date, a datetime.datetime,
     a numpy.datetime64, or a pandas.Timestamp.
 
     Date strings can be formatted according to the ISO 8601 date time format as 'YYYY-MM-DD'.
 
     Args:
-        dt (Union[None, LocalDate, str, datetime.date, datetime.time, datetime.datetime, numpy.datetime64,
-            pandas.Timestamp]): A date time value.  If None is provided, None is returned.
+        dt (Union[None, LocalDate, str, datetime.date, datetime.datetime, numpy.datetime64, pandas.Timestamp]): 
+            A date time value. If None is provided, None is returned.
 
     Returns:
         LocalDate
@@ -277,9 +277,9 @@ def to_j_local_time(dt: Union[None, LocalTime, int, str, datetime.time, datetime
         elif isinstance(dt, str):
             return _JDateTimeUtils.parseLocalTime(dt)
         elif isinstance(dt, pandas.Timestamp):
-            return _JLocalTime.of(dt.hour, dt.minute, dt.second, dt.microsecond * _nanos_per_micro + dt.nanosecond)
+            return _JLocalTime.of(dt.hour, dt.minute, dt.second, dt.microsecond * _NANOS_PER_MICRO + dt.nanosecond)
         elif isinstance(dt, datetime.time) or isinstance(dt, datetime.datetime):
-            return _JLocalTime.of(dt.hour, dt.minute, dt.second, dt.microsecond * _nanos_per_micro)
+            return _JLocalTime.of(dt.hour, dt.minute, dt.second, dt.microsecond * _NANOS_PER_MICRO)
         elif isinstance(dt, numpy.datetime64):
             # Conversion only supports micros resolution
             return to_j_local_time(dt.astype(datetime.time))
@@ -295,7 +295,7 @@ def to_j_instant(dt: Union[None, Instant, int, str, datetime.datetime, numpy.dat
         Optional[Instant]:
     """
     Converts a date time value to a Java Instant.
-    Date time values can be None, a Java Instant, an int, a string, a datetime.time, a datetime.datetime,
+    Date time values can be None, a Java Instant, an int, a string, a datetime.datetime,
     a numpy.datetime64, or a pandas.Timestamp.
 
     int values are the number of nanoseconds since the Epoch.
@@ -327,11 +327,11 @@ def to_j_instant(dt: Union[None, Instant, int, str, datetime.datetime, numpy.dat
         elif isinstance(dt, datetime.datetime):
             epoch_time = dt.timestamp()
             epoch_sec = int(epoch_time)
-            nanos = int((epoch_time - epoch_sec) * _nanos_per_second)
+            nanos = int((epoch_time - epoch_sec) * _NANOS_PER_SECOND)
             return _JInstant.ofEpochSecond(epoch_sec, nanos)
         elif isinstance(dt, numpy.datetime64):
             epoch_nanos = dt.astype('datetime64[ns]').astype(numpy.int64)
-            epoch_sec, nanos = divmod(epoch_nanos, _nanos_per_second)
+            epoch_sec, nanos = divmod(epoch_nanos, _NANOS_PER_SECOND)
             return _JInstant.ofEpochSecond(int(epoch_sec), int(nanos))
         elif isinstance(dt, pandas.Timestamp):
             return _JDateTimeUtils.epochNanosToInstant(dt.value)
@@ -347,13 +347,13 @@ def to_j_zdt(dt: Union[None, ZonedDateTime, str, datetime.datetime, numpy.dateti
         Optional[ZonedDateTime]:
     """
     Converts a date time value to a Java ZonedDateTime.
-    Date time values can be None, a Java ZonedDateTime, a string, a datetime.time, a datetime.datetime,
+    Date time values can be None, a Java ZonedDateTime, a string, a datetime.datetime,
     a numpy.datetime64, or a pandas.Timestamp.
 
     Date time strings can be formatted according to the ISO 8601 date time format
-    '{@code 'yyyy-MM-ddThh:mm:ss[.SSSSSSSSS] TZ' and others.
+    ``'yyyy-MM-ddThh:mm:ss[.SSSSSSSSS] TZ'`` and others.
     Additionally, date time strings can be integer values that are nanoseconds, milliseconds, or seconds
-    from the Epoch.  Expected date ranges are used to infer the units.
+    from the Epoch. Expected date ranges are used to infer the units.
 
     Converting a datetime.datetime or pandas.Timestamp to a ZonedDateTime will use the datetime's timezone information.
     Converting a numpy.datetime64 to a ZonedDateTime will use the Deephaven default time zone.
@@ -410,14 +410,14 @@ def to_j_duration(dt: Union[None, Duration, int, str, datetime.timedelta, numpy.
     begin with a negative sign.
 
     Examples:
-       "PT20.345S" -- parses as "20.345 seconds"
-       "PT15M"     -- parses as "15 minutes" (where a minute is 60 seconds)
-       "PT10H"     -- parses as "10 hours" (where an hour is 3600 seconds)
-       "P2D"       -- parses as "2 days" (where a day is 24 hours or 86400 seconds)
-       "P2DT3H4M"  -- parses as "2 days, 3 hours and 4 minutes"
-       "PT-6H3M"    -- parses as "-6 hours and +3 minutes"
-       "-PT6H3M"    -- parses as "-6 hours and -3 minutes"
-       "-PT-6H+3M"  -- parses as "+6 hours and -3 minutes"
+        |    "PT20.345S" -- parses as "20.345 seconds"
+        |    "PT15M"     -- parses as "15 minutes" (where a minute is 60 seconds)
+        |    "PT10H"     -- parses as "10 hours" (where an hour is 3600 seconds)
+        |    "P2D"       -- parses as "2 days" (where a day is 24 hours or 86400 seconds)
+        |    "P2DT3H4M"  -- parses as "2 days, 3 hours and 4 minutes"
+        |    "PT-6H3M"    -- parses as "-6 hours and +3 minutes"
+        |    "-PT6H3M"    -- parses as "-6 hours and -3 minutes"
+        |    "-PT-6H+3M"  -- parses as "+6 hours and -3 minutes"
 
     Args:
         dt (Union[None, Duration, int, str, datetime.timedelta, numpy.timedelta64, pandas.Timedelta]):
@@ -439,10 +439,10 @@ def to_j_duration(dt: Union[None, Duration, int, str, datetime.timedelta, numpy.
         elif isinstance(dt, str):
             return _JDateTimeUtils.parseDuration(dt)
         elif isinstance(dt, pandas.Timedelta):
-            nanos = int((dt / datetime.timedelta(microseconds=1)) * _nanos_per_micro) + dt.nanoseconds
+            nanos = int((dt / datetime.timedelta(microseconds=1)) * _NANOS_PER_MICRO) + dt.nanoseconds
             return _JDuration.ofNanos(nanos)
         elif isinstance(dt, datetime.timedelta):
-            nanos = int((dt / datetime.timedelta(microseconds=1)) * _nanos_per_micro)
+            nanos = int((dt / datetime.timedelta(microseconds=1)) * _NANOS_PER_MICRO)
             return _JDuration.ofNanos(nanos)
         elif isinstance(dt, numpy.timedelta64):
             nanos = int(dt.astype('timedelta64[ns]').astype(numpy.int64))
@@ -468,13 +468,13 @@ def to_j_period(dt: Union[None, Period, str, datetime.timedelta, numpy.timedelta
     begin with a negative sign.
 
     Examples:
-      "P2Y"             -- 2 Years
-      "P3M"             -- 3 Months
-      "P4W"             -- 4 Weeks
-      "P5D"             -- 5 Days
-      "P1Y2M3D"         -- 1 Year, 2 Months, 3 Days
-      "P-1Y2M"          -- -1 Year, 2 Months
-      "-P1Y2M"          -- -1 Year, -2 Months
+        |    "P2Y"             -- 2 Years
+        |    "P3M"             -- 3 Months
+        |    "P4W"             -- 4 Weeks
+        |    "P5D"             -- 5 Days
+        |    "P1Y2M3D"         -- 1 Year, 2 Months, 3 Days
+        |    "P-1Y2M"          -- -1 Year, 2 Months
+        |    "-P1Y2M"          -- -1 Year, -2 Months
 
     Args:
         dt (Union[None, Period, str, datetime.timedelta, numpy.timedelta64, pandas.Timedelta]):
@@ -559,9 +559,11 @@ def to_date(dt: Union[None, LocalDate, ZonedDateTime]) -> Optional[datetime.date
         if dt is None:
             return None
         if isinstance(dt, LocalDate.j_type):
-            return datetime.date(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth())
+            year, month_value, day_of_month = _JPythonTimeComponents.getLocalDateComponents(dt)
+            return datetime.date(year, month_value, day_of_month)
         if isinstance(dt, ZonedDateTime.j_type):
-            return datetime.date(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth())
+            year, month_value, day_of_month = _JPythonTimeComponents.getLocalDateComponents(dt)
+            return datetime.date(year, month_value, day_of_month)
         else:
             raise TypeError("Unsupported conversion: " + str(type(dt)) + " -> datetime.date")
     except TypeError as e:
@@ -588,9 +590,11 @@ def to_time(dt: Union[None, LocalTime, ZonedDateTime]) -> Optional[datetime.time
         if dt is None:
             return None
         elif isinstance(dt, LocalTime.j_type):
-            return datetime.time(dt.getHour(), dt.getMinute(), dt.getSecond(), dt.getNano() // _nanos_per_micro)
+            hour, minute, second, nano = _JPythonTimeComponents.getLocalTimeComponents(dt)
+            return datetime.time(hour, minute, second, nano // _NANOS_PER_MICRO)
         elif isinstance(dt, ZonedDateTime.j_type):
-            return datetime.time(dt.getHour(), dt.getMinute(), dt.getSecond(), dt.getNano() // _nanos_per_micro)
+            hour, minute, second, nano = _JPythonTimeComponents.getLocalTimeComponents(dt)
+            return datetime.time(hour, minute, second, nano // _NANOS_PER_MICRO)
         else:
             raise TypeError("Unsupported conversion: " + str(type(dt)) + " -> datetime.time")
     except TypeError as e:
@@ -617,10 +621,12 @@ def to_datetime(dt: Union[None, Instant, ZonedDateTime]) -> Optional[datetime.da
         if dt is None:
             return None
         elif isinstance(dt, Instant.j_type):
-            ts = dt.getEpochSecond() + (dt.getNano() / _nanos_per_second)
+            epoch_second, nano = _JPythonTimeComponents.getInstantComponents(dt)
+            ts = epoch_second + (nano / _NANOS_PER_SECOND)
             return datetime.datetime.fromtimestamp(ts)
         elif isinstance(dt, ZonedDateTime.j_type):
-            ts = dt.toEpochSecond() + (dt.getNano() / _nanos_per_second)
+            epoch_second, nano = _JPythonTimeComponents.getInstantComponents(dt)
+            ts = epoch_second + (nano / _NANOS_PER_SECOND)
             return datetime.datetime.fromtimestamp(ts)
         else:
             raise TypeError("Unsupported conversion: " + str(type(dt)) + " -> datetime.datetime")
@@ -676,10 +682,12 @@ def to_np_datetime64(dt: Union[None, Instant, ZonedDateTime]) -> Optional[numpy.
         if dt is None:
             return None
         elif isinstance(dt, Instant.j_type):
-            ts = dt.getEpochSecond() * _nanos_per_second + dt.getNano()
+            epoch_second, nano = _JPythonTimeComponents.getInstantComponents(dt)
+            ts = epoch_second * _NANOS_PER_SECOND + nano
             return numpy.datetime64(ts, 'ns')
         elif isinstance(dt, ZonedDateTime.j_type):
-            ts = dt.toEpochSecond() * _nanos_per_second + dt.getNano()
+            epoch_second, nano = _JPythonTimeComponents.getInstantComponents(dt)
+            ts = epoch_second * _NANOS_PER_SECOND + nano
             return numpy.datetime64(ts, 'ns')
         else:
             raise TypeError("Unsupported conversion: " + str(type(dt)) + " -> datetime.datetime")
@@ -706,11 +714,10 @@ def to_timedelta(dt: Union[None, Duration]) -> Optional[datetime.timedelta]:
         if dt is None:
             return None
         elif isinstance(dt, Duration.j_type):
-            return datetime.timedelta(seconds=dt.getSeconds(), microseconds=dt.getNano() // _nanos_per_micro)
+            seconds, nano = _JPythonTimeComponents.getDurationComponents(dt)
+            return datetime.timedelta(seconds=seconds, microseconds=nano // _NANOS_PER_MICRO)
         elif isinstance(dt, Period.j_type):
-            y = dt.getYears()
-            m = dt.getMonths()
-            d = dt.getDays()
+            y, m, d = _JPythonTimeComponents.getPeriodComponents(dt)
 
             if y or m:
                 raise ValueError("Unsupported conversion: " + str(type(dt)) +
@@ -744,12 +751,11 @@ def to_pd_timedelta(dt: Union[None, Duration]) -> Optional[pandas.Timedelta]:
         if dt is None:
             return None
         elif isinstance(dt, Duration.j_type):
-            micros, nanos = divmod(dt.getNano(), _nanos_per_micro)
-            return pandas.Timedelta(seconds=dt.getSeconds(), microseconds=micros, nanoseconds=nanos)
+            seconds, nano = _JPythonTimeComponents.getDurationComponents(dt)
+            micros, nanos = divmod(nano, _NANOS_PER_MICRO)
+            return pandas.Timedelta(seconds=seconds, microseconds=micros, nanoseconds=nanos)
         elif isinstance(dt, Period.j_type):
-            y = dt.getYears()
-            m = dt.getMonths()
-            d = dt.getDays()
+            y, m, d = _JPythonTimeComponents.getPeriodComponents(dt)
 
             if y or m:
                 raise ValueError("Unsupported conversion: " + str(type(dt)) +
@@ -785,9 +791,7 @@ def to_np_timedelta64(dt: Union[None, Duration, Period]) -> Optional[numpy.timed
         elif isinstance(dt, Duration.j_type):
             return numpy.timedelta64(dt.toNanos(), 'ns')
         elif isinstance(dt, Period.j_type):
-            d = dt.getDays()
-            m = dt.getMonths()
-            y = dt.getYears()
+            y, m, d = _JPythonTimeComponents.getPeriodComponents(dt)
 
             count = (1 if d else 0) + (1 if m else 0) + (1 if y else 0)
 

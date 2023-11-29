@@ -4,13 +4,10 @@
 #pragma once
 
 #include <string_view>
-#include "deephaven/client/columns.h"
 #include "deephaven/client/client_options.h"
-#include "deephaven/client/expressions.h"
 #include "deephaven/client/utility/misc_types.h"
 #include "deephaven/dhcore/clienttable/schema.h"
 #include "deephaven/dhcore/ticking/ticking.h"
-#include "deephaven/dhcore/utility/callbacks.h"
 
 namespace deephaven::client::impl {
 class UpdateByOperationImpl;
@@ -531,11 +528,13 @@ UpdateByOperation rollingCountTime(std::string timestamp_col, std::vector<std::s
     deephaven::client::utility::DurationSpecifier rev_time,
     deephaven::client::utility::DurationSpecifier fwd_time = 0);
 /**
- * Creates a rolling standard deviation UpdateByOperation for the supplied column names, using ticks as the
- * windowing unit. Ticks are row counts, and you may specify the reverse and forward window in
- * number of rows to include. The current row is considered to belong to the reverse window but
- * not the forward window. Also, negative values are allowed and can be used to generate completely
- * forward or completely reverse windows.
+ * Creates a rolling sample standard deviation UpdateByOperation for the supplied column names, using ticks as the
+ * windowing unit. Ticks are row counts, and you may specify the reverse and forward window in number of rows to include.
+ * The current row is considered to belong to the reverse window but not the forward window. Also, negative values are
+ * allowed and can be used to generate completely forward or completely reverse windows.
+ *
+ * Sample standard deviation is computed using Bessel's correction (https://en.wikipedia.org/wiki/Bessel%27s_correction),
+ * which ensures that the sample variance will be an unbiased estimator of population variance.
  *
  * See the documentation of rollingSumTick() for examples of window values.
  *
@@ -546,11 +545,14 @@ UpdateByOperation rollingCountTime(std::string timestamp_col, std::vector<std::s
  */
 UpdateByOperation rollingStdTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks = 0);
 /**
- * Creates a rolling standard deviation UpdateByOperation for the supplied column names, using time as the
- * windowing unit. This function accepts nanoseconds or time strings as the reverse and forward
- * window parameters. Negative values are allowed and can be used to generate completely forward or
- * completely reverse windows. A row containing a null in the timestamp column belongs to no window
- * and will not be considered in the windows of other rows; its output will be null.
+ * Creates a rolling sample standard deviation UpdateByOperation for the supplied column names, using time as the
+ * windowing unit. This function accepts nanoseconds or time strings as the reverse and forward window parameters.
+ * Negative values are allowed and can be used to generate completely forward or completely reverse windows.
+ * A row containing a null in the timestamp column belongs to no window and will not be considered in the windows
+ * of other rows; its output will be null.
+ *
+ * Sample standard deviation is computed using Bessel's correction (https://en.wikipedia.org/wiki/Bessel%27s_correction),
+ * which ensures that the sample variance will be an unbiased estimator of population variance.
  *
  * See the documentation of rollingSumTime() for examples of window values.
  *

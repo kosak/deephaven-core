@@ -1,18 +1,26 @@
-# The Deephaven R Client
 
-The Deephaven R client is an R package that enables R users to interface with a Deephaven server and perform various
+# The Deephaven Core R Client
+
+The Deephaven Core R client is an R package that enables R users to interface with a Deephaven server and perform various
 server-side operations from the comfort of RStudio or any other R interface.
 
 ## What can the R client do?
 
-The Deephaven Client currently provides three basic functionalities:
+The R Client provides the following functionalities:
 
 1. Connect to a Deephaven server
    -   with anonymous authentication (no username or password)
    -   with basic authentication (username and password)
+   -   with pre-shared key authentication (requires only a key)
    -   with custom authentication (general key-value credentials)
 
-2. Interface with Deephaven Tables on the server
+2. Run scripts on the server
+   -   If the server is equipped with a console, run a script in that console
+   -   Currently, Python and Groovy are supported
+
+3. Utilize Deephaven's vast table API from R
+   -   Create static and ticking tables on the server
+   -   Construct and execute complex queries
    -   Retrieve references to tables on the server
    -   Pull table data into an [Arrow RecordBatchReader](https://arrow.apache.org/docs/r/reference/RecordBatchReader.html),
 an [Arrow Table](https://arrow.apache.org/docs/r/reference/Table.html),
@@ -22,11 +30,7 @@ or an [R Data Frame](https://stat.ethz.ch/R-manual/R-devel/library/base/html/dat
 an [Arrow Table](https://arrow.apache.org/docs/r/reference/Table.html),
 a [dplyr Tibble](https://tibble.tidyverse.org),
 or an [R Data Frame](https://stat.ethz.ch/R-manual/R-devel/library/base/html/data.frame.html)
-   -   Bind server-side tables to variable names, enabling access from outside the current R session
-
-3. Run scripts on the server
-   -   If the server is equipped with a console, run a script in that console
-   -   Currently, Python and Groovy are supported
+   -   Call Deephaven table methods with familiar R functions
 
 ## Installation
 
@@ -89,7 +93,7 @@ Currently, the R client is only supported on Ubuntu 20.04 or 22.04 and must be b
    echo $LD_LIBRARY_PATH
    ```
 
-   Both environment libraries need to be defined for installing the package in the
+   Both environment variables need to be defined for installing the package in the
    instructions below.  Once the package is installed, you will only need
    `LD_LIBRARY_PATH` to be set in the R session where you intend to use the `rdeephaven` library.
    If you are starting R from the command line, you can set the environment variable as explained
@@ -97,18 +101,25 @@ Currently, the R client is only supported on Ubuntu 20.04 or 22.04 and must be b
 
    Refer to the instructions on the C++ client installation for more details on the `dhcpp` directory.
 
+   For faster compilation of the R client and its dependencies (particularly the Arrow R client),
+   use the following commands:
+   ```bash
+    export NCPUS=`getconf _NPROCESSORS_ONLN`
+    export MAKE="make -j$NCPUS"
+   ```
+
 4. Start an R console inside the rdeephaven directory. In that console, install the dephaven client dependencies
    (since we are building from source, dependencies will not be automatically pulled in):
    ```r
    install.packages(c('Rcpp', 'arrow', 'R6', 'dplyr'))
    ```
-   then install the deephaven client itself:
+   Then, exit the R console with `quit()`. From the rdeephaven directory, build and install the R client:
    ```r
-   install.packages(".", repos=NULL, type="source")
+   cd .. && R CMD build rdeephaven && R CMD INSTALL --no-multiarch --with-keep.source rdeephaven_*.tar.gz && rm rdeephaven_*.tar.gz
    ```
-   This last command can also be executed from RStudio without the need for explicitly starting an R console.
+   This is needed over the typical `install.packages()` to ensure that the vignettes get built and installed.
 
-   ---
+
    **NOTE**
 
    If using RStudio for this step, the environment variables that were set in step 3 may not persist into the RStudio
@@ -121,22 +132,24 @@ Currently, the R client is only supported on Ubuntu 20.04 or 22.04 and must be b
    the `etc/generate-dotRenviron-lines.sh` in the same shell where you set the environment variables;
    the script will give you the right content for the `.Renviron` file.
    Then, create a new R project from the existing `deephaven-core` directory using RStudio, and the corresponding
-   R session will inherit all of the necessary environment variables for successful compilation.
+   R session will inherit all the necessary environment variables for successful compilation.
 
    If RStudio Server is being used, all of the above must be followed for successful compilation. _In addition_,
    use the output from the script `etc/generate-rserverdotconf-lines.sh` and add them to the `rserver.conf` file
    for the RStudio Server installation (the location of that file may depend on your particular RStudio server
    installation, but a common location is `/etc/rstudio/rserver.conf`).
    
-   ---
+
 
 6. Now, run
    ```r
    library(rdeephaven)
    ```
    in the R session, and start using the client!
+   
+   For an introduction to the package, run `vignette("rdeephaven")`.
 
----
+
 **NOTE**
 
 If an error like this occurs in step 4:
@@ -157,11 +170,16 @@ this means that the C++ compiler does not know where to find the relevant header
    export DHCPP=/path/to/dhcpp
    ```
 3. The Deephaven C++ client is installed and the `DHCPP` environment variable is set, but the current project is not configured to allow the compiler to access the Deephaven `dhcpp` and `src` directories. This is more difficult to give advice on, as it is an IDE-dependent problem. Consult your IDE's documentation on C/C++ compiler include paths for more information.
----
+
 
 ## Running the unit tests
 
-The Deephaven R client utilizes R's `testthat` package to perform unit tests. In order to run these unit tests, install `testthat` via `install.packages("testthat")`. Then, from an R session with `rdeephaven` installed, run the unit tests:
+The Deephaven R client utilizes R's `testthat` package to perform unit tests. In order to run these unit tests, install `testthat` and the other dependent packages:
+```r
+install.packages(c('testthat', 'lubridate', 'zoo'))
+```
+
+Then, from an R session with `rdeephaven` installed, run the unit tests:
 ```r
 library(testthat)
 test_package("rdeephaven")

@@ -49,6 +49,7 @@ import io.deephaven.qst.table.TicketTable;
 import io.deephaven.server.auth.AuthorizationProvider;
 import io.deephaven.server.console.ScopeTicketResolver;
 import io.deephaven.server.runner.GrpcServer;
+import io.deephaven.server.runner.MainHelper;
 import io.deephaven.server.session.*;
 import io.deephaven.server.test.TestAuthModule.FakeBearer;
 import io.deephaven.server.util.Scheduler;
@@ -74,6 +75,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -202,6 +204,11 @@ public abstract class FlightMessageRoundTripTest {
     private ManagedChannel clientChannel;
     private ScheduledExecutorService clientScheduler;
     private FlightSession clientSession;
+
+    @BeforeClass
+    public static void setupOnce() throws IOException {
+        MainHelper.bootstrapProjectDirectories();
+    }
 
     @Before
     public void setup() throws IOException {
@@ -814,9 +821,11 @@ public abstract class FlightMessageRoundTripTest {
 
         // export from query scope to our session; this transforms the table
         assertEquals(0, numTransforms.intValue());
-        final Export export = clientSession.session().export(TicketTable.fromQueryScopeField(tableName));
-        // place the transformed table into the scope; wait on the future to ensure the server-side operation completes
-        clientSession.session().publish(resultTableName, export).get();
+        try (final TableHandle handle = clientSession.session().execute(TicketTable.fromQueryScopeField(tableName))) {
+            // place the transformed table into the scope; wait on the future to ensure the server-side operation
+            // completes
+            clientSession.session().publish(resultTableName, handle).get();
+        }
         assertEquals(1, numTransforms.intValue());
 
         // check that the table was transformed
@@ -835,28 +844,28 @@ public abstract class FlightMessageRoundTripTest {
         scriptSession.setVariable(tableName, table);
 
         // export from query scope to our session; this transforms the table
-        final Export export = clientSession.session().export(TicketTable.fromQueryScopeField(tableName));
+        try (final TableHandle handle = clientSession.session().execute(TicketTable.fromQueryScopeField(tableName))) {
+            // verify that we can sort the table prior to the restriction
+            clientSession.session().publish(resultTableName, handle).get();
+            // verify that we can publish as many times as we please
+            clientSession.session().publish(resultTableName, handle).get();
 
-        // verify that we can sort the table prior to the restriction
-        clientSession.session().publish(resultTableName, export).get();
-        // verify that we can publish as many times as we please
-        clientSession.session().publish(resultTableName, export).get();
+            component.authorizationProvider().getConsoleServiceAuthWiring().delegate =
+                    new ConsoleServiceAuthWiring.AllowAll() {
+                        @Override
+                        public void onMessageReceivedBindTableToVariable(AuthContext authContext,
+                                BindTableToVariableRequest request) {
+                            ServiceAuthWiring.operationNotAllowed(DISABLED_FOR_TEST);
+                        }
+                    };
 
-        component.authorizationProvider().getConsoleServiceAuthWiring().delegate =
-                new ConsoleServiceAuthWiring.AllowAll() {
-                    @Override
-                    public void onMessageReceivedBindTableToVariable(AuthContext authContext,
-                            BindTableToVariableRequest request) {
-                        ServiceAuthWiring.operationNotAllowed(DISABLED_FOR_TEST);
-                    }
-                };
-
-        try {
-            clientSession.session().publish(resultTableName, export).get();
-            fail("expected the publish to fail");
-        } catch (final Exception e) {
-            // expect the authorization error details to propagate
-            assertTrue(e.getMessage().contains(DISABLED_FOR_TEST));
+            try {
+                clientSession.session().publish(resultTableName, handle).get();
+                fail("expected the publish to fail");
+            } catch (final Exception e) {
+                // expect the authorization error details to propagate
+                assertTrue(e.getMessage().contains(DISABLED_FOR_TEST));
+            }
         }
     }
 
@@ -868,26 +877,29 @@ public abstract class FlightMessageRoundTripTest {
         scriptSession.setVariable(tableName, table);
 
         // export from query scope to our session; this transforms the table
-        final Export export = clientSession.session().export(TicketTable.fromQueryScopeField(tableName));
+        try (final TableHandle handle = clientSession.session().execute(TicketTable.fromQueryScopeField(tableName))) {
 
-        // verify that we can sort the table prior to the restriction
-        clientSession.session().execute(export.table().sort("I"));
+            // verify that we can sort the table prior to the restriction
+            // noinspection EmptyTryBlock
+            try (final TableHandle ignored = handle.sort("I")) {
+                // ignore
+            }
 
-        component.authorizationProvider().getTableServiceContextualAuthWiring().delegate =
-                new TableServiceContextualAuthWiring.AllowAll() {
-                    @Override
-                    public void checkPermissionSort(AuthContext authContext, SortTableRequest request,
-                            List<Table> sourceTables) {
-                        ServiceAuthWiring.operationNotAllowed(DISABLED_FOR_TEST);
-                    }
-                };
+            component.authorizationProvider().getTableServiceContextualAuthWiring().delegate =
+                    new TableServiceContextualAuthWiring.AllowAll() {
+                        @Override
+                        public void checkPermissionSort(AuthContext authContext, SortTableRequest request,
+                                List<Table> sourceTables) {
+                            ServiceAuthWiring.operationNotAllowed(DISABLED_FOR_TEST);
+                        }
+                    };
 
-        try {
-            clientSession.session().execute(export.table().sort("J"));
-            fail("expected the sort to fail");
-        } catch (final Exception e) {
-            // expect the authorization error details to propagate
-            assertTrue(e.getMessage().contains(DISABLED_FOR_TEST));
+            try (final TableHandle ignored = handle.sort("J")) {
+                fail("expected the sort to fail");
+            } catch (final Exception e) {
+                // expect the authorization error details to propagate
+                assertTrue(e.getMessage().contains(DISABLED_FOR_TEST));
+            }
         }
     }
 
