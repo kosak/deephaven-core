@@ -22,7 +22,6 @@ set(ALL_FILES
     src/impl/table_handle_impl.cc
     src/impl/table_handle_manager_impl.cc
     src/impl/update_by_operation_impl.cc
-
     include/private/deephaven/client/impl/aggregate_impl.h
     include/private/deephaven/client/impl/client_impl.h
     include/private/deephaven/client/impl/table_handle_impl.h
@@ -30,6 +29,8 @@ set(ALL_FILES
     include/private/deephaven/client/impl/update_by_operation_impl.h
     include/private/deephaven/client/impl/util.h
 
+    src/arrowutil/arrow_client_table.cc
+    include/private/deephaven/client/arrowutil/arrow_client_table.h
     include/private/deephaven/client/arrowutil/arrow_column_source.h
     include/private/deephaven/client/arrowutil/arrow_value_converter.h
     include/private/deephaven/client/arrowutil/arrow_visitors.h
@@ -38,11 +39,15 @@ set(ALL_FILES
     src/client.cc
     src/flight.cc
     src/update_by.cc
-
     include/public/deephaven/client/client.h
     include/public/deephaven/client/client_options.h
     include/public/deephaven/client/flight.h
     include/public/deephaven/client/update_by.h
+
+    src/interop/client_interop.cc
+    src/interop/client_options_interop.cc
+    include/public/deephaven/client/interop/client_interop.h
+    include/public/deephaven/client/interop/client_options_interop.h
 
     src/subscription/subscribe_thread.cc
 
@@ -110,6 +115,7 @@ if (LINUX)
 endif()
 
 if (WIN32)
+    set_property(TARGET dhclient PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
     # /Wall is a bit too chatty so we stick with /W3
     # /bigobj needed because ticking/immer_table_state.cc compiles to something too large apparently
     target_compile_options(dhclient PRIVATE /W3 /bigobj)
