@@ -21,6 +21,7 @@ set(ALL_FILES
     src/container/row_sequence.cc
     src/immerutil/abstract_flex_vector.cc
     src/immerutil/immer_column_source.cc
+    src/interop/interop_util.cc
     src/ticking/barrage_processor.cc
     src/ticking/immer_table_state.cc
     src/ticking/index_decoder.cc
@@ -47,6 +48,7 @@ set(ALL_FILES
     include/public/deephaven/dhcore/column/column_source_helpers.h
     include/public/deephaven/dhcore/column/column_source_utils.h
     include/public/deephaven/dhcore/container/row_sequence.h
+    include/public/deephaven/dhcore/interop/interop_util.h
     include/public/deephaven/dhcore/ticking/barrage_processor.h
     include/public/deephaven/dhcore/ticking/ticking.h
     include/public/deephaven/dhcore/utility/cython_support.h
@@ -118,6 +120,7 @@ if (LINUX)
 endif()
 
 if (WIN32)
+  set_property(TARGET dhcore PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
   # /Wall is a bit too chatty so we stick with /W3
   # /bigobj needed because ticking/immer_table_state.cc compiles to something too large apparently
   target_compile_options(dhcore PRIVATE /W3 /bigobj)
@@ -130,4 +133,3 @@ target_include_directories(dhcore PRIVATE third_party/roaring/include)
 target_include_directories(dhcore PRIVATE flatbuf)
 target_include_directories(dhcore PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>)
 target_link_libraries(dhcore PUBLIC immer)
-
