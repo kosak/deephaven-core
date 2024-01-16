@@ -44,6 +44,9 @@ set(ALL_FILES
     include/public/deephaven/client/flight.h
     include/public/deephaven/client/update_by.h
 
+        src/interop/client_options_interop.cc
+        include/public/deephaven/client/interop/client_options_interop.h
+
     src/subscription/subscribe_thread.cc
 
     include/private/deephaven/client/subscription/subscribe_thread.h
@@ -95,6 +98,9 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.grpc.pb.h
     proto/deephaven/proto/ticket.pb.cc
     proto/deephaven/proto/ticket.pb.h
+        include/public/deephaven/client/interop/client_interop.h
+        src/interop/client_interop.cc
+        include/public/deephaven/client/flight_interop.h
 )
 
 add_library(dhclient SHARED ${ALL_FILES})
@@ -110,6 +116,7 @@ if (LINUX)
 endif()
 
 if (WIN32)
+    set_property(TARGET dhclient PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
     # /Wall is a bit too chatty so we stick with /W3
     # /bigobj needed because ticking/immer_table_state.cc compiles to something too large apparently
     target_compile_options(dhclient PRIVATE /W3 /bigobj)

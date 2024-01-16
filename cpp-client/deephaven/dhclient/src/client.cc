@@ -30,6 +30,7 @@ using deephaven::client::impl::UpdateByOperationImpl;
 using deephaven::client::subscription::SubscriptionHandle;
 using deephaven::client::utility::Executor;
 using deephaven::client::utility::OkOrThrow;
+using deephaven::client::utility::ValueOrThrow;
 using deephaven::dhcore::clienttable::Schema;
 using deephaven::dhcore::utility::GetWhat;
 using deephaven::dhcore::utility::MakeReservedVector;
@@ -544,6 +545,11 @@ std::shared_ptr<Schema> TableHandle::Schema() const {
 
 std::shared_ptr<arrow::flight::FlightStreamReader> TableHandle::GetFlightStreamReader() const {
   return GetManager().CreateFlightWrapper().GetFlightStreamReader(*this);
+}
+
+std::shared_ptr<arrow::Table> TableHandle::ToArrowTable() const {
+  auto res = GetFlightStreamReader()->ToTable();
+  return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(std::move(res)));
 }
 
 std::shared_ptr<SubscriptionHandle> TableHandle::Subscribe(

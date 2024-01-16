@@ -31,6 +31,13 @@ class TableHandleManagerImpl;
 }  // namespace deephaven::client::impl
 
 /**
+ * Forward reference to arrow's Table
+ */
+namespace arrow {
+class Table;
+}  // namespace arrow
+
+/**
  * Forward reference to arrow's FlightStreamReader
  */
 namespace arrow::flight {
@@ -1835,6 +1842,13 @@ public:
    */
   [[nodiscard]]
   std::shared_ptr<arrow::flight::FlightStreamReader> GetFlightStreamReader() const;
+
+  /**
+   * Read in the whole Arrow table
+   * @return the Arrow table
+  */
+  [[nodiscard]]
+  std::shared_ptr<arrow::Table> ToArrowTable() const;
 
   /**
    * Subscribe to a ticking table.

@@ -66,4 +66,9 @@ public:
 private:
   std::shared_ptr<impl::TableHandleManagerImpl> impl_;
 };
+
+class ArrowTable {
+private:
+  std::shared_ptr<arrow::Table> arrowTqable_;
+};
 }  // namespace deephaven::client

@@ -1,0 +1,370 @@
+/*
+ * Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+ */
+#include "deephaven/client/interop/client_interop.h"
+
+#include <codecvt>
+#include <locale>
+#include <arrow/table.h>
+#include "deephaven/client/client.h"
+#include "deephaven/client/client_options.h"
+#include "deephaven/client/utility/arrow_util.h"
+#include "deephaven/dhcore/interop/interop_util.h"
+#include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/format.h"
+
+using deephaven::client::Client;
+using deephaven::client::ClientOptions;
+using deephaven::client::TableHandle;
+using deephaven::client::TableHandleManager;
+using deephaven::client::utility::ArrowUtil;
+using deephaven::client::utility::DurationSpecifier;
+using deephaven::client::utility::TimePointSpecifier;
+using deephaven::client::interop::ArrowTable;
+using deephaven::dhcore::interop::ErrorStatus;
+using deephaven::dhcore::interop::NativeError;
+using deephaven::dhcore::interop::PlatformUtf16;
+using deephaven::dhcore::interop::PlatformUtf16v2;
+using deephaven::dhcore::interop::ResultOrError;
+using deephaven::dhcore::interop::Utf16Converter;
+using deephaven::dhcore::interop::WrappedException;
+using deephaven::dhcore::utility::MakeReservedVector;
+
+namespace {
+std::vector<std::string> MakeStringVec(const char16_t **key_columns, int64_t num_key_columns) {
+  auto result = MakeReservedVector<std::string>(num_key_columns);
+  Utf16Converter converter;
+  for (int64_t i = 0; i < num_key_columns; ++i) {
+    result.emplace_back(converter.to_bytes(key_columns[i]));
+  }
+  return result;
+}
+}  // namespace
+
+
+
+
+extern "C" {
+// Takes a UTF-16 platform string
+void invokelab_r0(const char16_t *s) {
+  Utf16Converter converter;
+  fmt::println(stderr, "r0 received {}", converter.to_bytes(s));
+}
+
+// Returns a UTF-16 platform string
+const PlatformUtf16 *invokelab_r1() {
+  const char *message = "tpnn(🎔) - U+1F394";
+  fmt::println(stderr, "r1 returning {}", message);
+
+  Utf16Converter converter;
+  auto wstring = converter.from_bytes(message);
+  return PlatformUtf16::Create(wstring);
+}
+
+// Returns the string passed into it
+const PlatformUtf16 *invokelab_r2(const char16_t *s) {
+  {
+    // Wouldn't need the Utf16Converter except we want to print a debug message
+    Utf16Converter converter;
+    fmt::println(stderr, "r2 got {} and returning it", converter.to_bytes(s));
+  }
+  return PlatformUtf16::Create(s);
+}
+
+// Gets a UTF-16 platform strings from in array
+void invokelab_r3(const char16_t **data_in, int32_t count) {
+  Utf16Converter converter;
+  for (int i = 0; i != count; ++i) {
+    auto s = converter.to_bytes(data_in[i]);
+    fmt::println(stderr, "r3 index {} is {}", i, s);
+  }
+  std::cerr << "nothing else to do why am I still here\n";
+}
+
+// Store UTF-16 platform strings in out array. For extra credit, do it in one call to the
+// PlatformUtf16 allocator.
+void invokelab_r4(const PlatformUtf16 **data_out, int32_t count) {
+  Utf16Converter converter;
+  auto u16strings = MakeReservedVector<std::u16string>(count);
+  auto u16strings_ptrs = MakeReservedVector<const char16_t*>(count);
+  for (int i = 0; i != count; ++i) {
+    const char *fmt_string = "💫✨element ⦕{}⦖,🌟⭐";
+    auto s = fmt::format(fmt_string, i);
+    fmt::println(stderr, "r4 index {} storing {}", i, s);
+    auto s16 = converter.from_bytes(s);
+    u16strings.push_back(std::move(s16));
+    u16strings_ptrs.push_back(u16strings.back().data());
+  }
+  PlatformUtf16::Create(u16strings_ptrs.data(), data_out, count);
+}
+
+// Copy in to out, but reverse them. Just because.
+void invokelab_r5(const char16_t **data_in, const PlatformUtf16 **data_out, int32_t count) {
+  PlatformUtf16::Create(data_in, data_out, count);
+  std::reverse(data_out, data_out + count);
+}
+
+struct Big {
+  int a, b, c, d, e, f, g, h, i;
+};
+
+Big invokelab_r6(int a, int b, int c) {
+  fmt::println(std::cerr, "r6 {} {} {}", a, b, c);
+  return Big {10+a, 10+b, 10+c, 100+a, 100+b, 100+c, 1000+a, 1000+b, 1000+c};
+}
+
+int invokelab_r7(int a, int b, int c) {
+  fmt::println(std::cerr, "r7 {} {} {}", a, b, c);
+  return 12 + a;
+}
+
+class NENever {
+public:
+  NENever() = default;
+  explicit NENever(std::string_view s) {
+    std::cerr << "trying to make a " << s << '\n';
+    auto utf16 = Utf16Converter().from_bytes(s.data());
+    text_ = PlatformUtf16::Create(utf16);
+    std::cerr << "constructor returning ok\n";
+  }
+
+  const PlatformUtf16 *text_;
+};
+
+struct NEOtherString {
+  const char16_t *text_;
+};
+struct WrappedOtherString {
+  NEOtherString neos_;
+};
+
+NENever invokelab_r8(int a, int b, int c) {
+  fmt::println(std::cerr, "r8 {} {} {}", a, b, c);
+  return NENever("r8 is sad");
+}
+
+void invokelab_r9(int a, int b, int c, NENever *result) {
+  fmt::println(std::cerr, "r9 {} {} {}", a, b, c);
+  result->text_ = PlatformUtf16::Create(Utf16Converter().from_bytes("r9 is sad"));
+}
+
+void invokelab_r10(NENever *result, int32_t count) {
+  fmt::println(std::cerr, "r10 result is {}, count is {}",
+      (void*)result, count);
+  for (int i = 0; i != count; ++i) {
+    auto message = fmt::format("r10 is {} happy", i);
+    result[i].text_ = PlatformUtf16::Create(Utf16Converter().from_bytes(message));
+  }
+}
+
+void invokelab_r11(NEOtherString *result, int32_t count) {
+  fmt::println(std::cerr, "r10 result is {}, count is {}",
+      (void*)result, count);
+  for (int i = 0; i != count; ++i) {
+    auto message = fmt::format("r11 is {} not-happy", i);
+    const auto *freakshow = PlatformUtf16::Create(Utf16Converter().from_bytes(message));
+    result[i].text_ = reinterpret_cast<const char16_t*>(freakshow);
+  }
+}
+
+void invokelab_r12(WrappedOtherString *result, int32_t count) {
+  fmt::println(std::cerr, "r10 result is {}, count is {}",
+      (void*)result, count);
+  for (int i = 0; i != count; ++i) {
+    auto message = fmt::format("r11 is {} not-happy", i);
+    const auto *freakshow = PlatformUtf16::Create(Utf16Converter().from_bytes(message));
+    result[i].neos_.text_ = reinterpret_cast<const char16_t*>(freakshow);
+  }
+}
+
+
+// There is no TableHandleManager_ctor entry point because we don't need callers to invoke
+// the TableHandleManager ctor directly.
+void deephaven_client_TableHandleManager_dtor(TableHandleManager *self) {
+  delete self;
+}
+
+void deephaven_client_TableHandleManager_EmptyTable(const TableHandleManager *self,
+    int64_t size, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, size]() {
+    auto res = self->EmptyTable(size);
+    return new TableHandle(std::move(res));
+  });
+}
+void deephaven_client_TableHandleManager_FetchTable(const TableHandleManager *self,
+    const char16_t *table_name, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, table_name]() {
+    auto tn = Utf16Converter().to_bytes(table_name);
+    auto res = self->FetchTable(tn);
+    return new TableHandle(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandleManager_TimeTable(const TableHandleManager *self,
+    const DurationSpecifier *period, const TimePointSpecifier *start_time,
+    bool blink_table, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, period, start_time, blink_table]() {
+    auto res = self->TimeTable(*period, *start_time, blink_table);
+    return new TableHandle(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandleManager_InputTable(const TableHandleManager *self,
+    const deephaven::client::TableHandle *initial_table, const char16_t **key_columns,
+    int64_t num_key_columns, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, initial_table, key_columns, num_key_columns]() {
+    auto kcs = MakeStringVec(key_columns, num_key_columns);
+    auto res = self->InputTable(*initial_table, std::move(kcs));
+    return new TableHandle(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandleManager_RunScript(const TableHandleManager *self,
+    const char16_t *code, ResultOrError<void> *roe) {
+  roe->SetResult([self, code]() {
+    auto s = Utf16Converter().to_bytes(code);
+    self->RunScript(s);
+    return nullptr;
+  });
+}
+
+void deephaven_client_Client_Connect(const char16_t *target, const ClientOptions *options,
+    ResultOrError<Client> *roe) {
+  roe->SetResult([target, options]() {
+    auto s = Utf16Converter().to_bytes(target);
+    auto res = Client::Connect(s, *options);
+    return new Client(std::move(res));
+  });
+}
+
+// There is no Client_ctor entry point because we don't need callers to invoke
+// the Client ctor directly.
+void deephaven_client_Client_dtor(Client *self) {
+  delete self;
+}
+
+void deephaven_client_Client_Close(Client *self, ResultOrError<void> *roe) {
+  roe->SetResult([self]() {
+    self->Close();
+    return nullptr;
+  });
+}
+
+void deephaven_client_Client_GetManager(Client *self, ResultOrError<TableHandleManager> *roe) {
+  roe->SetResult([self]() {
+    auto res = self->GetManager();
+    return new TableHandleManager(std::move(res));
+  });
+}
+
+// There is no TableHandle_ctor entry point because we don't need callers to invoke
+// the TableHandle ctor directly.
+void deephaven_client_TableHandle_dtor(TableHandle *self) {
+  delete self;
+}
+
+void deephaven_client_TableHandle_GetManager(TableHandle *self,
+    ResultOrError<TableHandleManager> *roe) {
+  roe->SetResult([self]() {
+    auto res = self->GetManager();
+    return new TableHandleManager(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandle_Select(TableHandle *self, const char16_t **column_specs,
+    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, column_specs, num_column_specs]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto res = self->Select(cols);
+    return new TableHandle(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandle_View(TableHandle *self, const char16_t **column_specs,
+    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, column_specs, num_column_specs]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto res = self->View(cols);
+    return new TableHandle(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandle_DropColumns(TableHandle *self, const char16_t **column_specs,
+    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, column_specs, num_column_specs]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto res = self->DropColumns(cols);
+    return new TableHandle(std::move(res));
+  });
+}
+
+void deephaven_client_TableHandle_Update(TableHandle *self, const char16_t **column_specs,
+    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
+  roe->SetResult([self, column_specs, num_column_specs]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto res = self->Update(cols);
+    return new TableHandle(std::move(res));
+  });
+}
+// ...
+void deephaven_client_TableHandle_BindToVariable(TableHandle *self,
+    const char16_t *variable, ResultOrError<void> *roe) {
+  roe->SetResult([self, variable]() {
+    auto v = Utf16Converter().to_bytes(variable);
+    self->BindToVariable(v);
+    return nullptr;
+  });
+}
+
+void deephaven_client_TableHandle_ToString(TableHandle *self,
+    int32_t want_headers, PlatformUtf16v2 *result, ErrorStatus *status) {
+  std::cerr << "want headers came in as " << want_headers << '\n';
+  status->Run([self, want_headers, result]() {
+    result->Reset();
+    auto text = self->ToString(want_headers != 0);
+    *result = PlatformUtf16v2::Create(std::move(text));
+  });
+}
+
+void deephaven_client_TableHandle_ToArrowTable(TableHandle *self,
+    ArrowTable **arrow_table, int32_t *num_columns, int64_t *num_rows,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto at = self->ToArrowTable();
+    *num_columns = at->num_columns();
+    *num_rows = at->num_rows();
+    *arrow_table = new ArrowTable(std::move(at));
+  });
+}
+
+void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *self) {
+  delete self;
+}
+
+void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
+  int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
+  ErrorStatus *status) {
+  status->Run([=]() {
+    const auto &schema = self->table_->schema();
+    if (schema->num_fields() != num_columns) {
+      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
+          schema->num_fields(), num_columns);
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+
+    // Gather all the names, so we can do a bulk allocate call.
+    auto names = MakeReservedVector<std::string>(num_columns);
+    for (const auto &field : schema->fields()) {
+      names.push_back(field->name());
+    }
+    PlatformUtf16v2::CreateBulk(names.data(), names.size(), columns);
+
+    // Now do the column types
+    size_t next_field_index = 0;
+    for (const auto &field : schema->fields()) {
+      auto element_type_id = *ArrowUtil::GetElementTypeId(*field->type(), true);
+      column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
+    }
+  });
+}
+}  // extern "C"
