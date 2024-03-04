@@ -8,20 +8,6 @@
 #include "deephaven/dhcore/interop/interop_util.h"
 
 
-namespace deephaven::client::interop {
-/**
- * A thin wrapper about std::shared_ptr<ArrowTable>. Not really necessary but
- * makes it easier for humans to map to the corresponding class on the C# side.
- */
-struct ArrowTable {
-public:
-  explicit ArrowTable(std::shared_ptr<arrow::Table> table) : table_(std::move(table)) {}
-  std::shared_ptr<arrow::Table> table_;
-};
-}  // namespace deephaven::client::interop {
-
-
-
 extern "C" {
 void invokelab_s1(const char *s);
 void invokelab_s2(const char16_t *s);
@@ -91,13 +77,14 @@ void deephaven_client_TableHandle_ToString(
     int32_t want_headers,
     deephaven::dhcore::interop::PlatformUtf16v2 *result,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_TableHandle_ToArrowTable(deephaven::client::TableHandle *self,
-    deephaven::client::interop::ArrowTable **arrow_table, int32_t *num_columns, int64_t *num_rows,
+void deephaven_client_TableHandle_ToLocalTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::LocalTable> *local_table,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *self);
+void deephaven_client_LocalTable_dtor(deephaven::client::LocalTable *self);
 
-void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
-    int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
-    int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
+//void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
+//    int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
+//    int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 }

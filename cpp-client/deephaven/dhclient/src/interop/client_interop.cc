@@ -15,14 +15,19 @@
 
 using deephaven::client::Client;
 using deephaven::client::ClientOptions;
+using deephaven::client::LocalTable;
 using deephaven::client::TableHandle;
 using deephaven::client::TableHandleManager;
 using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::DurationSpecifier;
 using deephaven::client::utility::TimePointSpecifier;
-using deephaven::client::interop::ArrowTable;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::Chunk;
+using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::interop::ErrorStatus;
 using deephaven::dhcore::interop::NativeError;
+using deephaven::dhcore::interop::NativePtr;
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::PlatformUtf16v2;
 using deephaven::dhcore::interop::ResultOrError;
@@ -326,45 +331,75 @@ void deephaven_client_TableHandle_ToString(TableHandle *self,
   });
 }
 
-void deephaven_client_TableHandle_ToArrowTable(TableHandle *self,
-    ArrowTable **arrow_table, int32_t *num_columns, int64_t *num_rows,
-    ErrorStatus *status) {
+void deephaven_client_TableHandle_ToLocalTable(NativePtr<TableHandle> self,
+    NativePtr<LocalTable> *local_table, ErrorStatus *status) {
   status->Run([=]() {
-    auto at = self->ToArrowTable();
-    *num_columns = at->num_columns();
-    *num_rows = at->num_rows();
-    *arrow_table = new ArrowTable(std::move(at));
+    auto lt = self->ToLocalTable();
+    *local_table = new LocalTable(std::move(lt));
   });
 }
 
-void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *self) {
+void deephaven_client_LocalTable_dtor(LocalTable *self) {
   delete self;
 }
 
-void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
-  int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
-  ErrorStatus *status) {
+void deephaven_client_LocalTable_GetColumn(NativePtr<LocalTable> self, int32_t col_num,
+    NativePtr<std::shared_ptr<ColumnSource>> *result, ErrorStatus *status) {
   status->Run([=]() {
-    const auto &schema = self->table_->schema();
-    if (schema->num_fields() != num_columns) {
-      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
-          schema->num_fields(), num_columns);
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-    }
-
-    // Gather all the names, so we can do a bulk allocate call.
-    auto names = MakeReservedVector<std::string>(num_columns);
-    for (const auto &field : schema->fields()) {
-      names.push_back(field->name());
-    }
-    PlatformUtf16v2::CreateBulk(names.data(), names.size(), columns);
-
-    // Now do the column types
-    size_t next_field_index = 0;
-    for (const auto &field : schema->fields()) {
-      auto element_type_id = *ArrowUtil::GetElementTypeId(*field->type(), true);
-      column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
-    }
+    auto cs = self->GetColumn(col_num);
+    *result = new std::shared_ptr<ColumnSource>(std::move(cs));
   });
 }
+
+void deephaven_dhcore_column_ColumnSource_FillChunk(
+    NativePtr<std::shared_ptr<ColumnSource>> self,
+    NativePtr<std::shared_ptr<RowSequence>> rows, NativePtr<Chunk> dest_data,
+    NativePtr<BooleanChunk> optional_dest_null_flags,
+    ErrorStatus *status) {
+  status->Run([&]() {
+    self->get()->FillChunk(**rows, dest_data.get(), optional_dest_null_flags.get());
+  });
+}
+
+//void deephaven_client_ArrowTable_GetSchema(ArrowTable *self,
+//  int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
+//  ErrorStatus *status) {
+//  status->Run([=]() {
+//    const auto &schema = self->table_->schema();
+//    if (schema->num_fields() != num_columns) {
+//      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
+//          schema->num_fields(), num_columns);
+//      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+//    }
+//
+//    // Gather all the names, so we can do a bulk allocate call.
+//    auto names = MakeReservedVector<std::string>(num_columns);
+//    for (const auto &field : schema->fields()) {
+//      names.push_back(field->name());
+//    }
+//    PlatformUtf16v2::CreateBulk(names.data(), names.size(), columns);
+//
+//    // Now do the column types
+//    size_t next_field_index = 0;
+//    for (const auto &field : schema->fields()) {
+//      auto element_type_id = *ArrowUtil::GetElementTypeId(*field->type(), true);
+//      column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
+//    }
+//  });
+//}
+
+//void deephaven_client_ArrowTable_GetInt32Column(NativePtr<ArrowTable> self,
+//    int32_t columnIndex, int32_t *data, int64_t numRows, ErrorStatus *status) {
+//  status->Run([=]() {
+//    const auto *arrowTable = self->table_.get();
+//    if (columnIndex >= arrowTable->num_columns()) {
+//      throw hapyassd;
+//    }
+//
+//    auto chunkedArray = arrowTable->column(columnIndex);
+//    chunkedArray->
+//
+//
+//  });
+//}
 }  // extern "C"

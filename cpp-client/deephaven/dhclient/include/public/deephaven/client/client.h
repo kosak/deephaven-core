@@ -8,6 +8,7 @@
 #include "deephaven/client/client_options.h"
 #include "deephaven/client/utility/misc_types.h"
 #include "deephaven/dhcore/clienttable/schema.h"
+#include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/ticking/ticking.h"
 
 /**
@@ -26,6 +27,7 @@ namespace deephaven::client::impl {
 class AggregateComboImpl;
 class AggregateImpl;
 class ClientImpl;
+class LocalTableImpl;
 class TableHandleImpl;
 class TableHandleManagerImpl;
 }  // namespace deephaven::client::impl
@@ -56,6 +58,7 @@ class SubscriptionHandle;
  */
 namespace deephaven::client {
 class Client;
+class LocalTable;
 class TableHandle;
 class TableHandleManager;
 class UpdateByOperation;
@@ -1844,11 +1847,11 @@ public:
   std::shared_ptr<arrow::flight::FlightStreamReader> GetFlightStreamReader() const;
 
   /**
-   * Read in the whole Arrow table
-   * @return the Arrow table
+   * Bring over the whole table to local storage
+   * @return the local copy of the table
   */
   [[nodiscard]]
-  std::shared_ptr<arrow::Table> ToArrowTable() const;
+  LocalTable ToLocalTable() const;
 
   /**
    * Subscribe to a ticking table.
@@ -1878,6 +1881,24 @@ public:
 
 private:
   std::shared_ptr<impl::TableHandleImpl> impl_;
+};
+
+class LocalTable {
+  using SchemaType = deephaven::dhcore::clienttable::Schema;
+  using ColumnSource = deephaven::dhcore::column::ColumnSource;
+
+public:
+  LocalTable();
+  explicit LocalTable(std::shared_ptr<arrow::Table> arrow_table);
+
+  std::shared_ptr<ColumnSource> GetColumn(int32_t col_num) const;
+  std::shared_ptr<arrow::Table> AsArrowTable() const;
+  std::shared_ptr<SchemaType> Schema() const;
+
+  int64_t NumRows() const;
+
+private:
+  std::shared_ptr<impl::LocalTableImpl> impl_;
 };
 
 namespace internal {

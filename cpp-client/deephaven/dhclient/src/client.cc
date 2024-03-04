@@ -547,9 +547,10 @@ std::shared_ptr<arrow::flight::FlightStreamReader> TableHandle::GetFlightStreamR
   return GetManager().CreateFlightWrapper().GetFlightStreamReader(*this);
 }
 
-std::shared_ptr<arrow::Table> TableHandle::ToArrowTable() const {
-  auto res = GetFlightStreamReader()->ToTable();
-  return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(std::move(res)));
+LocalTable TableHandle::ToLocalTable() const {
+  auto arrow_res = GetFlightStreamReader()->ToTable();
+  auto arrow_table = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(std::move(arrow_res)));
+  return LocalTable(std::move(arrow_table));
 }
 
 std::shared_ptr<SubscriptionHandle> TableHandle::Subscribe(
