@@ -143,4 +143,30 @@ TEST_CASE("Ticking Table modified rows are eventually all greater than 10", "[ti
 
   table.Unsubscribe(std::move(cookie));
 }
+
+TEST_CASE("this other thing", "[ticking]") {
+  auto client = TableMakerForTests::CreateClient();
+  auto tm = client.GetManager();
+
+  tm.RunScript(R"(
+import jpy
+Zamboni = jpy.get_type("io.deephaven.time.DateTimeUtils").epochSecondsToInstant(0)
+)");
+
+  auto table = tm.TimeTable("PT0:00:0.5")
+      .Update({"II = (int)((ii * 7) % 10)",
+          "Bytes = (byte)II",
+          "Chars = (char)(II + 'a')",
+          "Shorts = (short)II",
+          "Ints = (int)II",
+          "Longs = (long)II",
+          "Floats = (float)II",
+          "Doubles = (double)II",
+          "Strings = `hello ` + II",
+          "Bools = (II % 2) == 0",
+          "DateTimes = Zamboni + II"
+      })
+      .LastBy("II")
+      .Sort(SortPair::Ascending("II"));
+}
 }  // namespace deephaven::client::tests
