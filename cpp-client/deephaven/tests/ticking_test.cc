@@ -149,8 +149,9 @@ TEST_CASE("this other thing", "[ticking]") {
   auto tm = client.GetManager();
 
   tm.RunScript(R"(
-import jpy
-Zamboni = jpy.get_type("io.deephaven.time.DateTimeUtils").epochSecondsToInstant(0)
+from datetime import datetime, timezone
+import deephaven
+Zamboni = deephaven.time.to_j_instant(datetime.fromtimestamp(0, timezone.utc))
 )");
 
   auto table = tm.TimeTable("PT0:00:0.5")
