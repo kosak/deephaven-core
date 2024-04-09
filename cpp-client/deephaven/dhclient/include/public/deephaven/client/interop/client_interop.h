@@ -1,7 +1,6 @@
-/**
+/*
  * Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
  */
-
 #include <cstdint>
 #include "deephaven/client/client.h"
 #include "deephaven/client/client_options.h"
