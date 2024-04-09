@@ -124,6 +124,7 @@ if (WIN32)
   # /Wall is a bit too chatty so we stick with /W3
   # /bigobj needed because ticking/immer_table_state.cc compiles to something too large apparently
   target_compile_options(dhcore PRIVATE /W3 /bigobj)
+  target_compile_definitions(dhcore PRIVATE _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 endif()
 
 target_include_directories(dhcore PRIVATE include/private)
