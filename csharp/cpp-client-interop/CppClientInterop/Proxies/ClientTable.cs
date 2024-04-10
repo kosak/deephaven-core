@@ -14,13 +14,14 @@ internal abstract class ClientTableColumnFactory {
     new ColumnFactory<Native.ClientTable>.ForGeneric<Int64>(Native.ClientTable.deephaven_client_ClientTable_GetInt64Column),
     new ColumnFactory<Native.ClientTable>.ForGeneric<float>(Native.ClientTable.deephaven_client_ClientTable_GetFloatColumn),
     new ColumnFactory<Native.ClientTable>.ForGeneric<double>(Native.ClientTable.deephaven_client_ClientTable_GetDoubleColumn),
-    new ColumnFactory<Native.ClientTable>.ForBool(ClientTable.deephaven_client_ClientTable_GetBoolAsByteColumn),
+    new ColumnFactory<Native.ClientTable>.ForBool(Native.ClientTable.deephaven_client_ClientTable_GetBoolAsByteColumn),
     new ColumnFactory<Native.ClientTable>.ForGeneric<string>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
-    new ColumnFactory<Native.ClientTable>.ForDateTime(ClientTable.deephaven_client_ClientTable_GetDateTimeAsLongColumn),
+    // TODO: probably support something with more precision than the .NET DateTime type
+    new ColumnFactory<Native.ClientTable>.ForDateTime(Native.ClientTable.deephaven_client_ClientTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
-  public static ColumnFactory Of(ElementTypeId typeId) {
+  public static ColumnFactory<Native.ClientTable> Of(ElementTypeId typeId) {
     return _factories[(int)typeId];
   }
 }

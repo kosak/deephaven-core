@@ -1,20 +1,23 @@
 ﻿using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
+using CppClientInterop.CppClientInterop;
 using Deephaven.CppClientInterop.Native;
 
 namespace Deephaven.CppClientInterop;
 
-internal abstract class ColumnFactory666 {
-  private static ColumnFactory[] _factories = { new GenericColumnFactory<char>(Native.ArrowTable.deephaven_client_ArrowTable_GetCharColumn),
-    new GenericColumnFactory<SByte>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt8Column),
-    new GenericColumnFactory<Int16>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt16Column),
-    new GenericColumnFactory<Int32>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt32Column),
-    new GenericColumnFactory<Int64>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt64Column),
-    new GenericColumnFactory<float>(Native.ArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
-    new GenericColumnFactory<double>(Native.ArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
-    new BoolColumnFactory(),
-    new GenericColumnFactory<string>(Native.ArrowTable.deephaven_client_ArrowTable_GetStringColumn),
-    // Timestamp - TODO(kosak)
+internal abstract class ArrowTableColumnFactory {
+  private static readonly ColumnFactory<Native.ArrowTable>[] _factories = {
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<char>(Native.ArrowTable.deephaven_client_ArrowTable_GetCharColumn),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<SByte>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt8Column),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<Int16>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt16Column),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<Int32>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt32Column),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<Int64>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt64Column),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<float>(Native.ArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<double>(Native.ArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
+    new ColumnFactory<Native.ArrowTable>.ForBool(Native.ArrowTable.deephaven_client_ArrowTable_GetBoolAsByteColumn),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<string>(Native.ArrowTable.deephaven_client_ArrowTable_GetStringColumn),
+    // TODO: probably support something with more precision than the .NET DateTime type
+    new ColumnFactory<Native.ArrowTable>.ForDateTime(Native.ArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
