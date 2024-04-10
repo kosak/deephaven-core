@@ -7,17 +7,17 @@ namespace Deephaven.CppClientInterop;
 
 internal abstract class ClientTableColumnFactory {
   private static readonly ColumnFactory<Native.ClientTable>[] _factories = {
-    new ColumnFactory<Native.ClientTable>.ForGeneric<char>(Native.ClientTable.deephaven_client_ClientTable_GetCharColumn),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<SByte>(Native.ClientTable.deephaven_client_ClientTable_GetInt8Column),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<Int16>(Native.ClientTable.deephaven_client_ClientTable_GetInt16Column),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<Int32>(Native.ClientTable.deephaven_client_ClientTable_GetInt32Column),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<Int64>(Native.ClientTable.deephaven_client_ClientTable_GetInt64Column),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<float>(Native.ClientTable.deephaven_client_ClientTable_GetFloatColumn),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<double>(Native.ClientTable.deephaven_client_ClientTable_GetDoubleColumn),
-    new ColumnFactory<Native.ClientTable>.ForBool(Native.ClientTable.deephaven_client_ClientTable_GetBoolAsByteColumn),
-    new ColumnFactory<Native.ClientTable>.ForGeneric<string>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<char>(Native.ClientTable.deephaven_client_ClientTableHelper_GetCharColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<SByte>(Native.ClientTable.deephaven_client_ClientTableHelper_GetInt8Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<Int16>(Native.ClientTable.deephaven_client_ClientTableHelper_GetInt16Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<Int32>(Native.ClientTable.deephaven_client_ClientTableHelper_GetInt32Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<Int64>(Native.ClientTable.deephaven_client_ClientTableHelper_GetInt64Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<float>(Native.ClientTable.deephaven_client_ClientTableHelper_GetFloatColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<double>(Native.ClientTable.deephaven_client_ClientTableHelper_GetDoubleColumn),
+    new ColumnFactory<Native.ClientTable>.ForBool(Native.ClientTable.deephaven_client_ClientTableHelper_GetBoolAsByteColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<string>(Native.ClientTable.deephaven_client_ClientTableHelper_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
-    new ColumnFactory<Native.ClientTable>.ForDateTime(Native.ClientTable.deephaven_client_ClientTable_GetDateTimeAsLongColumn),
+    new ColumnFactory<Native.ClientTable>.ForDateTime(Native.ClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
