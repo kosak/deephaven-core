@@ -17,9 +17,18 @@ public:
   explicit ArrowTable(std::shared_ptr<arrow::Table> table) : table_(std::move(table)) {}
   std::shared_ptr<arrow::Table> table_;
 };
+
+/**
+ * A thin wrapper about std::shared_ptr<ArrowTable>. Not really necessary but
+ * makes it easier for humans to map to the corresponding class on the C# side.
+ */
+struct ClientTable {
+  using DHCoreClientTable = deephaven::dhcore::clienttable::ClientTable;
+public:
+  explicit ClientTable(std::shared_ptr<DHCoreClientTable> table) : table_(std::move(table)) {}
+  std::shared_ptr<DHCoreClientTable> table_;
+};
 }  // namespace deephaven::client::interop {
-
-
 
 extern "C" {
 void invokelab_s1(const char *s);
