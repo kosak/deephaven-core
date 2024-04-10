@@ -8,30 +8,30 @@ using System.Threading.Tasks;
 
 namespace Deephaven.CppClientInterop;
 
-internal abstract class ColumnFactory {
-  public abstract Array GetColumn(NativePtr<Native.ArrowTable> self, Int64 numRows);
+internal abstract class ColumnFactory<TableType> {
+  public abstract Array GetColumn(NativePtr<TableType> table, Int64 numRows);
 
-  public delegate void NativeImpl<in T>(NativePtr<Native.ArrowTable> self, T[] data, Int64 numRows,
+  public delegate void NativeImpl<in T>(NativePtr<TableType> setablelf, T[] data, Int64 numRows,
     out ErrorStatus status);
 
-  private sealed class GenericColumnFactory<T> : ColumnFactory {
+  public sealed class ForGeneric<T> : ColumnFactory<TableType> {
     private readonly NativeImpl<T> _nativeImpl;
 
-    public GenericColumnFactory(NativeImpl<T> nativeImpl) => _nativeImpl = nativeImpl;
+    public ForGeneric(NativeImpl<T> nativeImpl) => _nativeImpl = nativeImpl;
 
-    public override Array GetColumn(NativePtr<Native.ArrowTable> table, Int64 numRows) {
+    public override Array GetColumn(NativePtr<TableType> table, Int64 numRows) {
       var result = new T[numRows];
       _nativeImpl(table, result, numRows, out var errorStatus);
       return errorStatus.Unwrap(result);
     }
   }
 
-  public sealed class BoolColumnFactory : ColumnFactory {
+  public sealed class ForBool : ColumnFactory<TableType> {
     private readonly NativeImpl<byte> _nativeImpl;
 
-    public BoolColumnFactory(NativeImpl<byte> nativeImpl) => _nativeImpl = nativeImpl;
+    public ForBool(NativeImpl<byte> nativeImpl) => _nativeImpl = nativeImpl;
 
-    public override Array GetColumn(NativePtr<Native.ArrowTable> table, Int64 numRows) {
+    public override Array GetColumn(NativePtr<TableType> table, Int64 numRows) {
       var intermediate = new byte[numRows];
       _nativeImpl(table, intermediate, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
