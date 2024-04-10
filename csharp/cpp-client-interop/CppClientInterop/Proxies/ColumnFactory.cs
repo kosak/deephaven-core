@@ -11,17 +11,17 @@ namespace Deephaven.CppClientInterop;
 internal abstract class ColumnFactory<TableType> {
   public abstract Array GetColumn(NativePtr<TableType> table, Int64 numRows);
 
-  public delegate void NativeImpl<in T>(NativePtr<TableType> setablelf, T[] data, Int64 numRows,
-    out ErrorStatus status);
+  public delegate void NativeImpl<in T>(NativePtr<TableType> table, Int32 columnIndex,
+    T[] data, bool[]? optionalDestNullFlags, Int64 numRows, out ErrorStatus status);
 
   public sealed class ForGeneric<T> : ColumnFactory<TableType> {
     private readonly NativeImpl<T> _nativeImpl;
 
     public ForGeneric(NativeImpl<T> nativeImpl) => _nativeImpl = nativeImpl;
 
-    public override Array GetColumn(NativePtr<TableType> table, Int64 numRows) {
+    public override Array GetColumn(NativePtr<TableType> table, Int32 columnIndex, Int64 numRows) {
       var result = new T[numRows];
-      _nativeImpl(table, result, numRows, out var errorStatus);
+      _nativeImpl(table, columnIndex, result, null, numRows, out var errorStatus);
       return errorStatus.Unwrap(result);
     }
   }
