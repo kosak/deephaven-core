@@ -6,17 +6,17 @@ using Deephaven.CppClientInterop.Native;
 namespace Deephaven.CppClientInterop;
 
 internal abstract class ClientTableColumnFactory {
-  private static readonly ColumnFactory[] _factories = {
-    new GenericColumnFactory<char>(Native.ClientTable.deephaven_client_ClientTable_GetCharColumn),
-    new GenericColumnFactory<SByte>(Native.ClientTable.deephaven_client_ClientTable_GetInt8Column),
-    new GenericColumnFactory<Int16>(Native.ClientTable.deephaven_client_ClientTable_GetInt16Column),
-    new GenericColumnFactory<Int32>(Native.ClientTable.deephaven_client_ClientTable_GetInt32Column),
-    new GenericColumnFactory<Int64>(Native.ClientTable.deephaven_client_ClientTable_GetInt64Column),
-    new GenericColumnFactory<float>(Native.ClientTable.deephaven_client_ClientTable_GetFloatColumn),
-    new GenericColumnFactory<double>(Native.ClientTable.deephaven_client_ClientTable_GetDoubleColumn),
-    new ColumnFactory.BoolColumnFactory(Native.ClientTable.deephaven_client_ClientTable_GetBoolAsByteColumn),
-    new GenericColumnFactory<string>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
-    new GenericColumnFactory<DateTime>(Native.ClientTable.deephaven_client_ClientTable_GetDateTimeAsLongColumn),
+  private static readonly ColumnFactory<Native.ClientTable>[] _factories = {
+    new ColumnFactory<Native.ClientTable>.ForGeneric<char>(Native.ClientTable.deephaven_client_ClientTable_GetCharColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<SByte>(Native.ClientTable.deephaven_client_ClientTable_GetInt8Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<Int16>(Native.ClientTable.deephaven_client_ClientTable_GetInt16Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<Int32>(Native.ClientTable.deephaven_client_ClientTable_GetInt32Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<Int64>(Native.ClientTable.deephaven_client_ClientTable_GetInt64Column),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<float>(Native.ClientTable.deephaven_client_ClientTable_GetFloatColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<double>(Native.ClientTable.deephaven_client_ClientTable_GetDoubleColumn),
+    new ColumnFactory<Native.ClientTable>.ForBool(ClientTable.deephaven_client_ClientTable_GetBoolAsByteColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<string>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
+    new ColumnFactory<Native.ClientTable>.ForDateTime(ClientTable.deephaven_client_ClientTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
@@ -26,14 +26,13 @@ internal abstract class ClientTableColumnFactory {
 }
 
 public class ClientTable : IDisposable {
-
-  internal NativePtr<Native.ArrowTable> self;
+  internal NativePtr<Native.ClientTable> self;
   private readonly Int32 numColumns;
   private readonly Int64 numRows;
   private readonly string[] columnNames;
   private readonly ElementTypeId[] columnElementTypes;
 
-  internal ArrowTable(NativePtr<Native.ArrowTable> self, Int32 numColumns, Int64 numRows) {
+  internal ClientTable(NativePtr<Native.ClientTable> self, Int32 numColumns, Int64 numRows) {
     this.self = self;
     this.numColumns = numColumns;
     this.numRows = numRows;
@@ -41,14 +40,14 @@ public class ClientTable : IDisposable {
     columnElementTypes = new ElementTypeId[numColumns];
 
     var elementTypesAsInt = new Int32[numColumns];
-    Native.ArrowTable.deephaven_client_ArrowTable_GetSchema(self, numColumns, columnNames, elementTypesAsInt, out var status);
+    Native.ClientTable.deephaven_client_ClientTable_GetSchema(self, numColumns, columnNames, elementTypesAsInt, out var status);
     status.OkOrThrow();
     for (var i = 0; i != numColumns; ++i) {
       columnElementTypes[i] = (ElementTypeId)elementTypesAsInt[i];
     }
   }
 
-  ~ArrowTable() {
+  ~ClientTable() {
     Dispose();
   }
 
@@ -61,11 +60,11 @@ public class ClientTable : IDisposable {
     self.ptr = IntPtr.Zero;
     GC.SuppressFinalize(this);
 
-    Native.ArrowTable.deephaven_client_ArrowTable_dtor(temp);
+    Native.ClientTable.deephaven_client_ClientTable_dtor(temp);
   }
 
   public Array Column(Int32 index) {
-    var factory = ColumnFactory.Of(columnElementTypes[index]);
+    var factory = ClientTableColumnFactory.Of(columnElementTypes[index]);
     return factory.GetColumn(self, numRows);
   }
 }
