@@ -6,53 +6,22 @@ using Deephaven.CppClientInterop.Native;
 namespace Deephaven.CppClientInterop;
 
 internal abstract class ClientTableColumnFactory {
-  private static ColumnFactory[] _factories = { new GenericColumnFactory<char>(Native.ClientTable.deephaven_client_ClientTable_GetCharColumn),
+  private static readonly ColumnFactory[] _factories = {
+    new GenericColumnFactory<char>(Native.ClientTable.deephaven_client_ClientTable_GetCharColumn),
     new GenericColumnFactory<SByte>(Native.ClientTable.deephaven_client_ClientTable_GetInt8Column),
     new GenericColumnFactory<Int16>(Native.ClientTable.deephaven_client_ClientTable_GetInt16Column),
     new GenericColumnFactory<Int32>(Native.ClientTable.deephaven_client_ClientTable_GetInt32Column),
     new GenericColumnFactory<Int64>(Native.ClientTable.deephaven_client_ClientTable_GetInt64Column),
     new GenericColumnFactory<float>(Native.ClientTable.deephaven_client_ClientTable_GetFloatColumn),
     new GenericColumnFactory<double>(Native.ClientTable.deephaven_client_ClientTable_GetDoubleColumn),
-    new BoolColumnFactory(),
+    new ColumnFactory.BoolColumnFactory(Native.ClientTable.deephaven_client_ClientTable_GetBoolAsByteColumn),
     new GenericColumnFactory<string>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
-    new GenericColumnFactory<DateTime>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
+    new GenericColumnFactory<DateTime>(Native.ClientTable.deephaven_client_ClientTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
   public static ColumnFactory Of(ElementTypeId typeId) {
     return _factories[(int)typeId];
-  }
-
-  public abstract Array GetColumn(NativePtr<Native.ArrowTable> self, Int64 numRows);
-
-  private sealed class GenericColumnFactory<T> : ColumnFactory {
-    public delegate void NativeMethod(NativePtr<Native.ArrowTable> self, T[] data, Int64 numRows,
-      out ErrorStatus status);
-
-    private readonly NativeMethod _nativeMethod;
-
-    public GenericColumnFactory(NativeMethod nativeMethod) => _nativeMethod = nativeMethod;
-
-    public override Array GetColumn(NativePtr<Native.ArrowTable> table, Int64 numRows) {
-      var result = new T[numRows];
-      _nativeMethod(table, result, numRows, out var errorStatus);
-      return errorStatus.Unwrap(result);
-    }
-  }
-
-  private sealed class BoolColumnFactory : ColumnFactory {
-    public override Array GetColumn(NativePtr<Native.ArrowTable> table, Int64 numRows) {
-      var intermediate = new byte[numRows];
-      Native.ArrowTable.deephaven_client_ArrowTable_GetBoolAsByteColumn(table, intermediate, numRows,
-        out var errorStatus);
-      errorStatus.OkOrThrow();
-      var result = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        result[i] = intermediate[i] != 0;
-      }
-
-      return result;
-    }
   }
 }
 
