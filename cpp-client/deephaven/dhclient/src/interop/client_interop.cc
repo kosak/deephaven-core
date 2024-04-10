@@ -380,6 +380,32 @@ void deephaven_client_TableHandle_ToClientTable(TableHandle *self,
   });
 }
 
+void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
+    int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    const auto &schema = self->table_->Schema();
+    if (schema->NumCols() != num_columns) {
+      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
+          schema->NumCols(), num_columns);
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+
+    // Gather all the names, so we can do a bulk allocate call.
+    auto names = MakeReservedVector<std::string>(num_columns);
+    for (const auto &field : schema->Names()) {
+      names.push_back(field);
+    }
+    PlatformUtf16v2::CreateBulk(names.data(), names.size(), columns);
+
+    // Now do the column types
+    size_t next_field_index = 0;
+    for (const auto element_type_id : schema->Types()) {
+      column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
+    }
+  });
+}
+
 void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self) {
   delete self;
 }
