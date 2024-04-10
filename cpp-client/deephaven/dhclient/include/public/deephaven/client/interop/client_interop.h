@@ -108,4 +108,14 @@ void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *se
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
     int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_ToClientTable(deephaven::client::TableHandle *self,
+    deephaven::client::interop::ClientTable **client_table, int32_t *num_columns, int64_t *num_rows,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self);
+
+void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
+    int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
+    int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 }
