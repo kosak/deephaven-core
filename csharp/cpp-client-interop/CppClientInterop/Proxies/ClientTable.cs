@@ -41,7 +41,7 @@ public class ClientTable : IDisposable {
     columnElementTypes = new ElementTypeId[numColumns];
 
     var elementTypesAsInt = new Int32[numColumns];
-    Native.ClientTable.deephaven_client_ClientTable_GetSchema(self, numColumns, columnNames, elementTypesAsInt, out var status);
+    Native.ClientTable.deephaven_client_ClientTable_Schema(self, numColumns, columnNames, elementTypesAsInt, out var status);
     status.OkOrThrow();
     for (var i = 0; i != numColumns; ++i) {
       columnElementTypes[i] = (ElementTypeId)elementTypesAsInt[i];
