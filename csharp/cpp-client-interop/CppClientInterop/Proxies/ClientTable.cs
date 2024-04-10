@@ -1,20 +1,21 @@
 ﻿using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
+using CppClientInterop.CppClientInterop;
 using Deephaven.CppClientInterop.Native;
 
 namespace Deephaven.CppClientInterop;
 
-internal abstract class ColumnFactory666 {
-  private static ColumnFactory[] _factories = { new GenericColumnFactory<char>(Native.ArrowTable.deephaven_client_ArrowTable_GetCharColumn),
-    new GenericColumnFactory<SByte>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt8Column),
-    new GenericColumnFactory<Int16>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt16Column),
-    new GenericColumnFactory<Int32>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt32Column),
-    new GenericColumnFactory<Int64>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt64Column),
-    new GenericColumnFactory<float>(Native.ArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
-    new GenericColumnFactory<double>(Native.ArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
+internal abstract class ClientTableColumnFactory {
+  private static ColumnFactory[] _factories = { new GenericColumnFactory<char>(Native.ClientTable.deephaven_client_ClientTable_GetCharColumn),
+    new GenericColumnFactory<SByte>(Native.ClientTable.deephaven_client_ClientTable_GetInt8Column),
+    new GenericColumnFactory<Int16>(Native.ClientTable.deephaven_client_ClientTable_GetInt16Column),
+    new GenericColumnFactory<Int32>(Native.ClientTable.deephaven_client_ClientTable_GetInt32Column),
+    new GenericColumnFactory<Int64>(Native.ClientTable.deephaven_client_ClientTable_GetInt64Column),
+    new GenericColumnFactory<float>(Native.ClientTable.deephaven_client_ClientTable_GetFloatColumn),
+    new GenericColumnFactory<double>(Native.ClientTable.deephaven_client_ClientTable_GetDoubleColumn),
     new BoolColumnFactory(),
-    new GenericColumnFactory<string>(Native.ArrowTable.deephaven_client_ArrowTable_GetStringColumn),
-    // Timestamp - TODO(kosak)
+    new GenericColumnFactory<string>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
+    new GenericColumnFactory<DateTime>(Native.ClientTable.deephaven_client_ClientTable_GetStringColumn),
     // List - TODO(kosak)
   };
 
@@ -55,7 +56,7 @@ internal abstract class ColumnFactory666 {
   }
 }
 
-public class ArrowTable : IDisposable {
+public class ClientTable : IDisposable {
 
   internal NativePtr<Native.ArrowTable> self;
   private readonly Int32 numColumns;
