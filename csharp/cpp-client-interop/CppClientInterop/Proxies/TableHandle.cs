@@ -45,4 +45,11 @@ public sealed class TableHandle : IDisposable {
     status.OkOrThrow();
     return new ArrowTable(arrowTable, numColumns, numRows);
   }
+
+  public ClientTable ToClientTable() {
+    Native.TableHandle.deephaven_client_TableHandle_ToClientTable(self, out var arrowTable, out var numColumns,
+      out var numRows, out var status);
+    status.OkOrThrow();
+    return new ClientTable(arrowTable, numColumns, numRows);
+  }
 }

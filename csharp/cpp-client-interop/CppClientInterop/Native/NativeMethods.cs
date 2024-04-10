@@ -139,6 +139,11 @@ internal class TableHandle {
   public static extern void deephaven_client_TableHandle_ToArrowTable(NativePtr<TableHandle> self,
     out NativePtr<Native.ArrowTable> arrowTable, out Int32 numColumns, out Int64 numRows,
     out ErrorStatus status);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TableHandle_ToClientTable(NativePtr<TableHandle> self,
+    out NativePtr<Native.ClientTable> clientTable, out Int32 numColumns, out Int64 numRows,
+    out ErrorStatus status);
 }
 
 internal class ArrowTable {
