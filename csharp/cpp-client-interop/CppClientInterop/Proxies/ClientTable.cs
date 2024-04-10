@@ -14,7 +14,7 @@ internal abstract class ClientTableColumnFactory {
     new ColumnFactory<Native.ClientTable>.ForGeneric<Int64>(Native.ClientTable.deephaven_client_ClientTableHelper_GetInt64Column),
     new ColumnFactory<Native.ClientTable>.ForGeneric<float>(Native.ClientTable.deephaven_client_ClientTableHelper_GetFloatColumn),
     new ColumnFactory<Native.ClientTable>.ForGeneric<double>(Native.ClientTable.deephaven_client_ClientTableHelper_GetDoubleColumn),
-    new ColumnFactory<Native.ClientTable>.ForBool(Native.ClientTable.deephaven_client_ClientTableHelper_GetBoolAsByteColumn),
+    new ColumnFactory<Native.ClientTable>.ForGeneric<bool>(Native.ClientTable.deephaven_client_ClientTableHelper_GetBoolColumn),
     new ColumnFactory<Native.ClientTable>.ForGeneric<string>(Native.ClientTable.deephaven_client_ClientTableHelper_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
     new ColumnFactory<Native.ClientTable>.ForDateTime(Native.ClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn),
@@ -66,6 +66,6 @@ public class ClientTable : IDisposable {
 
   public Array Column(Int32 index) {
     var factory = ClientTableColumnFactory.Of(columnElementTypes[index]);
-    return factory.GetColumn(self, numRows);
+    return factory.GetColumn(self, index, numRows);
   }
 }
