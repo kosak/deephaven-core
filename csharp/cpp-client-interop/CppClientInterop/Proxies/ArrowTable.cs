@@ -66,7 +66,7 @@ public class ArrowTable : IDisposable {
   }
 
   public Array Column(Int32 index) {
-    var factory = ColumnFactory.Of(columnElementTypes[index]);
+    var factory = ArrowTableColumnFactory.Of(columnElementTypes[index]);
     return factory.GetColumn(self, numRows);
   }
 }

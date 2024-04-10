@@ -143,11 +143,11 @@ public static class Program {
       Console.WriteLine($"s is {s}");
 
       var ct = t2.ToClientTable();
-      var at = t2.ToArrowTable();
+      // var at = t2.ToArrowTable();
       // at.Schema
       // at.Slice
       // at.Column(n)   -- what to return here?  Array maybe?
-      var c = at.Column(1);
+      var c = ct.Column(1);
       var ci = (int[])c;
       for (var i = 0; i != ci.Length; i++) {
         Console.WriteLine($"{i} -- {ci[i]}");
