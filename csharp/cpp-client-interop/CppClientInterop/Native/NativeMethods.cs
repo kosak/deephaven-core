@@ -160,62 +160,92 @@ internal class ArrowTable {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetCharColumn(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] char[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] char[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetInt8Column(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] SByte[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] SByte[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetInt16Column(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int16[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int16[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetInt32Column(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int32[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int32[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetInt64Column(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int64[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetFloatColumn(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] float[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] float[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetDoubleColumn(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] double[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] double[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ArrowTable_GetBoolAsByteColumn(
+  public static extern void deephaven_client_ArrowTable_GetBoolColumn(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] byte[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetStringColumn(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] string[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetDateTimeAsLongColumn(
     NativePtr<Native.ArrowTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int64[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 }
 
 internal class ClientTable {
@@ -232,65 +262,92 @@ internal class ClientTable {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetCharColumn(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] char[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] char[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetInt8Column(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] SByte[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] SByte[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetInt16Column(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int16[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int16[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetInt32Column(
     NativePtr<Native.ClientTable> self,
     Int32 columnIndex,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int32[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] optionalDestNullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetInt64Column(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int64[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetFloatColumn(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] float[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] float[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetDoubleColumn(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] double[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] double[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetBoolAsByteColumn(
+  public static extern void deephaven_client_ClientTableHelper_GetBoolColumn(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] byte[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetStringColumn(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] string[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(
     NativePtr<Native.ClientTable> self,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int64[] data,
-    Int64 numRows, out ErrorStatus status);
+    Int32 columnIndex,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? optionalDestNullFlags,
+    Int64 numRows,
+    out ErrorStatus status);
 }
 
 internal class DurationSpecifier {
