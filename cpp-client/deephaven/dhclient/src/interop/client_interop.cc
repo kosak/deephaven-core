@@ -22,6 +22,8 @@ using deephaven::client::utility::DurationSpecifier;
 using deephaven::client::utility::TimePointSpecifier;
 using deephaven::client::interop::ArrowTable;
 using deephaven::client::interop::ClientTable;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::interop::ErrorStatus;
 using deephaven::dhcore::interop::NativeError;
 using deephaven::dhcore::interop::PlatformUtf16;
@@ -408,5 +410,22 @@ void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable
 
 void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self) {
   delete self;
+}
+
+void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::interop::ClientTable *self,
+    int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto cs = self->table_->GetColumn(column_index);
+    auto data_chunk = Int32Chunk::CreateView(data, num_rows);
+    BooleanChunk null_chunk;
+    BooleanChunk *null_chunkp = nullptr;
+    if (optional_dest_null_flags != nullptr) {
+      null_chunk = BooleanChunk::CreateView(optional_dest_null_flags, num_rows);
+      null_chunkp = &null_chunk;
+    }
+    auto rows = self->table_->GetRowSequence();
+    cs->FillChunk(*rows, &data_chunk, null_chunkp);
+  });
 }
 }  // extern "C"
