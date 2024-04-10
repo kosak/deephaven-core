@@ -21,40 +21,8 @@ internal abstract class ArrowTableColumnFactory {
     // List - TODO(kosak)
   };
 
-  public static ColumnFactory Of(ElementTypeId typeId) {
+  public static ColumnFactory<Native.ArrowTable> Of(ElementTypeId typeId) {
     return _factories[(int)typeId];
-  }
-
-  public abstract Array GetColumn(NativePtr<Native.ArrowTable> self, Int64 numRows);
-
-  private sealed class GenericColumnFactory<T> : ColumnFactory {
-    public delegate void NativeMethod(NativePtr<Native.ArrowTable> self, T[] data, Int64 numRows,
-      out ErrorStatus status);
-
-    private readonly NativeMethod _nativeMethod;
-
-    public GenericColumnFactory(NativeMethod nativeMethod) => _nativeMethod = nativeMethod;
-
-    public override Array GetColumn(NativePtr<Native.ArrowTable> table, Int64 numRows) {
-      var result = new T[numRows];
-      _nativeMethod(table, result, numRows, out var errorStatus);
-      return errorStatus.Unwrap(result);
-    }
-  }
-
-  private sealed class BoolColumnFactory : ColumnFactory {
-    public override Array GetColumn(NativePtr<Native.ArrowTable> table, Int64 numRows) {
-      var intermediate = new byte[numRows];
-      Native.ArrowTable.deephaven_client_ArrowTable_GetBoolAsByteColumn(table, intermediate, numRows,
-        out var errorStatus);
-      errorStatus.OkOrThrow();
-      var result = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        result[i] = intermediate[i] != 0;
-      }
-
-      return result;
-    }
   }
 }
 
