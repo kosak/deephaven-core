@@ -21,6 +21,7 @@ using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::DurationSpecifier;
 using deephaven::client::utility::TimePointSpecifier;
 using deephaven::client::interop::ArrowTable;
+using deephaven::client::interop::ClientTable;
 using deephaven::dhcore::interop::ErrorStatus;
 using deephaven::dhcore::interop::NativeError;
 using deephaven::dhcore::interop::PlatformUtf16;
@@ -366,5 +367,20 @@ void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTabl
       column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
     }
   });
+}
+
+void deephaven_client_TableHandle_ToClientTable(TableHandle *self,
+    ClientTable **client_table, int32_t *num_columns, int64_t *num_rows,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto ct = self->ToClientTable();
+    *num_columns = ct->NumColumns();
+    *num_rows = ct->NumRows();
+    *client_table = new ClientTable(std::move(ct));
+  });
+}
+
+void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self) {
+  delete self;
 }
 }  // extern "C"
