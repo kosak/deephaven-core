@@ -141,6 +141,8 @@ public static class Program {
       t2.BindToVariable("showme");
       var s = t2.ToString(true);
       Console.WriteLine($"s is {s}");
+
+      var ct = t2.ToClientTable();
       var at = t2.ToArrowTable();
       // at.Schema
       // at.Slice
