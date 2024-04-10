@@ -205,6 +205,12 @@ internal class ArrowTable {
     NativePtr<Native.ArrowTable> self,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
     Int64 numRows, out ErrorStatus status);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_ArrowTable_GetDateTimeAsLongColumn(
+    NativePtr<Native.ArrowTable> self,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int64[] data,
+    Int64 numRows, out ErrorStatus status);
 }
 
 internal class ClientTable {

@@ -43,4 +43,24 @@ internal abstract class ColumnFactory<TableType> {
       return result;
     }
   }
+
+  public sealed class ForDateTime : ColumnFactory<TableType> {
+    private readonly NativeImpl<Int64> _nativeImpl;
+
+    public ForDateTime(NativeImpl<Int64> nativeImpl) => _nativeImpl = nativeImpl;
+
+    public override Array GetColumn(NativePtr<TableType> table, Int64 numRows) {
+      var intermediate = new Int64[numRows];
+      _nativeImpl(table, intermediate, numRows, out var errorStatus);
+      errorStatus.OkOrThrow();
+      var result = new DateTime[numRows];
+      for (Int64 i = 0; i < numRows; ++i) {
+        // TODO: probably support something with more precision than the .NET DateTime type
+        var millis = intermediate[i] / 1000;
+        result[i] = DateTimeOffset.FromUnixTimeMilliseconds(millis).DateTime;
+      }
+
+      return result;
+    }
+  }
 }
