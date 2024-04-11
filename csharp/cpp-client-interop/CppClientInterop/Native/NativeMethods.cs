@@ -3,6 +3,7 @@
  */
 using System.Runtime.InteropServices;
 using System.Text;
+using static Deephaven.CppClientInterop.Native.TableHandle;
 
 namespace Deephaven.CppClientInterop.Native;
 
@@ -154,14 +155,20 @@ internal class TableHandle {
   public static extern void deephaven_client_TableHandle_Subscribe(NativePtr<TableHandle> self,
     NativeOnUpdate nativeOnUpdate, NativeOnFailure nativeOnFailure,
     out NativePtr<Native.SubscriptionHandle> nativeSubscriptionHandle, out ErrorStatus status);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TableHandle_Unsubscribe(NativePtr<TableHandle> self,
+    NativePtr<Native.SubscriptionHandle> nativeSubscriptionHandle, out ErrorStatus status);
 }
 
 internal class TickingUpdate {
-
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TickingUpdate_dtor(NativePtr<TickingUpdate> self);
 }
 
 internal class SubscriptionHandle {
-
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_SubscriptionHandle_dtor(NativePtr<SubscriptionHandle> self);
 }
 
 internal class ArrowTable {

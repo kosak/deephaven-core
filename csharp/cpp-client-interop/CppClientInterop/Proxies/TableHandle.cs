@@ -4,9 +4,11 @@ namespace Deephaven.CppClientInterop;
 
 public sealed class TableHandle : IDisposable {
   internal NativePtr<Native.TableHandle> self;
+  internal TableHandleManager Manager;
 
-  internal TableHandle(NativePtr<Native.TableHandle> self) {
+  internal TableHandle(NativePtr<Native.TableHandle> self, TableHandleManager manager) {
     this.self = self;
+    Manager = manager;
   }
 
   ~TableHandle() {
@@ -25,7 +27,7 @@ public sealed class TableHandle : IDisposable {
   public TableHandle Update(params string[] columnSpecs) {
     Native.TableHandle.deephaven_client_TableHandle_Update(self, columnSpecs, columnSpecs.Length, out var roe);
     var res = roe.Unwrap();
-    return new TableHandle(res);
+    return new TableHandle(res, Manager);
   }
 
   public void BindToVariable(string variable) {
@@ -45,19 +47,24 @@ public sealed class TableHandle : IDisposable {
   }
 
   public SubscriptionHandle Subscribe(ITickingCallback callback) {
-    var zm = new TickingWrapper(callback);
-    Native.TableHandle.deephaven_client_TableHandle_Subscribe(self, zm.NativeOnUpdate, callback.OnFailure,
+    var tw = new TickingWrapper(callback);
+    Native.TableHandle.deephaven_client_TableHandle_Subscribe(self, tw.NativeOnUpdate, callback.OnFailure,
       out var nativeSusbcriptionHandle, out var status);
     status.OkOrThrow();
-    return new SubscriptionHandle(nativeSusbcriptionHandle, zm);
+    var result = new SubscriptionHandle(nativeSusbcriptionHandle);
+    Manager.AddSubscription(result, tw);
+    return result;
   }
 
   public void Unsubscribe(SubscriptionHandle handle) {
-    var nativeHandle = handle.ReleaseSubscriptionHandle();
-    if (nativeHandle.ptr == IntPtr.Zero) {
+    if (handle.Self.ptr == IntPtr.Zero) {
       return;
     }
-    Native.TableHandle.deephaven_client_TableHandle_Unsubscribe(self, handle.ReleaseSubscriptionHandle(), out var status);
+    var nativePtr = handle.Self;
+    handle.Self.ptr = IntPtr.Zero;
+    Manager.RemoveSubscription(handle);
+    Native.TableHandle.deephaven_client_TableHandle_Unsubscribe(self, nativePtr, out var status);
+    Native.SubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(nativePtr);
     status.OkOrThrow();
   }
 
