@@ -221,7 +221,7 @@ internal class ArrowTable {
     out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ArrowTable_GetBoolColumn(
+  public static extern void deephaven_client_ArrowTable_GetBooleanColumn(
     NativePtr<Native.ArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] data,
@@ -323,7 +323,7 @@ internal class ClientTable {
     out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetBoolColumn(
+  public static extern void deephaven_client_ClientTableHelper_GetBooleanColumn(
     NativePtr<Native.ClientTable> self,
     Int32 columnIndex,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] data,
