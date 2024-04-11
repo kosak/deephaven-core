@@ -195,4 +195,14 @@ public static class Program {
     }
 #endif
   }
+
+  public class MyCallback : ITickingCallback {
+    public void OnTick(TickingUpdate update) {
+      Console.WriteLine("Hi, got an update");
+    }
+
+    public void OnFailure(string errorMessage) {
+      Console.WriteLine($"Hi, got an error {errorMessage}");
+    }
+  }
 }

@@ -8,33 +8,55 @@ using Deephaven.CppClientInterop.Native;
 namespace Deephaven.CppClientInterop;
 
 public class SubscriptionHandle : IDisposable {
-  private NativePtr<Native.SubscriptionHandle> nativeSubscriptionHandle;
+  private NativePtr<Native.SubscriptionHandle> self;
   private readonly Object keepAlive;
 
-  internal SubscriptionHandle(NativePtr<Native.SubscriptionHandle> nativeSubscriptionHandle, Object keepAlive) {
-    this.nativeSubscriptionHandle = nativeSubscriptionHandle;
+  internal SubscriptionHandle(NativePtr<Native.SubscriptionHandle> self, Object keepAlive) {
+    this.self = self;
     this.keepAlive = keepAlive;
   }
 
-  internal NativePtr<Native.SubscriptionHandle> ReleaaseSubscriptionHandle() {
-    if (nativeSubscriptionHandle.ptr == IntPtr.Zero) {
-      throw new Exception("Subscription handle already released");
+  ~SubscriptionHandle() {
+    Dispose();
+  }
+
+  public void Dispose() {
+    if (self.ptr == IntPtr.Zero) {
+      return;
     }
-    var result = nativeSubscriptionHandle;
-    nativeSubscriptionHandle.ptr = IntPtr.Zero;
+    Native.TableHandle.deephaven_client_SubscriptionHandle_dtor(self);
+    self.ptr = IntPtr.Zero;
+    GC.SuppressFinalize(this);
+  }
+
+  internal NativePtr<Native.SubscriptionHandle> ReleaseSubscriptionHandle() {
+    var result = self;
+    self.ptr = IntPtr.Zero;
     return result;
   }
 }
 
 public class TickingUpdate : IDisposable {
-  private NativePtr<Native.TickingUpdate> nativeTickingUpdate;
+  private NativePtr<Native.TickingUpdate> self;
 
-  internal TickingUpdate(NativePtr<Native.TickingUpdate> nativeTickingUpdate) =>
-    this.nativeTickingUpdate = nativeTickingUpdate;
+  internal TickingUpdate(NativePtr<Native.TickingUpdate> self) => this.self = self;
 
   public ClientTable Current { get;  }
   // public ClientTable BeforeRemoves { get;  }
   // public RowSequence RemovedRows { get;  }
+
+  ~TickingUpdate() {
+    Dispose();
+  }
+
+  public void Dispose() {
+    if (self.ptr == IntPtr.Zero) {
+      return;
+    }
+    Native.TableHandle.deephaven_client_TickingUpdate_dtor(self);
+    self.ptr = IntPtr.Zero;
+    GC.SuppressFinalize(this);
+  }
 }
 
 public interface ITickingCallback {
