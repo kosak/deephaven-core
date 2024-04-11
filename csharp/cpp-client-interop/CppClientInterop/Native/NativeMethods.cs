@@ -34,7 +34,6 @@ public class Void {
 }
 
 internal class ClientOptions {
-
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_ctor(out ResultOrError<ClientOptions> roe);
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
@@ -144,6 +143,25 @@ internal class TableHandle {
   public static extern void deephaven_client_TableHandle_ToClientTable(NativePtr<TableHandle> self,
     out NativePtr<Native.ClientTable> clientTable, out Int32 numColumns, out Int64 numRows,
     out ErrorStatus status);
+
+  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+  public delegate void NativeOnUpdate(NativePtr<Native.TickingUpdate> tickingUpdate);
+
+  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+  public delegate void NativeOnFailure(string error);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TableHandle_Subscribe(NativePtr<TableHandle> self,
+    NativeOnUpdate nativeOnUpdate, NativeOnFailure nativeOnFailure,
+    out NativePtr<Native.SubscriptionHandle> nativeSubscriptionHandle, out ErrorStatus status);
+}
+
+internal class TickingUpdate {
+
+}
+
+internal class SubscriptionHandle {
+
 }
 
 internal class ArrowTable {

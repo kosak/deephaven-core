@@ -33,10 +33,28 @@ public sealed class TableHandle : IDisposable {
     _ = roe.Unwrap();
   }
 
-  public string ToString(bool wantHeaders) {
-    Native.TableHandle.deephaven_client_TableHandle_ToString(self, wantHeaders ? 1 : 0, out var result,
-      out var status);
-    return status.Unwrap(result);
+  private class TickingWrapper {
+    private readonly ITickingCallback _callback;
+
+    public TickingWrapper(ITickingCallback callback) => this._callback = callback;
+
+    public void NativeOnUpdate(NativePtr<Native.TickingUpdate> nativeTickingUpdate) {
+      var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
+      _callback.OnTick(tickingUpdate);
+    }
+  }
+
+  public SubscriptionHandle Subscribe(ITickingCallback callback) {
+    var zm = new TickingWrapper(callback);
+    Native.TableHandle.deephaven_client_TableHandle_Subscribe(self, zm.NativeOnUpdate, callback.OnFailure,
+      out var nativeSusbcriptionHandle, out var status);
+    status.OkOrThrow();
+    return new SubscriptionHandle(nativeSusbcriptionHandle, zm);
+  }
+
+  public void Unsubscribe(SubscriptionHandle handle) {
+    Native.TableHandle.deephaven_client_TableHandle_Unsubscribe(self, handle.NativeSubscriptionHandle, out var status);
+    status.OkOrFail();
   }
 
   public ArrowTable ToArrowTable() {
@@ -51,5 +69,11 @@ public sealed class TableHandle : IDisposable {
       out var numRows, out var status);
     status.OkOrThrow();
     return new ClientTable(arrowTable, numColumns, numRows);
+  }
+
+  public string ToString(bool wantHeaders) {
+    Native.TableHandle.deephaven_client_TableHandle_ToString(self, wantHeaders ? 1 : 0, out var result,
+      out var status);
+    return status.Unwrap(result);
   }
 }
