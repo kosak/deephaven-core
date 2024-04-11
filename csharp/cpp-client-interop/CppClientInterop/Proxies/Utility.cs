@@ -6,13 +6,15 @@ public class DurationSpecifier {
   internal NativePtr<Native.DurationSpecifier> self;
 
   public DurationSpecifier(Int64 nanos) {
-    Native.DurationSpecifier.deephaven_client_DurationSpecifier_ctor_nanos(nanos, out var roe);
-    self = roe.Unwrap();
+    Native.DurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_nanos(nanos,
+      out var result, out var status);
+    self = status.Unwrap(result);
   }
 
   public DurationSpecifier(string duration) {
-    Native.DurationSpecifier.deephaven_client_DurationSpecifier_ctor_duration(duration, out var roe);
-    self = roe.Unwrap();
+    Native.DurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_duration(duration,
+      out var result, out var status);
+    self = status.Unwrap(result);
   }
 
   ~DurationSpecifier() {
@@ -23,11 +25,10 @@ public class DurationSpecifier {
     if (self.ptr == IntPtr.Zero) {
       return;
     }
-    Native.DurationSpecifier.deephaven_client_DurationSpecifier_dtor(self);
+    Native.DurationSpecifier.deephaven_client_utility_DurationSpecifier_dtor(self);
     self.ptr = IntPtr.Zero;
     GC.SuppressFinalize(this);
   }
-
 }
 
 public class TimePointSpecifier {

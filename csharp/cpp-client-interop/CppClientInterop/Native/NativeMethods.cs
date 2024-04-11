@@ -377,22 +377,27 @@ internal class ClientTable {
 
 internal class DurationSpecifier {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_DurationSpecifier_ctor_nanos(Int64 nanos, out ResultOrError<DurationSpecifier> roe);
+  public static extern void deephaven_client_utility_DurationSpecifier_ctor_nanos(Int64 nanos,
+    out NativePtr<DurationSpecifier> result, out ErrorStatus status);
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_DurationSpecifier_ctor_duration(string duration, out ResultOrError<DurationSpecifier> roe);
+  public static extern void deephaven_client_utility_DurationSpecifier_ctor_duration(string duration,
+    out NativePtr<DurationSpecifier> result, out ErrorStatus status);
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_DurationSpecifier_dtor(NativePtr<DurationSpecifier> self);
+  public static extern void deephaven_client_utility_DurationSpecifier_dtor(NativePtr<DurationSpecifier> self);
 }
 
 internal class TimePointSpecifier {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TimePointSpecifier_ctor_nanos(Int64 nanos, out ResultOrError<TimePointSpecifier> roe);
+  public static extern void deephaven_client_utility_TimePointSpecifier_ctor_nanos(Int64 nanos,
+    out NativePtr<TimePointSpecifier> result, out ErrorStatus status);
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TimePointSpecifier_ctor_duration(string duration, out ResultOrError<TimePointSpecifier> roe);
+  public static extern void deephaven_client_utility_TimePointSpecifier_ctor_duration(string duration,
+    out NativePtr<TimePointSpecifier> result, out ErrorStatus status);
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TimePointSpecifier_dtor(NativePtr<TimePointSpecifier> self);
+  public static extern void deephaven_client_utility_TimePointSpecifier_dtor(NativePtr<TimePointSpecifier> self);
 }
 
+// TODO(kosak)
 public class Todo {
 
 }
