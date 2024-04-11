@@ -135,7 +135,7 @@ public static class Program {
       StringHack.Init();
       using var options = new ClientOptions();
       using var client = Client.Connect("localhost:10000", options);
-      using var thm = client.GetManager();
+      using var thm = client.Manager;
       using var t1 = thm.EmptyTable(10);
       using var t2 = t1.Update(
         "Chars = ii == 5 ? null : (char)('a' + ii)",

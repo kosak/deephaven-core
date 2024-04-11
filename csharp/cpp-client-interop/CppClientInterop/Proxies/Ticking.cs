@@ -33,7 +33,7 @@ public class TickingUpdate : IDisposable {
     if (self.ptr == IntPtr.Zero) {
       return;
     }
-    Native.TableHandle.deephaven_client_TickingUpdate_dtor(self);
+    Native.TickingUpdate.deephaven_client_TickingUpdate_dtor(self);
     self.ptr = IntPtr.Zero;
     GC.SuppressFinalize(this);
   }
