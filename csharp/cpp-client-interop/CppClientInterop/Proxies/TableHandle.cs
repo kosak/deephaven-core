@@ -53,8 +53,12 @@ public sealed class TableHandle : IDisposable {
   }
 
   public void Unsubscribe(SubscriptionHandle handle) {
-    Native.TableHandle.deephaven_client_TableHandle_Unsubscribe(self, handle.NativeSubscriptionHandle, out var status);
-    status.OkOrFail();
+    var nativeHandle = handle.ReleaseSubscriptionHandle();
+    if (nativeHandle.ptr == IntPtr.Zero) {
+      return;
+    }
+    Native.TableHandle.deephaven_client_TableHandle_Unsubscribe(self, handle.ReleaseSubscriptionHandle(), out var status);
+    status.OkOrThrow();
   }
 
   public ArrowTable ToArrowTable() {
