@@ -530,4 +530,40 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::clien
     }
   });
 }
+
+void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
+    DurationSpecifier **result, ErrorStatus *status) {
+  status->Run([=] {
+    *result = new DurationSpecifier(nanos);
+  });
+}
+
+void deephaven_client_utility_DurationSpecifier_ctor_duration(std::string duration,
+    DurationSpecifier **result, ErrorStatus *status) {
+  status->Run([&] {
+    *result = new DurationSpecifier(std::move(duration));
+  });
+}
+
+void deephaven_client_utility_DurationSpecifier_dtor(DurationSpecifier *self) {
+  delete self;
+}
+
+void deephaven_client_utility_TimePointSpecifier_ctor_nanos(int64_t nanos,
+    TimePointSpecifier **result, ErrorStatus *status) {
+  status->Run([=] {
+    *result = new TimePointSpecifier(nanos);
+  });
+}
+
+void deephaven_client_utility_TimePointSpecifier_ctor_duration(std::string duration,
+    TimePointSpecifier **result, ErrorStatus *status) {
+  status->Run([&] {
+    *result = new TimePointSpecifier(std::move(duration));
+  });
+}
+
+void deephaven_client_utility_TimePointSpecifier_dtor(TimePointSpecifier *self) {
+  delete self;
+}
 }  // extern "C"
