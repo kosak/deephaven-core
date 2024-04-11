@@ -137,7 +137,19 @@ public static class Program {
       using var client = Client.Connect("localhost:10000", options);
       using var thm = client.GetManager();
       using var t1 = thm.EmptyTable(10);
-      using var t2 = t1.Update("II = (int)ii", "J = 12");
+      using var t2 = t1.Update(
+        "Chars = ii == 5 ? null : (char)('a' + ii)",
+        "Bytes = ii == 5 ? null : (byte)(ii)",
+        "Shorts = ii == 5 ? null : (short)(ii)",
+        "Ints = ii == 5 ? null : (int)(ii)",
+        "Longs = ii == 5 ? null : (long)(ii)",
+        "Floats = ii == 5 ? null : (float)(ii)",
+        "Doubles = ii == 5 ? null : (double)(ii)",
+        "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+        "Strings = ii == 5 ? null : `hello ` + i",
+        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii"
+      );
+
       t2.BindToVariable("showme");
       var s = t2.ToString(true);
       Console.WriteLine($"s is {s}");
@@ -147,10 +159,9 @@ public static class Program {
       // at.Schema
       // at.Slice
       // at.Column(n)   -- what to return here?  Array maybe?
-      var c = ct.Column(0);
-      var ci = (int[])c;
-      for (var i = 0; i != ci.Length; i++) {
-        Console.WriteLine($"{i} -- {ci[i]}");
+      var c = ct.Column(9);
+      for (var i = 0; i != c.Length; i++) {
+        Console.WriteLine($"{i} -- {c.GetValue(i)}");
       }
     } catch (Exception ex) {
       Console.WriteLine(ex);

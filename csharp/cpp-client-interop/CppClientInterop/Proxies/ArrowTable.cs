@@ -14,10 +14,10 @@ internal abstract class ArrowTableColumnFactory {
     new ColumnFactory<Native.ArrowTable>.ForGeneric<Int64>(Native.ArrowTable.deephaven_client_ArrowTable_GetInt64Column),
     new ColumnFactory<Native.ArrowTable>.ForGeneric<float>(Native.ArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
     new ColumnFactory<Native.ArrowTable>.ForGeneric<double>(Native.ArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
-    new ColumnFactory<Native.ArrowTable>.ForGeneric<bool>(Native.ArrowTable.deephaven_client_ArrowTable_GetBoolColumn),
+    new ColumnFactory<Native.ArrowTable>.ForGeneric<bool>(Native.ArrowTable.deephaven_client_ArrowTable_GetBooleanAsInt32Column),
     new ColumnFactory<Native.ArrowTable>.ForGeneric<string>(Native.ArrowTable.deephaven_client_ArrowTable_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
-    new ColumnFactory<Native.ArrowTable>.ForDateTime(Native.ArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
+    new  ColumnFactory<Native.ArrowTable>.ForDateTime(Native.ArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
