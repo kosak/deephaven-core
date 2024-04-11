@@ -149,4 +149,22 @@ void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::inter
 void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTable *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
+    deephaven::client::utility::DurationSpecifier **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_utility_DurationSpecifier_ctor_duration(std::string duration,
+    deephaven::client::utility::DurationSpecifier **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_utility_DurationSpecifier_dtor(
+    deephaven::client::utility::DurationSpecifier *self);
+
+void deephaven_client_utility_TimePointSpecifier_ctor_nanos(int64_t nanos,
+    deephaven::client::utility::TimePointSpecifier **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_utility_TimePointSpecifier_ctor_duration(std::string duration,
+    deephaven::client::utility::TimePointSpecifier **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_utility_TimePointSpecifier_dtor(
+    deephaven::client::utility::TimePointSpecifier *result);
 }
