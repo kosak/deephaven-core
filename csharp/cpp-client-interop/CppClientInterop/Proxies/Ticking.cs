@@ -1,38 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Deephaven.CppClientInterop.Native;
 
 namespace Deephaven.CppClientInterop;
 
-public class SubscriptionHandle : IDisposable {
-  private NativePtr<Native.SubscriptionHandle> self;
-  private readonly Object keepAlive;
+public class SubscriptionHandle {
+  internal NativePtr<Native.SubscriptionHandle> Self;
 
-  internal SubscriptionHandle(NativePtr<Native.SubscriptionHandle> self, Object keepAlive) {
-    this.self = self;
-    this.keepAlive = keepAlive;
-  }
-
-  ~SubscriptionHandle() {
-    Dispose();
-  }
-
-  public void Dispose() {
-    if (self.ptr == IntPtr.Zero) {
-      return;
-    }
-    Native.TableHandle.deephaven_client_SubscriptionHandle_dtor(self);
-    self.ptr = IntPtr.Zero;
-    GC.SuppressFinalize(this);
-  }
-
-  internal NativePtr<Native.SubscriptionHandle> ReleaseSubscriptionHandle() {
-    var result = self;
-    self.ptr = IntPtr.Zero;
-    return result;
+  internal SubscriptionHandle(NativePtr<Native.SubscriptionHandle> self) {
+    Self = self;
   }
 }
 
@@ -41,7 +16,12 @@ public class TickingUpdate : IDisposable {
 
   internal TickingUpdate(NativePtr<Native.TickingUpdate> self) => this.self = self;
 
-  public ClientTable Current { get;  }
+  public ClientTable Current {
+    get {
+      throw new NotImplementedException("NIY");
+
+    }
+  }
   // public ClientTable BeforeRemoves { get;  }
   // public RowSequence RemovedRows { get;  }
 

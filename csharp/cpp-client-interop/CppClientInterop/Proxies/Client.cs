@@ -5,14 +5,19 @@ namespace Deephaven.CppClientInterop;
 
 public class Client : IDisposable {
   internal NativePtr<Native.Client> self;
+  public TableHandleManager Manager;
 
   public static Client Connect(string target, ClientOptions options) {
     Native.Client.deephaven_client_Client_Connect(target, options.self, out var roe);
-    return new Client(roe.Unwrap());
+    var nativeClient = roe.Unwrap();
+    Native.Client.deephaven_client_Client_GetManager(nativeClient, out var roe2);
+    var manager = new TableHandleManager(roe2.Unwrap());
+    return new Client(nativeClient, manager);
   }
 
-  private Client(NativePtr<Native.Client> self) {
+  private Client(NativePtr<Native.Client> self, TableHandleManager manager) {
     this.self = self;
+    this.Manager = manager;
   }
 
   ~Client() {
@@ -26,11 +31,6 @@ public class Client : IDisposable {
     Native.Client.deephaven_client_Client_dtor(self);
     self.ptr = IntPtr.Zero;
     GC.SuppressFinalize(this);
-  }
-
-  public TableHandleManager GetManager() {
-    Native.Client.deephaven_client_Client_GetManager(self, out var roe);
-    return new TableHandleManager(roe.Unwrap());
   }
 }
 
