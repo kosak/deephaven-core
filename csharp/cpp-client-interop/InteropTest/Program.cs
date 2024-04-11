@@ -155,14 +155,24 @@ public static class Program {
       Console.WriteLine($"s is {s}");
 
       var ct = t2.ToClientTable();
+      var arrays = new Array[ct.NumColumns];
+      for (var i = 0; i != ct.NumColumns; ++i) {
+        arrays[i] = ct.GetColumn(i);
+      }
+
+      for (var j = 0; j != ct.NumRows; ++j) {
+        var space = "";
+        for (var i = 0; i != ct.NumColumns; ++i) {
+          Console.Write($"{space}{arrays[i].GetValue(j)}");
+          space = " ";
+        }
+        Console.WriteLine();
+      }
+
       // var at = t2.ToArrowTable();
       // at.Schema
       // at.Slice
       // at.Column(n)   -- what to return here?  Array maybe?
-      var c = ct.Column(9);
-      for (var i = 0; i != c.Length; i++) {
-        Console.WriteLine($"{i} -- {c.GetValue(i)}");
-      }
     } catch (Exception ex) {
       Console.WriteLine(ex);
     }
