@@ -33,9 +33,8 @@ internal abstract class ColumnFactory<TableType> {
       errorStatus.OkOrThrow();
       var result = new DateTime[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        // TODO: probably support something with more precision than the .NET DateTime type
-        var millis = intermediate[i] / 1000;
-        result[i] = DateTimeOffset.FromUnixTimeMilliseconds(millis).DateTime;
+        var micros = intermediate[i] / 1000;
+        result[i] = new DateTime(1970, 1, 1).AddMicroseconds(micros);
       }
 
       return result;
