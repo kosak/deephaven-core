@@ -538,10 +538,11 @@ void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
   });
 }
 
-void deephaven_client_utility_DurationSpecifier_ctor_duration(std::string duration,
+void deephaven_client_utility_DurationSpecifier_ctor_duration(const char16_t *duration,
     DurationSpecifier **result, ErrorStatus *status) {
-  status->Run([&] {
-    *result = new DurationSpecifier(std::move(duration));
+  status->Run([=] {
+    Utf16Converter converter;
+    *result = new DurationSpecifier(converter.to_bytes(duration));
   });
 }
 
@@ -556,10 +557,11 @@ void deephaven_client_utility_TimePointSpecifier_ctor_nanos(int64_t nanos,
   });
 }
 
-void deephaven_client_utility_TimePointSpecifier_ctor_duration(std::string duration,
+void deephaven_client_utility_TimePointSpecifier_ctor_duration(const char16_t *duration,
     TimePointSpecifier **result, ErrorStatus *status) {
-  status->Run([&] {
-    *result = new TimePointSpecifier(std::move(duration));
+  status->Run([=] {
+    Utf16Converter converter;
+    *result = new TimePointSpecifier(converter.to_bytes(duration));
   });
 }
 
