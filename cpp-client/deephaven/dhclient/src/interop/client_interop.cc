@@ -494,12 +494,16 @@ void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop
   });
 }
 
-void deephaven_client_ClientTableHelper_GetBooleanColumn(deephaven::client::interop::ClientTable *self,
-    int32_t column_index, bool *data, bool *optional_dest_null_flags, int64_t num_rows,
+void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::client::interop::ClientTable *self,
+    int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
-    auto data_chunk = BooleanChunk::CreateView(data, num_rows);
+    // For Boolean, DateTime, and String we have to do a little data conversion.
+    auto data_chunk = BooleanChunk::Create(num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    for (int64_t i = 0; i != num_rows; ++i) {
+      data[i] = data_chunk.data()[i] ? 1 : 0;
+    }
   });
 }
 
@@ -507,18 +511,18 @@ void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::inter
     int32_t column_index, PlatformUtf16v2 *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
-    // For DateTime and String we have to do a little data conversion.
+    // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = StringChunk::Create(num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
     PlatformUtf16v2::CreateBulk(data_chunk.data(), num_rows, data);
   });
 }
 
-void deephaven_client_ClientTableHelper_GetTimestampAsLongColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTable *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
-    // For DateTime and String we have to do a little data conversion.
+    // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = DateTimeChunk::Create(num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
     for (int64_t i = 0; i != num_rows; ++i) {
