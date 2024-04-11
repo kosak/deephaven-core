@@ -173,6 +173,23 @@ public static class Program {
       // at.Schema
       // at.Slice
       // at.Column(n)   -- what to return here?  Array maybe?
+
+      using var tt = thm.TimeTable(new DurationSpecifier("PT0:00:01"), new TimePointSpecifier(0), false);
+      using var t3 = tt.Update(
+        "Chars = ii == 5 ? null : (char)('a' + ii)",
+        "Bytes = ii == 5 ? null : (byte)(ii)",
+        "Shorts = ii == 5 ? null : (short)(ii)",
+        "Ints = ii == 5 ? null : (int)(ii)",
+        "Longs = ii == 5 ? null : (long)(ii)",
+        "Floats = ii == 5 ? null : (float)(ii)",
+        "Doubles = ii == 5 ? null : (double)(ii)",
+        "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+        "Strings = ii == 5 ? null : `hello ` + i",
+        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii"
+      );
+      var handle = t3.Subscribe(new MyCallback());
+      Thread.Sleep(TimeSpan.FromSeconds(5));
+      t3.Unsubscribe(handle);
     } catch (Exception ex) {
       Console.WriteLine(ex);
     }
