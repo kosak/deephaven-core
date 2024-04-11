@@ -137,7 +137,7 @@ public static class Program {
       using var client = Client.Connect("localhost:10000", options);
       using var thm = client.GetManager();
       using var t1 = thm.EmptyTable(10);
-      using var t2 = t1.Update("II = ii", "J = 12");
+      using var t2 = t1.Update("II = (int)ii", "J = 12");
       t2.BindToVariable("showme");
       var s = t2.ToString(true);
       Console.WriteLine($"s is {s}");
@@ -147,7 +147,7 @@ public static class Program {
       // at.Schema
       // at.Slice
       // at.Column(n)   -- what to return here?  Array maybe?
-      var c = ct.Column(1);
+      var c = ct.Column(0);
       var ci = (int[])c;
       for (var i = 0; i != ci.Length; i++) {
         Console.WriteLine($"{i} -- {ci[i]}");
