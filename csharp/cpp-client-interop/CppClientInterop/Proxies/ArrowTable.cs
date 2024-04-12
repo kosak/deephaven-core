@@ -29,22 +29,21 @@ internal abstract class ArrowTableColumnFactory {
 public class ArrowTable : IDisposable {
 
   internal NativePtr<Native.ArrowTable> self;
-  private readonly Int32 numColumns;
-  private readonly Int64 numRows;
+  public readonly Int32 NumColumns;
+  public readonly Int64 NumRows;
   private readonly string[] columnNames;
   private readonly ElementTypeId[] columnElementTypes;
 
-  internal ArrowTable(NativePtr<Native.ArrowTable> self, Int32 numColumns, Int64 numRows) {
+  internal ArrowTable(NativePtr<Native.ArrowTable> self) {
     this.self = self;
-    this.numColumns = numColumns;
-    this.numRows = numRows;
-    columnNames = new string[numColumns];
-    columnElementTypes = new ElementTypeId[numColumns];
+    Native.ArrowTable.deephaven_client_ArrowTable_GetDimensions(self, out NumColumns, out NumRows, out var status1);
+    columnNames = new string[NumColumns];
+    columnElementTypes = new ElementTypeId[NumColumns];
 
-    var elementTypesAsInt = new Int32[numColumns];
-    Native.ArrowTable.deephaven_client_ArrowTable_GetSchema(self, numColumns, columnNames, elementTypesAsInt, out var status);
+    var elementTypesAsInt = new Int32[NumColumns];
+    Native.ArrowTable.deephaven_client_ArrowTable_GetSchema(self, NumColumns, columnNames, elementTypesAsInt, out var status);
     status.OkOrThrow();
-    for (var i = 0; i != numColumns; ++i) {
+    for (var i = 0; i != NumColumns; ++i) {
       columnElementTypes[i] = (ElementTypeId)elementTypesAsInt[i];
     }
   }
@@ -67,6 +66,6 @@ public class ArrowTable : IDisposable {
 
   public Array Column(Int32 index) {
     var factory = ArrowTableColumnFactory.Of(columnElementTypes[index]);
-    return factory.GetColumn(self, index, numRows);
+    return factory.GetColumn(self, index, NumRows);
   }
 }

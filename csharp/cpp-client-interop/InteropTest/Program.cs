@@ -155,19 +155,7 @@ public static class Program {
       Console.WriteLine($"s is {s}");
 
       var ct = t2.ToClientTable();
-      var arrays = new Array[ct.NumColumns];
-      for (var i = 0; i != ct.NumColumns; ++i) {
-        arrays[i] = ct.GetColumn(i);
-      }
-
-      for (var j = 0; j != ct.NumRows; ++j) {
-        var space = "";
-        for (var i = 0; i != ct.NumColumns; ++i) {
-          Console.Write($"{space}{arrays[i].GetValue(j)}");
-          space = " ";
-        }
-        Console.WriteLine();
-      }
+      ShowTable(ct);
 
       // var at = t2.ToArrowTable();
       // at.Schema
@@ -196,9 +184,27 @@ public static class Program {
 #endif
   }
 
+  private static void ShowTable(ClientTable ct) {
+    var arrays = new Array[ct.NumColumns];
+    for (var i = 0; i != ct.NumColumns; ++i) {
+      arrays[i] = ct.GetColumn(i);
+    }
+
+    for (var j = 0; j != ct.NumRows; ++j) {
+      var space = "";
+      for (var i = 0; i != ct.NumColumns; ++i) {
+        Console.Write($"{space}{arrays[i].GetValue(j)}");
+        space = " ";
+      }
+      Console.WriteLine();
+    }
+  }
+
   public class MyCallback : ITickingCallback {
     public void OnTick(TickingUpdate update) {
       Console.WriteLine("Hi, got an update");
+      using var table = update.Current;
+      ShowTable(table);
     }
 
     public void OnFailure(string errorMessage) {

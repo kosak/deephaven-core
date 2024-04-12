@@ -135,13 +135,11 @@ internal class TableHandle {
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_ToArrowTable(NativePtr<TableHandle> self,
-    out NativePtr<Native.ArrowTable> arrowTable, out Int32 numColumns, out Int64 numRows,
-    out ErrorStatus status);
+    out NativePtr<Native.ArrowTable> arrowTable, out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_ToClientTable(NativePtr<TableHandle> self,
-    out NativePtr<Native.ClientTable> clientTable, out Int32 numColumns, out Int64 numRows,
-    out ErrorStatus status);
+    out NativePtr<Native.ClientTable> clientTable, out ErrorStatus status);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
   public delegate void NativeOnUpdate(NativePtr<Native.TickingUpdate> tickingUpdate);
@@ -172,6 +170,10 @@ internal class SubscriptionHandle {
 internal class ArrowTable {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_dtor(NativePtr<Native.ArrowTable> self);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_ArrowTable_GetDimensions(
+    NativePtr<Native.ArrowTable> self, out Int32 numColumns, out Int64 numRows, out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ArrowTable_GetSchema(
@@ -274,6 +276,10 @@ internal class ArrowTable {
 internal class ClientTable {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTable_dtor(NativePtr<Native.ClientTable> self);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_ClientTable_GetDimensions(
+    NativePtr<Native.ClientTable> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTable_Schema(
