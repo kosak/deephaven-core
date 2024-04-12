@@ -18,8 +18,10 @@ public class TickingUpdate : IDisposable {
 
   public ClientTable Current {
     get {
-      throw new NotImplementedException("NIY");
-
+      Native.TickingUpdate.deephaven_client_TickingUpdate_Current(self,
+        out var ct, out var status);
+      status.OkOrThrow();
+      return new ClientTable(ct);
     }
   }
   // public ClientTable BeforeRemoves { get;  }
