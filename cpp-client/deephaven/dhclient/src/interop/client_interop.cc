@@ -8,6 +8,7 @@
 #include <arrow/table.h>
 #include "deephaven/client/client.h"
 #include "deephaven/client/client_options.h"
+#include "deephaven/client/subscription/subscription_handle.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/interop/interop_util.h"
 #include "deephaven/dhcore/utility/utility.h"
@@ -17,6 +18,7 @@ using deephaven::client::Client;
 using deephaven::client::ClientOptions;
 using deephaven::client::TableHandle;
 using deephaven::client::TableHandleManager;
+using deephaven::client::subscription::SubscriptionHandle;
 using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::DurationSpecifier;
 using deephaven::client::utility::TimePointSpecifier;
@@ -40,6 +42,9 @@ using deephaven::dhcore::interop::PlatformUtf16v2;
 using deephaven::dhcore::interop::ResultOrError;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::interop::WrappedException;
+using deephaven::dhcore::ticking::TickingCallback;
+using deephaven::dhcore::ticking::TickingUpdate;
+using deephaven::dhcore::utility::GetWhat;
 using deephaven::dhcore::utility::MakeReservedVector;
 
 namespace {
@@ -356,6 +361,38 @@ void deephaven_client_TableHandle_ToArrowTable(TableHandle *self,
     *num_columns = at->num_columns();
     *num_rows = at->num_rows();
     *arrow_table = new ArrowTable(std::move(at));
+  });
+}
+
+class WrappedTickingCallback final : public TickingCallback {
+public:
+  WrappedTickingCallback(NativeOnUpdate *on_update, NativeOnFailure *on_failure) :
+     on_update_(on_update), on_failure_(on_failure) {}
+
+  void OnTick(TickingUpdate update) final {
+    (*on_update_)(&update);
+  }
+
+  void OnFailure(std::exception_ptr eptr) final {
+    Utf16Converter converter;
+    auto message = GetWhat(eptr);
+    auto wide_string = converter.from_bytes(message);
+    (*on_failure_)(wide_string.data());
+  }
+
+private:
+  NativeOnUpdate *on_update_ = nullptr;
+  NativeOnFailure *on_failure_ = nullptr;
+};
+
+void deephaven_client_TableHandle_Subscribe(deephaven::client::TableHandle *self,
+    NativeOnUpdate *native_on_update, NativeOnFailure *native_on_failure,
+    std::shared_ptr<SubscriptionHandle> **native_subscription_handle,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto wtc = std::make_shared<WrappedTickingCallback>(native_on_update, native_on_failure);
+    auto handle = self->Subscribe(std::move(wtc));
+    *native_subscription_handle = new std::shared_ptr<SubscriptionHandle>(std::move(handle));
   });
 }
 

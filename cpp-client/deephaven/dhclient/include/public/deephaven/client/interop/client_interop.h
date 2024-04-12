@@ -103,6 +103,18 @@ void deephaven_client_TableHandle_ToArrowTable(deephaven::client::TableHandle *s
     deephaven::client::interop::ArrowTable **arrow_table, int32_t *num_columns, int64_t *num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+using NativeOnUpdate = void(deephaven::dhcore::ticking::TickingUpdate *ticking_update);
+using NativeOnFailure = void(const char16_t *error);
+
+void deephaven_client_TableHandle_Subscribe(deephaven::client::TableHandle *self,
+    NativeOnUpdate *native_on_update, NativeOnFailure *native_on_failure,
+    std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> **native_subscription_handle,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_Unsubscribe(deephaven::client::TableHandle *self,
+    std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> *native_subscription_handle,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *self);
 
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
