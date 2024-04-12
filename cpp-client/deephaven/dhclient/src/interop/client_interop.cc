@@ -474,6 +474,15 @@ void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable
   });
 }
 
+void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
+    deephaven::client::interop::ClientTable **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto current = self->Current();
+    *result = new ClientTable(std::move(current));
+  });
+}
+
 void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self) {
   delete self;
 }
