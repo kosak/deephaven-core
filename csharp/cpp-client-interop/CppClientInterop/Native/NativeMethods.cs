@@ -2,8 +2,6 @@
  * Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
  */
 using System.Runtime.InteropServices;
-using System.Text;
-using static Deephaven.CppClientInterop.Native.TableHandle;
 
 namespace Deephaven.CppClientInterop.Native;
 
