@@ -474,6 +474,10 @@ void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable
   });
 }
 
+void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self) {
+  delete self;
+}
+
 void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
     deephaven::client::interop::ClientTable **result,
     deephaven::dhcore::interop::ErrorStatus *status) {
