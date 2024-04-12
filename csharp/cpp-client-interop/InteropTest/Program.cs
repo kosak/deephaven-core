@@ -188,7 +188,7 @@ public static class Program {
         "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii"
       );
       var handle = t3.Subscribe(new MyCallback());
-      Thread.Sleep(TimeSpan.FromSeconds(5));
+      Thread.Sleep(TimeSpan.FromSeconds(10));
       t3.Unsubscribe(handle);
     } catch (Exception ex) {
       Console.WriteLine(ex);

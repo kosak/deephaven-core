@@ -41,8 +41,9 @@ public sealed class TableHandle : IDisposable {
     public TickingWrapper(ITickingCallback callback) => this._callback = callback;
 
     public void NativeOnUpdate(NativePtr<Native.TickingUpdate> nativeTickingUpdate) {
-      var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
-      _callback.OnTick(tickingUpdate);
+      using (var tickingUpdate = new TickingUpdate(nativeTickingUpdate)) {
+        _callback.OnTick(tickingUpdate);
+      }
     }
   }
 
