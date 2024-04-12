@@ -354,12 +354,9 @@ void deephaven_client_TableHandle_ToString(TableHandle *self,
 }
 
 void deephaven_client_TableHandle_ToArrowTable(TableHandle *self,
-    ArrowTable **arrow_table, int32_t *num_columns, int64_t *num_rows,
-    ErrorStatus *status) {
+    ArrowTable **arrow_table, ErrorStatus *status) {
   status->Run([=]() {
     auto at = self->ToArrowTable();
-    *num_columns = at->num_columns();
-    *num_rows = at->num_rows();
     *arrow_table = new ArrowTable(std::move(at));
   });
 }
@@ -400,6 +397,14 @@ void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *se
   delete self;
 }
 
+void deephaven_client_ArrowTable_GetDimensions(ArrowTable *self,
+    int32_t *num_columns, int64_t *num_rows, ErrorStatus *status) {
+  status->Run([=]() {
+    *num_columns = self->table_->num_columns();
+    *num_rows = self->table_->num_rows();
+  });
+}
+
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
   int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
   ErrorStatus *status) {
@@ -428,13 +433,18 @@ void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTabl
 }
 
 void deephaven_client_TableHandle_ToClientTable(TableHandle *self,
-    ClientTable **client_table, int32_t *num_columns, int64_t *num_rows,
-    ErrorStatus *status) {
+    ClientTable **client_table, ErrorStatus *status) {
   status->Run([=]() {
     auto ct = self->ToClientTable();
-    *num_columns = ct->NumColumns();
-    *num_rows = ct->NumRows();
     *client_table = new ClientTable(std::move(ct));
+  });
+}
+
+void deephaven_client_ClientTable_GetDimensions(ClientTable *self,
+    int32_t *num_columns, int64_t *num_rows, ErrorStatus *status) {
+  status->Run([=]() {
+    *num_columns = self->table_->NumColumns();
+    *num_rows = self->table_->NumRows();
   });
 }
 
