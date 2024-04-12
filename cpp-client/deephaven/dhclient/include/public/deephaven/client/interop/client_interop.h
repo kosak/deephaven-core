@@ -18,10 +18,6 @@ public:
   std::shared_ptr<arrow::Table> table_;
 };
 
-/**
- * A thin wrapper about std::shared_ptr<ArrowTable>. Not really necessary but
- * makes it easier for humans to map to the corresponding class on the C# side.
- */
 struct ClientTable {
   using DHCoreClientTable = deephaven::dhcore::clienttable::ClientTable;
 public:
@@ -100,7 +96,7 @@ void deephaven_client_TableHandle_ToString(
     deephaven::dhcore::interop::PlatformUtf16v2 *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_TableHandle_ToArrowTable(deephaven::client::TableHandle *self,
-    deephaven::client::interop::ArrowTable **arrow_table, int32_t *num_columns, int64_t *num_rows,
+    deephaven::client::interop::ArrowTable **arrow_table,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 using NativeOnUpdate = void(deephaven::dhcore::ticking::TickingUpdate *ticking_update);
@@ -117,15 +113,23 @@ void deephaven_client_TableHandle_Unsubscribe(deephaven::client::TableHandle *se
 
 void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *self);
 
+void deephaven_client_ArrowTable_GetDimensions(deephaven::client::interop::ArrowTable *self,
+    int32_t *num_columns, int64_t *num_rows,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
     int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_ToClientTable(deephaven::client::TableHandle *self,
-    deephaven::client::interop::ClientTable **client_table, int32_t *num_columns, int64_t *num_rows,
+    deephaven::client::interop::ClientTable **client_table,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self);
+
+void deephaven_client_ClientTable_GetDimensions(deephaven::client::interop::ClientTable *self,
+    int32_t *num_columns, int64_t *num_rows,
+    deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
     int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
