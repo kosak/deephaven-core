@@ -159,7 +159,11 @@ internal class TableHandle {
 
 internal class TickingUpdate {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TickingUpdate_dtor(NativePtr<TickingUpdate> self);
+  public static extern void deephaven_client_TickingUpdate_dtor(NativePtr<Native.TickingUpdate> self);
+
+  [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TickingUpdate_Current(NativePtr<Native.TickingUpdate> self,
+    out NativePtr<Native.ClientTable> result, out ErrorStatus status);
 }
 
 internal class SubscriptionHandle {
