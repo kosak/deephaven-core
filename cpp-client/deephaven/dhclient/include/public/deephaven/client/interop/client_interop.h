@@ -135,6 +135,8 @@ void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable
     int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16v2 *columns,
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self);
+
 void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
     deephaven::client::interop::ClientTable **result,
     deephaven::dhcore::interop::ErrorStatus *status);
