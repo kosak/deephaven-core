@@ -367,7 +367,8 @@ public:
      on_update_(on_update), on_failure_(on_failure) {}
 
   void OnTick(TickingUpdate update) final {
-    (*on_update_)(&update);
+    auto *copy = new TickingUpdate(std::move(update));
+    (*on_update_)(copy);
   }
 
   void OnFailure(std::exception_ptr eptr) final {
