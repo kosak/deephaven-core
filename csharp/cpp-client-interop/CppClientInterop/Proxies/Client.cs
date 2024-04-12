@@ -41,6 +41,9 @@ public static class StringHack {
   }
 
   private static void AllocatorHelper(string[] inItems, string[] outItems, Int32 count) {
+    if (count == 0) {
+      return;
+    }
     Console.WriteLine($"Array has length {inItems.Length} and {outItems.Length}. Count i s{count}");
     for (int i = 0; i < count; ++i) {
       Console.WriteLine($"BulkIdentity in item {i} is {inItems[i]}");
