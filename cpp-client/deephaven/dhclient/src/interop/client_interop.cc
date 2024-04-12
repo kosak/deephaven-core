@@ -478,7 +478,8 @@ void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingU
     deephaven::client::interop::ClientTable **result,
     deephaven::dhcore::interop::ErrorStatus *status) {
   status->Run([=]() {
-    auto current = self->Current();
+    std::cerr << "Change this back\n";
+    std::shared_ptr<deephaven::dhcore::clienttable::ClientTable> current(self->Current());
     *result = new ClientTable(std::move(current));
   });
 }
@@ -569,7 +570,12 @@ void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::inter
   status->Run([=]() {
     // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = StringChunk::Create(num_rows);
+    fmt::println(std::cerr, "We have {} rows", num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    fmt::println(std::cerr, "We still have {} rows", num_rows);
+    for (int64_t i = 0; i != num_rows; ++i) {
+      fmt::println(std::cerr, "item {} is {}", i, data_chunk.data()[i]);
+    }
     PlatformUtf16v2::CreateBulk(data_chunk.data(), num_rows, data);
   });
 }
