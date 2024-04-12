@@ -41,9 +41,8 @@ public sealed class TableHandle : IDisposable {
     public TickingWrapper(ITickingCallback callback) => this._callback = callback;
 
     public void NativeOnUpdate(NativePtr<Native.TickingUpdate> nativeTickingUpdate) {
-      using (var tickingUpdate = new TickingUpdate(nativeTickingUpdate)) {
-        _callback.OnTick(tickingUpdate);
-      }
+      using var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
+      _callback.OnTick(tickingUpdate);
     }
   }
 
@@ -70,17 +69,15 @@ public sealed class TableHandle : IDisposable {
   }
 
   public ArrowTable ToArrowTable() {
-    Native.TableHandle.deephaven_client_TableHandle_ToArrowTable(self, out var arrowTable, out var numColumns,
-      out var numRows, out var status);
+    Native.TableHandle.deephaven_client_TableHandle_ToArrowTable(self, out var arrowTable, out var status);
     status.OkOrThrow();
-    return new ArrowTable(arrowTable, numColumns, numRows);
+    return new ArrowTable(arrowTable);
   }
 
   public ClientTable ToClientTable() {
-    Native.TableHandle.deephaven_client_TableHandle_ToClientTable(self, out var arrowTable, out var numColumns,
-      out var numRows, out var status);
+    Native.TableHandle.deephaven_client_TableHandle_ToClientTable(self, out var clientTable, out var status);
     status.OkOrThrow();
-    return new ClientTable(arrowTable, numColumns, numRows);
+    return new ClientTable(clientTable);
   }
 
   public string ToString(bool wantHeaders) {

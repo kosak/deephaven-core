@@ -28,22 +28,22 @@ internal abstract class ClientTableColumnFactory {
 
 public class ClientTable : IDisposable {
   internal NativePtr<Native.ClientTable> self;
-  public Int32 NumColumns { get; }
-  public Int64 NumRows { get; }
+  public readonly Int32 NumColumns;
+  public readonly Int64 NumRows;
   public string[] ColumnNames;
   private readonly ElementTypeId[] columnElementTypes;
 
-  internal ClientTable(NativePtr<Native.ClientTable> self, Int32 numColumns, Int64 numRows) {
+  internal ClientTable(NativePtr<Native.ClientTable> self) {
     this.self = self;
-    NumColumns = numColumns;
-    NumRows = numRows;
-    ColumnNames = new string[numColumns];
-    columnElementTypes = new ElementTypeId[numColumns];
+    Native.ClientTable.deephaven_client_ClientTable_GetDimensions(self, out NumColumns, out NumRows, out var status1);
+    status1.OkOrThrow();
+    ColumnNames = new string[NumColumns];
+    columnElementTypes = new ElementTypeId[NumColumns];
 
-    var elementTypesAsInt = new Int32[numColumns];
-    Native.ClientTable.deephaven_client_ClientTable_Schema(self, numColumns, ColumnNames, elementTypesAsInt, out var status);
-    status.OkOrThrow();
-    for (var i = 0; i != numColumns; ++i) {
+    var elementTypesAsInt = new Int32[NumColumns];
+    Native.ClientTable.deephaven_client_ClientTable_Schema(self, NumColumns, ColumnNames, elementTypesAsInt, out var status2);
+    status2.OkOrThrow();
+    for (var i = 0; i != NumColumns; ++i) {
       columnElementTypes[i] = (ElementTypeId)elementTypesAsInt[i];
     }
   }
