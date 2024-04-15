@@ -34,42 +34,56 @@ public class Void {
 
 internal class ClientOptions {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_ctor(out ResultOrError<ClientOptions> roe);
+  public static extern void deephaven_client_ClientOptions_ctor(
+    out ResultOrError<ClientOptions> roe);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_dtor(NativePtr<ClientOptions> self);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetDefaultAuthentication(NativePtr<ClientOptions> self,
-    out ResultOrError<Void> roe);
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetBasicAuthentication(NativePtr<ClientOptions> self,
-    string username, string password, out ResultOrError<Void> roe);
+    string username, string password, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetCustomAuthentication(NativePtr<ClientOptions> self,
-    string authentication_key, string authentication_value, out ResultOrError<Void> roe);
+    string authentication_key, string authentication_value, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetSessionType(NativePtr<ClientOptions> self,
-    string session_type, out ResultOrError<Void> roe);
+    string session_type,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetUseTls(NativePtr<ClientOptions> self,
-    bool use_tls, out ResultOrError<Void> roe);
+    bool use_tls, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetTlsRootCerts(NativePtr<ClientOptions> self,
-    string tls_root_certs, out ResultOrError<Void> roe);
+    string tls_root_certs, out ErrorStatus status);
+    
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetClientCertChain(NativePtr<ClientOptions> self,
-    string client_cert_chain, out ResultOrError<Void> roe);
+    string client_cert_chain, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetClientPrivateKey(NativePtr<ClientOptions> self,
-    string client_private_key, out ResultOrError<Void> roe);
+    string client_private_key, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_AddIntOption(NativePtr<ClientOptions> self,
-    string opt, Int32 val, out ResultOrError<Void> roe);
+    string opt, Int32 val, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_AddStringOption(NativePtr<ClientOptions> self,
-    string opt, string val, out ResultOrError<Void> roe);
+    string opt, string val, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_AddExtraHeader(NativePtr<ClientOptions> self,
-    string header_name, string header_value, out ResultOrError<Void> roe);
+    string header_name, string header_value, out ErrorStatus status);
 }
 
 internal class TableHandleManager {
