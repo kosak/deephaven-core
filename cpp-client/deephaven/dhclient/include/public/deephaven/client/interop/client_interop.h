@@ -64,12 +64,17 @@ void deephaven_client_TableHandleManager_RunScript(const deephaven::client::Tabl
 
 void deephaven_client_Client_Connect(const char16_t *target,
     const deephaven::client::ClientOptions *options,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::Client> *roe);
+    deephaven::client::Client **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_Client_dtor(deephaven::client::Client *self);
+
 void deephaven_client_Client_Close(deephaven::client::Client *self,
-    deephaven::dhcore::interop::ResultOrError<void> *roe);
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_Client_GetManager(deephaven::client::Client *self,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandleManager> *roe);
+    deephaven::client::TableHandleManager **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_dtor(deephaven::client::TableHandle *self);
 void deephaven_client_TableHandle_GetManager(deephaven::client::TableHandle *self,

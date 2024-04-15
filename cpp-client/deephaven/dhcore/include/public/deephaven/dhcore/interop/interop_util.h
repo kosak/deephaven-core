@@ -182,6 +182,9 @@ public:
   void Run(const T &callback) {
     text_.Reset();
     try {
+      // Sanity check for this method's callers to make sure they're not returning a value
+      // which would be ignored here.
+      static_assert(std::is_same_v<decltype(callback()), void>);
       callback();
     } catch (const std::exception &e) {
       text_ = PlatformUtf16v2::Create(e.what());

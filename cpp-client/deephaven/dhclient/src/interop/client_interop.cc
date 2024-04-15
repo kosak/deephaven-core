@@ -255,12 +255,14 @@ void deephaven_client_TableHandleManager_RunScript(const TableHandleManager *sel
   });
 }
 
-void deephaven_client_Client_Connect(const char16_t *target, const ClientOptions *options,
-    ResultOrError<Client> *roe) {
-  roe->SetResult([target, options]() {
+void deephaven_client_Client_Connect(const char16_t *target,
+    const deephaven::client::ClientOptions *options,
+    deephaven::client::Client **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto s = Utf16Converter().to_bytes(target);
     auto res = Client::Connect(s, *options);
-    return new Client(std::move(res));
+    *result = new Client(std::move(res));
   });
 }
 
@@ -270,17 +272,19 @@ void deephaven_client_Client_dtor(Client *self) {
   delete self;
 }
 
-void deephaven_client_Client_Close(Client *self, ResultOrError<void> *roe) {
-  roe->SetResult([self]() {
+void deephaven_client_Client_Close(Client *self,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     self->Close();
-    return nullptr;
   });
 }
 
-void deephaven_client_Client_GetManager(Client *self, ResultOrError<TableHandleManager> *roe) {
-  roe->SetResult([self]() {
+void deephaven_client_Client_GetManager(Client *self,
+    TableHandleManager **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto res = self->GetManager();
-    return new TableHandleManager(std::move(res));
+    *result = new TableHandleManager(std::move(res));
   });
 }
 
