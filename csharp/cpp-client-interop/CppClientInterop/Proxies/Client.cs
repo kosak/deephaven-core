@@ -8,11 +8,12 @@ public class Client : IDisposable {
   public TableHandleManager Manager;
 
   public static Client Connect(string target, ClientOptions options) {
-    Native.Client.deephaven_client_Client_Connect(target, options.self, out var roe);
-    var nativeClient = roe.Unwrap();
-    Native.Client.deephaven_client_Client_GetManager(nativeClient, out var roe2);
-    var manager = new TableHandleManager(roe2.Unwrap());
-    return new Client(nativeClient, manager);
+    Native.Client.deephaven_client_Client_Connect(target, options.self, out var clientResult, out var status1);
+    status1.OkOrThrow();
+    Native.Client.deephaven_client_Client_GetManager(clientResult, out var managerResult, out var status2);
+    status2.OkOrThrow();
+    var manager = new TableHandleManager(managerResult);
+    return new Client(clientResult, manager);
   }
 
   private Client(NativePtr<Native.Client> self, TableHandleManager manager) {

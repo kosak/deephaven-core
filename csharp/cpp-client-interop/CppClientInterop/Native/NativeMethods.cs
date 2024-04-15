@@ -96,14 +96,22 @@ internal class TableHandleManager {
 
 internal class Client {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_Client_Connect(string target, NativePtr<ClientOptions> options,
-    out ResultOrError<Client> roe);
+  public static extern void deephaven_client_Client_Connect(string target,
+    NativePtr<ClientOptions> options,
+    out NativePtr<Client> result,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_Client_dtor(NativePtr<Client> self);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_Client_Close(NativePtr<Client> self, out ResultOrError<Void> roe);
+  public static extern void deephaven_client_Client_Close(NativePtr<Client> self,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_Client_GetManager(NativePtr<Client> self, out ResultOrError<TableHandleManager> roe);
+  public static extern void deephaven_client_Client_GetManager(NativePtr<Client> self,
+    out NativePtr<TableHandleManager> result,
+    out ErrorStatus status);
 }
 
 internal class TableHandle {
