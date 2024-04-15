@@ -6,8 +6,8 @@ public class ClientOptions : IDisposable {
   internal NativePtr<Native.ClientOptions> self;
 
   public ClientOptions() {
-    Native.ClientOptions.deephaven_client_ClientOptions_ctor(out var roe);
-    self = roe.Unwrap();
+    Native.ClientOptions.deephaven_client_ClientOptions_ctor(out var result, out var status);
+    self = status.Unwrap(result);
   }
 
   ~ClientOptions() {

@@ -29,13 +29,12 @@ public class WrappedException {
 }
 
 public class Void {
-
 }
 
 internal class ClientOptions {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_ctor(
-    out ResultOrError<ClientOptions> roe);
+    out NativePtr<ClientOptions> result, out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_dtor(NativePtr<ClientOptions> self);
@@ -54,8 +53,7 @@ internal class ClientOptions {
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetSessionType(NativePtr<ClientOptions> self,
-    string session_type,
-    out ErrorStatus status);
+    string session_type, out ErrorStatus status);
 
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_SetUseTls(NativePtr<ClientOptions> self,
