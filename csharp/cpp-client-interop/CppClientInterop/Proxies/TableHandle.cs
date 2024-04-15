@@ -25,14 +25,15 @@ public sealed class TableHandle : IDisposable {
   }
 
   public TableHandle Update(params string[] columnSpecs) {
-    Native.TableHandle.deephaven_client_TableHandle_Update(self, columnSpecs, columnSpecs.Length, out var roe);
-    var res = roe.Unwrap();
-    return new TableHandle(res, Manager);
+    Native.TableHandle.deephaven_client_TableHandle_Update(self, columnSpecs, columnSpecs.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
   }
 
   public void BindToVariable(string variable) {
-    Native.TableHandle.deephaven_client_TableHandle_BindToVariable(self, variable, out var roe);
-    _ = roe.Unwrap();
+    Native.TableHandle.deephaven_client_TableHandle_BindToVariable(self, variable, out var status);
+    status.OkOrThrow();
   }
 
   private class TickingWrapper {

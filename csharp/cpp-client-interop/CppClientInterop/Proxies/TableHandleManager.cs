@@ -27,19 +27,21 @@ public class TableHandleManager : IDisposable {
   }
 
   public TableHandle EmptyTable(Int64 size) {
-    Native.TableHandleManager.deephaven_client_TableHandleManager_EmptyTable(self, size, out var roe);
-    return new TableHandle(roe.Unwrap(), this);
+    Native.TableHandleManager.deephaven_client_TableHandleManager_EmptyTable(self, size,
+      out var result, out var status);
+    return new TableHandle(status.Unwrap(result), this);
   }
 
   public TableHandle FetchTable(string tableName) {
-    Native.TableHandleManager.deephaven_client_TableHandleManager_FetchTable(self, tableName, out var roe);
-    return new TableHandle(roe.Unwrap(), this);
+    Native.TableHandleManager.deephaven_client_TableHandleManager_FetchTable(self, tableName,
+      out var result, out var status);
+    return new TableHandle(status.Unwrap(result), this);
   }
 
   public TableHandle TimeTable(DurationSpecifier period, TimePointSpecifier startTime, bool blinkTable) {
     Native.TableHandleManager.deephaven_client_TableHandleManager_TimeTable(self, period.self, startTime.self,
-      blinkTable, out var roe);
-    return new TableHandle(roe.Unwrap(), this);
+      blinkTable, out var result, out var status);
+    return new TableHandle(status.Unwrap(result), this);
   }
 
   public TableHandle InputTable(TableHandle initialTable, string[] keyColumns) {
@@ -47,8 +49,9 @@ public class TableHandleManager : IDisposable {
   }
 
   public void RunScript(string script) {
-    Native.TableHandleManager.deephaven_client_TableHandleManager_RunScript(self, script, out var roe);
-    _ = roe.Unwrap();
+    Native.TableHandleManager.deephaven_client_TableHandleManager_RunScript(self, script,
+      out var status);
+    status.OkOrThrow();
   }
 
   internal void AddSubscription(SubscriptionHandle handle, object keepalive) {
