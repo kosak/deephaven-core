@@ -28,9 +28,6 @@ public class WrappedException {
   public static extern void deephaven_client_WrappedException_dtor(NativePtr<WrappedException> self);
 }
 
-public class Void {
-}
-
 internal class ClientOptions {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientOptions_ctor(
@@ -103,7 +100,7 @@ internal class TableHandleManager {
     Int64 num_key_columns, ResultOrError<TableHandle> roe);
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandleManager_RunScript(NativePtr<TableHandleManager> self,
-    string code, out ResultOrError<Void> roe);
+    string code, out ErrorStatus errorStatus);
 }
 
 internal class Client {
@@ -129,26 +126,35 @@ internal class Client {
 internal class TableHandle {
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_dtor(NativePtr<TableHandle> self);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_GetManager(NativePtr<TableHandle> self,
-    out ResultOrError<TableHandleManager> roe);
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_Select(NativePtr<TableHandle> self,
-    NativePtr<Todo> column_specs, Int64 num_column_specs, out ResultOrError<TableHandle> roe);
+    NativePtr<Todo> column_specs, Int64 num_column_specs,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_View(NativePtr<TableHandle> self,
-    NativePtr<Todo> column_specs, Int64 num_column_specs, out ResultOrError<TableHandleManager> roe);
+    NativePtr<Todo> column_specs, Int64 num_column_specs, out ResultOrError<TableHandleManager> roe,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_DropColumns(NativePtr<TableHandle> self,
-    NativePtr<Todo> column_specs, Int64 num_column_specs, out ResultOrError<TableHandle> roe);
+    NativePtr<Todo> column_specs, Int64 num_column_specs, out ResultOrError<TableHandle> roe,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_Update(NativePtr<TableHandle> self,
-    [In] string[] columns, Int32 numColumns, out ResultOrError<TableHandle> roe);
-  // ...
+    [In] string[] columns, Int32 numColumns, out ResultOrError<TableHandle> roe,
+    out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_BindToVariable(NativePtr<TableHandle> self,
-    string variable, out ResultOrError<Void> roe);
-  // ...
+    string variable, out ErrorStatus status);
+
   [DllImport(DllLocations.Dhclient, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
   public static extern void deephaven_client_TableHandle_ToString(NativePtr<TableHandle> self,
     Int32 wantHeaders, out string result, out ErrorStatus status);
