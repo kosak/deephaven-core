@@ -196,85 +196,9 @@ public:
 private:
   PlatformUtf16v2 text_;
 };
-
-class WrappedException {
-public:
-  explicit WrappedException(std::string what) : what_(std::move(what)) {}
-
-  [[nodiscard]]
-  const std::string &What() const { return what_; }
-
-  template<typename T>
-  static WrappedException *Run(const T &callback) {
-    try {
-      callback();
-      return nullptr;
-    } catch (const std::exception &e) {
-      return new WrappedException(e.what());
-    } catch (...) {
-      return new WrappedException("Unknown exception");
-    }
-  }
-
-private:
-  std::string what_;
-};
-
-class NativeError {
-public:
-  NativeError() = default;
-  explicit NativeError(std::string_view s) {
-    std::cerr << "trying to make a " << s << '\n';
-    auto utf16 = Utf16Converter().from_bytes(s.data());
-    text_ = PlatformUtf16::Create(utf16);
-    std::cerr << "constructor returning ok\n";
-  }
-
-  template<typename T>
-  static NativeError Run(const T &callback) {
-    try {
-      callback();
-      std::cerr << "callback successful\n";
-      return NativeError("Q");
-    } catch (const std::exception &e) {
-      return NativeError(e.what());
-    } catch (...) {
-      return NativeError("Unknown exception");
-    }
-  }
-
-private:
-  const PlatformUtf16 *text_;
-};
-
-template<typename T>
-struct ResultOrError {
-  template<typename U>
-  void SetResult(const U &callback) {
-    try {
-      result_ = callback();
-      error_ = nullptr;
-    } catch (const std::exception &e) {
-      result_ = nullptr;
-      error_ = new WrappedException(e.what());
-    } catch (...) {
-      std::cout << "Zamboni time!!!!\n";
-      result_ = nullptr;
-      error_ = new WrappedException("Unknown exception");
-    }
-  }
-
-  T *result_ = nullptr;
-  WrappedException *error_ = nullptr;
-};
 }  // namespace deephaven::dhcore::interop
 
 extern "C" {
 void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
     deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocatorHelper);
-
-void deephaven_client_WrappedException_dtor(
-    deephaven::dhcore::interop::WrappedException *self);
-const deephaven::dhcore::interop::PlatformUtf16 *deephaven_client_WrappedException_What(
-    deephaven::dhcore::interop::WrappedException *self);
 }  // extern "C"

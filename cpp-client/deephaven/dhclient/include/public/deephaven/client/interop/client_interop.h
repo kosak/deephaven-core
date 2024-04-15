@@ -43,24 +43,33 @@ void invokelab_r5(const char16_t **data_in, const deephaven::dhcore::interop::Pl
 // TODO(kosak): all the const char * should maybe come over as UTF-16 types from Windows.
 
 void deephaven_client_TableHandleManager_dtor(deephaven::client::TableHandleManager *self);
+
 void deephaven_client_TableHandleManager_EmptyTable(const deephaven::client::TableHandleManager *self,
     int64_t size,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::TableHandleManager *self,
     const char16_t *table_name,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandleManager_TimeTable(const deephaven::client::TableHandleManager *self,
     const deephaven::client::utility::DurationSpecifier *period,
     const deephaven::client::utility::TimePointSpecifier *start_time,
     bool blink_table,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandleManager_InputTable(const deephaven::client::TableHandleManager *self,
     const deephaven::client::TableHandle *initial_table, const char16_t **key_columns,
     int64_t num_key_columns,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandleManager_RunScript(const deephaven::client::TableHandleManager *self,
     const char16_t *code,
-    deephaven::dhcore::interop::ResultOrError<void> *roe);
+    deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_Client_Connect(const char16_t *target,
     const deephaven::client::ClientOptions *options,
@@ -77,29 +86,41 @@ void deephaven_client_Client_GetManager(deephaven::client::Client *self,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_dtor(deephaven::client::TableHandle *self);
+
 void deephaven_client_TableHandle_GetManager(deephaven::client::TableHandle *self,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandleManager> *roe);
+    deephaven::client::TableHandleManager **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_Select(deephaven::client::TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_View(deephaven::client::TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_DropColumns(deephaven::client::TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_Update(deephaven::client::TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::dhcore::interop::ResultOrError<deephaven::client::TableHandle> *roe);
-// ...
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle *self,
     const char16_t *variable,
-    deephaven::dhcore::interop::ResultOrError<void> *roe);
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_ToString(
     deephaven::client::TableHandle *self,
     int32_t want_headers,
     deephaven::dhcore::interop::PlatformUtf16v2 *result,
     deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_ToArrowTable(deephaven::client::TableHandle *self,
     deephaven::client::interop::ArrowTable **arrow_table,
     deephaven::dhcore::interop::ErrorStatus *status);

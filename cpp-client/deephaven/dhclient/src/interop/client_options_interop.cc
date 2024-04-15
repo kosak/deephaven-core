@@ -7,7 +7,6 @@
 #include "deephaven/client/client_options.h"
 #include "deephaven/dhcore/interop/interop_util.h"
 
-using deephaven::dhcore::interop::ResultOrError;
 using deephaven::client::ClientOptions;
 
 extern "C" {

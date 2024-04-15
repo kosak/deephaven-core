@@ -8,7 +8,6 @@
 
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
-using deephaven::dhcore::interop::WrappedException;
 using deephaven::dhcore::utility::MakeReservedVector;
 
 namespace deephaven::dhcore::interop {
@@ -60,15 +59,5 @@ extern "C" {
 void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
     deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocator_helper) {
   PlatformUtf16::AllocatorHelper() = allocator_helper;
-}
-
-void deephaven_client_WrappedException_dtor(WrappedException *self) {
-  delete self;
-}
-
-const PlatformUtf16 *deephaven_client_WrappedException_What(WrappedException *self) {
-  Utf16Converter c;
-  auto result = c.from_bytes(self->What());
-  return PlatformUtf16::Create(result);
 }
 }  // extern "C"

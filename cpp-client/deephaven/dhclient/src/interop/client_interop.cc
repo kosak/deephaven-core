@@ -36,12 +36,9 @@ using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::interop::ErrorStatus;
-using deephaven::dhcore::interop::NativeError;
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::PlatformUtf16v2;
-using deephaven::dhcore::interop::ResultOrError;
 using deephaven::dhcore::interop::Utf16Converter;
-using deephaven::dhcore::interop::WrappedException;
 using deephaven::dhcore::ticking::TickingCallback;
 using deephaven::dhcore::ticking::TickingUpdate;
 using deephaven::dhcore::utility::GetWhat;
@@ -211,47 +208,58 @@ void deephaven_client_TableHandleManager_dtor(TableHandleManager *self) {
   delete self;
 }
 
-void deephaven_client_TableHandleManager_EmptyTable(const TableHandleManager *self,
-    int64_t size, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, size]() {
-    auto res = self->EmptyTable(size);
-    return new TableHandle(std::move(res));
+void deephaven_client_TableHandleManager_EmptyTable(const deephaven::client::TableHandleManager *self,
+    int64_t size,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto table = self->EmptyTable(size);
+    *result = new TableHandle(std::move(table));
   });
 }
-void deephaven_client_TableHandleManager_FetchTable(const TableHandleManager *self,
-    const char16_t *table_name, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, table_name]() {
+
+void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::TableHandleManager *self,
+    const char16_t *table_name,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto tn = Utf16Converter().to_bytes(table_name);
-    auto res = self->FetchTable(tn);
-    return new TableHandle(std::move(res));
+    auto table = self->FetchTable(tn);
+    *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandleManager_TimeTable(const TableHandleManager *self,
-    const DurationSpecifier *period, const TimePointSpecifier *start_time,
-    bool blink_table, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, period, start_time, blink_table]() {
-    auto res = self->TimeTable(*period, *start_time, blink_table);
-    return new TableHandle(std::move(res));
+
+void deephaven_client_TableHandleManager_TimeTable(const deephaven::client::TableHandleManager *self,
+    const deephaven::client::utility::DurationSpecifier *period,
+    const deephaven::client::utility::TimePointSpecifier *start_time,
+    bool blink_table,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto table = self->TimeTable(*period, *start_time, blink_table);
+    *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandleManager_InputTable(const TableHandleManager *self,
+void deephaven_client_TableHandleManager_InputTable(const deephaven::client::TableHandleManager *self,
     const deephaven::client::TableHandle *initial_table, const char16_t **key_columns,
-    int64_t num_key_columns, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, initial_table, key_columns, num_key_columns]() {
+    int64_t num_key_columns,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto kcs = MakeStringVec(key_columns, num_key_columns);
-    auto res = self->InputTable(*initial_table, std::move(kcs));
-    return new TableHandle(std::move(res));
+    auto table = self->InputTable(*initial_table, std::move(kcs));
+    *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandleManager_RunScript(const TableHandleManager *self,
-    const char16_t *code, ResultOrError<void> *roe) {
-  roe->SetResult([self, code]() {
+void deephaven_client_TableHandleManager_RunScript(const deephaven::client::TableHandleManager *self,
+    const char16_t *code,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([self, code]() {
     auto s = Utf16Converter().to_bytes(code);
     self->RunScript(s);
-    return nullptr;
   });
 }
 
