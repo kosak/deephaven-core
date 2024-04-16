@@ -37,7 +37,6 @@ using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::interop::ErrorStatus;
 using deephaven::dhcore::interop::PlatformUtf16;
-using deephaven::dhcore::interop::PlatformUtf16v2;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::ticking::TickingCallback;
 using deephaven::dhcore::ticking::TickingUpdate;
@@ -365,12 +364,12 @@ void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle 
 }
 
 void deephaven_client_TableHandle_ToString(TableHandle *self,
-    int32_t want_headers, PlatformUtf16v2 *result, ErrorStatus *status) {
+    int32_t want_headers, PlatformUtf16 *result, ErrorStatus *status) {
   std::cerr << "want headers came in as " << want_headers << '\n';
   status->Run([self, want_headers, result]() {
     result->Reset();
     auto text = self->ToString(want_headers != 0);
-    *result = PlatformUtf16v2::Create(std::move(text));
+    *result = PlatformUtf16::Create(std::move(text));
   });
 }
 
@@ -428,7 +427,7 @@ void deephaven_client_ArrowTable_GetDimensions(ArrowTable *self,
 }
 
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
-  int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
+  int32_t num_columns, PlatformUtf16 *columns, int32_t *column_types,
   ErrorStatus *status) {
   status->Run([=]() {
     const auto &schema = self->table_->schema();
@@ -443,7 +442,7 @@ void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTabl
     for (const auto &field : schema->fields()) {
       names.push_back(field->name());
     }
-    PlatformUtf16v2::CreateBulk(names.data(), names.size(), columns);
+    PlatformUtf16::CreateBulk(names.data(), names.size(), columns);
 
     // Now do the column types
     size_t next_field_index = 0;
@@ -471,7 +470,7 @@ void deephaven_client_ClientTable_GetDimensions(ClientTable *self,
 }
 
 void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
-    int32_t num_columns, PlatformUtf16v2 *columns, int32_t *column_types,
+    int32_t num_columns, PlatformUtf16 *columns, int32_t *column_types,
     ErrorStatus *status) {
   status->Run([=]() {
     const auto &schema = self->table_->Schema();
@@ -486,7 +485,7 @@ void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable
     for (const auto &field : schema->Names()) {
       names.push_back(field);
     }
-    PlatformUtf16v2::CreateBulk(names.data(), names.size(), columns);
+    PlatformUtf16::CreateBulk(names.data(), names.size(), columns);
 
     // Now do the column types
     size_t next_field_index = 0;
@@ -591,7 +590,7 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::clien
 }
 
 void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTable *self,
-    int32_t column_index, PlatformUtf16v2 *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, PlatformUtf16 *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
     // For Boolean, DateTime, and String we have to do a little data conversion.
@@ -602,7 +601,7 @@ void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::inter
     for (int64_t i = 0; i != num_rows; ++i) {
       fmt::println(std::cerr, "item {} is {}", i, data_chunk.data()[i]);
     }
-    PlatformUtf16v2::CreateBulk(data_chunk.data(), num_rows, data);
+    PlatformUtf16::CreateBulk(data_chunk.data(), num_rows, data);
   });
 }
 

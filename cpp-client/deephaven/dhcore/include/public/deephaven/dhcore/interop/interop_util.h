@@ -107,7 +107,7 @@ using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, c
  * And also we include a final ErrorStatus out argument, which is our convention to return
  * overall success or failure. This is similar to an Arrow::Status type but much simpler.
  */
-class PlatformUtf16v2 {
+class PlatformUtf16 {
 public:
   using allocatorHelper_t = void (*)(const char16_t **in_items, const char16_t **out_items,
       int32_t count);
@@ -119,45 +119,48 @@ public:
    */
   static allocatorHelper_t &AllocatorHelper();
 
-  static PlatformUtf16v2 Create(std::string_view item);
-  static PlatformUtf16v2 Create(std::u16string_view  item);
-  static void CreateBulk(const std::string *strings, size_t num_strings, PlatformUtf16v2 *results);
-  static void CreateBulk(const std::u16string *strings, size_t num_strings, PlatformUtf16v2 *results);
-
-  //static void Create(const char16_t **in_items, PlatformUtf16v2 *out_items, int32_t count);
+  static PlatformUtf16 Create(std::string_view item);
+  static PlatformUtf16 Create(std::u16string_view  item);
+  static void CreateBulk(const std::string *strings, size_t num_strings, PlatformUtf16 *results);
+  static void CreateBulk(const std::u16string *strings, size_t num_strings, PlatformUtf16 *results);
 
   void Reset() {
     data_ = nullptr;
   }
 
 private:
-  explicit PlatformUtf16v2(const char16_t *data) : data_(data) {}
+  explicit PlatformUtf16(const char16_t *data) : data_(data) {}
+
   const char16_t *data_ = nullptr;
 };
 
 class ErrorStatus {
 public:
+  /**
+   * This is used to wrap caller code in a lambda so that we can automatically set the error
+   * status if the lambda throws an exception.
+   */
   template<typename T>
   void Run(const T &callback) {
     text_.Reset();
     try {
       // Sanity check for this method's callers to make sure they're not returning a value
-      // which would be ignored here.
+      // which would be a programming mistake because it is ignored here.
       static_assert(std::is_same_v<decltype(callback()), void>);
       callback();
     } catch (const std::exception &e) {
-      text_ = PlatformUtf16v2::Create(e.what());
+      text_ = PlatformUtf16::Create(e.what());
     } catch (...) {
-      text_ = PlatformUtf16v2::Create("Unknown exception");
+      text_ = PlatformUtf16::Create("Unknown exception");
     }
   }
 
 private:
-  PlatformUtf16v2 text_;
+  PlatformUtf16 text_;
 };
 }  // namespace deephaven::dhcore::interop
 
 extern "C" {
 void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
-    deephaven::dhcore::interop::PlatformUtf16v2::allocatorHelper_t allocatorHelper);
+    deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocatorHelper);
 }  // extern "C"
