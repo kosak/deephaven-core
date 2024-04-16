@@ -6,15 +6,14 @@
 
 #include <vector>
 
-using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::utility::MakeReservedVector;
 
 namespace deephaven::dhcore::interop {
-PlatformUtf16::allocatorHelper_t &PlatformUtf16::AllocatorHelper() {
+PlatformUtf16v2::allocatorHelper_t &PlatformUtf16v2::AllocatorHelper() {
   // We make this a function rather than a global because it plays more nicely with
   // CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.
-  static PlatformUtf16::allocatorHelper_t allocator_helper;
+  static allocatorHelper_t allocator_helper;
   return allocator_helper;
 }
 
@@ -27,7 +26,7 @@ PlatformUtf16v2 PlatformUtf16v2::Create(std::string_view s) {
 PlatformUtf16v2 PlatformUtf16v2::Create(std::u16string_view s) {
   const char16_t *in_item = s.data();
   const char16_t *out_item;
-  PlatformUtf16::AllocatorHelper()(&in_item, &out_item, 1);
+  AllocatorHelper()(&in_item, &out_item, 1);
   return PlatformUtf16v2(out_item);
 }
 
@@ -48,7 +47,7 @@ void PlatformUtf16v2::CreateBulk(const std::u16string *strings, size_t num_strin
     u16_ptrs.push_back(strings[i].data());
   }
   std::vector<const char16_t*> result_ptrs(num_strings);
-  PlatformUtf16::AllocatorHelper()(u16_ptrs.data(), result_ptrs.data(), num_strings);
+  AllocatorHelper()(u16_ptrs.data(), result_ptrs.data(), num_strings);
   for (size_t i = 0; i != num_strings; ++i) {
     results[i] = PlatformUtf16v2(result_ptrs[i]);
   }
@@ -57,7 +56,7 @@ void PlatformUtf16v2::CreateBulk(const std::u16string *strings, size_t num_strin
 
 extern "C" {
 void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
-    deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocator_helper) {
-  PlatformUtf16::AllocatorHelper() = allocator_helper;
+    deephaven::dhcore::interop::PlatformUtf16v2::allocatorHelper_t allocator_helper) {
+  deephaven::dhcore::interop::PlatformUtf16v2::AllocatorHelper() = allocator_helper;
 }
 }  // extern "C"
