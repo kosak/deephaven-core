@@ -12,23 +12,6 @@
 #include <string_view>
 
 namespace deephaven::dhcore::interop {
-template<typename T>
-class NativePtr {
-public:
-  NativePtr &operator=(T *target);
-
-  T &operator*() { return *target_; }
-  const T &operator*() const { return *target_; }
-  T *operator->() { return target_; }
-  const T *operator->() const { return target_; }
-
-  T *get();
-  const T *get() const;
-
-private:
-  T *target_ = nullptr;
-};
-
 using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>;
 
 /**
