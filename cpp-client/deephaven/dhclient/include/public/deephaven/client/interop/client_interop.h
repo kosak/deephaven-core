@@ -118,7 +118,7 @@ void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle 
 void deephaven_client_TableHandle_ToString(
     deephaven::client::TableHandle *self,
     int32_t want_headers,
-    deephaven::dhcore::interop::PlatformUtf16 *result,
+    const deephaven::dhcore::interop::PlatformUtf16 **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_ToArrowTable(deephaven::client::TableHandle *self,
@@ -144,7 +144,7 @@ void deephaven_client_ArrowTable_GetDimensions(deephaven::client::interop::Arrow
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
-    int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16 *columns,
+    int32_t num_columns, const deephaven::dhcore::interop::PlatformUtf16 **columns,
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_ToClientTable(deephaven::client::TableHandle *self,
@@ -158,7 +158,7 @@ void deephaven_client_ClientTable_GetDimensions(deephaven::client::interop::Clie
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
-    int32_t num_columns, deephaven::dhcore::interop::PlatformUtf16 *columns,
+    int32_t num_columns, const deephaven::dhcore::interop::PlatformUtf16 **columns,
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self);
@@ -192,7 +192,8 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::clien
     int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTable *self,
-    int32_t column_index, deephaven::dhcore::interop::PlatformUtf16 *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, const deephaven::dhcore::interop::PlatformUtf16 **data,
+    bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTable *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,

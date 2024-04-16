@@ -109,21 +109,19 @@ void invokelab_r3(const char16_t **data_in, int32_t count) {
 void invokelab_r4(const PlatformUtf16 **data_out, int32_t count) {
   Utf16Converter converter;
   auto u16strings = MakeReservedVector<std::u16string>(count);
-  auto u16strings_ptrs = MakeReservedVector<const char16_t*>(count);
   for (int i = 0; i != count; ++i) {
     const char *fmt_string = "💫✨element ⦕{}⦖,🌟⭐";
     auto s = fmt::format(fmt_string, i);
-    fmt::println(stderr, "r4 index {} storing {}", i, s);
+    // fmt::println(stderr, "r4 index {} storing {}", i, s);
     auto s16 = converter.from_bytes(s);
     u16strings.push_back(std::move(s16));
-    u16strings_ptrs.push_back(u16strings.back().data());
   }
-  PlatformUtf16::Create(u16strings_ptrs.data(), data_out, count);
+  PlatformUtf16::CreateBulk(u16strings.data(), count, data_out);
 }
 
 // Copy in to out, but reverse them. Just because.
 void invokelab_r5(const char16_t **data_in, const PlatformUtf16 **data_out, int32_t count) {
-  PlatformUtf16::Create(data_in, data_out, count);
+  PlatformUtf16::CreateBulk(data_in, count, data_out);
   std::reverse(data_out, data_out + count);
 }
 
@@ -132,12 +130,12 @@ struct Big {
 };
 
 Big invokelab_r6(int a, int b, int c) {
-  fmt::println(std::cerr, "r6 {} {} {}", a, b, c);
+  // fmt::println(std::cerr, "r6 {} {} {}", a, b, c);
   return Big {10+a, 10+b, 10+c, 100+a, 100+b, 100+c, 1000+a, 1000+b, 1000+c};
 }
 
 int invokelab_r7(int a, int b, int c) {
-  fmt::println(std::cerr, "r7 {} {} {}", a, b, c);
+  // fmt::println(std::cerr, "r7 {} {} {}", a, b, c);
   return 12 + a;
 }
 
@@ -364,10 +362,9 @@ void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle 
 }
 
 void deephaven_client_TableHandle_ToString(TableHandle *self,
-    int32_t want_headers, PlatformUtf16 *result, ErrorStatus *status) {
+    int32_t want_headers, const PlatformUtf16 **result, ErrorStatus *status) {
   std::cerr << "want headers came in as " << want_headers << '\n';
   status->Run([self, want_headers, result]() {
-    result->Reset();
     auto text = self->ToString(want_headers != 0);
     *result = PlatformUtf16::Create(std::move(text));
   });
@@ -427,7 +424,7 @@ void deephaven_client_ArrowTable_GetDimensions(ArrowTable *self,
 }
 
 void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
-  int32_t num_columns, PlatformUtf16 *columns, int32_t *column_types,
+  int32_t num_columns, const PlatformUtf16 **columns, int32_t *column_types,
   ErrorStatus *status) {
   status->Run([=]() {
     const auto &schema = self->table_->schema();
@@ -470,7 +467,7 @@ void deephaven_client_ClientTable_GetDimensions(ClientTable *self,
 }
 
 void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
-    int32_t num_columns, PlatformUtf16 *columns, int32_t *column_types,
+    int32_t num_columns, const PlatformUtf16 **columns, int32_t *column_types,
     ErrorStatus *status) {
   status->Run([=]() {
     const auto &schema = self->table_->Schema();
@@ -590,17 +587,12 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::clien
 }
 
 void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTable *self,
-    int32_t column_index, PlatformUtf16 *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, const PlatformUtf16 **data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
     // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = StringChunk::Create(num_rows);
-    fmt::println(std::cerr, "We have {} rows", num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
-    fmt::println(std::cerr, "We still have {} rows", num_rows);
-    for (int64_t i = 0; i != num_rows; ++i) {
-      fmt::println(std::cerr, "item {} is {}", i, data_chunk.data()[i]);
-    }
     PlatformUtf16::CreateBulk(data_chunk.data(), num_rows, data);
   });
 }

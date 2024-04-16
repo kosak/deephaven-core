@@ -17,21 +17,21 @@ PlatformUtf16::allocatorHelper_t &PlatformUtf16::AllocatorHelper() {
   return allocator_helper;
 }
 
-PlatformUtf16 PlatformUtf16::Create(std::string_view s) {
+const PlatformUtf16 *PlatformUtf16::Create(std::string_view s) {
   Utf16Converter c;
   auto u16_text = c.from_bytes(s.data());
   return Create(u16_text);
 }
 
-PlatformUtf16 PlatformUtf16::Create(std::u16string_view s) {
+const PlatformUtf16 *PlatformUtf16::Create(std::u16string_view s) {
   const char16_t *in_item = s.data();
-  const char16_t *out_item;
+  const PlatformUtf16 *out_item;
   AllocatorHelper()(&in_item, &out_item, 1);
-  return PlatformUtf16(out_item);
+  return out_item;
 }
 
 void PlatformUtf16::CreateBulk(const std::string *strings, size_t num_strings,
-    PlatformUtf16 *results) {
+    const PlatformUtf16 **results) {
   Utf16Converter c;
   auto u16_strings = MakeReservedVector<std::u16string>(num_strings);
   for (size_t i = 0; i != num_strings; ++i) {
@@ -41,16 +41,17 @@ void PlatformUtf16::CreateBulk(const std::string *strings, size_t num_strings,
 }
 
 void PlatformUtf16::CreateBulk(const std::u16string *strings, size_t num_strings,
-    PlatformUtf16 *results) {
+    const PlatformUtf16 **results) {
   auto u16_ptrs = MakeReservedVector<const char16_t*>(num_strings);
   for (size_t i = 0; i != num_strings; ++i) {
     u16_ptrs.push_back(strings[i].data());
   }
-  std::vector<const char16_t*> result_ptrs(num_strings);
-  AllocatorHelper()(u16_ptrs.data(), result_ptrs.data(), num_strings);
-  for (size_t i = 0; i != num_strings; ++i) {
-    results[i] = PlatformUtf16(result_ptrs[i]);
-  }
+  AllocatorHelper()(u16_ptrs.data(), results, num_strings);
+}
+
+void PlatformUtf16::CreateBulk(const char16_t **strings, size_t num_strings,
+    const deephaven::dhcore::interop::PlatformUtf16 **results) {
+  AllocatorHelper()(strings, results, num_strings);
 }
 }  // namespace deephaven::dhcore::interop
 
