@@ -302,56 +302,65 @@ void deephaven_client_TableHandle_dtor(TableHandle *self) {
   delete self;
 }
 
-void deephaven_client_TableHandle_GetManager(TableHandle *self,
-    ResultOrError<TableHandleManager> *roe) {
-  roe->SetResult([self]() {
-    auto res = self->GetManager();
-    return new TableHandleManager(std::move(res));
+void deephaven_client_TableHandle_GetManager(deephaven::client::TableHandle *self,
+    deephaven::client::TableHandleManager **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto table = self->GetManager();
+    *result = new TableHandleManager(std::move(table));
   });
 }
 
-void deephaven_client_TableHandle_Select(TableHandle *self, const char16_t **column_specs,
-    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, column_specs, num_column_specs]() {
+void deephaven_client_TableHandle_Select(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto cols = MakeStringVec(column_specs, num_column_specs);
-    auto res = self->Select(cols);
-    return new TableHandle(std::move(res));
+    auto table = self->Select(cols);
+    *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandle_View(TableHandle *self, const char16_t **column_specs,
-    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, column_specs, num_column_specs]() {
+void deephaven_client_TableHandle_View(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto cols = MakeStringVec(column_specs, num_column_specs);
-    auto res = self->View(cols);
-    return new TableHandle(std::move(res));
+    auto table = self->View(cols);
+    *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandle_DropColumns(TableHandle *self, const char16_t **column_specs,
-    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, column_specs, num_column_specs]() {
+void deephaven_client_TableHandle_DropColumns(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto cols = MakeStringVec(column_specs, num_column_specs);
-    auto res = self->DropColumns(cols);
-    return new TableHandle(std::move(res));
+    auto table = self->DropColumns(cols);
+    *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandle_Update(TableHandle *self, const char16_t **column_specs,
-    int64_t num_column_specs, ResultOrError<TableHandle> *roe) {
-  roe->SetResult([self, column_specs, num_column_specs]() {
+void deephaven_client_TableHandle_Update(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto cols = MakeStringVec(column_specs, num_column_specs);
-    auto res = self->Update(cols);
-    return new TableHandle(std::move(res));
+    auto table = self->Update(cols);
+    *result = new TableHandle(std::move(table));
   });
 }
-// ...
-void deephaven_client_TableHandle_BindToVariable(TableHandle *self,
-    const char16_t *variable, ResultOrError<void> *roe) {
-  roe->SetResult([self, variable]() {
+
+void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle *self,
+    const char16_t *variable,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
     auto v = Utf16Converter().to_bytes(variable);
     self->BindToVariable(v);
-    return nullptr;
   });
 }
 
