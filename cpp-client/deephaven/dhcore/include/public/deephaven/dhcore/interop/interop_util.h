@@ -29,12 +29,13 @@ using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, c
  * 4. An array of strings is also returned as an "out" parameter. Conceptually this is a
  *    const char16_t ** (just as above) plus a length argument. The caller allocates the array
  *    and uses MarshalAs(UnmanagedType.LPArray, SizeParamIndex = N)] to communicate the needed
- *    information to the marshalling system. Again as above the type we actually use is different
+ *    information to the marshalling system. Here, N is the numeric index of the argument that
+ *    carries the length of the array. Again as above the type we actually use is different
  *    from char16_t. See below
  *
  * As always, one must be mindful of memory ownership. For strings being passed to us, this is
- * not a problem (because the caller owns/manages the storage). For strings that we give back to the
- * caller, either as a single string or an array of strings, the situation is more complicated
+ * not our concern, because the caller owns/manages the storage. For strings that we give back to
+ * the caller, either as a single string or an array of strings, the situation is more complicated
  * because we need to allocate the string and the caller needs to free it. This needs to be done in
  * a platform-specific way. On Windows this is via CoTaskMemAlloc, and on Linux it is via normal
  * malloc.
@@ -47,9 +48,9 @@ using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, c
  *
  * We can leverage this trick in the following way. When we have a string that we want to be
  * copied and allocated in the right way, we pass it to a delegate whose job is essentially to
- * just return the string. But since that job has to obey the calling / return conventions, it
- * actually has to copy the string and allocate it in the right way, which is what we needed to
- * do in the first place.
+ * just return the string. But since that delegate has to obey the calling / return conventions, it
+ * actually has to copy the string and allocate it in the right way, which happens to be the
+ * very thing we needed to do in the first place.
  *
  * So, we make our caller write an "identity function" in C# and give us a pointer (delegate)
  * to it that we keep around for the lifetime of the program.
@@ -67,8 +68,9 @@ using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, c
  *   }
  * }
  *
- * As you can see the semantics of the code itself merely copies input to output. The trick we
- * need is done by the marshaling infrastructure, who reallocates outStrings for us.
+ * As you can see the semantics of the code itself merely copies input to output. This operation
+ * itself doesn't seem to be doing very much, but the real work is done by the marshalling
+ * infrastructure, which allocates memory and does the copies for outStrings on our behalf.
  *
  * The delegate that points to this method is declared in a very careful way:
  *
@@ -88,7 +90,7 @@ using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, c
  * return the "wrong" kind of char16_t *... that is, one that had not been allocated with the
  * above process and therefore having the wrong ownership semantics. To reduce the chance of
  * this, all of our returned strings are of type "const PlatformUtf16 *". This is an opaque class
- * with no members and is basically an "alias" for the corresponding const char16_t *. But
+ * with no members and is basically a "type pun" for the corresponding const char16_t *. But
  * there are no automatic conversions or anything of that nature, so the only way you can get
  * one is to call one of the factory methods. The Windows side is indifferent to and unaware of
  * this type so it thinks it's just getting const char16_t * and is none the wiser.
@@ -106,35 +108,35 @@ using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, c
  * public static extern void GiveMeAString(out string result);
  *
  * Also note that we generally use 'out' parameters rather than return values. The reason is
- * that most of our methods may return more than one value, and we try to keep things simple
- * rather than return structured types. A typical method looks more like this:
+ * that most of our methods may return more than one value, and we try to keep things simple.
+ * A typical method looks more like this:
  *
  * [DllImport("Dhclient.dll", CharSet = CharSet.Unicode)]
  * public static extern void GiveMeStuff(int a, int b, int c,
  *   out int x, out int y, out string z, out ErrorStatus status);
  *
  * This method gets a, b, and c by value and has out parameters x, y, z, and status.
- * These out parameters are passed as a pointer to C++, which is expected to set them.
+ * These out parameters are passed as a pointer to C++, which is expected to set the data
+ * structures that they point to.
  *
  * And also we include a final ErrorStatus out argument, which is our convention to return
- * overall success or failure. This is similar to an Arrow::Status type but simpler.
+ * overall success or failure. This is similar to an Arrow::Status type but simpler. It just
+ * contains a string (actually a const PlatformUtf16*) representing an error message or a nullptr
+ * if there was no error.
  *
  * One final wrinkle is the [Out] attribute that we use for arrays, which is different from the
- * C# "out" keyword. Consider the method that we used in our platform allocator:
+ * C# "out" keyword. The reason we do this is because our callers allocate the arrays and pass
+ * a reference to them in (so they're really "in" parameters) but what happens to the elements
+ * varies: the string elements in 'inStrings' are "in" parameters meant to be observed by the
+ * C++ code, but the string elements in 'outStrings' are "out" parameters meant to be set by
+ * the C++ code and copied back. So 'inStrings' needs the [In] designation and 'outStrings' needs
+ * the [Out] designation.
  *
  * [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
  * public delegate void PlatformAllocatorHelperDelegate(
  *   [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] inStrings,
  *   [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] outStrings,
  *   int count);
- *
- * In this situation we have an issue where the arrays themselves are created by the caller,
- * so they are both technically 'in' parameters and their first elements are passed to the
- * caller as pointers. But the difference is in how the elements are treated:
- * - the elements of inStrings are meant to be passed to the native code (C++) so they are marked
- *   as [In] and copied over
- * - the elements of outStrings are meant to be passed back to the managed code (C#) so they are
- *   marked as [Out] and copied back when the C++ code returns.
  */
 class PlatformUtf16 {
 public:
