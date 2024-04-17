@@ -44,6 +44,11 @@ set(ALL_FILES
     include/public/deephaven/client/flight.h
     include/public/deephaven/client/update_by.h
 
+    src/interop/client_interop.cc
+    src/interop/client_options_interop.cc
+    include/public/deephaven/client/interop/client_interop.h
+    include/public/deephaven/client/interop/client_options_interop.h
+
     src/subscription/subscribe_thread.cc
 
     include/private/deephaven/client/subscription/subscribe_thread.h
