@@ -72,8 +72,8 @@ void deephaven_client_TableHandleManager_RunScript(const deephaven::client::Tabl
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_Client_Connect(const char16_t *target,
-    const deephaven::client::ClientOptions *options,
-    deephaven::client::Client **result,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::ClientOptions> options,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Client> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_Client_dtor(deephaven::client::Client *self);

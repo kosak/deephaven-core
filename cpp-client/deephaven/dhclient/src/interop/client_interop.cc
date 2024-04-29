@@ -36,6 +36,7 @@ using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::interop::ErrorStatus;
+using deephaven::dhcore::interop::NativePtr;
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::ticking::TickingCallback;
@@ -261,13 +262,13 @@ void deephaven_client_TableHandleManager_RunScript(const deephaven::client::Tabl
 }
 
 void deephaven_client_Client_Connect(const char16_t *target,
-    const deephaven::client::ClientOptions *options,
-    deephaven::client::Client **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    NativePtr<ClientOptions> options,
+    NativePtr<Client> *result,
+    ErrorStatus *status) {
   status->Run([=]() {
     auto s = Utf16Converter().to_bytes(target);
-    auto res = Client::Connect(s, *options);
-    *result = new Client(std::move(res));
+    auto res = Client::Connect(s, *options.ptr_);
+    result->ptr_ = new Client(std::move(res));
   });
 }
 

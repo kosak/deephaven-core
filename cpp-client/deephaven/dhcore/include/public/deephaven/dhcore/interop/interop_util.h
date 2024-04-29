@@ -157,6 +157,25 @@ public:
   static void CreateBulk(const std::u16string *strings, size_t num_strings, const PlatformUtf16 **results);
 };
 
+
+/**
+ * This class simply wraps a pointer. It is meant to mirror a similar struct on the C++ side, namely
+ *
+ * [StructLayout(LayoutKind.Sequential)]
+ * public struct NativePtr<T> {
+ *   public IntPtr ptr;
+ * }
+ *
+ * Even though this struct just wraps a bare IntPtr, making the enclosing struct generic gives
+ * us a little more typechecking on the C# side.
+ */
+template<typename T>
+struct NativePtr {
+  explicit NativePtr(T *ptr) : ptr_(ptr) {}
+
+  T *ptr_ = nullptr;
+};
+
 class ErrorStatus {
 public:
   /**
