@@ -28,8 +28,8 @@ public class BasicInteropTest {
   public void TestArrayRunningSum() {
     var data = new [] { 10, 20, 30, 40, 50 };
     var result = new int[5];
-    var expectedResult = new[] { 10, 30, 60, 100, 12 };
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(data, result, data.Length);
+    var expectedResult = new[] { 10, 30, 60, 100, 150 };
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(data, data.Length, result);
 
     Assert.Equal(expectedResult, result);
   }
@@ -39,7 +39,7 @@ public class BasicInteropTest {
     var data = new[] { "a", "b", "c", "d", "e" };
     var result = new string[5];
     var expectedResult = new[] { "a🦷", "b🦷", "c🦷", "d🦷", "e🦷" };
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(data, result, "🦷", data.Length);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(data, data.Length, "🦷", result);
 
     Assert.Equal(expectedResult, result);
   }

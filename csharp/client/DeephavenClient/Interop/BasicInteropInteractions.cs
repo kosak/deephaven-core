@@ -34,14 +34,16 @@ public class BasicInteropInteractions {
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int32[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int32[] result,
-    Int32 length);
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] data,
+    Int32 length,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)]
+    Int32[] result);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] string[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] string[] result,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] data,
+    Int32 length,
     string toAppend,
-    Int32 length);
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)]
+    string[] result);
 }
