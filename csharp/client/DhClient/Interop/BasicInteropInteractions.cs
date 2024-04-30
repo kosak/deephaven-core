@@ -33,21 +33,32 @@ public class BasicInteropInteractions {
   }
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_SetBasicStruct(
+  public static extern void deephaven_dhcore_basicInteropInteractions_BasicStruct(
     int i, string s, int iOffset, string sAppend, out BasicStruct result);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_SetBasicStructInPlace(
+  public static extern void deephaven_dhcore_basicInteropInteractions_BasicStructInPlace(
     ref BasicStruct s, int iOffset, string sAppend);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_RunningSum(
+  public static extern void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(
     [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int32[] data,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] Int32[] result,
     Int32 length);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_RunningSumInPlace(
+  public static extern void deephaven_dhcore_basicInteropInteractions_ArrayRunningSumInPlace(
     [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] data,
+    Int32 length);
+
+  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] result,
+    Int32 length);
+
+  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcatInPlace(
+    [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] data,
     Int32 length);
 }
