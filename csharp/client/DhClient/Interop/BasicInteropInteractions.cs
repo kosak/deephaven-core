@@ -18,31 +18,24 @@ public class BasicInteropInteractions {
   public static extern void deephaven_dhcore_basicInteropInteractions_Add(Int32 a, Int32 b, out Int32 result);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_AddInPlace(ref Int32 value, Int32 offset);
-
-  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_Concat(string a, string b, out string result);
-
-  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_ConcatInPlace(ref string s, string toAppend);
 
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   public struct BasicStruct {
-    public BasicStruct(int i, string s) {
+    public BasicStruct() {
+    }
+
+    public BasicStruct(int i, string? s) {
       this.i = i;
       this.s = s;
     }
     public int i;
-    public string s;
+    public string? s;
   }
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_BasicStruct(
     int i, string s, int iOffset, string sAppend, out BasicStruct result);
-
-  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_BasicStructInPlace(
-    ref BasicStruct s, int iOffset, string sAppend);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(
@@ -51,20 +44,9 @@ public class BasicInteropInteractions {
     Int32 length);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_ArrayRunningSumInPlace(
-    [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] data,
-    Int32 length);
-
-  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
     [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] string[] data,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] string[] result,
-    string toAppend,
-    Int32 length);
-
-  [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcatInPlace(
-    [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
     string toAppend,
     Int32 length);
 }
