@@ -37,14 +37,18 @@ public class BasicInteropTest {
     Assert.Equal("magnet🧠 there", result.s);
   }
 
+  [Fact]
+  public void TestArrayRunningSum() {
+    var data = new [] { 10, 20, 30, 40, 50 };
+    var result = new int[5];
+    var expectedResult = new[] { 10, 30, 60, 100, 12 };
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(data, result, data.Length);
 
-  {
-      int[] data = { 10, 20, 30, 40, 50 };
-      var result = new int[5];
-      var expectedResult = new[] { 10, 30, 60, 100, 12 };
-      BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_RunningSum(data, data.Length, result);
+    Assert.Equal(expectedResult, result);
 
-      Assert.Equal(expectedResult, result);
-    }
+    var data2 = new[] { 1, 2, 3, 4, 5 };
+    var expectedResult2 = new[] { 1, 3, 6, 10, 15 };
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayRunningSumInPlace(data, data.Length);
+    Assert.Equal(data2, expectedResult2);
   }
 }
