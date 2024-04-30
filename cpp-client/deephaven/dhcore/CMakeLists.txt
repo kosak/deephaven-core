@@ -21,6 +21,7 @@ set(ALL_FILES
     src/container/row_sequence.cc
     src/immerutil/abstract_flex_vector.cc
     src/immerutil/immer_column_source.cc
+    src/interop/basic_interop_interactions.cc
     src/interop/interop_util.cc
     src/ticking/barrage_processor.cc
     src/ticking/immer_table_state.cc
