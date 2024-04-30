@@ -53,12 +53,14 @@ public class BasicInteropInteractions {
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] result,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] string[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] string[] result,
+    string toAppend,
     Int32 length);
 
   [DllImport(Constants.DhCorePath, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayElementConcatInPlace(
-    [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] data,
+    [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] data,
+    string toAppend,
     Int32 length);
 }
