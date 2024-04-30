@@ -48,7 +48,23 @@ public class BasicInteropTest {
 
     var data2 = new[] { 1, 2, 3, 4, 5 };
     var expectedResult2 = new[] { 1, 3, 6, 10, 15 };
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayRunningSumInPlace(data, data.Length);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayRunningSumInPlace(data2, data2.Length);
+    Assert.Equal(data2, expectedResult2);
+  }
+
+  [Fact]
+  public void TestArrayElementConcat() {
+    var data = new[] { "a", "b", "c", "d", "e" };
+    var result = new string[5];
+    var expectedResult = new[] { "a🦷", "b🦷", "c🦷", "d🦷", "e🦷" };
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(data, result, "🦷", data.Length);
+
+    Assert.Equal(expectedResult, result);
+
+    var data2 = new[] { "v", "w", "x", "y", "z" };
+    var expectedResult2 = new[] { "a🦷", "w🦄", "x🦄", "y🦄", "z🦄" };
+
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayElementConcatInPlace(data2, "🦄", data2.Length);
     Assert.Equal(data2, expectedResult2);
   }
 }
