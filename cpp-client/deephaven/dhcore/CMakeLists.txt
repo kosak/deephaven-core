@@ -48,6 +48,7 @@ set(ALL_FILES
     include/public/deephaven/dhcore/column/column_source_helpers.h
     include/public/deephaven/dhcore/column/column_source_utils.h
     include/public/deephaven/dhcore/container/row_sequence.h
+    include/public/deephaven/dhcore/interop/basic_interop_interactions.h
     include/public/deephaven/dhcore/interop/interop_util.h
     include/public/deephaven/dhcore/ticking/barrage_processor.h
     include/public/deephaven/dhcore/ticking/ticking.h
