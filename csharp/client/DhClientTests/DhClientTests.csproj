@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DhClient\DhClient.csproj" />
+    <ProjectReference Include="..\DeephavenClient\DeephavenClient.csproj" />
   </ItemGroup>
 
 </Project>

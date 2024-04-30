@@ -1,5 +1,5 @@
 ﻿using System.Net.WebSockets;
-using Deephaven.DhClient.Interop;
+using Deephaven.DeephavenClient.Interop;
 
 namespace Deephaven.DhClientTests;
 
