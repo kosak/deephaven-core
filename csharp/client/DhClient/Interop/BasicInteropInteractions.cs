@@ -28,6 +28,10 @@ public class BasicInteropInteractions {
 
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   public struct BasicStruct {
+    public BasicStruct(int i, string s) {
+      this.i = i;
+      this.s = s;
+    }
     public int i;
     public string s;
   }
