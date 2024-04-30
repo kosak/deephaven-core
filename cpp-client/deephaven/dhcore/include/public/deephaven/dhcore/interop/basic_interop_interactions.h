@@ -26,5 +26,5 @@ void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(
 
 void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
     const char16_t **data, int32_t length, const char16_t *to_append,
-    deephaven::dhcore::interop::PlatformUtf16 **result);
+    const deephaven::dhcore::interop::PlatformUtf16 **result);
 }  // extern "C"

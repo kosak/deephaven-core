@@ -1,9 +1,11 @@
 #include "deephaven/dhcore/interop/basic_interop_interactions.h"
+#include "deephaven/dhcore/utility/utility.h"
 
 #include <string>
 
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
+using deephaven::dhcore::utility::MakeReservedVector;
 
 extern "C" {
 void deephaven_dhcore_basicInteropInteractions_Add(int32_t a, int32_t b, int32_t *result) {
@@ -43,5 +45,13 @@ void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(
 
 void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
     const char16_t **data, int32_t length, const char16_t *to_append,
-    deephaven::dhcore::interop::PlatformUtf16 **result);
+    const deephaven::dhcore::interop::PlatformUtf16 **result) {
+  // This is the demonstration of an advanced technique. Since every call to PlaformUtf16::Create
+  // has to cross the boundary back to native, we gather the values here so we can use a batch call
+  auto values = MakeReservedVector<std::u16string>(length);
+  for (int32_t i = 0; i != length; ++i) {
+    values.push_back(std::u16string(data[i]) + to_append);
+  }
+  PlatformUtf16::CreateBulk(values.data(), values.size(), result);
+}
 }  // extern "C"
