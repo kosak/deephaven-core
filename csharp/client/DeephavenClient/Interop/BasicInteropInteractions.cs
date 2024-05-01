@@ -26,7 +26,7 @@ public class BasicInteropInteractions {
 
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_BasicStruct(
-    int i, string s, int iOffset, string sAppend, out BasicStruct result);
+    ref BasicStruct data, int iOffset, string sAppend, out BasicStruct result);
 
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(

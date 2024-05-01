@@ -22,9 +22,8 @@ public class BasicInteropTest {
 
   [Fact]
   public void TestBasicStruct() {
-    return;
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_BasicStruct(100, "hi", 123, "🧠 there",
-      out var result);
+    var bs = new BasicInteropInteractions.BasicStruct(100, "hi");
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_BasicStruct(ref bs, 123, " 🧠 there", out var result);
     Assert.Equal(223, result.i);
     Assert.Equal("hi 🧠 there", result.s);
   }
