@@ -10,10 +10,20 @@ using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::utility::MakeReservedVector;
 
 namespace deephaven::dhcore::interop {
+namespace {
+void DefaultAllocatorHelper(const char16_t **/*in_items*/, const PlatformUtf16 **out_items,
+    int32_t count) {
+  std::cerr << "ERROR: AllocatorHelper was never set\n";
+  for (int32_t i = 0; i != count; ++i) {
+    out_items[i] = nullptr;
+  }
+}
+}  // namespace
+
 PlatformUtf16::allocatorHelper_t &PlatformUtf16::AllocatorHelper() {
   // We make this a function rather than a global because it plays more nicely with
   // CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.
-  static allocatorHelper_t allocator_helper;
+  static allocatorHelper_t allocator_helper = &DefaultAllocatorHelper;
   return allocator_helper;
 }
 
