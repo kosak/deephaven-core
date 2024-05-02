@@ -15,7 +15,7 @@ public class SelectTest {
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Add(3, 4, out var result);
     Assert.Equal(7, result);
 
-    var tm = TableMakerForTests.Create();
+    var ctx = CommonContextForTests.Create();
 
     var boolData = new List<bool>();
     var charData = new List<char>();
@@ -43,7 +43,7 @@ public class SelectTest {
       dateTimeData.Add(DateTimeOffset.FromUnixTimeMilliseconds(i * 1000).DateTime);
     }
 
-    TableMaker maker;
+    var maker = new TableMaker();
     maker.AddColumn("boolData", boolData);
     maker.AddColumn("charData", charData);
     maker.AddColumn("byteData", byteData);
@@ -55,7 +55,7 @@ public class SelectTest {
     maker.AddColumn("stringData", stringData);
     maker.AddColumn("dateTimeData", dateTimeData);
 
-    var t = maker.MakeTable(tm.Client().GetManager());
+    var t = maker.MakeTable(ctx.Client().GetManager());
 
     t.Stream(Console.Out, true);
 
