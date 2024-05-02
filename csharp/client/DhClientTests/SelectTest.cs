@@ -58,22 +58,19 @@ public class SelectTest {
     var t = maker.MakeTable(tm.Client().GetManager());
 
     t.Stream(Console.Out, true);
-    Console.WriteLine(t.);
-
-    std::cout << t.Stream(true) << '\n';
 
     CompareTable(
       t,
-      "boolData", bool_data,
-      "charData", char_data,
-      "byteData", byte_data,
-      "shortData", short_data,
-      "intData", int_data,
-      "longData", long_data,
-      "floatData", float_data,
-      "doubleData", double_data,
-      "stringData", string_data,
-      "dateTimeData", date_time_data
+      "boolData", boolData,
+      "charData", charData,
+      "byteData", byteData,
+      "shortData", shortData,
+      "intData", intData,
+      "longData", longData,
+      "floatData", floatData,
+      "doubleData", doubleData,
+      "stringData", stringData,
+      "dateTimeData", dateTimeData
     );
   }
 }
