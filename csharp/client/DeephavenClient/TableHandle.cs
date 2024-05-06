@@ -1,19 +1,16 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Deephaven.DeephavenClient;
 
 public sealed class TableHandle : IDisposable {
-  internal NativePtr<NativeTableHandle> _self;
+  internal NativePtr<NativeTableHandle> Self;
   internal TableHandleManager Manager;
 
   internal TableHandle(NativePtr<NativeTableHandle> self, TableHandleManager manager) {
-    this._self = self;
+    Self = self;
     Manager = manager;
   }
 
@@ -26,29 +23,15 @@ public sealed class TableHandle : IDisposable {
     GC.SuppressFinalize(this);
   }
 
-  //
-  // ~TableHandle() {
-  //   Dispose();
-  // }
-  //
-  // public void Dispose() {
-  //   if (self.ptr == IntPtr.Zero) {
-  //     return;
-  //   }
-  //   Native.TableHandle.deephaven_client_TableHandle_dtor(self);
-  //   self.ptr = IntPtr.Zero;
-  //   GC.SuppressFinalize(this);
-  // }
-
   public TableHandle Update(params string[] columnSpecs) {
-    deephaven_client_TableHandle_Update(_self, columnSpecs, columnSpecs.Length,
+    NativeTableHandle.deephaven_client_TableHandle_Update(Self, columnSpecs, columnSpecs.Length,
       out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, Manager);
   }
 
   public void BindToVariable(string variable) {
-    deephaven_client_TableHandle_BindToVariable(_self, variable, out var status);
+    NativeTableHandle.deephaven_client_TableHandle_BindToVariable(Self, variable, out var status);
     status.OkOrThrow();
   }
 
@@ -65,7 +48,7 @@ public sealed class TableHandle : IDisposable {
 
   public SubscriptionHandle Subscribe(ITickingCallback callback) {
     var tw = new TickingWrapper(callback);
-    deephaven_client_TableHandle_Subscribe(_self, tw.NativeOnUpdate, callback.OnFailure,
+    NativeTableHandle.deephaven_client_TableHandle_Subscribe(_self, tw.NativeOnUpdate, callback.OnFailure,
       out var nativeSusbcriptionHandle, out var status);
     status.OkOrThrow();
     var result = new SubscriptionHandle(nativeSusbcriptionHandle);
@@ -80,35 +63,35 @@ public sealed class TableHandle : IDisposable {
     var nativePtr = handle.Self;
     handle.Self.ptr = IntPtr.Zero;
     Manager.RemoveSubscription(handle);
-    deephaven_client_TableHandle_Unsubscribe(self, nativePtr, out var status);
-    Native.SubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(nativePtr);
+    NativeTableHandle.deephaven_client_TableHandle_Unsubscribe(Self, nativePtr, out var status);
+    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(nativePtr);
     status.OkOrThrow();
   }
 
   public ArrowTable ToArrowTable() {
-    Native.TableHandle.deephaven_client_TableHandle_ToArrowTable(self, out var arrowTable, out var status);
+    NativeTableHandle.deephaven_client_TableHandle_ToArrowTable(Self, out var arrowTable, out var status);
     status.OkOrThrow();
     return new ArrowTable(arrowTable);
   }
 
   public ClientTable ToClientTable() {
-    Native.TableHandle.deephaven_client_TableHandle_ToClientTable(self, out var clientTable, out var status);
+    NativeTableHandle.deephaven_client_TableHandle_ToClientTable(Self, out var clientTable, out var status);
     status.OkOrThrow();
     return new ClientTable(clientTable);
   }
 
   public string ToString(bool wantHeaders) {
-    Native.TableHandle.deephaven_client_TableHandle_ToString(self, wantHeaders ? 1 : 0, out var result,
+    NativeTableHandle.deephaven_client_TableHandle_ToString(Self, wantHeaders ? 1 : 0, out var result,
       out var status);
     return status.Unwrap(result);
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = _self.Reset();
+    var temp = Self.Reset();
     if (temp.IsNull) {
       return;
     }
-    deephaven_dhclient_utility_TableMaker_dtor(temp);
+    NativeTableHandle.deephaven_client_TableHandle_dtor(temp);
   }
 }
 
