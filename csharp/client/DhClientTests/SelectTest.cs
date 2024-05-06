@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Deephaven.DeephavenClient.Utility;
 
 namespace Deephaven.DhClientTests;
 
@@ -43,7 +44,7 @@ public class SelectTest {
       dateTimeData.Add(DateTimeOffset.FromUnixTimeMilliseconds(i * 1000).DateTime);
     }
 
-    var maker = new TableMaker();
+    using var maker = new TableMaker();
     maker.AddColumn("boolData", boolData);
     maker.AddColumn("charData", charData);
     maker.AddColumn("byteData", byteData);

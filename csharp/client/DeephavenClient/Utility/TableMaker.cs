@@ -12,6 +12,12 @@ public class TableMaker : IDisposable {
   internal static extern void deephaven_dhclient_utility_TableMaker_dtor(NativePtr<NativeTableMaker> self);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_MakeTable(NativePtr<NativeTableMaker> self,
+    NativePtr<NativeTableHandleManager> manager,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Char(
     NativePtr<NativeTableMaker> self,
     string name,
@@ -110,15 +116,24 @@ public class TableMaker : IDisposable {
     GC.SuppressFinalize(this);
   }
 
-  private void ReleaseUnmanagedResources() {
-    deephaven_dhclient_utility_TableMaker_dtor(_self);
-    _self.Reset();
-  }
-
   public void AddColumn<T>(string name, IList<T> column) {
     var array = column.ToArray();
     var myVisitor = new MyVisitor(this, name);
     ArrayDispatcher.AcceptVisitor(myVisitor, array);
+  }
+
+  public TableHandle MakeTable(TableHandleManager manager) {
+    deephaven_dhclient_utility_TableMaker_MakeTable(_self, manager._self, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, manager);
+  }
+
+  private void ReleaseUnmanagedResources() {
+    var temp = _self.Reset();
+    if (temp.IsNull) {
+      return;
+    }
+    deephaven_dhclient_utility_TableMaker_dtor(temp);
   }
 
   private static class ArrayDispatcher {

@@ -40,8 +40,14 @@ public class PlatformUtf16 {
 public struct NativePtr<T> {
   public IntPtr ptr;
 
-  public void Reset() {
+  public NativePtr(IntPtr ptr) => this.ptr = ptr;
+
+  public bool IsNull => ptr != IntPtr.Zero;
+
+  public NativePtr<T> Reset() {
+    var result = new NativePtr<T>(ptr);
     ptr = IntPtr.Zero;
+    return result;
   }
 }
 
