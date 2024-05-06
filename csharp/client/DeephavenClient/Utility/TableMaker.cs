@@ -4,106 +4,10 @@ using System.Runtime.InteropServices;
 namespace Deephaven.DeephavenClient.Utility;
 
 public class TableMaker : IDisposable {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_ctor(out NativePtr<NativeTableMaker> result,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_dtor(NativePtr<NativeTableMaker> self);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_MakeTable(NativePtr<NativeTableMaker> self,
-    NativePtr<NativeTableHandleManager> manager,
-    out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Char(
-    NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    char[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
-    NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    sbyte[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    Int16[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    Int32[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    Int64[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Float(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    float[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Double(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    double[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    byte[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__String(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    string[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(NativePtr<NativeTableMaker> self,
-    string name,
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    Int64[] data,
-    Int32 length,
-    out ErrorStatus status);
-
-
   private NativePtr<NativeTableMaker> _self;
 
   public TableMaker() {
-    deephaven_dhclient_utility_TableMaker_ctor(out _self, out var status);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_ctor(out _self, out var status);
     status.OkOrThrow();
   }
 
@@ -123,7 +27,7 @@ public class TableMaker : IDisposable {
   }
 
   public TableHandle MakeTable(TableHandleManager manager) {
-    deephaven_dhclient_utility_TableMaker_MakeTable(_self, manager._self, out var result, out var status);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_MakeTable(_self, manager._self, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, manager);
   }
@@ -133,7 +37,7 @@ public class TableMaker : IDisposable {
     if (temp.IsNull) {
       return;
     }
-    deephaven_dhclient_utility_TableMaker_dtor(temp);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_dtor(temp);
   }
 
   private static class ArrayDispatcher {
@@ -217,43 +121,43 @@ public class TableMaker : IDisposable {
     }
 
     public void Visit(char[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Char(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Char(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(sbyte[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow(); 
     }
 
     public void Visit(Int16[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(Int32[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(Int64[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(float[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Float(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Float(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(double[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__Double(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Double(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
@@ -264,13 +168,13 @@ public class TableMaker : IDisposable {
         reinterpreted[i] = array[i] ? (byte)1 : (byte)0;
       }
 
-      deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
+     NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
         _owner._self, _name, reinterpreted, reinterpreted.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(string[] array) {
-      deephaven_dhclient_utility_TableMaker_AddColumn__String(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__String(
         _owner._self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
@@ -281,7 +185,7 @@ public class TableMaker : IDisposable {
         reinterpreted[i] = array[i].Nanosecond;
       }
 
-      deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(
         _owner._self, _name, reinterpreted, reinterpreted.Length, out var status);
       status.OkOrThrow();
     }
@@ -289,7 +193,101 @@ public class TableMaker : IDisposable {
 }
 
 /**
- * Placeholder for NativePtr
+ * Placeholder for use with NativePtr
  */
 internal class NativeTableMaker {
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_ctor(out NativePtr<NativeTableMaker> result,
+  out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_dtor(NativePtr<NativeTableMaker> self);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_MakeTable(NativePtr<NativeTableMaker> self,
+    NativePtr<NativeTableHandleManager> manager,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Char(
+    NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    char[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
+      NativePtr<NativeTableMaker> self,
+      string name,
+      [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    sbyte[] data,
+      Int32 length,
+      out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    Int16[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    Int32[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    Int64[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Float(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    float[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Double(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    double[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    byte[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__String(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    string[] data,
+    Int32 length,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(NativePtr<NativeTableMaker> self,
+    string name,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+    Int64[] data,
+    Int32 length,
+    out ErrorStatus status);
 }
