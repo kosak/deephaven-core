@@ -5,22 +5,39 @@ using System.Runtime.InteropServices;
 
 namespace Deephaven.DeephavenClient;
 
-public class SubscriptionHandle {
+public class SubscriptionHandle : IDisposable {
   internal NativePtr<NativeSubscriptionHandle> Self;
 
   internal SubscriptionHandle(NativePtr<NativeSubscriptionHandle> self) {
     Self = self;
   }
+
+  ~SubscriptionHandle() {
+    ReleaseUnmanagedResources();
+  }
+
+  public void Dispose() {
+    ReleaseUnmanagedResources();
+    GC.SuppressFinalize(this);
+  }
+
+  private void ReleaseUnmanagedResources() {
+    var temp = Self.Release();
+    if (temp.IsNull) {
+      return;
+    }
+    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(temp);
+  }
 }
 
 public class TickingUpdate : IDisposable {
-  private NativePtr<NativeTickingUpdate> self;
+  internal NativePtr<NativeTickingUpdate> Self;
 
-  internal TickingUpdate(NativePtr<NativeTickingUpdate> self) => this.self = self;
+  internal TickingUpdate(NativePtr<NativeTickingUpdate> self) => this.Self = self;
 
   public ClientTable Current {
     get {
-      NativeTickingUpdate.deephaven_client_TickingUpdate_Current(self,
+      NativeTickingUpdate.deephaven_client_TickingUpdate_Current(Self,
         out var ct, out var status);
       status.OkOrThrow();
       return new ClientTable(ct);
@@ -30,16 +47,20 @@ public class TickingUpdate : IDisposable {
   // public RowSequence RemovedRows { get;  }
 
   ~TickingUpdate() {
-    Dispose();
+    ReleaseUnmanagedResources();
   }
 
   public void Dispose() {
-    if (self.ptr == IntPtr.Zero) {
+    ReleaseUnmanagedResources();
+    GC.SuppressFinalize(this);
+  }
+
+  public void ReleaseUnmanagedResources() {
+    var temp = Self.Release();
+    if (temp.IsNull) {
       return;
     }
-    NativeTickingUpdate.deephaven_client_TickingUpdate_dtor(self);
-    self.ptr = IntPtr.Zero;
-    GC.SuppressFinalize(this);
+    NativeTickingUpdate.deephaven_client_TickingUpdate_dtor(temp);
   }
 }
 

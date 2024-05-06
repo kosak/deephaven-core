@@ -48,7 +48,7 @@ public sealed class TableHandle : IDisposable {
 
   public SubscriptionHandle Subscribe(ITickingCallback callback) {
     var tw = new TickingWrapper(callback);
-    NativeTableHandle.deephaven_client_TableHandle_Subscribe(_self, tw.NativeOnUpdate, callback.OnFailure,
+    NativeTableHandle.deephaven_client_TableHandle_Subscribe(Self, tw.NativeOnUpdate, callback.OnFailure,
       out var nativeSusbcriptionHandle, out var status);
     status.OkOrThrow();
     var result = new SubscriptionHandle(nativeSusbcriptionHandle);
