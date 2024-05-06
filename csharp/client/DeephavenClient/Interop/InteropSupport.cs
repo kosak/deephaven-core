@@ -39,6 +39,10 @@ public class PlatformUtf16 {
 [StructLayout(LayoutKind.Sequential)]
 public struct NativePtr<T> {
   public IntPtr ptr;
+
+  public void Reset() {
+    ptr = IntPtr.Zero;
+  }
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
