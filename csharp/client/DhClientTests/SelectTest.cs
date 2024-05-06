@@ -55,7 +55,7 @@ public class SelectTest {
     maker.AddColumn("stringData", stringData);
     maker.AddColumn("dateTimeData", dateTimeData);
 
-    var t = maker.MakeTable(ctx.Client().GetManager());
+    var t = maker.MakeTable(ctx.Client.Manager);
 
     t.Stream(Console.Out, true);
 
