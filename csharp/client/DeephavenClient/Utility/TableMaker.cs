@@ -117,8 +117,65 @@ public class TableMaker : IDisposable {
 
   public void AddColumn<T>(string name, IList<T> column) {
     var array = column.ToArray();
-    var myVisitor = new MyVisitor(this);
-    ArrayNubbin.AcceptVisitor(array, myVisitor);
+    var myVisitor = new MyVisitor(this, name);
+    ArrayDispatcher.AcceptVisitor(myVisitor, array);
+  }
+
+  private static class ArrayDispatcher {
+    public static void AcceptVisitor<T>(IArrayVisitor visitor, T[] array) {
+      // TODO: make this faster
+      if (array is char[] chars) {
+        visitor.Visit(chars);
+        return;
+      }
+
+      if (array is sbyte[] sbytes) {
+        visitor.Visit(sbytes);
+        return;
+      }
+
+      if (array is Int16[] int16s) {
+        visitor.Visit(int16s);
+        return;
+      }
+
+      if (array is Int32[] int32s) {
+        visitor.Visit(int32s);
+        return;
+      }
+
+      if (array is Int64[] int64s) {
+        visitor.Visit(int64s);
+        return;
+      }
+
+      if (array is float[] floats) {
+        visitor.Visit(floats);
+        return;
+      }
+
+      if (array is double[] doubles) {
+        visitor.Visit(doubles);
+        return;
+      }
+
+      if (array is bool[] bools) {
+        visitor.Visit(bools);
+        return;
+      }
+
+      if (array is string[] strings) {
+        visitor.Visit(strings);
+        return;
+      }
+
+      if (array is DateTime[] datetimes) {
+        visitor.Visit(datetimes);
+        return;
+      }
+
+      throw new ArgumentException($"Don't know how to handle type {array.GetType().Name}");
+    }
   }
 
   // put this somewhere
@@ -136,12 +193,12 @@ public class TableMaker : IDisposable {
   }
 
   private class MyVisitor : IArrayVisitor {
-    private readonly string _name;
     private readonly TableMaker _owner;
+    private readonly string _name;
 
-    public MyVisitor(string name, TableMaker owner) {
-      _name = name;
+    public MyVisitor(TableMaker owner, string name) {
       _owner = owner;
+      _name = name;
     }
 
     public void Visit(char[] array) {
