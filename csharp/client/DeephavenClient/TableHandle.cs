@@ -87,7 +87,7 @@ public sealed class TableHandle : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Reset();
+    var temp = Self.Release();
     if (temp.IsNull) {
       return;
     }

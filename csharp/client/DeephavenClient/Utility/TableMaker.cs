@@ -27,13 +27,13 @@ public class TableMaker : IDisposable {
   }
 
   public TableHandle MakeTable(TableHandleManager manager) {
-    NativeTableMaker.deephaven_dhclient_utility_TableMaker_MakeTable(_self, manager._self, out var result, out var status);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_MakeTable(_self, manager.Self, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, manager);
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = _self.Reset();
+    var temp = _self.Release();
     if (temp.IsNull) {
       return;
     }

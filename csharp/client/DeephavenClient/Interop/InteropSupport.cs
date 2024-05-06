@@ -44,7 +44,7 @@ public struct NativePtr<T> {
 
   public bool IsNull => ptr != IntPtr.Zero;
 
-  public NativePtr<T> Reset() {
+  public NativePtr<T> Release() {
     var result = new NativePtr<T>(ptr);
     ptr = IntPtr.Zero;
     return result;
