@@ -74,4 +74,8 @@ public class SelectTest {
       "dateTimeData", dateTimeData
     );
   }
+
+  private static void CompareTable(params object[] args) {
+    Console.WriteLine($"hi, comparing ${args}");
+  }
 }
