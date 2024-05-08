@@ -1,10 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Deephaven.DeephavenClient;
 
@@ -13,7 +9,7 @@ public class Client : IDisposable {
   public TableHandleManager Manager;
 
   public static Client Connect(string target, ClientOptions options) {
-    NativeClient.deephaven_client_Client_Connect(target, options.self, out var clientResult, out var status1);
+    NativeClient.deephaven_client_Client_Connect(target, options.Self, out var clientResult, out var status1);
     status1.OkOrThrow();
     NativeClient.deephaven_client_Client_GetManager(clientResult, out var managerResult, out var status2);
     status2.OkOrThrow();
@@ -21,41 +17,45 @@ public class Client : IDisposable {
     return new Client(clientResult, manager);
   }
 
-  private Client(NativePtr<Native.Client> self, TableHandleManager manager) {
-    this.self = self;
-    this.Manager = manager;
+  private Client(NativePtr<NativeClient> self, TableHandleManager manager) {
+    Self = self;
+    Manager = manager;
   }
 
   ~Client() {
-    Dispose();
+    ReleaseUnmanagedResources();
   }
 
   public void Dispose() {
-    if (self.ptr == IntPtr.Zero) {
+    ReleaseUnmanagedResources();
+    GC.SuppressFinalize(this);
+  }
+
+  private void ReleaseUnmanagedResources() {
+    var temp = Self.Release();
+    if (temp.IsNull) {
       return;
     }
-    Native.Client.deephaven_client_Client_dtor(self);
-    self.ptr = IntPtr.Zero;
-    GC.SuppressFinalize(this);
+    NativeClient.deephaven_client_Client_dtor(temp);
   }
 }
 
 internal class NativeClient {
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_Client_Connect(string target,
-    NativePtr<ClientOptions> options,
-    out NativePtr<Client> result,
+    NativePtr<NativeClientOptions> options,
+    out NativePtr<NativeClient> result,
     out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_Client_dtor(NativePtr<Client> self);
+  public static extern void deephaven_client_Client_dtor(NativePtr<NativeClient> self);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_Client_Close(NativePtr<Client> self,
+  public static extern void deephaven_client_Client_Close(NativePtr<NativeClient> self,
     out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_Client_GetManager(NativePtr<Client> self,
-    out NativePtr<TableHandleManager> result,
+  public static extern void deephaven_client_Client_GetManager(NativePtr<NativeClient> self,
+    out NativePtr<NativeTableHandleManager> result,
     out ErrorStatus status);
 }
