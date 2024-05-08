@@ -10,6 +10,7 @@
 #include "deephaven/client/client_options.h"
 #include "deephaven/client/subscription/subscription_handle.h"
 #include "deephaven/client/utility/arrow_util.h"
+#include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/interop/interop_util.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
@@ -21,9 +22,11 @@ using deephaven::client::TableHandleManager;
 using deephaven::client::subscription::SubscriptionHandle;
 using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::DurationSpecifier;
+using deephaven::client::utility::TableMaker;
 using deephaven::client::utility::TimePointSpecifier;
 using deephaven::client::interop::ArrowTable;
 using deephaven::client::interop::ClientTable;
+using deephaven::dhcore::DateTime;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::CharChunk;
 using deephaven::dhcore::chunk::Chunk;
@@ -647,5 +650,130 @@ void deephaven_client_utility_TimePointSpecifier_ctor_duration(const char16_t *d
 
 void deephaven_client_utility_TimePointSpecifier_dtor(TimePointSpecifier *self) {
   delete self;
+}
+
+void deephaven_dhclient_utility_TableMaker_ctor(TableMaker **result, ErrorStatus *status) {
+  status->Run([=] {
+    *result = new TableMaker();
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_dtor(TableMaker *self) {
+  delete self;
+}
+
+void deephaven_dhclient_utility_TableMaker_MakeTable(
+    deephaven::client::utility::TableMaker *self,
+    deephaven::client::TableHandleManager *manager,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=] {
+    auto th = self->MakeTable(*manager);
+    *result = new TableHandle(std::move(th));
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Char(TableMaker *self,
+    const char16_t *name, const char16_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<char16_t> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(TableMaker *self,
+    const char16_t *name, const int8_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<int8_t> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(TableMaker *self,
+    const char16_t *name, const int16_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<int16_t> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(TableMaker *self,
+    const char16_t *name, const int32_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<int32_t> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(TableMaker *self,
+    const char16_t *name, const int64_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<int64_t> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Float(TableMaker *self,
+    const char16_t *name, const float *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<float> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Double(TableMaker *self,
+    const char16_t *name, const double *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<double> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(TableMaker *self,
+    const char16_t *name, const int32_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    // I'm a little sad about this copy
+    std::vector<bool> values(data, data + length);
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__String(TableMaker *self,
+    const char16_t *name, const char16_t **data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    auto values = MakeReservedVector<std::string>(length);
+    for (int32_t i = 0; i != length; ++i) {
+      values.push_back(converter.to_bytes(data[i]));
+    }
+    self->AddColumn(converter.to_bytes(name), values);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(TableMaker *self,
+    const char16_t *name, const int64_t *data, int32_t length, ErrorStatus *status) {
+  status->Run([=] {
+    Utf16Converter converter;
+    auto values = MakeReservedVector<DateTime>(length);
+    for (int32_t i = 0; i != length; ++i) {
+      values.push_back(DateTime::FromNanos(data[i]));
+    }
+    self->AddColumn(converter.to_bytes(name), values);
+  });
 }
 }  // extern "C"
