@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "deephaven/client/client.h"
 #include "deephaven/client/client_options.h"
+#include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/interop/interop_util.h"
 
 
@@ -27,21 +28,6 @@ public:
 }  // namespace deephaven::client::interop {
 
 extern "C" {
-void invokelab_s1(const char *s);
-void invokelab_s2(const char16_t *s);
-void invokelab_s3(const char **ss);
-void invokelab_s4(const char16_t **ss);
-
-void invokelab_r0(const char16_t *s);
-const deephaven::dhcore::interop::PlatformUtf16 *invokelab_r1();
-const deephaven::dhcore::interop::PlatformUtf16 *invokelab_r2(const char16_t *s);
-void invokelab_r3(const char16_t **data_in, int32_t count);
-void invokelab_r4(const deephaven::dhcore::interop::PlatformUtf16 **data_out, int32_t count);
-void invokelab_r5(const char16_t **data_in, const deephaven::dhcore::interop::PlatformUtf16 **data_out,
-    int32_t count);
-
-// TODO(kosak): all the const char * should maybe come over as UTF-16 types from Windows.
-
 void deephaven_client_TableHandleManager_dtor(deephaven::client::TableHandleManager *self);
 
 void deephaven_client_TableHandleManager_EmptyTable(const deephaven::client::TableHandleManager *self,
@@ -215,5 +201,98 @@ void deephaven_client_utility_TimePointSpecifier_ctor_duration(const char16_t *d
     deephaven::client::utility::TimePointSpecifier **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_utility_TimePointSpecifier_dtor(
-    deephaven::client::utility::TimePointSpecifier *result);
-}
+    deephaven::client::utility::TimePointSpecifier *self);
+
+void deephaven_dhclient_utility_TableMaker_ctor(
+    deephaven::client::utility::TableMaker **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_dhclient_utility_TableMaker_dtor(
+    deephaven::client::utility::TableMaker *self);
+void deephaven_dhclient_utility_TableMaker_MakeTable(deephaven::client::utility::TableMaker *self,
+    deephaven::client::TableHandleManager *manager,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Char(
+    NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+char[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
+    NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+sbyte[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+Int16[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+Int32[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+Int64[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Float(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+float[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__Double(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+double[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+byte[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__String(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+string[] data,
+Int32 length,
+    out ErrorStatus status);
+
+[DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(NativePtr<NativeTableMaker> self,
+    string name,
+[In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
+Int64[] data,
+Int32 length,
+    out ErrorStatus status);
+
+}  // extern "C"
