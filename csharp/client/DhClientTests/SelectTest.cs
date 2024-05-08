@@ -13,9 +13,6 @@ public class SelectTest {
 
   [Fact]
   public void TestSupportAllTypes() {
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Add(3, 4, out var result);
-    Assert.Equal(7, result);
-
     var ctx = new CommonContextForTests();
 
     var boolData = new List<bool>();

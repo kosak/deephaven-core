@@ -4,10 +4,10 @@ using System.Runtime.InteropServices;
 namespace Deephaven.DeephavenClient.Utility;
 
 public class TableMaker : IDisposable {
-  private NativePtr<NativeTableMaker> _self;
+  internal NativePtr<NativeTableMaker> Self;
 
   public TableMaker() {
-    NativeTableMaker.deephaven_dhclient_utility_TableMaker_ctor(out _self, out var status);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_ctor(out Self, out var status);
     status.OkOrThrow();
   }
 
@@ -20,6 +20,14 @@ public class TableMaker : IDisposable {
     GC.SuppressFinalize(this);
   }
 
+  private void ReleaseUnmanagedResources() {
+    var temp = Self.Release();
+    if (temp.IsNull) {
+      return;
+    }
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_dtor(temp);
+  }
+
   public void AddColumn<T>(string name, IList<T> column) {
     var array = column.ToArray();
     var myVisitor = new MyVisitor(this, name);
@@ -27,17 +35,9 @@ public class TableMaker : IDisposable {
   }
 
   public TableHandle MakeTable(TableHandleManager manager) {
-    NativeTableMaker.deephaven_dhclient_utility_TableMaker_MakeTable(_self, manager.Self, out var result, out var status);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_MakeTable(Self, manager.Self, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, manager);
-  }
-
-  private void ReleaseUnmanagedResources() {
-    var temp = _self.Release();
-    if (temp.IsNull) {
-      return;
-    }
-    NativeTableMaker.deephaven_dhclient_utility_TableMaker_dtor(temp);
   }
 
   private static class ArrayDispatcher {
@@ -122,43 +122,43 @@ public class TableMaker : IDisposable {
 
     public void Visit(char[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Char(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(sbyte[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow(); 
     }
 
     public void Visit(Int16[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(Int32[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(Int64[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(float[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Float(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(double[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Double(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
@@ -169,13 +169,13 @@ public class TableMaker : IDisposable {
       }
 
      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
-        _owner._self, _name, reinterpreted, reinterpreted.Length, out var status);
+        _owner.Self, _name, reinterpreted, reinterpreted.Length, out var status);
       status.OkOrThrow();
     }
 
     public void Visit(string[] array) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__String(
-        _owner._self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
@@ -186,7 +186,7 @@ public class TableMaker : IDisposable {
       }
 
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(
-        _owner._self, _name, reinterpreted, reinterpreted.Length, out var status);
+        _owner.Self, _name, reinterpreted, reinterpreted.Length, out var status);
       status.OkOrThrow();
     }
   }

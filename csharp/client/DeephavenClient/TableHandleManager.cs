@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Deephaven.CppClientInterop;
 
 namespace Deephaven.DeephavenClient;
 
@@ -88,7 +89,7 @@ internal class NativeTableHandleManager {
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandleManager_TimeTable(NativePtr<NativeTableHandleManager> self,
-    NativePtr<DurationSpecifier> period, NativePtr<TimePointSpecifier> startTime,
+    NativePtr<NativeDurationSpecifier> period, NativePtr<NativeTimePointSpecifier> startTime,
     bool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
