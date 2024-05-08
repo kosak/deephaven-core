@@ -86,6 +86,10 @@ public sealed class TableHandle : IDisposable {
     return status.Unwrap(result);
   }
 
+  public void Stream(TextWriter textWriter, bool wantHeaders) {
+    textWriter.Write(ToString(wantHeaders));
+  }
+
   private void ReleaseUnmanagedResources() {
     var temp = Self.Release();
     if (temp.IsNull) {
