@@ -31,7 +31,7 @@ Schema::~Schema() = default;
 std::optional<int32_t> Schema::GetColumnIndex(std::string_view name, bool strict) const {
   auto ip = index_.find(name);
   if (ip != index_.end()) {
-    return ip->second;
+    return static_cast<int32_t>(ip->second);
   }
   // Not found: check strictness flag.
   if (!strict) {
