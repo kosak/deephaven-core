@@ -44,7 +44,7 @@ public class CommonContextForTests {
   }
 
   private static Client CreateClient(ClientOptions clientOptions) {
-    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "localhost");
+    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "10.0.4.60");
     var port = GlobalEnvironmentForTests.GetEnv("DH_PORT", "10000");
     var connectionString = $"{host}:{port}";
     var client = Client.Connect(connectionString, clientOptions);

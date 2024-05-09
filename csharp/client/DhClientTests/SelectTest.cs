@@ -4,11 +4,16 @@ using System.Collections;
 using System.Collections.Generic;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Utility;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Deephaven.DhClientTests;
 
 public class SelectTest {
-  public SelectTest() {
+  private readonly ITestOutputHelper _output;
+
+  public SelectTest(ITestOutputHelper output) {
+    _output = output;
     PlatformUtf16.Init();
   }
 
@@ -35,7 +40,7 @@ public class SelectTest {
       byteData.Add((byte)(i * 11));
       shortData.Add((short)(i * 1000));
       intData.Add(i * 1_000_000);
-      longData.Add(i * 1_000_000_000);
+      longData.Add(i * (long)1_000_000_000);
       floatData.Add(i * 123.456F);
       doubleData.Add(i * 987654.321);
       stringData.Add($"test {i}");
@@ -56,7 +61,7 @@ public class SelectTest {
 
     var t = maker.MakeTable(ctx.Client.Manager);
 
-    t.Stream(Console.Out, true);
+    _output.WriteLine(t.ToString(true));
 
     CompareTable(
       t,

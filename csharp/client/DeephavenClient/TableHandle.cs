@@ -87,7 +87,8 @@ public sealed class TableHandle : IDisposable {
   }
 
   public void Stream(TextWriter textWriter, bool wantHeaders) {
-    textWriter.Write(ToString(wantHeaders));
+    var s = ToString(wantHeaders);
+    textWriter.Write(s);
   }
 
   private void ReleaseUnmanagedResources() {
