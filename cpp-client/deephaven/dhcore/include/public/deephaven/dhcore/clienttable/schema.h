@@ -52,7 +52,7 @@ public:
 
   [[nodiscard]]
   int32_t NumCols() const {
-    return names_.size();
+    return static_cast<int32_t>(names_.size());
   }
 
 private:
