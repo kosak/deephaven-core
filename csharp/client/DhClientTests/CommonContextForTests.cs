@@ -35,6 +35,14 @@ public class CommonContextForTests {
     return new CommonContextForTests(client, testTable, cn, cd);
   }
 
+  private CommonContextForTests(Client client, TableHandle testTable,
+    ColumnNamesForTests cn, ColumnDataForTests cd) {
+    Client = client;
+    TestTable = testTable;
+    this.cn = cn;
+    this.cd = cd;
+  }
+
   private static Client CreateClient(ClientOptions clientOptions) {
     var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "localhost");
     var port = GlobalEnvironmentForTests.GetEnv("DH_PORT", "10000");
@@ -51,9 +59,7 @@ class GlobalEnvironmentForTests {
   }
 }
 
-
-
-class ColumnNamesForTests {
+public class ColumnNamesForTests {
   public string ImportDate = "ImportDate";
   public string Ticker = "Ticker";
   public string Open = "Open";
@@ -61,7 +67,7 @@ class ColumnNamesForTests {
   public string Volume = "Volume";
 }
 
-class ColumnDataForTests {
+public class ColumnDataForTests {
   public string[] ImportDate = {
     "2017-11-01",
     "2017-11-01",

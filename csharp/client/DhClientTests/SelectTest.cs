@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Utility;
 
 namespace Deephaven.DhClientTests;
@@ -13,7 +14,7 @@ public class SelectTest {
 
   [Fact]
   public void TestSupportAllTypes() {
-    var ctx = new CommonContextForTests();
+    var ctx = CommonContextForTests.Create(new ClientOptions());
 
     var boolData = new List<bool>();
     var charData = new List<char>();
