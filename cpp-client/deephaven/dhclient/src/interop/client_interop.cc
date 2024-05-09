@@ -744,7 +744,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Double(TableMaker *self,
 }
 
 void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(TableMaker *self,
-    const char16_t *name, const int32_t *data, int32_t length, ErrorStatus *status) {
+    const char16_t *name, const int8_t *data, int32_t length, ErrorStatus *status) {
   status->Run([=] {
     Utf16Converter converter;
     // I'm a little sad about this copy

@@ -260,7 +260,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Double(
 void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
-    const int32_t *data,  // by default .NET byte is marshaled as int32_t
+    const int8_t *data,
     int32_t length,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__String(
