@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Utility;
@@ -157,53 +158,58 @@ public class SelectTest {
     );
   }
 
-  TEST_CASE("New columns", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
+  [Fact]
+  public void NewColumns() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
 
     // A formula expression
-    auto t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
+    var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
         .Select("MV1 = Volume * Close", "V_plus_12 = Volume + 12");
 
-    std::vector<double> mv1_data = { 2350000, 6050000, 507300 };
-    std::vector<int64_t> mv2_data = { 100012, 250012, 19012 };
+    var mv1Data = new double[]{ 2350000, 6050000, 507300 };
+    var mv2Data = new long[] { 100012, 250012, 19012 };
 
     CompareTable(
         t1,
-        "MV1", mv1_data,
-        "V_plus_12", mv2_data
+        "MV1", mv1Data,
+        "V_plus_12", mv2Data
     );
   }
 
-  TEST_CASE("Drop columns", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
+  [Fact]
+  public void DropColumns() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
 
-    auto t1 = table.DropColumns({ "ImportDate", "Open", "Close"});
-    CHECK(2 == t1.Schema()->NumCols());
+    var t1 = table.DropColumns("ImportDate", "Open", "Close");
+    Assert.Equal(5, table.Schema.NumCols);
+    Assert.Equal(2, t1.Schema.NumCols);
   }
 
-  TEST_CASE("Simple Where", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
-    auto updated = table.Update("QQQ = i");
+  [Fact]
+  public void SimpleWhere() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
+    var updated = table.Update("QQQ = i");
 
-    auto t1 = updated.Where("ImportDate == `2017-11-01` && Ticker == `IBM`")
+    var t1 = updated.Where("ImportDate == `2017-11-01` && Ticker == `IBM`")
         .Select("Ticker", "Volume");
 
-    std::vector < std::string> ticker_data = { "IBM"};
-    std::vector<int64_t> vol_data = { 138000 };
+    var tickerData = new[] { "IBM"};
+    var volData = new Int64[] { 138000 };
 
     CompareTable(
         t1,
-        "Ticker", ticker_data,
-        "Volume", vol_data
+        "Ticker", tickerData,
+        "Volume", volData
     );
   }
 
-  TEST_CASE("Formula in the Where clause", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
+  [Fact]
+  public void FormulaInTheWhereClause() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
 
     auto t1 = table.Where(
             "ImportDate == `2017-11-01` && Ticker == `AAPL` && Volume % 10 == Volume % 100")
