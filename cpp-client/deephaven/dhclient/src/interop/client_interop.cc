@@ -312,6 +312,17 @@ void deephaven_client_TableHandle_GetManager(deephaven::client::TableHandle *sel
   });
 }
 
+void deephaven_client_TableHandle_Where(deephaven::client::TableHandle *self,
+    const char16_t *condition,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    Utf16Converter converter;
+    auto table = self->Where(converter.to_bytes(condition));
+    *result = new TableHandle(std::move(table));
+  });
+}
+
 void deephaven_client_TableHandle_Select(deephaven::client::TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
     deephaven::client::TableHandle **result,
