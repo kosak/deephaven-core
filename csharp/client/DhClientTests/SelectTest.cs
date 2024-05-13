@@ -277,49 +277,50 @@ public class SelectTest {
 
   [Fact]
   public void TestLazyUpdate() {
-  TEST_CASE("LazyUpdate", "[select]") {
-      auto tm = TableMakerForTests::Create();
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-      std::vector < std::string> a_data = { "The", "At", "Is", "On"};
-      std::vector<int32_t> b_data = { 1, 2, 3, 4 };
-      std::vector<int32_t> c_data = { 5, 2, 5, 5 };
-      TableMaker source_maker;
-      source_maker.AddColumn("A", a_data);
-      source_maker.AddColumn("B", b_data);
-      source_maker.AddColumn("C", c_data);
-      auto source = source_maker.MakeTable(tm.Client().GetManager());
+    var aData = new[] { "The", "At", "Is", "On" };
+    var bData = new[] { 1, 2, 3, 4 };
+    var cData = new[] { 5, 2, 5, 5 };
 
-      auto result = source.LazyUpdate({ "Y = sqrt(C)"});
+    using var sourceMaker = new TableMaker();
+    sourceMaker.AddColumn("A", aData);
+    sourceMaker.AddColumn("B", bData);
+    sourceMaker.AddColumn("C", cData);
+    var source = sourceMaker.MakeTable(ctx.Client.Manager);
 
-      std::vector<double> sqrt_data = { std::sqrt(5), std::sqrt(2), std::sqrt(5), std::sqrt(5) };
-      CompareTable(result,
-          "A", a_data,
-          "B", b_data,
-          "C", c_data,
-          "Y", sqrt_data);
-    }
+    var result = source.LazyUpdate("Y = sqrt(C)");
 
-    TEST_CASE("SelectDistinct", "[select]") {
-      auto tm = TableMakerForTests::Create();
+    var sqrtData = new[] { Math.Sqrt(5), Math.Sqrt(2), Math.Sqrt(5), Math.Sqrt(5) };
+    CompareTable(result,
+      "A", aData,
+      "B", bData,
+      "C", cData,
+      "Y", sqrtData);
+  }
 
-      std::vector < std::string> a_data = { "apple", "apple", "orange", "orange", "plum", "grape"};
-      std::vector<int32_t> b_data = { 1, 1, 2, 2, 3, 3 };
-      TableMaker source_maker;
-      source_maker.AddColumn("A", a_data);
-      source_maker.AddColumn("B", b_data);
-      auto source = source_maker.MakeTable(tm.Client().GetManager());
+  [Fact]
+  public void TestSelectDistinct() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-      auto result = source.SelectDistinct({ "A"});
+    var aData = new[] { "apple", "apple", "orange", "orange", "plum", "grape" };
+    var bData = new[] { 1, 1, 2, 2, 3, 3 };
 
-      std::cout << result.Stream(true) << '\n';
+    using var sourceMaker = new TableMaker();
+    sourceMaker.AddColumn("A", aData);
+    sourceMaker.AddColumn("B", bData);
+    var source = sourceMaker.MakeTable(ctx.Client.Manager);
 
-      std::vector < std::string> expected_data = { "apple", "orange", "plum", "grape"};
+    var result = source.SelectDistinct("A");
+    _output.WriteLine(result.ToString(true));
 
-      CompareTable(result,
-          "A", expected_data);
-    }
+    var expectedData = new[] { "apple", "orange", "plum", "grape" };
 
-    private static void CompareTable(TableHandle table, params object[] args) {
+    CompareTable(result,
+      "A", expectedData);
+  }
+
+  private static void CompareTable(TableHandle table, params object[] args) {
     if (args.Length % 2 != 0) {
       throw new ArgumentException($"args array expected to have even number of elements, but has {args.Length}");
     }
