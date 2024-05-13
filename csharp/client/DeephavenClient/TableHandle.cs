@@ -23,9 +23,72 @@ public sealed class TableHandle : IDisposable {
     GC.SuppressFinalize(this);
   }
 
+  public TableHandle Where(string condition) {
+    NativeTableHandle.deephaven_client_TableHandle_Where(Self, condition, out var result,
+      out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle Select(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_Select(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle View(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_View(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle DropColumns(params string[] columns) {
+    NativeTableHandle.deephaven_client_TableHandle_DropColumns(Self,
+      columns, columns.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
   public TableHandle Update(params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_Update(Self, columnSpecs, columnSpecs.Length,
       out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle SelectDistinct(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_SelectDistinct(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle Head(Int64 numRows) {
+    NativeTableHandle.deephaven_client_TableHandle_Head(Self, numRows,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle Tail(Int64 numRows) {
+    NativeTableHandle.deephaven_client_TableHandle_Tail(Self, numRows,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle LastBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_LastBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle WhereIn(TableHandle filterTable, params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_WhereIn(Self,
+      filterTable.Self, columnSpecs, columnSpecs.Length, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, Manager);
   }
@@ -105,12 +168,14 @@ internal class NativeTableHandle {
   internal static extern void deephaven_client_TableHandle_dtor(NativePtr<NativeTableHandle> self);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_GetManager(NativePtr<NativeTableHandle> self,
+  internal static extern void deephaven_client_TableHandle_Where(NativePtr<NativeTableHandle> self,
+    string condition, out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_Select(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out ErrorStatus status);
+    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_View(NativePtr<NativeTableHandle> self,
