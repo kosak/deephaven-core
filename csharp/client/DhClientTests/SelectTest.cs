@@ -138,7 +138,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void LastByAndSelect() {
+  public void TestLastByAndSelect() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
@@ -160,7 +160,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void NewColumns() {
+  public void TestNewColumns() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
@@ -179,7 +179,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void DropColumns() {
+  public void TestDropColumns() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
@@ -189,7 +189,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void SimpleWhere() {
+  public void TestSimpleWhere() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
     var updated = table.Update("QQQ = i");
@@ -208,7 +208,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void FormulaInTheWhereClause() {
+  public void TestFormulaInTheWhereClause() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
@@ -228,7 +228,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void SimpleWhereWithSyntaxError() {
+  public void TestSimpleWhereWithSyntaxError() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
@@ -239,7 +239,7 @@ public class SelectTest {
   }
 
   [Fact]
-  public void WhereIn() {
+  public void TestWhereIn() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
     var letterData = new[] { "A", "C", "F", "B", "E", "D", "A" };
@@ -275,6 +275,8 @@ public class SelectTest {
       "Code", codeExpected);
   }
 
+  [Fact]
+  public void TestLazyUpdate() {
   TEST_CASE("LazyUpdate", "[select]") {
       auto tm = TableMakerForTests::Create();
 
