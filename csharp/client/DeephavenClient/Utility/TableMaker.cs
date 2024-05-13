@@ -168,7 +168,7 @@ public class TableMaker : IDisposable {
         reinterpreted[i] = array[i] ? (byte)1 : (byte)0;
       }
 
-     NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
+      NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
         _owner.Self, _name, reinterpreted, reinterpreted.Length, out var status);
       status.OkOrThrow();
     }
@@ -181,8 +181,9 @@ public class TableMaker : IDisposable {
 
     public void Visit(DateTime[] array) {
       var reinterpreted = new long[array.Length];
+      var epoch = new DateTime(1970, 1, 1);
       for (var i = 0; i != array.Length; ++i) {
-        reinterpreted[i] = array[i].Nanosecond;
+        reinterpreted[i] = (long)array[i].Subtract(epoch).TotalNanoseconds;
       }
 
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(
