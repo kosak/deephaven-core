@@ -11,7 +11,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.DhClientTests;
 
-public class CommonContextForTests {
+public class CommonContextForTests : IDisposable {
   public readonly Client Client;
   public readonly TableHandle TestTable;
   private readonly ColumnNamesForTests cn;

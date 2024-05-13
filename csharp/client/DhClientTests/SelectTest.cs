@@ -20,7 +20,7 @@ public class SelectTest {
 
   [Fact]
   public void TestSupportAllTypes() {
-    var ctx = CommonContextForTests.Create(new ClientOptions());
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
 
     var boolData = new List<bool>();
     var charData = new List<char>();
@@ -76,6 +76,40 @@ public class SelectTest {
       "doubleData", doubleData,
       "stringData", stringData,
       "dateTimeData", dateTimeData
+    );
+  }
+
+  [Fact]
+  public void TestCreateUpdateFetchATable() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+
+    var intData = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    var doubleData = new[] { 0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9 };
+    var stringData = new[] {
+      "zero", "one", "two", "three", "four", "five", "six", "seven",
+      "eight", "nine"};
+
+    using var maker = new TableMaker();
+    maker.AddColumn("IntValue", intData);
+    maker.AddColumn("DoubleValue", doubleData);
+    maker.AddColumn("StringValue", stringData);
+    var t = maker.MakeTable(ctx.Client.Manager);
+    var t2 = t.Update("Q2 = IntValue * 100");
+    var t3 = t2.Update("Q3 = Q2 + 10");
+    var t4 = t3.Update("Q4 = Q2 + 100");
+
+    var q2Data = new[] { 0, 100, 200, 300, 400, 500, 600, 700, 800, 900 };
+    var q3Data = new[] { 10, 110, 210, 310, 410, 510, 610, 710, 810, 910 };
+    var q4Data = new[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+
+    CompareTable(
+      t4,
+      "IntValue", intData,
+      "DoubleValue", doubleData,
+      "StringValue", stringData,
+      "Q2", q2Data,
+      "Q3", q3Data,
+      "Q4", q4Data
     );
   }
 
