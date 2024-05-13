@@ -78,7 +78,15 @@ public class SelectTest {
     );
   }
 
-  private static void CompareTable(params object[] args) {
+  private static void CompareTable(TableHandle table, params object[] args) {
+    if (args.Length % 2 != 0) {
+      throw new ArgumentException($"args array expected to have even number of elements, but has {args.Length}");
+    }
+
+    var expectedNumColumns = args.Length / 2;
+
+    var clientTable = table.ToClientTable();
+    
     Console.WriteLine($"hi, comparing ${args}");
   }
 }

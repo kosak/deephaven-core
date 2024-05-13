@@ -16,7 +16,7 @@ public class PlatformUtf16 {
     int count);
 
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(AllocatorHelper allocator);
+  internal static extern void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(AllocatorHelper allocator);
 
   private static void BulkIdentity(string[] inItems, string[] outItems, Int32 count) {
     if (count == 0) {
