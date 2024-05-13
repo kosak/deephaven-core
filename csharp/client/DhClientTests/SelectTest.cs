@@ -9,6 +9,7 @@ using Deephaven.DeephavenClient.Utility;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Xml.Linq;
+using Microsoft.VisualBasic;
 
 namespace Deephaven.DhClientTests;
 
@@ -211,71 +212,70 @@ public class SelectTest {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
-    auto t1 = table.Where(
+    var t1 = table.Where(
             "ImportDate == `2017-11-01` && Ticker == `AAPL` && Volume % 10 == Volume % 100")
         .Select("Ticker", "Volume");
-    std::cout << t1.Stream(true) << '\n';
+    _output.WriteLine(t1.ToString(true));
 
-    std::vector < std::string> ticker_data = { "AAPL", "AAPL", "AAPL"};
-    std::vector<int64_t> vol_data = { 100000, 250000, 19000 };
+    var tickerData = new string[] { "AAPL", "AAPL", "AAPL"};
+    var volData = new Int64[] { 100000, 250000, 19000 };
 
     CompareTable(
         t1,
-        "Ticker", ticker_data,
-        "Volume", vol_data
+        "Ticker", tickerData,
+        "Volume", volData
     );
   }
 
-  TEST_CASE("Simple 'Where' with syntax error", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
+  [Fact]
+  public void SimpleWhereWithSyntaxError() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
 
-    try {
-      // String literal
-      auto t1 = table.Where(")))))");
-      std::cout << t1.Stream(true) << '\n';
-    } catch (const std::exception &e) {
-      // Expected
-      fmt::print(std::cerr, "Caught *expected* exception {}\n", e.what());
-      return;
-    }
-    throw std::runtime_error("Expected a failure, but didn't experience one");
-    }
+    Assert.Throws<Exception>(() => {
+      var t1 = table.Where(")))))");
+      _output.WriteLine(t1.ToString(true));
+    });
+  }
 
-    TEST_CASE("WhereIn", "[select]") {
-      auto tm = TableMakerForTests::Create();
+  [Fact]
+  public void WhereIn() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-      std::vector < std::string> letter_data = { "A", "C", "F", "B", "E", "D", "A"};
-      std::vector<std::optional<int32_t>> number_data = { { }, 2, 1, { }, 4, 5, 3 };
-      std::vector < std::string> color_data = { "red", "blue", "orange", "purple", "yellow", "pink", "blue"};
-      std::vector<std::optional<int32_t>> code_data = { 12, 13, 11, { }, 16, 14, { } };
-      TableMaker source_maker;
-      source_maker.AddColumn("Letter", letter_data);
-      source_maker.AddColumn("Number", number_data);
-      source_maker.AddColumn("Color", color_data);
-      source_maker.AddColumn("Code", code_data);
-      auto source = source_maker.MakeTable(tm.Client().GetManager());
+    var letterData = new[] { "A", "C", "F", "B", "E", "D", "A" };
+    var numberData = new Int32?[] { null, 2, 1, null, 4, 5, 3 };
+    var colorData = new string[] { "red", "blue", "orange", "purple", "yellow", "pink", "blue" };
+    var codeData = new Int32?[] { 12, 13, 11, null, 16, 14, null };
 
-      std::vector < std::string> filter_color_data = { "blue", "red", "purple", "white"};
-      TableMaker filter_maker;
-      filter_maker.AddColumn("Colors", filter_color_data);
-      auto filter = filter_maker.MakeTable(tm.Client().GetManager());
+    using var sourceMaker = new TableMaker();
+    sourceMaker.AddColumn("Letter", letterData);
+    sourceMaker.AddColumn("Number", numberData);
+    sourceMaker.AddColumn("Color", colorData);
+    sourceMaker.AddColumn("Code", codeData);
 
-      auto result = source.WhereIn(filter, { "Color = Colors"});
+    var source = sourceMaker.MakeTable(ctx.Client.Manager);
 
-      std::vector < std::string> letter_expected = { "A", "C", "B", "A"};
-      std::vector<std::optional<int32_t>> number_expected = { { }, 2, { }, 3 };
-      std::vector < std::string> color_expected = { "red", "blue", "purple", "blue"};
-      std::vector<std::optional<int32_t>> code_expected = { 12, 13, { }, { } };
+    var filterColorData = new[] { "blue", "red", "purple", "white" };
 
-      CompareTable(result,
-          "Letter", letter_expected,
-          "Number", number_expected,
-          "Color", color_expected,
-          "Code", code_expected);
-    }
+    using var filterMaker = new TableMaker();
+    filterMaker.AddColumn("Colors", filterColorData);
+    var filter = filterMaker.MakeTable(ctx.Client.Manager);
 
-    TEST_CASE("LazyUpdate", "[select]") {
+    var result = source.WhereIn(filter, "Color = Colors");
+
+    var letterExpected = new[] { "A", "C", "B", "A" };
+    var numberExpected = new Int32?[] { null, 2, null, 3 };
+    var colorExpected = new[] { "red", "blue", "purple", "blue" };
+    var codeExpected = new Int32?[] { 12, 13, null, null };
+
+    CompareTable(result,
+      "Letter", letterExpected,
+      "Number", numberExpected,
+      "Color", colorExpected,
+      "Code", codeExpected);
+  }
+
+  TEST_CASE("LazyUpdate", "[select]") {
       auto tm = TableMakerForTests::Create();
 
       std::vector < std::string> a_data = { "The", "At", "Is", "On"};
