@@ -114,44 +114,46 @@ public class SelectTest {
     );
   }
 
-  TEST_CASE("Select a few columns", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
+  [Fact]
+  public void TestSelectAFewColumns() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
 
-    auto t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
+    var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
         .Select("Ticker", "Close", "Volume")
         .Head(2);
 
-    std::vector < std::string> ticker_data = { "AAPL", "AAPL"};
-    std::vector<double> close_data = { 23.5, 24.2 };
-    std::vector<int64_t> vol_data = { 100000, 250000 };
+    var tickerData = new[] { "AAPL", "AAPL"};
+    var closeData = new [] { 23.5, 24.2 };
+    var volDdata = new [] { 100000, 250000 };
 
     CompareTable(
         t1,
-        "Ticker", ticker_data,
-        "Close", close_data,
-        "Volume", vol_data
+        "Ticker", tickerData,
+        "Close", closeData,
+        "Volume", volDdata
     );
   }
 
-  TEST_CASE("LastBy + Select", "[select]") {
-    auto tm = TableMakerForTests::Create();
-    auto table = tm.Table();
+  [Fact]
+  public void LastByAndSelect() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var table = ctx.TestTable;
 
-    auto t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
+    var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
         .LastBy("Ticker")
         .Select("Ticker", "Close", "Volume");
-    std::cout << t1.Stream(true) << '\n';
+    _output.WriteLine(t1.ToString(true));
 
-    std::vector < std::string> ticker_data = { "AAPL"};
-    std::vector<double> close_data = { 26.7 };
-    std::vector<int64_t> vol_data = { 19000 };
+    var tickerData = new[] { "AAPL"};
+    var closeData = new[] { 26.7 };
+    var volData = new Int64[] { 19000 };
 
     CompareTable(
         t1,
-        "Ticker", ticker_data,
-        "Close", close_data,
-        "Volume", vol_data
+        "Ticker", tickerData,
+        "Close", closeData,
+        "Volume", volData
     );
   }
 
