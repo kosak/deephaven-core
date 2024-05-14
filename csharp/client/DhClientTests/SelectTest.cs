@@ -335,6 +335,8 @@ public class SelectTest {
     }
 
     var nextIndex = 0;
+    var useSChemaInstead = clientTable.Schema;
+    useSChemaInstead.Blah666();
     var cols = new Dictionary<string, IList>();
     foreach (var colName in clientTable.ColumnNames) {
       var column = clientTable.GetColumn(nextIndex);

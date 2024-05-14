@@ -58,6 +58,13 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle LazyUpdate(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_LazyUpdate(Self, columnSpecs, columnSpecs.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
   public TableHandle SelectDistinct(params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_SelectDistinct(Self,
       columnSpecs, columnSpecs.Length, out var result, out var status);
@@ -205,6 +212,10 @@ internal class NativeTableHandle {
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_Update(NativePtr<NativeTableHandle> self,
+    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_client_TableHandle_LazyUpdate(NativePtr<NativeTableHandle> self,
     [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]

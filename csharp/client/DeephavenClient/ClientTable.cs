@@ -8,10 +8,7 @@ namespace Deephaven.DeephavenClient;
 
 public class ClientTable : IDisposable {
   internal NativePtr<NativeClientTable> Self;
-  public readonly Int32 NumColumns;
-  public readonly Int64 NumRows;
-  public string[] ColumnNames;
-  private readonly ElementTypeId[] _columnElementTypes;
+  public readonly Schema Schema;
 
   internal ClientTable(NativePtr<NativeClientTable> self) {
     Self = self;
