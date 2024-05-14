@@ -12,17 +12,16 @@ public class ClientTable : IDisposable {
 
   internal ClientTable(NativePtr<NativeClientTable> self) {
     Self = self;
-    NativeClientTable.deephaven_client_ClientTable_GetDimensions(self, out NumColumns, out NumRows, out var status1);
+    NativeClientTable.deephaven_client_ClientTable_GetDimensions(self,
+      out var numColumns, out var numRows, out var status1);
     status1.OkOrThrow();
-    ColumnNames = new string[NumColumns];
-    _columnElementTypes = new ElementTypeId[NumColumns];
 
-    var elementTypesAsInt = new Int32[NumColumns];
-    NativeClientTable.deephaven_client_ClientTable_Schema(self, NumColumns, ColumnNames, elementTypesAsInt, out var status2);
+    var columnNames = new string[numColumns];
+    var elementTypesAsInt = new Int32[numColumns];
+    NativeClientTable.deephaven_client_ClientTable_Schema(self, numColumns, columnNames, elementTypesAsInt,
+      out var status2);
     status2.OkOrThrow();
-    for (var i = 0; i != NumColumns; ++i) {
-      _columnElementTypes[i] = (ElementTypeId)elementTypesAsInt[i];
-    }
+    Schema = new Schema(columnNames, elementTypesAsInt, numRows);
   }
 
   ~ClientTable() {
@@ -35,8 +34,9 @@ public class ClientTable : IDisposable {
   }
 
   public Array GetColumn(Int32 index) {
-    var factory = ClientTableColumnFactory.Of(_columnElementTypes[index]);
-    return factory.GetColumn(Self, index, NumRows);
+    var elementType = Schema.Types[index];
+    var factory = ClientTableColumnFactory.Of(elementType);
+    return factory.GetColumn(Self, index, Schema.NumRows);
   }
 
   private void ReleaseUnmanagedResources() {
