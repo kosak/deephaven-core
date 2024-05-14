@@ -361,6 +361,17 @@ void deephaven_client_TableHandle_Select(deephaven::client::TableHandle *self,
   });
 }
 
+void deephaven_client_TableHandle_SelectDistinct(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto table = self->SelectDistinct(cols);
+    *result = new TableHandle(std::move(table));
+  });
+}
+
 void deephaven_client_TableHandle_View(deephaven::client::TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
     deephaven::client::TableHandle **result,
@@ -390,6 +401,37 @@ void deephaven_client_TableHandle_Update(deephaven::client::TableHandle *self,
   status->Run([=]() {
     auto cols = MakeStringVec(column_specs, num_column_specs);
     auto table = self->Update(cols);
+    *result = new TableHandle(std::move(table));
+  });
+}
+
+void deephaven_client_TableHandle_LazyUpdate(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto table = self->LazyUpdate(cols);
+    *result = new TableHandle(std::move(table));
+  });
+}
+
+void deephaven_client_TableHandle_Head(deephaven::client::TableHandle *self,
+    int64_t num_rows,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto table = self->Head(num_rows);
+    *result = new TableHandle(std::move(table));
+  });
+}
+
+void deephaven_client_TableHandle_Tail(deephaven::client::TableHandle *self,
+    int64_t num_rows,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status) {
+  status->Run([=]() {
+    auto table = self->Tail(num_rows);
     *result = new TableHandle(std::move(table));
   });
 }
