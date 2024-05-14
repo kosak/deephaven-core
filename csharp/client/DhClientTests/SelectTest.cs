@@ -328,28 +328,17 @@ public class SelectTest {
     var expectedNumColumns = args.Length / 2;
 
     var clientTable = table.ToClientTable();
-    var actualNumColumns = clientTable.NumColumns;
+    var actualNumColumns = clientTable.NumCols;
 
     if (expectedNumColumns != actualNumColumns) {
       throw new ArgumentException($"Expected {expectedNumColumns}, have {actualNumColumns} columns");
     }
 
-    var nextIndex = 0;
-    var useSChemaInstead = clientTable.Schema;
-    useSChemaInstead.Blah666();
-    var cols = new Dictionary<string, IList>();
-    foreach (var colName in clientTable.ColumnNames) {
-      var column = clientTable.GetColumn(nextIndex);
-      cols[colName] = column;
-      ++nextIndex;
-    }
-
     for (var colNum = 0; colNum < expectedNumColumns; ++colNum) {
       var expectedColName = (string)args[colNum * 2];
       var expectedColumn = (IList)args[colNum * 2 + 1];
-      if (!cols.TryGetValue(expectedColName, out var actualColumn)) {
-        throw new ArgumentException($"Table does not have expected column {expectedColName}");
-      }
+      var actualColIndex = clientTable.Schema.GetColumnIndex(expectedColName, true);
+      var actualColumn = clientTable.GetColumn(actualColIndex!.Value);
 
       if (!EnumerablesEqual(expectedColumn, actualColumn)) {
         throw new ArgumentException($"Expected column {EnumerableToString(expectedColumn)} differs from actual column {EnumerableToString(actualColumn)}");

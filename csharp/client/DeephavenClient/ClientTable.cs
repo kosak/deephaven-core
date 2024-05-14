@@ -10,6 +10,8 @@ public class ClientTable : IDisposable {
   internal NativePtr<NativeClientTable> Self;
   public readonly Schema Schema;
 
+  public Int32 NumCols => Schema.NumCols;
+
   internal ClientTable(NativePtr<NativeClientTable> self) {
     Self = self;
     NativeClientTable.deephaven_client_ClientTable_GetDimensions(self,

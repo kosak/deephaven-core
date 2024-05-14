@@ -41,15 +41,15 @@ public class Schema {
     NumRows = numRows;
   }
 
-  Int32? GetColumnIndex(string name, bool strict) {
-    if (_nameToIndex.TryGetValue(name, out var result)) {
+  public Int32 GetColumnIndex(string name) {
+    if (TryGetColumnIndex(name, out var result)) {
       return result;
     }
 
-    if (strict) {
-      throw new ArgumentException($"""Column name "{name}" not found, and strict was set""");
-    }
+    throw new ArgumentException($"""Column name "{name}" not found, and strict was set""");
+  }
 
-    return null;
+  public bool TryGetColumnIndex(string name, out Int32 result) {
+    return _nameToIndex.TryGetValue(name, out result);
   }
 }
