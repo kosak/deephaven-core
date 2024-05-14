@@ -41,55 +41,121 @@ public class TableMaker : IDisposable {
   }
 
   private static class ArrayDispatcher {
+    static void ConvertOptional<T>(T?[] input, out T[] data, out sbyte[] nulls) where T : struct {
+      data = new T[input.Length];
+      nulls = new sbyte[input.Length];
+      for (var i = 0; i != input.Length; ++i) {
+        if (input[i].HasValue) {
+          data[i] = input[i]!.Value;
+        } else {
+          nulls[i] = 1;
+        }
+      }
+    }
+
     public static void AcceptVisitor<T>(IArrayVisitor visitor, T[] array) {
       // TODO: make this faster
       if (array is char[] chars) {
-        visitor.Visit(chars);
+        visitor.Visit(chars, null);
+        return;
+      }
+
+      if (array is char?[] optionalChars) {
+        ConvertOptional(optionalChars, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is sbyte[] sbytes) {
-        visitor.Visit(sbytes);
+        visitor.Visit(sbytes, null);
+        return;
+      }
+
+      if (array is sbyte?[] optionalSbytes) {
+        ConvertOptional(optionalSbytes, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is Int16[] int16s) {
-        visitor.Visit(int16s);
+        visitor.Visit(int16s, null);
+        return;
+      }
+
+      if (array is Int16?[] optionalInt16s) {
+        ConvertOptional(optionalInt16s, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is Int32[] int32s) {
-        visitor.Visit(int32s);
+        visitor.Visit(int32s, null);
+        return;
+      }
+
+      if (array is Int32?[] optionalInt32s) {
+        ConvertOptional(optionalInt32s, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is Int64[] int64s) {
-        visitor.Visit(int64s);
+        visitor.Visit(int64s, null);
+        return;
+      }
+
+      if (array is Int64?[] optionalInt64s) {
+        ConvertOptional(optionalInt64s, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is float[] floats) {
-        visitor.Visit(floats);
+        visitor.Visit(floats, null);
+        return;
+      }
+
+      if (array is float?[] optionalFloats) {
+        ConvertOptional(optionalFloats, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is double[] doubles) {
-        visitor.Visit(doubles);
+        visitor.Visit(doubles, null);
+        return;
+      }
+
+      if (array is float?[] optionalDoubles) {
+        ConvertOptional(optionalDoubles, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is bool[] bools) {
-        visitor.Visit(bools);
+        visitor.Visit(bools, null);
+        return;
+      }
+
+      if (array is bool?[] optionalBools) {
+        ConvertOptional(optionalBools, out var data, out var nulls);
+        visitor.Visit(data, nulls);
+        return;
+      }
+
+      if (array is DateTime[] datetimes) {
+        visitor.Visit(datetimes, null);
+        return;
+      }
+
+      if (array is DateTime?[] optionalDateTimes) {
+        ConvertOptional(optionalDateTimes, out var data, out var nulls);
+        visitor.Visit(data, nulls);
         return;
       }
 
       if (array is string[] strings) {
         visitor.Visit(strings);
-        return;
-      }
-
-      if (array is DateTime[] datetimes) {
-        visitor.Visit(datetimes);
         return;
       }
 
@@ -99,16 +165,17 @@ public class TableMaker : IDisposable {
 
   // put this somewhere
   private interface IArrayVisitor {
-    public void Visit(char[] array);
-    public void Visit(sbyte[] array);
-    public void Visit(Int16[] array);
-    public void Visit(Int32[] array);
-    public void Visit(Int64[] array);
-    public void Visit(float[] array);
-    public void Visit(double[] array);
-    public void Visit(bool[] array);
+    public void Visit(char[] array, sbyte[]? nulls);
+    public void Visit(sbyte[] array, sbyte[]? nulls);
+    public void Visit(Int16[] array, sbyte[]? nulls);
+    public void Visit(Int32[] array, sbyte[]? nulls);
+    public void Visit(Int64[] array, sbyte[]? nulls);
+    public void Visit(float[] array, sbyte[]? nulls);
+    public void Visit(double[] array, sbyte[]? nulls);
+    public void Visit(bool[] array, sbyte[]? nulls);
+    public void Visit(DateTime[] array, sbyte[]? nulls);
+    // No nulls array because string is a reference type
     public void Visit(string[] array);
-    public void Visit(DateTime[] array);
   }
 
   private class MyVisitor : IArrayVisitor {
@@ -120,49 +187,49 @@ public class TableMaker : IDisposable {
       _name = name;
     }
 
-    public void Visit(char[] array) {
+    public void Visit(char[] array, sbyte[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Char(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow();
     }
 
-    public void Visit(sbyte[] array) {
+    public void Visit(sbyte[] array, sbyte[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow(); 
     }
 
-    public void Visit(Int16[] array) {
+    public void Visit(Int16[] array, bool[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow();
     }
 
-    public void Visit(Int32[] array) {
+    public void Visit(Int32[] array, bool[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow();
     }
 
-    public void Visit(Int64[] array) {
+    public void Visit(Int64[] array, bool[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow();
     }
 
-    public void Visit(float[] array) {
+    public void Visit(float[] array, bool[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Float(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow();
     }
 
-    public void Visit(double[] array) {
+    public void Visit(double[] array, bool[]? nulls) {
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__Double(
         _owner.Self, _name, array, array.Length, out var status);
       status.OkOrThrow();
     }
 
-    public void Visit(bool[] array) {
+    public void Visit(bool[] array, bool[]? nulls) {
       var reinterpreted = new byte[array.Length];
       for (var i = 0; i != array.Length; ++i) {
         reinterpreted[i] = array[i] ? (byte)1 : (byte)0;
@@ -179,7 +246,7 @@ public class TableMaker : IDisposable {
       status.OkOrThrow();
     }
 
-    public void Visit(DateTime[] array) {
+    public void Visit(DateTime[] array, bool[]? nulls) {
       var reinterpreted = new long[array.Length];
       var epoch = new DateTime(1970, 1, 1);
       for (var i = 0; i != array.Length; ++i) {
