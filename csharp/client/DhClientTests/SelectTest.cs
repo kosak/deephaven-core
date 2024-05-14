@@ -337,8 +337,8 @@ public class SelectTest {
     for (var colNum = 0; colNum < expectedNumColumns; ++colNum) {
       var expectedColName = (string)args[colNum * 2];
       var expectedColumn = (IList)args[colNum * 2 + 1];
-      var actualColIndex = clientTable.Schema.GetColumnIndex(expectedColName, true);
-      var actualColumn = clientTable.GetColumn(actualColIndex!.Value);
+      var actualColIndex = clientTable.Schema.GetColumnIndex(expectedColName);
+      var actualColumn = clientTable.GetColumn(actualColIndex);
 
       if (!EnumerablesEqual(expectedColumn, actualColumn)) {
         throw new ArgumentException($"Expected column {EnumerableToString(expectedColumn)} differs from actual column {EnumerableToString(actualColumn)}");

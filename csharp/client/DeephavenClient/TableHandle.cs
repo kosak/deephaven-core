@@ -2,16 +2,29 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Deephaven.DeephavenClient.Utility;
 
 namespace Deephaven.DeephavenClient;
 
 public sealed class TableHandle : IDisposable {
   internal NativePtr<NativeTableHandle> Self;
-  internal TableHandleManager Manager;
+  public TableHandleManager Manager;
+  public Schema Schema;
 
   internal TableHandle(NativePtr<NativeTableHandle> self, TableHandleManager manager) {
     Self = self;
     Manager = manager;
+
+    NativeTableHandle.deephaven_client_TableHandle_GetDimensions(Self,
+      out var numColumns, out var numRows, out var status1);
+    status1.OkOrThrow();
+
+    var columnNames = new string[numColumns];
+    var elementTypesAsInt = new Int32[numColumns];
+    NativeTableHandle.deephaven_client_TableHandle_Schema(self, numColumns, columnNames,
+      elementTypesAsInt, out var status2);
+    status2.OkOrThrow();
+    Schema = new Schema(columnNames, elementTypesAsInt, numRows);
   }
 
   ~TableHandle() {
@@ -173,6 +186,18 @@ public sealed class TableHandle : IDisposable {
 internal class NativeTableHandle {
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_dtor(NativePtr<NativeTableHandle> self);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TableHandle_GetDimensions(
+    NativePtr<NativeTableHandle> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_TableHandle_Schema(
+    NativePtr<NativeTableHandle> self,
+    Int32 numColumns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] columns,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] columnTypes,
+    out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_Where(NativePtr<NativeTableHandle> self,

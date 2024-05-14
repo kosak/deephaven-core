@@ -11,7 +11,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.DhClientTests;
 
-public class CommonContextForTests : IDisposable {
+public sealed class CommonContextForTests : IDisposable {
   public readonly Client Client;
   public readonly TableHandle TestTable;
   private readonly ColumnNamesForTests cn;
@@ -41,6 +41,11 @@ public class CommonContextForTests : IDisposable {
     TestTable = testTable;
     this.cn = cn;
     this.cd = cd;
+  }
+
+  public void Dispose() {
+    TestTable.Dispose();
+    Client.Dispose();
   }
 
   private static Client CreateClient(ClientOptions clientOptions) {

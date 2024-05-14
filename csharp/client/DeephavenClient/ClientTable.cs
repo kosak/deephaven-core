@@ -14,7 +14,7 @@ public class ClientTable : IDisposable {
 
   internal ClientTable(NativePtr<NativeClientTable> self) {
     Self = self;
-    NativeClientTable.deephaven_client_ClientTable_GetDimensions(self,
+    NativeClientTable.deephaven_client_ClientTable_GetDimensions(Self,
       out var numColumns, out var numRows, out var status1);
     status1.OkOrThrow();
 
@@ -81,7 +81,8 @@ internal class NativeClientTable {
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_ClientTable_Schema(
-    NativePtr<NativeClientTable> self, Int32 numColumns,
+    NativePtr<NativeClientTable> self,
+    Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] columns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] columnTypes,
     out ErrorStatus status);
