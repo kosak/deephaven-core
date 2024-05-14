@@ -281,6 +281,33 @@ void deephaven_client_Client_dtor(Client *self) {
   delete self;
 }
 
+void deephaven_client_TableHandle_GetDimensions(TableHandle *self,
+    int32_t *num_columns, int64_t *num_rows, ErrorStatus *status) {
+  status->Run([=]() {
+    *num_columns = self->Schema()->NumCols();
+    *num_rows = self->NumRows();
+  });
+}
+
+void deephaven_client_TableHandle_GetSchema(TableHandle *self,
+    int32_t /*num_columns*/, const PlatformUtf16 **columns, int32_t *column_types,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    const auto &schema = self->Schema();
+
+    // Gather all the names, so we can do a bulk allocate call.
+    const auto &names = schema->Names();
+    PlatformUtf16::CreateBulk(names.data(), names.size(), columns);
+
+    // Now do the column types
+    size_t next_field_index = 0;
+    for (auto element_type_id : schema->Types()) {
+      column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
+    }
+  });
+}
+
+
 void deephaven_client_Client_Close(Client *self,
     deephaven::dhcore::interop::ErrorStatus *status) {
   status->Run([=]() {
