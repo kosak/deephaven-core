@@ -21,7 +21,7 @@ public sealed class TableHandle : IDisposable {
 
     var columnNames = new string[numColumns];
     var elementTypesAsInt = new Int32[numColumns];
-    NativeTableHandle.deephaven_client_TableHandle_Schema(self, numColumns, columnNames,
+    NativeTableHandle.deephaven_client_TableHandle_GetSchema(self, numColumns, columnNames,
       elementTypesAsInt, out var status2);
     status2.OkOrThrow();
     Schema = new Schema(columnNames, elementTypesAsInt, numRows);
@@ -192,7 +192,7 @@ internal class NativeTableHandle {
     NativePtr<NativeTableHandle> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandle_Schema(
+  public static extern void deephaven_client_TableHandle_GetSchema(
     NativePtr<NativeTableHandle> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] columns,
