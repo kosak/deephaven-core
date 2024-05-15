@@ -132,7 +132,7 @@ struct TypeConverterTraits {
   // The below assert fires when this class is instantiated; i.e. when none of the specializations
   // match. It needs to be written this way (with "is_same<T,T>") because for technical reasons it
   // needso be dependent on T, even if degenerately so.
-  static_assert(!std::is_same<T, T>::value, "TableMaker doesn't know how to work with this type");
+  static_assert(!std::is_same_v<T, T>, "TableMaker doesn't know how to work with this type");
 };
 
 // Implementation note: GetDeephavenTypeName() is better as a function rather than a constant,
@@ -145,6 +145,9 @@ struct TypeConverterTraits<char16_t> {
   }
   static arrow::UInt16Builder GetBuilder() {
     return arrow::UInt16Builder();
+  }
+  static char16_t Reinterpret(char16_t o) {
+    return o;
   }
   static std::string_view GetDeephavenTypeName() {
     return "char";
@@ -159,6 +162,9 @@ struct TypeConverterTraits<bool> {
   static arrow::BooleanBuilder GetBuilder() {
     return arrow::BooleanBuilder();
   }
+  static bool Reinterpret(bool o) {
+    return o;
+  }
   static std::string_view GetDeephavenTypeName() {
     return "java.lang.Boolean";
   }
@@ -171,6 +177,9 @@ struct TypeConverterTraits<int8_t> {
   }
   static arrow::Int8Builder GetBuilder() {
     return arrow::Int8Builder();
+  }
+  static int8_t Reinterpret(int8_t o) {
+    return o;
   }
   static std::string_view GetDeephavenTypeName() {
     return "byte";
@@ -185,6 +194,9 @@ struct TypeConverterTraits<int16_t> {
   static arrow::Int16Builder GetBuilder() {
     return arrow::Int16Builder();
   }
+  static int16_t Reinterpret(int16_t o) {
+    return o;
+  }
   static std::string_view GetDeephavenTypeName() {
     return "short";
   }
@@ -197,6 +209,9 @@ struct TypeConverterTraits<int32_t> {
   }
   static arrow::Int32Builder GetBuilder() {
     return arrow::Int32Builder();
+  }
+  static int32_t Reinterpret(int32_t o) {
+    return o;
   }
   static std::string_view GetDeephavenTypeName() {
     return "int";
@@ -211,6 +226,9 @@ struct TypeConverterTraits<int64_t> {
   static arrow::Int64Builder GetBuilder() {
     return arrow::Int64Builder();
   }
+  static int64_t Reinterpret(int64_t o) {
+    return o;
+  }
   static std::string_view GetDeephavenTypeName() {
     return "long";
   }
@@ -223,6 +241,9 @@ struct TypeConverterTraits<float> {
   }
   static arrow::FloatBuilder GetBuilder() {
     return arrow::FloatBuilder();
+  }
+  static float Reinterpret(float o) {
+    return o;
   }
   static std::string_view GetDeephavenTypeName() {
     return "float";
@@ -237,6 +258,9 @@ struct TypeConverterTraits<double> {
   static arrow::DoubleBuilder GetBuilder() {
     return arrow::DoubleBuilder();
   }
+  static double Reinterpret(double o) {
+    return o;
+  }
   static std::string_view GetDeephavenTypeName() {
     return "double";
   }
@@ -249,6 +273,9 @@ struct TypeConverterTraits<std::string> {
   }
   static arrow::StringBuilder GetBuilder() {
     return arrow::StringBuilder();
+  }
+  static const std::string &Reinterpret(const std::string &o) {
+    return o;
   }
   static std::string_view GetDeephavenTypeName() {
     return "java.lang.String";
@@ -263,6 +290,9 @@ struct TypeConverterTraits<deephaven::dhcore::DateTime> {
   static arrow::TimestampBuilder GetBuilder() {
     return arrow::TimestampBuilder(GetDataType(), arrow::default_memory_pool());
   }
+  static int64_t Reinterpret(const deephaven::dhcore::DateTime &dt) {
+    return dt.Nanos();
+  }
   static std::string_view GetDeephavenTypeName() {
     return "java.time.ZonedDateTime";
   }
@@ -276,6 +306,9 @@ struct TypeConverterTraits<std::optional<T>> {
   }
   static auto GetBuilder() {
     return inner_t::GetBuilder();
+  }
+  static auto Reinterpret(const T &o) {
+    return inner_t::Reinterpret(o);
   }
   static std::string_view GetDeephavenTypeName() {
     return TypeConverterTraits<T>::GetDeephavenTypeName();
@@ -295,7 +328,7 @@ TypeConverter TypeConverter::CreateNew(const std::vector<T> &values) {
     bool valid;
     const auto *contained_value = TryGetContainedValue(&value, &valid);
     if (valid) {
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Append(*contained_value)));
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Append(traits_t::Reinterpret(*contained_value))));
     } else {
       OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendNull()));
     }
