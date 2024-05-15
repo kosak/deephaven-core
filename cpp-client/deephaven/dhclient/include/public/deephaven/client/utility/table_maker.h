@@ -274,7 +274,7 @@ struct TypeConverterTraits<std::optional<T>> {
   static auto GetDataType() {
     return inner_t::GetDataType();
   }
-  static arrow::TimestampBuilder GetBuilder() {
+  static auto GetBuilder() {
     return inner_t::GetBuilder();
   }
   static std::string_view GetDeephavenTypeName() {
