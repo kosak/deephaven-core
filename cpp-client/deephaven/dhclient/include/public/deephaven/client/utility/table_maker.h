@@ -383,28 +383,19 @@ TypeConverter TypeConverter::CreateNew(const GetValue &get_value, const IsNull &
 
 template<typename T>
 void TableMaker::AddColumn(std::string name, const std::vector<T> &values) {
-  auto get_value = [&](size_t index) { return values[index]; };
+  // Specifying the return type here in this way (rather than const T &)
+  // allows us to deal with std::vector<bool>, which is very special, and would
+  // otherwise cause a compiler error, because of the way it is specialized.
+  auto get_value = [&](size_t index) -> typename std::vector<T>::const_reference { return values[index]; };
   auto is_null = [](size_t /*index*/) { return false; };
-  auto info = internal::TypeConverter::CreateNew<T>(get_value, is_null, values.size());
-  FinishAddColumn(std::move(name), std::move(info));
-}
-
-// For now, a specialization for std::string whose get_value() returns a reference, so that we
-// can save a copy.
-template<>
-inline void TableMaker::AddColumn(std::string name, const std::vector<std::string> &values) {
-  auto get_value = [&](size_t index) -> const std::string & { return values[index]; };
-  auto is_null = [](size_t /*index*/) { return false; };
-  auto info = internal::TypeConverter::CreateNew<std::string>(get_value, is_null, values.size());
-  FinishAddColumn(std::move(name), std::move(info));
+  return AddColumn<T>(std::move(name), get_value, is_null, values.size());
 }
 
 template<typename T>
 void TableMaker::AddColumn(std::string name, const std::vector<std::optional<T>> &values) {
   auto get_value = [&](size_t index) -> const T& { return *values[index]; };
   auto is_null = [&](size_t index) { return !values[index].has_value(); };
-  auto info = internal::TypeConverter::CreateNew<T>(get_value, is_null, values.size());
-  FinishAddColumn(std::move(name), std::move(info));
+  return AddColumn<T>(std::move(name), get_value, is_null, values.size());
 }
 
 template<typename T, typename GetValue, typename IsNull>
