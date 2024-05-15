@@ -30,6 +30,11 @@ public:
   [[nodiscard]]
   static TypeConverter CreateNew(const std::vector<T> &values);
 
+  template<typename T, typename GetValue, typename IsNull>
+  [[nodiscard]]
+  static TypeConverter CreateNew(const GetValue &get_value, const IsNull &is_null,
+      size_t size);
+
   TypeConverter(std::shared_ptr<arrow::DataType> data_type, std::string deephaven_type,
       std::shared_ptr<arrow::Array> column);
   ~TypeConverter();
@@ -107,8 +112,12 @@ public:
   template<typename T>
   void AddColumn(std::string name, const std::vector<T> &values);
 
-  template<typename TGRABBER>
-  void GrabColumn(std::string name, const TGRABBER &grabber);
+  template<typename T>
+  void AddColumn(std::string name, const std::vector<std::optional<T>> &values);
+
+  template<typename T, typename GetValue, typename IsNull>
+  void AddColumn(std::string name, const GetValue &get_value, const IsNull &is_null,
+      size_t size);
 
   /**
    * Make the table. Call this after all your calls to AddColumn().
@@ -342,16 +351,66 @@ TypeConverter TypeConverter::CreateNew(const std::vector<T> &values) {
   return TypeConverter(std::move(data_type), std::string(traits_t::GetDeephavenTypeName()),
       std::move(array));
 }
+
+template<typename T, typename GetValue, typename IsNull>
+TypeConverter TypeConverter::CreateNew(const GetValue &get_value, const IsNull &is_null,
+    size_t size) {
+  using deephaven::client::utility::OkOrThrow;
+
+  typedef TypeConverterTraits<T> traits_t;
+
+  auto data_type = traits_t::GetDataType();
+  auto builder = traits_t::GetBuilder();
+
+  for (size_t i = 0; i != size; ++i) {
+    if (!is_null(i)) {
+       OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
+           builder.Append(traits_t::Reinterpret(get_value(i)))));
+    } else {
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendNull()));
+    }
+  }
+  auto builder_res = builder.Finish();
+  if (!builder_res.ok()) {
+    auto message = fmt::format("Error building array of type {}: {}",
+        traits_t::GetDeephavenTypeName(), builder_res.status().ToString());
+  }
+  auto array = builder_res.ValueUnsafe();
+  return TypeConverter(std::move(data_type), std::string(traits_t::GetDeephavenTypeName()),
+      std::move(array));
+}
 }  // namespace internal
 
 template<typename T>
 void TableMaker::AddColumn(std::string name, const std::vector<T> &values) {
-  auto info = internal::TypeConverter::CreateNew(values);
+  auto get_value = [&](size_t index) { return values[index]; };
+  auto is_null = [](size_t /*index*/) { return false; };
+  auto info = internal::TypeConverter::CreateNew<T>(get_value, is_null, values.size());
   FinishAddColumn(std::move(name), std::move(info));
 }
 
-template<typename TGRABBER>
-void TableMaker::GrabColumn(std::string name, const TGRABBER &grabber) {
-  throw std::runtime_error("TODO");
+// For now, a specialization for std::string whose get_value() returns a reference, so that we
+// can save a copy.
+template<>
+inline void TableMaker::AddColumn(std::string name, const std::vector<std::string> &values) {
+  auto get_value = [&](size_t index) -> const std::string & { return values[index]; };
+  auto is_null = [](size_t /*index*/) { return false; };
+  auto info = internal::TypeConverter::CreateNew<std::string>(get_value, is_null, values.size());
+  FinishAddColumn(std::move(name), std::move(info));
+}
+
+template<typename T>
+void TableMaker::AddColumn(std::string name, const std::vector<std::optional<T>> &values) {
+  auto get_value = [&](size_t index) -> const T& { return *values[index]; };
+  auto is_null = [&](size_t index) { return !values[index].has_value(); };
+  auto info = internal::TypeConverter::CreateNew<T>(get_value, is_null, values.size());
+  FinishAddColumn(std::move(name), std::move(info));
+}
+
+template<typename T, typename GetValue, typename IsNull>
+void TableMaker::AddColumn(std::string name, const GetValue &get_value, const IsNull &is_null,
+    size_t size) {
+  auto info = internal::TypeConverter::CreateNew<T>(get_value, is_null, size);
+  FinishAddColumn(std::move(name), std::move(info));
 }
 }  // namespace deephaven::client::utility

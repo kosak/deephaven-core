@@ -69,23 +69,6 @@ void GetColumnHelper(deephaven::client::interop::ClientTable *self,
   auto rows = self->table_->GetRowSequence();
   cs->FillChunk(*rows, data_chunk, null_chunkp);
 }
-
-template<typename T>
-struct BasicValueGrabber {
-  BasicValueGrabber(const T *data, int32_t length, const int8_t *optional_nulls)
-    : data_(data), length_(length), optional_nulls_(optional_nulls) {}
-
-  std::optional<T> operator()(size_t index) const {
-    if (optional_nulls_ != nullptr && optional_nulls_[index]) {
-      return {};
-    }
-    return DateTime::FromNanos(data_[index]);
-  }
-
-  const T *data_ = nullptr;
-  int32_t length_ = 0;
-  const int8_t *optional_nulls_ = nullptr;
-};
 }  // namespace
 
 extern "C" {
@@ -774,9 +757,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Char(TableMaker *self,
     const char16_t *name, const char16_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<char16_t> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<char16_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -784,9 +767,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(TableMaker *self,
     const char16_t *name, const int8_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<int8_t> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<int8_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -794,9 +777,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(TableMaker *self,
     const char16_t *name, const int16_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<int16_t> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<int16_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -804,9 +787,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(TableMaker *self,
     const char16_t *name, const int32_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<int32_t> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<int32_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -814,9 +797,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(TableMaker *self,
     const char16_t *name, const int64_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<int64_t> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<int64_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -824,9 +807,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Float(TableMaker *self,
     const char16_t *name, const float *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<float> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<float>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -834,9 +817,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Double(TableMaker *self,
     const char16_t *name, const double *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    BasicValueGrabber<double> value_grabber(data, length, optional_nulls);
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index]; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<double>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -844,14 +827,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(TableMaker *sel
     const char16_t *name, const int8_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    auto value_grabber = [=](size_t index) -> std::optional<bool> {
-      if (optional_nulls != nullptr && optional_nulls[index]) {
-        return {};
-      }
-      return data[index] != 0;
-    };
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return data[index] != 0; };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<bool>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -859,14 +837,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(TableMaker 
     const char16_t *name, const int64_t *data, int32_t length,
     const int8_t *optional_nulls, ErrorStatus *status) {
   status->Run([=] {
-    auto value_grabber = [=](size_t index) -> std::optional<DateTime> {
-      if (optional_nulls != nullptr && optional_nulls[index]) {
-        return {};
-      }
-      return DateTime::FromNanos(data[index]);
-    };
-    Utf16Converter converter;
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [=](size_t index) { return DateTime::FromNanos(data[index]); };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<DateTime>(Utf16Converter().to_bytes(name), get_value, is_null, length);
   });
 }
 
@@ -875,13 +848,9 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__String(TableMaker *self,
     ErrorStatus *status) {
   status->Run([=] {
     Utf16Converter converter;
-    auto value_grabber = [&](size_t index) -> std::optional<std::string> {
-      if (data[index] == nullptr || (optional_nulls != nullptr && optional_nulls[index])) {
-        return {};
-      }
-      return converter.to_bytes(data[index]);
-    };
-    self->GrabColumn(converter.to_bytes(name), value_grabber);
+    auto get_value = [&](size_t index) { return converter.to_bytes(data[index]); };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
+    self->AddColumn<std::string>(converter.to_bytes(name), get_value, is_null, length);
   });
 }
 }  // extern "C"
