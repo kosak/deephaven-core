@@ -104,8 +104,8 @@ public:
    * name and values. Each call to this method adds a column. When there are multiple calls
    * to this method, the sizes of the `values` arrays must be consistent.
    */
-  template<typename T>
-  void AddColumn(std::string name, const std::vector<T> &values);
+  template<typename VALUE_GRABBER>
+  void AddColumn(std::string name, const VALUE_GRABBER &grabber);
 
   /**
    * Make the table. Call this after all your calls to AddColumn().
@@ -226,8 +226,8 @@ struct TypeConverterTraits<std::optional<T>> {
   }
 };
 
-template<typename T>
-TypeConverter TypeConverter::CreateNew(const std::vector<T> &values) {
+template<typename VALUE_GRABBER>
+TypeConverter TypeConverter::CreateNew(const VALUE_GRABBER &value_grabber) {
   using deephaven::client::utility::OkOrThrow;
 
   typedef TypeConverterTraits<T> traits_t;
@@ -235,11 +235,11 @@ TypeConverter TypeConverter::CreateNew(const std::vector<T> &values) {
   auto data_type = std::make_shared<typename traits_t::arrowType_t>();
 
   typename traits_t::arrowBuilder_t builder;
-  for (const auto &value : values) {
-    bool valid;
-    const auto *contained_value = TryGetContainedValue(&value, &valid);
-    if (valid) {
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Append(*contained_value)));
+  size_t size = value_grabber.size();
+  for (size_t i = 0; i != size; ++i) {
+    auto value = value_grabber(i);
+    if (value.has_value()) {
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Append(*value)));
     } else {
       OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendNull()));
     }
@@ -282,9 +282,9 @@ inline TypeConverter TypeConverter::CreateNew(const std::vector<deephaven::dhcor
 }
 }  // namespace internal
 
-template<typename T>
-void TableMaker::AddColumn(std::string name, const std::vector<T> &values) {
-  auto info = internal::TypeConverter::CreateNew(values);
+template<typename VALUE_GRABBER>
+void TableMaker::AddColumn(std::string name, const VALUE_GRABBER &value_grabber) {
+  auto info = internal::TypeConverter::CreateNew(value_grabber);
   FinishAddColumn(std::move(name), std::move(info));
 }
 }  // namespace deephaven::client::utility
