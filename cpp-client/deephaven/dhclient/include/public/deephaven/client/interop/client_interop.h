@@ -253,59 +253,69 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Char(
     const char16_t *name,
     const char16_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const int8_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const int16_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const int32_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const int64_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Float(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const float *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Double(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const double *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const int8_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__String(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const char16_t **data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(
     deephaven::client::utility::TableMaker *self,
     const char16_t *name,
     const int64_t *data,
     int32_t length,
+    const int8_t *optional_nulls,
     deephaven::dhcore::interop::ErrorStatus *status);
 }  // extern "C"

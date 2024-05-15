@@ -776,7 +776,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Char(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<char16_t> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -786,7 +786,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<int8_t> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -796,7 +796,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<int16_t> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -806,7 +806,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<int32_t> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -816,7 +816,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<int64_t> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -826,7 +826,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Float(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<float> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -836,7 +836,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__Double(TableMaker *self,
   status->Run([=] {
     BasicValueGrabber<double> value_grabber(data, length, optional_nulls);
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -851,7 +851,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(TableMaker *sel
       return data[index] != 0;
     };
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -866,7 +866,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(TableMaker 
       return DateTime::FromNanos(data[index]);
     };
     Utf16Converter converter;
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 
@@ -881,7 +881,7 @@ void deephaven_dhclient_utility_TableMaker_AddColumn__String(TableMaker *self,
       }
       return converter.to_bytes(data[index]);
     };
-    self->AddColumn(converter.to_bytes(name), value_grabber);
+    self->GrabColumn(converter.to_bytes(name), value_grabber);
   });
 }
 }  // extern "C"
