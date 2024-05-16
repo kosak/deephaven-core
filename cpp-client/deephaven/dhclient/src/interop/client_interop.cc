@@ -405,10 +405,10 @@ void deephaven_client_TableHandle_Update(deephaven::client::TableHandle *self,
   });
 }
 
-void deephaven_client_TableHandle_LazyUpdate(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_LazyUpdate(TableHandle *self,
     const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    TableHandle **result,
+    ErrorStatus *status) {
   status->Run([=]() {
     auto cols = MakeStringVec(column_specs, num_column_specs);
     auto table = self->LazyUpdate(cols);
@@ -416,17 +416,40 @@ void deephaven_client_TableHandle_LazyUpdate(deephaven::client::TableHandle *sel
   });
 }
 
-void deephaven_client_TableHandle_Head(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_LastBy(TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    TableHandle **result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto table = self->LastBy(cols);
+    *result = new TableHandle(std::move(table));
+  });
+}
+
+void deephaven_client_TableHandle_WhereIn(TableHandle *self,
+    TableHandle *filter_table,
+    const char16_t **column_specs, int64_t num_column_specs,
+    TableHandle **result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto table = self->WhereIn(*filter_table, cols);
+    *result = new TableHandle(std::move(table));
+  });
+}
+
+void deephaven_client_TableHandle_Head(TableHandle *self,
     int64_t num_rows,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    TableHandle **result,
+    ErrorStatus *status) {
   status->Run([=]() {
     auto table = self->Head(num_rows);
     *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandle_Tail(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_Tail(TableHandle *self,
     int64_t num_rows,
     deephaven::client::TableHandle **result,
     deephaven::dhcore::interop::ErrorStatus *status) {

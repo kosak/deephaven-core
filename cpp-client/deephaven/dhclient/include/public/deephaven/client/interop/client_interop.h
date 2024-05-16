@@ -127,6 +127,11 @@ void deephaven_client_TableHandle_LazyUpdate(deephaven::client::TableHandle *sel
     deephaven::client::TableHandle **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_LastBy(deephaven::client::TableHandle *self,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_Head(deephaven::client::TableHandle *self,
     int64_t num_rows,
     deephaven::client::TableHandle **result,
@@ -134,6 +139,12 @@ void deephaven_client_TableHandle_Head(deephaven::client::TableHandle *self,
 
 void deephaven_client_TableHandle_Tail(deephaven::client::TableHandle *self,
     int64_t num_rows,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_WhereIn(deephaven::client::TableHandle *self,
+    deephaven::client::TableHandle *filter_table,
+    const char16_t **column_specs, int64_t num_column_specs,
     deephaven::client::TableHandle **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
