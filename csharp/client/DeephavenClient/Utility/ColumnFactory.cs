@@ -1,9 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Deephaven.DeephavenClient.Utility;
 
@@ -11,7 +8,7 @@ internal abstract class ColumnFactory<TTableType> {
   public abstract Array GetColumn(NativePtr<TTableType> table, Int32 columnIndex, Int64 numRows);
 
   public delegate void NativeImpl<in T>(NativePtr<TTableType> table, Int32 columnIndex,
-    T[] data, bool[]? nullFlags, Int64 numRows, out ErrorStatus status);
+    T[] data, sbyte[]? nullFlags, Int64 numRows, out ErrorStatus status);
 
   public sealed class ForGeneric<T> : ColumnFactory<TTableType> {
     private readonly NativeImpl<T> _nativeImpl;

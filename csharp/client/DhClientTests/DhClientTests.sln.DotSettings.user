@@ -7,5 +7,7 @@
     &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.BasicInteropTest.TestArrayElementConcat&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.BasicInteropTest.TestBasicStruct&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.SelectTest.TestSupportAllTypes&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.SelectTest.TestSimpleWhere&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.SelectTest.TestSelectAFewColumns&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

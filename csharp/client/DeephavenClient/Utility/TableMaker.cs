@@ -240,9 +240,14 @@ public class TableMaker : IDisposable {
       status.OkOrThrow();
     }
 
-    public void Visit(string[] array) {
+    public void Visit(string?[] array) {
+      var nulls = new sbyte[array.Length];
+      for (var i = 0; i != array.Length; ++i) {
+        nulls[i] = array[i] == null ? (sbyte)1 : (sbyte)0;
+      }
+
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__String(
-        _owner.Self, _name, array, array.Length, out var status);
+        _owner.Self, _name, array, array.Length, nulls, out var status);
       status.OkOrThrow();
     }
 
@@ -369,14 +374,12 @@ internal class NativeTableMaker {
     sbyte[]? nulls,
     out ErrorStatus status);
 
-  // The string version is different and doesn't have a 'nulls' array,
-  // because it doesn't need one, because string is a reference and can
-  // natively represent 'null'.
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_dhclient_utility_TableMaker_AddColumn__String(NativePtr<NativeTableMaker> self,
     string name,
     [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)]
-    string[] data,
+    string?[] data,
     Int32 length,
+    sbyte[]? nulls,
     out ErrorStatus status);
 }

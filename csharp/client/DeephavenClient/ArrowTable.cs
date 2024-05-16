@@ -92,7 +92,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] char[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -101,7 +101,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] SByte[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -110,7 +110,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int16[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -119,7 +119,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int32[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -128,7 +128,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -137,7 +137,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] float[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -146,7 +146,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] double[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -155,7 +155,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -164,7 +164,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] string[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 
@@ -173,7 +173,7 @@ internal class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[]? nullFlags,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
 }

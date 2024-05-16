@@ -127,13 +127,13 @@ public class SelectTest {
 
     var tickerData = new[] { "AAPL", "AAPL"};
     var closeData = new [] { 23.5, 24.2 };
-    var volDdata = new [] { 100000, 250000 };
+    var volData = new Int64[] { 100000, 250000 };
 
     CompareTable(
         t1,
         "Ticker", tickerData,
         "Close", closeData,
-        "Volume", volDdata
+        "Volume", volData
     );
   }
 
@@ -217,7 +217,7 @@ public class SelectTest {
         .Select("Ticker", "Volume");
     _output.WriteLine(t1.ToString(true));
 
-    var tickerData = new string[] { "AAPL", "AAPL", "AAPL"};
+    var tickerData = new[] { "AAPL", "AAPL", "AAPL"};
     var volData = new Int64[] { 100000, 250000, 19000 };
 
     CompareTable(
@@ -244,7 +244,7 @@ public class SelectTest {
 
     var letterData = new[] { "A", "C", "F", "B", "E", "D", "A" };
     var numberData = new Int32?[] { null, 2, 1, null, 4, 5, 3 };
-    var colorData = new string[] { "red", "blue", "orange", "purple", "yellow", "pink", "blue" };
+    var colorData = new[] { "red", "blue", "orange", "purple", "yellow", "pink", "blue" };
     var codeData = new Int32?[] { 12, 13, 11, null, 16, 14, null };
 
     using var sourceMaker = new TableMaker();
