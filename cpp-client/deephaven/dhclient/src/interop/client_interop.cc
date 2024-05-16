@@ -20,12 +20,12 @@ using deephaven::client::ClientOptions;
 using deephaven::client::TableHandle;
 using deephaven::client::TableHandleManager;
 using deephaven::client::subscription::SubscriptionHandle;
+using deephaven::client::interop::ArrowTable;
 using deephaven::client::utility::ArrowUtil;
+using deephaven::client::interop::ClientTableSpWrapper;
 using deephaven::client::utility::DurationSpecifier;
 using deephaven::client::utility::TableMaker;
 using deephaven::client::utility::TimePointSpecifier;
-using deephaven::client::interop::ArrowTable;
-using deephaven::client::interop::ClientTable;
 using deephaven::dhcore::DateTime;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::CharChunk;
@@ -57,7 +57,7 @@ std::vector<std::string> MakeStringVec(const char16_t **key_columns, int64_t num
   return result;
 }
 
-void GetColumnHelper(deephaven::client::interop::ClientTable *self,
+void GetColumnHelper(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, Chunk *data_chunk, bool *optional_dest_null_flags, int64_t num_rows) {
   auto cs = self->table_->GetColumn(column_index);
   BooleanChunk null_chunk;
@@ -535,14 +535,14 @@ void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTabl
 }
 
 void deephaven_client_TableHandle_ToClientTable(TableHandle *self,
-    ClientTable **client_table, ErrorStatus *status) {
+    ClientTableSpWrapper **client_table, ErrorStatus *status) {
   status->Run([=]() {
     auto ct = self->ToClientTable();
-    *client_table = new ClientTable(std::move(ct));
+    *client_table = new ClientTableSpWrapper(std::move(ct));
   });
 }
 
-void deephaven_client_ClientTable_GetDimensions(ClientTable *self,
+void deephaven_client_ClientTable_GetDimensions(ClientTableSpWrapper *self,
     int32_t *num_columns, int64_t *num_rows, ErrorStatus *status) {
   status->Run([=]() {
     *num_columns = self->table_->NumColumns();
@@ -550,7 +550,7 @@ void deephaven_client_ClientTable_GetDimensions(ClientTable *self,
   });
 }
 
-void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTable_Schema(ClientTableSpWrapper *self,
     int32_t num_columns, const PlatformUtf16 **columns, int32_t *column_types,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -576,25 +576,23 @@ void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable
   });
 }
 
-void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self) {
+void deephaven_client_TickingUpdate_dtor(TickingUpdate *self) {
   delete self;
 }
 
-void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
-    deephaven::client::interop::ClientTable **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+void deephaven_client_TickingUpdate_Current(TickingUpdate *self,
+    ClientTableSpWrapper **result,
+    ErrorStatus *status) {
   status->Run([=]() {
-    std::cerr << "Change this back\n";
-    std::shared_ptr<deephaven::dhcore::clienttable::ClientTable> current(self->Current());
-    *result = new ClientTable(std::move(current));
+    *result = new ClientTableSpWrapper(self->Current());
   });
 }
 
-void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self) {
+void deephaven_client_ClientTable_dtor(ClientTableSpWrapper *self) {
   delete self;
 }
 
-void deephaven_client_ClientTableHelper_GetInt8Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt8Column(ClientTableSpWrapper *self,
     int32_t column_index, int8_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -603,7 +601,7 @@ void deephaven_client_ClientTableHelper_GetInt8Column(deephaven::client::interop
   });
 }
 
-void deephaven_client_ClientTableHelper_GetInt16Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt16Column(ClientTableSpWrapper *self,
     int32_t column_index, int16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -612,7 +610,7 @@ void deephaven_client_ClientTableHelper_GetInt16Column(deephaven::client::intero
   });
 }
 
-void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt32Column(ClientTableSpWrapper *self,
     int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -621,7 +619,7 @@ void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::intero
   });
 }
 
-void deephaven_client_ClientTableHelper_GetInt64Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt64Column(ClientTableSpWrapper *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -630,7 +628,7 @@ void deephaven_client_ClientTableHelper_GetInt64Column(deephaven::client::intero
   });
 }
 
-void deephaven_client_ClientTableHelper_GetFloatColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetFloatColumn(ClientTableSpWrapper *self,
     int32_t column_index, float *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -639,7 +637,7 @@ void deephaven_client_ClientTableHelper_GetFloatColumn(deephaven::client::intero
   });
 }
 
-void deephaven_client_ClientTableHelper_GetDoubleColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetDoubleColumn(ClientTableSpWrapper *self,
     int32_t column_index, double *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -648,7 +646,7 @@ void deephaven_client_ClientTableHelper_GetDoubleColumn(deephaven::client::inter
   });
 }
 
-void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetCharColumn(ClientTableSpWrapper *self,
     int32_t column_index, char16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -657,7 +655,7 @@ void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop
   });
 }
 
-void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(ClientTableSpWrapper *self,
     int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -670,7 +668,7 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::clien
   });
 }
 
-void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetStringColumn(ClientTableSpWrapper *self,
     int32_t column_index, const PlatformUtf16 **data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
@@ -681,7 +679,7 @@ void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::inter
   });
 }
 
-void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWrapper *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {

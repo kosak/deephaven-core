@@ -19,11 +19,18 @@ public:
   std::shared_ptr<arrow::Table> table_;
 };
 
-struct ClientTable {
-  using DHCoreClientTable = deephaven::dhcore::clienttable::ClientTable;
+/**
+ * This class exists so we don't get confused about what we are passing
+ * back and forth to .NET. Basically, like any other object, we need to
+ * heap-allocate this object and pass an opaque pointer back and forth
+ * to .NET. The fact that this object's only member is a shared pointer
+ * is irrelevant in terms of what we need to do.
+ */
+struct ClientTableSpWrapper {
+  using ClientTable = deephaven::dhcore::clienttable::ClientTable;
 public:
-  explicit ClientTable(std::shared_ptr<DHCoreClientTable> table) : table_(std::move(table)) {}
-  std::shared_ptr<DHCoreClientTable> table_;
+  explicit ClientTableSpWrapper(std::shared_ptr<ClientTable> table) : table_(std::move(table)) {}
+  std::shared_ptr<ClientTable> table_;
 };
 }  // namespace deephaven::client::interop {
 
@@ -167,54 +174,54 @@ void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTabl
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_ToClientTable(deephaven::client::TableHandle *self,
-    deephaven::client::interop::ClientTable **client_table,
+    deephaven::client::interop::ClientTableSpWrapper **client_table,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTable *self);
+void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTableSpWrapper *self);
 
-void deephaven_client_ClientTable_GetDimensions(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTable_GetDimensions(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t *num_columns, int64_t *num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t num_columns, const deephaven::dhcore::interop::PlatformUtf16 **columns,
     int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self);
 
 void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
-    deephaven::client::interop::ClientTable **result,
+    deephaven::client::interop::ClientTableSpWrapper **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_ClientTableHelper_GetInt8Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt8Column(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, int8_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetInt16Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt16Column(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, int16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetInt64Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetInt64Column(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetFloatColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetFloatColumn(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, float *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetDoubleColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetDoubleColumn(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, double *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, char16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, const deephaven::dhcore::interop::PlatformUtf16 **data,
     bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTable *self,
+void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 
