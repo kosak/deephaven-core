@@ -22,6 +22,23 @@ internal abstract class ColumnFactory<TTableType> {
     }
   }
 
+  public sealed class ForBool : ColumnFactory<TTableType> {
+    private readonly NativeImpl<sbyte> _nativeImpl;
+
+    public ForBool(NativeImpl<sbyte> nativeImpl) => _nativeImpl = nativeImpl;
+
+    public override Array GetColumn(NativePtr<TTableType> table, Int32 columnIndex, Int64 numRows) {
+      var intermediate = new sbyte[numRows];
+      _nativeImpl(table, columnIndex, intermediate, null, numRows, out var errorStatus);
+      errorStatus.OkOrThrow();
+      var result = new bool[numRows];
+      for (Int64 i = 0; i < numRows; ++i) {
+        result[i] = intermediate[i] != 0;
+      }
+      return result;
+    }
+  }
+
   public sealed class ForDateTime : ColumnFactory<TTableType> {
     private readonly NativeImpl<Int64> _nativeImpl;
 

@@ -60,7 +60,7 @@ internal static class ArrowTableColumnFactory {
     new ColumnFactory<NativeArrowTable>.ForGeneric<Int64>(NativeArrowTable.deephaven_client_ArrowTable_GetInt64Column),
     new ColumnFactory<NativeArrowTable>.ForGeneric<float>(NativeArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
     new ColumnFactory<NativeArrowTable>.ForGeneric<double>(NativeArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<bool>(NativeArrowTable.deephaven_client_ArrowTable_GetBooleanAsInt32Column),
+    new ColumnFactory<NativeArrowTable>.ForBool(NativeArrowTable.deephaven_client_ArrowTable_GetBooleanAsInt32Column),
     new ColumnFactory<NativeArrowTable>.ForGeneric<string>(NativeArrowTable.deephaven_client_ArrowTable_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
     new  ColumnFactory<NativeArrowTable>.ForDateTime(NativeArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
@@ -154,7 +154,7 @@ internal class NativeArrowTable {
   public static extern void deephaven_client_ArrowTable_GetBooleanAsInt32Column(
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] bool[] data,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[] data,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? nullFlags,
     Int64 numRows,
     out ErrorStatus status);
