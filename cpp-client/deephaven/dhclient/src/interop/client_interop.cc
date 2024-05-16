@@ -726,8 +726,8 @@ void deephaven_client_ClientTableHelper_GetCharColumn(ClientTableSpWrapper *self
   });
 }
 
-void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+void deephaven_client_ClientTableHelper_GetBooleanAsSbyteColumn(ClientTableSpWrapper *self,
+    int32_t column_index, int8_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
     AutoNullMapper mapper(optional_dest_null_flags, num_rows);

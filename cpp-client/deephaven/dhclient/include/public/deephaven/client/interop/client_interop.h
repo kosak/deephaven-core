@@ -232,8 +232,8 @@ void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop
     int32_t column_index, char16_t *data,
     deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data,
+void deephaven_client_ClientTableHelper_GetBooleanAsSbyteColumn(deephaven::client::interop::ClientTableSpWrapper *self,
+    int32_t column_index, int8_t *data,
     deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTableSpWrapper *self,
