@@ -176,6 +176,12 @@ struct NativePtr {
   T *ptr_ = nullptr;
 };
 
+
+/**
+ * Not safe to pass .NET bool to interop: use int8_t (aka .NET sbyte) instead.
+ */
+enum class InteropBool : int8_t { kFalse, kTrue };
+
 class ErrorStatus {
 public:
   /**

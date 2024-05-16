@@ -50,7 +50,7 @@ void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::Tab
 void deephaven_client_TableHandleManager_TimeTable(const deephaven::client::TableHandleManager *self,
     const deephaven::client::utility::DurationSpecifier *period,
     const deephaven::client::utility::TimePointSpecifier *start_time,
-    bool blink_table,
+    deephaven::dhcore::interop::InteropBool blink_table,
     deephaven::client::TableHandle **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
@@ -205,35 +205,44 @@ void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingU
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_ClientTableHelper_GetInt8Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int8_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int8_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetInt16Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int16_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int32_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetInt64Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int64_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetFloatColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, float *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, float *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetDoubleColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, double *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, double *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, char16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, char16_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int32_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTableSpWrapper *self,
     int32_t column_index, const deephaven::dhcore::interop::PlatformUtf16 **data,
-    bool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int64_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,

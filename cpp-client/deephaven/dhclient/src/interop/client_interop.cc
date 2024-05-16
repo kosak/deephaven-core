@@ -39,6 +39,7 @@ using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::interop::ErrorStatus;
+using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::NativePtr;
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
@@ -69,6 +70,46 @@ void GetColumnHelper(deephaven::client::interop::ClientTableSpWrapper *self,
   auto rows = self->table_->GetRowSequence();
   cs->FillChunk(*rows, data_chunk, null_chunkp);
 }
+
+/*
+ * The purpose of this class is to conveniently manage the interaction between InteropBool
+ * and C++ bool. Specifically, it is used when the caller passes us an array of InteropBool.
+ * When constructed with a pointer to InteropBool and a size, we allocate an array of that
+ * many C++ bools. Our BoolData() member will return a pointer to this array of "actual"
+ * C++ bools that can be passed to the library. Then, our destructor will copy this array
+ * of actual bools back to the original InteropBool array.
+ *
+ * If the caller passes us a null pointer, our BoolData() member will return null and our
+ * destructor will do nothing.
+ */
+class AutoNullMapper {
+public:
+  AutoNullMapper(InteropBool *interop_bools, int64_t size) : interop_bools_(interop_bools),
+    size_(size) {
+    if (interop_bools == nullptr) {
+      return;
+    }
+    real_bools_ = std::make_unique<bool[]>(size);
+  }
+
+  ~AutoNullMapper() {
+    if (interop_bools_ == nullptr) {
+      return;
+    }
+
+    for (int64_t i = 0; i != size_; ++i) {
+      interop_bools_[i] = real_bools_[i] ? InteropBool::kTrue : InteropBool::kFalse;
+    }
+  }
+
+  [[nodiscard]]
+  bool *BoolData() const { return real_bools_.get(); }
+
+private:
+  InteropBool *interop_bools_ = nullptr;
+  int64_t size_ = 0;
+  std::unique_ptr<bool[]> real_bools_;
+};
 }  // namespace
 
 extern "C" {
@@ -221,8 +262,8 @@ void deephaven_client_TableHandleManager_EmptyTable(const deephaven::client::Tab
 
 void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::TableHandleManager *self,
     const char16_t *table_name,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    TableHandle **result,
+    ErrorStatus *status) {
   status->Run([=]() {
     auto tn = Utf16Converter().to_bytes(table_name);
     auto table = self->FetchTable(tn);
@@ -231,23 +272,23 @@ void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::Tab
 }
 
 
-void deephaven_client_TableHandleManager_TimeTable(const deephaven::client::TableHandleManager *self,
-    const deephaven::client::utility::DurationSpecifier *period,
-    const deephaven::client::utility::TimePointSpecifier *start_time,
-    bool blink_table,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+void deephaven_client_TableHandleManager_TimeTable(const TableHandleManager *self,
+    const DurationSpecifier *period,
+    const TimePointSpecifier *start_time,
+    InteropBool blink_table,
+    TableHandle **result,
+    ErrorStatus *status) {
   status->Run([=]() {
-    auto table = self->TimeTable(*period, *start_time, blink_table);
+    auto table = self->TimeTable(*period, *start_time, blink_table != InteropBool::kFalse);
     *result = new TableHandle(std::move(table));
   });
 }
 
-void deephaven_client_TableHandleManager_InputTable(const deephaven::client::TableHandleManager *self,
-    const deephaven::client::TableHandle *initial_table, const char16_t **key_columns,
+void deephaven_client_TableHandleManager_InputTable(const TableHandleManager *self,
+    const TableHandle *initial_table, const char16_t **key_columns,
     int64_t num_key_columns,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    TableHandle **result,
+    ErrorStatus *status) {
   status->Run([=]() {
     auto kcs = MakeStringVec(key_columns, num_key_columns);
     auto table = self->InputTable(*initial_table, std::move(kcs));
@@ -255,9 +296,9 @@ void deephaven_client_TableHandleManager_InputTable(const deephaven::client::Tab
   });
 }
 
-void deephaven_client_TableHandleManager_RunScript(const deephaven::client::TableHandleManager *self,
+void deephaven_client_TableHandleManager_RunScript(const TableHandleManager *self,
     const char16_t *code,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    ErrorStatus *status) {
   status->Run([self, code]() {
     auto s = Utf16Converter().to_bytes(code);
     self->RunScript(s);
@@ -616,75 +657,83 @@ void deephaven_client_ClientTable_dtor(ClientTableSpWrapper *self) {
 }
 
 void deephaven_client_ClientTableHelper_GetInt8Column(ClientTableSpWrapper *self,
-    int32_t column_index, int8_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int8_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = Int8Chunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetInt16Column(ClientTableSpWrapper *self,
-    int32_t column_index, int16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int16_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = Int16Chunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetInt32Column(ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int32_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = Int32Chunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetInt64Column(ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = Int64Chunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetFloatColumn(ClientTableSpWrapper *self,
-    int32_t column_index, float *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, float *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = FloatChunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetDoubleColumn(ClientTableSpWrapper *self,
-    int32_t column_index, double *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, double *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = DoubleChunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetCharColumn(ClientTableSpWrapper *self,
-    int32_t column_index, char16_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, char16_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = CharChunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int32_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = BooleanChunk::Create(num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i] ? 1 : 0;
     }
@@ -692,23 +741,26 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInt32Column(ClientTableSpWra
 }
 
 void deephaven_client_ClientTableHelper_GetStringColumn(ClientTableSpWrapper *self,
-    int32_t column_index, const PlatformUtf16 **data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, const PlatformUtf16 **data, InteropBool *optional_dest_null_flags,
+    int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = StringChunk::Create(num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
     PlatformUtf16::CreateBulk(data_chunk.data(), num_rows, data);
   });
 }
 
 void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data, bool *optional_dest_null_flags, int64_t num_rows,
+    int32_t column_index, int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
+    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     // For Boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = DateTimeChunk::Create(num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i].Nanos();
     }
