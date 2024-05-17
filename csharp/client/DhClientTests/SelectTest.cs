@@ -298,29 +298,13 @@ public class SelectTest {
     tc.AddColumn("B", bData);
     tc.AddColumn("C", cData);
     tc.AddColumn("Y", sqrtData);
-
-    // result.ToArrowTable().GetColumn()
-    // result.ToArrowTable().GetColumnWithNulls()
-    // result.ToArrowTable().GetNullableColumn()
-
-    var dData = new int?[10];
-    tc.AddNullableColumn("z", aData);
-    tc.AddNullableColumn("z", bData);
-    tc.AddNullableColumn("z", dData);
-
-    string? s = null;
-    tc.Doit(s);
-    int? x = null;
-    tc.Doit(x);
-    
     tc.CompareTo(result);
   }
 
   class TableComparer {
-    public void Doit<T>(T? o) {
-      var freak = typeof(T?).FullName;
-      Console.WriteLine("hi2");
-    }
+    private readonly Dictionary<string, IEnumerable> _columns = new();
+    private Int64? _numRows = default;
+
     public void AddColumn<T>(string name, IList<T> data, bool[]? nulls = null) {
       var nullableData = new T?[data.Count];
       for (var i = 0; i < data.Count; ++i) {
@@ -332,8 +316,17 @@ public class SelectTest {
     }
 
     public void AddNullableColumn<T>(string name, IList<T?> data) {
-      var jerk = $"hi {data[0]} and {data[0] != null}";
-      Console.WriteLine($"zombie");
+      if (!_columns.TryAdd(name, data)) {
+        throw new ArgumentException($"Can't add duplicate column name \"{name}\"");
+      }
+
+      if (!_numRows.HasValue) {
+        _numRows = data.Count;
+      } else {
+        if (_numRows.Value != data.Count) {
+          throw new ArgumentException($"Columns have inconsistent size: {_numRows.Value} vs {data.Count}");
+        }
+      }
     }
 
     public void CompareTo(TableHandle result) {
@@ -382,31 +375,48 @@ public class SelectTest {
       var actualColIndex = clientTable.Schema.GetColumnIndex(expectedColName);
       var actualColumn = clientTable.GetColumn(actualColIndex);
 
-      if (!EnumerablesEqual(expectedColumn, actualColumn)) {
+      if (!EnumerablesEqual(expectedColumn, actualColumn, out var failureReason)) {
         throw new ArgumentException($"Expected column {EnumerableToString(expectedColumn)} differs from actual column {EnumerableToString(actualColumn)}");
       }
     }
   }
 
-  private static bool EnumerablesEqual(IEnumerable lhs, IEnumerable rhs) {
+  private static bool EnumerablesEqual(IEnumerable lhs, IEnumerable rhs, out string failureReason) {
+    var nextIndex = 0;
     var rEnum = rhs.GetEnumerator();
     try {
       foreach (var lItem in lhs) {
         if (!rEnum.MoveNext()) {
+          failureReason = $"lhs has more elements than rhs, which has only {nextIndex} elements";
           return false;
         }
 
+        var rItem = rEnum.Current;
         if (!object.Equals(lItem, rEnum.Current)) {
+          failureReason = $"Item {nextIndex}: lItem is {ExplicitNull(lItem)}, rItem is {ExplicitNull(rItem)}";
           return false;
         }
       }
 
-      return !rEnum.MoveNext();
+      if (rEnum.MoveNext()) {
+        failureReason = $"rhs has more elements than lhs, which has only {nextIndex} elements";
+        return false;
+      }
+
+      failureReason = "";
+      return true;
     } finally {
       if (rEnum is IDisposable id) {
         id.Dispose();
       }
     }
+  }
+
+  private static string? ExplicitNull(object? item) {
+    if (item == null) {
+      return "[null]";
+    }
+    return item.ToString();
   }
 
   private static string EnumerableToString(IEnumerable enumerable) {
