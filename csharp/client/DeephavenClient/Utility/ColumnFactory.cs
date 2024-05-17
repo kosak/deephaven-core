@@ -1,11 +1,15 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Deephaven.DeephavenClient.Utility;
 
 internal abstract class ColumnFactory<TTableType> {
-  public abstract Array GetColumn(NativePtr<TTableType> table, Int32 columnIndex, Int64 numRows);
+  public enum Mode { DataOnly, DataAndNullArray, ArrayOfNullables }
+
+  public abstract (Array, bool[]?) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
+    Int64 numRows, Mode mode);
 
   public delegate void NativeImpl<in T>(NativePtr<TTableType> table, Int32 columnIndex,
     T[] data, sbyte[]? nullFlags, Int64 numRows, out ErrorStatus status);
@@ -15,10 +19,37 @@ internal abstract class ColumnFactory<TTableType> {
 
     public ForGeneric(NativeImpl<T> nativeImpl) => _nativeImpl = nativeImpl;
 
-    public override Array GetColumn(NativePtr<TTableType> table, Int32 columnIndex, Int64 numRows) {
-      var result = new T[numRows];
-      _nativeImpl(table, columnIndex, result, null, numRows, out var errorStatus);
-      return errorStatus.Unwrap(result);
+    public override (Array, bool[]?) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
+      Int64 numRows, Mode mode) {
+      var data = new T[numRows];
+      var nullsAsSbytes = mode == Mode.DataOnly ? null : new sbyte[numRows];
+      _nativeImpl(table, columnIndex, data, nullsAsSbytes, numRows, out var errorStatus);
+      errorStatus.OkOrThrow();
+
+      return Adapt(data, nullsAsSbytes, mode);
+    }
+
+    if (mode == Mode.DataOnly) {
+        return (data, null);
+      }
+
+      if (mode == Mode.DataAndNullArray) {
+        var nulls = new bool[numRows];
+        for (Int64 i = 0; i != numRows; ++i) {
+          nulls[i] = nullsAsSbytes![i] != 0;
+        }
+        return (data, nulls);
+      }
+
+      // mode == Mode.ArrayOfNullables
+      var nullableData = new T?[numRows];
+      for (Int64 i = 0; i != numRows; ++i) {
+        if (nullsAsSbytes![i] != 0) {
+          nullableData[i] = data[i];
+        }
+      }
+
+      return (nullableData, null);
     }
   }
 
