@@ -304,23 +304,36 @@ public class SelectTest {
     // result.ToArrowTable().GetNullableColumn()
 
     var dData = new int?[10];
-    tc.AddNullableColumn("q", dData);
     tc.AddNullableColumn("z", aData);
     tc.AddNullableColumn("z", bData);
+    tc.AddNullableColumn("z", dData);
+
+    string? s = null;
+    tc.Doit(s);
+    int? x = null;
+    tc.Doit(x);
     
     tc.CompareTo(result);
   }
 
   class TableComparer {
-    public void AddColumn<T>(string name, IList<T> data) {
+    public void Doit<T>(T? o) {
+      var freak = typeof(T?).FullName;
       Console.WriteLine("hi2");
     }
-    public void AddNullableColumn<T>(string name, IList<T?> data) where T : struct {
-      Console.WriteLine("hi");
+    public void AddColumn<T>(string name, IList<T> data, bool[]? nulls = null) {
+      var nullableData = new T?[data.Count];
+      for (var i = 0; i < data.Count; ++i) {
+        if (nulls == null || !nulls[i]) {
+          nullableData[i] = data[i];
+        }
+      }
+      AddNullableColumn(name, nullableData);
     }
 
-    public void AddColumNWithNulls<T>(string name, IList<T> data, bool[] nulls) {
-
+    public void AddNullableColumn<T>(string name, IList<T?> data) {
+      var jerk = $"hi {data[0]} and {data[0] != null}";
+      Console.WriteLine($"zombie");
     }
 
     public void CompareTo(TableHandle result) {
