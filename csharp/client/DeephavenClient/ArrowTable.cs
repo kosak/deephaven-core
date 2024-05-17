@@ -40,14 +40,14 @@ public class ArrowTable : IDisposable {
   public (Array, bool[]) GetColumn(Int32 index) {
     var elementType = _columnElementTypes[index];
     var factory = ArrowTableColumnFactory.Of(elementType);
-    var (data, nulls) = factory.GetColumn(Self, index, NumRows, ColumnFactoryMode.DataAndNullArray);
-    return (data, nulls!);
+    var (data, nulls) = factory.GetColumn(Self, index, NumRows);
+    return (data, nulls);
   }
 
   public Array GetNullableColumn(Int32 index) {
     var elementType = _columnElementTypes[index];
     var factory = ArrowTableColumnFactory.Of(elementType);
-    return factory.GetColumn(Self, index, NumRows, ColumnFactoryMode.ArrayOfNullables).Item1;
+    return factory.GetNullableColumn(Self, index, NumRows);
   }
 
   public void ReleaseUnmanagedResources() {
@@ -61,15 +61,15 @@ public class ArrowTable : IDisposable {
 
 internal static class ArrowTableColumnFactory {
   private static readonly ColumnFactory<NativeArrowTable>[] Factories = {
-    new ColumnFactory<NativeArrowTable>.ForGeneric<char>(NativeArrowTable.deephaven_client_ArrowTable_GetCharColumn),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<SByte>(NativeArrowTable.deephaven_client_ArrowTable_GetInt8Column),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<Int16>(NativeArrowTable.deephaven_client_ArrowTable_GetInt16Column),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<Int32>(NativeArrowTable.deephaven_client_ArrowTable_GetInt32Column),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<Int64>(NativeArrowTable.deephaven_client_ArrowTable_GetInt64Column),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<float>(NativeArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<double>(NativeArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<char>(NativeArrowTable.deephaven_client_ArrowTable_GetCharColumn),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<SByte>(NativeArrowTable.deephaven_client_ArrowTable_GetInt8Column),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<Int16>(NativeArrowTable.deephaven_client_ArrowTable_GetInt16Column),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<Int32>(NativeArrowTable.deephaven_client_ArrowTable_GetInt32Column),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<Int64>(NativeArrowTable.deephaven_client_ArrowTable_GetInt64Column),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<float>(NativeArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
+    new ColumnFactory<NativeArrowTable>.ForOtherValueType<double>(NativeArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
     new ColumnFactory<NativeArrowTable>.ForBool(NativeArrowTable.deephaven_client_ArrowTable_GetBooleanAsInt32Column),
-    new ColumnFactory<NativeArrowTable>.ForGeneric<string>(NativeArrowTable.deephaven_client_ArrowTable_GetStringColumn),
+    new ColumnFactory<NativeArrowTable>.ForString(NativeArrowTable.deephaven_client_ArrowTable_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
     new  ColumnFactory<NativeArrowTable>.ForDateTime(NativeArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
