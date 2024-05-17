@@ -67,19 +67,18 @@ public class SelectTest {
 
     _output.WriteLine(t.ToString(true));
 
-    CompareTable(
-      t,
-      "boolData", boolData,
-      "charData", charData,
-      "byteData", byteData,
-      "shortData", shortData,
-      "intData", intData,
-      "longData", longData,
-      "floatData", floatData,
-      "doubleData", doubleData,
-      "stringData", stringData,
-      "dateTimeData", dateTimeData
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("boolData", boolData);
+    tc.AddColumn("charData", charData);
+    tc.AddColumn("byteData", byteData);
+    tc.AddColumn("shortData", shortData);
+    tc.AddColumn("intData", intData);
+    tc.AddColumn("longData", longData);
+    tc.AddColumn("floatData", floatData);
+    tc.AddColumn("doubleData", doubleData);
+    tc.AddColumn("stringData", stringData);
+    tc.AddColumn("dateTimeData", dateTimeData);
+    tc.AssertEqualTo(t);
   }
 
   [Fact]
@@ -105,15 +104,14 @@ public class SelectTest {
     var q3Data = new[] { 10, 110, 210, 310, 410, 510, 610, 710, 810, 910 };
     var q4Data = new[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 
-    CompareTable(
-      t4,
-      "IntValue", intData,
-      "DoubleValue", doubleData,
-      "StringValue", stringData,
-      "Q2", q2Data,
-      "Q3", q3Data,
-      "Q4", q4Data
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("IntValue", intData);
+    tc.AddColumn("DoubleValue", doubleData);
+    tc.AddColumn("StringValue", stringData);
+    tc.AddColumn("Q2", q2Data);
+    tc.AddColumn("Q3", q3Data);
+    tc.AddColumn("Q4", q4Data);
+    tc.AssertEqualTo(t4);
   }
 
   [Fact]
@@ -129,12 +127,11 @@ public class SelectTest {
     var closeData = new [] { 23.5, 24.2 };
     var volData = new Int64[] { 100000, 250000 };
 
-    CompareTable(
-        t1,
-        "Ticker", tickerData,
-        "Close", closeData,
-        "Volume", volData
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("Ticker", tickerData);
+    tc.AddColumn("Close", closeData);
+    tc.AddColumn("Volume", volData);
+    tc.AssertEqualTo(t1);
   }
 
   [Fact]
@@ -151,12 +148,11 @@ public class SelectTest {
     var closeData = new[] { 26.7 };
     var volData = new Int64[] { 19000 };
 
-    CompareTable(
-        t1,
-        "Ticker", tickerData,
-        "Close", closeData,
-        "Volume", volData
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("Ticker", tickerData);
+    tc.AddColumn("Close", closeData);
+    tc.AddColumn("Volume", volData);
+    tc.AssertEqualTo(t1);
   }
 
   [Fact]
@@ -169,13 +165,12 @@ public class SelectTest {
         .Select("MV1 = Volume * Close", "V_plus_12 = Volume + 12");
 
     var mv1Data = new double[]{ 2350000, 6050000, 507300 };
-    var mv2Data = new long[] { 100012, 250012, 19012 };
+    var vp2Data = new long[] { 100012, 250012, 19012 };
 
-    CompareTable(
-        t1,
-        "MV1", mv1Data,
-        "V_plus_12", mv2Data
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("MV1", mv1Data);
+    tc.AddColumn("V_plus_12", vp2Data);
+    tc.AssertEqualTo(t1);
   }
 
   [Fact]
@@ -200,11 +195,10 @@ public class SelectTest {
     var tickerData = new[] { "IBM"};
     var volData = new Int64[] { 138000 };
 
-    CompareTable(
-        t1,
-        "Ticker", tickerData,
-        "Volume", volData
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("Ticker", tickerData);
+    tc.AddColumn("Volume", volData);
+    tc.AssertEqualTo(t1);
   }
 
   [Fact]
@@ -220,11 +214,10 @@ public class SelectTest {
     var tickerData = new[] { "AAPL", "AAPL", "AAPL"};
     var volData = new Int64[] { 100000, 250000, 19000 };
 
-    CompareTable(
-        t1,
-        "Ticker", tickerData,
-        "Volume", volData
-    );
+    var tc = new TableComparer();
+    tc.AddColumn("Ticker", tickerData);
+    tc.AddColumn("Volume", volData);
+    tc.AssertEqualTo(t1);
   }
 
   [Fact]
@@ -268,11 +261,13 @@ public class SelectTest {
     var colorExpected = new[] { "red", "blue", "purple", "blue" };
     var codeExpected = new Int32?[] { 12, 13, null, null };
 
-    CompareTable(result,
-      "Letter", letterExpected,
-      "Number", numberExpected,
-      "Color", colorExpected,
-      "Code", codeExpected);
+    var expected = new TableComparer();
+    expected.AddNullableColumn("Letter", letterExpected);
+    expected.AddNullableColumn("Number", numberExpected);
+    expected.AddNullableColumn("Color", colorExpected);
+    expected.AddNullableColumn("Code", codeExpected);
+
+    expected.AssertEqualTo(result);
   }
 
   [Fact]
@@ -298,12 +293,12 @@ public class SelectTest {
     tc.AddColumn("B", bData);
     tc.AddColumn("C", cData);
     tc.AddColumn("Y", sqrtData);
-    tc.CompareTo(result);
+    tc.AssertEqualTo(result);
   }
 
   class TableComparer {
     private readonly Dictionary<string, IEnumerable> _columns = new();
-    private Int64? _numRows = default;
+    private Int64 _numRows = 0;
 
     public void AddColumn<T>(string name, IList<T> data, bool[]? nulls = null) {
       var nullableData = new T?[data.Count];
@@ -316,21 +311,40 @@ public class SelectTest {
     }
 
     public void AddNullableColumn<T>(string name, IList<T?> data) {
+      if (_columns.Count == 0) {
+        _numRows = data.Count;
+      } else {
+        if (_numRows != data.Count) {
+          throw new ArgumentException($"Columns have inconsistent size: {_numRows} vs {data.Count}");
+        }
+      }
+
       if (!_columns.TryAdd(name, data)) {
         throw new ArgumentException($"Can't add duplicate column name \"{name}\"");
       }
 
-      if (!_numRows.HasValue) {
-        _numRows = data.Count;
-      } else {
-        if (_numRows.Value != data.Count) {
-          throw new ArgumentException($"Columns have inconsistent size: {_numRows.Value} vs {data.Count}");
-        }
-      }
     }
 
-    public void CompareTo(TableHandle result) {
+    public void AssertEqualTo(TableHandle table) {
+      if (_columns.Count == 0) {
+        throw new Exception("TableComparer doesn't have any columns");
+      }
 
+      if (_columns.Count != table.Schema.NumCols) {
+        throw new Exception($"Expected number of columns is {_columns.Count}. Actual is {table.Schema.NumCols}");
+      }
+
+      var clientTable = table.ToClientTable();
+
+      foreach (var (name, expectedColumn) in _columns) {
+        if (!clientTable.Schema.TryGetColumnIndex(name, out var actualColIndex)) {
+          throw new Exception($"Expected table has column named \"{name}\". Actual does not.");
+        }
+        var actualColumn = clientTable.GetColumn(actualColIndex);
+        if (!TryCompareEnumerables(expectedColumn, actualColumn, out var failureReason)) {
+          throw new Exception($"While comparing column \"{name}\": {failureReason}");
+        }
+      }
     }
   }
 
@@ -351,72 +365,50 @@ public class SelectTest {
 
     var expectedData = new[] { "apple", "orange", "plum", "grape" };
 
-    CompareTable(result,
-      "A", expectedData);
+    var tc = new TableComparer();
+    tc.AddColumn("A", expectedData);
+    tc.AssertEqualTo(source);
   }
 
-  private static void CompareTable(TableHandle table, params object[] args) {
-    if (args.Length % 2 != 0) {
-      throw new ArgumentException($"args array expected to have even number of elements, but has {args.Length}");
-    }
-
-    var expectedNumColumns = args.Length / 2;
-
-    var clientTable = table.ToClientTable();
-    var actualNumColumns = clientTable.NumCols;
-
-    if (expectedNumColumns != actualNumColumns) {
-      throw new ArgumentException($"Expected {expectedNumColumns}, have {actualNumColumns} columns");
-    }
-
-    for (var colNum = 0; colNum < expectedNumColumns; ++colNum) {
-      var expectedColName = (string)args[colNum * 2];
-      var expectedColumn = (IList)args[colNum * 2 + 1];
-      var actualColIndex = clientTable.Schema.GetColumnIndex(expectedColName);
-      var actualColumn = clientTable.GetColumn(actualColIndex);
-
-      if (!EnumerablesEqual(expectedColumn, actualColumn, out var failureReason)) {
-        throw new ArgumentException($"Expected column {EnumerableToString(expectedColumn)} differs from actual column {EnumerableToString(actualColumn)}");
-      }
-    }
-  }
-
-  private static bool EnumerablesEqual(IEnumerable lhs, IEnumerable rhs, out string failureReason) {
+  private static bool TryCompareEnumerables(IEnumerable expected, IEnumerable actual, out string failureReason) {
     var nextIndex = 0;
-    var rEnum = rhs.GetEnumerator();
+    var actualEnum = actual.GetEnumerator();
     try {
-      foreach (var lItem in lhs) {
-        if (!rEnum.MoveNext()) {
-          failureReason = $"lhs has more elements than rhs, which has only {nextIndex} elements";
+      foreach (var expectedItem in expected) {
+        if (!actualEnum.MoveNext()) {
+          failureReason = $"expected has more elements than actual, which has only {nextIndex} elements";
           return false;
         }
 
-        var rItem = rEnum.Current;
-        if (!object.Equals(lItem, rEnum.Current)) {
-          failureReason = $"Item {nextIndex}: lItem is {ExplicitNull(lItem)}, rItem is {ExplicitNull(rItem)}";
+        var actualItem = actualEnum.Current;
+        if (!object.Equals(expectedItem, actualItem)) {
+          failureReason = $"Row {nextIndex}: expected is {ExplicitToString(expectedItem)}, actual is {ExplicitToString(actualItem)}";
           return false;
         }
+
+        ++nextIndex;
       }
 
-      if (rEnum.MoveNext()) {
-        failureReason = $"rhs has more elements than lhs, which has only {nextIndex} elements";
+      if (actualEnum.MoveNext()) {
+        failureReason = $"Actual has more elements than expected, which has only {nextIndex} elements";
         return false;
       }
 
       failureReason = "";
       return true;
     } finally {
-      if (rEnum is IDisposable id) {
+      if (actualEnum is IDisposable id) {
         id.Dispose();
       }
     }
   }
 
-  private static string? ExplicitNull(object? item) {
+  private static string? ExplicitToString(object? item) {
     if (item == null) {
       return "[null]";
     }
-    return item.ToString();
+
+    return $"{item}[{item.GetType().Name}]";
   }
 
   private static string EnumerableToString(IEnumerable enumerable) {
