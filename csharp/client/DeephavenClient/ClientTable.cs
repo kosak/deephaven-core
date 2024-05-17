@@ -38,7 +38,20 @@ public class ClientTable : IDisposable {
   public Array GetColumn(Int32 index) {
     var elementType = Schema.Types[index];
     var factory = ClientTableColumnFactory.Of(elementType);
-    return factory.GetColumn(Self, index, Schema.NumRows);
+    return factory.GetColumn(Self, index, Schema.NumRows, ColumnFactoryMode.DataOnly).Item1;
+  }
+
+  public Array GetNullableColumn(Int32 index) {
+    var elementType = Schema.Types[index];
+    var factory = ClientTableColumnFactory.Of(elementType);
+    return factory.GetColumn(Self, index, Schema.NumRows, ColumnFactoryMode.ArrayOfNullables).Item1;
+  }
+
+  public (Array, bool[]) GetColumnWithNulls(Int32 index) {
+    var elementType = Schema.Types[index];
+    var factory = ClientTableColumnFactory.Of(elementType);
+    var (data, nulls) = factory.GetColumn(Self, index, Schema.NumRows, ColumnFactoryMode.DataAndNullArray);
+    return (data, nulls!);
   }
 
   private void ReleaseUnmanagedResources() {
