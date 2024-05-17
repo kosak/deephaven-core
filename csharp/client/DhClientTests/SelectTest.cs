@@ -292,11 +292,40 @@ public class SelectTest {
     var result = source.LazyUpdate("Y = sqrt(C)");
 
     var sqrtData = new[] { Math.Sqrt(5), Math.Sqrt(2), Math.Sqrt(5), Math.Sqrt(5) };
-    CompareTable(result,
-      "A", aData,
-      "B", bData,
-      "C", cData,
-      "Y", sqrtData);
+
+    var tc = new TableComparer();
+    tc.AddColumn("A", aData);
+    tc.AddColumn("B", bData);
+    tc.AddColumn("C", cData);
+    tc.AddColumn("Y", sqrtData);
+
+    // result.ToArrowTable().GetColumn()
+    // result.ToArrowTable().GetColumnWithNulls()
+    // result.ToArrowTable().GetNullableColumn()
+
+    var dData = new int?[10];
+    tc.AddNullableColumn("q", dData);
+    tc.AddNullableColumn("z", aData);
+    tc.AddNullableColumn("z", bData);
+    
+    tc.CompareTo(result);
+  }
+
+  class TableComparer {
+    public void AddColumn<T>(string name, IList<T> data) {
+      Console.WriteLine("hi2");
+    }
+    public void AddNullableColumn<T>(string name, IList<T?> data) where T : struct {
+      Console.WriteLine("hi");
+    }
+
+    public void AddColumNWithNulls<T>(string name, IList<T> data, bool[] nulls) {
+
+    }
+
+    public void CompareTo(TableHandle result) {
+
+    }
   }
 
   [Fact]

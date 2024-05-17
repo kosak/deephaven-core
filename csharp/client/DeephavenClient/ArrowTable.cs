@@ -37,9 +37,23 @@ public class ArrowTable : IDisposable {
     GC.SuppressFinalize(this);
   }
 
-  public Array Column(Int32 index) {
-    var factory = ArrowTableColumnFactory.Of(_columnElementTypes[index]);
-    return factory.GetColumn(Self, index, NumRows);
+  public Array GetColumn(Int32 index) {
+    var elementType = _columnElementTypes[index];
+    var factory = ArrowTableColumnFactory.Of(elementType);
+    return factory.GetColumn(Self, index, NumRows, ColumnFactoryMode.DataOnly).Item1;
+  }
+
+  public Array GetNullableColumn(Int32 index) {
+    var elementType = _columnElementTypes[index];
+    var factory = ArrowTableColumnFactory.Of(elementType);
+    return factory.GetColumn(Self, index, NumRows, ColumnFactoryMode.ArrayOfNullables).Item1;
+  }
+
+  public (Array, bool[]) GetColumnWithNulls(Int32 index) {
+    var elementType = _columnElementTypes[index];
+    var factory = ArrowTableColumnFactory.Of(elementType);
+    var (data, nulls) = factory.GetColumn(Self, index, NumRows, ColumnFactoryMode.DataAndNullArray);
+    return (data, nulls!);
   }
 
   public void ReleaseUnmanagedResources() {

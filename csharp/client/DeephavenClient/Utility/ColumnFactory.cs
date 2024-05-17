@@ -33,7 +33,6 @@ internal abstract class ColumnFactory<TTableType> {
     }
   }
 
-
   public sealed class ForBool : ColumnFactory<TTableType> {
     private readonly NativeImpl<sbyte> _nativeImpl;
 
