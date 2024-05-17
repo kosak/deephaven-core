@@ -340,7 +340,8 @@ public class SelectTest {
         if (!clientTable.Schema.TryGetColumnIndex(name, out var actualColIndex)) {
           throw new Exception($"Expected table has column named \"{name}\". Actual does not.");
         }
-        var actualColumn = clientTable.GetColumn(actualColIndex);
+
+        var actualColumn = clientTable.GetNullableColumn(actualColIndex);
         if (!TryCompareEnumerables(expectedColumn, actualColumn, out var failureReason)) {
           throw new Exception($"While comparing column \"{name}\": {failureReason}");
         }

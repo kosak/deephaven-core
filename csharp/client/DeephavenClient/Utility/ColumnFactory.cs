@@ -4,7 +4,6 @@ using System;
 namespace Deephaven.DeephavenClient.Utility;
 
 internal enum ColumnFactoryMode {
-  DataOnly,
   DataAndNullArray,
   ArrayOfNullables
 }
@@ -25,7 +24,7 @@ internal abstract class ColumnFactory<TTableType> {
     public override (Array, bool[]?) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows, ColumnFactoryMode mode) {
       var data = new T[numRows];
-      var nullsAsSbytes = mode == ColumnFactoryMode.DataOnly ? null : new sbyte[numRows];
+      var nullsAsSbytes = new sbyte[numRows];
       _nativeImpl(table, columnIndex, data, nullsAsSbytes, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
 
@@ -41,7 +40,7 @@ internal abstract class ColumnFactory<TTableType> {
     public override (Array, bool[]?) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows, ColumnFactoryMode mode) {
       var intermediate = new sbyte[numRows];
-      var nullsAsSbytes = mode == ColumnFactoryMode.DataOnly ? null : new sbyte[numRows];
+      var nullsAsSbytes = new sbyte[numRows];
       _nativeImpl(table, columnIndex, intermediate, nullsAsSbytes, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
       var data = new bool[numRows];
@@ -60,7 +59,7 @@ internal abstract class ColumnFactory<TTableType> {
     public override (Array, bool[]?) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows, ColumnFactoryMode mode) {
       var intermediate = new Int64[numRows];
-      var nullsAsSbytes = mode == ColumnFactoryMode.DataOnly ? null : new sbyte[numRows];
+      var nullsAsSbytes = new sbyte[numRows];
       _nativeImpl(table, columnIndex, intermediate, nullsAsSbytes, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
       var data = new DateTime[numRows];
@@ -73,10 +72,6 @@ internal abstract class ColumnFactory<TTableType> {
   }
 
   private static (Array, bool[]?) Adapt<T>(T[] data, sbyte[]? nullsAsSbytes, ColumnFactoryMode mode) {
-    if (mode == ColumnFactoryMode.DataOnly) {
-      return (data, null);
-    }
-
     var numRows = data.Length;
 
     if (mode == ColumnFactoryMode.DataAndNullArray) {
@@ -88,7 +83,10 @@ internal abstract class ColumnFactory<TTableType> {
       return (data, nulls);
     }
 
-    // mode == Mode.ArrayOfNullables
+    if (mode != ColumnFactoryMode.ArrayOfNullables) {
+      throw new ArgumentException($"Unexpected mode {mode}");
+    }
+
     var nullableData = new T?[numRows];
     for (Int64 i = 0; i != numRows; ++i) {
       if (nullsAsSbytes![i] != 0) {
