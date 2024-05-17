@@ -1,5 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
+using System.Reflection;
 
 namespace Deephaven.DeephavenClient.Utility;
 
@@ -47,22 +48,12 @@ internal abstract class ColumnFactory<TTableType> {
 
     public override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
-      var intermediate = new sbyte[numRows];
-      var nullsAsSbytes = new sbyte[numRows];
-      _nativeImpl(table, columnIndex, intermediate, nullsAsSbytes, numRows, out var errorStatus);
-      errorStatus.OkOrThrow();
-      var data = new bool[numRows];
-      var nulls = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        data[i] = intermediate[i] != 0;
-        nulls[i] = nullsAsSbytes[i] != 0;
-      }
-      return (data, nulls);
+      return GetColumnInternal(table, columnIndex, numRows);
     }
 
     public override (Array, bool[]) GetNullableColumn(NativePtr<TTableType> table, int columnIndex, long numRows) {
-      var (data, bools) = GetColumnInternal(table, columnIndex, numRows);
-      return Adapt(data, bools);
+      var (data, nulls) = GetColumnInternal(table, columnIndex, numRows);
+      return (ConvertToNullable(data), nulls);
     }
 
     private (bool[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
@@ -79,7 +70,6 @@ internal abstract class ColumnFactory<TTableType> {
       }
       return (data, nulls);
     }
-
   }
 
   public sealed class ForDateTime : ColumnFactory<TTableType> {
@@ -128,34 +118,33 @@ internal abstract class ColumnFactory<TTableType> {
     }
 
     public override (Array, bool[]) GetNullableColumn(NativePtr<TTableType> table, int columnIndex, long numRows) {
-      var (data, bools) = GetColumn(table, columnIndex, numRows);
-      return Adapt(data, bools);
+      var (data, bools) = GetColumnInternal(table, columnIndex, numRows);
+      return (ConvertToNullable(data), bools);
+    }
+
+    private (T[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
+      Int64 numRows) {
+      var data = new T[numRows];
+      var nullsAsSbytes = new sbyte[numRows];
+      _nativeImpl(table, columnIndex, data, nullsAsSbytes, numRows, out var errorStatus);
+      errorStatus.OkOrThrow();
+      var nulls = new bool[numRows];
+      for (Int64 i = 0; i < numRows; ++i) {
+        nulls[i] = nullsAsSbytes[i] != 0;
+      }
+      return (data, nulls);
     }
   }
 
-  private static (Array, bool[]) Adapt<T>(T[] data, sbyte[] nullsAsSbytes) {
+  private static (T?[], bool[]) ConvertToNullable<T>(T[] data, bool[] nulls) where T : struct {
     var numRows = data.Length;
-
-    if (mode == ColumnFactoryMode.DataAndNullArray) {
-      var nulls = new bool[numRows];
-      for (Int64 i = 0; i != numRows; ++i) {
-        nulls[i] = nullsAsSbytes![i] != 0;
-      }
-
-      return (data, nulls);
-    }
-
-    if (mode != ColumnFactoryMode.ArrayOfNullables) {
-      throw new ArgumentException($"Unexpected mode {mode}");
-    }
-
-    var nullableData = new T?[numRows];
-    for (Int64 i = 0; i != numRows; ++i) {
-      if (nullsAsSbytes![i] == 0) {
-        nullableData[i] = data[i];
+    var result = new T?[numRows];
+    for (var i = 0; i != numRows; ++i) {
+      if (!nulls[i]) {
+        result[i] = data[i];
       }
     }
 
-    return (nullableData, null);
+    return (result, nulls);
   }
 }
