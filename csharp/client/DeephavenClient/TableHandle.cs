@@ -113,6 +113,13 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle By(AggregateCombo combo, string[] groupByColumns) {
+    // Aggregate and AggregateCombo are "lazy" in the sense that they are pure C#
+    // abstractions. We only 
+
+  }
+
+
   public void BindToVariable(string variable) {
     NativeTableHandle.deephaven_client_TableHandle_BindToVariable(Self, variable, out var status);
     status.OkOrThrow();

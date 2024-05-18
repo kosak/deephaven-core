@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.Interop;
 
-namespace Deephaven.CppClientInterop;
+namespace Deephaven.DeephavenClient;
 
 public class DurationSpecifier {
   internal NativePtr<NativeDurationSpecifier> Self;
