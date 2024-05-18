@@ -1090,7 +1090,7 @@ public:
    * A variadic form of By(std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns to UpdateView
+   * @param args Columns to group by
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
@@ -1107,7 +1107,7 @@ public:
    * A variadic form of By(AggregateCombo, std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns to UpdateView
+   * @param columnSpecs Columns to group by.
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
@@ -1129,7 +1129,7 @@ public:
    * A variadic form of MinBy(std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns to UpdateView
+   * @param columnSpecs Columns to group by.
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
@@ -1151,7 +1151,7 @@ public:
    * A variadic form of MaxBy(std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns
+   * @param args Columns to group by
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
@@ -1173,7 +1173,7 @@ public:
    * A variadic form of SumBy(std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns
+   * @param columnSpecs Columns to group by.
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
@@ -1195,7 +1195,7 @@ public:
    * A variadic form of AbsSumBy(std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns
+   * @param args Columns to group by.
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
@@ -1217,7 +1217,7 @@ public:
    * A variadic form of VarBy(std::vector<std::string>) const that takes a combination of
    * argument types.
    * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The columns
+   * @param args The columns to group by
    * @return A TableHandle referencing the new table
    */
   template<typename ...Args>
