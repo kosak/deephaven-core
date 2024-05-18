@@ -40,7 +40,7 @@ internal abstract class ColumnFactory<TTableType> {
     }
   }
 
-  public abstract class ColumnFactoryForValueTypes<T> : ColumnFactory<TTableType> {
+  public abstract class ColumnFactoryForValueTypes<T> : ColumnFactory<TTableType> where T : struct {
     public sealed override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
       return GetColumnInternal(table, columnIndex, numRows);

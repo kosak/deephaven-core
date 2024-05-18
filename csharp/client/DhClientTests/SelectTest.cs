@@ -364,11 +364,11 @@ public class SelectTest {
     var result = source.SelectDistinct("A");
     _output.WriteLine(result.ToString(true));
 
-    var expectedData = new[] { "apple", "orange", "plum", "grape" };
+    var expectedAData = new[] { "apple", "orange", "plum", "grape" };
 
     var tc = new TableComparer();
-    tc.AddColumn("A", expectedData);
-    tc.AssertEqualTo(source);
+    tc.AddColumn("A", expectedAData);
+    tc.AssertEqualTo(result);
   }
 
   private static bool TryCompareEnumerables(IEnumerable expected, IEnumerable actual, out string failureReason) {
