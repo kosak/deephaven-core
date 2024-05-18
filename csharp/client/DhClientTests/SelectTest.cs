@@ -1,15 +1,8 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Utility;
 using Xunit.Abstractions;
-using Xunit.Sdk;
-using System.Xml.Linq;
-using Microsoft.VisualBasic;
 
 namespace Deephaven.DhClientTests;
 
@@ -89,7 +82,8 @@ public class SelectTest {
     var doubleData = new[] { 0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9 };
     var stringData = new[] {
       "zero", "one", "two", "three", "four", "five", "six", "seven",
-      "eight", "nine"};
+      "eight", "nine"
+    };
 
     using var maker = new TableMaker();
     maker.AddColumn("IntValue", intData);
@@ -120,11 +114,11 @@ public class SelectTest {
     var table = ctx.TestTable;
 
     var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
-        .Select("Ticker", "Close", "Volume")
-        .Head(2);
+      .Select("Ticker", "Close", "Volume")
+      .Head(2);
 
-    var tickerData = new[] { "AAPL", "AAPL"};
-    var closeData = new [] { 23.5, 24.2 };
+    var tickerData = new[] { "AAPL", "AAPL" };
+    var closeData = new[] { 23.5, 24.2 };
     var volData = new Int64[] { 100000, 250000 };
 
     var tc = new TableComparer();
@@ -140,11 +134,11 @@ public class SelectTest {
     var table = ctx.TestTable;
 
     var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
-        .LastBy("Ticker")
-        .Select("Ticker", "Close", "Volume");
+      .LastBy("Ticker")
+      .Select("Ticker", "Close", "Volume");
     _output.WriteLine(t1.ToString(true));
 
-    var tickerData = new[] { "AAPL"};
+    var tickerData = new[] { "AAPL" };
     var closeData = new[] { 26.7 };
     var volData = new Int64[] { 19000 };
 
@@ -162,9 +156,9 @@ public class SelectTest {
 
     // A formula expression
     var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
-        .Select("MV1 = Volume * Close", "V_plus_12 = Volume + 12");
+      .Select("MV1 = Volume * Close", "V_plus_12 = Volume + 12");
 
-    var mv1Data = new double[]{ 2350000, 6050000, 507300 };
+    var mv1Data = new double[] { 2350000, 6050000, 507300 };
     var vp2Data = new long[] { 100012, 250012, 19012 };
 
     var tc = new TableComparer();
@@ -190,9 +184,9 @@ public class SelectTest {
     var updated = table.Update("QQQ = i");
 
     var t1 = updated.Where("ImportDate == `2017-11-01` && Ticker == `IBM`")
-        .Select("Ticker", "Volume");
+      .Select("Ticker", "Volume");
 
-    var tickerData = new[] { "IBM"};
+    var tickerData = new[] { "IBM" };
     var volData = new Int64[] { 138000 };
 
     var tc = new TableComparer();
@@ -207,11 +201,11 @@ public class SelectTest {
     var table = ctx.TestTable;
 
     var t1 = table.Where(
-            "ImportDate == `2017-11-01` && Ticker == `AAPL` && Volume % 10 == Volume % 100")
-        .Select("Ticker", "Volume");
+        "ImportDate == `2017-11-01` && Ticker == `AAPL` && Volume % 10 == Volume % 100")
+      .Select("Ticker", "Volume");
     _output.WriteLine(t1.ToString(true));
 
-    var tickerData = new[] { "AAPL", "AAPL", "AAPL"};
+    var tickerData = new[] { "AAPL", "AAPL", "AAPL" };
     var volData = new Int64[] { 100000, 250000, 19000 };
 
     var tc = new TableComparer();
@@ -296,59 +290,6 @@ public class SelectTest {
     tc.AssertEqualTo(result);
   }
 
-  class TableComparer {
-    private readonly Dictionary<string, IEnumerable> _columns = new();
-    private Int64 _numRows = 0;
-
-    public void AddColumn<T>(string name, IList<T> data, bool[]? nulls = null) {
-      var nullableData = new T?[data.Count];
-      for (var i = 0; i < data.Count; ++i) {
-        if (nulls == null || !nulls[i]) {
-          nullableData[i] = data[i];
-        }
-      }
-      AddNullableColumn(name, nullableData);
-    }
-
-    public void AddNullableColumn<T>(string name, IList<T?> data) {
-      if (_columns.Count == 0) {
-        _numRows = data.Count;
-      } else {
-        if (_numRows != data.Count) {
-          throw new ArgumentException($"Columns have inconsistent size: {_numRows} vs {data.Count}");
-        }
-      }
-
-      if (!_columns.TryAdd(name, data)) {
-        throw new ArgumentException($"Can't add duplicate column name \"{name}\"");
-      }
-
-    }
-
-    public void AssertEqualTo(TableHandle table) {
-      if (_columns.Count == 0) {
-        throw new Exception("TableComparer doesn't have any columns");
-      }
-
-      if (_columns.Count != table.Schema.NumCols) {
-        throw new Exception($"Expected number of columns is {_columns.Count}. Actual is {table.Schema.NumCols}");
-      }
-
-      var clientTable = table.ToClientTable();
-
-      foreach (var (name, expectedColumn) in _columns) {
-        if (!clientTable.Schema.TryGetColumnIndex(name, out var actualColIndex)) {
-          throw new Exception($"Expected table has column named \"{name}\". Actual does not.");
-        }
-
-        var actualColumn = clientTable.GetNullableColumn(actualColIndex);
-        if (!TryCompareEnumerables(expectedColumn, actualColumn, out var failureReason)) {
-          throw new Exception($"While comparing column \"{name}\": {failureReason}");
-        }
-      }
-    }
-  }
-
   [Fact]
   public void TestSelectDistinct() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -369,57 +310,5 @@ public class SelectTest {
     var tc = new TableComparer();
     tc.AddColumn("A", expectedAData);
     tc.AssertEqualTo(result);
-  }
-
-  private static bool TryCompareEnumerables(IEnumerable expected, IEnumerable actual, out string failureReason) {
-    var nextIndex = 0;
-    var actualEnum = actual.GetEnumerator();
-    try {
-      foreach (var expectedItem in expected) {
-        if (!actualEnum.MoveNext()) {
-          failureReason = $"expected has more elements than actual, which has only {nextIndex} elements";
-          return false;
-        }
-
-        var actualItem = actualEnum.Current;
-        if (!object.Equals(expectedItem, actualItem)) {
-          failureReason = $"Row {nextIndex}: expected is {ExplicitToString(expectedItem)}, actual is {ExplicitToString(actualItem)}";
-          return false;
-        }
-
-        ++nextIndex;
-      }
-
-      if (actualEnum.MoveNext()) {
-        failureReason = $"Actual has more elements than expected, which has only {nextIndex} elements";
-        return false;
-      }
-
-      failureReason = "";
-      return true;
-    } finally {
-      if (actualEnum is IDisposable id) {
-        id.Dispose();
-      }
-    }
-  }
-
-  private static string? ExplicitToString(object? item) {
-    if (item == null) {
-      return "[null]";
-    }
-
-    return $"{item}[{item.GetType().Name}]";
-  }
-
-  private static string EnumerableToString(IEnumerable enumerable) {
-    var sw = new StringWriter();
-    var comma = "";
-    foreach (var item in enumerable) {
-      sw.Write(comma);
-      sw.Write(item);
-      comma = ", ";
-    }
-    return sw.ToString();
   }
 }

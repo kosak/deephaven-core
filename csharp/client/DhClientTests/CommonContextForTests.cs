@@ -14,8 +14,8 @@ namespace Deephaven.DhClientTests;
 public sealed class CommonContextForTests : IDisposable {
   public readonly Client Client;
   public readonly TableHandle TestTable;
-  private readonly ColumnNamesForTests cn;
-  private readonly ColumnDataForTests cd;
+  public readonly ColumnNamesForTests ColumnNames;
+  public readonly ColumnDataForTests ColumnData;
 
   public static CommonContextForTests Create(ClientOptions options) {
     var client = CreateClient(options);
@@ -39,8 +39,8 @@ public sealed class CommonContextForTests : IDisposable {
     ColumnNamesForTests cn, ColumnDataForTests cd) {
     Client = client;
     TestTable = testTable;
-    this.cn = cn;
-    this.cd = cd;
+    ColumnNames = cn;
+    ColumnData = cd;
   }
 
   public void Dispose() {
