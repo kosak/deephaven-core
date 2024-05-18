@@ -42,7 +42,7 @@ public struct NativePtr<T> {
 
   public NativePtr(IntPtr ptr) => this.ptr = ptr;
 
-  public bool IsNull => ptr != IntPtr.Zero;
+  public readonly bool IsNull => ptr != IntPtr.Zero;
 
   public NativePtr<T> Release() {
     var result = new NativePtr<T>(ptr);
@@ -55,13 +55,13 @@ public struct NativePtr<T> {
 public struct ErrorStatus {
   public string error;
 
-  public void OkOrThrow() {
+  public readonly void OkOrThrow() {
     if (error != null) {
       throw new Exception(error);
     }
   }
 
-  public T Unwrap<T>(T item) {
+  public readonly T Unwrap<T>(T item) {
     OkOrThrow();
     return item;
   }
