@@ -51,17 +51,10 @@ class TableComparer {
   private readonly Dictionary<string, IEnumerable> _columns = new();
   private Int64 _numRows = 0;
 
-  public void AddColumn<T>(string name, IList<T> data, bool[]? nulls = null) {
-    var nullableData = new T?[data.Count];
-    for (var i = 0; i < data.Count; ++i) {
-      if (nulls == null || !nulls[i]) {
-        nullableData[i] = data[i];
-      }
-    }
-    AddNullableColumn(name, nullableData);
-  }
-
-  public void AddNullableColumn<T>(string name, IList<T?> data) {
+  /// <summary>
+  /// T can be a primitive type, Nullable&lt;T&gt; or string
+  /// </summary>
+  public void AddColumn<T>(string name, IList<T> data) {
     if (_columns.Count == 0) {
       _numRows = data.Count;
     } else {
@@ -73,7 +66,16 @@ class TableComparer {
     if (!_columns.TryAdd(name, data)) {
       throw new ArgumentException($"Can't add duplicate column name \"{name}\"");
     }
+  }
 
+  public void AddColumnWithNulls<T>(string name, IList<T> data, bool[]? nulls) where T : struct {
+    var nullableData = new T?[data.Count];
+    for (var i = 0; i < data.Count; ++i) {
+      if (nulls == null || !nulls[i]) {
+        nullableData[i] = data[i];
+      }
+    }
+    AddColumn(name, nullableData);
   }
 
   public void AssertEqualTo(TableHandle table) {

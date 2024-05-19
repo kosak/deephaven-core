@@ -256,10 +256,10 @@ public class SelectTest {
     var codeExpected = new Int32?[] { 12, 13, null, null };
 
     var expected = new TableComparer();
-    expected.AddNullableColumn("Letter", letterExpected);
-    expected.AddNullableColumn("Number", numberExpected);
-    expected.AddNullableColumn("Color", colorExpected);
-    expected.AddNullableColumn("Code", codeExpected);
+    expected.AddColumn("Letter", letterExpected);
+    expected.AddColumn("Number", numberExpected);
+    expected.AddColumn("Color", colorExpected);
+    expected.AddColumn("Code", codeExpected);
 
     expected.AssertEqualTo(result);
   }
