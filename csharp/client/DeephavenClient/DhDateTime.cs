@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Deephaven.DeephavenClient;
 
@@ -12,6 +8,11 @@ namespace Deephaven.DeephavenClient;
 /// </summary>
 public class DhDateTime {
   public readonly Int64 Nanos;
+
+  public DhDateTime(int year, int month, int day, int hour, int minute = 0, int second = 0, int nanos = 0) {
+    var ts = new DateTime(year, month, day, hour, minute, second) - DateTime.UnixEpoch;
+    Nanos = (Int64)ts.TotalNanoseconds + nanos;
+  }
 
   public DhDateTime(Int64 nanos) => Nanos = nanos;
 
