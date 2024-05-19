@@ -22,7 +22,7 @@ public class AggregatesTest {
     var zngaTable = table.Where("Ticker == `ZNGA`");
 
     var aggTable = zngaTable.View("Close")
-      .By(AggregateCombo.Create(new[] {
+      .By(new AggregateCombo(new[] {
         Aggregate.Avg(new []{"AvgClose=Close"}),
         Aggregate.Sum(new []{"SumClose=Close"}),
         Aggregate.Min(new [] {"MinClose=Close"}),
