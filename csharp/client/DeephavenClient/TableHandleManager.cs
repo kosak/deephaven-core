@@ -21,6 +21,14 @@ public sealed class TableHandleManager : IDisposable {
     GC.SuppressFinalize(this);
   }
 
+  private void ReleaseUnmanagedResources() {
+    var temp = Self.Release();
+    if (temp.IsNull) {
+      return;
+    }
+    NativeTableHandleManager.deephaven_client_TableHandleManager_dtor(temp);
+  }
+
   public TableHandle EmptyTable(Int64 size) {
     NativeTableHandleManager.deephaven_client_TableHandleManager_EmptyTable(Self, size,
       out var result, out var status);
@@ -65,14 +73,6 @@ public sealed class TableHandleManager : IDisposable {
 
   internal void RemoveSubscription(SubscriptionHandle handle) {
     _subscriptions.Remove(handle);
-  }
-
-  private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
-      return;
-    }
-    NativeTableHandleManager.deephaven_client_TableHandleManager_dtor(temp);
   }
 }
 

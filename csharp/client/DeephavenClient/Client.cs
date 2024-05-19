@@ -26,6 +26,10 @@ public class Client : IDisposable {
     ReleaseUnmanagedResources();
   }
 
+  public void Close() {
+    Dispose();
+  }
+
   public void Dispose() {
     ReleaseUnmanagedResources();
     GC.SuppressFinalize(this);
