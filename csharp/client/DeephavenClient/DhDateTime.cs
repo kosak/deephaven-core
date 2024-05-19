@@ -1,4 +1,5 @@
 ﻿using System;
+using Deephaven.DeephavenClient.Utility;
 
 namespace Deephaven.DeephavenClient;
 
@@ -14,7 +15,9 @@ public class DhDateTime {
     Nanos = (Int64)ts.TotalNanoseconds + nanos;
   }
 
-  public DhDateTime(Int64 nanos) => Nanos = nanos;
+  public DhDateTime(Int64 nanos) {
+    Nanos = nanos == DeephavenConstants.NullLong ? 0 : nanos;
+  }
 
   public DateTime DateTime => DateTime.UnixEpoch.AddTicks(Nanos / 100);
 }
