@@ -54,7 +54,7 @@ public sealed class TableHandleManager : IDisposable {
     return new TableHandle(result, this);
   }
 
-  public TableHandle InputTable(TableHandle initialTable, string[] keyColumns) {
+  public TableHandle InputTable(TableHandle initialTable, params string[] keyColumns) {
     NativeTableHandleManager.deephaven_client_TableHandleManager_InputTable(Self, initialTable.Self,
       keyColumns, keyColumns.Length, out var result, out var status);
     status.OkOrThrow();
