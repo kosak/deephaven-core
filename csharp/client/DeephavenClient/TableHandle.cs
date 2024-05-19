@@ -233,14 +233,14 @@ internal class NativeTableHandle {
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_WhereIn(NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> filterTable,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
+    [In] string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_By(NativePtr<NativeTableHandle> self,
     NativePtr<NativeAggregateCombo> aggregateCombo,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
+    [In] string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_DropColumns(NativePtr<NativeTableHandle> self,
