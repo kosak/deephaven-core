@@ -99,7 +99,7 @@ public:
     }
 
     for (int64_t i = 0; i != size_; ++i) {
-      interop_bools_[i] = real_bools_[i] ? InteropBool::kTrue : InteropBool::kFalse;
+      interop_bools_[i] = InteropBool(real_bools_[i]);
     }
   }
 
@@ -280,7 +280,7 @@ void deephaven_client_TableHandleManager_TimeTable(const TableHandleManager *sel
     TableHandle **result,
     ErrorStatus *status) {
   status->Run([=]() {
-    auto table = self->TimeTable(*period, *start_time, blink_table != InteropBool::kFalse);
+    auto table = self->TimeTable(*period, *start_time, (bool)blink_table);
     *result = new TableHandle(std::move(table));
   });
 }

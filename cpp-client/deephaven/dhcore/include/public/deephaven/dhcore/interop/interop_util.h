@@ -180,12 +180,15 @@ struct NativePtr {
 /**
  * Not safe to pass .NET bool to interop: use int8_t (aka .NET sbyte) instead.
  */
-struct InteropBool {
+class InteropBool {
+public:
+  explicit InteropBool(bool value) : value_(value ? 1 : 0) {}
+
   explicit operator bool() const { return value_ != 0; }
 
-  int8_t value_;
+private:
+  int8_t value_ = 0;
 };
-enum class InteropBool : int8_t { kFalse, kTrue };
 
 class ErrorStatus {
 public:
