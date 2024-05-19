@@ -484,6 +484,22 @@ void deephaven_client_TableHandle_WhereIn(TableHandle *self,
   });
 }
 
+void deephaven_client_TableHandle_AddTable(TableHandle *self,
+    TableHandle *table_to_add,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    self->AddTable(*table_to_add);
+  });
+}
+
+void deephaven_client_TableHandle_RemoveTable(TableHandle *self,
+    TableHandle *table_to_remove,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    self->RemoveTable(*table_to_remove);
+  });
+}
+
 void deephaven_client_TableHandle_By(TableHandle *self,
     const AggregateCombo *combo,
     const char16_t **column_specs, int64_t num_column_specs,

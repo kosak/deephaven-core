@@ -150,6 +150,14 @@ void deephaven_client_TableHandle_WhereIn(deephaven::client::TableHandle *self,
     deephaven::client::TableHandle **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_AddTable(deephaven::client::TableHandle *self,
+    deephaven::client::TableHandle *table_to_add,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_RemoveTable(deephaven::client::TableHandle *self,
+    deephaven::client::TableHandle *table_to_remove,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_By(deephaven::client::TableHandle *self,
     const deephaven::client::AggregateCombo *aggregate_combo,
     const char16_t **column_specs, int64_t num_column_specs,
