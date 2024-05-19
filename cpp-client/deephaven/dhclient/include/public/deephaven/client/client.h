@@ -1906,5 +1906,3 @@ private:
 };
 }  // namespace internal
 }  // namespace deephaven::client
-
-// kosak test
