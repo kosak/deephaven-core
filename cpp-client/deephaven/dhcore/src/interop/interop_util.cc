@@ -56,12 +56,12 @@ void PlatformUtf16::CreateBulk(const std::u16string *strings, size_t num_strings
   for (size_t i = 0; i != num_strings; ++i) {
     u16_ptrs.push_back(strings[i].data());
   }
-  AllocatorHelper()(u16_ptrs.data(), results, num_strings);
+  AllocatorHelper()(u16_ptrs.data(), results, static_cast<int32_t>(num_strings));
 }
 
 void PlatformUtf16::CreateBulk(const char16_t **strings, size_t num_strings,
     const deephaven::dhcore::interop::PlatformUtf16 **results) {
-  AllocatorHelper()(strings, results, num_strings);
+  AllocatorHelper()(strings, results, static_cast<int32_t>(num_strings));
 }
 }  // namespace deephaven::dhcore::interop
 
