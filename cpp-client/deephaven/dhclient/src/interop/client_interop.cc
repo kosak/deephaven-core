@@ -15,6 +15,7 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
+using deephaven::client::Aggregate;
 using deephaven::client::Client;
 using deephaven::client::ClientOptions;
 using deephaven::client::TableHandle;
@@ -764,6 +765,138 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWra
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i].Nanos();
     }
+  });
+}
+
+void deephaven_client_Aggregate_dtor(Aggregate *self) {
+  delete self;
+}
+
+void deephaven_client_Aggregate_AbsSum(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::AbsSum(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Group(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Group(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Avg(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Avg(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Count(
+    const char16_t *column,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    Utf16Converter converter;
+    *result = new Aggregate(Aggregate::Count(converter.to_bytes(column)));
+  });
+}
+
+void deephaven_client_Aggregate_First(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::First(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Last(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Last(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Max(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Max(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Med(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Med(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Min(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Min(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Pct(
+    double percentile, InteropBool avg_median,
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Pct(percentile, (bool)avg_median, std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Std(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Std(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Sum(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Sum(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_Var(
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::Var(std::move(cols)));
+  });
+}
+
+void deephaven_client_Aggregate_WAvg(const char16_t *weight,
+    const char16_t **columns, int32_t num_columns,
+    Aggregate **result, ErrorStatus *status) {
+  status->Run([=]() {
+    Utf16Converter converter;
+    auto cols = MakeStringVec(columns, num_columns);
+    *result = new Aggregate(Aggregate::WAvg(converter.to_bytes(weight), std::move(cols)));
   });
 }
 

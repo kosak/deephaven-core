@@ -654,11 +654,12 @@ public:
    * @param args The arguments to WAvg
    * @return An Aggregate object representing the aggregation
    */
-  template<typename ...Args>
+  template<typename WeightArg, typename ...Args>
   [[nodiscard]]
-  static Aggregate WAvg(Args &&...args) {
+  static Aggregate WAvg(WeightArg &&weight_column, Args &&...args) {
+    auto weight = internal::ConvertToString::ToString(std::forward<WeightArg>(weight));
     std::vector<std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-    return WAvg(std::move(vec));
+    return WAvg(std::move(weight), std::move(vec));
   }
 
   /**
