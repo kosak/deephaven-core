@@ -44,10 +44,6 @@ public class Aggregate {
     return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_Min);
   }
 
-  public static Aggregate Pct(IEnumerable<string> columnSpecs) {
-    return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_Pct);
-  }
-
   public static Aggregate Std(IEnumerable<string> columnSpecs) {
     return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_Std);
   }
@@ -67,6 +63,14 @@ public class Aggregate {
   public static Aggregate Count(string columnSpec) {
     LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       NativeAggregate.deephaven_client_Aggregate_Count(columnSpec, out result, out status);
+    return new Aggregate(lazyInvoker);
+  }
+
+  public static Aggregate Pct(double percentile, bool avgMedian, IEnumerable<string> columnSpecs) {
+    var cols = columnSpecs.ToArray();
+    LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
+      NativeAggregate.deephaven_client_Aggregate_Pct(percentile, (InteropBool)avgMedian,
+        cols, cols.Length, out result, out status);
     return new Aggregate(lazyInvoker);
   }
 

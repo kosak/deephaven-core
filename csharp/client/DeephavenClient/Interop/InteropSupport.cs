@@ -52,12 +52,19 @@ public struct NativePtr<T> {
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-public struct InteropBool {
-  private sbyte _value;
+public struct InteropBool : IEquatable<InteropBool> {
+  private readonly sbyte _value;
 
   public InteropBool(bool value) { _value = value ? (sbyte)1 : (sbyte)0; }
 
-  readonly bool Value => _value != 0;
+  public readonly bool BoolValue => _value != 0;
+
+  public bool Equals(InteropBool other) {
+    return _value == other._value;
+  }
+
+  public static explicit operator bool(InteropBool ib) => ib.BoolValue;
+  public static explicit operator InteropBool(bool b) => new(b);
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

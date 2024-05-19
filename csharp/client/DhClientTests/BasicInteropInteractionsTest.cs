@@ -1,10 +1,11 @@
-﻿using System.Net.WebSockets;
+﻿using System.ComponentModel;
+using System.Net.WebSockets;
 using Deephaven.DeephavenClient.Interop;
 
 namespace Deephaven.DhClientTests;
 
-public class BasicInteropTest {
-  public BasicInteropTest() {
+public class BasicInteropInteractionsTest {
+  public BasicInteropInteractionsTest() {
     PlatformUtf16.Init();
   }
 
@@ -39,12 +40,23 @@ public class BasicInteropTest {
   }
 
   [Fact]
-  public void TestArrayElementConcat() {
-    var data = new[] { "a", "b", "c", "d", "e" };
-    var result = new string[5];
-    var expectedResult = new[] { "a🦷", "b🦷", "c🦷", "d🦷", "e🦷" };
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(data, data.Length, "🦷", result);
+  public void TestCompare() {
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Compare(4, 7, out var result1);
+    Assert.True((bool)result1);
 
-    Assert.Equal(expectedResult, result);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Compare(7, 4, out var result2);
+    Assert.False((bool)result2);
+  }
+
+  [Fact]
+  public void TestCompareArrays() {
+    const int length = 3;
+    var data1 = new Int32[length] { -3, 8, 55 };
+    var data2 = new Int32[length] { -7, 10, 100 };
+    var results = new InteropBool[length];
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Compare_Array(data1, data2, length, results);
+
+    var expectedResults = new InteropBool[length] { (InteropBool)false, (InteropBool)true, (InteropBool)false };
+    Assert.Equal(expectedResults, results);
   }
 }
