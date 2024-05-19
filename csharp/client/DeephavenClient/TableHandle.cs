@@ -8,13 +8,16 @@ public sealed class TableHandle : IDisposable {
   internal NativePtr<NativeTableHandle> Self;
   public TableHandleManager Manager;
   public Schema Schema;
+  public readonly Int32 NumRows;
+  public readonly Int64 NumCols;
+  public readonly bool IsStatic;
 
   internal TableHandle(NativePtr<NativeTableHandle> self, TableHandleManager manager) {
     Self = self;
     Manager = manager;
 
-    NativeTableHandle.deephaven_client_TableHandle_GetDimensions(Self,
-      out var numColumns, out var numRows, out var status1);
+    NativeTableHandle.deephaven_client_TableHandle_GetAttributes(Self,
+      out var numColumns, out var numRows, out InteropBool isStatic, out var status1);
     status1.OkOrThrow();
 
     var columnNames = new string[numColumns];
@@ -194,8 +197,9 @@ internal class NativeTableHandle {
   internal static extern void deephaven_client_TableHandle_dtor(NativePtr<NativeTableHandle> self);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandle_GetDimensions(
-    NativePtr<NativeTableHandle> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatus status);
+  public static extern void deephaven_client_TableHandle_GetAttributes(
+    NativePtr<NativeTableHandle> self, out Int32 numColumns, out Int64 numRows,
+    out InteropBool isStatic, out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_GetSchema(
