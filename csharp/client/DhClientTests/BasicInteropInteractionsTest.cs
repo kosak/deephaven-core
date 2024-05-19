@@ -89,11 +89,11 @@ public class BasicInteropInteractionsTest {
       expectedResult[i] = prefixes[i] + suffixes[i];
     }
 
-    var resultHandles = new StringPoolHandle[numItems];
+    var resultHandles = new StringHandle[numItems];
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ConcatArrays(
       prefixes, suffixes, numItems, resultHandles, out var poolHandle);
     var pool = poolHandle.ImportAndDestroy();
-    var actualResult = resultHandles.Select(h => pool.Get(h)).ToArray();
+    var actualResult = resultHandles.Select(pool.Get).ToArray();
     Assert.Equal(expectedResult, actualResult);
   }
 

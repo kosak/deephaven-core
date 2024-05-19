@@ -3,13 +3,24 @@ using System.Runtime.InteropServices;
 
 namespace Deephaven.DeephavenClient.Interop;
 
-public class BasicInteropInteractions {
+public partial class BasicInteropInteractions {
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_Add(Int32 a, Int32 b, out Int32 result);
 
-  [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_Concat(string a, string b,
-    out string result);
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_dhcore_basicInteropInteractions_Concat(string a, string b,
+    out StringHandle resultHandle, out StringPoolHandle resultPoolHandle);
+
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_dhcore_basicInteropInteractions_ConcatArrays(
+    [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
+    string[] a,
+    [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
+    string[] b,
+    Int32 size,
+    [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
+    string[] resultHandles123,
+    out StringPoolHandle resultPoolHandle);
 
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   public struct BasicStruct {
