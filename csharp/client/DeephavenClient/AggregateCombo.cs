@@ -22,7 +22,7 @@ internal class InternalAggregateCombo : IDisposable {
     try {
       // Invoke the lazy method on the aggregate to get its C++ wrapper
       foreach (var agg in aggregates) {
-        internalAggregates.Add(agg.Invoke());
+        internalAggregates.Add(agg.Materialize());
       }
 
       var internalAggPtrs = internalAggregates.Select(ag => ag.Self).ToArray();

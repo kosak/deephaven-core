@@ -10,7 +10,7 @@ public class Aggregate {
     [In] string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-  private delegate void LazyInvoker(out NativePtr<NativeAggregate> result, out ErrorStatus status);
+  private delegate void LazyMaterializer(out NativePtr<NativeAggregate> result, out ErrorStatus status);
 
   public static Aggregate AbsSum(IEnumerable<string> columnSpecs) {
     return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_AbsSum);
@@ -61,17 +61,17 @@ public class Aggregate {
   }
 
   public static Aggregate Count(string columnSpec) {
-    LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
+    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       NativeAggregate.deephaven_client_Aggregate_Count(columnSpec, out result, out status);
-    return new Aggregate(lazyInvoker);
+    return new Aggregate(lazyMaterializer);
   }
 
   public static Aggregate Pct(double percentile, bool avgMedian, IEnumerable<string> columnSpecs) {
     var cols = columnSpecs.ToArray();
-    LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
+    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       NativeAggregate.deephaven_client_Aggregate_Pct(percentile, (InteropBool)avgMedian,
         cols, cols.Length, out result, out status);
-    return new Aggregate(lazyInvoker);
+    return new Aggregate(lazyMaterializer);
   }
 
   /// <summary>
@@ -81,18 +81,18 @@ public class Aggregate {
   private static Aggregate CreateHelper(IEnumerable<string> columnSpecs, AggregateMethod aggregateMethod) {
     var cs = columnSpecs.ToArray();
 
-    LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
+    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       aggregateMethod(cs, cs.Length, out result, out status);
 
-    return new Aggregate(lazyInvoker);
+    return new Aggregate(lazyMaterializer);
   }
 
-  private readonly LazyInvoker _lazyInvoker;
+  private readonly LazyMaterializer _lazyMaterializer;
 
-  private Aggregate(LazyInvoker lazyInvoker) => _lazyInvoker = lazyInvoker;
+  private Aggregate(LazyMaterializer lazyMaterializer) => _lazyMaterializer = lazyMaterializer;
 
-  internal InternalAggregate Invoke() {
-    _lazyInvoker(out var result, out var status);
+  internal InternalAggregate Materialize() {
+    _lazyMaterializer(out var result, out var status);
     status.OkOrThrow();
     return new InternalAggregate(result);
   }
