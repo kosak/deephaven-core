@@ -3,6 +3,7 @@
 
 #include <string>
 
+using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::utility::MakeReservedVector;
@@ -53,5 +54,16 @@ void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
     values.push_back(std::u16string(data[i]) + to_append);
   }
   PlatformUtf16::CreateBulk(values.data(), values.size(), result);
+}
+
+void deephaven_dhcore_basicInteropInteractions_Less(int32_t a, int32_t b, InteropBool *result) {
+  *result = InteropBool(a < b);
+}
+
+void deephaven_dhcore_basicInteropInteractions_Less_Array(const int32_t *a, const int32_t *b,
+    int32_t length, InteropBool *results) {
+  for (int32_t i = 0; i != length; ++i) {
+    results[i] = InteropBool(a[i] < b[i]);
+  }
 }
 }  // extern "C"
