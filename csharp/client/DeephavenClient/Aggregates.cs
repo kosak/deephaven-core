@@ -5,6 +5,13 @@ using Deephaven.DeephavenClient.Interop;
 namespace Deephaven.DeephavenClient;
 
 public class Aggregate {
+  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+  private delegate void AggregateMethod(
+    [In] string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
+
+  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+  private delegate void LazyInvoker(out NativePtr<NativeAggregate> result, out ErrorStatus status);
+
   public static Aggregate AbsSum(IEnumerable<string> columnSpecs) {
     return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_AbsSum);
   }
@@ -57,6 +64,12 @@ public class Aggregate {
     return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_WAvg);
   }
 
+  public static Aggregate Count(string columnSpec) {
+    LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
+      NativeAggregate.deephaven_client_Aggregate_Count(columnSpec, out result, out status);
+    return new Aggregate(lazyInvoker);
+  }
+
   /// <summary>
   /// Helper method for all the Aggregate functions except Count, which is special because
   /// it takes a string rather than an IEnumerable&lt;string&gt;
@@ -70,77 +83,25 @@ public class Aggregate {
     return new Aggregate(lazyInvoker);
   }
 
-  public static Aggregate Count(string columnSpec) {
-    LazyInvoker lazyInvoker = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
-      NativeAggregate.deephaven_client_Aggregate_Count(columnSpec, out result, out status);
-    return new Aggregate(lazyInvoker);
-  }
+  private readonly LazyInvoker _lazyInvoker;
 
+  private Aggregate(LazyInvoker lazyInvoker) => _lazyInvoker = lazyInvoker;
 
-  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-  private delegate void AggregateMethod(
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
-
-  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-  private delegate void LazyInvoker(out NativePtr<NativeAggregate> result, out ErrorStatus status);
-
-
-  private Aggregate(LazyInvoker lazyInvoker) {
-
+  internal InternalAggregate Invoke() {
+    _lazyInvoker(out var result, out var status);
+    status.OkOrThrow();
+    return new InternalAggregate(result);
   }
 
   internal NativePtr<NativeDurationSpecifier> Self;
-
-  public DurationSpecifier(Int64 nanos) {
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_nanos(nanos,
-      out var result, out var status);
-    status.OkOrThrow();
-    Self = result;
-  }
-
-  public DurationSpecifier(string duration) {
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_duration(duration,
-      out var result, out var status);
-    status.OkOrThrow();
-    Self = result;
-  }
-
-  ~DurationSpecifier() {
-    ReleaseUnmanagedResources();
-  }
-
-  public void Dispose() {
-    ReleaseUnmanagedResources();
-    GC.SuppressFinalize(this);
-  }
-
-  private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
-      return;
-    }
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_dtor(temp);
-  }
 }
 
 internal class InternalAggregate : IDisposable {
-  internal NativePtr<NativeDurationSpecifier> Self;
+  internal NativePtr<NativeAggregate> Self;
 
-  public DurationSpecifier(Int64 nanos) {
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_nanos(nanos,
-      out var result, out var status);
-    status.OkOrThrow();
-    Self = result;
-  }
+  internal InternalAggregate(NativePtr<NativeAggregate> self) => Self = self;
 
-  public DurationSpecifier(string duration) {
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_duration(duration,
-      out var result, out var status);
-    status.OkOrThrow();
-    Self = result;
-  }
-
-  ~DurationSpecifier() {
+  ~InternalAggregate() {
     ReleaseUnmanagedResources();
   }
 
@@ -154,12 +115,13 @@ internal class InternalAggregate : IDisposable {
     if (temp.IsNull) {
       return;
     }
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_dtor(temp);
+    NativeAggregate.deephaven_client_Aggregate_dtor(temp);
   }
 }
 
-
 internal class NativeAggregate {
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_client_Aggregate_dtor(NativePtr<NativeAggregate> self);
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_Aggregate_AbsSum(
     [In] string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
