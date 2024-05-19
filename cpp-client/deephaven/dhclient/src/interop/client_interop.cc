@@ -16,6 +16,7 @@
 #include "deephaven/third_party/fmt/format.h"
 
 using deephaven::client::Aggregate;
+using deephaven::client::AggregateCombo;
 using deephaven::client::Client;
 using deephaven::client::ClientOptions;
 using deephaven::client::TableHandle;
@@ -768,6 +769,20 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWra
   });
 }
 
+void deephaven_client_AggregateCombo_Create(
+    const Aggregate *aggregates, int32_t num_aggregates,
+    AggregateCombo **result, ErrorStatus *status) {
+  status->Run([=]() {
+    std::vector<Aggregate> agg_copies(aggregates, aggregates + num_aggregates);
+    auto ac = AggregateCombo::Create(std::move(agg_copies));
+    *result = new AggregateCombo(std::move(ac));
+  });
+}
+
+void deephaven_client_AggregateCombo_dtor(AggregateCombo *self) {
+  delete self;
+}
+
 void deephaven_client_Aggregate_dtor(Aggregate *self) {
   delete self;
 }
@@ -907,11 +922,11 @@ void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
   });
 }
 
-void deephaven_client_utility_DurationSpecifier_ctor_duration(const char16_t *duration,
+void deephaven_client_utility_DurationSpecifier_ctor_durationstr(const char16_t *duration_str,
     DurationSpecifier **result, ErrorStatus *status) {
   status->Run([=] {
     Utf16Converter converter;
-    *result = new DurationSpecifier(converter.to_bytes(duration));
+    *result = new DurationSpecifier(converter.to_bytes(duration_str));
   });
 }
 
@@ -926,11 +941,11 @@ void deephaven_client_utility_TimePointSpecifier_ctor_nanos(int64_t nanos,
   });
 }
 
-void deephaven_client_utility_TimePointSpecifier_ctor_duration(const char16_t *duration,
+void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(const char16_t *time_point_str,
     TimePointSpecifier **result, ErrorStatus *status) {
   status->Run([=] {
     Utf16Converter converter;
-    *result = new TimePointSpecifier(converter.to_bytes(duration));
+    *result = new TimePointSpecifier(converter.to_bytes(time_point_str));
   });
 }
 

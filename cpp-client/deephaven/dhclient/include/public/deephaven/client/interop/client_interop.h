@@ -245,6 +245,12 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::clien
     deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_AggregateCombo_Create(
+    const deephaven::client::Aggregate *aggregates, int32_t num_aggregates,
+    deephaven::client::AggregateCombo **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_AggregateCombo_dtor(deephaven::client::AggregateCombo *self);
+
 void deephaven_client_Aggregate_dtor(deephaven::client::Aggregate *self);
 void deephaven_client_Aggregate_AbsSum(
     const char16_t **columns, int32_t num_columns,
@@ -307,7 +313,7 @@ void deephaven_client_Aggregate_WAvg(const char16_t *weight,
 void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
     deephaven::client::utility::DurationSpecifier **result,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_utility_DurationSpecifier_ctor_duration(const char16_t *duration,
+void deephaven_client_utility_DurationSpecifier_ctor_durationstr(const char16_t *duration_str,
     deephaven::client::utility::DurationSpecifier **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_utility_DurationSpecifier_dtor(
@@ -317,8 +323,8 @@ void deephaven_client_utility_TimePointSpecifier_ctor_nanos(
     int64_t nanos,
     deephaven::client::utility::TimePointSpecifier **result,
     deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_utility_TimePointSpecifier_ctor_duration(
-    const char16_t *duration,
+void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
+    const char16_t *time_point_str,
     deephaven::client::utility::TimePointSpecifier **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_utility_TimePointSpecifier_dtor(
