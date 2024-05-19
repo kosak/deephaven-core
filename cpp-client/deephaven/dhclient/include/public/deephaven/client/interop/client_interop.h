@@ -71,8 +71,10 @@ void deephaven_client_Client_Connect(const char16_t *target,
 
 void deephaven_client_Client_dtor(deephaven::client::Client *self);
 
-void deephaven_client_TableHandle_GetDimensions(deephaven::client::TableHandle *self,
-    int32_t *num_columns, int64_t *num_rows, deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_GetAttributes(deephaven::client::TableHandle *self,
+    int32_t *num_columns, int64_t *num_rows,
+    deephaven::dhcore::interop::InteropBool *is_static,
+    deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_GetSchema(deephaven::client::TableHandle *self,
     int32_t num_columns,

@@ -324,11 +324,13 @@ void deephaven_client_Client_dtor(Client *self) {
   delete self;
 }
 
-void deephaven_client_TableHandle_GetDimensions(TableHandle *self,
-    int32_t *num_columns, int64_t *num_rows, ErrorStatus *status) {
+void deephaven_client_TableHandle_GetAttributes(TableHandle *self,
+    int32_t *num_columns, int64_t *num_rows, InteropBool *is_static,
+    ErrorStatus *status) {
   status->Run([=]() {
     *num_columns = self->Schema()->NumCols();
     *num_rows = self->NumRows();
+    *is_static = (InteropBool)self->IsStatic();
   });
 }
 
