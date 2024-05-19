@@ -23,10 +23,10 @@ public class AggregatesTest {
 
     var aggTable = zngaTable.View("Close")
       .By(AggregateCombo.Create(new[] {
-        Aggregate.Avg("AvgClose=Close"),
-        Aggregate.Sum("SumClose=Close"),
-        Aggregate.Min("MinClose=Close"),
-        Aggregate.Max("MaxClose=Close"),
+        Aggregate.Avg(new []{"AvgClose=Close"}),
+        Aggregate.Sum(new []{"SumClose=Close"}),
+        Aggregate.Min(new [] {"MinClose=Close"}),
+        Aggregate.Max(new []{"MaxClose=Close"}),
         Aggregate.Count("Count")
       }));
 
