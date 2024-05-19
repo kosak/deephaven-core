@@ -246,7 +246,7 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::clien
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_AggregateCombo_Create(
-    const deephaven::client::Aggregate *aggregates, int32_t num_aggregates,
+    const deephaven::client::Aggregate **aggregate_ptrs, int32_t num_aggregates,
     deephaven::client::AggregateCombo **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 void deephaven_client_AggregateCombo_dtor(deephaven::client::AggregateCombo *self);

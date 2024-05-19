@@ -770,10 +770,13 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWra
 }
 
 void deephaven_client_AggregateCombo_Create(
-    const Aggregate *aggregates, int32_t num_aggregates,
+    const Aggregate **aggregate_ptrs, int32_t num_aggregates,
     AggregateCombo **result, ErrorStatus *status) {
   status->Run([=]() {
-    std::vector<Aggregate> agg_copies(aggregates, aggregates + num_aggregates);
+    auto agg_copies = MakeReservedVector<Aggregate>(num_aggregates);
+    for (int32_t i = 0; i != num_aggregates; ++i) {
+      agg_copies.push_back(*aggregate_ptrs[i]);
+    }
     auto ac = AggregateCombo::Create(std::move(agg_copies));
     *result = new AggregateCombo(std::move(ac));
   });
