@@ -27,7 +27,7 @@ public class InputTableTest {
       var bData = new Int64[] { 100, 101, 102 };
       var tc = new TableComparer();
       tc.AddColumn("A", aData);
-      tc.AddColumn("A", aData);
+      tc.AddColumn("B", bData);
       tc.AssertEqualTo(inputTable);
     }
 

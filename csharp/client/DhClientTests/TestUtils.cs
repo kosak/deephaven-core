@@ -4,7 +4,6 @@ using System.Collections;
 namespace Deephaven.DhClientTests;
 
 public static class TestUtils {
-
   public static bool TryCompareEnumerables(IEnumerable expected, IEnumerable actual, out string failureReason) {
     var nextIndex = 0;
     var actualEnum = actual.GetEnumerator();
