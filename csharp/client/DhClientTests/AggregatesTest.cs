@@ -1,7 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using Deephaven.DeephavenClient;
 using Xunit.Abstractions;
-using System.Xml.Linq;
 
 namespace Deephaven.DhClientTests;
 

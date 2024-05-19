@@ -5,19 +5,13 @@ using Deephaven.DeephavenClient.Interop;
 namespace Deephaven.DeephavenClient;
 
 public class AggregateCombo {
-  public static AggregateCombo Create(IEnumerable<Aggregate> aggregates) {
-    return new AggregateCombo(aggregates.ToArray());
-  }
-
   private readonly Aggregate[] _aggregates;
 
-  private AggregateCombo(Aggregate[] aggregates) => _aggregates = aggregates;
+  public AggregateCombo(IEnumerable<Aggregate> aggregates) => _aggregates = aggregates.ToArray();
 
   internal InternalAggregateCombo Invoke() {
     return new InternalAggregateCombo(_aggregates);
   }
-
-  internal NativePtr<NativeDurationSpecifier> Self;
 }
 
 internal class InternalAggregateCombo : IDisposable {

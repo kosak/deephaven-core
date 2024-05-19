@@ -1,8 +1,5 @@
 ﻿using Deephaven.DeephavenClient.Interop;
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Deephaven.CppClientInterop;
 
 namespace Deephaven.DeephavenClient;
 

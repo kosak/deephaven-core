@@ -1,6 +1,4 @@
 ﻿using Deephaven.DeephavenClient.Interop;
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.Utility;
 
@@ -113,12 +111,13 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
-  public TableHandle By(AggregateCombo combo, string[] groupByColumns) {
-    // Aggregate and AggregateCombo are "lazy" in the sense that they are pure C#
-    // abstractions. We only 
-
+  public TableHandle By(AggregateCombo combo, params string[] groupByColumns) {
+    using var comboInternal = combo.Invoke();
+    NativeTableHandle.deephaven_client_TableHandle_By(Self,
+      comboInternal.Self, groupByColumns, groupByColumns.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
   }
-
 
   public void BindToVariable(string variable) {
     NativeTableHandle.deephaven_client_TableHandle_BindToVariable(Self, variable, out var status);
@@ -234,6 +233,12 @@ internal class NativeTableHandle {
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_WhereIn(NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> filterTable,
+    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_client_TableHandle_By(NativePtr<NativeTableHandle> self,
+    NativePtr<NativeAggregateCombo> aggregateCombo,
     [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
