@@ -58,7 +58,7 @@ internal class InternalAggregateCombo : IDisposable {
 internal class NativeAggregateCombo {
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_AggregateCombo_Create(
-    [In] NativePtr<NativeAggregate>[] columns, Int32 numColumns,
+    [In] NativePtr<NativeAggregate>[] aggregates, Int32 numAggregates,
     out NativePtr<NativeAggregateCombo> self, out ErrorStatus status);
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_AggregateCombo_dtor(NativePtr<NativeAggregateCombo> self);
