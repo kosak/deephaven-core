@@ -482,6 +482,18 @@ void deephaven_client_TableHandle_WhereIn(TableHandle *self,
   });
 }
 
+void deephaven_client_TableHandle_By(TableHandle *self,
+    const AggregateCombo *combo,
+    const char16_t **column_specs, int64_t num_column_specs,
+    TableHandle **result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto cols = MakeStringVec(column_specs, num_column_specs);
+    auto table = self->By(*combo, std::move(cols));
+    *result = new TableHandle(std::move(table));
+  });
+}
+
 void deephaven_client_TableHandle_Head(TableHandle *self,
     int64_t num_rows,
     TableHandle **result,

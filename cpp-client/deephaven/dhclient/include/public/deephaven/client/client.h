@@ -372,7 +372,7 @@ public:
   /**
    * Copy constructor
    */
-  Aggregate(const Aggregate &other) noexcept;
+  Aggregate(const Aggregate &other);
   /**
    * Move constructor
    */
@@ -380,7 +380,7 @@ public:
   /**
    * Copy assigment operator.
    */
-  Aggregate &operator=(const Aggregate &other) noexcept;
+  Aggregate &operator=(const Aggregate &other);
   /**
    * Move assigment operator.
    */
@@ -694,11 +694,19 @@ public:
   static AggregateCombo Create(std::vector<Aggregate> vec);
 
   /**
-   * Move constructor.
+ * Copy constructor
+ */
+  AggregateCombo(const AggregateCombo &other);
+  /**
+   * Move constructor
    */
   AggregateCombo(AggregateCombo &&other) noexcept;
   /**
-   * Move assignment operator.
+   * Copy assigment operator.
+   */
+  AggregateCombo &operator=(const AggregateCombo &other);
+  /**
+   * Move assigment operator.
    */
   AggregateCombo &operator=(AggregateCombo &&other) noexcept;
 

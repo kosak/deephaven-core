@@ -148,6 +148,12 @@ void deephaven_client_TableHandle_WhereIn(deephaven::client::TableHandle *self,
     deephaven::client::TableHandle **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_By(deephaven::client::TableHandle *self,
+    const deephaven::client::AggregateCombo *aggregate_combo,
+    const char16_t **column_specs, int64_t num_column_specs,
+    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle *self,
     const char16_t *variable,
     deephaven::dhcore::interop::ErrorStatus *status);

@@ -180,9 +180,9 @@ Aggregate createAggForMatchPairs(ComboAggregateRequest::AggType aggregate_type,
 }  // namespace
 
 Aggregate::Aggregate() = default;
-Aggregate::Aggregate(const Aggregate &other) noexcept = default;
+Aggregate::Aggregate(const Aggregate &other) = default;
 Aggregate::Aggregate(Aggregate &&other) noexcept = default;
-Aggregate &Aggregate::operator=(const Aggregate &other) noexcept = default;
+Aggregate &Aggregate::operator=(const Aggregate &other) = default;
 Aggregate &Aggregate::operator=(Aggregate &&other) noexcept = default;
 Aggregate::~Aggregate() = default;
 
@@ -283,6 +283,8 @@ AggregateCombo AggregateCombo::Create(std::vector<Aggregate> vec) {
 }
 
 AggregateCombo::AggregateCombo(std::shared_ptr<impl::AggregateComboImpl> impl) : impl_(std::move(impl)) {}
+AggregateCombo::AggregateCombo(const deephaven::client::AggregateCombo &other) = default;
+AggregateCombo &AggregateCombo::operator=(const AggregateCombo &other) = default;
 AggregateCombo::AggregateCombo(AggregateCombo &&other) noexcept = default;
 AggregateCombo &AggregateCombo::operator=(AggregateCombo &&other) noexcept = default;
 AggregateCombo::~AggregateCombo() = default;
