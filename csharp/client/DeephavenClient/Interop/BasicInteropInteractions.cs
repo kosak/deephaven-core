@@ -43,15 +43,15 @@ public class BasicInteropInteractions {
     string[] result);
 
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_Compare(Int32 a, Int32 b, out InteropBool result);
+  public static extern void deephaven_dhcore_basicInteropInteractions_Less(Int32 a, Int32 b, out InteropBool result);
 
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_Compare_Array(
+  public static extern void deephaven_dhcore_basicInteropInteractions_Less_Array(
     [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
     Int32[] a,
     [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
     Int32[] b,
     Int32 length,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
-    InteropBool[] result);
+    InteropBool[] results);
 }
