@@ -47,11 +47,10 @@ internal class InternalAggregateCombo : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtr.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeAggregateCombo.deephaven_client_AggregateCombo_dtor(temp);
+    NativeAggregateCombo.deephaven_client_AggregateCombo_dtor(old);
   }
 }
 

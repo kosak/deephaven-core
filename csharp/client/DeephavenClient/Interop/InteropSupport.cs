@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Unicode;
 
 namespace Deephaven.DeephavenClient.Interop;
 
@@ -36,28 +38,34 @@ public class PlatformUtf16 {
   }
 }
 
-[StructLayout(LayoutKind.Sequential)]
-public struct NativePtr<T> {
-  public IntPtr ptr;
+public static class NativePtrUtil {
+  public static bool TryRelease<T>(ref NativePtr<T> self, out NativePtr<T> oldPtr) {
+    oldPtr = self;
+    if (self.IsNull) {
+      return false;
+    }
 
-  public NativePtr(IntPtr ptr) => this.ptr = ptr;
-
-  public readonly bool IsNull => ptr != IntPtr.Zero;
-
-  public NativePtr<T> Release() {
-    var result = new NativePtr<T>(ptr);
-    ptr = IntPtr.Zero;
-    return result;
+    self = new NativePtr<T>(IntPtr.Zero);
+    return true;
   }
 }
 
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct NativePtr<T> {
+  public readonly IntPtr ptr;
+
+  public NativePtr(IntPtr ptr) => this.ptr = ptr;
+
+  public bool IsNull => ptr != IntPtr.Zero;
+}
+
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-public struct InteropBool : IEquatable<InteropBool> {
+public readonly struct InteropBool : IEquatable<InteropBool> {
   private readonly sbyte _value;
 
   public InteropBool(bool value) { _value = value ? (sbyte)1 : (sbyte)0; }
 
-  public readonly bool BoolValue => _value != 0;
+  public bool BoolValue => _value != 0;
 
   public bool Equals(InteropBool other) {
     return _value == other._value;
@@ -65,6 +73,49 @@ public struct InteropBool : IEquatable<InteropBool> {
 
   public static explicit operator bool(InteropBool ib) => ib.BoolValue;
   public static explicit operator InteropBool(bool b) => new(b);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct StringHandle {
+  public Int32 Index;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct StringPoolHandle {
+  public NativePtr<NativeStringPool> NativeStringPool;
+  public Int32 NumStrings;
+  public Int32 NumBytes;
+
+  public StringPool ImportAndDestroy() {
+    if (!NativePtrUtil.TryRelease(ref NativeStringPool, out var temp)) {
+      throw new InvalidOperationException("Can't run ImportAndDestroy twice");
+    }
+
+    var bytes = new byte[NumBytes];
+    var ends = new Int32[NumStrings];
+    NativeStringPool.deephaven_whatever_love_ImportAndDestroy(temp,
+      bytes, bytes.Length,
+      ends, ends.Length);
+
+    var strings = new string[NumStrings];
+    for (var i = 0; i != NumStrings; ++i) {
+      var begin = i == 0 ? 0 : ends[i - 1];
+      var end = ends[i];
+      strings[i] = Encoding.UTF8.GetString(bytes, begin, end - begin);
+    }
+
+    return new StringPool(strings);
+  }
+}
+
+public sealed class StringPool {
+  public readonly string[] Strings;
+
+  public StringPool(string[] strings) => Strings = strings;
+
+  public string Get(StringHandle handle) {
+    return Strings[handle.Index];
+  }
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

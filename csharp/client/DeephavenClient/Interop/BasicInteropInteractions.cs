@@ -8,7 +8,8 @@ public class BasicInteropInteractions {
   public static extern void deephaven_dhcore_basicInteropInteractions_Add(Int32 a, Int32 b, out Int32 result);
 
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_Concat(string a, string b, out string result);
+  public static extern void deephaven_dhcore_basicInteropInteractions_Concat(string a, string b,
+    out string result);
 
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   public struct BasicStruct {
