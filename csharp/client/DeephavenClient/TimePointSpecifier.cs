@@ -3,24 +3,38 @@ using System.Runtime.InteropServices;
 
 namespace Deephaven.DeephavenClient;
 
-public class TimePointSpecifier : IDisposable {
+public class TimePointSpecifier {
+  private readonly object _timePoint;
+
+  public TimePointSpecifier(Int64 nanos) => _timePoint = nanos;
+  public TimePointSpecifier(string timePoint) => _timePoint = timePoint;
+
+  public static implicit operator TimePointSpecifier(Int64 nanos) => new(nanos);
+  public static implicit operator TimePointSpecifier(string timePoint) => new(timePoint);
+
+  internal InternalTimePointSpecifier Materialize() => new (_timePoint);
+}
+
+internal class InternalTimePointSpecifier : IDisposable {
   internal NativePtr<NativeTimePointSpecifier> Self;
 
-  public TimePointSpecifier(Int64 nanos) {
-    NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_ctor_nanos(nanos,
-      out var result, out var status);
+  public InternalTimePointSpecifier(object duration) {
+    NativePtr<NativeTimePointSpecifier> result;
+    ErrorStatus status;
+    if (duration is Int64 nanos) {
+      NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_ctor_nanos(nanos,
+        out result, out status);
+    } else if (duration is string dur) {
+      NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(dur,
+        out result, out status);
+    } else {
+      throw new ArgumentException($"Unexpected type {duration.GetType().Name} for duration");
+    }
     status.OkOrThrow();
     Self = result;
   }
 
-  public TimePointSpecifier(string duration) {
-    NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_ctor_duration(duration,
-      out var result, out var status);
-    status.OkOrThrow();
-    Self = result;
-  }
-
-  ~TimePointSpecifier() {
+  ~InternalTimePointSpecifier() {
     ReleaseUnmanagedResources();
   }
 
@@ -43,8 +57,8 @@ internal class NativeTimePointSpecifier {
   public static extern void deephaven_client_utility_TimePointSpecifier_ctor_nanos(Int64 nanos,
     out NativePtr<NativeTimePointSpecifier> result, out ErrorStatus status);
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_TimePointSpecifier_ctor_duration(string duration,
-    out NativePtr<NativeTimePointSpecifier> result, out ErrorStatus status);
+  public static extern void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
+    string timePointStr, out NativePtr<NativeTimePointSpecifier> result, out ErrorStatus status);
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_utility_TimePointSpecifier_dtor(NativePtr<NativeTimePointSpecifier> self);
 }

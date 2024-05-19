@@ -36,7 +36,9 @@ public sealed class TableHandleManager : IDisposable {
   }
 
   public TableHandle TimeTable(DurationSpecifier period, TimePointSpecifier startTime, bool blinkTable) {
-    NativeTableHandleManager.deephaven_client_TableHandleManager_TimeTable(Self, period.Self, startTime.Self,
+    using var per = period.Materialize();
+    using var st = startTime.Materialize();
+    NativeTableHandleManager.deephaven_client_TableHandleManager_TimeTable(Self, per.Self, st.Self,
       blinkTable, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, this);

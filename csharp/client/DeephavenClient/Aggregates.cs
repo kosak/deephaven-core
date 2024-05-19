@@ -96,7 +96,6 @@ public class Aggregate {
     status.OkOrThrow();
     return new InternalAggregate(result);
   }
-  internal NativePtr<NativeDurationSpecifier> Self;
 }
 
 internal class InternalAggregate : IDisposable {
