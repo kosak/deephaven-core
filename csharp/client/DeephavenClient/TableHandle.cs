@@ -1,6 +1,7 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.Utility;
+using System.Numerics;
 
 namespace Deephaven.DeephavenClient;
 
@@ -113,6 +114,16 @@ public sealed class TableHandle : IDisposable {
       filterTable.Self, columnSpecs, columnSpecs.Length, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, Manager);
+  }
+
+  public void AddTable(TableHandle tableToAdd) {
+    NativeTableHandle.deephaven_client_TableHandle_AddTable(Self, tableToAdd.Self, out var status);
+    status.OkOrThrow();
+  }
+
+  public void RemoveTable(TableHandle tableToRemove) {
+    NativeTableHandle.deephaven_client_TableHandle_RemoveTable(Self, tableToRemove.Self, out var status);
+    status.OkOrThrow();
   }
 
   public TableHandle By(AggregateCombo combo, params string[] groupByColumns) {
@@ -240,6 +251,16 @@ internal class NativeTableHandle {
     NativePtr<NativeTableHandle> filterTable,
     [In] string[] columns, Int32 numColumns,
     out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_client_TableHandle_AddTable(NativePtr<NativeTableHandle> self,
+    NativePtr<NativeTableHandle> tableToAdd,
+    out ErrorStatus status);
+
+  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  internal static extern void deephaven_client_TableHandle_RemoveTable(NativePtr<NativeTableHandle> self,
+    NativePtr<NativeTableHandle> tableToRemove,
+    out ErrorStatus status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   internal static extern void deephaven_client_TableHandle_By(NativePtr<NativeTableHandle> self,
