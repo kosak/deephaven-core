@@ -24,7 +24,7 @@ public class InputTableTest {
     // expect inputTable to be {0, 100}, {1, 101}, {2, 102}
     {
       var aData = new Int64[] { 0, 1, 2 };
-      var bData = new Int64[]{ 100, 101, 102 };
+      var bData = new Int64[] { 100, 101, 102 };
       var tc = new TableComparer();
       tc.AddColumn("A", aData);
       tc.AddColumn("A", aData);
@@ -40,76 +40,44 @@ public class InputTableTest {
       var bData = new Int64[] { 100, 101, 102, 200, 201 };
       var tc = new TableComparer();
       tc.AddColumn("A", aData);
-      tc.AddColumn("A", aData);
+      tc.AddColumn("B", bData);
       tc.AssertEqualTo(inputTable);
     }
   }
 
 
-  TEST_CASE("Input Table: keyed", "[input_table]") {
-    auto client = TableMakerForTests::CreateClient();
-    auto tm = client.GetManager();
-    auto source = tm.EmptyTable(3).Update({ "A = ii", "B = ii + 100"});
+  [Fact]
+  public void TestInputTableKeyed() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var tm = ctx.Client.Manager;
+
+    var source = tm.EmptyTable(3).Update("A = ii", "B = ii + 100");
     // Keys = {"A"}, so InputTable will be in keyed mode
-    auto input_table = tm.InputTable(source, { "A"});
+    var inputTable = tm.InputTable(source, "A");
 
 
     // expect input_table to be {0, 100}, {1, 101}, {2, 102}
     {
-      std::vector<int64_t> a_data = { 0, 1, 2 };
-      std::vector<int64_t> b_data = { 100, 101, 102 };
-      CompareTable(input_table,
-        "A", a_data,
-        "B", b_data);
+      var aData = new Int64[] { 0, 1, 2 };
+      var bData = new Int64[] { 100, 101, 102 };
+      var tc = new TableComparer();
+      tc.AddColumn("A", aData);
+      tc.AddColumn("B", bData);
+      tc.AssertEqualTo(inputTable);
     }
 
 
-    auto table_to_add = tm.EmptyTable(2).Update({ "A = ii", "B = ii + 200"});
-    input_table.AddTable(table_to_add);
-
+    var tableToAdd = tm.EmptyTable(2).Update("A = ii", "B = ii + 200");
+    inputTable.AddTable(tableToAdd);
 
     // Because key is "A", expect input_table to be {0, 200}, {1, 201}, {2, 102}
     {
-      std::vector<int64_t> a_data = { 0, 1, 2 };
-      std::vector<int64_t> b_data = { 200, 201, 102 };
-      CompareTable(input_table,
-        "A", a_data,
-        "B", b_data);
-    }
-  }
-
-
-
-
-
-  [Fact]
-  public void TestHeadAndTail() {
-    using var ctx = CommonContextForTests.Create(new ClientOptions());
-    var table = ctx.TestTable;
-
-    table = table.Where("ImportDate == `2017-11-01`");
-
-    var th = table.Head(2).Select("Ticker", "Volume");
-    var tt = table.Tail(2).Select("Ticker", "Volume");
-
-    {
-      var tickerData = new[] { "XRX", "XRX" };
-      var volumeData = new Int64[] { 345000, 87000 };
+      var aData = new Int64[] { 0, 1, 2 };
+      var bData = new Int64[] { 200, 201, 102 };
       var tc = new TableComparer();
-
-      tc.AddColumn("Ticker", tickerData);
-      tc.AddColumn("Volume", volumeData);
-      tc.AssertEqualTo(th);
-    }
-
-    {
-      var tickerData = new[] { "ZNGA", "ZNGA" };
-      var volumeData = new Int64[] { 46123, 48300 };
-      var tc = new TableComparer();
-
-      tc.AddColumn("Ticker", tickerData);
-      tc.AddColumn("Volume", volumeData);
-      tc.AssertEqualTo(tt);
+      tc.AddColumn("A", aData);
+      tc.AddColumn("B", bData);
+      tc.AssertEqualTo(inputTable);
     }
   }
 }
