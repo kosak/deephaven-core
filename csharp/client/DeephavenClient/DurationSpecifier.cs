@@ -12,6 +12,7 @@ public class DurationSpecifier {
       out var result, out var status);
     status.OkOrThrow();
     Self = result;
+    ConvertToKosakStyle666();
   }
 
   public DurationSpecifier(string duration) {

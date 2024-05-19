@@ -41,10 +41,10 @@ public class BasicInteropInteractionsTest {
 
   [Fact]
   public void TestCompare() {
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Compare(4, 7, out var result1);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Less(4, 7, out var result1);
     Assert.True((bool)result1);
 
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Compare(7, 4, out var result2);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Less(7, 4, out var result2);
     Assert.False((bool)result2);
   }
 
@@ -54,9 +54,9 @@ public class BasicInteropInteractionsTest {
     var data1 = new Int32[length] { -3, 8, 55 };
     var data2 = new Int32[length] { -7, 10, 100 };
     var results = new InteropBool[length];
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Compare_Array(data1, data2, length, results);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Less_Array(data1, data2, length, results);
 
-    var expectedResults = new InteropBool[length] { (InteropBool)false, (InteropBool)true, (InteropBool)false };
+    var expectedResults = new InteropBool[length] { (InteropBool)false, (InteropBool)true, (InteropBool)true };
     Assert.Equal(expectedResults, results);
   }
 }
