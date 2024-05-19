@@ -92,6 +92,7 @@ public class Aggregate {
     status.OkOrThrow();
     return new InternalAggregate(result);
   }
+  internal NativePtr<NativeDurationSpecifier> Self;
 }
 
 internal class InternalAggregate : IDisposable {
@@ -149,6 +150,7 @@ internal class NativeAggregate {
     [In] string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_Aggregate_Pct(
+    double percentile, InteropBool avgMedian,
     [In] string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_Aggregate_Std(

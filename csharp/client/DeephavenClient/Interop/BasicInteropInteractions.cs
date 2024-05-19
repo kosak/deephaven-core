@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace Deephaven.DeephavenClient.Interop;
 
-
 public class BasicInteropInteractions {
   [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
   public static extern void deephaven_dhcore_basicInteropInteractions_Add(Int32 a, Int32 b, out Int32 result);
@@ -42,4 +41,17 @@ public class BasicInteropInteractions {
     string toAppend,
     [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)]
     string[] result);
+
+  [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_dhcore_basicInteropInteractions_Compare(Int32 a, Int32 b, out InteropBool result);
+
+  [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
+  public static extern void deephaven_dhcore_basicInteropInteractions_Compare_Array(
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
+    Int32[] a,
+    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
+    Int32[] b,
+    Int32 length,
+    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
+    InteropBool[] result);
 }

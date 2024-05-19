@@ -52,6 +52,15 @@ public struct NativePtr<T> {
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct InteropBool {
+  private sbyte _value;
+
+  public InteropBool(bool value) { _value = value ? (sbyte)1 : (sbyte)0; }
+
+  readonly bool Value => _value != 0;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
 public struct ErrorStatus {
   public string error;
 
