@@ -8,8 +8,8 @@ public sealed class TableHandle : IDisposable {
   internal NativePtr<NativeTableHandle> Self;
   public TableHandleManager Manager;
   public Schema Schema;
-  public readonly Int32 NumRows;
-  public readonly Int64 NumCols;
+  public Int32 NumCols => Schema.NumCols;
+  public Int64 NumRows => Schema.NumRows;
   public readonly bool IsStatic;
 
   internal TableHandle(NativePtr<NativeTableHandle> self, TableHandleManager manager) {
@@ -17,12 +17,13 @@ public sealed class TableHandle : IDisposable {
     Manager = manager;
 
     NativeTableHandle.deephaven_client_TableHandle_GetAttributes(Self,
-      out var numColumns, out var numRows, out InteropBool isStatic, out var status1);
+      out var numCols, out var numRows, out InteropBool isStatic, out var status1);
     status1.OkOrThrow();
+    IsStatic = (bool)isStatic;
 
-    var columnNames = new string[numColumns];
-    var elementTypesAsInt = new Int32[numColumns];
-    NativeTableHandle.deephaven_client_TableHandle_GetSchema(self, numColumns, columnNames,
+    var columnNames = new string[numCols];
+    var elementTypesAsInt = new Int32[numCols];
+    NativeTableHandle.deephaven_client_TableHandle_GetSchema(self, numCols, columnNames,
       elementTypesAsInt, out var status2);
     status2.OkOrThrow();
     Schema = new Schema(columnNames, elementTypesAsInt, numRows);
