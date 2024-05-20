@@ -68,7 +68,8 @@ StringPool::StringPool(std::vector<uint8_t> bytes, std::vector<int32_t> ends) :
    bytes_(std::move(bytes)), ends_(std::move(ends)) {}
 StringPool::~StringPool() = default;
 
-void StringPool::Export(uint8_t *bytes, int32_t *ends) {
+void StringPool::Export(uint8_t *bytes, int32_t bytes_length,
+    int32_t *ends, int32_t ends_length) {
   std::copy(bytes_.begin(), bytes_.end(), bytes);
   std::copy(ends_.begin(), ends_.end(), ends);
 }
@@ -99,8 +100,9 @@ void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
 
 void deephaven_dhcore_interop_StringPool_ExportAndDestroy(
     deephaven::dhcore::interop::StringPool *string_pool,
-    uint8_t *bytes, int32_t *ends) {
-  string_pool->Export(bytes, ends);
+    uint8_t *bytes, int32_t bytes_length,
+    int32_t *ends, int32_t ends_length) {
+  string_pool->Export(bytes, bytes_length, ends, ends_length);
   delete string_pool;
 }
 }  // extern "C"
