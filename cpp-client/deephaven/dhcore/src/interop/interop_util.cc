@@ -88,7 +88,8 @@ StringPoolHandle StringPoolBuilder::Build() {
   auto num_bytes = bytes_.size();
   auto num_strings = ends_.size();
   auto *sp = new StringPool(std::move(bytes_), std::move(ends_));
-  return StringPoolHandle(sp, num_bytes, num_strings);
+  return StringPoolHandle(sp, static_cast<int32_t>(num_bytes),
+      static_cast<int32_t>(num_strings));
 }
 }  // namespace deephaven::dhcore::interop
 
