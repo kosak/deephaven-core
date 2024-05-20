@@ -50,15 +50,15 @@ internal partial class NativeClient {
     out NativePtr<NativeClient> result,
     out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static extern void deephaven_client_Client_dtor(NativePtr<NativeClient> self);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static extern void deephaven_client_Client_Close(NativePtr<NativeClient> self,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static extern void deephaven_client_Client_GetManager(NativePtr<NativeClient> self,
     out NativePtr<NativeTableHandleManager> result,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 }
