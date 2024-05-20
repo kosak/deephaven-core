@@ -41,6 +41,13 @@ public partial class BasicInteropInteractions {
     public double d;
   }
 
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStruct(
+    ref BasicStruct a, ref BasicStruct b, out BasicStruct result);
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(
+    BasicStruct[] a, BasicStruct[] b, Int32 length, BasicStruct[] result);
+
   [StructLayout(LayoutKind.Sequential)]
   public struct NestedStruct {
     public BasicStruct A;
@@ -52,11 +59,7 @@ public partial class BasicInteropInteractions {
     }
   }
 
-
   [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStruct(
-    ref BasicStruct a, ref BasicStruct b, out BasicStruct result);
-  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(
-    BasicStruct[] a, BasicStruct[] b, Int32 length, BasicStruct[] result);
+  public static partial void deephaven_dhcore_basicInteropInteractions_AddNestedStruct(
+    ref NestedStruct a, ref NestedStruct b, out NestedStruct result);
 }

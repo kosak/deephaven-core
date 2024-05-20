@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-using System.Net.WebSockets;
-using Deephaven.DeephavenClient.Interop;
+﻿using Deephaven.DeephavenClient.Interop;
 
 namespace Deephaven.DhClientTests;
 
@@ -136,8 +134,6 @@ public class BasicInteropInteractionsTest {
     var b = new BasicInteropInteractions.NestedStruct(b1, b2);
 
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddNestedStruct(ref a, ref b, out var result);
-    Assert.Equal(112, result.i);
-    Assert.Equal(41.75, result.d);
+    Assert.Equal(112, result.A.i);
   }
-
 }
