@@ -43,9 +43,9 @@ public class Client : IDisposable {
   }
 }
 
-internal class NativeClient {
+internal partial class NativeClient {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
-  public static extern void deephaven_client_Client_Connect(string target,
+  public static partial void deephaven_client_Client_Connect(string target,
     NativePtr<NativeClientOptions> options,
     out NativePtr<NativeClient> result,
     out ErrorStatusNew status);
