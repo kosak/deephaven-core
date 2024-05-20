@@ -99,10 +99,10 @@ void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
 }
 
 void deephaven_dhcore_interop_StringPool_ExportAndDestroy(
-    deephaven::dhcore::interop::StringPool *string_pool,
+    deephaven::dhcore::interop::NativePtr<deephaven::dhcore::interop::StringPool> string_pool,
     uint8_t *bytes, int32_t bytes_length,
     int32_t *ends, int32_t ends_length) {
-  string_pool->Export(bytes, bytes_length, ends, ends_length);
-  delete string_pool;
+  string_pool.ptr_->Export(bytes, bytes_length, ends, ends_length);
+  delete string_pool.ptr_;
 }
 }  // extern "C"
