@@ -71,7 +71,7 @@ internal abstract class ClientTableColumnFactory {
     new ColumnFactory<NativeClientTable>.ForBool(NativeClientTable.deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn),
     new ColumnFactory<NativeClientTable>.ForString(NativeClientTable.deephaven_client_ClientTableHelper_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
-    new ColumnFactory<NativeClientTable>.ForDateTime(NativeClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn),
+    new ColumnFactory<NativeClientTable>.ForDateTime(NativeClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column),
     // List - TODO(kosak)
   };
 
@@ -180,7 +180,7 @@ internal partial class NativeClientTable {
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(
+  public static partial void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
     Int64[] data,

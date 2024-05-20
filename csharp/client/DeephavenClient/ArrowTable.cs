@@ -179,7 +179,7 @@ internal partial class NativeArrowTable {
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_client_ArrowTable_GetDateTimeAsLongColumn(
+  public static partial void deephaven_client_ArrowTable_GetDateTimeAsInt64Column(
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     Int64[] data,
