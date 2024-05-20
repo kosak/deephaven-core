@@ -135,7 +135,7 @@ public struct ErrorStatus {
 }
 
 internal partial class NativeStringPool {
-  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_dhcore_interop_StringPool_ExportAndDestroy(NativePtr<NativeStringPool> self,
     byte[] bytes, Int32 bytesLength,
     Int32[] ends, Int32 endsLength);
