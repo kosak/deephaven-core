@@ -77,9 +77,9 @@ StringPoolBuilder::StringPoolBuilder() = default;
 StringPoolBuilder::~StringPoolBuilder() = default;
 
 StringHandle StringPoolBuilder::Add(std::string_view sv) {
-  StringHandle result(ends_.size());
+  StringHandle result(static_cast<int32_t>(ends_.size()));
   bytes_.insert(bytes_.end(), sv.begin(), sv.end());
-  ends_.push_back(bytes_.size());
+  ends_.push_back(static_cast<int32_t>(bytes_.size()));
   return result;
 }
 
