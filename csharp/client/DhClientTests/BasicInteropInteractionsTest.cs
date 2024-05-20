@@ -99,11 +99,11 @@ public class BasicInteropInteractionsTest {
 
   [Fact]
   public void TestInAndOutStruct() {
-    var a = new BasicInteropInteractions.BasicStruct(100, 33.2);
-    var b = new BasicInteropInteractions.BasicStruct(12, 8.1);
+    var a = new BasicInteropInteractions.BasicStruct(100, 33.25);
+    var b = new BasicInteropInteractions.BasicStruct(12, 8.5);
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddBasicStruct(ref a, ref b, out var result);
     Assert.Equal(112, result.i);
-    Assert.Equal(41.3, result.d);
+    Assert.Equal(41.75, result.d);
   }
 
   [Fact]
