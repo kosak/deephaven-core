@@ -64,10 +64,10 @@ void deephaven_client_TableHandleManager_RunScript(const deephaven::client::Tabl
     const char16_t *code,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_Client_Connect(const char16_t *target,
+void deephaven_client_Client_Connect(const char *target,
     deephaven::dhcore::interop::NativePtr<deephaven::client::ClientOptions> options,
     deephaven::dhcore::interop::NativePtr<deephaven::client::Client> *result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_Client_dtor(deephaven::client::Client *self);
 

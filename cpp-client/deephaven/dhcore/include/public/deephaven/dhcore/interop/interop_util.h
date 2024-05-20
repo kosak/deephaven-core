@@ -180,6 +180,12 @@ struct NativePtr {
   [[nodiscard]]
   operator T*() const { return ptr_; }
 
+  [[nodiscard]]
+  T *operator ->() const { return ptr_; }
+
+  void Reset(T *new_ptr) { ptr_ = new_ptr; }
+
+private:
   T *ptr_ = nullptr;
 };
 

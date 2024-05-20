@@ -6,6 +6,8 @@
 
 #include <vector>
 
+using deephaven::dhcore::interop::NativePtr;
+using deephaven::dhcore::interop::StringPool;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::utility::MakeReservedVector;
 
@@ -105,10 +107,10 @@ void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
 }
 
 void deephaven_dhcore_interop_StringPool_ExportAndDestroy(
-    deephaven::dhcore::interop::NativePtr<deephaven::dhcore::interop::StringPool> string_pool,
+    NativePtr<StringPool> string_pool,
     uint8_t *bytes, int32_t bytes_length,
     int32_t *ends, int32_t ends_length) {
-  string_pool.ptr_->Export(bytes, bytes_length, ends, ends_length);
-  delete string_pool.ptr_;
+  string_pool->Export(bytes, bytes_length, ends, ends_length);
+  delete string_pool.Get();
 }
 }  // extern "C"

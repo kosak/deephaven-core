@@ -41,6 +41,7 @@ using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::interop::ErrorStatus;
+using deephaven::dhcore::interop::ErrorStatusNew;
 using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::NativePtr;
 using deephaven::dhcore::interop::PlatformUtf16;
@@ -307,14 +308,13 @@ void deephaven_client_TableHandleManager_RunScript(const TableHandleManager *sel
   });
 }
 
-void deephaven_client_Client_Connect(const char16_t *target,
+void deephaven_client_Client_Connect(const char *target,
     NativePtr<ClientOptions> options,
     NativePtr<Client> *result,
-    ErrorStatus *status) {
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto s = Utf16Converter().to_bytes(target);
-    auto res = Client::Connect(s, *options.ptr_);
-    result->ptr_ = new Client(std::move(res));
+    auto res = Client::Connect(target, *options);
+    result->Reset(new Client(std::move(res)));
   });
 }
 
