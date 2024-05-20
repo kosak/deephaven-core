@@ -28,7 +28,7 @@ void deephaven_client_ClientOptions_SetSessionType(
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_ClientOptions_SetUseTls(
     deephaven::dhcore::interop::NativePtr<deephaven::client::ClientOptions> self,
-    bool use_tls,
+    deephaven::dhcore::interop::InteropBool use_tls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_ClientOptions_SetTlsRootCerts(
     deephaven::dhcore::interop::NativePtr<deephaven::client::ClientOptions> self,

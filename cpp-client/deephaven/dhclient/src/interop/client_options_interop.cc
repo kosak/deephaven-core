@@ -8,6 +8,7 @@
 #include "deephaven/dhcore/interop/interop_util.h"
 
 using deephaven::dhcore::interop::ErrorStatusNew;
+using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::NativePtr;
 
 using deephaven::client::ClientOptions;
@@ -56,10 +57,10 @@ void deephaven_client_ClientOptions_SetSessionType(NativePtr<ClientOptions> self
 }
 
 void deephaven_client_ClientOptions_SetUseTls(NativePtr<ClientOptions> self,
-    bool use_tls,
+    InteropBool use_tls,
     ErrorStatusNew *status) {
   status->Run([=]() {
-    self->SetUseTls(use_tls);
+    self->SetUseTls((bool)use_tls);
   });
 
 }

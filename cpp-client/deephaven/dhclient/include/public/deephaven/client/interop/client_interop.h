@@ -266,69 +266,72 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::clien
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_AggregateCombo_Create(
-    const deephaven::client::Aggregate **aggregate_ptrs, int32_t num_aggregates,
-    deephaven::client::AggregateCombo **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_AggregateCombo_dtor(deephaven::client::AggregateCombo *self);
+    const deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *aggregate_ptrs,
+    int32_t num_aggregates,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::AggregateCombo> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_AggregateCombo_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::AggregateCombo> self);
 
-void deephaven_client_Aggregate_dtor(deephaven::client::Aggregate *self);
+void deephaven_client_Aggregate_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> self);
 void deephaven_client_Aggregate_AbsSum(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Group(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Avg(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Count(
-    const char16_t *column,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char *column,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_First(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Last(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Max(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Med(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Min(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Pct(
     double percentile, deephaven::dhcore::interop::InteropBool avg_median,
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Std(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Sum(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_Var(
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_Aggregate_WAvg(const char16_t *weight,
-    const char16_t **columns, int32_t num_columns,
-    deephaven::client::Aggregate **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **columns, int32_t num_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
     deephaven::client::utility::DurationSpecifier **result,
