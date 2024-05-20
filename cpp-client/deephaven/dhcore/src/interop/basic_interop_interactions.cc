@@ -45,6 +45,18 @@ void deephaven_dhcore_basicInteropInteractions_Concat(const char *a, const char 
   *string_pool_handle = builder.Build();
 }
 
+void deephaven_dhcore_basicInteropInteractions_ConcatArrays(const char **a, const char **b,
+    int32_t length,
+    deephaven::dhcore::interop::StringHandle *result_handles,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle) {
+  StringPoolBuilder builder;
+  for (int32_t i = 0; i != length; ++i) {
+    auto text = std::string(a[i]) + b[i];
+    result_handles[i] = builder.Add(text);
+  }
+  *string_pool_handle = builder.Build();
+}
+
 void deephaven_dhcore_basicInteropInteractions_BasicStruct(
     const BasicStructIn *data, int i_offset, const char16_t *s_append, BasicStructOut *result) {
   result->i = data->i + i_offset;
