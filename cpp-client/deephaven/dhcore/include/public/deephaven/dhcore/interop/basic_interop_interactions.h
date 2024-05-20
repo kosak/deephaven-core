@@ -26,6 +26,9 @@ void deephaven_dhcore_basicInteropInteractions_ConcatArrays(const char **a, cons
 
 struct BasicStruct {
   BasicStruct(int i, double d) : i_(i), d_(d) {}
+
+  BasicStruct Add(const BasicStruct &other) const;
+
   int i_;
   double d_;
 };
@@ -35,4 +38,16 @@ void deephaven_dhcore_basicInteropInteractions_AddBasicStruct(
 
 void deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(
     const BasicStruct *a, const BasicStruct *b, int32_t length, BasicStruct *result);
+
+struct NestedStruct {
+  NestedStruct(const BasicStruct &a, const BasicStruct &b) : a_(a), b_(b) {}
+
+  NestedStruct Add(const NestedStruct &other) const;
+
+  BasicStruct a_;
+  BasicStruct b_;
+};
+
+void deephaven_dhcore_basicInteropInteractions_AddNestedStruct(
+    const NestedStruct *a, const NestedStruct *b, NestedStruct *result);
 }  // extern "C"
