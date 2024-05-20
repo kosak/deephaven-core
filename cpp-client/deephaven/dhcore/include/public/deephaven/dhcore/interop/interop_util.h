@@ -265,7 +265,7 @@ public:
   }
 
 private:
-  int32_t ok_;
+  int32_t ok_ = 0;
 };
 
 
