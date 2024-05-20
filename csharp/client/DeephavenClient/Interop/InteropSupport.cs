@@ -126,19 +126,19 @@ public sealed class StringPool {
   }
 }
 
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+[StructLayout(LayoutKind.Sequential)]
 public struct ErrorStatus {
-  public string error;
+  internal StringHandle StringHandle;
+  internal StringPoolHandle StringPoolHandle;
 
-  public readonly void OkOrThrow() {
-    if (error != null) {
-      throw new Exception(error);
+  public void OkOrThrow() {
+    if (StringPoolHandle.NumStrings == 0) {
+      // ok
+      return;
     }
-  }
 
-  public readonly T Unwrap<T>(T item) {
-    OkOrThrow();
-    return item;
+    var error = StringPoolHandle.ExportAndDestroy().Get(StringHandle);
+    throw new Exception(error);
   }
 }
 
