@@ -69,7 +69,17 @@ void deephaven_client_Client_Connect(const char *target,
     deephaven::dhcore::interop::NativePtr<deephaven::client::Client> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_Client_dtor(deephaven::client::Client *self);
+void deephaven_client_Client_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Client> self);
+
+void deephaven_client_Client_Close(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Client> self,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+
+void deephaven_client_Client_GetManager(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::Client> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_GetAttributes(deephaven::client::TableHandle *self,
     int32_t *num_columns, int64_t *num_rows,
@@ -79,13 +89,6 @@ void deephaven_client_TableHandle_GetAttributes(deephaven::client::TableHandle *
 void deephaven_client_TableHandle_GetSchema(deephaven::client::TableHandle *self,
     int32_t num_columns,
     const deephaven::dhcore::interop::PlatformUtf16 **columns, int32_t *column_types,
-    deephaven::dhcore::interop::ErrorStatus *status);
-
-void deephaven_client_Client_Close(deephaven::client::Client *self,
-    deephaven::dhcore::interop::ErrorStatus *status);
-
-void deephaven_client_Client_GetManager(deephaven::client::Client *self,
-    deephaven::client::TableHandleManager **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_dtor(

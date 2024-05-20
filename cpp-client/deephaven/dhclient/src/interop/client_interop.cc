@@ -320,8 +320,25 @@ void deephaven_client_Client_Connect(const char *target,
 
 // There is no Client_ctor entry point because we don't need callers to invoke
 // the Client ctor directly.
-void deephaven_client_Client_dtor(Client *self) {
+void deephaven_client_Client_dtor(NativePtr<Client> self) {
   delete self;
+}
+
+
+void deephaven_client_Client_Close(NativePtr<Client> self,
+    ErrorStatusNew *status) {
+  status->Run([=]() {
+    self->Close();
+  });
+}
+
+void deephaven_client_Client_GetManager(NativePtr<Client> self,
+    NativePtr<TableHandleManager> *result,
+    ErrorStatusNew *status) {
+  status->Run([=]() {
+    auto res = self->GetManager();
+    result->Reset(new TableHandleManager(std::move(res)));
+  });
 }
 
 void deephaven_client_TableHandle_GetAttributes(TableHandle *self,
@@ -349,23 +366,6 @@ void deephaven_client_TableHandle_GetSchema(TableHandle *self,
     for (auto element_type_id : schema->Types()) {
       column_types[next_field_index++] = static_cast<int32_t>(element_type_id);
     }
-  });
-}
-
-
-void deephaven_client_Client_Close(Client *self,
-    deephaven::dhcore::interop::ErrorStatus *status) {
-  status->Run([=]() {
-    self->Close();
-  });
-}
-
-void deephaven_client_Client_GetManager(Client *self,
-    TableHandleManager **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
-  status->Run([=]() {
-    auto res = self->GetManager();
-    *result = new TableHandleManager(std::move(res));
   });
 }
 
