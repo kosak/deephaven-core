@@ -657,7 +657,7 @@ public:
   template<typename WeightArg, typename ...Args>
   [[nodiscard]]
   static Aggregate WAvg(WeightArg &&weight_column, Args &&...args) {
-    auto weight = internal::ConvertToString::ToString(std::forward<WeightArg>(weight));
+    auto weight = internal::ConvertToString::ToString(std::forward<WeightArg>(weight_column));
     std::vector<std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
     return WAvg(std::move(weight), std::move(vec));
   }
