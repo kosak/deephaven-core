@@ -57,7 +57,7 @@ public class ClientOptions : IDisposable {
   }
 
   ClientOptions SetUseTls(bool useTls) {
-    NativeClientOptions.deephaven_client_ClientOptions_SetUseTls(Self, useTls,
+    NativeClientOptions.deephaven_client_ClientOptions_SetUseTls(Self, (InteropBool)useTls,
       out var status);
     status.OkOrThrow();
     return this;
