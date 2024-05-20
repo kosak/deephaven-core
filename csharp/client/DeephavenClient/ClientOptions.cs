@@ -1,6 +1,4 @@
 ﻿using Deephaven.DeephavenClient.Interop;
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Deephaven.DeephavenClient;
@@ -109,55 +107,55 @@ public class ClientOptions : IDisposable {
 }
 
 
-internal class NativeClientOptions {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_ctor(
-    out NativePtr<NativeClientOptions> result, out ErrorStatus status);
+internal partial class NativeClientOptions {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_ctor(
+    out NativePtr<NativeClientOptions> result, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_dtor(NativePtr<NativeClientOptions> self);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_dtor(NativePtr<NativeClientOptions> self);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetDefaultAuthentication(NativePtr<NativeClientOptions> self,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetDefaultAuthentication(NativePtr<NativeClientOptions> self,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetBasicAuthentication(NativePtr<NativeClientOptions> self,
-    string username, string password, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetBasicAuthentication(NativePtr<NativeClientOptions> self,
+    string username, string password, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetCustomAuthentication(NativePtr<NativeClientOptions> self,
-    string authentication_key, string authentication_value, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetCustomAuthentication(NativePtr<NativeClientOptions> self,
+    string authentication_key, string authentication_value, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetSessionType(NativePtr<NativeClientOptions> self,
-    string session_type, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetSessionType(NativePtr<NativeClientOptions> self,
+    string session_type, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetUseTls(NativePtr<NativeClientOptions> self,
-    bool use_tls, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetUseTls(NativePtr<NativeClientOptions> self,
+    InteropBool use_tls, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetTlsRootCerts(NativePtr<NativeClientOptions> self,
-    string tls_root_certs, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetTlsRootCerts(NativePtr<NativeClientOptions> self,
+    string tls_root_certs, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetClientCertChain(NativePtr<NativeClientOptions> self,
-    string client_cert_chain, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetClientCertChain(NativePtr<NativeClientOptions> self,
+    string client_cert_chain, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_SetClientPrivateKey(NativePtr<NativeClientOptions> self,
-    string client_private_key, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_SetClientPrivateKey(NativePtr<NativeClientOptions> self,
+    string client_private_key, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_AddIntOption(NativePtr<NativeClientOptions> self,
-    string opt, Int32 val, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_AddIntOption(NativePtr<NativeClientOptions> self,
+    string opt, Int32 val, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_AddStringOption(NativePtr<NativeClientOptions> self,
-    string opt, string val, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_AddStringOption(NativePtr<NativeClientOptions> self,
+    string opt, string val, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientOptions_AddExtraHeader(NativePtr<NativeClientOptions> self,
-    string header_name, string header_value, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientOptions_AddExtraHeader(NativePtr<NativeClientOptions> self,
+    string header_name, string header_value, out ErrorStatusNew status);
 }
