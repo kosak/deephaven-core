@@ -1,4 +1,5 @@
 ﻿using Deephaven.DeephavenClient.Interop;
+using Deephaven.DeephavenClient.Interop.TestApi;
 
 namespace Deephaven.DhClientTests;
 
@@ -9,7 +10,7 @@ public class BasicInteropInteractionsTest {
 
   [Fact]
   public void TestInAndOutPrimitives() {
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Add(3, 4, out var result);
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_Add(3, 4, out var result);
     Assert.Equal(7, result);
   }
 
@@ -19,7 +20,7 @@ public class BasicInteropInteractionsTest {
     var a = new Int32[length] { 10, 20, 30 };
     var b = new Int32[length] { -5, 10, -15 };
     var actualResult = new Int32[length];
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddArrays(a, b,
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddArrays(a, b,
       length, actualResult);
     var expectedResult = new Int32[length] { 5, 30, 15 };
     Assert.Equal(expectedResult, actualResult);
@@ -29,7 +30,7 @@ public class BasicInteropInteractionsTest {
   public void TestInAndOutBooleans() {
     foreach (var a in new[] { false, true }) {
       foreach (var b in new[] { false, true }) {
-        BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Xor((InteropBool)a,
+        BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_Xor((InteropBool)a,
           (InteropBool)b, out var actualResult);
         var expectedResult = a ^ b;
         Assert.Equal(expectedResult, (bool)actualResult);
@@ -54,7 +55,7 @@ public class BasicInteropInteractionsTest {
     var bArray = bList.Select(e => (InteropBool)e).ToArray();
     var size = aArray.Length;
     var actualResultArray = new InteropBool[size];
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_XorArrays(
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_XorArrays(
       aArray, bArray, size, actualResultArray);
 
     var expectedResultArray = expectedResult.Select(e => (InteropBool)e).ToArray();
@@ -67,7 +68,7 @@ public class BasicInteropInteractionsTest {
     const string a = "Deep🎔";
     const string b = "haven";
     var expectedResult = a + b;
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Concat(a, b,
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_Concat(a, b,
       out var resultHandle, out var poolHandle);
     var pool = poolHandle.ExportAndDestroy();
     var actualResult = pool.Get(resultHandle);
@@ -88,7 +89,7 @@ public class BasicInteropInteractionsTest {
     }
 
     var resultHandles = new StringHandle[numItems];
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ConcatArrays(
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_ConcatArrays(
       prefixes, suffixes, numItems, resultHandles, out var poolHandle);
     var pool = poolHandle.ExportAndDestroy();
     var actualResult = resultHandles.Select(pool.Get).ToArray();
@@ -97,43 +98,75 @@ public class BasicInteropInteractionsTest {
 
   [Fact]
   public void TestInAndOutStruct() {
-    var a = new BasicInteropInteractions.BasicStruct(100, 33.25);
-    var b = new BasicInteropInteractions.BasicStruct(12, 8.5);
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddBasicStruct(ref a, ref b, out var result);
-    Assert.Equal(112, result.i);
-    Assert.Equal(41.75, result.d);
+    var a = new BasicStruct(100, 33.25);
+    var b = new BasicStruct(12, 8.5);
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddBasicStruct(ref a, ref b, out var actualResult);
+    var expectedResult = a.Add(b);
+    Assert.Equal(expectedResult, actualResult);
   }
 
   [Fact]
   public void TestInAndOutStructArrays() {
     const Int32 size = 37;
-    var a = new BasicInteropInteractions.BasicStruct[size];
-    var b = new BasicInteropInteractions.BasicStruct[size];
-    var expectedResult = new BasicInteropInteractions.BasicStruct[size];
+    var a = new BasicStruct[size];
+    var b = new BasicStruct[size];
+    var expectedResult = new BasicStruct[size];
 
     for (Int32 i = 0; i != size; ++i) {
-      var tempA = new BasicInteropInteractions.BasicStruct(i, 1234.5 + i);
-      var tempB = new BasicInteropInteractions.BasicStruct(100 + i, 824.3 + i);
-      a[i] = tempA;
-      b[i] = tempB;
-      expectedResult[i] = new BasicInteropInteractions.BasicStruct(tempA.i + tempB.i, tempA.d + tempB.d);
+      a[i] = new BasicStruct(i, 1234.5 + i);
+      b[0] = new BasicStruct(100 + i, 824.3 + i);
+      expectedResult[i] = a[i].Add(b[i]);
     }
-    var actualResult = new BasicInteropInteractions.BasicStruct[size];
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(a, b, size, actualResult);
+    var actualResult = new BasicStruct[size];
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddBasicStructArrays(a, b, size, actualResult);
     Assert.Equal(expectedResult, actualResult);
   }
 
   [Fact]
   public void TestInAndOutNestedStruct() {
-    var a1 = new BasicInteropInteractions.BasicStruct(11, 22.22);
-    var a2 = new BasicInteropInteractions.BasicStruct(33, 44.44);
-    var a = new BasicInteropInteractions.NestedStruct(a1, a2);
+    var a1 = new BasicStruct(11, 22.22);
+    var a2 = new BasicStruct(33, 44.44);
+    var a = new NestedStruct(a1, a2);
 
-    var b1 = new BasicInteropInteractions.BasicStruct(55, 66.66);
-    var b2 = new BasicInteropInteractions.BasicStruct(77, 88.88);
-    var b = new BasicInteropInteractions.NestedStruct(b1, b2);
+    var b1 = new BasicStruct(55, 66.66);
+    var b2 = new BasicStruct(77, 88.88);
+    var b = new NestedStruct(b1, b2);
 
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddNestedStruct(ref a, ref b, out var result);
-    Assert.Equal(112, result.A.i);
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddNestedStruct(ref a, ref b, out var actualResult);
+    var expectedResult = a.Add(b);
+    Assert.Equal(expectedResult, actualResult);
+  }
+
+  [Fact]
+  public void TestInAndOutNestedStructArray() {
+    const Int32 size = 52;
+    var a = new NestedStruct[size];
+    var b = new NestedStruct[size];
+    var expectedResult = new NestedStruct[size];
+
+    for (Int32 i = 0; i != size; ++i) {
+      var aa = new BasicStruct(i * 100, i * 11.11);
+      var ab = new BasicStruct(i + 200, i * 22.22);
+      var ba = new BasicStruct(i + 300, i * 33.33);
+      var bb = new BasicStruct(i + 400, i * 44.44);
+      a[i] = new NestedStruct(aa, ab);
+      b[i] = new NestedStruct(ba, bb);
+      expectedResult[i] = a[i].Add(b[i]);
+    }
+
+    var actualResult = new NestedStruct[size];
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddNestedStructArrays(a, b, size, actualResult);
+    Assert.Equal(expectedResult, actualResult);
+  }
+
+  [Fact]
+  public void TestErrorStatus() {
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_SetErrorIfLessThan(10, 1, out var status1);
+    var error1 = status1.GetError();
+    Assert.Null(error1);
+
+    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_SetErrorIfLessThan(1, 10, out var status2);
+    var error2 = status2.GetError();
+    Assert.NotNull(error2);
   }
 }

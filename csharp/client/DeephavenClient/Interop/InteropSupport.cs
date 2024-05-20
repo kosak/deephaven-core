@@ -142,14 +142,25 @@ public struct ErrorStatusNew {
   internal StringHandle StringHandle;
   internal StringPoolHandle StringPoolHandle;
 
+  /// <summary>
+  /// OkOrThrow and GetError are destructive and you can only call one of them, once.
+  /// </summary>
   public void OkOrThrow() {
+    var error = GetError();
+    if (error != null) {
+      throw new Exception(error);
+    }
+  }
+
+  /// <summary>
+  /// OkOrThrow and GetError are destructive and you can only call one of them, once.
+  /// </summary>
+  public string? GetError() {
     if (StringPoolHandle.NumStrings == 0) {
-      // ok
-      return;
+      return null;
     }
 
-    var error = StringPoolHandle.ExportAndDestroy().Get(StringHandle);
-    throw new Exception(error);
+    return StringPoolHandle.ExportAndDestroy().Get(StringHandle);
   }
 }
 
