@@ -18,11 +18,14 @@ public class ClientTable : IDisposable {
       out var numColumns, out var numRows, out var status1);
     status1.OkOrThrow();
 
-    var columnNames = new string[numColumns];
+    var columnNameHandles = new StringHandle[numColumns];
     var elementTypesAsInt = new Int32[numColumns];
-    NativeClientTable.deephaven_client_ClientTable_Schema(self, numColumns, columnNames, elementTypesAsInt,
-      out var status2);
+    NativeClientTable.deephaven_client_ClientTable_Schema(self, numColumns, columnNameHandles, elementTypesAsInt,
+      out var stringPoolHandle, out var status2);
     status2.OkOrThrow();
+    var pool = stringPoolHandle.ExportAndDestroy();
+
+    var columnNames = columnNameHandles.Select(pool.Get).ToArray();
     Schema = new Schema(columnNames, elementTypesAsInt, numRows);
   }
 
@@ -58,14 +61,14 @@ public class ClientTable : IDisposable {
 
 internal abstract class ClientTableColumnFactory {
   private static readonly ColumnFactory<NativeClientTable>[] Factories = {
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<char>(NativeClientTable.deephaven_client_ClientTableHelper_GetCharColumn),
+    new ColumnFactory<NativeClientTable>.ForChar(NativeClientTable.deephaven_client_ClientTableHelper_GetCharAsInt16Column),
     new ColumnFactory<NativeClientTable>.ForOtherValueType<SByte>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt8Column),
     new ColumnFactory<NativeClientTable>.ForOtherValueType<Int16>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt16Column),
     new ColumnFactory<NativeClientTable>.ForOtherValueType<Int32>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt32Column),
     new ColumnFactory<NativeClientTable>.ForOtherValueType<Int64>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt64Column),
     new ColumnFactory<NativeClientTable>.ForOtherValueType<float>(NativeClientTable.deephaven_client_ClientTableHelper_GetFloatColumn),
     new ColumnFactory<NativeClientTable>.ForOtherValueType<double>(NativeClientTable.deephaven_client_ClientTableHelper_GetDoubleColumn),
-    new ColumnFactory<NativeClientTable>.ForBool(NativeClientTable.deephaven_client_ClientTableHelper_GetBooleanAsSbyteColumn),
+    new ColumnFactory<NativeClientTable>.ForBool(NativeClientTable.deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn),
     new ColumnFactory<NativeClientTable>.ForString(NativeClientTable.deephaven_client_ClientTableHelper_GetStringColumn),
     // TODO: probably support something with more precision than the .NET DateTime type
     new ColumnFactory<NativeClientTable>.ForDateTime(NativeClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn),
@@ -77,109 +80,111 @@ internal abstract class ClientTableColumnFactory {
   }
 }
 
-internal class NativeClientTable {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTable_dtor(NativePtr<NativeClientTable> self);
+internal partial class NativeClientTable {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTable_dtor(NativePtr<NativeClientTable> self);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTable_GetDimensions(
-    NativePtr<NativeClientTable> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTable_GetDimensions(
+    NativePtr<NativeClientTable> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTable_Schema(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTable_Schema(
     NativePtr<NativeClientTable> self,
     Int32 numColumns,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] columns,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] columnTypes,
-    out ErrorStatus status);
+    StringHandle[] columnHandles,
+    Int32[] columnTypes,
+    out StringPoolHandle stringPool,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetCharColumn(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetInt8Column(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] char[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    sbyte[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetInt8Column(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetInt16Column(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] SByte[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    Int16[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetInt16Column(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetInt32Column(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int16[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    Int32[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetInt32Column(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetInt64Column(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int32[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    Int64[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetInt64Column(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetFloatColumn(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    float[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetFloatColumn(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetDoubleColumn(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] float[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    double[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetDoubleColumn(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] double[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    InteropBool[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetBooleanAsSbyteColumn(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    Int16[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetStringColumn(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetStringColumn(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] string[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    StringHandle[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out StringPoolHandle stringPoolHandle,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(
     NativePtr<NativeClientTable> self,
     Int32 columnIndex,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] Int64[] data,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 4)] sbyte[]? optionalDestNullFlags,
+    Int64[] data,
+    InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 }

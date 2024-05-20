@@ -12,24 +12,31 @@ internal abstract class ColumnFactory<TTableType> {
     Int64 numRows);
 
   public delegate void NativeImpl<in T>(NativePtr<TTableType> table, Int32 columnIndex,
-    T[] data, sbyte[]? nullFlags, Int64 numRows, out ErrorStatus status);
+    T[] data, InteropBool[]? nullFlags, Int64 numRows, out ErrorStatusNew status);
 
   public sealed class ForString : ColumnFactory<TTableType> {
-    private readonly NativeImpl<string> _nativeImpl;
+    public delegate void NativeImplString(NativePtr<TTableType> table, Int32 columnIndex,
+      StringHandle[] data, InteropBool[]? nullFlags, Int64 numRows, out StringPoolHandle stringPoolHandle,
+      out ErrorStatusNew status);
 
-    public ForString(NativeImpl<string> nativeImpl) => _nativeImpl = nativeImpl;
+    private readonly NativeImplString _nativeImpl;
+
+    public ForString(NativeImplString nativeImpl) => _nativeImpl = nativeImpl;
 
     public override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
-      var data = new string[numRows];
-      var nullsAsSbytes = new sbyte[numRows];
-      _nativeImpl(table, columnIndex, data, nullsAsSbytes, numRows, out var errorStatus);
+      var handles = new StringHandle[numRows];
+      var interopNulls = new InteropBool[numRows];
+      _nativeImpl(table, columnIndex, handles, interopNulls, numRows, out var stringPoolHandle, out var errorStatus);
       errorStatus.OkOrThrow();
+      var pool = stringPoolHandle.ExportAndDestroy();
+
+      var data = new string[numRows];
       var nulls = new bool[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        nulls[i] = nullsAsSbytes[i] != 0;
+        data[i] = pool.Get(handles[i]);
+        nulls[i] = (bool)interopNulls[i];
       }
-
       return (data, nulls);
     }
 
@@ -62,44 +69,64 @@ internal abstract class ColumnFactory<TTableType> {
       Int64 numRows);
   }
 
-  public sealed class ForBool : ColumnFactoryForValueTypes<bool> {
-    private readonly NativeImpl<sbyte> _nativeImpl;
+  public sealed class ForChar: ColumnFactoryForValueTypes<char> {
+    private readonly NativeImpl<Int16> _nativeImpl;
 
-    public ForBool(NativeImpl<sbyte> nativeImpl) => _nativeImpl = nativeImpl;
+    public ForChar(NativeImpl<Int16> nativeImpl) => _nativeImpl = nativeImpl;
 
-    protected override (bool[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
+    protected override (char[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
-      var intermediate = new sbyte[numRows];
-      var nullsAsSbytes = new sbyte[numRows];
-      _nativeImpl(table, columnIndex, intermediate, nullsAsSbytes, numRows, out var errorStatus);
+      var intermediate = new Int16[numRows];
+      var interopNulls = new InteropBool[numRows];
+      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
-      var data = new bool[numRows];
+      var data = new char[numRows];
       var nulls = new bool[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        data[i] = intermediate[i] != 0;
-        nulls[i] = nullsAsSbytes[i] != 0;
+        data[i] = (char)intermediate[i];
+        nulls[i] = (bool)interopNulls[i];
       }
       return (data, nulls);
     }
   }
 
-  public sealed class ForDateTime : ColumnFactoryForValueTypes<DateTime> {
+  public sealed class ForBool : ColumnFactoryForValueTypes<bool> {
+    private readonly NativeImpl<InteropBool> _nativeImpl;
+
+    public ForBool(NativeImpl<InteropBool> nativeImpl) => _nativeImpl = nativeImpl;
+
+    protected override (bool[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
+      Int64 numRows) {
+      var intermediate = new InteropBool[numRows];
+      var interopNulls = new InteropBool[numRows];
+      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
+      errorStatus.OkOrThrow();
+      var data = new bool[numRows];
+      var nulls = new bool[numRows];
+      for (Int64 i = 0; i < numRows; ++i) {
+        data[i] = (bool)intermediate[i];
+        nulls[i] = (bool)interopNulls[i];
+      }
+      return (data, nulls);
+    }
+  }
+
+  public sealed class ForDateTime : ColumnFactoryForValueTypes<DhDateTime> {
     private readonly NativeImpl<Int64> _nativeImpl;
 
     public ForDateTime(NativeImpl<Int64> nativeImpl) => _nativeImpl = nativeImpl;
 
-    protected override (DateTime[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
+    protected override (DhDateTime[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
       var intermediate = new Int64[numRows];
-      var nullsAsSbytes = new sbyte[numRows];
-      _nativeImpl(table, columnIndex, intermediate, nullsAsSbytes, numRows, out var errorStatus);
+      var interopNulls = new InteropBool[numRows];
+      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
-      var data = new DateTime[numRows];
+      var data = new DhDateTime[numRows];
       var nulls = new bool[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        var micros = intermediate[i] / 1000;
-        data[i] = DateTimeOffset.UnixEpoch.AddMicroseconds(micros).DateTime;
-        nulls[i] = nullsAsSbytes[i] != 0;
+        data[i] = new DhDateTime(intermediate[i]);
+        nulls[i] = (bool)interopNulls[i];
       }
       return (data, nulls);
     }
@@ -113,12 +140,12 @@ internal abstract class ColumnFactory<TTableType> {
     protected override (T[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
       var data = new T[numRows];
-      var nullsAsSbytes = new sbyte[numRows];
-      _nativeImpl(table, columnIndex, data, nullsAsSbytes, numRows, out var errorStatus);
+      var interopNulls = new InteropBool[numRows];
+      _nativeImpl(table, columnIndex, data, interopNulls, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
       var nulls = new bool[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        nulls[i] = nullsAsSbytes[i] != 0;
+        nulls[i] = (bool)interopNulls[i];
       }
       return (data, nulls);
     }

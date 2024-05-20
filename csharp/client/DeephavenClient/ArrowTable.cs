@@ -15,13 +15,17 @@ public class ArrowTable : IDisposable {
     Self = self;
     NativeArrowTable.deephaven_client_ArrowTable_GetDimensions(self, out NumColumns, out NumRows, out var status1);
     status1.OkOrThrow();
+
+    var columnHandles = new StringHandle[NumColumns];
+    var elementTypesAsInt = new Int32[NumColumns];
+    NativeArrowTable.deephaven_client_ArrowTable_GetSchema(self, NumColumns, columnHandles, elementTypesAsInt, out var stringPoolHandle, out var status2);
+    status2.OkOrThrow();
+    var pool = stringPoolHandle.ExportAndDestroy();
+
     _columnNames = new string[NumColumns];
     _columnElementTypes = new ElementTypeId[NumColumns];
-
-    var elementTypesAsInt = new Int32[NumColumns];
-    NativeArrowTable.deephaven_client_ArrowTable_GetSchema(self, NumColumns, _columnNames, elementTypesAsInt, out var status2);
-    status2.OkOrThrow();
     for (var i = 0; i != NumColumns; ++i) {
+      _columnNames[i] = pool.Get(columnHandles[i]);
       _columnElementTypes[i] = (ElementTypeId)elementTypesAsInt[i];
     }
   }
@@ -58,17 +62,16 @@ public class ArrowTable : IDisposable {
 
 internal static class ArrowTableColumnFactory {
   private static readonly ColumnFactory<NativeArrowTable>[] Factories = {
-    new ColumnFactory<NativeArrowTable>.ForOtherValueType<char>(NativeArrowTable.deephaven_client_ArrowTable_GetCharColumn),
+    new ColumnFactory<NativeArrowTable>.ForChar(NativeArrowTable.deephaven_client_ArrowTable_GetCharAsInt16Column),
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<SByte>(NativeArrowTable.deephaven_client_ArrowTable_GetInt8Column),
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<Int16>(NativeArrowTable.deephaven_client_ArrowTable_GetInt16Column),
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<Int32>(NativeArrowTable.deephaven_client_ArrowTable_GetInt32Column),
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<Int64>(NativeArrowTable.deephaven_client_ArrowTable_GetInt64Column),
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<float>(NativeArrowTable.deephaven_client_ArrowTable_GetFloatColumn),
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<double>(NativeArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
-    new ColumnFactory<NativeArrowTable>.ForBool(NativeArrowTable.deephaven_client_ArrowTable_GetBooleanAsInt32Column),
+    new ColumnFactory<NativeArrowTable>.ForBool(NativeArrowTable.deephaven_client_ArrowTable_GetBooleanAsInteropBoolColumn),
     new ColumnFactory<NativeArrowTable>.ForString(NativeArrowTable.deephaven_client_ArrowTable_GetStringColumn),
-    // TODO: probably support something with more precision than the .NET DateTime type
-    new  ColumnFactory<NativeArrowTable>.ForDateTime(NativeArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
+    new ColumnFactory<NativeArrowTable>.ForDateTime(NativeArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
     // List - TODO(kosak)
   };
 
@@ -90,16 +93,7 @@ internal partial class NativeArrowTable {
     NativePtr<NativeArrowTable> self, Int32 numColumns,
     StringHandle[] columnHandles,
     Int32[] columnTypes,
-    out StringPool stringPool,
-    out ErrorStatusNew status);
-
-  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_client_ArrowTable_GetCharColumn(
-    NativePtr<NativeArrowTable> self,
-    Int32 numColumns,
-    char[] data,
-    InteropBool[]? nullFlags,
-    Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -161,6 +155,15 @@ internal partial class NativeArrowTable {
     NativePtr<NativeArrowTable> self,
     Int32 numColumns,
     InteropBool[] data,
+    InteropBool[]? nullFlags,
+    Int64 numRows,
+    out ErrorStatusNew status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ArrowTable_GetCharAsInt16Column(
+    NativePtr<NativeArrowTable> self,
+    Int32 numColumns,
+    Int16[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
     out ErrorStatusNew status);
