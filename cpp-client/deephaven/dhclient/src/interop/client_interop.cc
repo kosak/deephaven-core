@@ -958,7 +958,7 @@ void deephaven_client_Aggregate_WAvg(const char *weight,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto cols = std::vector<std::string>(columns, columns + num_columns);
-    result->Reset(new Aggregate(Aggregate::WAvg(weight, std::move(cols))));
+    result->Reset(new Aggregate(Aggregate::WAvg(std::string(weight), std::move(cols))));
   });
 }
 
