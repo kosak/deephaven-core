@@ -16,8 +16,9 @@ void deephaven_dhcore_basicInteropInteractions_XorArrays(
     const deephaven::dhcore::interop::InteropBool *b,
     int32_t length,
     deephaven::dhcore::interop::InteropBool *result);
-void deephaven_dhcore_basicInteropInteractions_Concat(const char16_t *a, const char16_t *b,
-    const deephaven::dhcore::interop::PlatformUtf16 **result);
+void deephaven_dhcore_basicInteropInteractions_Concat(const char *a, const char *b,
+    deephaven::dhcore::interop::StringHandle *resultHandle,
+    deephaven::dhcore::interop::StringPoolHandle *stringPoolHandle);
 
 struct BasicStructIn {
   int i;

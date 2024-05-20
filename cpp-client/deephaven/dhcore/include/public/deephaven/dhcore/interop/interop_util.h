@@ -10,6 +10,7 @@
 #include <locale>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace deephaven::dhcore::interop {
 using Utf16Converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>;
@@ -176,6 +177,47 @@ struct NativePtr {
   T *ptr_ = nullptr;
 };
 
+class StringPool {
+public:
+  StringPool(std::string bytes, std::vector<int32_t> ends);
+  StringPool(const StringPool &other) = delete;
+  StringPool &operator=(const StringPool &other) = delete;
+  ~StringPool();
+
+private:
+  std::string bytes_;
+  std::vector<int32_t> ends_;
+};
+
+struct StringHandle {
+  explicit StringHandle(int32_t index) : index_(index) {}
+
+  int32_t index_ = 0;
+};
+
+struct StringPoolHandle {
+  StringPoolHandle(StringPool *string_pool, int32_t num_bytes, int32_t num_strings) :
+      stringPool_(string_pool), numBytes_(num_bytes), numStrings_(num_strings) {}
+
+  StringPool *stringPool_ = nullptr;
+  int32_t numBytes_ = 0;
+  int32_t numStrings_ = 0;
+};
+
+class StringPoolBuilder {
+public:
+  StringPoolBuilder();
+  StringPoolBuilder(const StringPoolBuilder &other) = delete;
+  StringPoolBuilder &operator=(const StringPoolBuilder &other) = delete;
+  ~StringPoolBuilder();
+
+  StringHandle Add(std::string_view sv);
+  StringPoolHandle Build();
+
+private:
+  std::string bytes_;
+  std::vector<int32_t> ends_;
+};
 
 /**
  * Not safe to pass .NET bool to interop: use int8_t (aka .NET sbyte) instead.

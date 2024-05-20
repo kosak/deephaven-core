@@ -5,6 +5,11 @@
 
 using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::PlatformUtf16;
+using deephaven::dhcore::interop::StringHandle;
+using deephaven::dhcore::interop::StringPool;
+using deephaven::dhcore::interop::StringPoolHandle;
+using deephaven::dhcore::interop::StringPoolBuilder;
+using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::utility::MakeReservedVector;
 
@@ -32,16 +37,12 @@ void deephaven_dhcore_basicInteropInteractions_XorArrays(
   }
 }
 
-void deephaven_dhcore_basicInteropInteractions_Concat(const char16_t *a, const char16_t *b,
-    const PlatformUtf16 **result) {
-  // This converts to UTF-8, does a concat, and then converts back to UTF-16.
-  // You could have just stayed in UTF-16 the whole time.
-  Utf16Converter uc;
-  auto a_utf8 = uc.to_bytes(a);
-  auto b_utf8 = uc.to_bytes(b);
-  auto concatted = a_utf8 + b_utf8;
-  auto concatted_utf16 = uc.from_bytes(concatted);
-  *result = PlatformUtf16::Create(concatted_utf16);
+void deephaven_dhcore_basicInteropInteractions_Concat(const char *a, const char *b,
+    StringHandle *result_handle, StringPoolHandle *string_pool_handle) {
+  StringPoolBuilder builder;
+  auto text = std::string(a) + b;
+  *result_handle = builder.Add(text);
+  *string_pool_handle = builder.Build();
 }
 
 void deephaven_dhcore_basicInteropInteractions_BasicStruct(

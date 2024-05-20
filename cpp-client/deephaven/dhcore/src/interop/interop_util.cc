@@ -63,6 +63,27 @@ void PlatformUtf16::CreateBulk(const char16_t **strings, size_t num_strings,
     const deephaven::dhcore::interop::PlatformUtf16 **results) {
   AllocatorHelper()(strings, results, static_cast<int32_t>(num_strings));
 }
+
+StringPool::StringPool(std::string bytes, std::vector<int32_t> ends) :
+   bytes_(std::move(bytes)), ends_(std::move(ends)) {}
+StringPool::~StringPool() = default;
+
+StringPoolBuilder::StringPoolBuilder() = default;
+StringPoolBuilder::~StringPoolBuilder() = default;
+
+StringHandle StringPoolBuilder::Add(std::string_view sv) {
+  StringHandle result(ends_.size());
+  bytes_ += sv;
+  ends_.push_back(bytes_.size());
+  return result;
+}
+
+StringPoolHandle StringPoolBuilder::Build() {
+  auto num_bytes = bytes_.size();
+  auto num_strings = ends_.size();
+  auto *sp = new StringPool(std::move(bytes_), std::move(ends_));
+  return StringPoolHandle(sp, num_bytes, num_strings);
+}
 }  // namespace deephaven::dhcore::interop
 
 extern "C" {
