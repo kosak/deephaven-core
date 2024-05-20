@@ -172,6 +172,11 @@ void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle 
     const char16_t *variable,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_ToClientTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+
 void deephaven_client_TableHandle_ToString(
     deephaven::client::TableHandle *self,
     int32_t want_headers,
@@ -194,75 +199,94 @@ void deephaven_client_TableHandle_Unsubscribe(deephaven::client::TableHandle *se
     std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> *native_subscription_handle,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_ArrowTable_dtor(deephaven::client::interop::ArrowTable *self);
+void deephaven_client_ArrowTable_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> self);
 
-void deephaven_client_ArrowTable_GetDimensions(deephaven::client::interop::ArrowTable *self,
+void deephaven_client_ArrowTable_GetDimensions(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> self,
     int32_t *num_columns, int64_t *num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_ArrowTable_GetSchema(deephaven::client::interop::ArrowTable *self,
-    int32_t num_columns, const deephaven::dhcore::interop::PlatformUtf16 **columns,
-    int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_ArrowTable_GetSchema(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> self,
+    int32_t num_columns,
+    deephaven::dhcore::interop::StringHandle *column_handles, int32_t *column_types,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_ToClientTable(deephaven::client::TableHandle *self,
-    deephaven::client::interop::ClientTableSpWrapper **client_table,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_ClientTable_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self);
 
-void deephaven_client_ClientTable_dtor(deephaven::client::interop::ClientTableSpWrapper *self);
-
-void deephaven_client_ClientTable_GetDimensions(deephaven::client::interop::ClientTableSpWrapper *self,
+void deephaven_client_ClientTable_GetDimensions(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
     int32_t *num_columns, int64_t *num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_ClientTable_Schema(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t num_columns, const deephaven::dhcore::interop::PlatformUtf16 **columns,
-    int32_t *column_types, deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_ClientTable_Schema(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t num_columns,
+    deephaven::dhcore::interop::StringHandle *column_handles,
+    int32_t *column_types,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+
+void deephaven_client_ClientTableHelper_GetInt8Column(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int8_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetInt16Column(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int16_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetInt32Column(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int32_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetInt64Column(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int64_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetFloatColumn(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, float *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetDoubleColumn(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, double *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags,
+    int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int16_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags,
+    int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int8_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetStringColumn(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, deephaven::dhcore::interop::StringHandle *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    int32_t column_index, int64_t *data,
+    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self);
 
 void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
     deephaven::client::interop::ClientTableSpWrapper **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
-
-void deephaven_client_ClientTableHelper_GetInt8Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int8_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetInt16Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int16_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetInt32Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int32_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetInt64Column(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetFloatColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, float *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetDoubleColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, double *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetCharColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, char16_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetBooleanAsSbyteColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int8_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetStringColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, const deephaven::dhcore::interop::PlatformUtf16 **data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(deephaven::client::interop::ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data,
-    deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_AggregateCombo_Create(
