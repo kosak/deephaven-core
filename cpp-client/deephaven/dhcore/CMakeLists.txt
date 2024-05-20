@@ -21,7 +21,7 @@ set(ALL_FILES
     src/container/row_sequence.cc
     src/immerutil/abstract_flex_vector.cc
     src/immerutil/immer_column_source.cc
-    src/interop/basic_interop_interactions.cc
+        src/interop/testapi/basic_interop_interactions.cc
     src/interop/interop_util.cc
     src/ticking/barrage_processor.cc
     src/ticking/immer_table_state.cc
@@ -49,7 +49,7 @@ set(ALL_FILES
     include/public/deephaven/dhcore/column/column_source_helpers.h
     include/public/deephaven/dhcore/column/column_source_utils.h
     include/public/deephaven/dhcore/container/row_sequence.h
-    include/public/deephaven/dhcore/interop/basic_interop_interactions.h
+        include/public/deephaven/dhcore/interop/testapi/basic_interop_interactions.h
     include/public/deephaven/dhcore/interop/interop_util.h
     include/public/deephaven/dhcore/ticking/barrage_processor.h
     include/public/deephaven/dhcore/ticking/ticking.h
