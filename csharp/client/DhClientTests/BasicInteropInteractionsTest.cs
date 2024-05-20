@@ -71,7 +71,7 @@ public class BasicInteropInteractionsTest {
     var expectedResult = a + b;
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_Concat(a, b,
       out var resultHandle, out var poolHandle);
-    var pool = poolHandle.ImportAndDestroy();
+    var pool = poolHandle.ExportAndDestroy();
     var actualResult = pool.Get(resultHandle);
     Assert.Equal(expectedResult, actualResult);
   }
@@ -92,7 +92,7 @@ public class BasicInteropInteractionsTest {
     var resultHandles = new StringHandle[numItems];
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_ConcatArrays(
       prefixes, suffixes, numItems, resultHandles, out var poolHandle);
-    var pool = poolHandle.ImportAndDestroy();
+    var pool = poolHandle.ExportAndDestroy();
     var actualResult = resultHandles.Select(pool.Get).ToArray();
     Assert.Equal(expectedResult, actualResult);
   }
