@@ -44,11 +44,10 @@ internal class InternalTimePointSpecifier : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_dtor(temp);
+    NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_dtor(old);
   }
 }
 

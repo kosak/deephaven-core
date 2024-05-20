@@ -22,11 +22,10 @@ public class SubscriptionHandle : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(temp);
+    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(old);
   }
 }
 
@@ -56,11 +55,10 @@ public class TickingUpdate : IDisposable {
   }
 
   public void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeTickingUpdate.deephaven_client_TickingUpdate_dtor(temp);
+    NativeTickingUpdate.deephaven_client_TickingUpdate_dtor(old);
   }
 }
 

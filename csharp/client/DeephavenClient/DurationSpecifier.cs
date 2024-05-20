@@ -45,11 +45,10 @@ internal class InternalDurationSpecifier : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_dtor(temp);
+    NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_dtor(old);
   }
 }
 

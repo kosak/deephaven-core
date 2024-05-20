@@ -36,11 +36,10 @@ public class Client : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeClient.deephaven_client_Client_dtor(temp);
+    NativeClient.deephaven_client_Client_dtor(old);
   }
 }
 

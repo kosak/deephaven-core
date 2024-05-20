@@ -161,14 +161,12 @@ public sealed class TableHandle : IDisposable {
   }
 
   public void Unsubscribe(SubscriptionHandle handle) {
-    if (handle.Self.ptr == IntPtr.Zero) {
+    if (!NativePtrUtil.TryRelease(ref handle.Self, out var old)) {
       return;
     }
-    var nativePtr = handle.Self;
-    handle.Self.ptr = IntPtr.Zero;
     Manager.RemoveSubscription(handle);
-    NativeTableHandle.deephaven_client_TableHandle_Unsubscribe(Self, nativePtr, out var status);
-    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(nativePtr);
+    NativeTableHandle.deephaven_client_TableHandle_Unsubscribe(Self, old, out var status);
+    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(old);
     status.OkOrThrow();
   }
 
@@ -196,11 +194,10 @@ public sealed class TableHandle : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeTableHandle.deephaven_client_TableHandle_dtor(temp);
+    NativeTableHandle.deephaven_client_TableHandle_dtor(old);
   }
 }
 

@@ -133,3 +133,7 @@ public struct ErrorStatus {
     return item;
   }
 }
+
+public class NativeStringPool {
+
+}

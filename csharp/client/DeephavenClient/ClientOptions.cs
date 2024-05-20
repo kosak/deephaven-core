@@ -24,11 +24,10 @@ public class ClientOptions : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeClientOptions.deephaven_client_ClientOptions_dtor(temp);
+    NativeClientOptions.deephaven_client_ClientOptions_dtor(old);
   }
 
   ClientOptions SetDefaultAuthentication() {

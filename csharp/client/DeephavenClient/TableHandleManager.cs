@@ -22,11 +22,10 @@ public sealed class TableHandleManager : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeTableHandleManager.deephaven_client_TableHandleManager_dtor(temp);
+    NativeTableHandleManager.deephaven_client_TableHandleManager_dtor(old);
   }
 
   public TableHandle EmptyTable(Int64 size) {

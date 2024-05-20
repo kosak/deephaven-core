@@ -21,11 +21,10 @@ public class TableMaker : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    var temp = Self.Release();
-    if (temp.IsNull) {
+    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
       return;
     }
-    NativeTableMaker.deephaven_dhclient_utility_TableMaker_dtor(temp);
+    NativeTableMaker.deephaven_dhclient_utility_TableMaker_dtor(old);
   }
 
   public void AddColumn<T>(string name, IList<T> column) {
