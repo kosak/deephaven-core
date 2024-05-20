@@ -201,9 +201,9 @@ public sealed class TableHandle : IDisposable {
   }
 }
 
-internal class NativeTableHandle {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_dtor(NativePtr<NativeTableHandle> self);
+internal partial class NativeTableHandle {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_dtor(NativePtr<NativeTableHandle> self);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_TableHandle_GetAttributes(
