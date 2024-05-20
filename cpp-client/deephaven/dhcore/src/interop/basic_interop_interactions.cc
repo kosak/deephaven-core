@@ -57,36 +57,15 @@ void deephaven_dhcore_basicInteropInteractions_ConcatArrays(const char **a, cons
   *string_pool_handle = builder.Build();
 }
 
-void deephaven_dhcore_basicInteropInteractions_BasicStruct(
-    const BasicStructIn *data, int i_offset, const char16_t *s_append, BasicStructOut *result) {
-  result->i = data->i + i_offset;
-
-  // As a contrast to the above, we do the concat operation without converting back and
-  // forth to UTF-8
-  auto concatted_utf16 = std::u16string(data->s) + s_append;
-  result->s = PlatformUtf16::Create(concatted_utf16);
+void deephaven_dhcore_basicInteropInteractions_AddBasicStruct(
+    const BasicStruct *a, const BasicStruct *b, BasicStruct *result) {
+  *result = BasicStruct(a->i_ + b->i_, a->d_ + b->d_);
 }
 
-void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
-    const char16_t **data, int32_t length, const char16_t *to_append,
-    const deephaven::dhcore::interop::PlatformUtf16 **result) {
-  // This is the demonstration of an advanced technique. Since every call to PlaformUtf16::Create
-  // has to cross the boundary back to native, we gather the values here so we can use a batch call
-  auto values = MakeReservedVector<std::u16string>(length);
+void deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(
+    const BasicStruct *a, const BasicStruct *b, int32_t length, BasicStruct *result) {
   for (int32_t i = 0; i != length; ++i) {
-    values.push_back(std::u16string(data[i]) + to_append);
-  }
-  PlatformUtf16::CreateBulk(values.data(), values.size(), result);
-}
-
-void deephaven_dhcore_basicInteropInteractions_Less(int32_t a, int32_t b, InteropBool *result) {
-  *result = InteropBool(a < b);
-}
-
-void deephaven_dhcore_basicInteropInteractions_Less_Array(const int32_t *a, const int32_t *b,
-    int32_t length, InteropBool *results) {
-  for (int32_t i = 0; i != length; ++i) {
-    results[i] = InteropBool(a[i] < b[i]);
+    result[i] = BasicStruct(a[i].i_ + b[i].i_, a[i].d_ + b[i].d_);
   }
 }
 }  // extern "C"
