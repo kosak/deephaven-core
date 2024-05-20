@@ -220,7 +220,9 @@ public:
   StringPoolBuilder &operator=(const StringPoolBuilder &other) = delete;
   ~StringPoolBuilder();
 
+  [[nodiscard]]
   StringHandle Add(std::string_view sv);
+  [[nodiscard]]
   StringPoolHandle Build();
 
 private:
@@ -249,21 +251,23 @@ public:
    */
   template<typename T>
   void Run(const T &callback) {
-    text_ = nullptr;
+    StringPoolBuilder builder;
     try {
       // Sanity check for this method's callers to make sure they're not returning a value
       // which would be a programming mistake because it is ignored here.
       static_assert(std::is_same_v<decltype(callback()), void>);
       callback();
     } catch (const std::exception &e) {
-      text_ = PlatformUtf16::Create(e.what());
+      stringHandle_ = builder.Add(e.what());
     } catch (...) {
-      text_ = PlatformUtf16::Create("Unknown exception");
+      stringHandle_ = builder.Add("Unknown exception");
     }
+    stringPoolHandle_ = builder.Build();
   }
 
 private:
-  const PlatformUtf16 *text_ = nullptr;
+  StringHandle stringHandle_;
+  StringPoolHandle stringPoolHandle_;
 };
 }  // namespace deephaven::dhcore::interop
 
