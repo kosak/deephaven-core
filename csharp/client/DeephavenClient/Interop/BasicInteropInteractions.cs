@@ -41,6 +41,18 @@ public partial class BasicInteropInteractions {
     public double d;
   }
 
+  [StructLayout(LayoutKind.Sequential)]
+  public struct NestedStruct {
+    public BasicStruct A;
+    public BasicStruct B;
+
+    public NestedStruct(BasicStruct a, BasicStruct b) {
+      A = a;
+      B = b;
+    }
+  }
+
+
   [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStruct(
     ref BasicStruct a, ref BasicStruct b, out BasicStruct result);

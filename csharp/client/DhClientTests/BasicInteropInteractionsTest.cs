@@ -125,4 +125,19 @@ public class BasicInteropInteractionsTest {
     Assert.Equal(expectedResult, actualResult);
   }
 
+  [Fact]
+  public void TestInAndOutNestedStruct() {
+    var a1 = new BasicInteropInteractions.BasicStruct(11, 22.22);
+    var a2 = new BasicInteropInteractions.BasicStruct(33, 44.44);
+    var a = new BasicInteropInteractions.NestedStruct(a1, a2);
+
+    var b1 = new BasicInteropInteractions.BasicStruct(55, 66.66);
+    var b2 = new BasicInteropInteractions.BasicStruct(77, 88.88);
+    var b = new BasicInteropInteractions.NestedStruct(b1, b2);
+
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddNestedStruct(ref a, ref b, out var result);
+    Assert.Equal(112, result.i);
+    Assert.Equal(41.75, result.d);
+  }
+
 }
