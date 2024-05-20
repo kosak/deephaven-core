@@ -4,7 +4,7 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
-using deephaven::dhcore::interop::ErrorStatus;
+using deephaven::dhcore::interop::ErrorStatusNew;
 using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::StringHandle;
@@ -75,12 +75,12 @@ void deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddBasicStructArr
   }
 }
 
-void deephaven_dhcore_basicInteropInteractions_AddNestedStruct(
+void deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddNestedStruct(
     const NestedStruct *a, const NestedStruct *b, NestedStruct *result) {
   *result = a->Add(*b);
 }
 
-void deephaven_dhcore_basicInteropInteractions_AddNestedStructArrays(
+void deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddNestedStructArrays(
     const NestedStruct *a, const NestedStruct *b, int32_t length, NestedStruct *result) {
   for (int32_t i = 0; i != length; ++i) {
     result[i] = a[i].Add(b[i]);
@@ -88,7 +88,7 @@ void deephaven_dhcore_basicInteropInteractions_AddNestedStructArrays(
 }
 
 void deephaven_dhcore_interop_testapi_BasicInteropInteractions_SetErrorIfLessThan(
-    int32_t a, int32_t b, ErrorStatus *error_status) {
+    int32_t a, int32_t b, ErrorStatusNew *error_status) {
   error_status->Run([=]() {
     if (a < b) {
       auto message = fmt::format("{} < {}, which is not allowed", a, b);
