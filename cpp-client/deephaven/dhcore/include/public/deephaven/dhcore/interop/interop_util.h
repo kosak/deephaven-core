@@ -179,13 +179,15 @@ struct NativePtr {
 
 class StringPool {
 public:
-  StringPool(std::string bytes, std::vector<int32_t> ends);
+  StringPool(std::vector<uint8_t> bytes, std::vector<int32_t> ends);
   StringPool(const StringPool &other) = delete;
   StringPool &operator=(const StringPool &other) = delete;
   ~StringPool();
 
+  void Export(uint8_t *bytes, int32_t *ends);
+
 private:
-  std::string bytes_;
+  std::vector<uint8_t> bytes_;
   std::vector<int32_t> ends_;
 };
 
@@ -215,7 +217,7 @@ public:
   StringPoolHandle Build();
 
 private:
-  std::string bytes_;
+  std::vector<uint8_t> bytes_;
   std::vector<int32_t> ends_;
 };
 
@@ -260,5 +262,9 @@ private:
 
 extern "C" {
 void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
-    deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocatorHelper);
+    deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocator_helper);
+
+void deephaven_dhcore_interop_StringPool_ExportAndDestroy(
+    deephaven::dhcore::interop::StringPool *string_pool,
+    uint8_t *bytes, int32_t *ends);
 }  // extern "C"

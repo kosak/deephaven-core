@@ -64,16 +64,21 @@ void PlatformUtf16::CreateBulk(const char16_t **strings, size_t num_strings,
   AllocatorHelper()(strings, results, static_cast<int32_t>(num_strings));
 }
 
-StringPool::StringPool(std::string bytes, std::vector<int32_t> ends) :
+StringPool::StringPool(std::vector<uint8_t> bytes, std::vector<int32_t> ends) :
    bytes_(std::move(bytes)), ends_(std::move(ends)) {}
 StringPool::~StringPool() = default;
+
+void StringPool::Export(uint8_t *bytes, int32_t *ends) {
+  std::copy(bytes_.begin(), bytes_.end(), bytes);
+  std::copy(ends_.begin(), ends_.end(), ends);
+}
 
 StringPoolBuilder::StringPoolBuilder() = default;
 StringPoolBuilder::~StringPoolBuilder() = default;
 
 StringHandle StringPoolBuilder::Add(std::string_view sv) {
   StringHandle result(ends_.size());
-  bytes_ += sv;
+  bytes_.insert(bytes_.end(), sv.begin(), sv.end());
   ends_.push_back(bytes_.size());
   return result;
 }
@@ -90,5 +95,12 @@ extern "C" {
 void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(
     deephaven::dhcore::interop::PlatformUtf16::allocatorHelper_t allocator_helper) {
   deephaven::dhcore::interop::PlatformUtf16::AllocatorHelper() = allocator_helper;
+}
+
+void deephaven_dhcore_interop_StringPool_ExportAndDestroy(
+    deephaven::dhcore::interop::StringPool *string_pool,
+    uint8_t *bytes, int32_t *ends) {
+  string_pool->Export(bytes, ends);
+  delete string_pool;
 }
 }  // extern "C"
