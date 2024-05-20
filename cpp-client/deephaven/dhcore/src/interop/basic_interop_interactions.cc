@@ -20,6 +20,17 @@ void deephaven_dhcore_basicInteropInteractions_AddArrays(
   }
 }
 
+void deephaven_dhcore_basicInteropInteractions_Xor(InteropBool a, InteropBool b,
+    InteropBool *result) {
+  *result = InteropBool((bool)a ^ (bool)b);
+}
+
+void deephaven_dhcore_basicInteropInteractions_XorArrays(
+    const InteropBool *a, const InteropBool *b, int32_t length, InteropBool *result) {
+  for (int32_t i = 0; i != length; ++i) {
+    result[i] = InteropBool((bool)a[i] ^ (bool)b[i]);
+  }
+}
 
 void deephaven_dhcore_basicInteropInteractions_Concat(const char16_t *a, const char16_t *b,
     const PlatformUtf16 **result) {
