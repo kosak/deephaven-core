@@ -185,7 +185,8 @@ public sealed class TableHandle : IDisposable {
   public string ToString(bool wantHeaders) {
     NativeTableHandle.deephaven_client_TableHandle_ToString(Self, wantHeaders ? 1 : 0, out var result,
       out var status);
-    return status.Unwrap(result);
+    status.OkOrThrow();
+    return result;
   }
 
   public void Stream(TextWriter textWriter, bool wantHeaders) {

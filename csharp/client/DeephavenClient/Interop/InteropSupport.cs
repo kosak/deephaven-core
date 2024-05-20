@@ -128,6 +128,17 @@ public sealed class StringPool {
 
 [StructLayout(LayoutKind.Sequential)]
 public struct ErrorStatus {
+  public Int32 OK;
+
+  public void OkOrThrow() {
+    if (OK == 0) {
+      throw new Exception("Sad for some reason");
+    }
+  }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct ErrorStatusNew {
   internal StringHandle StringHandle;
   internal StringPoolHandle StringPoolHandle;
 
