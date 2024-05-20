@@ -44,11 +44,11 @@ public class Client : IDisposable {
 }
 
 internal class NativeClient {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static extern void deephaven_client_Client_Connect(string target,
     NativePtr<NativeClientOptions> options,
     out NativePtr<NativeClient> result,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
   [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
   public static extern void deephaven_client_Client_dtor(NativePtr<NativeClient> self);
