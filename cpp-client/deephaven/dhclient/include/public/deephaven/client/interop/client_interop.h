@@ -88,7 +88,8 @@ void deephaven_client_Client_GetManager(deephaven::client::Client *self,
     deephaven::client::TableHandleManager **result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_TableHandle_dtor(deephaven::client::TableHandle *self);
+void deephaven_client_TableHandle_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self);
 
 void deephaven_client_TableHandle_GetManager(deephaven::client::TableHandle *self,
     deephaven::client::TableHandleManager **result,

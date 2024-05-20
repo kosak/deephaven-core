@@ -371,7 +371,7 @@ void deephaven_client_Client_GetManager(Client *self,
 
 // There is no TableHandle_ctor entry point because we don't need callers to invoke
 // the TableHandle ctor directly.
-void deephaven_client_TableHandle_dtor(TableHandle *self) {
+void deephaven_client_TableHandle_dtor(NativePtr<TableHandle> self) {
   delete self;
 }
 

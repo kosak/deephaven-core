@@ -174,6 +174,12 @@ template<typename T>
 struct NativePtr {
   explicit NativePtr(T *ptr) : ptr_(ptr) {}
 
+  [[nodiscard]]
+  T *Get() const { return ptr_; }
+
+  [[nodiscard]]
+  operator T*() const { return ptr_; }
+
   T *ptr_ = nullptr;
 };
 
