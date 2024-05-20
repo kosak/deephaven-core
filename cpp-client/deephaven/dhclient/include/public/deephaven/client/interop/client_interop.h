@@ -328,7 +328,7 @@ void deephaven_client_Aggregate_Var(
     const char **columns, int32_t num_columns,
     deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
-void deephaven_client_Aggregate_WAvg(const char16_t *weight,
+void deephaven_client_Aggregate_WAvg(const char *weight,
     const char **columns, int32_t num_columns,
     deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
