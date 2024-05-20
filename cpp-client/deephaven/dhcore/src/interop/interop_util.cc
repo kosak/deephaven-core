@@ -70,6 +70,10 @@ StringPool::~StringPool() = default;
 
 void StringPool::Export(uint8_t *bytes, int32_t bytes_length,
     int32_t *ends, int32_t ends_length) {
+  if (bytes_length != bytes_.size() || ends_length != ends_.size()) {
+    std::cerr << "Serious programming error in StringPool::Export()\n";
+    std::exit(1);
+  }
   std::copy(bytes_.begin(), bytes_.end(), bytes);
   std::copy(ends_.begin(), ends_.end(), ends);
 }
