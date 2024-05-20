@@ -23,7 +23,7 @@ public class BasicInteropInteractionsTest {
     var actualResult = new Int32[length];
     BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddArrays(a, b,
       length, actualResult);
-    var expectedResult = new Int32[length] { -5, 10, -15 };
+    var expectedResult = new Int32[length] { 5, 30, 15 };
     Assert.Equal(expectedResult, actualResult);
   }
 

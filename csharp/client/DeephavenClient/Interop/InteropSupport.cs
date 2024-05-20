@@ -56,7 +56,7 @@ public readonly struct NativePtr<T> {
 
   public NativePtr(IntPtr ptr) => this.ptr = ptr;
 
-  public bool IsNull => ptr != IntPtr.Zero;
+  public bool IsNull => ptr == IntPtr.Zero;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -83,17 +83,17 @@ public struct StringHandle {
 [StructLayout(LayoutKind.Sequential)]
 public struct StringPoolHandle {
   private NativePtr<NativeStringPool> _nativeStringPool;
-  public Int32 NumStrings;
   public Int32 NumBytes;
+  public Int32 NumStrings;
 
-  public StringPool ImportAndDestroy() {
+  public StringPool ExportAndDestroy() {
     if (!NativePtrUtil.TryRelease(ref _nativeStringPool, out var old)) {
-      throw new InvalidOperationException("Can't run ImportAndDestroy twice");
+      throw new InvalidOperationException("Can't run ExportAndDestroy twice");
     }
 
     var bytes = new byte[NumBytes];
     var ends = new Int32[NumStrings];
-    NativeStringPool.deephaven_whatever_love_ImportAndDestroy(old,
+    NativeStringPool.deephaven_dhcore_interop_StringPool_ExportAndDestroy(old,
       bytes, bytes.Length,
       ends, ends.Length);
 
@@ -136,7 +136,7 @@ public struct ErrorStatus {
 
 internal partial class NativeStringPool {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_whatever_love_ImportAndDestroy(NativePtr<NativeStringPool> self,
+  public static partial void deephaven_dhcore_interop_StringPool_ExportAndDestroy(NativePtr<NativeStringPool> self,
     byte[] bytes, Int32 bytesLength,
     Int32[] ends, Int32 endsLength);
 }
