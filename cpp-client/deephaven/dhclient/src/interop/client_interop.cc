@@ -800,68 +800,74 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWra
 }
 
 void deephaven_client_AggregateCombo_Create(
-    const Aggregate **aggregate_ptrs, int32_t num_aggregates,
-    AggregateCombo **result, ErrorStatus *status) {
+    const NativePtr<Aggregate> *aggregate_ptrs,
+    int32_t num_aggregates,
+    NativePtr<AggregateCombo> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto agg_copies = MakeReservedVector<Aggregate>(num_aggregates);
     for (int32_t i = 0; i != num_aggregates; ++i) {
       agg_copies.push_back(*aggregate_ptrs[i]);
     }
     auto ac = AggregateCombo::Create(std::move(agg_copies));
-    *result = new AggregateCombo(std::move(ac));
+    result->Reset(new AggregateCombo(std::move(ac)));
   });
 }
 
-void deephaven_client_AggregateCombo_dtor(AggregateCombo *self) {
-  delete self;
+void deephaven_client_AggregateCombo_dtor(NativePtr<AggregateCombo> self) {
+  delete self.Get();
 }
 
-void deephaven_client_Aggregate_dtor(Aggregate *self) {
-  delete self;
+void deephaven_client_Aggregate_dtor(NativePtr<Aggregate> self) {
+  delete self.Get();
 }
 
 void deephaven_client_Aggregate_AbsSum(
-    const char16_t **columns, int32_t num_columns,
-    Aggregate **result, ErrorStatus *status) {
+    const char **columns, int32_t num_columns,
+    NativePtr<Aggregate> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto cols = MakeStringVec(columns, num_columns);
-    *result = new Aggregate(Aggregate::AbsSum(std::move(cols)));
+    auto cols = std::vector<std::string>(columns, columns + num_columns);
+    result->Reset(new Aggregate(Aggregate::AbsSum(std::move(cols))));
   });
 }
 
 void deephaven_client_Aggregate_Group(
-    const char16_t **columns, int32_t num_columns,
-    Aggregate **result, ErrorStatus *status) {
+    const char **columns, int32_t num_columns,
+    NativePtr<Aggregate> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto cols = MakeStringVec(columns, num_columns);
-    *result = new Aggregate(Aggregate::Group(std::move(cols)));
+    auto cols = std::vector<std::string>(columns, columns + num_columns);
+    result->Reset(new Aggregate(Aggregate::Group(std::move(cols))));
   });
 }
 
 void deephaven_client_Aggregate_Avg(
-    const char16_t **columns, int32_t num_columns,
-    Aggregate **result, ErrorStatus *status) {
+    const char **columns, int32_t num_columns,
+    NativePtr<Aggregate> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto cols = MakeStringVec(columns, num_columns);
-    *result = new Aggregate(Aggregate::Avg(std::move(cols)));
+    auto cols = std::vector<std::string>(columns, columns + num_columns);
+    result->Reset(new Aggregate(Aggregate::Avg(std::move(cols))));
   });
 }
 
 void deephaven_client_Aggregate_Count(
-    const char16_t *column,
-    Aggregate **result, ErrorStatus *status) {
+    const char *column,
+    NativePtr<Aggregate> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    Utf16Converter converter;
-    *result = new Aggregate(Aggregate::Count(converter.to_bytes(column)));
+    result->Reset(new Aggregate(Aggregate::Count(column)));
   });
 }
 
 void deephaven_client_Aggregate_First(
-    const char16_t **columns, int32_t num_columns,
-    Aggregate **result, ErrorStatus *status) {
+    const char **columns, int32_t num_columns,
+    NativePtr<Aggregate> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto cols = MakeStringVec(columns, num_columns);
-    *result = new Aggregate(Aggregate::First(std::move(cols)));
+    auto cols = std::vector<std::string>(columns, columns + num_columns);
+    result->Reset(new Aggregate(Aggregate::First(std::move(cols))));
   });
 }
 
