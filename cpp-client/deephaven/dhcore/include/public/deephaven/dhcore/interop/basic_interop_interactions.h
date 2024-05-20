@@ -5,6 +5,8 @@
 
 extern "C" {
 void deephaven_dhcore_basicInteropInteractions_Add(int32_t a, int32_t b, int32_t *result);
+void deephaven_dhcore_basicInteropInteractions_AddArrays(
+    const int32_t *a, const int32_t *b, int32_t length, int32_t *result);
 void deephaven_dhcore_basicInteropInteractions_Concat(const char16_t *a, const char16_t *b,
     const deephaven::dhcore::interop::PlatformUtf16 **result);
 
@@ -20,9 +22,6 @@ struct BasicStructOut {
 
 void deephaven_dhcore_basicInteropInteractions_BasicStruct(
     const BasicStructIn *data, int i_offset, const char16_t *s_append, BasicStructOut *result);
-
-void deephaven_dhcore_basicInteropInteractions_ArrayRunningSum(
-    const int32_t *data, int32_t length, int32_t *result);
 
 void deephaven_dhcore_basicInteropInteractions_ArrayElementConcat(
     const char16_t **data, int32_t length, const char16_t *to_append,
