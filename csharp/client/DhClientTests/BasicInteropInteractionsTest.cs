@@ -114,11 +114,15 @@ public class BasicInteropInteractionsTest {
 
     for (Int32 i = 0; i != size; ++i) {
       a[i] = new BasicStruct(i, 1234.5 + i);
-      b[0] = new BasicStruct(100 + i, 824.3 + i);
+      b[i] = new BasicStruct(100 + i, 824.3 + i);
       expectedResult[i] = a[i].Add(b[i]);
     }
     var actualResult = new BasicStruct[size];
     BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddBasicStructArrays(a, b, size, actualResult);
+
+    for (Int32 i = 0; i != size; ++i) {
+      Assert.Equal(expectedResult[i], actualResult[i]);
+    }
     Assert.Equal(expectedResult, actualResult);
   }
 
