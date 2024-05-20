@@ -251,6 +251,32 @@ public:
    */
   template<typename T>
   void Run(const T &callback) {
+    ok_ = 1;
+    try {
+      // Sanity check for this method's callers to make sure they're not returning a value
+      // which would be a programming mistake because it is ignored here.
+      static_assert(std::is_same_v<decltype(callback()), void>);
+      callback();
+    } catch (const std::exception &e) {
+      ok_ = 0;
+    } catch (...) {
+      ok_ = 0;
+    }
+  }
+
+private:
+  int32_t ok_;
+};
+
+
+class ErrorStatusNew {
+public:
+  /**
+   * This is used to wrap caller code in a lambda so that we can automatically set the error
+   * status if the lambda throws an exception.
+   */
+  template<typename T>
+  void Run(const T &callback) {
     StringPoolBuilder builder;
     try {
       // Sanity check for this method's callers to make sure they're not returning a value
