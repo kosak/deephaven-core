@@ -67,6 +67,14 @@ public readonly struct InteropBool : IEquatable<InteropBool> {
 
   public bool BoolValue => _value != 0;
 
+  public override bool Equals(object? obj) {
+    return obj is InteropBool o && Equals(o);
+  }
+
+  public override int GetHashCode() {
+    return _value.GetHashCode();
+  }
+
   public bool Equals(InteropBool other) {
     return _value == other._value;
   }
