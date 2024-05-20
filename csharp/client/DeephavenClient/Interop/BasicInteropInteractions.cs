@@ -28,20 +28,23 @@ public partial class BasicInteropInteractions {
     StringHandle[] resultHandles,
     out StringPoolHandle resultPoolHandle);
 
-  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+  [StructLayout(LayoutKind.Sequential)]
   public struct BasicStruct {
     public BasicStruct() {
     }
 
-    public BasicStruct(int i, string? s) {
+    public BasicStruct(int i, double d) {
       this.i = i;
-      this.s = s;
+      this.d = d;
     }
     public int i;
-    public string? s;
+    public double d;
   }
 
-  [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_dhcore_basicInteropInteractions_BasicStruct(
-    ref BasicStruct data, int iOffset, string sAppend, out BasicStruct result);
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStruct(
+    ref BasicStruct a, ref BasicStruct b, out BasicStruct result);
+  [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(
+    BasicStruct[] a, BasicStruct[] b, Int32 length, BasicStruct[] result);
 }

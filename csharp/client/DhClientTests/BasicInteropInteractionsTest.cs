@@ -98,11 +98,31 @@ public class BasicInteropInteractionsTest {
   }
 
   [Fact]
-  public void TestBasicStruct() {
-    var bs = new BasicInteropInteractions.BasicStruct(100, "hi");
-    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_BasicStruct(ref bs, 123, " 🧠 there", out var result);
-    Assert.Equal(223, result.i);
-    Assert.Equal("hi 🧠 there", result.s);
+  public void TestInAndOutStruct() {
+    var a = new BasicInteropInteractions.BasicStruct(100, 33.2);
+    var b = new BasicInteropInteractions.BasicStruct(12, 8.1);
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddBasicStruct(ref a, ref b, out var result);
+    Assert.Equal(112, result.i);
+    Assert.Equal(41.3, result.d);
+  }
+
+  [Fact]
+  public void TestInAndOutStructArrays() {
+    const Int32 size = 37;
+    var a = new BasicInteropInteractions.BasicStruct[size];
+    var b = new BasicInteropInteractions.BasicStruct[size];
+    var expectedResult = new BasicInteropInteractions.BasicStruct[size];
+
+    for (Int32 i = 0; i != size; ++i) {
+      var tempA = new BasicInteropInteractions.BasicStruct(i, 1234.5 + i);
+      var tempB = new BasicInteropInteractions.BasicStruct(100 + i, 824.3 + i);
+      a[i] = tempA;
+      b[i] = tempB;
+      expectedResult[i] = new BasicInteropInteractions.BasicStruct(tempA.i + tempB.i, tempA.d + tempB.d);
+    }
+    var actualResult = new BasicInteropInteractions.BasicStruct[size];
+    BasicInteropInteractions.deephaven_dhcore_basicInteropInteractions_AddBasicStructArrays(a, b, size, actualResult);
+    Assert.Equal(expectedResult, actualResult);
   }
 
 }
