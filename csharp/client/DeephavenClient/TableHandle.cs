@@ -1,7 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.Utility;
-using System.Numerics;
 
 namespace Deephaven.DeephavenClient;
 
@@ -22,11 +21,14 @@ public sealed class TableHandle : IDisposable {
     status1.OkOrThrow();
     IsStatic = (bool)isStatic;
 
-    var columnNames = new string[numCols];
+    var columnHandles = new StringHandle[numCols];
     var elementTypesAsInt = new Int32[numCols];
-    NativeTableHandle.deephaven_client_TableHandle_GetSchema(self, numCols, columnNames,
-      elementTypesAsInt, out var status2);
+    NativeTableHandle.deephaven_client_TableHandle_GetSchema(self, numCols, columnHandles,
+      elementTypesAsInt, out var stringPoolHandle, out var status2);
     status2.OkOrThrow();
+
+    var pool = stringPoolHandle.ExportAndDestroy();
+    var columnNames = columnHandles.Select(pool.Get).ToArray();
     Schema = new Schema(columnNames, elementTypesAsInt, numRows);
   }
 
@@ -161,13 +163,10 @@ public sealed class TableHandle : IDisposable {
   }
 
   public void Unsubscribe(SubscriptionHandle handle) {
-    if (!handle.Self.TryRelease(out var old)) {
-      return;
-    }
     Manager.RemoveSubscription(handle);
-    NativeTableHandle.deephaven_client_TableHandle_Unsubscribe(Self, old, out var status);
-    NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(old);
+    NativeTableHandle.deephaven_client_TableHandle_Unsubscribe(Self, handle.Self, out var status);
     status.OkOrThrow();
+    handle.Dispose();
   }
 
   public ArrowTable ToArrowTable() {
@@ -206,115 +205,161 @@ internal partial class NativeTableHandle {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_dtor(NativePtr<NativeTableHandle> self);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandle_GetAttributes(
-    NativePtr<NativeTableHandle> self, out Int32 numColumns, out Int64 numRows,
-    out InteropBool isStatic, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandle_GetAttributes(
+    NativePtr<NativeTableHandle> self,
+    out Int32 numColumns, out Int64 numRows, out InteropBool isStatic,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandle_GetSchema(
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandle_GetSchema(
     NativePtr<NativeTableHandle> self,
     Int32 numColumns,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] string[] columns,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] Int32[] columnTypes,
-    out ErrorStatus status);
+    StringHandle[] columnHandles,
+    Int32[] columnTypes,
+    out StringPoolHandle stringPoolHandle,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Where(NativePtr<NativeTableHandle> self,
-    string condition, out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Where(
+    NativePtr<NativeTableHandle> self,
+    string condition,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Select(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Select(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_SelectDistinct(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_SelectDistinct(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_View(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> clientTable,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_View(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> clientTable,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_LastBy(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_LastBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_WhereIn(NativePtr<NativeTableHandle> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_WhereIn(
+    NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> filterTable,
-    [In] string[] columns, Int32 numColumns,
-    out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_AddTable(NativePtr<NativeTableHandle> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_AddTable(
+    NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> tableToAdd,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_RemoveTable(NativePtr<NativeTableHandle> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_RemoveTable(
+    NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> tableToRemove,
-    out ErrorStatus status);
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_By(NativePtr<NativeTableHandle> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_By(
+    NativePtr<NativeTableHandle> self,
     NativePtr<NativeAggregateCombo> aggregateCombo,
-    [In] string[] columns, Int32 numColumns,
-    out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_DropColumns(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> clientTable,
-    out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_DropColumns(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> clientTable,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Update(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Update(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_LazyUpdate(NativePtr<NativeTableHandle> self,
-    [In] string[] columns, Int32 numColumns, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_LazyUpdate(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_BindToVariable(NativePtr<NativeTableHandle> self,
-    string variable, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_BindToVariable(
+    NativePtr<NativeTableHandle> self,
+    string variable,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-  internal static extern void deephaven_client_TableHandle_ToString(NativePtr<NativeTableHandle> self,
-    Int32 wantHeaders, out string result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_ToString(
+    NativePtr<NativeTableHandle> self,
+    Int32 wantHeaders,
+    out StringHandle resulHandle,
+    out StringPoolHandle stringPoolHandle,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_ToArrowTable(NativePtr<NativeTableHandle> self,
-    out NativePtr<NativeArrowTable> arrowTable, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_ToArrowTable(
+    NativePtr<NativeTableHandle> self,
+    out NativePtr<NativeArrowTable> arrowTable,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_ToClientTable(NativePtr<NativeTableHandle> self,
-    out NativePtr<NativeClientTable> clientTable, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_ToClientTable(
+    NativePtr<NativeTableHandle> self,
+    out NativePtr<NativeClientTable> clientTable,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Head(NativePtr<NativeTableHandle> self,
-    Int64 numRows, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Head(
+    NativePtr<NativeTableHandle> self,
+    Int64 numRows,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Tail(NativePtr<NativeTableHandle> self,
-    Int64 numRows, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Tail(
+    NativePtr<NativeTableHandle> self,
+    Int64 numRows,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatusNew status);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
   public delegate void NativeOnUpdate(NativePtr<NativeTickingUpdate> tickingUpdate);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-  public delegate void NativeOnFailure(string error);
+  public delegate void NativeOnFailure(StringHandle errorHandle, StringPoolHandle stringPoolHandle);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Subscribe(NativePtr<NativeTableHandle> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Subscribe(
+    NativePtr<NativeTableHandle> self,
     NativeOnUpdate nativeOnUpdate, NativeOnFailure nativeOnFailure,
-    out NativePtr<NativeSubscriptionHandle> nativeSubscriptionHandle, out ErrorStatus status);
+    out NativePtr<NativeSubscriptionHandle> nativeSubscriptionHandle,
+    out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_client_TableHandle_Unsubscribe(NativePtr<NativeTableHandle> self,
-    NativePtr<NativeSubscriptionHandle> nativeSubscriptionHandle, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Unsubscribe(
+    NativePtr<NativeTableHandle> self,
+    NativePtr<NativeSubscriptionHandle> nativeSubscriptionHandle,
+    out ErrorStatusNew status);
 }

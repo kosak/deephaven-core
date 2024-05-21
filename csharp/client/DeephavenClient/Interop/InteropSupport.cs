@@ -42,7 +42,7 @@ public class PlatformUtf16 {
 /// This is simply a wrapper for an IntPtr. Its purpose is to give us more careful type checking.
 /// It basically turns IntPtr into a "strong" IntPtr that can only be assigned to IntPtrs of the
 /// same type. The T isn't really used otherwise. Note that for correctness, the C++ side needs
-/// to receive a struct with the same layout.
+/// to receive a struct with the same layout (i.e. a C++ struct containing a single pointer).
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct NativePtr<T> {
