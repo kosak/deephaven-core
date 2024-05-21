@@ -960,41 +960,47 @@ void deephaven_client_Aggregate_WAvg(const char *weight,
 }
 
 void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
-    DurationSpecifier **result, ErrorStatus *status) {
+    NativePtr<DurationSpecifier> *result,
+    ErrorStatusNew *status) {
   status->Run([=] {
-    *result = new DurationSpecifier(nanos);
+    result->Reset(new DurationSpecifier(nanos));
   });
 }
 
-void deephaven_client_utility_DurationSpecifier_ctor_durationstr(const char16_t *duration_str,
-    DurationSpecifier **result, ErrorStatus *status) {
+void deephaven_client_utility_DurationSpecifier_ctor_durationstr(
+    const char *duration_str,
+    NativePtr<DurationSpecifier> *result,
+    ErrorStatusNew *status) {
+  status->Run([=] {
+    result->Reset(new DurationSpecifier(duration_str));
+  });
+}
+
+void deephaven_client_utility_DurationSpecifier_dtor(NativePtr<DurationSpecifier> self) {
+  delete self.Get();
+}
+
+void deephaven_client_utility_TimePointSpecifier_ctor_nanos(
+    int64_t nanos,
+    NativePtr<TimePointSpecifier> *result,
+    ErrorStatusNew *status) {
+  status->Run([=] {
+    result->Reset(new TimePointSpecifier(nanos));
+  });
+}
+
+void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
+    const char *time_point_str,
+    NativePtr<TimePointSpecifier> *result,
+    ErrorStatusNew *status) {
   status->Run([=] {
     Utf16Converter converter;
-    *result = new DurationSpecifier(converter.to_bytes(duration_str));
+    result->Reset(new TimePointSpecifier(time_point_str));
   });
 }
 
-void deephaven_client_utility_DurationSpecifier_dtor(DurationSpecifier *self) {
-  delete self;
-}
-
-void deephaven_client_utility_TimePointSpecifier_ctor_nanos(int64_t nanos,
-    TimePointSpecifier **result, ErrorStatus *status) {
-  status->Run([=] {
-    *result = new TimePointSpecifier(nanos);
-  });
-}
-
-void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(const char16_t *time_point_str,
-    TimePointSpecifier **result, ErrorStatus *status) {
-  status->Run([=] {
-    Utf16Converter converter;
-    *result = new TimePointSpecifier(converter.to_bytes(time_point_str));
-  });
-}
-
-void deephaven_client_utility_TimePointSpecifier_dtor(TimePointSpecifier *self) {
-  delete self;
+void deephaven_client_utility_TimePointSpecifier_dtor(NativePtr<TimePointSpecifier> self) {
+  delete self.Get();
 }
 
 void deephaven_dhclient_utility_TableMaker_ctor(

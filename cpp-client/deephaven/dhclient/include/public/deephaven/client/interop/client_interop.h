@@ -367,25 +367,27 @@ void deephaven_client_Aggregate_WAvg(const char *weight,
     deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_utility_DurationSpecifier_ctor_nanos(int64_t nanos,
-    deephaven::client::utility::DurationSpecifier **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
-void deephaven_client_utility_DurationSpecifier_ctor_durationstr(const char16_t *duration_str,
-    deephaven::client::utility::DurationSpecifier **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_utility_DurationSpecifier_ctor_nanos(
+    int64_t nanos,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::DurationSpecifier> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
+void deephaven_client_utility_DurationSpecifier_ctor_durationstr(
+    const char *duration_str,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::DurationSpecifier> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_utility_DurationSpecifier_dtor(
-    deephaven::client::utility::DurationSpecifier *self);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::DurationSpecifier> result);
 
 void deephaven_client_utility_TimePointSpecifier_ctor_nanos(
     int64_t nanos,
-    deephaven::client::utility::TimePointSpecifier **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TimePointSpecifier> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
-    const char16_t *time_point_str,
-    deephaven::client::utility::TimePointSpecifier **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char *time_point_str,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TimePointSpecifier> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_utility_TimePointSpecifier_dtor(
-    deephaven::client::utility::TimePointSpecifier *self);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TimePointSpecifier> result);
 
 void deephaven_dhclient_utility_TableMaker_ctor(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> *result,
