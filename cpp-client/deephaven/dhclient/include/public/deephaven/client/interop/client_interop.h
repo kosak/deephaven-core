@@ -35,34 +35,40 @@ public:
 }  // namespace deephaven::client::interop {
 
 extern "C" {
-void deephaven_client_TableHandleManager_dtor(deephaven::client::TableHandleManager *self);
+void deephaven_client_TableHandleManager_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self);
 
-void deephaven_client_TableHandleManager_EmptyTable(const deephaven::client::TableHandleManager *self,
+void deephaven_client_TableHandleManager_EmptyTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self,
     int64_t size,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::TableHandleManager *self,
-    const char16_t *table_name,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandleManager_FetchTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self,
+    const char *table_name,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandleManager_TimeTable(const deephaven::client::TableHandleManager *self,
-    const deephaven::client::utility::DurationSpecifier *period,
-    const deephaven::client::utility::TimePointSpecifier *start_time,
+void deephaven_client_TableHandleManager_TimeTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::DurationSpecifier> period,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TimePointSpecifier> start_time,
     deephaven::dhcore::interop::InteropBool blink_table,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandleManager_InputTable(const deephaven::client::TableHandleManager *self,
-    const deephaven::client::TableHandle *initial_table, const char16_t **key_columns,
-    int64_t num_key_columns,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandleManager_InputTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> initial_table,
+    const char **key_columns, int64_t num_key_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandleManager_RunScript(const deephaven::client::TableHandleManager *self,
-    const char16_t *code,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandleManager_RunScript(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self,
+    const char *code,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_Client_Connect(const char *target,
     deephaven::dhcore::interop::NativePtr<deephaven::client::ClientOptions> options,

@@ -222,62 +222,64 @@ void invokelab_r12(WrappedOtherString *result, int32_t count) {
 
 // There is no TableHandleManager_ctor entry point because we don't need callers to invoke
 // the TableHandleManager ctor directly.
-void deephaven_client_TableHandleManager_dtor(TableHandleManager *self) {
-  delete self;
+void deephaven_client_TableHandleManager_dtor(NativePtr<TableHandleManager> self) {
+  delete self.Get();
 }
 
-void deephaven_client_TableHandleManager_EmptyTable(const deephaven::client::TableHandleManager *self,
+void deephaven_client_TableHandleManager_EmptyTable(
+    NativePtr<TableHandleManager> self,
     int64_t size,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto table = self->EmptyTable(size);
-    *result = new TableHandle(std::move(table));
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
-void deephaven_client_TableHandleManager_FetchTable(const deephaven::client::TableHandleManager *self,
-    const char16_t *table_name,
-    TableHandle **result,
-    ErrorStatus *status) {
+void deephaven_client_TableHandleManager_FetchTable(
+    NativePtr<TableHandleManager> self,
+    const char *table_name,
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto tn = Utf16Converter().to_bytes(table_name);
-    auto table = self->FetchTable(tn);
-    *result = new TableHandle(std::move(table));
+    auto table = self->FetchTable(table_name);
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
-
-void deephaven_client_TableHandleManager_TimeTable(const TableHandleManager *self,
-    const DurationSpecifier *period,
-    const TimePointSpecifier *start_time,
+void deephaven_client_TableHandleManager_TimeTable(
+    NativePtr<TableHandleManager> self,
+    NativePtr<DurationSpecifier> period,
+    NativePtr<TimePointSpecifier> start_time,
     InteropBool blink_table,
-    TableHandle **result,
-    ErrorStatus *status) {
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto table = self->TimeTable(*period, *start_time, (bool)blink_table);
-    *result = new TableHandle(std::move(table));
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
-void deephaven_client_TableHandleManager_InputTable(const TableHandleManager *self,
-    const TableHandle *initial_table, const char16_t **key_columns,
-    int64_t num_key_columns,
-    TableHandle **result,
-    ErrorStatus *status) {
+void deephaven_client_TableHandleManager_InputTable(
+    NativePtr<TableHandleManager> self,
+    NativePtr<TableHandle> initial_table,
+    const char **key_columns, int64_t num_key_columns,
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto kcs = MakeStringVec(key_columns, num_key_columns);
+    std::vector<std::string> kcs(key_columns, key_columns + num_key_columns);
     auto table = self->InputTable(*initial_table, std::move(kcs));
-    *result = new TableHandle(std::move(table));
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
-void deephaven_client_TableHandleManager_RunScript(const TableHandleManager *self,
-    const char16_t *code,
-    ErrorStatus *status) {
+void deephaven_client_TableHandleManager_RunScript(
+    NativePtr<TableHandleManager> self,
+    const char *code,
+    ErrorStatusNew *status) {
   status->Run([self, code]() {
-    auto s = Utf16Converter().to_bytes(code);
-    self->RunScript(s);
+    self->RunScript(code);
   });
 }
 
