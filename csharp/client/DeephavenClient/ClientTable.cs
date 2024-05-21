@@ -83,7 +83,7 @@ internal partial class NativeClientTable {
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTable_GetDimensions(
-    NativePtr<NativeClientTable> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatusNew status);
+    NativePtr<NativeClientTable> self, out Int32 numColumns, out Int64 numWRows, out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTable_Schema(
@@ -92,7 +92,7 @@ internal partial class NativeClientTable {
     StringHandle[] columnHandles,
     Int32[] columnTypes,
     out StringPoolHandle stringPool,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetInt8Column(
@@ -102,7 +102,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetInt16Column(
@@ -112,7 +112,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetInt32Column(
@@ -122,7 +122,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetInt64Column(
@@ -132,7 +132,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetFloatColumn(
@@ -142,7 +142,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetDoubleColumn(
@@ -152,7 +152,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
@@ -162,7 +162,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
@@ -172,7 +172,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetStringColumn(
@@ -182,7 +182,7 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
@@ -192,5 +192,5 @@ internal partial class NativeClientTable {
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 }

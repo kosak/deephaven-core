@@ -86,7 +86,7 @@ internal partial class NativeArrowTable {
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetDimensions(
-    NativePtr<NativeArrowTable> self, out Int32 numColumns, out Int64 numRows, out ErrorStatusNew status);
+    NativePtr<NativeArrowTable> self, out Int32 numColumns, out Int64 numRows, out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetSchema(
@@ -94,7 +94,7 @@ internal partial class NativeArrowTable {
     StringHandle[] columnHandles,
     Int32[] columnTypes,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetInt8Column(
@@ -104,7 +104,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetInt16Column(
@@ -114,7 +114,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetInt32Column(
@@ -124,7 +124,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetInt64Column(
@@ -134,7 +134,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetFloatColumn(
@@ -144,7 +144,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetDoubleColumn(
@@ -154,7 +154,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetBooleanAsInteropBoolColumn(
@@ -164,7 +164,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetCharAsInt16Column(
@@ -174,7 +174,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetStringColumn(
@@ -184,7 +184,7 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ArrowTable_GetDateTimeAsInt64Column(
@@ -194,5 +194,5 @@ internal partial class NativeArrowTable {
     InteropBool[]? nullFlags,
     Int64 numRows,
     out StringPoolHandle stringPoolHandle,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 }

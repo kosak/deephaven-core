@@ -78,5 +78,5 @@ public partial class BasicInteropInteractions {
 
   [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_dhcore_interop_testapi_BasicInteropInteractions_SetErrorIfLessThan(
-    Int32 a, Int32 b, out ErrorStatusNew status);
+    Int32 a, Int32 b, out ErrorStatus status);
 }

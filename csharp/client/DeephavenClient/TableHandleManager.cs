@@ -81,24 +81,24 @@ internal partial class NativeTableHandleManager {
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_EmptyTable(NativePtr<NativeTableHandleManager> self,
-    Int64 size, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
+    Int64 size, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_FetchTable(NativePtr<NativeTableHandleManager> self,
-    string tableName, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
+    string tableName, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_TimeTable(NativePtr<NativeTableHandleManager> self,
     NativePtr<NativeDurationSpecifier> period, NativePtr<NativeTimePointSpecifier> startTime,
-    InteropBool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
+    InteropBool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_InputTable(NativePtr<NativeTableHandleManager> self,
     NativePtr<NativeTableHandle> initialTable, 
     string[]keyColumns, Int32 numKeyColumns,
-    out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
+    out NativePtr<NativeTableHandle> result, out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_RunScript(NativePtr<NativeTableHandleManager> self,
-    string code, out ErrorStatusNew errorStatus);
+    string code, out ErrorStatus errorStatus);
 }

@@ -7,10 +7,10 @@ namespace Deephaven.DeephavenClient;
 public class Aggregate {
   [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
   private delegate void AggregateMethod(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-  private delegate void LazyMaterializer(out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+  private delegate void LazyMaterializer(out NativePtr<NativeAggregate> result, out ErrorStatus status);
 
   public static Aggregate AbsSum(IEnumerable<string> columnSpecs) {
     return CreateHelper(columnSpecs, NativeAggregate.deephaven_client_Aggregate_AbsSum);
@@ -61,14 +61,14 @@ public class Aggregate {
   }
 
   public static Aggregate Count(string columnSpec) {
-    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatusNew status) =>
+    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       NativeAggregate.deephaven_client_Aggregate_Count(columnSpec, out result, out status);
     return new Aggregate(lazyMaterializer);
   }
 
   public static Aggregate Pct(double percentile, bool avgMedian, IEnumerable<string> columnSpecs) {
     var cols = columnSpecs.ToArray();
-    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatusNew status) =>
+    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       NativeAggregate.deephaven_client_Aggregate_Pct(percentile, (InteropBool)avgMedian,
         cols, cols.Length, out result, out status);
     return new Aggregate(lazyMaterializer);
@@ -81,7 +81,7 @@ public class Aggregate {
   private static Aggregate CreateHelper(IEnumerable<string> columnSpecs, AggregateMethod aggregateMethod) {
     var cs = columnSpecs.ToArray();
 
-    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatusNew status) =>
+    LazyMaterializer lazyMaterializer = (out NativePtr<NativeAggregate> result, out ErrorStatus status) =>
       aggregateMethod(cs, cs.Length, out result, out status);
 
     return new Aggregate(lazyMaterializer);
@@ -125,45 +125,45 @@ internal partial class NativeAggregate {
   public static partial void deephaven_client_Aggregate_dtor(NativePtr<NativeAggregate> self);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_AbsSum(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Group(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Avg(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Count(
-    string column, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string column, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_First(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Last(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Max(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Med(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Min(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Pct(
     double percentile, InteropBool avgMedian,
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Std(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Sum(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_Var(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Aggregate_WAvg(
-    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatusNew status);
+    string[] columns, Int32 numColumns, out NativePtr<NativeAggregate> result, out ErrorStatus status);
 }

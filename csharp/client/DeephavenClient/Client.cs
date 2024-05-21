@@ -48,17 +48,17 @@ internal partial class NativeClient {
   public static partial void deephaven_client_Client_Connect(string target,
     NativePtr<NativeClientOptions> options,
     out NativePtr<NativeClient> result,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Client_dtor(NativePtr<NativeClient> self);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Client_Close(NativePtr<NativeClient> self,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_Client_GetManager(NativePtr<NativeClient> self,
     out NativePtr<NativeTableHandleManager> result,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 }

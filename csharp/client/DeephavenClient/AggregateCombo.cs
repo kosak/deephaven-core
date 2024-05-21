@@ -58,7 +58,7 @@ internal partial class NativeAggregateCombo {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_AggregateCombo_Create(
     NativePtr<NativeAggregate>[] aggregates, Int32 numAggregates,
-    out NativePtr<NativeAggregateCombo> self, out ErrorStatusNew status);
+    out NativePtr<NativeAggregateCombo> self, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_AggregateCombo_dtor(NativePtr<NativeAggregateCombo> self);
 }

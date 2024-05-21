@@ -21,7 +21,7 @@ internal class InternalDurationSpecifier : IDisposable {
 
   public InternalDurationSpecifier(object duration) {
     NativePtr<NativeDurationSpecifier> result;
-    ErrorStatusNew status;
+    ErrorStatus status;
     if (duration is Int64 nanos) {
       NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_nanos(nanos,
         out result, out status);
@@ -56,10 +56,10 @@ internal class InternalDurationSpecifier : IDisposable {
 internal partial class NativeDurationSpecifier {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_utility_DurationSpecifier_ctor_nanos(Int64 nanos,
-    out NativePtr<NativeDurationSpecifier> result, out ErrorStatusNew status);
+    out NativePtr<NativeDurationSpecifier> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_utility_DurationSpecifier_ctor_duration(string duration,
-    out NativePtr<NativeDurationSpecifier> result, out ErrorStatusNew status);
+    out NativePtr<NativeDurationSpecifier> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_utility_DurationSpecifier_dtor(NativePtr<NativeDurationSpecifier> self);
 }

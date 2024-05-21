@@ -85,5 +85,5 @@ internal partial class NativeTickingUpdate {
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TickingUpdate_Current(NativePtr<NativeTickingUpdate> self,
-    out NativePtr<NativeClientTable> result, out ErrorStatusNew status);
+    out NativePtr<NativeClientTable> result, out ErrorStatus status);
 }

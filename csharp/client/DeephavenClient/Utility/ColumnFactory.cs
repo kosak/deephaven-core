@@ -10,7 +10,7 @@ internal abstract class ColumnFactory<TTableType> {
     Int64 numRows);
 
   public delegate void NativeImpl<in T>(NativePtr<TTableType> table, Int32 columnIndex,
-    T[] data, InteropBool[]? nullFlags, Int64 numRows, out StringPoolHandle stringPoolHandle, out ErrorStatusNew status);
+    T[] data, InteropBool[]? nullFlags, Int64 numRows, out StringPoolHandle stringPoolHandle, out ErrorStatus status);
 
   public abstract class ForType<TTarget, TNative> : ColumnFactory<TTableType> {
     private readonly NativeImpl<TNative> _nativeImpl;

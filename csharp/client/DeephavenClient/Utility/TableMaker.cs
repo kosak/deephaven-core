@@ -273,7 +273,7 @@ public class TableMaker : IDisposable {
 internal partial class NativeTableMaker {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_ctor(out NativePtr<NativeTableMaker> result,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_dtor(NativePtr<NativeTableMaker> self);
@@ -282,57 +282,57 @@ internal partial class NativeTableMaker {
   internal static partial void deephaven_dhclient_utility_TableMaker_MakeTable(NativePtr<NativeTableMaker> self,
     NativePtr<NativeTableHandleManager> manager,
     out NativePtr<NativeTableHandle> result,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__CharAsInt16(
     NativePtr<NativeTableMaker> self,
     string name, Int16[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
     NativePtr<NativeTableMaker> self,
     string name, sbyte[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(NativePtr<NativeTableMaker> self,
     string name, Int16[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(NativePtr<NativeTableMaker> self,
     string name, Int32[] data,  Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(NativePtr<NativeTableMaker> self,
     string name, Int64[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__Float(NativePtr<NativeTableMaker> self,
     string name, float[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__Double(NativePtr<NativeTableMaker> self,
     string name, double[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsInteropBool(NativePtr<NativeTableMaker> self,
     string name, InteropBool[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsInt64(NativePtr<NativeTableMaker> self,
     string name, Int64[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_dhclient_utility_TableMaker_AddColumn__String(NativePtr<NativeTableMaker> self,
     string name, string?[] data, Int32 length, InteropBool[]? nulls,
-    out ErrorStatusNew status);
+    out ErrorStatus status);
 }
