@@ -187,7 +187,7 @@ void deephaven_client_TableHandle_RemoveTable(
 
 void deephaven_client_TableHandle_By(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const deephaven::client::AggregateCombo *aggregate_combo,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::AggregateCombo> aggregate_combo,
     const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
@@ -211,8 +211,8 @@ void deephaven_client_TableHandle_ToString(
 
 void deephaven_client_TableHandle_ToArrowTable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    deephaven::client::interop::ArrowTable **arrow_table,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 using NativeOnUpdate = void(deephaven::dhcore::ticking::TickingUpdate *ticking_update);
 using NativeOnFailure = void(const char16_t *error);

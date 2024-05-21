@@ -493,66 +493,69 @@ void deephaven_client_TableHandle_RemoveTable(
 }
 
 void deephaven_client_TableHandle_By(
-    TableHandle *self,
-    const AggregateCombo *combo,
-    const char16_t **column_specs, int64_t num_column_specs,
-    TableHandle **result,
-    ErrorStatus *status) {
+    NativePtr<TableHandle> self,
+    NativePtr<AggregateCombo> aggregate_combo,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto cols = MakeStringVec(column_specs, num_column_specs);
-    auto table = self->By(*combo, std::move(cols));
-    *result = new TableHandle(std::move(table));
+    std::vector<std::string> cols(column_specs, column_specs + num_column_specs);
+    auto table = self->By(*aggregate_combo, std::move(cols));
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
 void deephaven_client_TableHandle_Head(
-    TableHandle *self,
+    NativePtr<TableHandle> self,
     int64_t num_rows,
-    TableHandle **result,
-    ErrorStatus *status) {
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto table = self->Head(num_rows);
-    *result = new TableHandle(std::move(table));
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
 void deephaven_client_TableHandle_Tail(
-    TableHandle *self,
+    NativePtr<TableHandle> self,
     int64_t num_rows,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto table = self->Tail(num_rows);
-    *result = new TableHandle(std::move(table));
+    result->Reset(new TableHandle(std::move(table)));
   });
 }
 
 void deephaven_client_TableHandle_BindToVariable(
-    deephaven::client::TableHandle *self,
-    const char16_t *variable,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    NativePtr<TableHandle> self,
+    const char *variable,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    auto v = Utf16Converter().to_bytes(variable);
-    self->BindToVariable(v);
+    self->BindToVariable(variable);
   });
 }
 
 void deephaven_client_TableHandle_ToString(
-    TableHandle *self,
-    int32_t want_headers, const PlatformUtf16 **result, ErrorStatus *status) {
-  std::cerr << "want headers came in as " << want_headers << '\n';
-  status->Run([self, want_headers, result]() {
-    auto text = self->ToString(want_headers != 0);
-    *result = PlatformUtf16::Create(std::move(text));
+    NativePtr<TableHandle> self,
+    InteropBool want_headers,
+    StringHandle *result_handle,
+    StringPoolHandle *string_pool_handle,
+    ErrorStatusNew *status) {
+  status->Run([=]() {
+    StringPoolBuilder builder;
+    *result_handle = builder.Add(self->ToString((bool)want_headers));
+    *string_pool_handle = builder.Build();
   });
 }
 
 void deephaven_client_TableHandle_ToArrowTable(
-    TableHandle *self,
-    ArrowTable **arrow_table, ErrorStatus *status) {
+    NativePtr<TableHandle> self,
+    NativePtr<ArrowTable> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto at = self->ToArrowTable();
-    *arrow_table = new ArrowTable(std::move(at));
+    result->Reset(new ArrowTable(std::move(at)));
   });
 }
 
