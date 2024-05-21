@@ -299,11 +299,13 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
     deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TickingUpdate_dtor(deephaven::dhcore::ticking::TickingUpdate *self);
+void deephaven_client_TickingUpdate_dtor(
+    deephaven::dhcore::interop::NativePtr<deephaven::dhcore::ticking::TickingUpdate> self);
 
-void deephaven_client_TickingUpdate_Current(deephaven::dhcore::ticking::TickingUpdate *self,
-    deephaven::client::interop::ClientTableSpWrapper **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TickingUpdate_Current(
+    deephaven::dhcore::interop::NativePtr<deephaven::dhcore::ticking::TickingUpdate> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_AggregateCombo_Create(
     const deephaven::dhcore::interop::NativePtr<deephaven::client::Aggregate> *aggregate_ptrs,
