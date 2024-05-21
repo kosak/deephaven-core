@@ -182,10 +182,10 @@ public sealed class TableHandle : IDisposable {
   }
 
   public string ToString(bool wantHeaders) {
-    NativeTableHandle.deephaven_client_TableHandle_ToString(Self, wantHeaders ? 1 : 0, out var result,
-      out var status);
+    NativeTableHandle.deephaven_client_TableHandle_ToString(Self, (InteropBool)wantHeaders, out var resultHandle,
+      out var stringPoolHandle, out var status);
     status.OkOrThrow();
-    return result;
+    return stringPoolHandle.ExportAndDestroy().Get(resultHandle);
   }
 
   public void Stream(TextWriter textWriter, bool wantHeaders) {
@@ -313,7 +313,7 @@ internal partial class NativeTableHandle {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_ToString(
     NativePtr<NativeTableHandle> self,
-    Int32 wantHeaders,
+    InteropBool wantHeaders,
     out StringHandle resulHandle,
     out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
