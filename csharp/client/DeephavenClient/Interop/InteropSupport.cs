@@ -88,9 +88,13 @@ public struct StringPoolHandle {
 
     var bytes = new byte[NumBytes];
     var ends = new Int32[NumStrings];
-    NativeStringPool.deephaven_dhcore_interop_StringPool_ExportAndDestroy(old,
+    var errorCode = NativeStringPool.deephaven_dhcore_interop_StringPool_ExportAndDestroy(old,
       bytes, bytes.Length,
       ends, ends.Length);
+    if (errorCode != 0) {
+      throw new InvalidOperationException(
+        $"Internal error {errorCode} in deephaven_dhcore_interop_StringPool_ExportAndDestroy");
+    }
 
     var strings = new string[NumStrings];
     for (var i = 0; i != NumStrings; ++i) {
@@ -142,7 +146,7 @@ public struct ErrorStatusNew {
 
 internal partial class NativeStringPool {
   [LibraryImport(LibraryPaths.Dhcore, StringMarshalling = StringMarshalling.Utf8)]
-  public static partial void deephaven_dhcore_interop_StringPool_ExportAndDestroy(NativePtr<NativeStringPool> self,
+  public static partial Int32 deephaven_dhcore_interop_StringPool_ExportAndDestroy(NativePtr<NativeStringPool> self,
     byte[] bytes, Int32 bytesLength,
     Int32[] ends, Int32 endsLength);
 }
