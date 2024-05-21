@@ -20,7 +20,7 @@ internal class InternalTimePointSpecifier : IDisposable {
 
   public InternalTimePointSpecifier(object duration) {
     NativePtr<NativeTimePointSpecifier> result;
-    ErrorStatus status;
+    ErrorStatusNew status;
     if (duration is Int64 nanos) {
       NativeTimePointSpecifier.deephaven_client_utility_TimePointSpecifier_ctor_nanos(nanos,
         out result, out status);
@@ -51,13 +51,13 @@ internal class InternalTimePointSpecifier : IDisposable {
   }
 }
 
-internal class NativeTimePointSpecifier {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_TimePointSpecifier_ctor_nanos(Int64 nanos,
-    out NativePtr<NativeTimePointSpecifier> result, out ErrorStatus status);
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
-    string timePointStr, out NativePtr<NativeTimePointSpecifier> result, out ErrorStatus status);
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_TimePointSpecifier_dtor(NativePtr<NativeTimePointSpecifier> self);
+internal partial class NativeTimePointSpecifier {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_utility_TimePointSpecifier_ctor_nanos(Int64 nanos,
+    out NativePtr<NativeTimePointSpecifier> result, out ErrorStatusNew status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
+    string timePointStr, out NativePtr<NativeTimePointSpecifier> result, out ErrorStatusNew status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_utility_TimePointSpecifier_dtor(NativePtr<NativeTimePointSpecifier> self);
 }

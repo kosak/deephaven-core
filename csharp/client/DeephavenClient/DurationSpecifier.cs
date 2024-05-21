@@ -21,7 +21,7 @@ internal class InternalDurationSpecifier : IDisposable {
 
   public InternalDurationSpecifier(object duration) {
     NativePtr<NativeDurationSpecifier> result;
-    ErrorStatus status;
+    ErrorStatusNew status;
     if (duration is Int64 nanos) {
       NativeDurationSpecifier.deephaven_client_utility_DurationSpecifier_ctor_nanos(nanos,
         out result, out status);
@@ -53,13 +53,13 @@ internal class InternalDurationSpecifier : IDisposable {
 }
 
 
-internal class NativeDurationSpecifier {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_DurationSpecifier_ctor_nanos(Int64 nanos,
-    out NativePtr<NativeDurationSpecifier> result, out ErrorStatus status);
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_DurationSpecifier_ctor_duration(string duration,
-    out NativePtr<NativeDurationSpecifier> result, out ErrorStatus status);
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_utility_DurationSpecifier_dtor(NativePtr<NativeDurationSpecifier> self);
+internal partial class NativeDurationSpecifier {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_utility_DurationSpecifier_ctor_nanos(Int64 nanos,
+    out NativePtr<NativeDurationSpecifier> result, out ErrorStatusNew status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_utility_DurationSpecifier_ctor_duration(string duration,
+    out NativePtr<NativeDurationSpecifier> result, out ErrorStatusNew status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_utility_DurationSpecifier_dtor(NativePtr<NativeDurationSpecifier> self);
 }

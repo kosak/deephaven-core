@@ -28,77 +28,77 @@ public class ClientOptions : IDisposable {
     NativeClientOptions.deephaven_client_ClientOptions_dtor(old);
   }
 
-  ClientOptions SetDefaultAuthentication() {
+  public ClientOptions SetDefaultAuthentication() {
     NativeClientOptions.deephaven_client_ClientOptions_SetDefaultAuthentication(Self,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetBasicAuthentication(string username, string password) {
+  public ClientOptions SetBasicAuthentication(string username, string password) {
     NativeClientOptions.deephaven_client_ClientOptions_SetBasicAuthentication(Self,
       username, password, out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetCustomAuthentication(string authenticationKey, string authenticationValue) {
+  public ClientOptions SetCustomAuthentication(string authenticationKey, string authenticationValue) {
     NativeClientOptions.deephaven_client_ClientOptions_SetCustomAuthentication(Self,
       authenticationKey, authenticationValue, out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetSessionType(string sessionType) {
+  public ClientOptions SetSessionType(string sessionType) {
     NativeClientOptions.deephaven_client_ClientOptions_SetSessionType(Self, sessionType,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetUseTls(bool useTls) {
+  public ClientOptions SetUseTls(bool useTls) {
     NativeClientOptions.deephaven_client_ClientOptions_SetUseTls(Self, (InteropBool)useTls,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetTlsRootCerts(string tlsRootCerts) {
+  public ClientOptions SetTlsRootCerts(string tlsRootCerts) {
     NativeClientOptions.deephaven_client_ClientOptions_SetTlsRootCerts(Self, tlsRootCerts,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetClientCertChain(string clientCertChain) {
+  public ClientOptions SetClientCertChain(string clientCertChain) {
     NativeClientOptions.deephaven_client_ClientOptions_SetClientCertChain(Self, clientCertChain,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions SetClientPrivateKey(string clientPrivateKey) {
+  public ClientOptions SetClientPrivateKey(string clientPrivateKey) {
     NativeClientOptions.deephaven_client_ClientOptions_SetClientPrivateKey(Self, clientPrivateKey,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions AddIntOption(string opt, Int32 val) {
+  public ClientOptions AddIntOption(string opt, Int32 val) {
     NativeClientOptions.deephaven_client_ClientOptions_AddIntOption(Self, opt, val,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions AddStringOption(string opt, string val) {
+  public ClientOptions AddStringOption(string opt, string val) {
     NativeClientOptions.deephaven_client_ClientOptions_AddStringOption(Self, opt, val,
       out var status);
     status.OkOrThrow();
     return this;
   }
 
-  ClientOptions AddExtraHeader(string headerName, string headerValue) {
+  public ClientOptions AddExtraHeader(string headerName, string headerValue) {
     NativeClientOptions.deephaven_client_ClientOptions_AddExtraHeader(Self, headerName, headerValue,
       out var status);
     status.OkOrThrow();
