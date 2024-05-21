@@ -105,27 +105,16 @@ public class JoinTest {
       var askData = new double?[] { null, 3.4, 3.4, 105, 110 };
       var askSizeData = new int?[] { null, 33, 33, 47, 15 };
 
-      using var tableMaker = new TableMaker();
-      tableMaker.AddColumn("Ticker", tickerData);
-      tableMaker.AddColumn("Timestamp", timestampData);
-      tableMaker.AddColumn("Price", priceData);
-      tableMaker.AddColumn("Size", sizeData);
-      tableMaker.AddColumn("Bid", bidData);
-      tableMaker.AddColumn("BidSize", bidSizeData);
-      tableMaker.AddColumn("Ask", askData);
-      tableMaker.AddColumn("AskSize", askSizeData);
-
-      CompareTable(
-        result,
-        "Ticker", ticker_data,
-        "Timestamp", timestamp_data,
-        "Price", priceData,
-        "Size", sizeData,
-        "Bid", bidData,
-        "BidSize", bid_size_data,
-        "Ask", askData,
-        "AskSize", askSizeData);
-    }
+      var tc = new TableComparer();
+      tc.AddColumn("Ticker", tickerData);
+      tc.AddColumn("Timestamp", timestampData);
+      tc.AddColumn("Price", priceData);
+      tc.AddColumn("Size", sizeData);
+      tc.AddColumn("Bid", bidData);
+      tc.AddColumn("BidSize", bidSizeData);
+      tc.AddColumn("Ask", askData);
+      tc.AddColumn("AskSize", askSizeData);
+      tc.AssertEqualTo(result);
   }
 }
 /*
