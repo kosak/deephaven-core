@@ -118,7 +118,7 @@ public sealed class StringPool {
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ErrorStatusNew {
+public struct ErrorStatus {
   internal StringHandle StringHandle;
   internal StringPoolHandle StringPoolHandle;
 
