@@ -680,89 +680,98 @@ void deephaven_client_ClientTableHelper_GetInt32Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index,
     int32_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = Int32Chunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
   });
 }
 
-void deephaven_client_ClientTableHelper_GetInt64Column(ClientTableSpWrapper *self,
-    int32_t column_index, int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+void deephaven_client_ClientTableHelper_GetInt64Column(
+    NativePtr<ClientTableSpWrapper> self,
+    int32_t column_index,
+    int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = Int64Chunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
   });
 }
 
-void deephaven_client_ClientTableHelper_GetFloatColumn(ClientTableSpWrapper *self,
+void deephaven_client_ClientTableHelper_GetFloatColumn(
+    NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, float *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = FloatChunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
   });
 }
 
-void deephaven_client_ClientTableHelper_GetDoubleColumn(ClientTableSpWrapper *self,
+void deephaven_client_ClientTableHelper_GetDoubleColumn(
+    NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, double *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
     auto data_chunk = DoubleChunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
   });
 }
 
-void deephaven_client_ClientTableHelper_GetCharColumn(ClientTableSpWrapper *self,
-    int32_t column_index, char16_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
+    NativePtr<ClientTableSpWrapper> self,
+    int32_t column_index, int16_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
-    auto data_chunk = CharChunk::CreateView(data, num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    auto data_chunk = CharChunk::Create(num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // For char, boolean, DateTime, and String we have to do a little data conversion.
+    for (int64_t i = 0; i != num_rows; ++i) {
+      data[i] = static_cast<int16_t>(data_chunk.data()[i]);
+    }
   });
 }
 
-void deephaven_client_ClientTableHelper_GetBooleanAsSbyteColumn(ClientTableSpWrapper *self,
+void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
+    NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, int8_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
-    // For Boolean, DateTime, and String we have to do a little data conversion.
+    // For char, boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = BooleanChunk::Create(num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i] ? 1 : 0;
     }
   });
 }
 
-void deephaven_client_ClientTableHelper_GetStringColumn(ClientTableSpWrapper *self,
-    int32_t column_index, const PlatformUtf16 **data, InteropBool *optional_dest_null_flags,
+void deephaven_client_ClientTableHelper_GetStringColumn(
+    NativePtr<ClientTableSpWrapper> self,
+    int32_t column_index, StringHandle *data, InteropBool *optional_dest_null_flags,
     int64_t num_rows,
-    ErrorStatus *status) {
+    StringPoolHandle *string_pool_handle,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
-    // For Boolean, DateTime, and String we have to do a little data conversion.
+    // For char, boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = StringChunk::Create(num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
-    PlatformUtf16::CreateBulk(data_chunk.data(), num_rows, data);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    StringPoolBuilder builder;
+    for (int64_t i = 0; i != num_rows; ++i) {
+      data[i] = builder.Add(data_chunk.data()[i]);
+    }
+    *string_pool_handle = builder.Build();
   });
 }
 
-void deephaven_client_ClientTableHelper_GetDateTimeAsLongColumn(ClientTableSpWrapper *self,
+void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
+    NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
-    ErrorStatus *status) {
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    AutoNullMapper mapper(optional_dest_null_flags, num_rows);
-    // For Boolean, DateTime, and String we have to do a little data conversion.
+    // For char, boolean, DateTime, and String we have to do a little data conversion.
     auto data_chunk = DateTimeChunk::Create(num_rows);
-    GetColumnHelper(self, column_index, &data_chunk, mapper.BoolData(), num_rows);
+    GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i].Nanos();
     }

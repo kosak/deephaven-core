@@ -276,6 +276,7 @@ void deephaven_client_ClientTableHelper_GetStringColumn(
     deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
     int32_t column_index, deephaven::dhcore::interop::StringHandle *data,
     deephaven::dhcore::interop::InteropBool *optional_dest_null_flags, int64_t num_rows,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
     deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
