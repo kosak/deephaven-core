@@ -61,7 +61,7 @@ void deephaven_client_TableHandleManager_TimeTable(
 void deephaven_client_TableHandleManager_InputTable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> self,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> initial_table,
-    const char **key_columns, int64_t num_key_columns,
+    const char **key_columns, int32_t num_key_columns,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 

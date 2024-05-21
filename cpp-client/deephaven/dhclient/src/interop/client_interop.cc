@@ -264,7 +264,7 @@ void deephaven_client_TableHandleManager_TimeTable(
 void deephaven_client_TableHandleManager_InputTable(
     NativePtr<TableHandleManager> self,
     NativePtr<TableHandle> initial_table,
-    const char **key_columns, int64_t num_key_columns,
+    const char **key_columns, int32_t num_key_columns,
     NativePtr<TableHandle> *result,
     ErrorStatusNew *status) {
   status->Run([=]() {
