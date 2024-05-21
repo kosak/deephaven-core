@@ -103,6 +103,7 @@ internal partial class NativeArrowTable {
     SByte[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -112,6 +113,7 @@ internal partial class NativeArrowTable {
     Int16[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -121,6 +123,7 @@ internal partial class NativeArrowTable {
     Int32[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -130,6 +133,7 @@ internal partial class NativeArrowTable {
     Int64[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -139,6 +143,7 @@ internal partial class NativeArrowTable {
     float[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -148,6 +153,7 @@ internal partial class NativeArrowTable {
     double[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -157,6 +163,7 @@ internal partial class NativeArrowTable {
     InteropBool[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -166,6 +173,7 @@ internal partial class NativeArrowTable {
     Int16[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -185,5 +193,6 @@ internal partial class NativeArrowTable {
     Int64[] data,
     InteropBool[]? nullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 }

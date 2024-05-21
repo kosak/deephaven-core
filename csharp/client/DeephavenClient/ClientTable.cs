@@ -101,6 +101,7 @@ internal partial class NativeClientTable {
     sbyte[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -110,6 +111,7 @@ internal partial class NativeClientTable {
     Int16[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -119,6 +121,7 @@ internal partial class NativeClientTable {
     Int32[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -128,6 +131,7 @@ internal partial class NativeClientTable {
     Int64[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -137,6 +141,7 @@ internal partial class NativeClientTable {
     float[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -146,6 +151,7 @@ internal partial class NativeClientTable {
     double[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -155,6 +161,7 @@ internal partial class NativeClientTable {
     InteropBool[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -164,6 +171,7 @@ internal partial class NativeClientTable {
     Int16[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
@@ -183,5 +191,6 @@ internal partial class NativeClientTable {
     Int64[] data,
     InteropBool[]? optionalDestNullFlags,
     Int64 numRows,
+    out StringPoolHandle stringPoolHandle,
     out ErrorStatusNew status);
 }

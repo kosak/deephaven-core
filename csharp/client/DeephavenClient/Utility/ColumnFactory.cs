@@ -10,32 +10,39 @@ internal abstract class ColumnFactory<TTableType> {
     Int64 numRows);
 
   public delegate void NativeImpl<in T>(NativePtr<TTableType> table, Int32 columnIndex,
-    T[] data, InteropBool[]? nullFlags, Int64 numRows, out ErrorStatusNew status);
+    T[] data, InteropBool[]? nullFlags, Int64 numRows, out StringPoolHandle stringPoolHandle, out ErrorStatusNew status);
 
-  public sealed class ForString : ColumnFactory<TTableType> {
-    public delegate void NativeImplString(NativePtr<TTableType> table, Int32 columnIndex,
-      StringHandle[] data, InteropBool[]? nullFlags, Int64 numRows, out StringPoolHandle stringPoolHandle,
-      out ErrorStatusNew status);
+  public abstract class ForType<TTarget, TNative> : ColumnFactory<TTableType> {
+    private readonly NativeImpl<TNative> _nativeImpl;
 
-    private readonly NativeImplString _nativeImpl;
+    protected ForType(NativeImpl<TNative> nativeImpl) => _nativeImpl = nativeImpl;
 
-    public ForString(NativeImplString nativeImpl) => _nativeImpl = nativeImpl;
-
-    public override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
+    public sealed override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
-      var handles = new StringHandle[numRows];
+      return GetColumnInternal(table, columnIndex, numRows);
+    }
+
+    protected (TTarget[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
+      Int64 numRows) {
+      var intermediate = new TNative[numRows];
       var interopNulls = new InteropBool[numRows];
-      _nativeImpl(table, columnIndex, handles, interopNulls, numRows, out var stringPoolHandle, out var errorStatus);
+      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var stringPoolHandle, out var errorStatus);
       errorStatus.OkOrThrow();
       var pool = stringPoolHandle.ExportAndDestroy();
-
-      var data = new string[numRows];
       var nulls = new bool[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        data[i] = pool.Get(handles[i]);
         nulls[i] = (bool)interopNulls[i];
       }
+
+      var data = ConvertNativeToTarget(intermediate, nulls, pool);
       return (data, nulls);
+    }
+
+    protected abstract TTarget[] ConvertNativeToTarget(TNative[] native, bool[] nulls, StringPool pool);
+  }
+
+  public sealed class ForString : ForType<string?, StringHandle> {
+    public ForString(NativeImpl<StringHandle> nativeImpl) : base(nativeImpl) {
     }
 
     public override Array GetNullableColumn(NativePtr<TTableType> table, int columnIndex, long numRows) {
@@ -43,17 +50,20 @@ internal abstract class ColumnFactory<TTableType> {
       // For the case of string, the return value is the same as GetColumn().
       return GetColumn(table, columnIndex, numRows).Item1;
     }
+
+    protected override string?[] ConvertNativeToTarget(StringHandle[] native, bool[] nulls, StringPool pool) {
+      var result = new string?[native.Length];
+      for (Int64 i = 0; i != native.Length; ++i) {
+        result[i] = nulls[i] ? null : pool.Get(native[i]);
+      }
+
+      return result;
+    }
   }
 
-  public abstract class ColumnFactoryForValueTypes<TTarget, TNative> : ColumnFactory<TTableType>
+  public abstract class ForValueTypes<TTarget, TNative> : ForType<TTarget, TNative>
         where TTarget : struct where TNative : struct {
-    private readonly NativeImpl<TNative> _nativeImpl;
-
-    protected ColumnFactoryForValueTypes(NativeImpl<TNative> nativeImpl) => _nativeImpl = nativeImpl;
-
-    public sealed override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
-      Int64 numRows) {
-      return GetColumnInternal(table, columnIndex, numRows);
+    protected ForValueTypes(NativeImpl<TNative> nativeImpl) : base(nativeImpl) {
     }
 
     public sealed override Array GetNullableColumn(NativePtr<TTableType> table, int columnIndex, long numRows) {
@@ -64,33 +74,15 @@ internal abstract class ColumnFactory<TTableType> {
           result[i] = data[i];
         }
       }
-
       return result;
     }
-
-    private (TTarget[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
-      Int64 numRows) {
-      var intermediate = new TNative[numRows];
-      var interopNulls = new InteropBool[numRows];
-      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
-      errorStatus.OkOrThrow();
-      var nulls = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        nulls[i] = (bool)interopNulls[i];
-      }
-
-      var data = ConvertNativeToTarget(intermediate, nulls);
-      return (data, nulls);
-    }
-
-    protected abstract TTarget[] ConvertNativeToTarget(TNative[] native, bool[] nulls);
   }
 
-  public sealed class ForChar: ColumnFactoryForValueTypes<char, Int16> {
+  public sealed class ForChar : ForValueTypes<char, Int16> {
     public ForChar(NativeImpl<Int16> nativeImpl) : base(nativeImpl) {
     }
 
-    protected override char[] ConvertNativeToTarget(Int16[] native, bool[] nulls) {
+    protected override char[] ConvertNativeToTarget(Int16[] native, bool[] nulls, StringPool pool) {
       var result = new char[native.Length];
       for (var i = 0; i != native.Length; ++i) {
         result[i] = (char)native[i];
@@ -99,11 +91,11 @@ internal abstract class ColumnFactory<TTableType> {
     }
   }
 
-  public sealed class ForBool : ColumnFactoryForValueTypes<bool, InteropBool> {
+  public sealed class ForBool : ForValueTypes<bool, InteropBool> {
     public ForBool(NativeImpl<InteropBool> nativeImpl) : base(nativeImpl) {
     }
 
-    protected override bool[] ConvertNativeToTarget(InteropBool[] native, bool[] nulls) {
+    protected override bool[] ConvertNativeToTarget(InteropBool[] native, bool[] nulls, StringPool pool) {
       var result = new bool[native.Length];
       for (var i = 0; i != native.Length; ++i) {
         result[i] = (bool)native[i];
@@ -113,11 +105,11 @@ internal abstract class ColumnFactory<TTableType> {
 
   }
 
-  public sealed class ForDateTime : ColumnFactoryForValueTypes<DhDateTime, Int64> {
+  public sealed class ForDateTime : ForValueTypes<DhDateTime, Int64> {
     public ForDateTime(NativeImpl<Int64> nativeImpl) : base(nativeImpl) {
     }
 
-    protected override DhDateTime[] ConvertNativeToTarget(Int64[] native, bool[] nulls) {
+    protected override DhDateTime[] ConvertNativeToTarget(Int64[] native, bool[] nulls, StringPool pool) {
       var result = new DhDateTime[native.Length];
       for (var i = 0; i != native.Length; ++i) {
         result[i] = nulls[i] ? new DhDateTime(0) : new DhDateTime(native[i]);
@@ -126,11 +118,11 @@ internal abstract class ColumnFactory<TTableType> {
     }
   }
 
-  public sealed class ForOtherValueType<T> : ColumnFactoryForValueTypes<T, T> where T : struct {
+  public sealed class ForOtherValueType<T> : ForValueTypes<T, T> where T : struct {
     public ForOtherValueType(NativeImpl<T> nativeImpl) : base(nativeImpl) {
     }
 
-    protected override T[] ConvertNativeToTarget(T[] native, bool[] nulls) {
+    protected override T[] ConvertNativeToTarget(T[] native, bool[] nulls, StringPool pool) {
       return native;
     }
   }
