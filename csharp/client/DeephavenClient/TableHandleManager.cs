@@ -75,29 +75,29 @@ public sealed class TableHandleManager : IDisposable {
   }
 }
 
-internal class NativeTableHandleManager {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandleManager_dtor(NativePtr<NativeTableHandleManager> self);
+internal partial class NativeTableHandleManager {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandleManager_dtor(NativePtr<NativeTableHandleManager> self);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandleManager_EmptyTable(NativePtr<NativeTableHandleManager> self,
-    Int64 size, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandleManager_EmptyTable(NativePtr<NativeTableHandleManager> self,
+    Int64 size, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandleManager_FetchTable(NativePtr<NativeTableHandleManager> self,
-    string tableName, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandleManager_FetchTable(NativePtr<NativeTableHandleManager> self,
+    string tableName, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandleManager_TimeTable(NativePtr<NativeTableHandleManager> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandleManager_TimeTable(NativePtr<NativeTableHandleManager> self,
     NativePtr<NativeDurationSpecifier> period, NativePtr<NativeTimePointSpecifier> startTime,
-    bool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+    bool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandleManager_InputTable(NativePtr<NativeTableHandleManager> self,
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandleManager_InputTable(NativePtr<NativeTableHandleManager> self,
     NativePtr<NativeTableHandle> initialTable, [In] string[]keyColumns,
-    Int64 numKeyColumns, out NativePtr<NativeTableHandle> result, out ErrorStatus status);
+    Int64 numKeyColumns, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TableHandleManager_RunScript(NativePtr<NativeTableHandleManager> self,
-    string code, out ErrorStatus errorStatus);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TableHandleManager_RunScript(NativePtr<NativeTableHandleManager> self,
+    string code, out ErrorStatusNew errorStatus);
 }

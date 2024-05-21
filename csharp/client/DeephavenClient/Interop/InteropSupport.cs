@@ -60,7 +60,7 @@ public struct NativePtr<T> {
     return true;
   }
 
-  public bool IsNull => ptr == IntPtr.Zero;
+  public readonly bool IsNull => ptr == IntPtr.Zero;
 }
 
 /// <summary>
