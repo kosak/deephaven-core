@@ -173,9 +173,9 @@ void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle 
     deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_ToClientTable(
-    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> self,
-    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> *result,
-    deephaven::dhcore::interop::ErrorStatusNew *status);
+    deephaven::client::TableHandle *self,
+    deephaven::client::interop::ClientTableSpWrapper **client_table,
+    deephaven::dhcore::interop::ErrorStatus *status);
 
 void deephaven_client_TableHandle_ToString(
     deephaven::client::TableHandle *self,

@@ -66,20 +66,29 @@ void PlatformUtf16::CreateBulk(const char16_t **strings, size_t num_strings,
   AllocatorHelper()(strings, results, static_cast<int32_t>(num_strings));
 }
 
-StringPool::StringPool(std::vector<uint8_t> bytes, std::vector<int32_t> ends) :
-   bytes_(std::move(bytes)), ends_(std::move(ends)) {}
-StringPool::~StringPool() = default;
-
-void StringPool::Export(uint8_t *bytes, int32_t bytes_length,
+void StringPool::ExportAndDestroy(StringPool *self,
+    uint8_t *bytes, int32_t bytes_length,
     int32_t *ends, int32_t ends_length) {
-  if (bytes_length != static_cast<int32_t>(bytes_.size()) ||
-      ends_length != static_cast<int32_t>(ends_.size())) {
+  // StringPoolBuilder::Build is allowed to return null if there are no strings.
+  if (self == nullptr) {
+    if (bytes_length != 0 || ends_length != 0) {
+      std::cerr << "Serious programming error with nullptr and StringPool::Export()\n";
+      std::exit(1);
+    }
+    return;
+  }
+  if (bytes_length != static_cast<int32_t>(self->bytes_.size()) ||
+      ends_length != static_cast<int32_t>(self->ends_.size())) {
     std::cerr << "Serious programming error in StringPool::Export()\n";
     std::exit(1);
   }
-  std::copy(bytes_.begin(), bytes_.end(), bytes);
-  std::copy(ends_.begin(), ends_.end(), ends);
+  std::copy(self->bytes_.begin(), self->bytes_.end(), bytes);
+  std::copy(self->ends_.begin(), self->ends_.end(), ends);
 }
+
+StringPool::StringPool(std::vector<uint8_t> bytes, std::vector<int32_t> ends) :
+   bytes_(std::move(bytes)), ends_(std::move(ends)) {}
+StringPool::~StringPool() = default;
 
 StringPoolBuilder::StringPoolBuilder() = default;
 StringPoolBuilder::~StringPoolBuilder() = default;
@@ -94,6 +103,9 @@ StringHandle StringPoolBuilder::Add(std::string_view sv) {
 StringPoolHandle StringPoolBuilder::Build() {
   auto num_bytes = bytes_.size();
   auto num_strings = ends_.size();
+  if (num_strings == 0) {
+    return StringPoolHandle(nullptr, 0, 0);
+  }
   auto *sp = new StringPool(std::move(bytes_), std::move(ends_));
   return StringPoolHandle(sp, static_cast<int32_t>(num_bytes),
       static_cast<int32_t>(num_strings));
@@ -110,7 +122,6 @@ void deephaven_dhcore_interop_StringPool_ExportAndDestroy(
     NativePtr<StringPool> string_pool,
     uint8_t *bytes, int32_t bytes_length,
     int32_t *ends, int32_t ends_length) {
-  string_pool->Export(bytes, bytes_length, ends, ends_length);
-  delete string_pool.Get();
+  StringPool::ExportAndDestroy(string_pool.Get(), bytes, bytes_length, ends, ends_length);
 }
 }  // extern "C"

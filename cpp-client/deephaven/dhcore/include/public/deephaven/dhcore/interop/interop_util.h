@@ -191,13 +191,15 @@ private:
 
 class StringPool {
 public:
+  static void ExportAndDestroy(
+      StringPool *self,
+      uint8_t *bytes, int32_t bytes_length,
+      int32_t *ends, int32_t ends_length);
+
   StringPool(std::vector<uint8_t> bytes, std::vector<int32_t> ends);
   StringPool(const StringPool &other) = delete;
   StringPool &operator=(const StringPool &other) = delete;
   ~StringPool();
-
-  void Export(uint8_t *bytes, int32_t bytes_length,
-      int32_t *ends, int32_t ends_length);
 
 private:
   std::vector<uint8_t> bytes_;
