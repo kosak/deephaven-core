@@ -9,7 +9,6 @@ public class DateTimeTest {
 
   public DateTimeTest(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

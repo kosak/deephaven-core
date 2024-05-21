@@ -11,7 +11,6 @@ public class FilterTest {
 
   public FilterTest(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

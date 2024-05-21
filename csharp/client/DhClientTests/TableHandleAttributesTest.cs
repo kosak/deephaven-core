@@ -10,7 +10,6 @@ public class TableHandleAttributesTest {
 
   public TableHandleAttributesTest(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

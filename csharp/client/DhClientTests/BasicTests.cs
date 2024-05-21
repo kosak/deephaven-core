@@ -10,7 +10,6 @@ public class BasicTests {
 
   public BasicTests(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

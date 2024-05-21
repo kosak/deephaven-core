@@ -9,7 +9,6 @@ public class InputTableTest {
 
   public InputTableTest(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

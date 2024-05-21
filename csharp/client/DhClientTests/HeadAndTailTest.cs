@@ -9,7 +9,6 @@ public class HeadAndTailTest {
 
   public HeadAndTailTest(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

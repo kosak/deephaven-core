@@ -11,7 +11,6 @@ public class SelectTest {
 
   public SelectTest(ITestOutputHelper output) {
     _output = output;
-    PlatformUtf16.Init();
   }
 
   [Fact]

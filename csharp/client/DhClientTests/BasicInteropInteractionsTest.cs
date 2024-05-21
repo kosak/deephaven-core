@@ -4,10 +4,6 @@ using Deephaven.DeephavenClient.Interop.TestApi;
 namespace Deephaven.DhClientTests;
 
 public class BasicInteropInteractionsTest {
-  public BasicInteropInteractionsTest() {
-    PlatformUtf16.Init();
-  }
-
   [Fact]
   public void TestInAndOutPrimitives() {
     BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_Add(3, 4, out var result);

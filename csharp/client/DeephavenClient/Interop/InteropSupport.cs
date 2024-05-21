@@ -10,34 +10,6 @@ internal class LibraryPaths {
   internal const string Dhclient = "dhclient.dll";
 }
 
-public class PlatformUtf16 {
-  [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-  public delegate void AllocatorHelper(
-    [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] inItems,
-    [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] string[] outItems,
-    int count);
-
-  [DllImport(LibraryPaths.Dhcore, CharSet = CharSet.Unicode)]
-  internal static extern void deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(AllocatorHelper allocator);
-
-  private static void BulkIdentity(string[] inItems, string[] outItems, Int32 count) {
-    if (count == 0) {
-      return;
-    }
-    Console.WriteLine($"Array has length {inItems.Length} and {outItems.Length}. Count i s{count}");
-    for (int i = 0; i < count; ++i) {
-      Console.WriteLine($"BulkIdentity in item {i} is {inItems[i]}");
-    }
-    for (int i = 0; i < count; ++i) {
-      outItems[i] = inItems[i];
-    }
-  }
-
-  public static void Init() {
-    deephaven_dhcore_interop_PlatformUtf16_register_allocator_helper(BulkIdentity);
-  }
-}
-
 /// <summary>
 /// This is simply a wrapper for an IntPtr. Its purpose is to give us more careful type checking.
 /// It basically turns IntPtr into a "strong" IntPtr that can only be assigned to IntPtrs of the
@@ -138,17 +110,6 @@ public sealed class StringPool {
 
   public string Get(StringHandle handle) {
     return Strings[handle.Index];
-  }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct ErrorStatus {
-  public readonly Int32 OK;
-
-  public void OkOrThrow() {
-    if (OK == 0) {
-      throw new Exception("Sad for some reason");
-    }
   }
 }
 
