@@ -41,18 +41,6 @@ public class TableMaker : IDisposable {
   }
 
   private static class ArrayDispatcher {
-    static void ConvertOptional<T>(T?[] input, out T[] data, out sbyte[] nulls) where T : struct {
-      data = new T[input.Length];
-      nulls = new sbyte[input.Length];
-      for (var i = 0; i != input.Length; ++i) {
-        if (input[i].HasValue) {
-          data[i] = input[i]!.Value;
-        } else {
-          nulls[i] = 1;
-        }
-      }
-    }
-
     public static void AcceptVisitor<T>(IArrayVisitor visitor, T[] array) {
       // TODO: make this faster
       if (array is char[] chars) {
@@ -161,6 +149,19 @@ public class TableMaker : IDisposable {
 
       throw new ArgumentException($"Don't know how to handle type {array.GetType().Name}");
     }
+
+    private static void ConvertOptional<T>(T?[] input, out T[] data, out sbyte[] nulls) where T : struct {
+      data = new T[input.Length];
+      nulls = new sbyte[input.Length];
+      for (var i = 0; i != input.Length; ++i) {
+        if (input[i].HasValue) {
+          data[i] = input[i]!.Value;
+        } else {
+          nulls[i] = 1;
+        }
+      }
+    }
+
   }
 
   // put this somewhere

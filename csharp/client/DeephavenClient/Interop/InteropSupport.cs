@@ -134,8 +134,8 @@ public sealed class StringPool {
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ErrorStatus {
-  public Int32 OK;
+public readonly struct ErrorStatus {
+  public readonly Int32 OK;
 
   public void OkOrThrow() {
     if (OK == 0) {
