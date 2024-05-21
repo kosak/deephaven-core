@@ -394,75 +394,75 @@ void deephaven_dhclient_utility_TableMaker_dtor(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self);
 void deephaven_dhclient_utility_TableMaker_MakeTable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    deephaven::client::TableHandleManager *manager,
-    deephaven::client::TableHandle **result,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> manager,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
-void deephaven_dhclient_utility_TableMaker_AddColumn__Char(
+void deephaven_dhclient_utility_TableMaker_AddColumn__CharAsInt16(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
-    const char16_t *data,
+    const char *name,
+    const int16_t *data,
     int32_t length,
-    const int8_t *optional_nulls,
+    const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const int8_t *data,
     int32_t length,
-    const int8_t *optional_nulls,
+    const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const int16_t *data,
     int32_t length,
-    const int8_t *optional_nulls,
+    const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const int32_t *data,
     int32_t length,
-    const int8_t *optional_nulls,
+    const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const int64_t *data,
     int32_t length,
-    const int8_t *optional_nulls,
+    const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Float(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const float *data,
     int32_t length,
-    const int8_t *optional_nulls,
+    const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__Double(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const double *data,
     int32_t length,
     const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
-void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(
+void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsInteropBool(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const int8_t *data,
     int32_t length,
     const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__String(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
-    const char16_t **data,
+    const char *name,
+    const char **data,
     int32_t length,
     const deephaven::dhcore::interop::InteropBool *optional_nulls,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsInt64(
     deephaven::dhcore::interop::NativePtr<deephaven::client::utility::TableMaker> self,
-    const char16_t *name,
+    const char *name,
     const int64_t *data,
     int32_t length,
     const deephaven::dhcore::interop::InteropBool *optional_nulls,

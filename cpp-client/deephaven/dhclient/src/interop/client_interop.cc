@@ -997,125 +997,151 @@ void deephaven_client_utility_TimePointSpecifier_dtor(TimePointSpecifier *self) 
   delete self;
 }
 
-void deephaven_dhclient_utility_TableMaker_ctor(TableMaker **result, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_ctor(
+    NativePtr<TableMaker> *result,
+    ErrorStatusNew *status) {
   status->Run([=] {
-    *result = new TableMaker();
+    result->Reset(new TableMaker());
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_dtor(TableMaker *self) {
-  delete self;
+void deephaven_dhclient_utility_TableMaker_dtor(NativePtr<TableMaker> self) {
+  delete self.Get();
 }
 
 void deephaven_dhclient_utility_TableMaker_MakeTable(
-    deephaven::client::utility::TableMaker *self,
-    deephaven::client::TableHandleManager *manager,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status) {
+    NativePtr<TableMaker> self,
+    NativePtr<TableHandleManager> manager,
+    NativePtr<TableHandle> *result,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto th = self->MakeTable(*manager);
-    *result = new TableHandle(std::move(th));
+    result->Reset(new TableHandle(std::move(th)));
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Char(TableMaker *self,
-    const char16_t *name, const char16_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__CharAsInt16(
+    NativePtr<TableMaker> self,
+    const char *name, const int16_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
+  status->Run([=] {
+    auto get_value = [=](size_t index) -> int16_t { return static_cast<int16_t>(data[index]); };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<char16_t>(name, get_value, is_null, length);
+  });
+}
+
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(
+    NativePtr<TableMaker> self,
+    const char *name, const int8_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<char16_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<int8_t>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Int8(TableMaker *self,
-    const char16_t *name, const int8_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(
+    NativePtr<TableMaker> self,
+    const char *name, const int16_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<int8_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<int16_t>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Int16(TableMaker *self,
-    const char16_t *name, const int16_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(
+    NativePtr<TableMaker> self,
+    const char *name, const int32_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<int16_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<int32_t>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Int32(TableMaker *self,
-    const char16_t *name, const int32_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(
+    NativePtr<TableMaker> self,
+    const char *name, const int64_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<int32_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<int64_t>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Int64(TableMaker *self,
-    const char16_t *name, const int64_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__Float(
+    NativePtr<TableMaker> self,
+    const char *name, const float *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<int64_t>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<float>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Float(TableMaker *self,
-    const char16_t *name, const float *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__Double(
+    NativePtr<TableMaker> self,
+    const char *name, const double *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<float>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<double>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__Double(TableMaker *self,
-    const char16_t *name, const double *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
-  status->Run([=] {
-    auto get_value = [=](size_t index) { return data[index]; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<double>(Utf16Converter().to_bytes(name), get_value, is_null, length);
-  });
-}
-
-void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsByte(TableMaker *self,
-    const char16_t *name, const int8_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__BoolAsInteropBool(
+    NativePtr<TableMaker> self,
+    const char *name, const int8_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return data[index] != 0; };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<bool>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<bool>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(TableMaker *self,
-    const char16_t *name, const int64_t *data, int32_t length,
-    const int8_t *optional_nulls, ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsInt64(
+    NativePtr<TableMaker> self,
+    const char *name, const int64_t *data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
     auto get_value = [=](size_t index) { return DateTime::FromNanos(data[index]); };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<DateTime>(Utf16Converter().to_bytes(name), get_value, is_null, length);
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<DateTime>(name, get_value, is_null, length);
   });
 }
 
-void deephaven_dhclient_utility_TableMaker_AddColumn__String(TableMaker *self,
-    const char16_t *name, const char16_t **data, int32_t length, const int8_t *optional_nulls,
-    ErrorStatus *status) {
+void deephaven_dhclient_utility_TableMaker_AddColumn__String(
+    NativePtr<TableMaker> self,
+    const char *name, const char **data, int32_t length,
+    const InteropBool *optional_nulls,
+    ErrorStatusNew *status) {
   status->Run([=] {
-    Utf16Converter converter;
-    auto get_value = [&](size_t index) { return converter.to_bytes(data[index]); };
-    auto is_null = [=](size_t index) { return optional_nulls != nullptr && optional_nulls[index] != 0; };
-    self->AddColumn<std::string>(converter.to_bytes(name), get_value, is_null, length);
+    auto get_value = [=](size_t index) -> std::string {
+      if (data[index] == nullptr) {
+        return "";
+      }
+      return data[index];
+    };
+    auto is_null = [=](size_t index) { return optional_nulls != nullptr && (bool)optional_nulls[index]; };
+    self->AddColumn<std::string>(name, get_value, is_null, length);
   });
 }
 }  // extern "C"
