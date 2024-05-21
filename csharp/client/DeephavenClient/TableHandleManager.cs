@@ -94,8 +94,9 @@ internal partial class NativeTableHandleManager {
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_InputTable(NativePtr<NativeTableHandleManager> self,
-    NativePtr<NativeTableHandle> initialTable, [In] string[]keyColumns,
-    Int64 numKeyColumns, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
+    NativePtr<NativeTableHandle> initialTable, 
+    string[]keyColumns, Int32 numKeyColumns,
+    out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_RunScript(NativePtr<NativeTableHandleManager> self,
