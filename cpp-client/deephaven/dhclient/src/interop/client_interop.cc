@@ -658,10 +658,12 @@ void deephaven_client_ClientTableHelper_GetInt8Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index,
     int8_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = Int8Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
@@ -669,10 +671,12 @@ void deephaven_client_ClientTableHelper_GetInt16Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index,
     int16_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = Int16Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
@@ -680,10 +684,12 @@ void deephaven_client_ClientTableHelper_GetInt32Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index,
     int32_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = Int32Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
@@ -691,36 +697,43 @@ void deephaven_client_ClientTableHelper_GetInt64Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index,
     int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = Int64Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
 void deephaven_client_ClientTableHelper_GetFloatColumn(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, float *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = FloatChunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
 void deephaven_client_ClientTableHelper_GetDoubleColumn(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, double *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = DoubleChunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
 void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, int16_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     auto data_chunk = CharChunk::Create(num_rows);
@@ -729,12 +742,14 @@ void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = static_cast<int16_t>(data_chunk.data()[i]);
     }
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
 void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, int8_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     // For char, boolean, DateTime, and String we have to do a little data conversion.
@@ -743,6 +758,7 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i] ? 1 : 0;
     }
+    *string_pool_handle = StringPoolHandle();
   });
 }
 
@@ -767,6 +783,7 @@ void deephaven_client_ClientTableHelper_GetStringColumn(
 void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
     NativePtr<ClientTableSpWrapper> self,
     int32_t column_index, int64_t *data, InteropBool *optional_dest_null_flags, int64_t num_rows,
+    StringPoolHandle *string_pool_handle,
     ErrorStatusNew *status) {
   status->Run([=]() {
     // For char, boolean, DateTime, and String we have to do a little data conversion.
@@ -775,6 +792,7 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i].Nanos();
     }
+    *string_pool_handle = StringPoolHandle();
   });
 }
 

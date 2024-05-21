@@ -213,6 +213,7 @@ struct StringHandle {
 };
 
 struct StringPoolHandle {
+  StringPoolHandle() = default;
   StringPoolHandle(StringPool *string_pool, int32_t num_bytes, int32_t num_strings) :
       stringPool_(string_pool), numBytes_(num_bytes), numStrings_(num_strings) {}
 
