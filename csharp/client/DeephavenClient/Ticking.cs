@@ -74,16 +74,16 @@ public interface ITickingCallback {
   void OnFailure(string errorMessage);
 }
 
-internal class NativeSubscriptionHandle {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_SubscriptionHandle_dtor(NativePtr<NativeSubscriptionHandle> self);
+internal partial class NativeSubscriptionHandle {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_SubscriptionHandle_dtor(NativePtr<NativeSubscriptionHandle> self);
 }
 
-internal class NativeTickingUpdate {
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TickingUpdate_dtor(NativePtr<NativeTickingUpdate> self);
+internal partial class NativeTickingUpdate {
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TickingUpdate_dtor(NativePtr<NativeTickingUpdate> self);
 
-  [DllImport(LibraryPaths.Dhclient, CharSet = CharSet.Unicode)]
-  public static extern void deephaven_client_TickingUpdate_Current(NativePtr<NativeTickingUpdate> self,
-    out NativePtr<NativeClientTable> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_TickingUpdate_Current(NativePtr<NativeTickingUpdate> self,
+    out NativePtr<NativeClientTable> result, out ErrorStatusNew status);
 }
