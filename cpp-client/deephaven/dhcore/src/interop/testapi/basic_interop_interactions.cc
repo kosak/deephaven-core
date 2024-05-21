@@ -4,7 +4,7 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
-using deephaven::dhcore::interop::ErrorStatusNew;
+using deephaven::dhcore::interop::ErrorStatus;
 using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::StringHandle;
 using deephaven::dhcore::interop::StringPool;
@@ -85,7 +85,7 @@ void deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddNestedStructAr
 }
 
 void deephaven_dhcore_interop_testapi_BasicInteropInteractions_SetErrorIfLessThan(
-    int32_t a, int32_t b, ErrorStatusNew *error_status) {
+    int32_t a, int32_t b, ErrorStatus *error_status) {
   error_status->Run([=]() {
     if (a < b) {
       auto message = fmt::format("{} < {}, which is not allowed", a, b);

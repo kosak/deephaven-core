@@ -78,5 +78,5 @@ void deephaven_dhcore_interop_testapi_BasicInteropInteractions_AddNestedStructAr
 
 void deephaven_dhcore_interop_testapi_BasicInteropInteractions_SetErrorIfLessThan(
     int32_t a, int32_t b,
-    deephaven::dhcore::interop::ErrorStatusNew *error_status);
+    deephaven::dhcore::interop::ErrorStatus *error_status);
 }  // extern "C"

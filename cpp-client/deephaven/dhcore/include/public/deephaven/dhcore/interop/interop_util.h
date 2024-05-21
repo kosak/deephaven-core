@@ -104,7 +104,7 @@ private:
   int8_t value_ = 0;
 };
 
-class ErrorStatusNew {
+class ErrorStatus {
 public:
   /**
    * This is used to wrap caller code in a lambda so that we can automatically set the error
