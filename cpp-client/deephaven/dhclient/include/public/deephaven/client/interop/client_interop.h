@@ -97,6 +97,7 @@ void deephaven_client_TableHandle_GetSchema(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     int32_t num_columns,
     deephaven::dhcore::interop::StringHandle *columns, int32_t *column_types,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_dtor(
@@ -115,43 +116,43 @@ void deephaven_client_TableHandle_Where(
 
 void deephaven_client_TableHandle_Select(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_SelectDistinct(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_View(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_DropColumns(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_Update(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_LazyUpdate(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_LastBy(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
@@ -169,23 +170,25 @@ void deephaven_client_TableHandle_Tail(
 
 void deephaven_client_TableHandle_WhereIn(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    deephaven::client::TableHandle *filter_table,
-    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> filter_table,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_AddTable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> table_to_add,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_RemoveTable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> table_to_remove,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_By(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     const deephaven::client::AggregateCombo *aggregate_combo,
-    const char **column_specs, int64_t num_column_specs,
+    const char **column_specs, int32_t num_column_specs,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
