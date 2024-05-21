@@ -95,6 +95,13 @@ public struct StringPoolHandle {
   public Int32 NumStrings;
 
   public StringPool ExportAndDestroy() {
+    if (NumStrings == 0) {
+      // Optimization: if there are no strings, then there is no pool and there is nothing to destroy.
+      if (!_nativeStringPool.IsNull) {
+        throw new Exception("Programming error: 0 strings but non-null _nativeStringPool ptr");
+      }
+      return new StringPool(Array.Empty<string>());
+    }
     if (!NativePtrUtil.TryRelease(ref _nativeStringPool, out var old)) {
       throw new InvalidOperationException("Can't run ExportAndDestroy twice");
     }

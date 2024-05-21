@@ -1,5 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System;
+using System.Buffers;
 using System.Reflection;
 
 namespace Deephaven.DeephavenClient.Utility;

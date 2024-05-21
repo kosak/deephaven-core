@@ -7,8 +7,10 @@ namespace Deephaven.DeephavenClient;
 /// Deephaven's custom representation of DateTime, with full nanosecond resolution,
 /// unlike .NET's own System.DateTime which has 100ns resolution.
 /// </summary>
-public struct DhDateTime {
+public readonly struct DhDateTime {
   public readonly Int64 Nanos;
+
+  public static DhDateTime FromNanos(Int64 nanos) => new (nanos);
 
   public DhDateTime(int year, int month, int day, int hour, int minute = 0, int second = 0, int nanos = 0) {
     var ts = new DateTime(year, month, day, hour, minute, second) - DateTime.UnixEpoch;

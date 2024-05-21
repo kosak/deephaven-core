@@ -1,6 +1,4 @@
 ﻿using Deephaven.DeephavenClient.Interop;
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.Utility;
 
@@ -70,7 +68,6 @@ internal abstract class ClientTableColumnFactory {
     new ColumnFactory<NativeClientTable>.ForOtherValueType<double>(NativeClientTable.deephaven_client_ClientTableHelper_GetDoubleColumn),
     new ColumnFactory<NativeClientTable>.ForBool(NativeClientTable.deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn),
     new ColumnFactory<NativeClientTable>.ForString(NativeClientTable.deephaven_client_ClientTableHelper_GetStringColumn),
-    // TODO: probably support something with more precision than the .NET DateTime type
     new ColumnFactory<NativeClientTable>.ForDateTime(NativeClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column),
     // List - TODO(kosak)
   };

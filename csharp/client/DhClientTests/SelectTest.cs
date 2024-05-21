@@ -27,7 +27,7 @@ public class SelectTest {
     var floatData = new List<float>();
     var doubleData = new List<double>();
     var stringData = new List<string>();
-    var dateTimeData = new List<DateTime>();
+    var dateTimeData = new List<DhDateTime>();
 
     const int startValue = -8;
     const int endValue = 8;
@@ -41,7 +41,7 @@ public class SelectTest {
       floatData.Add(i * 123.456F);
       doubleData.Add(i * 987654.321);
       stringData.Add($"test {i}");
-      dateTimeData.Add(DateTimeOffset.FromUnixTimeMilliseconds(i * 1000).DateTime);
+      dateTimeData.Add(DhDateTime.FromNanos(i));
     }
 
     using var maker = new TableMaker();

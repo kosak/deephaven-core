@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient.Interop;
+﻿using System.Buffers;
+using Deephaven.DeephavenClient.Interop;
 using System.Runtime.InteropServices;
 
 namespace Deephaven.DeephavenClient.Utility;
@@ -142,12 +143,12 @@ public class TableMaker : IDisposable {
         return;
       }
 
-      if (array is DateTime[] datetimes) {
+      if (array is DhDateTime[] datetimes) {
         visitor.Visit(datetimes, null);
         return;
       }
 
-      if (array is DateTime?[] optionalDateTimes) {
+      if (array is DhDateTime?[] optionalDateTimes) {
         ConvertOptional(optionalDateTimes, out var data, out var nulls);
         visitor.Visit(data, nulls);
         return;
@@ -172,7 +173,7 @@ public class TableMaker : IDisposable {
     public void Visit(float[] array, sbyte[]? nulls);
     public void Visit(double[] array, sbyte[]? nulls);
     public void Visit(bool[] array, sbyte[]? nulls);
-    public void Visit(DateTime[] array, sbyte[]? nulls);
+    public void Visit(DhDateTime[] array, sbyte[]? nulls);
     // No nulls array because string is a reference type
     public void Visit(string[] array);
   }
@@ -250,11 +251,10 @@ public class TableMaker : IDisposable {
       status.OkOrThrow();
     }
 
-    public void Visit(DateTime[] array, sbyte[]? nulls) {
+    public void Visit(DhDateTime[] array, sbyte[]? nulls) {
       var reinterpreted = new long[array.Length];
-      var epoch = new DateTime(1970, 1, 1);
       for (var i = 0; i != array.Length; ++i) {
-        reinterpreted[i] = (long)array[i].Subtract(epoch).TotalNanoseconds;
+        reinterpreted[i] = array[i].Nanos;
       }
 
       NativeTableMaker.deephaven_dhclient_utility_TableMaker_AddColumn__DateTimeAsLong(

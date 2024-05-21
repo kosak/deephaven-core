@@ -71,7 +71,7 @@ internal static class ArrowTableColumnFactory {
     new ColumnFactory<NativeArrowTable>.ForOtherValueType<double>(NativeArrowTable.deephaven_client_ArrowTable_GetDoubleColumn),
     new ColumnFactory<NativeArrowTable>.ForBool(NativeArrowTable.deephaven_client_ArrowTable_GetBooleanAsInteropBoolColumn),
     new ColumnFactory<NativeArrowTable>.ForString(NativeArrowTable.deephaven_client_ArrowTable_GetStringColumn),
-    new ColumnFactory<NativeArrowTable>.ForDateTime(NativeArrowTable.deephaven_client_ArrowTable_GetDateTimeAsLongColumn),
+    new ColumnFactory<NativeArrowTable>.ForDateTime(NativeArrowTable.deephaven_client_ArrowTable_GetDateTimeAsInt64Column),
     // List - TODO(kosak)
   };
 
