@@ -48,7 +48,7 @@ public sealed class TableHandleManager : IDisposable {
     using var per = period.Materialize();
     using var st = startTime.Materialize();
     NativeTableHandleManager.deephaven_client_TableHandleManager_TimeTable(Self, per.Self, st.Self,
-      blinkTable, out var result, out var status);
+      (InteropBool)blinkTable, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, this);
   }
@@ -90,7 +90,7 @@ internal partial class NativeTableHandleManager {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_TimeTable(NativePtr<NativeTableHandleManager> self,
     NativePtr<NativeDurationSpecifier> period, NativePtr<NativeTimePointSpecifier> startTime,
-    bool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
+    InteropBool blinkTable, out NativePtr<NativeTableHandle> result, out ErrorStatusNew status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_TableHandleManager_InputTable(NativePtr<NativeTableHandleManager> self,
