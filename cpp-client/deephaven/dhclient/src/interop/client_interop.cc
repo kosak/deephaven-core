@@ -516,8 +516,8 @@ void deephaven_client_ClientTable_GetDimensions(
     int32_t *num_columns, int64_t *num_rows,
     ErrorStatus *status) {
   status->Run([=]() {
-    *num_columns = self->table_->NumColumns();
-    *num_rows = self->table_->NumRows();
+    *num_columns = static_cast<int32_t>(self->table_->NumColumns());
+    *num_rows = static_cast<int64_t>(self->table_->NumRows());
   });
 }
 
