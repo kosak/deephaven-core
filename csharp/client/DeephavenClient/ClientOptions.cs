@@ -22,7 +22,7 @@ public class ClientOptions : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
+    if (!Self.TryRelease(out var old)) {
       return;
     }
     NativeClientOptions.deephaven_client_ClientOptions_dtor(old);

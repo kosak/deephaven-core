@@ -22,7 +22,7 @@ public class TableMaker : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
+    if (!Self.TryRelease(out var old)) {
       return;
     }
     NativeTableMaker.deephaven_dhclient_utility_TableMaker_dtor(old);

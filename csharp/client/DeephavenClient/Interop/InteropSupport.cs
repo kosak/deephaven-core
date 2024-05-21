@@ -38,27 +38,35 @@ public class PlatformUtf16 {
   }
 }
 
-public static class NativePtrUtil {
-  public static bool TryRelease<T>(ref NativePtr<T> self, out NativePtr<T> oldPtr) {
-    oldPtr = self;
-    if (self.IsNull) {
+/// <summary>
+/// This is simply a wrapper for an IntPtr. Its purpose is to give us more careful type checking.
+/// It basically turns IntPtr into a "strong" IntPtr that can only be assigned to IntPtrs of the
+/// same type. The T isn't really used otherwise. Note that for correctness, the C++ side needs
+/// to receive a struct with the same layout.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct NativePtr<T> {
+  public IntPtr ptr;
+
+  public NativePtr(IntPtr ptr) => this.ptr = ptr;
+
+  public bool TryRelease(out NativePtr<T> oldPtr) {
+    oldPtr = new NativePtr<T>(ptr);
+    if (IsNull) {
       return false;
     }
 
-    self = new NativePtr<T>(IntPtr.Zero);
+    ptr = IntPtr.Zero;
     return true;
   }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct NativePtr<T> {
-  public readonly IntPtr ptr;
-
-  public NativePtr(IntPtr ptr) => this.ptr = ptr;
 
   public bool IsNull => ptr == IntPtr.Zero;
 }
 
+/// <summary>
+/// This is a wrapper for a bool type. It is necessary because the managed and native sides
+/// don't agree on a representation for 'bool'.
+/// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
 public readonly struct InteropBool : IEquatable<InteropBool> {
   private readonly sbyte _value;
@@ -102,7 +110,7 @@ public struct StringPoolHandle {
       }
       return new StringPool(Array.Empty<string>());
     }
-    if (!NativePtrUtil.TryRelease(ref _nativeStringPool, out var old)) {
+    if (!_nativeStringPool.TryRelease(out var old)) {
       throw new InvalidOperationException("Can't run ExportAndDestroy twice");
     }
 

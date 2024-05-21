@@ -22,7 +22,7 @@ public class SubscriptionHandle : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
+    if (!Self.TryRelease(out var old)) {
       return;
     }
     NativeSubscriptionHandle.deephaven_client_SubscriptionHandle_dtor(old);
@@ -55,7 +55,7 @@ public class TickingUpdate : IDisposable {
   }
 
   public void ReleaseUnmanagedResources() {
-    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
+    if (!Self.TryRelease(out var old)) {
       return;
     }
     NativeTickingUpdate.deephaven_client_TickingUpdate_dtor(old);

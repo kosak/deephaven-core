@@ -53,7 +53,7 @@ public class ArrowTable : IDisposable {
   }
 
   public void ReleaseUnmanagedResources() {
-    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
+    if (!Self.TryRelease(out var old)) {
       return;
     }
     NativeArrowTable.deephaven_client_ArrowTable_dtor(old);

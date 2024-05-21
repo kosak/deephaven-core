@@ -161,7 +161,7 @@ public sealed class TableHandle : IDisposable {
   }
 
   public void Unsubscribe(SubscriptionHandle handle) {
-    if (!NativePtrUtil.TryRelease(ref handle.Self, out var old)) {
+    if (!handle.Self.TryRelease(out var old)) {
       return;
     }
     Manager.RemoveSubscription(handle);
@@ -195,7 +195,7 @@ public sealed class TableHandle : IDisposable {
   }
 
   private void ReleaseUnmanagedResources() {
-    if (!NativePtrUtil.TryRelease(ref Self, out var old)) {
+    if (!Self.TryRelease(out var old)) {
       return;
     }
     NativeTableHandle.deephaven_client_TableHandle_dtor(old);
