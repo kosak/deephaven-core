@@ -40,17 +40,14 @@ using deephaven::dhcore::chunk::Int16Chunk;
 using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::chunk::StringChunk;
-using deephaven::dhcore::interop::ErrorStatus;
 using deephaven::dhcore::interop::ErrorStatusNew;
 using deephaven::dhcore::interop::InteropBool;
 using deephaven::dhcore::interop::NativePtr;
-using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::StringHandle;
 using deephaven::dhcore::interop::StringPoolBuilder;
 using deephaven::dhcore::interop::StringPoolHandle;
 using deephaven::dhcore::ticking::TickingCallback;
 using deephaven::dhcore::ticking::TickingUpdate;
-using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::utility::GetWhat;
 using deephaven::dhcore::utility::MakeReservedVector;
 
@@ -425,15 +422,15 @@ public:
      on_update_(on_update), on_failure_(on_failure) {}
 
   void OnTick(TickingUpdate update) final {
-    auto *copy = new TickingUpdate(std::move(update));
-    (*on_update_)(copy);
+    NativePtr<TickingUpdate> nptr(new TickingUpdate(std::move(update)));
+    (*on_update_)(nptr);
   }
 
   void OnFailure(std::exception_ptr eptr) final {
-    Utf16Converter converter;
-    auto message = GetWhat(eptr);
-    auto wide_string = converter.from_bytes(message);
-    (*on_failure_)(wide_string.data());
+    StringPoolBuilder builder;
+    auto string_handle = builder.Add(GetWhat(eptr));
+    auto pool_handle = builder.Build();
+    (*on_failure_)(string_handle, pool_handle);
   }
 
 private:
@@ -889,7 +886,6 @@ void deephaven_client_utility_TimePointSpecifier_ctor_timepointstr(
     NativePtr<TimePointSpecifier> *result,
     ErrorStatusNew *status) {
   status->Run([=] {
-    Utf16Converter converter;
     result->Reset(new TimePointSpecifier(time_point_str));
   });
 }

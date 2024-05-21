@@ -214,8 +214,10 @@ void deephaven_client_TableHandle_ToArrowTable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
-using NativeOnUpdate = void(deephaven::dhcore::ticking::TickingUpdate *ticking_update);
-using NativeOnFailure = void(const char16_t *error);
+using NativeOnUpdate = void(
+    deephaven::dhcore::interop::NativePtr<deephaven::dhcore::ticking::TickingUpdate> ticking_update);
+using NativeOnFailure = void(deephaven::dhcore::interop::StringHandle,
+    deephaven::dhcore::interop::StringPoolHandle);
 
 void deephaven_client_TableHandle_Subscribe(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,

@@ -6,13 +6,10 @@
 
 using deephaven::dhcore::interop::ErrorStatusNew;
 using deephaven::dhcore::interop::InteropBool;
-using deephaven::dhcore::interop::PlatformUtf16;
 using deephaven::dhcore::interop::StringHandle;
 using deephaven::dhcore::interop::StringPool;
 using deephaven::dhcore::interop::StringPoolHandle;
 using deephaven::dhcore::interop::StringPoolBuilder;
-using deephaven::dhcore::interop::PlatformUtf16;
-using deephaven::dhcore::interop::Utf16Converter;
 using deephaven::dhcore::interop::testapi::BasicStruct;
 using deephaven::dhcore::interop::testapi::NestedStruct;
 using deephaven::dhcore::utility::MakeReservedVector;
