@@ -55,15 +55,6 @@ using deephaven::dhcore::utility::GetWhat;
 using deephaven::dhcore::utility::MakeReservedVector;
 
 namespace {
-std::vector<std::string> MakeStringVec(const char16_t **key_columns, int64_t num_key_columns) {
-  auto result = MakeReservedVector<std::string>(num_key_columns);
-  Utf16Converter converter;
-  for (int64_t i = 0; i < num_key_columns; ++i) {
-    result.emplace_back(converter.to_bytes(key_columns[i]));
-  }
-  return result;
-}
-
 void GetColumnHelper(ClientTableSpWrapper *self,
     int32_t column_index,
     Chunk *data_chunk, InteropBool *optional_dest_null_flags, int64_t num_rows) {
@@ -89,137 +80,6 @@ void GetColumnHelper(ClientTableSpWrapper *self,
 }  // namespace
 
 extern "C" {
-// Takes a UTF-16 platform string
-void invokelab_r0(const char16_t *s) {
-  Utf16Converter converter;
-  fmt::println(stderr, "r0 received {}", converter.to_bytes(s));
-}
-
-// Returns a UTF-16 platform string
-const PlatformUtf16 *invokelab_r1() {
-  const char *message = "tpnn(🎔) - U+1F394";
-  fmt::println(stderr, "r1 returning {}", message);
-
-  Utf16Converter converter;
-  auto wstring = converter.from_bytes(message);
-  return PlatformUtf16::Create(wstring);
-}
-
-// Returns the string passed into it
-const PlatformUtf16 *invokelab_r2(const char16_t *s) {
-  {
-    // Wouldn't need the Utf16Converter except we want to print a debug message
-    Utf16Converter converter;
-    fmt::println(stderr, "r2 got {} and returning it", converter.to_bytes(s));
-  }
-  return PlatformUtf16::Create(s);
-}
-
-// Gets a UTF-16 platform strings from in array
-void invokelab_r3(const char16_t **data_in, int32_t count) {
-  Utf16Converter converter;
-  for (int i = 0; i != count; ++i) {
-    auto s = converter.to_bytes(data_in[i]);
-    fmt::println(stderr, "r3 index {} is {}", i, s);
-  }
-  std::cerr << "nothing else to do why am I still here\n";
-}
-
-// Store UTF-16 platform strings in out array. For extra credit, do it in one call to the
-// PlatformUtf16 allocator.
-void invokelab_r4(const PlatformUtf16 **data_out, int32_t count) {
-  Utf16Converter converter;
-  auto u16strings = MakeReservedVector<std::u16string>(count);
-  for (int i = 0; i != count; ++i) {
-    const char *fmt_string = "💫✨element ⦕{}⦖,🌟⭐";
-    auto s = fmt::format(fmt_string, i);
-    // fmt::println(stderr, "r4 index {} storing {}", i, s);
-    auto s16 = converter.from_bytes(s);
-    u16strings.push_back(std::move(s16));
-  }
-  PlatformUtf16::CreateBulk(u16strings.data(), count, data_out);
-}
-
-// Copy in to out, but reverse them. Just because.
-void invokelab_r5(const char16_t **data_in, const PlatformUtf16 **data_out, int32_t count) {
-  PlatformUtf16::CreateBulk(data_in, count, data_out);
-  std::reverse(data_out, data_out + count);
-}
-
-struct Big {
-  int a, b, c, d, e, f, g, h, i;
-};
-
-Big invokelab_r6(int a, int b, int c) {
-  // fmt::println(std::cerr, "r6 {} {} {}", a, b, c);
-  return Big {10+a, 10+b, 10+c, 100+a, 100+b, 100+c, 1000+a, 1000+b, 1000+c};
-}
-
-int invokelab_r7(int a, int b, int c) {
-  // fmt::println(std::cerr, "r7 {} {} {}", a, b, c);
-  return 12 + a;
-}
-
-class NENever {
-public:
-  NENever() = default;
-  explicit NENever(std::string_view s) {
-    std::cerr << "trying to make a " << s << '\n';
-    auto utf16 = Utf16Converter().from_bytes(s.data());
-    text_ = PlatformUtf16::Create(utf16);
-    std::cerr << "constructor returning ok\n";
-  }
-
-  const PlatformUtf16 *text_;
-};
-
-struct NEOtherString {
-  const char16_t *text_;
-};
-struct WrappedOtherString {
-  NEOtherString neos_;
-};
-
-NENever invokelab_r8(int a, int b, int c) {
-  fmt::println(std::cerr, "r8 {} {} {}", a, b, c);
-  return NENever("r8 is sad");
-}
-
-void invokelab_r9(int a, int b, int c, NENever *result) {
-  fmt::println(std::cerr, "r9 {} {} {}", a, b, c);
-  result->text_ = PlatformUtf16::Create(Utf16Converter().from_bytes("r9 is sad"));
-}
-
-void invokelab_r10(NENever *result, int32_t count) {
-  fmt::println(std::cerr, "r10 result is {}, count is {}",
-      (void*)result, count);
-  for (int i = 0; i != count; ++i) {
-    auto message = fmt::format("r10 is {} happy", i);
-    result[i].text_ = PlatformUtf16::Create(Utf16Converter().from_bytes(message));
-  }
-}
-
-void invokelab_r11(NEOtherString *result, int32_t count) {
-  fmt::println(std::cerr, "r10 result is {}, count is {}",
-      (void*)result, count);
-  for (int i = 0; i != count; ++i) {
-    auto message = fmt::format("r11 is {} not-happy", i);
-    const auto *freakshow = PlatformUtf16::Create(Utf16Converter().from_bytes(message));
-    result[i].text_ = reinterpret_cast<const char16_t*>(freakshow);
-  }
-}
-
-void invokelab_r12(WrappedOtherString *result, int32_t count) {
-  fmt::println(std::cerr, "r10 result is {}, count is {}",
-      (void*)result, count);
-  for (int i = 0; i != count; ++i) {
-    auto message = fmt::format("r11 is {} not-happy", i);
-    const auto *freakshow = PlatformUtf16::Create(Utf16Converter().from_bytes(message));
-    result[i].neos_.text_ = reinterpret_cast<const char16_t*>(freakshow);
-  }
-}
-
-
 // There is no TableHandleManager_ctor entry point because we don't need callers to invoke
 // the TableHandleManager ctor directly.
 void deephaven_client_TableHandleManager_dtor(NativePtr<TableHandleManager> self) {
@@ -582,23 +442,25 @@ private:
 };
 
 void deephaven_client_TableHandle_Subscribe(
-    deephaven::client::TableHandle *self,
-    NativeOnUpdate *native_on_update, NativeOnFailure *native_on_failure,
-    std::shared_ptr<SubscriptionHandle> **native_subscription_handle,
-    ErrorStatus *status) {
+    NativePtr<TableHandle> self,
+    NativePtr<NativeOnUpdate> native_on_update,
+    NativePtr<NativeOnFailure> native_on_failure,
+    NativePtr<std::shared_ptr<SubscriptionHandle>> *native_subscription_handle,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto wtc = std::make_shared<WrappedTickingCallback>(native_on_update, native_on_failure);
     auto handle = self->Subscribe(std::move(wtc));
-    *native_subscription_handle = new std::shared_ptr<SubscriptionHandle>(std::move(handle));
+    native_subscription_handle->Reset(new std::shared_ptr<SubscriptionHandle>(std::move(handle)));
   });
 }
 
 void deephaven_client_TableHandle_ToClientTable(
-    TableHandle *self,
-    ClientTableSpWrapper **client_table, ErrorStatus *status) {
+    NativePtr<TableHandle> self,
+    NativePtr<ClientTableSpWrapper> *client_table,
+    ErrorStatusNew *status) {
   status->Run([=]() {
     auto ct = self->ToClientTable();
-    *client_table = new ClientTableSpWrapper(std::move(ct));
+    client_table->Reset(new ClientTableSpWrapper(std::move(ct)));
   });
 }
 
@@ -640,15 +502,15 @@ void deephaven_client_ArrowTable_GetSchema(
   });
 }
 
-void deephaven_client_TickingUpdate_dtor(TickingUpdate *self) {
-  delete self;
+void deephaven_client_TickingUpdate_dtor(NativePtr<TickingUpdate> self) {
+  delete self.Get();
 }
 
-void deephaven_client_TickingUpdate_Current(TickingUpdate *self,
-    ClientTableSpWrapper **result,
-    ErrorStatus *status) {
+void deephaven_client_TickingUpdate_Current(NativePtr<TickingUpdate> self,
+    NativePtr<ClientTableSpWrapper> *result,
+    ErrorStatusNew *status) {
   status->Run([=]() {
-    *result = new ClientTableSpWrapper(self->Current());
+    result->Reset(new ClientTableSpWrapper(self->Current()));
   });
 }
 

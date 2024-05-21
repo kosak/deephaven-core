@@ -219,14 +219,15 @@ using NativeOnFailure = void(const char16_t *error);
 
 void deephaven_client_TableHandle_Subscribe(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    NativeOnUpdate *native_on_update, NativeOnFailure *native_on_failure,
-    std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> **native_subscription_handle,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<NativeOnUpdate> native_on_update,
+    deephaven::dhcore::interop::NativePtr<NativeOnFailure> native_on_failure,
+    deephaven::dhcore::interop::NativePtr<std::shared_ptr<deephaven::client::subscription::SubscriptionHandle>> *native_subscription_handle,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_Unsubscribe(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
-    std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> *native_subscription_handle,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<std::shared_ptr<deephaven::client::subscription::SubscriptionHandle>> native_subscription_handle,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_ArrowTable_dtor(
     deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ArrowTable> self);
