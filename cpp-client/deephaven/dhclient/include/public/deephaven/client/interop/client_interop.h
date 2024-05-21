@@ -87,121 +87,141 @@ void deephaven_client_Client_GetManager(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> *result,
     deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_GetAttributes(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_GetAttributes(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     int32_t *num_columns, int64_t *num_rows,
     deephaven::dhcore::interop::InteropBool *is_static,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_GetSchema(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_GetSchema(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     int32_t num_columns,
-    const deephaven::dhcore::interop::PlatformUtf16 **columns, int32_t *column_types,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::StringHandle *columns, int32_t *column_types,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_dtor(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self);
 
-void deephaven_client_TableHandle_GetManager(deephaven::client::TableHandle *self,
-    deephaven::client::TableHandleManager **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_GetManager(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandleManager> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_Where(deephaven::client::TableHandle *self,
-    const char16_t *condition,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_Where(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char *condition,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_Select(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_Select(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_SelectDistinct(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_SelectDistinct(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_View(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_View(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_DropColumns(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_DropColumns(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_Update(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_Update(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_LazyUpdate(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_LazyUpdate(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_LastBy(deephaven::client::TableHandle *self,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_LastBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_Head(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_Head(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     int64_t num_rows,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_Tail(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_Tail(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     int64_t num_rows,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_WhereIn(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_WhereIn(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     deephaven::client::TableHandle *filter_table,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_AddTable(deephaven::client::TableHandle *self,
-    deephaven::client::TableHandle *table_to_add,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_AddTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_RemoveTable(deephaven::client::TableHandle *self,
-    deephaven::client::TableHandle *table_to_remove,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_RemoveTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_By(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_By(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     const deephaven::client::AggregateCombo *aggregate_combo,
-    const char16_t **column_specs, int64_t num_column_specs,
-    deephaven::client::TableHandle **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    const char **column_specs, int64_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_BindToVariable(deephaven::client::TableHandle *self,
-    const char16_t *variable,
-    deephaven::dhcore::interop::ErrorStatus *status);
+void deephaven_client_TableHandle_BindToVariable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char *variable,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_ToClientTable(
-    deephaven::client::TableHandle *self,
-    deephaven::client::interop::ClientTableSpWrapper **client_table,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> *client_table,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
 void deephaven_client_TableHandle_ToString(
-    deephaven::client::TableHandle *self,
-    int32_t want_headers,
-    const deephaven::dhcore::interop::PlatformUtf16 **result,
-    deephaven::dhcore::interop::ErrorStatus *status);
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::InteropBool want_headers,
+    deephaven::dhcore::interop::StringHandle *result_handle,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
+    deephaven::dhcore::interop::ErrorStatusNew *status);
 
-void deephaven_client_TableHandle_ToArrowTable(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_ToArrowTable(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     deephaven::client::interop::ArrowTable **arrow_table,
     deephaven::dhcore::interop::ErrorStatus *status);
 
 using NativeOnUpdate = void(deephaven::dhcore::ticking::TickingUpdate *ticking_update);
 using NativeOnFailure = void(const char16_t *error);
 
-void deephaven_client_TableHandle_Subscribe(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_Subscribe(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     NativeOnUpdate *native_on_update, NativeOnFailure *native_on_failure,
     std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> **native_subscription_handle,
     deephaven::dhcore::interop::ErrorStatus *status);
 
-void deephaven_client_TableHandle_Unsubscribe(deephaven::client::TableHandle *self,
+void deephaven_client_TableHandle_Unsubscribe(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     std::shared_ptr<deephaven::client::subscription::SubscriptionHandle> *native_subscription_handle,
     deephaven::dhcore::interop::ErrorStatus *status);
 
