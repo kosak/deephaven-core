@@ -1,7 +1,4 @@
 ﻿using Deephaven.DeephavenClient.Interop;
-using System;
-using System.Buffers;
-using System.Reflection;
 
 namespace Deephaven.DeephavenClient.Utility;
 
@@ -48,7 +45,12 @@ internal abstract class ColumnFactory<TTableType> {
     }
   }
 
-  public abstract class ColumnFactoryForValueTypes<T> : ColumnFactory<TTableType> where T : struct {
+  public abstract class ColumnFactoryForValueTypes<TTarget, TNative> : ColumnFactory<TTableType>
+        where TTarget : struct where TNative : struct {
+    private readonly NativeImpl<TNative> _nativeImpl;
+
+    protected ColumnFactoryForValueTypes(NativeImpl<TNative> nativeImpl) => _nativeImpl = nativeImpl;
+
     public sealed override (Array, bool[]) GetColumn(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
       return GetColumnInternal(table, columnIndex, numRows);
@@ -56,7 +58,7 @@ internal abstract class ColumnFactory<TTableType> {
 
     public sealed override Array GetNullableColumn(NativePtr<TTableType> table, int columnIndex, long numRows) {
       var (data, nulls) = GetColumnInternal(table, columnIndex, numRows);
-      var result = new T?[numRows];
+      var result = new TTarget?[numRows];
       for (var i = 0; i != numRows; ++i) {
         if (!nulls[i]) {
           result[i] = data[i];
@@ -66,89 +68,70 @@ internal abstract class ColumnFactory<TTableType> {
       return result;
     }
 
-    protected abstract (T[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
-      Int64 numRows);
-  }
-
-  public sealed class ForChar: ColumnFactoryForValueTypes<char> {
-    private readonly NativeImpl<Int16> _nativeImpl;
-
-    public ForChar(NativeImpl<Int16> nativeImpl) => _nativeImpl = nativeImpl;
-
-    protected override (char[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
+    private (TTarget[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
       Int64 numRows) {
-      var intermediate = new Int16[numRows];
+      var intermediate = new TNative[numRows];
       var interopNulls = new InteropBool[numRows];
       _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
       errorStatus.OkOrThrow();
-      var data = new char[numRows];
       var nulls = new bool[numRows];
       for (Int64 i = 0; i < numRows; ++i) {
-        data[i] = (char)intermediate[i];
         nulls[i] = (bool)interopNulls[i];
       }
+
+      var data = ConvertNativeToTarget(intermediate, nulls);
       return (data, nulls);
+    }
+
+    protected abstract TTarget[] ConvertNativeToTarget(TNative[] native, bool[] nulls);
+  }
+
+  public sealed class ForChar: ColumnFactoryForValueTypes<char, Int16> {
+    public ForChar(NativeImpl<Int16> nativeImpl) : base(nativeImpl) {
+    }
+
+    protected override char[] ConvertNativeToTarget(Int16[] native, bool[] nulls) {
+      var result = new char[native.Length];
+      for (var i = 0; i != native.Length; ++i) {
+        result[i] = (char)native[i];
+      }
+      return result;
     }
   }
 
-  public sealed class ForBool : ColumnFactoryForValueTypes<bool> {
-    private readonly NativeImpl<InteropBool> _nativeImpl;
+  public sealed class ForBool : ColumnFactoryForValueTypes<bool, InteropBool> {
+    public ForBool(NativeImpl<InteropBool> nativeImpl) : base(nativeImpl) {
+    }
 
-    public ForBool(NativeImpl<InteropBool> nativeImpl) => _nativeImpl = nativeImpl;
-
-    protected override (bool[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
-      Int64 numRows) {
-      var intermediate = new InteropBool[numRows];
-      var interopNulls = new InteropBool[numRows];
-      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
-      errorStatus.OkOrThrow();
-      var data = new bool[numRows];
-      var nulls = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        data[i] = (bool)intermediate[i];
-        nulls[i] = (bool)interopNulls[i];
+    protected override bool[] ConvertNativeToTarget(InteropBool[] native, bool[] nulls) {
+      var result = new bool[native.Length];
+      for (var i = 0; i != native.Length; ++i) {
+        result[i] = (bool)native[i];
       }
-      return (data, nulls);
+      return result;
+    }
+
+  }
+
+  public sealed class ForDateTime : ColumnFactoryForValueTypes<DhDateTime, Int64> {
+    public ForDateTime(NativeImpl<Int64> nativeImpl) : base(nativeImpl) {
+    }
+
+    protected override DhDateTime[] ConvertNativeToTarget(Int64[] native, bool[] nulls) {
+      var result = new DhDateTime[native.Length];
+      for (var i = 0; i != native.Length; ++i) {
+        result[i] = nulls[i] ? new DhDateTime(0) : new DhDateTime(native[i]);
+      }
+      return result;
     }
   }
 
-  public sealed class ForDateTime : ColumnFactoryForValueTypes<DhDateTime> {
-    private readonly NativeImpl<Int64> _nativeImpl;
-
-    public ForDateTime(NativeImpl<Int64> nativeImpl) => _nativeImpl = nativeImpl;
-
-    protected override (DhDateTime[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
-      Int64 numRows) {
-      var intermediate = new Int64[numRows];
-      var interopNulls = new InteropBool[numRows];
-      _nativeImpl(table, columnIndex, intermediate, interopNulls, numRows, out var errorStatus);
-      errorStatus.OkOrThrow();
-      var data = new DhDateTime[numRows];
-      var nulls = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        data[i] = new DhDateTime(intermediate[i]);
-        nulls[i] = (bool)interopNulls[i];
-      }
-      return (data, nulls);
+  public sealed class ForOtherValueType<T> : ColumnFactoryForValueTypes<T, T> where T : struct {
+    public ForOtherValueType(NativeImpl<T> nativeImpl) : base(nativeImpl) {
     }
-  }
 
-  public sealed class ForOtherValueType<T> : ColumnFactoryForValueTypes<T> where T : struct {
-    private readonly NativeImpl<T> _nativeImpl;
-
-    public ForOtherValueType(NativeImpl<T> nativeImpl) => _nativeImpl = nativeImpl;
-
-    protected override (T[], bool[]) GetColumnInternal(NativePtr<TTableType> table, Int32 columnIndex,
-      Int64 numRows) {
-      var data = new T[numRows];
-      var interopNulls = new InteropBool[numRows];
-      _nativeImpl(table, columnIndex, data, interopNulls, numRows, out var errorStatus);
-      errorStatus.OkOrThrow();
-      var nulls = new bool[numRows];
-      for (Int64 i = 0; i < numRows; ++i) {
-        nulls[i] = (bool)interopNulls[i];
-      }
-      return (data, nulls);
+    protected override T[] ConvertNativeToTarget(T[] native, bool[] nulls) {
+      return native;
     }
   }
 }
