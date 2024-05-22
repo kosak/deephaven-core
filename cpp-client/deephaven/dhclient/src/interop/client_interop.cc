@@ -74,6 +74,25 @@ void GetColumnHelper(ClientTableSpWrapper *self,
     }
   }
 }
+
+void JoinHelper(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status,
+    TableHandle (TableHandle::*invoker)(const TableHandle &, std::vector<std::string>,
+        std::vector<std::string>) const) {
+  status->Run([=]() {
+    std::vector<std::string> cols_to_match(columns_to_match,
+        columns_to_match + num_columns_to_match);
+    std::vector<std::string> cols_to_add(columns_to_add,
+        columns_to_add + num_columns_to_add);
+    auto table = (self->*invoker)(*right_side, std::move(cols_to_match), std::move(cols_to_add));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+}
 }  // namespace
 
 extern "C" {
@@ -329,6 +348,90 @@ void deephaven_client_TableHandle_WhereIn(
     auto table = self->WhereIn(*filter_table, cols);
     result->Reset(new TableHandle(std::move(table)));
   });
+}
+
+void deephaven_client_TableHandle_CrossJoin(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  JoinHelper(self, right_side,
+      columns_to_match, num_columns_to_match,
+      columns_to_add, num_columns_to_add,
+      result, status,
+      &TableHandle::CrossJoin);
+}
+
+void deephaven_client_TableHandle_NaturalJoin(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  JoinHelper(self, right_side,
+      columns_to_match, num_columns_to_match,
+      columns_to_add, num_columns_to_add,
+      result, status,
+      &TableHandle::NaturalJoin);
+}
+
+void deephaven_client_TableHandle_LeftOuterJoin(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  JoinHelper(self, right_side,
+      columns_to_match, num_columns_to_match,
+      columns_to_add, num_columns_to_add,
+      result, status,
+      &TableHandle::LeftOuterJoin);
+}
+
+void deephaven_client_TableHandle_ExactJoin(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  JoinHelper(self, right_side,
+      columns_to_match, num_columns_to_match,
+      columns_to_add, num_columns_to_add,
+      result, status,
+      &TableHandle::ExactJoin);
+}
+
+void deephaven_client_TableHandle_Aj(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  JoinHelper(self, right_side,
+      columns_to_match, num_columns_to_match,
+      columns_to_add, num_columns_to_add,
+      result, status,
+      &TableHandle::Aj);
+}
+
+void deephaven_client_TableHandle_Raj(
+    NativePtr<TableHandle> self,
+    NativePtr<TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  JoinHelper(self, right_side,
+      columns_to_match, num_columns_to_match,
+      columns_to_add, num_columns_to_add,
+      result, status,
+      &TableHandle::Raj);
 }
 
 void deephaven_client_TableHandle_AddTable(

@@ -168,6 +168,54 @@ void deephaven_client_TableHandle_Tail(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_CrossJoin(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_NaturalJoin(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_LeftOuterJoin(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_ExactJoin(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_Aj(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_Raj(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
+    const char **columns_to_match, int32_t num_columns_to_match,
+    const char **columns_to_add, int32_t num_columns_to_add,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_WhereIn(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> filter_table,
