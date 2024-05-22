@@ -599,6 +599,23 @@ void deephaven_client_TableHandle_Tail(
   });
 }
 
+void deephaven_client_TableHandle_Merge(NativePtr<TableHandle> self,
+    const char *key_column,
+    NativePtr<TableHandle> *sources, int32_t num_sources,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    // We need to make copies of the passed-in TableHandles because we're not
+    // allowed to modify or move them.
+    auto sources_copy = MakeReservedVector<TableHandle>(num_sources);
+    for (int32_t i = 0; i != num_sources; ++i) {
+      sources_copy.push_back(*sources[i]);
+    }
+    auto table = self->Merge(key_column, std::move(sources_copy));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+}
+
 void deephaven_client_TableHandle_BindToVariable(
     NativePtr<TableHandle> self,
     const char *variable,

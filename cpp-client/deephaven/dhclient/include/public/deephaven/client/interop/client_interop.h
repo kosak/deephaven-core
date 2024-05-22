@@ -168,6 +168,14 @@ void deephaven_client_TableHandle_Tail(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_Merge(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char *key_column,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *sources,
+    int32_t num_sources,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_CrossJoin(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> right_side,
