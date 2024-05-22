@@ -16,7 +16,7 @@ public class LastByTest {
     var tm = ctx.Client.Manager;
     var testTable = ctx.TestTable;
 
-    var lb = testTable.Where("ImportDate == `2017-11-01`")
+    using var lb = testTable.Where("ImportDate == `2017-11-01`")
       .Select("Ticker", "Open", "Close")
       .LastBy("Ticker");
 

@@ -104,6 +104,19 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle Merge(string keyColumns, TableHandle[] sources) {
+    var tableHandlePtrs = sources.Select(s => s.Self).ToArray();
+    NativeTableHandle.deephaven_client_TableHandle_Merge(Self, keyColumns,
+      tableHandlePtrs, tableHandlePtrs.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle Merge(TableHandle[] sources) {
+    return Merge("", sources);
+  }
+
   public TableHandle CrossJoin(TableHandle rightSide, string[] columnsToMatch,
     string[]? columnsToAdd = null) =>
     JoinHelper(rightSide, columnsToMatch, columnsToAdd,
@@ -601,6 +614,14 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_Tail(
     NativePtr<NativeTableHandle> self,
     Int64 numRows,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Merge(
+    NativePtr<NativeTableHandle> self,
+    string keyColumn,
+    NativePtr<NativeTableHandle>[] tableHandles, Int32 numTableHandles,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
