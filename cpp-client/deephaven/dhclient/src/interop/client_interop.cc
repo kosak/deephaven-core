@@ -93,6 +93,19 @@ void JoinHelper(
     result->Reset(new TableHandle(std::move(table)));
   });
 }
+
+void ByHelper(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status,
+    TableHandle (TableHandle::*invoker)(std::vector<std::string>) const) {
+  status->Run([=]() {
+    std::vector<std::string> cols(column_specs, column_specs + num_column_specs);
+    auto table = (self->*invoker)(std::move(cols));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+}
 }  // namespace
 
 extern "C" {
@@ -325,14 +338,113 @@ void deephaven_client_TableHandle_LazyUpdate(
   });
 }
 
+void deephaven_client_TableHandle_MinBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::MinBy);
+}
+
+void deephaven_client_TableHandle_SumBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::SumBy);
+}
+
+void deephaven_client_TableHandle_AbsSumBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::AbsSumBy);
+}
+
+void deephaven_client_TableHandle_VarBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::VarBy);
+}
+
+void deephaven_client_TableHandle_StdBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::StdBy);
+}
+
+void deephaven_client_TableHandle_AvgBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::AvgBy);
+}
+
 void deephaven_client_TableHandle_LastBy(
     NativePtr<TableHandle> self,
     const char **column_specs, int32_t num_column_specs,
     NativePtr<TableHandle> *result,
     ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::LastBy);
+}
+
+void deephaven_client_TableHandle_FirstBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::FirstBy);
+}
+
+void deephaven_client_TableHandle_MedianBy(
+    NativePtr<TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  ByHelper(self, column_specs, num_column_specs, result, status, &TableHandle::MedianBy);
+}
+
+void deephaven_client_TableHandle_PercentileBy(
+    NativePtr<TableHandle> self,
+    double percentile, deephaven::dhcore::interop::InteropBool avg_median,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
   status->Run([=]() {
     std::vector<std::string> cols(column_specs, column_specs + num_column_specs);
-    auto table = self->LastBy(cols);
+    auto table = self->PercentileBy(percentile, (bool)avg_median, std::move(cols));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+}
+
+void deephaven_client_TableHandle_CountBy(
+    NativePtr<TableHandle> self,
+    const char *weight_column,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    std::vector<std::string> cols(column_specs, column_specs + num_column_specs);
+    auto table = self->CountBy(weight_column, std::move(cols));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+}
+
+void deephaven_client_TableHandle_WavgBy(
+    NativePtr<TableHandle> self,
+    const char *weight_column,
+    const char **column_specs, int32_t num_column_specs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    std::vector<std::string> cols(column_specs, column_specs + num_column_specs);
+    auto table = self->WAvgBy(weight_column, std::move(cols));
     result->Reset(new TableHandle(std::move(table)));
   });
 }

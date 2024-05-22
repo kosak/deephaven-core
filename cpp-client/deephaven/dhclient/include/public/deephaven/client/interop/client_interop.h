@@ -240,6 +240,87 @@ void deephaven_client_TableHandle_By(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_MinBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_MaxBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_SumBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_AbsSumBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_VarBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_StdBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_AvgBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_LastBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_FirstBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_MedianBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_PercentileBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    double percentile, deephaven::dhcore::interop::InteropBool avg_median,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_CountBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char *weightColumn,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
+void deephaven_client_TableHandle_WavgBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char *weightColumn,
+    const char **column_specs, int32_t num_column_specs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_BindToVariable(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     const char *variable,

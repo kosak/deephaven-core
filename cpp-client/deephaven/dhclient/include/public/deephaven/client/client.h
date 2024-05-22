@@ -1379,7 +1379,9 @@ public:
    * @return A TableHandle referencing the new table
    */
   [[nodiscard]]
-  TableHandle PercentileBy(double percentile, std::vector<std::string> column_specs) const;
+  TableHandle PercentileBy(double percentile, std::vector<std::string> column_specs) const {
+    return PercentileBy(percentile, false, std::move(column_specs));
+  }
   /**
    * A variadic form of PercentileBy(double, std::vector<std::string>) const that takes a combination of
    * argument types.
@@ -1391,7 +1393,7 @@ public:
   [[nodiscard]]
   TableHandle PercentileBy(double percentile, Args &&...args) const {
     std::vector<std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-    return PercentileBy(percentile, std::move(vec));
+    return PercentileBy(percentile, false, std::forward<Args...>(args...));
   }
 
   /**

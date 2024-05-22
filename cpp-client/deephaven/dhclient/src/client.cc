@@ -408,11 +408,6 @@ TableHandle TableHandle::PercentileBy(double percentile, bool avg_median,
   return TableHandle(std::move(qt_impl));
 }
 
-TableHandle TableHandle::PercentileBy(double percentile, std::vector<std::string> column_specs) const {
-  auto qt_impl = impl_->PercentileBy(percentile, std::move(column_specs));
-  return TableHandle(std::move(qt_impl));
-}
-
 TableHandle TableHandle::CountBy(std::string count_by_column,
     std::vector<std::string> column_specs) const {
   auto qt_impl = impl_->CountBy(std::move(count_by_column), std::move(column_specs));
