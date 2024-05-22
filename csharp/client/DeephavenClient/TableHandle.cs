@@ -104,6 +104,77 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle CrossJoin(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd = null) =>
+    JoinHelper(rightSide, columnsToMatch, columnsToAdd,
+      NativeTableHandle.deephaven_client_TableHandle_CrossJoin);
+
+  public TableHandle NaturalJoin(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd = null) {
+    columnsToAdd ??= Array.Empty<string>();
+    NativeTableHandle.deephaven_client_TableHandle_NaturalJoin(Self,
+      rightSide.Self, columnsToMatch, columnsToMatch.Length,
+      columnsToAdd, columnsToAdd.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle LeftOuterJoin(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd = null) {
+    columnsToAdd ??= Array.Empty<string>();
+    NativeTableHandle.deephaven_client_TableHandle_LeftOuterJoin(Self,
+      rightSide.Self, columnsToMatch, columnsToMatch.Length,
+      columnsToAdd, columnsToAdd.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+
+  public TableHandle ExactJoin(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd = null) {
+    columnsToAdd ??= Array.Empty<string>();
+    NativeTableHandle.deephaven_client_TableHandle_ExactJoin(Self,
+      rightSide.Self, columnsToMatch, columnsToMatch.Length,
+      columnsToAdd, columnsToAdd.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle Aj(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd = null) {
+    columnsToAdd ??= Array.Empty<string>();
+    NativeTableHandle.deephaven_client_TableHandle_Aj(Self,
+      rightSide.Self, on, joins, joins.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle Raj(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd = null) {
+    columnsToAdd ??= Array.Empty<string>();
+    NativeTableHandle.deephaven_client_TableHandle_Raj(Self,
+      rightSide.Self, on, joins, joins.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  private delegate void NativeJoinInvoker();
+
+  private TableHandle JoinHelper(TableHandle rightSide, string[] columnsToMatch,
+    string[]? columnsToAdd, NativeJoinInvoker invoker) { 
+    columnsToAdd ??= Array.Empty<string>();
+    invoker(rightSide.Self, columnsToMatch, columnsToMatch.Length,
+      columnsToAdd, columnsToAdd.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
   public TableHandle MinBy(params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_MinBy(Self,
       columnSpecs, columnSpecs.Length, out var result, out var status);
