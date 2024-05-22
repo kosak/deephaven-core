@@ -608,8 +608,8 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_CrossJoin(
     NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> rightSide,
-    string[] columnsToMatch, Int32 columnsToMatchLength,
-    string[] columnsToAdd, Int32 columnsToAddLength,
+    string[] columnsToMatch, Int32 numColumnsToMatch,
+    string[] columnsToAdd, Int32 numColumnsToAdd,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
@@ -617,8 +617,8 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_NaturalJoin(
     NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> rightSide,
-    string[] columnsToMatch, Int32 columnsToMatchLength,
-    string[] columnsToAdd, Int32 columnsToAddLength,
+    string[] columnsToMatch, Int32 numColumnsToMatch,
+    string[] columnsToAdd, Int32 numColumnsToAdd,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
@@ -626,8 +626,8 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_LeftOuterJoin(
     NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> rightSide,
-    string[] columnsToMatch, Int32 columnsToMatchLength,
-    string[] columnsToAdd, Int32 columnsToAddLength,
+    string[] columnsToMatch, Int32 numColumnsToMatch,
+    string[] columnsToAdd, Int32 numColumnsToAdd,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
@@ -635,8 +635,8 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_ExactJoin(
     NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> rightSide,
-    string[] columnsToMatch, Int32 columnsToMatchLength,
-    string[] columnsToAdd, Int32 columnsToAddLength,
+    string[] columnsToMatch, Int32 numColumnsToMatch,
+    string[] columnsToAdd, Int32 numColumnsToAdd,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
@@ -644,8 +644,8 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_Aj(
     NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> rightSide,
-    string[] columnsToMatch, Int32 columnsToMatchLength,
-    string[] columnsToAdd, Int32 columnsToAddLength,
+    string[] columnsToMatch, Int32 numColumnsToMatch,
+    string[] columnsToAdd, Int32 numColumnsToAdd,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
@@ -653,8 +653,8 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_Raj(
     NativePtr<NativeTableHandle> self,
     NativePtr<NativeTableHandle> rightSide,
-    string[] columnsToMatch, Int32 columnsToMatchLength,
-    string[] columnsToAdd, Int32 columnsToAddLength,
+    string[] columnsToMatch, Int32 numColumnsToMatch,
+    string[] columnsToAdd, Int32 numColumnsToAdd,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
