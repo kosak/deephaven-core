@@ -8,6 +8,13 @@ namespace Deephaven.DeephavenClient;
 /// unlike .NET's own System.DateTime which has 100ns resolution.
 /// </summary>
 public readonly struct DhDateTime {
+  public static DhDateTime Parse(string date) {
+    // TODO(kosak): do something about the extra nanosecond resolution
+    var dt = DateTime.Parse(date);
+    var ts = dt - DateTime.UnixEpoch;
+    return new DhDateTime((Int64)ts.TotalNanoseconds);
+  }
+
   public readonly Int64 Nanos;
 
   public static DhDateTime FromNanos(Int64 nanos) => new (nanos);

@@ -104,8 +104,113 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle MinBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_MinBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle MaxBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_MaxBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle SumBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_SumBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle AbsSumBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_AbsSumBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle VarBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_VarBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle StdBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_StdBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle AvgBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_AvgBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle FirstBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_FirstBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
   public TableHandle LastBy(params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_LastBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle MedianBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_MedianBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle PercentileBy(double percentile, bool avgMedian, params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_PercentileBy(Self,
+      percentile, (InteropBool)avgMedian, columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle PercentileBy(double percentile, params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_PercentileBy(Self,
+      percentile, columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle CountBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_CountBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle WAvgBy(params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_WAvgBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle TailBy(Int64 n, params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_TailBy(Self,
+      columnSpecs, columnSpecs.Length, out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
+  public TableHandle HeadBy(Int64 n, params string[] columnSpecs) {
+    NativeTableHandle.deephaven_client_TableHandle_HeadBy(Self,
       columnSpecs, columnSpecs.Length, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, Manager);
@@ -249,7 +354,114 @@ internal partial class NativeTableHandle {
     out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_MinBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_MaxBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_SumBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_AbsSumBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_VarBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_StdBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_AvgBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_FirstBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_LastBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_MedianBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_PercentileBy(
+    NativePtr<NativeTableHandle> self,
+    double percentile, InteropBool avgMedian,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_PercentileBy(
+    NativePtr<NativeTableHandle> self,
+    double percentile,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_CountBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_WAvgBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_TailBy(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, Int32 numColumns,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_HeadBy(
     NativePtr<NativeTableHandle> self,
     string[] columns, Int32 numColumns,
     out NativePtr<NativeTableHandle> result,

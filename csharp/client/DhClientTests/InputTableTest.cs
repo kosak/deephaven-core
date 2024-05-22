@@ -1,5 +1,4 @@
-﻿using Deephaven.DeephavenClient.Interop;
-using Deephaven.DeephavenClient;
+﻿using Deephaven.DeephavenClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.DhClientTests;
