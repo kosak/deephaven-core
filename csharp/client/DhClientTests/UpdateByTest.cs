@@ -43,7 +43,7 @@ public class UpdateByTest {
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
         _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
-        using var result = table.UpdateBy(new[] {op}, new[] {"e"});
+        using var result = table.UpdateBy(new[] { op }, new[] { "e" });
         Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
@@ -124,8 +124,8 @@ public class UpdateByTest {
   private TableHandle[] MakeTables(TableHandleManager tm) {
     var staticTable = MakeRandomTable(tm).Update("Timestamp=now()");
     var tickingTable = tm.TimeTable(TimeSpan.FromSeconds(1))
-        .Update("a = i", "b = i*i % 13", "c = i * 13 % 23", "d = a + b", "e = a - b");
-    return new [] { staticTable, tickingTable};
+      .Update("a = i", "b = i*i % 13", "c = i * 13 % 23", "d = a + b", "e = a - b");
+    return new[] { staticTable, tickingTable };
   }
 
   private TableHandle MakeRandomTable(TableHandleManager tm) {
@@ -135,12 +135,14 @@ public class UpdateByTest {
     if (NumCols > 26) {
       throw new ArgumentException("NumCols constant is too big for this test")
     }
+
     for (var col = 0; col != NumCols; ++col) {
       var name = ((char)('a' + col)).ToString();
       var values = new Int32[NumRows];
       for (var i = 0; i != NumRows; ++i) {
         values[i] = rng.Next(1000);
       }
+
       maker.AddColumn(name, values);
     }
 
@@ -163,111 +165,109 @@ public class UpdateByTest {
     return result;
   }
 
-  std::vector<UpdateByOperation> MakeEmOps() {
-    OperationControl em_op_control(BadDataBehavior::kThrow, BadDataBehavior::kReset,
-        MathContext::kUnlimited);
+  private static UpdateByOperation[] MakeEmOps() {
+    OperationControl em_op_control(BadDataBehavior.Throw, BadDataBehavior.Reset,
+      MathContext.Unlimited);
 
-    using nanos = std::chrono::nanoseconds;
-
-    std::vector<UpdateByOperation> result = {
+    var result = new UpdateByOperation[] {
       // exponential moving average
-      emaTick(100, {"ema_a = a"}),
-      emaTick(100, { "ema_a = a"}, em_op_control),
-      emaTime("Timestamp", nanos(10), { "ema_a = a"}),
-      emaTime("Timestamp", "PT00:00:00.001", { "ema_c = c"}, em_op_control),
-      emaTime("Timestamp", "PT1M", { "ema_c = c"}),
-      emaTime("Timestamp", "PT1M", { "ema_c = c"}, em_op_control),
+      EmaTick(100,  {"ema_a = a"}),
+      EmaTick(100,  { "ema_a = a"}, em_op_control),
+      EmaTime("Timestamp", nanos(10),  { "ema_a = a"}),
+      EmaTime("Timestamp", "PT00:00:00.001",  { "ema_c = c"}, em_op_control),
+      EmaTime("Timestamp", "PT1M",  { "ema_c = c"}),
+      EmaTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
       // exponential moving sum
-      emsTick(100, { "ems_a = a"}),
-      emsTick(100, { "ems_a = a"}, em_op_control),
-      emsTime("Timestamp", nanos(10), { "ems_a = a"}),
-      emsTime("Timestamp", "PT00:00:00.001", { "ems_c = c"}, em_op_control),
-      emsTime("Timestamp", "PT1M", { "ema_c = c"}),
-      emsTime("Timestamp", "PT1M", { "ema_c = c"}, em_op_control),
+      EmsTick(100,  { "ems_a = a"}),
+      EmsTick(100,  { "ems_a = a"}, em_op_control),
+      EmsTime("Timestamp", nanos(10),  { "ems_a = a"}),
+      EmsTime("Timestamp", "PT00:00:00.001",  { "ems_c = c"}, em_op_control),
+      EmsTime("Timestamp", "PT1M",  { "ema_c = c"}),
+      EmsTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
       // exponential moving minimum
-      emminTick(100, { "emmin_a = a"}),
-      emminTick(100, { "emmin_a = a"}, em_op_control),
-      emminTime("Timestamp", nanos(10), { "emmin_a = a"}),
-      emminTime("Timestamp", "PT00:00:00.001", { "emmin_c = c"}, em_op_control),
-      emminTime("Timestamp", "PT1M", { "ema_c = c"}),
-      emminTime("Timestamp", "PT1M", { "ema_c = c"}, em_op_control),
+      EmminTick(100,  { "emmin_a = a"}),
+      EmminTick(100,  { "emmin_a = a"}, em_op_control),
+      EmminTime("Timestamp", nanos(10),  { "emmin_a = a"}),
+      EmminTime("Timestamp", "PT00:00:00.001",  { "emmin_c = c"}, em_op_control),
+      EmminTime("Timestamp", "PT1M",  { "ema_c = c"}),
+      EmminTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
       // exponential moving maximum
-      emmaxTick(100, { "emmax_a = a"}),
-      emmaxTick(100, { "emmax_a = a"}, em_op_control),
-      emmaxTime("Timestamp", nanos(10), { "emmax_a = a"}),
-      emmaxTime("Timestamp", "PT00:00:00.001", { "emmax_c = c"}, em_op_control),
-      emmaxTime("Timestamp", "PT1M", { "ema_c = c"}),
-      emmaxTime("Timestamp", "PT1M", { "ema_c = c"}, em_op_control),
+      EmmaxTick(100,  { "emmax_a = a"}),
+      EmmaxTick(100,  { "emmax_a = a"}, em_op_control),
+      EmmaxTime("Timestamp", nanos(10),  { "emmax_a = a"}),
+      EmmaxTime("Timestamp", "PT00:00:00.001",  { "emmax_c = c"}, em_op_control),
+      EmmaxTime("Timestamp", "PT1M",  { "ema_c = c"}),
+      EmmaxTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
       // exponential moving standard deviation
-      emstdTick(100, { "emstd_a = a"}),
-      emstdTick(100, { "emstd_a = a"}, em_op_control),
-      emstdTime("Timestamp", nanos(10), { "emstd_a = a"}),
-      emstdTime("Timestamp", "PT00:00:00.001", { "emtd_c = c"}, em_op_control),
-      emstdTime("Timestamp", "PT1M", { "ema_c = c"}),
-      emstdTime("Timestamp", "PT1M", { "ema_c = c"}, em_op_control)
-  };
-  return result;
-}
+      EmstdTick(100,  { "emstd_a = a"}),
+      EmstdTick(100,  { "emstd_a = a"}, em_op_control),
+      EmstdTime("Timestamp", nanos(10),  { "emstd_a = a"}),
+      EmstdTime("Timestamp", "PT00:00:00.001",  { "emtd_c = c"}, em_op_control),
+      EmstdTime("Timestamp", "PT1M",  { "ema_c = c"}),
+      EmstdTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control)
+    };
+    return result;
+  }
 
-std::vector<UpdateByOperation> MakeRollingOps() {
-  using secs = std::chrono::seconds;
+  private static UpdateByOperation[] MakeRollingOps() {
 
-  // exponential moving average
-  std::vector<UpdateByOperation> result = {
+    // exponential moving average
+    var result = new UpdateByOperation[] {
       // rolling sum
-      rollingSumTick({"rsum_a = a", "rsum_d = d"}, 10),
-      rollingSumTick({ "rsum_a = a", "rsum_d = d"}, 10, 10),
-      rollingSumTime("Timestamp", { "rsum_b = b", "rsum_e = e"}, "PT00:00:10"),
-      rollingSumTime("Timestamp", { "rsum_b = b", "rsum_e = e"}, secs(10), secs(-10)),
-      rollingSumTime("Timestamp", { "rsum_b = b", "rsum_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingSumTick({"rsum_a = a", "rsum_d = d"}, 10),
+      RollingSumTick({ "rsum_a = a", "rsum_d = d"}, 10, 10),
+      RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, "PT00:00:10"),
+      RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, secs(10), secs(-10)),
+      RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling group
-      rollingGroupTick({ "rgroup_a = a", "rgroup_d = d"}, 10),
-      rollingGroupTick({ "rgroup_a = a", "rgroup_d = d"}, 10, 10),
-      rollingGroupTime("Timestamp", { "rgroup_b = b", "rgroup_e = e"}, "PT00:00:10"),
-      rollingGroupTime("Timestamp", { "rgroup_b = b", "rgroup_e = e"}, secs(10), secs(-10)),
-      rollingGroupTime("Timestamp", { "rgroup_b = b", "rgroup_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingGroupTick({ "rgroup_a = a", "rgroup_d = d"}, 10),
+      RollingGroupTick({ "rgroup_a = a", "rgroup_d = d"}, 10, 10),
+      RollingGroupTime("Timestamp",  { "rgroup_b = b", "rgroup_e = e"}, "PT00:00:10"),
+      RollingGroupTime("Timestamp",  { "rgroup_b = b", "rgroup_e = e"}, secs(10), secs(-10)),
+      RollingGroupTime("Timestamp",  { "rgroup_b = b", "rgroup_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling average
-      rollingAvgTick({ "ravg_a = a", "ravg_d = d"}, 10),
-      rollingAvgTick({ "ravg_a = a", "ravg_d = d"}, 10, 10),
-      rollingAvgTime("Timestamp", { "ravg_b = b", "ravg_e = e"}, "PT00:00:10"),
-      rollingAvgTime("Timestamp", { "ravg_b = b", "ravg_e = e"}, secs(10), secs(-10)),
-      rollingAvgTime("Timestamp", { "ravg_b = b", "ravg_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingAvgTick({ "ravg_a = a", "ravg_d = d"}, 10),
+      RollingAvgTick({ "ravg_a = a", "ravg_d = d"}, 10, 10),
+      RollingAvgTime("Timestamp",  { "ravg_b = b", "ravg_e = e"}, "PT00:00:10"),
+      RollingAvgTime("Timestamp",  { "ravg_b = b", "ravg_e = e"}, secs(10), secs(-10)),
+      RollingAvgTime("Timestamp",  { "ravg_b = b", "ravg_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling minimum
-      rollingMinTick({ "rmin_a = a", "rmin_d = d"}, 10),
-      rollingMinTick({ "rmin_a = a", "rmin_d = d"}, 10, 10),
-      rollingMinTime("Timestamp", { "rmin_b = b", "rmin_e = e"}, "PT00:00:10"),
-      rollingMinTime("Timestamp", { "rmin_b = b", "rmin_e = e"}, secs(10), secs(-10)),
-      rollingMinTime("Timestamp", { "rmin_b = b", "rmin_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingMinTick({ "rmin_a = a", "rmin_d = d"}, 10),
+      RollingMinTick({ "rmin_a = a", "rmin_d = d"}, 10, 10),
+      RollingMinTime("Timestamp",  { "rmin_b = b", "rmin_e = e"}, "PT00:00:10"),
+      RollingMinTime("Timestamp",  { "rmin_b = b", "rmin_e = e"}, secs(10), secs(-10)),
+      RollingMinTime("Timestamp",  { "rmin_b = b", "rmin_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling maximum
-      rollingMaxTick({ "rmax_a = a", "rmax_d = d"}, 10),
-      rollingMaxTick({ "rmax_a = a", "rmax_d = d"}, 10, 10),
-      rollingMaxTime("Timestamp", { "rmax_b = b", "rmax_e = e"}, "PT00:00:10"),
-      rollingMaxTime("Timestamp", { "rmax_b = b", "rmax_e = e"}, secs(10), secs(-10)),
-      rollingMaxTime("Timestamp", { "rmax_b = b", "rmax_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingMaxTick({ "rmax_a = a", "rmax_d = d"}, 10),
+      RollingMaxTick({ "rmax_a = a", "rmax_d = d"}, 10, 10),
+      RollingMaxTime("Timestamp",  { "rmax_b = b", "rmax_e = e"}, "PT00:00:10"),
+      RollingMaxTime("Timestamp",  { "rmax_b = b", "rmax_e = e"}, secs(10), secs(-10)),
+      RollingMaxTime("Timestamp",  { "rmax_b = b", "rmax_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling product
-      rollingProdTick({ "rprod_a = a", "rprod_d = d"}, 10),
-      rollingProdTick({ "rprod_a = a", "rprod_d = d"}, 10, 10),
-      rollingProdTime("Timestamp", { "rprod_b = b", "rprod_e = e"}, "PT00:00:10"),
-      rollingProdTime("Timestamp", { "rprod_b = b", "rprod_e = e"}, secs(10), secs(-10)),
-      rollingProdTime("Timestamp", { "rprod_b = b", "rprod_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingProdTick({ "rprod_a = a", "rprod_d = d"}, 10),
+      RollingProdTick({ "rprod_a = a", "rprod_d = d"}, 10, 10),
+      RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, "PT00:00:10"),
+      RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, secs(10), secs(-10)),
+      RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling count
-      rollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10),
-      rollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10, 10),
-      rollingCountTime("Timestamp", { "rcount_b = b", "rcount_e = e"}, "PT00:00:10"),
-      rollingCountTime("Timestamp", { "rcount_b = b", "rcount_e = e"}, secs(10), secs(-10)),
-      rollingCountTime("Timestamp", { "rcount_b = b", "rcount_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10),
+      RollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10, 10),
+      RollingCountTime("Timestamp",  { "rcount_b = b", "rcount_e = e"}, "PT00:00:10"),
+      RollingCountTime("Timestamp",  { "rcount_b = b", "rcount_e = e"}, secs(10), secs(-10)),
+      RollingCountTime("Timestamp",  { "rcount_b = b", "rcount_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling standard deviation
-      rollingStdTick({ "rstd_a = a", "rstd_d = d"}, 10),
-      rollingStdTick({ "rstd_a = a", "rstd_d = d"}, 10, 10),
-      rollingStdTime("Timestamp", { "rstd_b = b", "rstd_e = e"}, "PT00:00:10"),
-      rollingStdTime("Timestamp", { "rstd_b = b", "rstd_e = e"}, secs(10), secs(-10)),
-      rollingStdTime("Timestamp", { "rstd_b = b", "rstd_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingStdTick({ "rstd_a = a", "rstd_d = d"}, 10),
+      RollingStdTick({ "rstd_a = a", "rstd_d = d"}, 10, 10),
+      RollingStdTime("Timestamp",  { "rstd_b = b", "rstd_e = e"}, "PT00:00:10"),
+      RollingStdTime("Timestamp",  { "rstd_b = b", "rstd_e = e"}, secs(10), secs(-10)),
+      RollingStdTime("Timestamp",  { "rstd_b = b", "rstd_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling weighted average (using "b" as the weight column)
-      rollingWavgTick("b", { "rwavg_a = a", "rwavg_d = d"}, 10),
-      rollingWavgTick("b", { "rwavg_a = a", "rwavg_d = d"}, 10, 10),
-      rollingWavgTime("Timestamp", "b", { "rwavg_b = b", "rwavg_e = e"}, "PT00:00:10"),
-      rollingWavgTime("Timestamp", "b", { "rwavg_b = b", "rwavg_e = e"}, secs(10), secs(-10)),
-      rollingWavgTime("Timestamp", "b", { "rwavg_b = b", "rwavg_e = e"}, "PT30S", "-PT00:00:20")
-  };
-return result;
+      RollingWavgTick("b",  { "rwavg_a = a", "rwavg_d = d"}, 10),
+      RollingWavgTick("b",  { "rwavg_a = a", "rwavg_d = d"}, 10, 10),
+      RollingWavgTime("Timestamp", "b",  { "rwavg_b = b", "rwavg_e = e"}, "PT00:00:10"),
+      RollingWavgTime("Timestamp", "b",  { "rwavg_b = b", "rwavg_e = e"}, secs(10), secs(-10)),
+      RollingWavgTime("Timestamp", "b",  { "rwavg_b = b", "rwavg_e = e"}, "PT30S", "-PT00:00:20")
+    };
+    return result;
+  }
 }
