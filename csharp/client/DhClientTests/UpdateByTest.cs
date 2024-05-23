@@ -122,43 +122,44 @@ public class UpdateByTest {
   }
 
   private TableHandle[] MakeTables(TableHandleManager tm) {
-    var staticTable = tm.MakeRandomTable(tm).Update("Timestamp=now()");
+    var staticTable = MakeRandomTable(tm).Update("Timestamp=now()");
     var tickingTable = tm.TimeTable(TimeSpan.FromSeconds(1))
         .Update("a = i", "b = i*i % 13", "c = i * 13 % 23", "d = a + b", "e = a - b");
     return new [] { staticTable, tickingTable};
   }
 
-  TableHandle MakeRandomTable(const Client &client) {
-    std::random_device rd;
-    std::default_random_engine engine(rd());
-    std::uniform_int_distribution<int32_t> uniform_dist(0, 999);
+  private TableHandle MakeRandomTable(TableHandleManager tm) {
+    var rng = new Random(12345);
 
-    TableMaker tm;
-    static_assert(kNumCols <= 26);
-    for (size_t col = 0; col != kNumCols; ++col) {
-      char name[2] = { static_cast<char>('a' + col), 0 };
-      auto values = MakeReservedVector<int32_t>(kNumRows);
-      for (size_t i = 0; i != kNumRows; ++i) {
-        values.push_back(uniform_dist(engine));
-      }
-      tm.AddColumn(name, values);
+    var maker = new TableMaker();
+    if (NumCols > 26) {
+      throw new ArgumentException("NumCols constant is too big for this test")
     }
-    return tm.MakeTable(client.GetManager());
+    for (var col = 0; col != NumCols; ++col) {
+      var name = ((char)('a' + col)).ToString();
+      var values = new Int32[NumRows];
+      for (var i = 0; i != NumRows; ++i) {
+        values[i] = rng.Next(1000);
+      }
+      maker.AddColumn(name, values);
+    }
+
+    return maker.MakeTable(tm);
   }
 
-  std::vector<UpdateByOperation> MakeSimpleOps() {
-    std::vector < std::string> simple_op_pairs = { "UA=a", "UB=b"};
-    std::vector<UpdateByOperation> result = {
-      cumSum(simple_op_pairs),
-      cumProd(simple_op_pairs),
-      cumMin(simple_op_pairs),
-      cumMax(simple_op_pairs),
-      forwardFill(simple_op_pairs),
-      delta(simple_op_pairs),
-      delta(simple_op_pairs, DeltaControl::kNullDominates),
-      delta(simple_op_pairs, DeltaControl::kValueDominates),
-      delta(simple_op_pairs, DeltaControl::kZeroDominates)
-  };
+  private static UpdateByOperation[] MakeSimpleOps() {
+    var simpleOpPairs = new[] { "UA=a", "UB=b" };
+    var result = new[] {
+      CumSum(simpleOpPairs),
+      CumProd(simpleOpPairs),
+      CumMin(simpleOpPairs),
+      CumMax(simpleOpPairs),
+      ForwardFill(simpleOpPairs),
+      Delta(simpleOpPairs),
+      Delta(simpleOpPairs, DeltaControl.NullDominates),
+      Delta(simpleOpPairs, DeltaControl.ValueDominates),
+      Delta(simpleOpPairs, DeltaControl.kZeroDominates)
+    };
     return result;
   }
 
