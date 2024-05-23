@@ -10,8 +10,9 @@ namespace Deephaven.DeephavenClient;
 public readonly struct DhDateTime {
   public static DhDateTime Parse(string date) {
     // TODO(kosak): do something about the extra nanosecond resolution
-    var dt = DateTime.Parse(date);
+    var dt = DateTime.Parse(date).ToUniversalTime();
     var ts = dt - DateTime.UnixEpoch;
+
     return new DhDateTime((Int64)ts.TotalNanoseconds);
   }
 
@@ -29,4 +30,8 @@ public readonly struct DhDateTime {
   }
 
   public DateTime DateTime => DateTime.UnixEpoch.AddTicks(Nanos / 100);
+
+  public override string ToString() {
+    return $"[Nanos={Nanos}]";
+  }
 }

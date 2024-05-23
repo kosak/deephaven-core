@@ -1,7 +1,5 @@
-﻿using Deephaven.DeephavenClient.Interop;
-using Deephaven.DeephavenClient;
+﻿using Deephaven.DeephavenClient;
 using Xunit.Abstractions;
-using System;
 
 namespace Deephaven.DhClientTests;
 
@@ -13,7 +11,7 @@ public class TableHandleAttributesTest {
   }
 
   [Fact]
-  public void TestTableHandleAttributes() {
+  public void TableHandleAttributes() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var thm = ctx.Client.Manager;
     const Int64 numRows = 37;
@@ -23,7 +21,7 @@ public class TableHandleAttributesTest {
   }
 
   [Fact]
-  public void TestTableHandleDynamicAttributes() {
+  public void TableHandleDynamicAttributes() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var thm = ctx.Client.Manager;
     var t = thm.TimeTable(1_000_000_000).Update("II = ii");
@@ -31,7 +29,7 @@ public class TableHandleAttributesTest {
   }
 
   [Fact]
-  public void TestTableHandleCreatedByDoPut() {
+  public void TableHandleCreatedByDoPut() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
     Assert.True(table.IsStatic);
