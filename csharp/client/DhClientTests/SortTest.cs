@@ -19,7 +19,7 @@ public class SortTest {
 
     var tickerData = new[] { "ZNGA", "ZNGA", "XYZZY", "XRX", "XRX"};
     var openData = new[] { 541.2, 685.3, 92.3, 50.5, 83.1 };
-    var volData = new[] { 46123, 48300, 6060842, 87000, 345000 };
+    var volData = new Int64[] { 46123, 48300, 6060842, 87000, 345000 };
 
     var tc = new TableComparer();
     tc.AddColumn("Ticker", tickerData);

@@ -413,7 +413,7 @@ internal partial class NativeTableHandle {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_Sort(
     NativePtr<NativeTableHandle> self,
-    string[] columns, InteropBool[] directionsAsInt32, InteropBool[] abss, Int32 numSortPairs,
+    string[] columns, InteropBool[] ascendings, InteropBool[] abss, Int32 numSortPairs,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
