@@ -121,6 +121,18 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle Ungroup(params string[] groupByColumns) {
+    return Ungroup(false, groupByColumns);
+  }
+
+  public TableHandle Ungroup(bool nullFill, params string[] groupByColumns) {
+    NativeTableHandle.deephaven_client_TableHandle_Ungroup(Self, (InteropBool)nullFill,
+      groupByColumns, groupByColumns.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
   public TableHandle Merge(string keyColumns, TableHandle[] sources) {
     var tableHandlePtrs = sources.Select(s => s.Self).ToArray();
     NativeTableHandle.deephaven_client_TableHandle_Merge(Self, keyColumns,
@@ -638,6 +650,14 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_Tail(
     NativePtr<NativeTableHandle> self,
     Int64 numRows,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Ungroup(
+    NativePtr<NativeTableHandle> self,
+    InteropBool nullFill,
+    string[] groupByColumns, Int32 numGroupByColumns,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
