@@ -114,6 +114,15 @@ void deephaven_client_TableHandle_Where(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_Sort(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const char **columns,
+    const deephaven::dhcore::interop::InteropBool *ascendings,
+    const deephaven::dhcore::interop::InteropBool *abss,
+    int32_t num_sort_pairs,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_Select(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     const char **column_specs, int32_t num_column_specs,

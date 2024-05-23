@@ -19,6 +19,8 @@ using deephaven::client::Aggregate;
 using deephaven::client::AggregateCombo;
 using deephaven::client::Client;
 using deephaven::client::ClientOptions;
+using deephaven::client::SortDirection;
+using deephaven::client::SortPair;
 using deephaven::client::TableHandle;
 using deephaven::client::TableHandleManager;
 using deephaven::client::subscription::SubscriptionHandle;
@@ -264,6 +266,28 @@ void deephaven_client_TableHandle_Where(
     auto table = self->Where(condition);
     result->Reset(new TableHandle(std::move(table)));
   });
+}
+
+void deephaven_client_TableHandle_Sort(
+    NativePtr<TableHandle> self,
+    const char **columns,
+    const InteropBool *ascendings,
+    const InteropBool *abss,
+    int32_t num_sort_pairs,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto sort_pairs = MakeReservedVector<SortPair>(num_sort_pairs);
+    for (int32_t i = 0; i != num_sort_pairs; ++i) {
+      sort_pairs.emplace_back(
+          columns[i],
+          ascendings[i] ? SortDirection::kAscending : SortDirection::kDescending,
+          (bool)abss[i]);
+    }
+    auto table = self->Sort(std::move(sort_pairs));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+
 }
 
 void deephaven_client_TableHandle_Select(
