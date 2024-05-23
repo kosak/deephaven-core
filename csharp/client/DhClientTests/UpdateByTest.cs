@@ -2,7 +2,7 @@
 using Deephaven.DeephavenClient.Utility;
 using System;
 using Xunit.Abstractions;
-using static Deephaven.DeephavenClient.UpdateByOperation;
+using static Deephaven.DeephavenClient.UpdateBy.UpdateByOperation;
 
 namespace Deephaven.DhClientTests;
 
@@ -38,7 +38,7 @@ public class UpdateByTest {
     var tables = MakeTables(tm);
     var simpleOps = MakeSimpleOps();
 
-    for (var opIndex = 0; opIndex != simpleOps.size(); ++opIndex) {
+    for (var opIndex = 0; opIndex != simpleOps.Length; ++opIndex) {
       var op = simpleOps[opIndex];
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
@@ -59,7 +59,7 @@ public class UpdateByTest {
     var tables = MakeTables(tm);
     var emOps = MakeEmOps();
 
-    for (var opIndex = 0; opIndex != emOps.size(); ++opIndex) {
+    for (var opIndex = 0; opIndex != emOps.Length; ++opIndex) {
       var op = emOps[opIndex];
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
