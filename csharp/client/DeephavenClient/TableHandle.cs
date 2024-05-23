@@ -48,6 +48,23 @@ public sealed class TableHandle : IDisposable {
     return new TableHandle(result, Manager);
   }
 
+  public TableHandle Sort(params SortPair[] sortPairs) {
+    var columns = new string[sortPairs.Length];
+    var ascendings = new InteropBool[sortPairs.Length];
+    var abss = new InteropBool[sortPairs.Length];
+    for (var i = 0; i != sortPairs.Length; ++i) {
+      var sp = sortPairs[i];
+      columns[i] = sp.Column;
+      ascendings[i] = (InteropBool)(sp.Direction == SortDirection.Ascending);
+      abss[i] = (InteropBool)sp.Abs;
+    }
+    NativeTableHandle.deephaven_client_TableHandle_Sort(Self, 
+      columns, ascendings, abss, sortPairs.Length,
+      out var result, out var status);
+    status.OkOrThrow();
+    return new TableHandle(result, Manager);
+  }
+
   public TableHandle Select(params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_Select(Self,
       columnSpecs, columnSpecs.Length, out var result, out var status);
@@ -390,6 +407,13 @@ internal partial class NativeTableHandle {
   internal static partial void deephaven_client_TableHandle_Where(
     NativePtr<NativeTableHandle> self,
     string condition,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_Sort(
+    NativePtr<NativeTableHandle> self,
+    string[] columns, InteropBool[] directionsAsInt32, InteropBool[] abss, Int32 numSortPairs,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 

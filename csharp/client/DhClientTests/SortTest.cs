@@ -32,16 +32,16 @@ public class SortTest {
   public void SortTempTable() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var int_data0 = new []{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    var int_data1 = new []{ 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
-    var int_data2 = new []{ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
-    var int_data3 = new []{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
+    var intData0 = new []{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    var intData1 = new []{ 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
+    var intData2 = new []{ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
+    var intData3 = new []{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
 
     var maker = new TableMaker();
-    maker.AddColumn("IntValue0", int_data0);
-    maker.AddColumn("IntValue1", int_data1);
-    maker.AddColumn("IntValue2", int_data2);
-    maker.AddColumn("IntValue3", int_data3);
+    maker.AddColumn("IntValue0", intData0);
+    maker.AddColumn("IntValue1", intData1);
+    maker.AddColumn("IntValue2", intData2);
+    maker.AddColumn("IntValue3", intData3);
 
     var temp_table = maker.MakeTable(ctx.Client.Manager);
 
