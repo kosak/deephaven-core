@@ -166,6 +166,27 @@ public sealed class TableHandle : IDisposable {
     JoinHelper(rightSide, columnsToMatch, columnsToAdd,
       NativeTableHandle.deephaven_client_TableHandle_ExactJoin);
 
+  public TableHandle UpdateBy(UpdateByOperation[] operations, string[] by) {
+    var internalOperations = new List<InternalUpdateByOperation>();
+    foreach (var operation in operations) {
+      internalOperations.Add(operation.MakeInternal());
+    }
+
+    try {
+      var internalOperationPtrs = internalOperations.Select(s => s.Self).ToArray();
+      NativeTableHandle.deephaven_client_TableHandle_UpdateBy(Self,
+        internalOperationPtrs, internalOperationPtrs.Length,
+        by, by.Length,
+        out var result, out var status);
+      status.OkOrThrow();
+      return new TableHandle(result, Manager);
+    } finally {
+      foreach (var intOp in internalOperations) {
+        intOp.Dispose();
+      }
+    }
+  }
+
   public TableHandle Aj(TableHandle rightSide, string[] columnsToMatch,
     string[]? columnsToAdd = null) =>
     JoinHelper(rightSide, columnsToMatch, columnsToAdd,
@@ -294,14 +315,14 @@ public sealed class TableHandle : IDisposable {
 
   public TableHandle TailBy(Int64 n, params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_TailBy(Self,
-      columnSpecs, columnSpecs.Length, out var result, out var status);
+      n, columnSpecs, columnSpecs.Length, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, Manager);
   }
 
   public TableHandle HeadBy(Int64 n, params string[] columnSpecs) {
     NativeTableHandle.deephaven_client_TableHandle_HeadBy(Self,
-      columnSpecs, columnSpecs.Length, out var result, out var status);
+      n, columnSpecs, columnSpecs.Length, out var result, out var status);
     status.OkOrThrow();
     return new TableHandle(result, Manager);
   }
@@ -553,14 +574,14 @@ internal partial class NativeTableHandle {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_TailBy(
     NativePtr<NativeTableHandle> self,
-    string[] columns, Int32 numColumns,
+    int n, string[] columns, Int32 numColumns,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_HeadBy(
     NativePtr<NativeTableHandle> self,
-    string[] columns, Int32 numColumns,
+    int n, string[] columns, Int32 numColumns,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
@@ -702,6 +723,14 @@ internal partial class NativeTableHandle {
     NativePtr<NativeTableHandle> rightSide,
     string[] columnsToMatch, Int32 numColumnsToMatch,
     string[] columnsToAdd, Int32 numColumnsToAdd,
+    out NativePtr<NativeTableHandle> result,
+    out ErrorStatus status);
+
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  internal static partial void deephaven_client_TableHandle_UpdateBy(
+    NativePtr<NativeTableHandle> self,
+    NativePtr<NativeUpdateByOperation>[] ops, Int32 numOps,
+    string[] by, Int32 numBy,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
