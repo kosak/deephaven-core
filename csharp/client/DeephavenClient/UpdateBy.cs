@@ -43,65 +43,73 @@ public sealed class UpdateByOperation {
     return new InternalUpdateByOperation(result);
   }
 
-
   public static UpdateByOperation CumSum(string[] cols) =>
-    new UpdateByOperation(cols, NativeUpdateByOperation.deephaven_client_update_by_cumSum);
+    new ((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
+        NativeUpdateByOperation.deephaven_client_update_by_cumSum(cols, cols.Length, out result, out status));
   public static UpdateByOperation CumProd(string[] cols) =>
-    new UpdateByOperation(cols, NativeUpdateByOperation.deephaven_client_update_by_cumProd);
+    new((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
+      NativeUpdateByOperation.deephaven_client_update_by_cumProd(cols, cols.Length, out result, out status));
   public static UpdateByOperation CumMin(string[] cols) =>
-    new UpdateByOperation(cols, NativeUpdateByOperation.deephaven_client_update_by_cumMin);
+    new((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
+      NativeUpdateByOperation.deephaven_client_update_by_cumMin(cols, cols.Length, out result, out status));
   public static UpdateByOperation CumMax(string[] cols) =>
-    new UpdateByOperation(cols, NativeUpdateByOperation.deephaven_client_update_by_cumMax);
+    new((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
+      NativeUpdateByOperation.deephaven_client_update_by_cumMax(cols, cols.Length, out result, out status));
   public static UpdateByOperation ForwardFill(string[] cols) =>
-    new UpdateByOperation(cols, NativeUpdateByOperation.deephaven_client_update_by_forwardFill);
+    new((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
+      NativeUpdateByOperation.deephaven_client_update_by_forwardFill(cols, cols.Length, out result, out status));
 
   public static UpdateByOperation Delta(string[] cols, DeltaControl deltaControl = DeltaControl.NullDominates) =>
     new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
       NativeUpdateByOperation.deephaven_client_update_by_delta(cols, cols.Length, deltaControl, out result, out status));
 
   public static UpdateByOperation EmaTick(double decayTicks, string[] cols, OperationControl? opControl) {
-    opControl ??= new OperationControl();
+    var oc = opControl ?? new OperationControl();
     return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emaTick(decayTicks, cols, cols.Length, ref opControl, out result,
+      NativeUpdateByOperation.deephaven_client_update_by_emaTick(decayTicks, cols, cols.Length, ref oc, out result,
         out status));
   }
 
   public static UpdateByOperation EmaTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl) {
-    opControl ??= new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emaTime(decayTicks, cols, cols.Length, ref opControl, out result,
-        out status));
+    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
+      var oc = opControl ?? new OperationControl();
+      using var dct = decayTime.Materialize();
+      NativeUpdateByOperation.deephaven_client_update_by_emaTime(timestampCol, dct.Self, cols, cols.Length,
+        ref oc, out result, out status);
+    });
   }
 
   public static UpdateByOperation EmsTick(double decayTicks, string[] cols, OperationControl? opControl) {
-    opControl ??= new OperationControl();
+    var oc = opControl ?? new OperationControl();
     return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emsTick(decayTicks, cols, cols.Length, ref opControl, out result,
+      NativeUpdateByOperation.deephaven_client_update_by_emsTick(decayTicks, cols, cols.Length, ref oc, out result,
         out status));
   }
 
   public static UpdateByOperation EmsTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl) {
-    opControl ??= new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emsTime(decayTicks, cols, cols.Length, ref opControl, out result,
-        out status));
+    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
+      var oc = opControl ?? new OperationControl();
+      using var dct = decayTime.Materialize();
+      NativeUpdateByOperation.deephaven_client_update_by_emsTime(timestampCol, dct.Self, cols, cols.Length,
+        ref oc, out result, out status);
+    });
   }
 
   public static UpdateByOperation EmminTick(double decayTicks, string[] cols, OperationControl? opControl) {
-    opControl ??= new OperationControl();
+    var oc = opControl ?? new OperationControl();
     return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emminTick(decayTicks, cols, cols.Length, ref opControl, out result,
+      NativeUpdateByOperation.deephaven_client_update_by_emminTick(decayTicks, cols, cols.Length, ref oc, out result,
         out status));
   }
 
   public static UpdateByOperation EmminTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl) {
-    opControl ??= new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emminTime(decayTicks, cols, cols.Length, ref opControl, out result,
-        out status));
+    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
+      var oc = opControl ?? new OperationControl();
+      using var dct = decayTime.Materialize();
+      NativeUpdateByOperation.deephaven_client_update_by_emminTime(timestampCol, dct.Self, cols, cols.Length,
+        ref oc, out result, out status);
+    });
   }
-
-
 }
 
 internal class InternalUpdateByOperation : IDisposable {
@@ -147,4 +155,28 @@ internal partial class NativeUpdateByOperation {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_update_by_delta(string[] cols, Int32 numCols,
     DeltaControl deltaControl, out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_emaTick(double decayTicks,
+    string[] cols, Int32 numCols, ref OperationControl opControl,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_emaTime(string timestampCol,
+    NativePtr<NativeDurationSpecifier> decayTime, string[] cols, Int32 numCols,
+  ref OperationControl opControl, out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_emsTick(double decayTicks,
+    string[] cols, Int32 numCols, ref OperationControl opControl,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_emsTime(string timestampCol,
+    NativePtr<NativeDurationSpecifier> decayTime, string[] cols, Int32 numCols,
+    ref OperationControl opControl, out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_emminTick(double decayTicks,
+    string[] cols, Int32 numCols, ref OperationControl opControl,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_emminTime(string timestampCol,
+    NativePtr<NativeDurationSpecifier> decayTime, string[] cols, Int32 numCols,
+    ref OperationControl opControl, out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
 }

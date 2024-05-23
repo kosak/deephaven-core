@@ -1,5 +1,6 @@
 ﻿using Deephaven.DeephavenClient.Interop;
 using System.Runtime.InteropServices;
+using Deephaven.DeephavenClient.UpdateBy;
 using Deephaven.DeephavenClient.Utility;
 
 namespace Deephaven.DeephavenClient;
