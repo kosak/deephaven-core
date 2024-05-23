@@ -40,11 +40,11 @@ public class UpdateByTest {
 
     for (var opIndex = 0; opIndex != simpleOps.size(); ++opIndex) {
       var op = simpleOps[opIndex];
-      for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+      for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
         _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
         using var result = table.UpdateBy(new[] {op}, new[] {"e"});
-        Assert.Equal(table.IsStatic(), result.IsStatic());
+        Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
       }
@@ -61,13 +61,13 @@ public class UpdateByTest {
 
     for (var opIndex = 0; opIndex != emOps.size(); ++opIndex) {
       var op = emOps[opIndex];
-      for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+      for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
         _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
         using var result = table.UpdateBy(new[] { op }, new[] { "b" });
-        Assert.Equal(table.IsStatic(), result.IsStatic());
+        Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(1 + table.NumCols, result.NumCols);
-        if (result.IsStatic()) {
+        if (result.IsStatic) {
           Assert.Equal(result.NumRows, table.NumRows);
         }
       }
@@ -82,13 +82,13 @@ public class UpdateByTest {
     var tables = MakeTables(tm);
     var rollingOps = MakeRollingOps();
 
-    for (var opIndex = 0; opIndex != emOps.size(); ++opIndex) {
-      var op = emOps[opIndex];
-      for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+    for (var opIndex = 0; opIndex != rollingOps.Length; ++opIndex) {
+      var op = rollingOps[opIndex];
+      for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
         _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
         using var result = table.UpdateBy(new[] { op }, new[] { "c" });
-        Assert.Equal(table.IsStatic(), result.IsStatic());
+        Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
       }
@@ -109,26 +109,23 @@ public class UpdateByTest {
       RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d" }, 10)
     };
 
-    for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+    for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
       var table = tables[tableIndex];
       _output.WriteLine($"Processing table {tableIndex}");
       using var result = table.UpdateBy(new[] { op }, new[] { "c" });
-      Assert.Equal(table.IsStatic(), result.IsStatic());
+      Assert.Equal(table.IsStatic, result.IsStatic);
       Assert.Equal(10 + table.NumCols, result.NumCols);
-      if (result.IsStatic()) {
+      if (result.IsStatic) {
         Assert.Equal(result.NumRows, table.NumRows);
       }
     }
   }
 
-  namespace {
-  std::vector<TableHandle> MakeTables(const Client &client) {
-    std::vector<TableHandle> result;
-    auto tm = client.GetManager();
-    auto static_table = MakeRandomTable(client).Update("Timestamp=now()");
-    auto ticking_table = tm.TimeTable(std::chrono::seconds(1))
+  private TableHandle[] MakeTables(TableHandleManager tm) {
+    var staticTable = tm.MakeRandomTable(tm).Update("Timestamp=now()");
+    var tickingTable = tm.TimeTable(TimeSpan.FromSeconds(1))
         .Update("a = i", "b = i*i % 13", "c = i * 13 % 23", "d = a + b", "e = a - b");
-    return { static_table, ticking_table};
+    return new [] { staticTable, tickingTable};
   }
 
   TableHandle MakeRandomTable(const Client &client) {
