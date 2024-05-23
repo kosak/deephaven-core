@@ -12,44 +12,41 @@ public class UpdateByTest {
 
   [Fact]
   public void SimpleCumSum() {
-    const int target = 10;
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var tm = ctx.Client.Manager;
-    
+
     var source = tm.EmptyTable(10).Update("Letter = (i % 2 == 0) ? `A` : `B`", "X = i");
-    var result = source.UpdateBy(new[] { CumSum(new[] { "SumX = X"})}, new[] {"Letter"});
+    var result = source.UpdateBy(new[] { CumSum(new[] { "SumX = X" }) }, new[] { "Letter" });
     var filtered = result.Select("SumX");
     var tc = new TableComparer();
-    tc.AddColumn("SumX", new Int64[] { 0, 1, 2, 4, 6, 9, 12, 16, 20, 25});
+    tc.AddColumn("SumX", new Int64[] { 0, 1, 2, 4, 6, 9, 12, 16, 20, 25 });
     tc.AssertEqualTo(filtered);
   }
-}
 
-  TEST_CASE("UpdateBy: SimpleCumSum", "[update_by]") {
-    auto client = TableMakerForTests::CreateClient();
-    auto tm = client.GetManager();
-    auto source = tm.EmptyTable(10).Update("Letter = (i % 2 == 0) ? `A` : `B`", "X = i");
-    auto result = source.UpdateBy({ cumSum({ "SumX = X"})}, { "Letter"});
-    auto filtered = result.Select("SumX");
-    CompareTable(filtered, "SumX", std::vector<int64_t>{ 0, 1, 2, 4, 6, 9, 12, 16, 20, 25});
-  }
+  [Fact]
+  public void SimpleOps() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var tm = ctx.Client.Manager;
 
-  TEST_CASE("UpdateBy: SimpleOps", "[update_by]") {
-    auto client = TableMakerForTests::CreateClient();
-    auto tables = MakeTables(client);
-    auto simple_ops = MakeSimpleOps();
+    var tables = MakeTables(tm);
+    var simple_ops = MakeSimpleOps();
 
-    for (size_t op_index = 0; op_index != simple_ops.size(); ++op_index) {
-      const auto &op = simple_ops[op_index];
-      for (size_t table_index = 0; table_index != tables.size(); ++table_index) {
-        const auto &table = tables[table_index];
+    for (var op_index = 0; op_index != simple_ops.size(); ++op_index) {
+      const auto  &op = simple_ops[op_index];
+      for (var table_index = 0; table_index != tables.size(); ++table_index) {
+        var table = tables[table_index];
         INFO("Processing op " << op_index << " on Table " << table_index);
-        auto result = table.UpdateBy({ op}, { "e"});
-    CHECK(result.IsStatic() == table.IsStatic());
-    CHECK(result.Schema()->NumCols() == 2 + table.Schema()->NumCols());
-    CHECK(result.NumRows() >= table.NumRows());
+        var result = table.UpdateBy({
+          op
+        }, {
+          "e"
+        });
+        Assert.Equal(table.IsStatic(), result.IsStatic());
+        Assert.Equal(2 + table.NumCols, result.NumCols);
+        Assert.True(result.NumRows >= table.NumRows);
+      }
+    }
   }
-}
 }
 
 TEST_CASE("UpdateBy: EmOps", "[update_by]") {
