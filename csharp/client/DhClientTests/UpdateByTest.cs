@@ -76,51 +76,52 @@ public class UpdateByTest {
 
   [Fact]
   public void RollingOps() {
-    auto client = TableMakerForTests::CreateClient();
-    auto tables = MakeTables(client);
-    auto rolling_ops = MakeRollingOps();
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var tm = ctx.Client.Manager;
 
-    for (size_t op_index = 0; op_index != rolling_ops.size(); ++op_index) {
-      const auto  &op = rolling_ops[op_index];
-      for (size_t table_index = 0; table_index != tables.size(); ++table_index) {
-        const auto  &table = tables[table_index];
-        INFO("Processing op " << op_index << " on Table " << table_index);
-        auto result = table.UpdateBy({
-          op
-        }, {
-          "c"
-        });
-        CHECK(result.IsStatic() == table.IsStatic());
-        CHECK(result.Schema()->NumCols() == 2 + table.Schema()->NumCols());
-        CHECK(result.NumRows() >= table.NumRows());
+    var tables = MakeTables(tm);
+    var rollingOps = MakeRollingOps();
+
+    for (var opIndex = 0; opIndex != emOps.size(); ++opIndex) {
+      var op = emOps[opIndex];
+      for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+        var table = tables[tableIndex];
+        _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
+        using var result = table.UpdateBy(new[] { op }, new[] { "c" });
+        Assert.Equal(table.IsStatic(), result.IsStatic());
+        Assert.Equal(2 + table.NumCols, result.NumCols);
+        Assert.True(result.NumRows >= table.NumRows);
       }
     }
   }
 
-  TEST_CASE("UpdateBy: Multiple Ops", "[update_by]") {
-  auto client = TableMakerForTests::CreateClient();
-  auto tables = MakeTables(client);
-  std::vector<UpdateByOperation> multiple_ops = {
-      cumSum({"sum_a=a", "sum_b=b"}),
-      cumSum({ "max_a=a", "max_d=d"}),
-      emaTick(10, { "ema_d=d", "ema_e=e"}),
-      emaTime("Timestamp", "PT00:00:00.1", { "ema_time_d=d", "ema_time_e=e"}),
-      rollingWavgTick("b", { "rwavg_a = a", "rwavg_d = d"}, 10)
-  };
+  [Fact]
+  public void MultipleOps() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var tm = ctx.Client.Manager;
 
-for (size_t table_index = 0; table_index != tables.size(); ++table_index) {
-  const auto &table = tables[table_index];
-  INFO("Processing Table " << table_index);
-  auto result = table.UpdateBy(multiple_ops, { "c"});
-CHECK(result.IsStatic() == table.IsStatic());
-CHECK(result.Schema()->NumCols() == 10 + table.Schema()->NumCols());
-if (result.IsStatic()) {
-  CHECK(result.NumRows() == table.NumRows());
-}
+    var tables = MakeTables(tm);
+    var multipleOps = {
+      CumSum(new[] { "sum_a=a", "sum_b=b" }),
+      CumSum(new[] { "max_a=a", "max_d=d" }),
+      EmaTick(10, new[] { "ema_d=d", "ema_e=e" }),
+      EmaTime("Timestamp", "PT00:00:00.1", new[] { "ema_time_d=d", "ema_time_e=e" }),
+      RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d" }, 10)
+    };
+
+    for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+      var table = tables[tableIndex];
+      _output.WriteLine($"Processing table {tableIndex}");
+      using var result = table.UpdateBy(new[] { op }, new[] { "c" });
+      Assert.Equal(table.IsStatic(), result.IsStatic());
+      Assert.Equal(10 + table.NumCols, result.NumCols);
+      if (result.IsStatic()) {
+        Assert.Equal(result.NumRows, table.NumRows);
+      }
+    }
   }
-}
 
-namespace {
+  namespace {
   std::vector<TableHandle> MakeTables(const Client &client) {
     std::vector<TableHandle> result;
     auto tm = client.GetManager();
