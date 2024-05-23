@@ -10,6 +10,13 @@ public class UpdateByTest {
   const int NumCols = 5;
   const int NumRows = 1000;
 
+  private readonly ITestOutputHelper _output;
+
+  public UpdateByTest(ITestOutputHelper output) {
+    _output = output;
+  }
+
+
   [Fact]
   public void SimpleCumSum() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -29,65 +36,68 @@ public class UpdateByTest {
     var tm = ctx.Client.Manager;
 
     var tables = MakeTables(tm);
-    var simple_ops = MakeSimpleOps();
+    var simpleOps = MakeSimpleOps();
 
-    for (var op_index = 0; op_index != simple_ops.size(); ++op_index) {
-      const auto  &op = simple_ops[op_index];
-      for (var table_index = 0; table_index != tables.size(); ++table_index) {
-        var table = tables[table_index];
-        INFO("Processing op " << op_index << " on Table " << table_index);
-        var result = table.UpdateBy({
-          op
-        }, {
-          "e"
-        });
+    for (var opIndex = 0; opIndex != simpleOps.size(); ++opIndex) {
+      var op = simpleOps[opIndex];
+      for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+        var table = tables[tableIndex];
+        _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
+        using var result = table.UpdateBy(new[] {op}, new[] {"e"});
         Assert.Equal(table.IsStatic(), result.IsStatic());
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
       }
     }
   }
-}
 
-TEST_CASE("UpdateBy: EmOps", "[update_by]") {
-  auto client = TableMakerForTests::CreateClient();
-  auto tables = MakeTables(client);
-  auto em_ops = MakeEmOps();
+  [Fact]
+  public void EmOps() {
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var tm = ctx.Client.Manager;
 
-  for (size_t op_index = 0; op_index != em_ops.size(); ++op_index) {
-    const auto &op = em_ops[op_index];
-    for (size_t table_index = 0; table_index != tables.size(); ++table_index) {
-      const auto &table = tables[table_index];
-      INFO("Processing op " << op_index << " on Table " << table_index);
-      auto result = table.UpdateBy({ op}, { "b"});
-  CHECK(result.IsStatic() == table.IsStatic());
-  CHECK(result.Schema()->NumCols() == 1 + table.Schema()->NumCols());
-  if (result.IsStatic()) {
-    CHECK(result.NumRows() == table.NumRows());
+    var tables = MakeTables(tm);
+    var emOps = MakeEmOps();
+
+    for (var opIndex = 0; opIndex != emOps.size(); ++opIndex) {
+      var op = emOps[opIndex];
+      for (var tableIndex = 0; tableIndex != tables.size(); ++tableIndex) {
+        var table = tables[tableIndex];
+        _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
+        using var result = table.UpdateBy(new[] { op }, new[] { "b" });
+        Assert.Equal(table.IsStatic(), result.IsStatic());
+        Assert.Equal(1 + table.NumCols, result.NumCols);
+        if (result.IsStatic()) {
+          Assert.Equal(result.NumRows, table.NumRows);
+        }
+      }
+    }
   }
-}
+
+  [Fact]
+  public void RollingOps() {
+    auto client = TableMakerForTests::CreateClient();
+    auto tables = MakeTables(client);
+    auto rolling_ops = MakeRollingOps();
+
+    for (size_t op_index = 0; op_index != rolling_ops.size(); ++op_index) {
+      const auto  &op = rolling_ops[op_index];
+      for (size_t table_index = 0; table_index != tables.size(); ++table_index) {
+        const auto  &table = tables[table_index];
+        INFO("Processing op " << op_index << " on Table " << table_index);
+        auto result = table.UpdateBy({
+          op
+        }, {
+          "c"
+        });
+        CHECK(result.IsStatic() == table.IsStatic());
+        CHECK(result.Schema()->NumCols() == 2 + table.Schema()->NumCols());
+        CHECK(result.NumRows() >= table.NumRows());
+      }
+    }
   }
-}
 
-TEST_CASE("UpdateBy: RollingOps", "[update_by]") {
-  auto client = TableMakerForTests::CreateClient();
-  auto tables = MakeTables(client);
-  auto rolling_ops = MakeRollingOps();
-
-  for (size_t op_index = 0; op_index != rolling_ops.size(); ++op_index) {
-    const auto &op = rolling_ops[op_index];
-    for (size_t table_index = 0; table_index != tables.size(); ++table_index) {
-      const auto &table = tables[table_index];
-      INFO("Processing op " << op_index << " on Table " << table_index);
-      auto result = table.UpdateBy({ op}, { "c"});
-  CHECK(result.IsStatic() == table.IsStatic());
-  CHECK(result.Schema()->NumCols() == 2 + table.Schema()->NumCols());
-  CHECK(result.NumRows() >= table.NumRows());
-}
-  }
-}
-
-TEST_CASE("UpdateBy: Multiple Ops", "[update_by]") {
+  TEST_CASE("UpdateBy: Multiple Ops", "[update_by]") {
   auto client = TableMakerForTests::CreateClient();
   auto tables = MakeTables(client);
   std::vector<UpdateByOperation> multiple_ops = {
@@ -262,5 +272,3 @@ std::vector<UpdateByOperation> MakeRollingOps() {
   };
 return result;
 }
-}  // namespace
-}  // namespace deephaven::client::tests
