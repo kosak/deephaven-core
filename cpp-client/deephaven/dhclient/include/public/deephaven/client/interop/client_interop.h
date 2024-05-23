@@ -114,6 +114,13 @@ void deephaven_client_TableHandle_Where(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_Ungroup(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    deephaven::dhcore::interop::InteropBool null_fill,
+    const char **group_by_columns, int32_t num_group_by_columns,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_Sort(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     const char **columns,

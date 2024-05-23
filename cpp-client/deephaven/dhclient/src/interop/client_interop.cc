@@ -268,6 +268,19 @@ void deephaven_client_TableHandle_Where(
   });
 }
 
+void deephaven_client_TableHandle_Ungroup(
+    NativePtr<TableHandle> self,
+    InteropBool null_fill,
+    const char **group_by_columns, int32_t num_group_by_columns,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    std::vector<std::string> cols(group_by_columns, group_by_columns + num_group_by_columns);
+    auto table = self->Ungroup((bool)null_fill, std::move(cols));
+    result->Reset(new TableHandle(std::move(table)));
+  });
+}
+
 void deephaven_client_TableHandle_Sort(
     NativePtr<TableHandle> self,
     const char **columns,
