@@ -30,17 +30,72 @@ public readonly struct OperationControl {
   }
 }
 
-public sealed class UpdateByOperation {
-  private delegate void NativeInvoker(out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+public abstract class UpdateByOperation {
+  private protected abstract InternalUpdateByOperation MakeInternal();
 
-  private readonly NativeInvoker _invoker;
+  private sealed class WithCols : UpdateByOperation {
+    public delegate void NativeInvoker(string[] cols, Int32 numCols,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
 
-  private UpdateByOperation(NativeInvoker invoker) => _invoker = invoker;
+    private readonly string[] _cols;
+    private readonly NativeInvoker _invoker;
 
-  internal InternalUpdateByOperation MakeInternal() {
-    _invoker(out var result, out var status);
-    status.OkOrThrow();
-    return new InternalUpdateByOperation(result);
+    public WithCols(string[] cols, NativeInvoker invoker) {
+      _cols = cols;
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      _invoker(_cols, _cols.Length, out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
+  }
+
+  private sealed class WithDelta : UpdateByOperation {
+    public delegate void NativeInvoker(string[] cols, Int32 numCols, DeltaControl deltaControl,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+
+    private readonly string[] _cols;
+    private readonly DeltaControl _deltaControl;
+    private readonly NativeInvoker _invoker;
+
+    public WithDelta(string[] cols, DeltaControl deltaControl, NativeInvoker invoker) {
+      _cols = cols;
+      _deltaControl = deltaControl;
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      _invoker(_cols, _cols.Length, _deltaControl, out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
+  }
+
+  private sealed class WithTicks : UpdateByOperation {
+    public delegate void NativeInvoker(double decayTicks, string[] cols, Int32 numCols,
+      ref OperationControl operationControl,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+
+    private readonly double _decayTicks;
+    private readonly string[] _cols;
+    private OperationControl _operationControl;
+    private readonly NativeInvoker _invoker;
+
+    public WithTicks(double decayTicks, string[] cols, OperationControl? operationControl,
+      NativeInvoker invoker) {
+      _decayTicks = decayTicks;
+      _cols = cols;
+      _operationControl = operationControl ?? new OperationControl();
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      _invoker(_decayTicks, _cols, _cols.Length, ref _operationControl, out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
   }
 
   public static UpdateByOperation CumSum(string[] cols) =>
