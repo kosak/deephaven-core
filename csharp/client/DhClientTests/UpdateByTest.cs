@@ -1,6 +1,7 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Utility;
 using System;
+using Deephaven.DeephavenClient.UpdateBy;
 using Xunit.Abstractions;
 using static Deephaven.DeephavenClient.UpdateBy.UpdateByOperation;
 
@@ -15,7 +16,6 @@ public class UpdateByTest {
   public UpdateByTest(ITestOutputHelper output) {
     _output = output;
   }
-
 
   [Fact]
   public void SimpleCumSum() {
@@ -160,7 +160,7 @@ public class UpdateByTest {
       Delta(simpleOpPairs),
       Delta(simpleOpPairs, DeltaControl.NullDominates),
       Delta(simpleOpPairs, DeltaControl.ValueDominates),
-      Delta(simpleOpPairs, DeltaControl.kZeroDominates)
+      Delta(simpleOpPairs, DeltaControl.ZeroDominates)
     };
     return result;
   }
