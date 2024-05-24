@@ -98,6 +98,89 @@ public abstract class UpdateByOperation {
     }
   }
 
+  private sealed class WithTime : UpdateByOperation {
+    public delegate void NativeInvoker(string timestampCol, 
+      NativePtr<NativeDurationSpecifier> decayTime, string[] cols, Int32 numCols,
+      ref OperationControl operationControl,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+
+    private readonly string _timestampCol;
+    private readonly DurationSpecifier _decayTime;
+    private readonly string[] _cols;
+    private OperationControl _operationControl;
+    private readonly NativeInvoker _invoker;
+
+    public WithTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? operationControl,
+      NativeInvoker invoker) {
+      _timestampCol = timestampCol;
+      _decayTime = decayTime;
+      _cols = cols;
+      _operationControl = operationControl ?? new OperationControl();
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      using var dc = _decayTime.Materialize();
+      _invoker(_timestampCol, dc.Self, _cols, _cols.Length, ref _operationControl, out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
+  }
+
+  private sealed class WithRollingTicks : UpdateByOperation {
+    public delegate void NativeInvoker(string[] cols, Int32 num_cols, Int32 revTicks, Int32 fwdTicks,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+
+    private readonly string[] _cols;
+    private readonly Int32 _revTicks;
+    private readonly Int32 _fwdTicks;
+    private readonly NativeInvoker _invoker;
+
+    public WithRollingTicks(string[] cols, Int32 revTicks, Int32 fwdTicks, NativeInvoker invoker) {
+      _cols = cols;
+      _revTicks = revTicks;
+      _fwdTicks = fwdTicks;
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      _invoker(_cols, _cols.Length, _revTicks, _fwdTicks, out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
+  }
+
+  private sealed class WithRollingTime : UpdateByOperation {
+    public delegate void NativeInvoker(string timestampCol, string[] cols, Int32 numCols,
+      NativePtr<NativeDurationSpecifier> revTime,
+      NativePtr<NativeDurationSpecifier> fwdTime,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+
+    private readonly string _timestampCol;
+    private readonly string[] _cols;
+    private readonly DurationSpecifier _revTime;
+    private readonly DurationSpecifier _fwdTime;
+    private readonly NativeInvoker _invoker;
+
+    public WithRollingTime(string timestampCol, string[] cols,
+      DurationSpecifier revTime, DurationSpecifier? fwdTime, NativeInvoker invoker) {
+      _timestampCol = timestampCol;
+      _cols = cols;
+      _revTime = revTime;
+      _fwdTime = fwdTime ?? new DurationSpecifier(0);
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      using var revNative = _revTime.Materialize();
+      using var fwdNative = _fwdTime.Materialize();
+      _invoker(_timestampCol, _cols, _cols.Length, revNative.Self, fwdNative.Self,
+        out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
+  }
+
   public static UpdateByOperation CumSum(string[] cols) =>
     new WithCols(cols, NativeUpdateByOperation.deephaven_client_update_by_cumSum);
   public static UpdateByOperation CumProd(string[] cols) =>
@@ -292,4 +375,31 @@ internal partial class NativeUpdateByOperation {
   public static partial void deephaven_client_update_by_emstdTime(string timestampCol,
     NativePtr<NativeDurationSpecifier> decayTime, string[] cols, Int32 numCols,
     ref OperationControl opControl, out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingSumTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingSumTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingGroupTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingGroupTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingAvgTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingAvgTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
 }
