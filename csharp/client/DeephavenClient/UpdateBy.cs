@@ -55,108 +55,103 @@ public sealed class UpdateByOperation {
     new WithCols(cols, NativeUpdateByOperation.deephaven_client_update_by_forwardFill);
 
   public static UpdateByOperation Delta(string[] cols, DeltaControl deltaControl = DeltaControl.NullDominates) =>
-    new WithDelta(cols, deltaControl, NativeUpdateByOperation.deephaven_client_update_by_delta);
+    new WithDelta(cols, deltaControl,
+      NativeUpdateByOperation.deephaven_client_update_by_delta);
 
   public static UpdateByOperation EmaTick(double decayTicks, string[] cols, OperationControl? opControl = null) =>
-    new WithTicks(decayTicks, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emaTick);
+    new WithTicks(decayTicks, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emaTick);
   public static UpdateByOperation EmaTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl = null) =>
-    new WithTime(timestampCol, decayTime, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emaTime);
+    new WithTime(timestampCol, decayTime, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emaTime);
   public static UpdateByOperation EmsTick(double decayTicks, string[] cols, OperationControl? opControl = null) =>
-    new WithTicks(decayTicks, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emsTick);
+    new WithTicks(decayTicks, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emsTick);
   public static UpdateByOperation EmsTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl = null) =>
-    new WithTime(timestampCol, decayTime, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emsTime);
+    new WithTime(timestampCol, decayTime, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emsTime);
   public static UpdateByOperation EmminTick(double decayTicks, string[] cols, OperationControl? opControl = null) =>
-    new WithTicks(decayTicks, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emminTick);
+    new WithTicks(decayTicks, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emminTick);
   public static UpdateByOperation EmminTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl = null) =>
-    new WithTime(timestampCol, decayTime, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emminTime);
+    new WithTime(timestampCol, decayTime, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emminTime);
   public static UpdateByOperation EmmaxTick(double decayTicks, string[] cols, OperationControl? opControl = null) =>
-    new WithTicks(decayTicks, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emmaxTick);
+    new WithTicks(decayTicks, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emmaxTick);
   public static UpdateByOperation EmmaxTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl = null) =>
-    new WithTime(timestampCol, decayTime, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emmaxTime);
+    new WithTime(timestampCol, decayTime, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emmaxTime);
   public static UpdateByOperation EmstdTick(double decayTicks, string[] cols, OperationControl? opControl = null) =>
-    new WithTicks(decayTicks, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emstdTick);
+    new WithTicks(decayTicks, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emstdTick);
   public static UpdateByOperation EmstdTime(string timestampCol, DurationSpecifier decayTime, string[] cols, OperationControl? opControl = null) =>
-    new WithTime(timestampCol, decayTime, cols, opControl, NativeUpdateByOperation.deephaven_client_update_by_emstdTime);
+    new WithTime(timestampCol, decayTime, cols, opControl,
+      NativeUpdateByOperation.deephaven_client_update_by_emstdTime);
 
   public static UpdateByOperation RollingSumTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
-    new WithRollingTicks(cols, revTicks, fwdTicks, NativeUpdateByOperation.deephaven_client_update_by_rollingSumTick);
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingSumTick);
   public static UpdateByOperation RollingSumTime(string timestampCol, string[] cols,
     DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
-    new WithRollingTime(timestampCol, cols, revTime, fwdTime, NativeUpdateByOperation.deephaven_client_update_by_rollingSumTime);
-
-
-  public static UpdateByOperation EmsTick(double decayTicks, string[] cols,
-    OperationControl? opControl = null) {
-    var oc = opControl ?? new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emsTick(decayTicks, cols, cols.Length, ref oc, out result,
-        out status));
-  }
-
-  public static UpdateByOperation EmsTime(string timestampCol, DurationSpecifier decayTime, string[] cols,
-    OperationControl? opControl = null) {
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
-      var oc = opControl ?? new OperationControl();
-      using var dct = decayTime.Materialize();
-      NativeUpdateByOperation.deephaven_client_update_by_emsTime(timestampCol, dct.Self, cols, cols.Length,
-        ref oc, out result, out status);
-    });
-  }
-
-  public static UpdateByOperation EmminTick(double decayTicks, string[] cols,
-    OperationControl? opControl = null) {
-    var oc = opControl ?? new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emminTick(decayTicks, cols, cols.Length, ref oc, out result,
-        out status));
-  }
-
-  public static UpdateByOperation EmminTime(string timestampCol, DurationSpecifier decayTime, string[] cols,
-    OperationControl? opControl = null) {
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
-      var oc = opControl ?? new OperationControl();
-      using var dct = decayTime.Materialize();
-      NativeUpdateByOperation.deephaven_client_update_by_emminTime(timestampCol, dct.Self, cols, cols.Length,
-        ref oc, out result, out status);
-    });
-  }
-
-  public static UpdateByOperation EmmaxTick(double decayTicks, string[] cols,
-    OperationControl? opControl = null) {
-    var oc = opControl ?? new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emmaxTick(decayTicks, cols, cols.Length, ref oc, out result,
-        out status));
-  }
-
-  public static UpdateByOperation EmmaxTime(string timestampCol, DurationSpecifier decayTime, string[] cols,
-    OperationControl? opControl = null) {
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
-      var oc = opControl ?? new OperationControl();
-      using var dct = decayTime.Materialize();
-      NativeUpdateByOperation.deephaven_client_update_by_emmaxTime(timestampCol, dct.Self, cols, cols.Length,
-        ref oc, out result, out status);
-    });
-  }
-
-  public static UpdateByOperation EmstdTick(double decayTicks, string[] cols,
-    OperationControl? opControl = null) {
-    var oc = opControl ?? new OperationControl();
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) =>
-      NativeUpdateByOperation.deephaven_client_update_by_emstdTick(decayTicks, cols, cols.Length, ref oc, out result,
-        out status));
-  }
-
-  public static UpdateByOperation EmstdTime(string timestampCol, DurationSpecifier decayTime, string[] cols,
-    OperationControl? opControl = null) {
-    return new UpdateByOperation((out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status) => {
-      var oc = opControl ?? new OperationControl();
-      using var dct = decayTime.Materialize();
-      NativeUpdateByOperation.deephaven_client_update_by_emstdTime(timestampCol, dct.Self, cols, cols.Length,
-        ref oc, out result, out status);
-    });
-  }
-
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingSumTime);
+  public static UpdateByOperation RollingGroupTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingGroupTick);
+  public static UpdateByOperation RollingGroupTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingGroupTime);
+  public static UpdateByOperation RollingAvgTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingAvgTick);
+  public static UpdateByOperation RollingAvgTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingAvgTime);
+  public static UpdateByOperation RollingMinTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingMinTick);
+  public static UpdateByOperation RollingMinTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingMinTime);
+  public static UpdateByOperation RollingMaxTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingMaxTick);
+  public static UpdateByOperation RollingMaxTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingMaxTime);
+  public static UpdateByOperation RollingProdTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingProdTick);
+  public static UpdateByOperation RollingProdTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingProdTime);
+  public static UpdateByOperation RollingCountTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingCountTick);
+  public static UpdateByOperation RollingCountTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingCountTime);
+  public static UpdateByOperation RollingStdTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingStdTick);
+  public static UpdateByOperation RollingStdTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingStdTime);
+  public static UpdateByOperation RollingWavgTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
+    new WithRollingTicks(cols, revTicks, fwdTicks,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingWavgTick);
+  public static UpdateByOperation RollingWavgTime(string timestampCol, string[] cols,
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
+    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      NativeUpdateByOperation.deephaven_client_update_by_rollingWavgTime);
 }
 
 internal class InternalUpdateByOperation : IDisposable {
