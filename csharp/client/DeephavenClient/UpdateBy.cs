@@ -402,4 +402,58 @@ internal partial class NativeUpdateByOperation {
     string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
     NativePtr<NativeDurationSpecifier> fwdTime,
     out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingMinTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingMinTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingMaxTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingMaxTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingProdTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingProdTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingCountTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingCountTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingStdTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingStdTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingWavgTick(
+    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_update_by_rollingWavgTime(string timestampCol,
+    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    NativePtr<NativeDurationSpecifier> fwdTime,
+    out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
 }
