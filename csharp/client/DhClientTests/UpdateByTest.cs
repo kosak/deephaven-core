@@ -101,7 +101,7 @@ public class UpdateByTest {
     var tm = ctx.Client.Manager;
 
     var tables = MakeTables(tm);
-    var multipleOps = {
+    var multipleOps = new[] {
       CumSum(new[] { "sum_a=a", "sum_b=b" }),
       CumSum(new[] { "max_a=a", "max_d=d" }),
       EmaTick(10, new[] { "ema_d=d", "ema_e=e" }),
@@ -112,7 +112,7 @@ public class UpdateByTest {
     for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
       var table = tables[tableIndex];
       _output.WriteLine($"Processing table {tableIndex}");
-      using var result = table.UpdateBy(new[] { op }, new[] { "c" });
+      using var result = table.UpdateBy(multipleOps, new[] { "c" });
       Assert.Equal(table.IsStatic, result.IsStatic);
       Assert.Equal(10 + table.NumCols, result.NumCols);
       if (result.IsStatic) {
@@ -166,46 +166,47 @@ public class UpdateByTest {
   }
 
   private static UpdateByOperation[] MakeEmOps() {
-    OperationControl em_op_control(BadDataBehavior.Throw, BadDataBehavior.Reset,
+    var emOpControl = new OperationControl(BadDataBehavior.Throw, BadDataBehavior.Reset,
       MathContext.Unlimited);
 
-    var result = new UpdateByOperation[] {
+    var result = new [] {
       // exponential moving average
-      EmaTick(100,  {"ema_a = a"}),
-      EmaTick(100,  { "ema_a = a"}, em_op_control),
-      EmaTime("Timestamp", nanos(10),  { "ema_a = a"}),
-      EmaTime("Timestamp", "PT00:00:00.001",  { "ema_c = c"}, em_op_control),
-      EmaTime("Timestamp", "PT1M",  { "ema_c = c"}),
-      EmaTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
+      EmaTick(100, new[] { "ema_a = a" }),
+      EmaTick(100, new[] { "ema_a = a" }, emOpControl),
+      EmaTime("Timestamp", 10, new[] { "ema_a = a" }),
+      EmaTime("Timestamp", "PT00:00:00.001", new[] { "ema_c = c" }, emOpControl),
+      EmaTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
+      EmaTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
       // exponential moving sum
-      EmsTick(100,  { "ems_a = a"}),
-      EmsTick(100,  { "ems_a = a"}, em_op_control),
-      EmsTime("Timestamp", nanos(10),  { "ems_a = a"}),
-      EmsTime("Timestamp", "PT00:00:00.001",  { "ems_c = c"}, em_op_control),
-      EmsTime("Timestamp", "PT1M",  { "ema_c = c"}),
-      EmsTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
+      EmsTick(100, new[] { "ems_a = a" }),
+      EmsTick(100, new[] { "ems_a = a" }, emOpControl),
+      EmsTime("Timestamp", 10,  new[] { "ems_a = a"}),
+      EmsTime("Timestamp", "PT00:00:00.001", new[] { "ems_c = c" }, emOpControl),
+      EmsTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
+      EmsTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
       // exponential moving minimum
-      EmminTick(100,  { "emmin_a = a"}),
-      EmminTick(100,  { "emmin_a = a"}, em_op_control),
-      EmminTime("Timestamp", nanos(10),  { "emmin_a = a"}),
-      EmminTime("Timestamp", "PT00:00:00.001",  { "emmin_c = c"}, em_op_control),
-      EmminTime("Timestamp", "PT1M",  { "ema_c = c"}),
-      EmminTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
+      EmminTick(100, new[] { "emmin_a = a" }),
+      EmminTick(100, new[] { "emmin_a = a" }, emOpControl),
+      EmminTime("Timestamp", 10, new[] { "emmin_a = a" }),
+      EmminTime("Timestamp", "PT00:00:00.001", new[] { "emmin_c = c" }, emOpControl),
+      EmminTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
+      EmminTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
       // exponential moving maximum
-      EmmaxTick(100,  { "emmax_a = a"}),
-      EmmaxTick(100,  { "emmax_a = a"}, em_op_control),
-      EmmaxTime("Timestamp", nanos(10),  { "emmax_a = a"}),
-      EmmaxTime("Timestamp", "PT00:00:00.001",  { "emmax_c = c"}, em_op_control),
-      EmmaxTime("Timestamp", "PT1M",  { "ema_c = c"}),
-      EmmaxTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control),
+      EmmaxTick(100, new[] { "emmax_a = a" }),
+      EmmaxTick(100, new[] { "emmax_a = a" }, emOpControl),
+      EmmaxTime("Timestamp", 10, new[] { "emmax_a = a" }),
+      EmmaxTime("Timestamp", "PT00:00:00.001", new[] { "emmax_c = c" }, emOpControl),
+      EmmaxTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
+      EmmaxTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
       // exponential moving standard deviation
-      EmstdTick(100,  { "emstd_a = a"}),
-      EmstdTick(100,  { "emstd_a = a"}, em_op_control),
-      EmstdTime("Timestamp", nanos(10),  { "emstd_a = a"}),
-      EmstdTime("Timestamp", "PT00:00:00.001",  { "emtd_c = c"}, em_op_control),
-      EmstdTime("Timestamp", "PT1M",  { "ema_c = c"}),
-      EmstdTime("Timestamp", "PT1M",  { "ema_c = c"}, em_op_control)
+      EmstdTick(100, new[] { "emstd_a = a" }),
+      EmstdTick(100, new[] { "emstd_a = a" }, emOpControl),
+      EmstdTime("Timestamp", 10, new[] { "emstd_a = a" }),
+      EmstdTime("Timestamp", "PT00:00:00.001", new[] { "emtd_c = c" }, emOpControl),
+      EmstdTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
+      EmstdTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl)
     };
+
     return result;
   }
 
@@ -214,8 +215,8 @@ public class UpdateByTest {
     // exponential moving average
     var result = new UpdateByOperation[] {
       // rolling sum
-      RollingSumTick({"rsum_a = a", "rsum_d = d"}, 10),
-      RollingSumTick({ "rsum_a = a", "rsum_d = d"}, 10, 10),
+      RollingSumTick(new[] {"rsum_a = a", "rsum_d = d"}, 10),
+      RollingSumTick(new[] { "rsum_a = a", "rsum_d = d"}, 10, 10),
       RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, "PT00:00:10"),
       RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, secs(10), secs(-10)),
       RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, "PT30S", "-PT00:00:20"),

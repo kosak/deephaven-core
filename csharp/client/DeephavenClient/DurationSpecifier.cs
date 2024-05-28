@@ -12,6 +12,7 @@ public class DurationSpecifier {
 
   public static implicit operator DurationSpecifier(Int64 nanos) => new (nanos);
   public static implicit operator DurationSpecifier(string duration) => new (duration);
+  public static implicit operator DurationSpecifier(TimeSpan ts) => new((long)(ts.TotalMicroseconds * 1000));
 
   internal InternalDurationSpecifier Materialize() => new (_duration);
 }

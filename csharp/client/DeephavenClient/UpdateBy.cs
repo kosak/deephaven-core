@@ -181,6 +181,31 @@ public abstract class UpdateByOperation {
     }
   }
 
+  private sealed class WithRollingWavgTicks : UpdateByOperation {
+    public delegate void NativeInvoker(string weightCol, string[] cols, Int32 num_cols, Int32 revTicks, Int32 fwdTicks,
+      out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
+
+    private readonly string _weightCol;
+    private readonly string[] _cols;
+    private readonly Int32 _revTicks;
+    private readonly Int32 _fwdTicks;
+    private readonly NativeInvoker _invoker;
+
+    public WithRollingWavgTicks(string weightCol, string[] cols, Int32 revTicks, Int32 fwdTicks, NativeInvoker invoker) {
+      _weightCol = weightCol;
+      _cols = cols;
+      _revTicks = revTicks;
+      _fwdTicks = fwdTicks;
+      _invoker = invoker;
+    }
+
+    private protected override InternalUpdateByOperation MakeInternal() {
+      _invoker(_weightCol, _cols, _cols.Length, _revTicks, _fwdTicks, out var result, out var status);
+      status.OkOrThrow();
+      return new InternalUpdateByOperation(result);
+    }
+  }
+
   public static UpdateByOperation CumSum(string[] cols) =>
     new WithCols(cols, NativeUpdateByOperation.deephaven_client_update_by_cumSum);
   public static UpdateByOperation CumProd(string[] cols) =>
@@ -283,12 +308,13 @@ public abstract class UpdateByOperation {
     DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
     new WithRollingTime(timestampCol, cols, revTime, fwdTime,
       NativeUpdateByOperation.deephaven_client_update_by_rollingStdTime);
-  public static UpdateByOperation RollingWavgTick(string[] cols, Int32 revTicks, Int32 fwdTicks = 0) =>
-    new WithRollingTicks(cols, revTicks, fwdTicks,
+  public static UpdateByOperation RollingWavgTick(string weightCol, string[] cols,
+    Int32 revTicks, Int32 fwdTicks = 0) =>
+      new WithRollingWavgTicks(weightCol, cols, revTicks, fwdTicks,
       NativeUpdateByOperation.deephaven_client_update_by_rollingWavgTick);
-  public static UpdateByOperation RollingWavgTime(string timestampCol, string[] cols,
+  public static UpdateByOperation RollingWavgTime(string timestampCol, string weightCol, string[] cols,
     DurationSpecifier revTime, DurationSpecifier? fwdTime = null) =>
-    new WithRollingTime(timestampCol, cols, revTime, fwdTime,
+      new WithRollingWavgTime(timestampCol, weightCol, cols, revTime, fwdTime,
       NativeUpdateByOperation.deephaven_client_update_by_rollingWavgTime);
 }
 
@@ -449,11 +475,11 @@ internal partial class NativeUpdateByOperation {
     out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_update_by_rollingWavgTick(
-    string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
+    string weightCol, string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
     out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_update_by_rollingWavgTime(string timestampCol,
-    string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
+    string weightCol, string[] cols, Int32 numCols, NativePtr<NativeDurationSpecifier> revTime,
     NativePtr<NativeDurationSpecifier> fwdTime,
     out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
 }
