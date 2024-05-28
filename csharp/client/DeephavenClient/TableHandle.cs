@@ -575,14 +575,14 @@ internal partial class NativeTableHandle {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_TailBy(
     NativePtr<NativeTableHandle> self,
-    int n, string[] columns, Int32 numColumns,
+    Int64 n, string[] columns, Int32 numColumns,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   internal static partial void deephaven_client_TableHandle_HeadBy(
     NativePtr<NativeTableHandle> self,
-    int n, string[] columns, Int32 numColumns,
+    Int64 n, string[] columns, Int32 numColumns,
     out NativePtr<NativeTableHandle> result,
     out ErrorStatus status);
 

@@ -128,12 +128,12 @@ public class UpdateByTest {
     return new[] { staticTable, tickingTable };
   }
 
-  private TableHandle MakeRandomTable(TableHandleManager tm) {
+  private static TableHandle MakeRandomTable(TableHandleManager tm) {
     var rng = new Random(12345);
 
     var maker = new TableMaker();
     if (NumCols > 26) {
-      throw new ArgumentException("NumCols constant is too big for this test")
+      throw new ArgumentException("NumCols constant is too big for this test");
     }
 
     for (var col = 0; col != NumCols; ++col) {
@@ -250,25 +250,25 @@ public class UpdateByTest {
       RollingProdTick(new[] { "rprod_a = a", "rprod_d = d"}, 10, 10),
       RollingProdTime("Timestamp", new[] { "rprod_b = b", "rprod_e = e"}, "PT00:00:10"),
       RollingProdTime("Timestamp", new[] { "rprod_b = b", "rprod_e = e"}, Secs(10), Secs(-10)),
-      RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingProdTime("Timestamp",  new[] { "rprod_b = b", "rprod_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling count
-      RollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10),
-      RollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10, 10),
-      RollingCountTime("Timestamp",  { "rcount_b = b", "rcount_e = e"}, "PT00:00:10"),
-      RollingCountTime("Timestamp",  { "rcount_b = b", "rcount_e = e"}, secs(10), secs(-10)),
-      RollingCountTime("Timestamp",  { "rcount_b = b", "rcount_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingCountTick(new[] { "rcount_a = a", "rcount_d = d"}, 10),
+      RollingCountTick(new[] { "rcount_a = a", "rcount_d = d"}, 10, 10),
+      RollingCountTime("Timestamp", new[] { "rcount_b = b", "rcount_e = e"}, "PT00:00:10"),
+      RollingCountTime("Timestamp",  new[] { "rcount_b = b", "rcount_e = e"}, Secs(10), Secs(-10)),
+      RollingCountTime("Timestamp", new[] { "rcount_b = b", "rcount_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling standard deviation
-      RollingStdTick({ "rstd_a = a", "rstd_d = d"}, 10),
-      RollingStdTick({ "rstd_a = a", "rstd_d = d"}, 10, 10),
-      RollingStdTime("Timestamp",  { "rstd_b = b", "rstd_e = e"}, "PT00:00:10"),
-      RollingStdTime("Timestamp",  { "rstd_b = b", "rstd_e = e"}, secs(10), secs(-10)),
-      RollingStdTime("Timestamp",  { "rstd_b = b", "rstd_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingStdTick(new[] { "rstd_a = a", "rstd_d = d"}, 10),
+      RollingStdTick(new[] { "rstd_a = a", "rstd_d = d"}, 10, 10),
+      RollingStdTime("Timestamp", new[] { "rstd_b = b", "rstd_e = e"}, "PT00:00:10"),
+      RollingStdTime("Timestamp", new[] { "rstd_b = b", "rstd_e = e"}, Secs(10), Secs(-10)),
+      RollingStdTime("Timestamp", new[] { "rstd_b = b", "rstd_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling weighted average (using "b" as the weight column)
-      RollingWavgTick("b",  { "rwavg_a = a", "rwavg_d = d"}, 10),
-      RollingWavgTick("b",  { "rwavg_a = a", "rwavg_d = d"}, 10, 10),
-      RollingWavgTime("Timestamp", "b",  { "rwavg_b = b", "rwavg_e = e"}, "PT00:00:10"),
-      RollingWavgTime("Timestamp", "b",  { "rwavg_b = b", "rwavg_e = e"}, secs(10), secs(-10)),
-      RollingWavgTime("Timestamp", "b",  { "rwavg_b = b", "rwavg_e = e"}, "PT30S", "-PT00:00:20")
+      RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d"}, 10),
+      RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d"}, 10, 10),
+      RollingWavgTime("Timestamp", "b", new[] { "rwavg_b = b", "rwavg_e = e"}, "PT00:00:10"),
+      RollingWavgTime("Timestamp", "b", new[] { "rwavg_b = b", "rwavg_e = e"}, Secs(10), Secs(-10)),
+      RollingWavgTime("Timestamp", "b", new[] { "rwavg_b = b", "rwavg_e = e"}, "PT30S", "-PT00:00:20")
     };
     return result;
   }
