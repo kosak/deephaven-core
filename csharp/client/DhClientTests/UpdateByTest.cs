@@ -211,44 +211,45 @@ public class UpdateByTest {
   }
 
   private static UpdateByOperation[] MakeRollingOps() {
+    static TimeSpan Secs(int s) => TimeSpan.FromSeconds(s);
 
     // exponential moving average
     var result = new UpdateByOperation[] {
       // rolling sum
       RollingSumTick(new[] {"rsum_a = a", "rsum_d = d"}, 10),
       RollingSumTick(new[] { "rsum_a = a", "rsum_d = d"}, 10, 10),
-      RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, "PT00:00:10"),
-      RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, secs(10), secs(-10)),
-      RollingSumTime("Timestamp",  { "rsum_b = b", "rsum_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingSumTime("Timestamp",  new[] { "rsum_b = b", "rsum_e = e"}, "PT00:00:10"),
+      RollingSumTime("Timestamp",  new[] { "rsum_b = b", "rsum_e = e"}, Secs(10), Secs(-10)),
+      RollingSumTime("Timestamp",  new[] { "rsum_b = b", "rsum_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling group
-      RollingGroupTick({ "rgroup_a = a", "rgroup_d = d"}, 10),
-      RollingGroupTick({ "rgroup_a = a", "rgroup_d = d"}, 10, 10),
-      RollingGroupTime("Timestamp",  { "rgroup_b = b", "rgroup_e = e"}, "PT00:00:10"),
-      RollingGroupTime("Timestamp",  { "rgroup_b = b", "rgroup_e = e"}, secs(10), secs(-10)),
-      RollingGroupTime("Timestamp",  { "rgroup_b = b", "rgroup_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingGroupTick(new[] { "rgroup_a = a", "rgroup_d = d"}, 10),
+      RollingGroupTick(new[] { "rgroup_a = a", "rgroup_d = d"}, 10, 10),
+      RollingGroupTime("Timestamp", new[] { "rgroup_b = b", "rgroup_e = e"}, "PT00:00:10"),
+      RollingGroupTime("Timestamp", new[] { "rgroup_b = b", "rgroup_e = e"}, Secs(10), Secs(-10)),
+      RollingGroupTime("Timestamp",  new[] { "rgroup_b = b", "rgroup_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling average
-      RollingAvgTick({ "ravg_a = a", "ravg_d = d"}, 10),
-      RollingAvgTick({ "ravg_a = a", "ravg_d = d"}, 10, 10),
-      RollingAvgTime("Timestamp",  { "ravg_b = b", "ravg_e = e"}, "PT00:00:10"),
-      RollingAvgTime("Timestamp",  { "ravg_b = b", "ravg_e = e"}, secs(10), secs(-10)),
-      RollingAvgTime("Timestamp",  { "ravg_b = b", "ravg_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingAvgTick(new[] { "ravg_a = a", "ravg_d = d"}, 10),
+      RollingAvgTick(new[] { "ravg_a = a", "ravg_d = d"}, 10, 10),
+      RollingAvgTime("Timestamp", new[] { "ravg_b = b", "ravg_e = e"}, "PT00:00:10"),
+      RollingAvgTime("Timestamp", new[] { "ravg_b = b", "ravg_e = e"}, Secs(10), Secs(-10)),
+      RollingAvgTime("Timestamp",  new[] { "ravg_b = b", "ravg_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling minimum
-      RollingMinTick({ "rmin_a = a", "rmin_d = d"}, 10),
-      RollingMinTick({ "rmin_a = a", "rmin_d = d"}, 10, 10),
-      RollingMinTime("Timestamp",  { "rmin_b = b", "rmin_e = e"}, "PT00:00:10"),
-      RollingMinTime("Timestamp",  { "rmin_b = b", "rmin_e = e"}, secs(10), secs(-10)),
-      RollingMinTime("Timestamp",  { "rmin_b = b", "rmin_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingMinTick(new[] { "rmin_a = a", "rmin_d = d"}, 10),
+      RollingMinTick(new[] { "rmin_a = a", "rmin_d = d"}, 10, 10),
+      RollingMinTime("Timestamp", new[] { "rmin_b = b", "rmin_e = e"}, "PT00:00:10"),
+      RollingMinTime("Timestamp", new[] { "rmin_b = b", "rmin_e = e"}, Secs(10), Secs(-10)),
+      RollingMinTime("Timestamp", new[] { "rmin_b = b", "rmin_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling maximum
-      RollingMaxTick({ "rmax_a = a", "rmax_d = d"}, 10),
-      RollingMaxTick({ "rmax_a = a", "rmax_d = d"}, 10, 10),
-      RollingMaxTime("Timestamp",  { "rmax_b = b", "rmax_e = e"}, "PT00:00:10"),
-      RollingMaxTime("Timestamp",  { "rmax_b = b", "rmax_e = e"}, secs(10), secs(-10)),
-      RollingMaxTime("Timestamp",  { "rmax_b = b", "rmax_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingMaxTick(new[] { "rmax_a = a", "rmax_d = d"}, 10),
+      RollingMaxTick(new[] { "rmax_a = a", "rmax_d = d"}, 10, 10),
+      RollingMaxTime("Timestamp", new[] { "rmax_b = b", "rmax_e = e"}, "PT00:00:10"),
+      RollingMaxTime("Timestamp", new[] { "rmax_b = b", "rmax_e = e"}, Secs(10), Secs(-10)),
+      RollingMaxTime("Timestamp", new[] { "rmax_b = b", "rmax_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling product
-      RollingProdTick({ "rprod_a = a", "rprod_d = d"}, 10),
-      RollingProdTick({ "rprod_a = a", "rprod_d = d"}, 10, 10),
-      RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, "PT00:00:10"),
-      RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, secs(10), secs(-10)),
+      RollingProdTick(new[] { "rprod_a = a", "rprod_d = d"}, 10),
+      RollingProdTick(new[] { "rprod_a = a", "rprod_d = d"}, 10, 10),
+      RollingProdTime("Timestamp", new[] { "rprod_b = b", "rprod_e = e"}, "PT00:00:10"),
+      RollingProdTime("Timestamp", new[] { "rprod_b = b", "rprod_e = e"}, Secs(10), Secs(-10)),
       RollingProdTime("Timestamp",  { "rprod_b = b", "rprod_e = e"}, "PT30S", "-PT00:00:20"),
       // rolling count
       RollingCountTick({ "rcount_a = a", "rcount_d = d"}, 10),
