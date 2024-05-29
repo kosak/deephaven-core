@@ -70,8 +70,6 @@ void WithRollingTicksHelper(
   });
 }
 
-//UpdateByOperation rollingSumTime(std::string timestamp_col, std::vector<std::string> cols,
-//    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
 void WithRollingTimeHelper(const char *timestamp_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
@@ -82,6 +80,33 @@ void WithRollingTimeHelper(const char *timestamp_col,
   status->Run([=]() {
     std::vector<std::string> columns(cols, cols + num_cols);
     auto ubo = (*fp)(timestamp_col, std::move(columns), *rev_time, *fwd_time);
+    result->Reset(new UpdateByOperation(std::move(ubo)));
+  });
+}
+
+void WithRollingWavgTicksHelper(const char *weight_col,
+    const char **cols, int32_t num_cols,
+    int32_t rev_ticks, int32_t fwd_ticks,
+    NativePtr<UpdateByOperation> *result,
+    ErrorStatus *status,
+    UpdateByOperation (*fp)(std::string, std::vector<std::string>, int32_t, int32_t)) {
+  status->Run([=]() {
+    std::vector<std::string> columns(cols, cols + num_cols);
+    auto ubo = (*fp)(weight_col, std::move(columns), rev_ticks, fwd_ticks);
+    result->Reset(new UpdateByOperation(std::move(ubo)));
+  });
+}
+
+void WithRollingWavgTimeHelper(const char *timestamp_col, const char *weight_col,
+    const char **cols, int32_t num_cols,
+    NativePtr<DurationSpecifier> rev_time,
+    NativePtr<DurationSpecifier> fwd_time,
+    NativePtr<UpdateByOperation> *result,
+    ErrorStatus *status,
+    UpdateByOperation (*fp)(std::string, std::string, std::vector<std::string>, DurationSpecifier, DurationSpecifier)) {
+  status->Run([=]() {
+    std::vector<std::string> columns(cols, cols + num_cols);
+    auto ubo = (*fp)(timestamp_col, weight_col, std::move(columns), *rev_time, *fwd_time);
     result->Reset(new UpdateByOperation(std::move(ubo)));
   });
 }
@@ -297,68 +322,114 @@ void deephaven_client_update_by_rollingMinTick(
     int32_t rev_ticks, int32_t fwd_ticks,
     NativePtr<UpdateByOperation> *result,
     ErrorStatus *status) {
-
+  WithRollingTicksHelper(cols, num_cols, rev_ticks, fwd_ticks, result, status,
+      &deephaven::client::update_by::rollingMinTick);
 }
+
 void deephaven_client_update_by_rollingMinTime(const char *timestamp_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
     NativePtr<DurationSpecifier> fwd_time,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTimeHelper(timestamp_col, cols, num_cols, rev_time, fwd_time, result, status,
+      &deephaven::client::update_by::rollingMinTime);
+}
+
 void deephaven_client_update_by_rollingMaxTick(
     const char **cols, int32_t num_cols,
     int32_t rev_ticks, int32_t fwd_ticks,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTicksHelper(cols, num_cols, rev_ticks, fwd_ticks, result, status,
+      &deephaven::client::update_by::rollingMaxTick);
+}
+
 void deephaven_client_update_by_rollingMaxTime(const char *timestamp_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
     NativePtr<DurationSpecifier> fwd_time,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTimeHelper(timestamp_col, cols, num_cols, rev_time, fwd_time, result, status,
+      &deephaven::client::update_by::rollingMaxTime);
+}
+
 void deephaven_client_update_by_rollingProdTick(
     const char **cols, int32_t num_cols,
     int32_t rev_ticks, int32_t fwd_ticks,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTicksHelper(cols, num_cols, rev_ticks, fwd_ticks, result, status,
+      &deephaven::client::update_by::rollingProdTick);
+}
+
 void deephaven_client_update_by_rollingProdTime(const char *timestamp_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
     NativePtr<DurationSpecifier> fwd_time,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTimeHelper(timestamp_col, cols, num_cols, rev_time, fwd_time, result, status,
+      &deephaven::client::update_by::rollingProdTime);
+}
+
 void deephaven_client_update_by_rollingCountTick(
     const char **cols, int32_t num_cols,
     int32_t rev_ticks, int32_t fwd_ticks,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTicksHelper(cols, num_cols, rev_ticks, fwd_ticks, result, status,
+      &deephaven::client::update_by::rollingCountTick);
+}
+
 void deephaven_client_update_by_rollingCountTime(const char *timestamp_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
     NativePtr<DurationSpecifier> fwd_time,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTimeHelper(timestamp_col, cols, num_cols, rev_time, fwd_time, result, status,
+      &deephaven::client::update_by::rollingCountTime);
+}
+
 void deephaven_client_update_by_rollingStdTick(
     const char **cols, int32_t num_cols,
     int32_t rev_ticks, int32_t fwd_ticks,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTicksHelper(cols, num_cols, rev_ticks, fwd_ticks, result, status,
+      &deephaven::client::update_by::rollingStdTick);
+}
+
 void deephaven_client_update_by_rollingStdTime(const char *timestamp_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
     NativePtr<DurationSpecifier> fwd_time,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingTimeHelper(timestamp_col, cols, num_cols, rev_time, fwd_time, result, status,
+      &deephaven::client::update_by::rollingStdTime);
+}
+
 void deephaven_client_update_by_rollingWavgTick(const char *weight_col,
     const char **cols, int32_t num_cols,
     int32_t rev_ticks, int32_t fwd_ticks,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingWavgTicksHelper(weight_col, cols, num_cols, rev_ticks, fwd_ticks, result, status,
+      &deephaven::client::update_by::rollingWavgTick);
+}
+
 void deephaven_client_update_by_rollingWavgTime(const char *timestamp_col,
     const char *weight_col,
     const char **cols, int32_t num_cols,
     NativePtr<DurationSpecifier> rev_time,
     NativePtr<DurationSpecifier> fwd_time,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithRollingWavgTimeHelper(timestamp_col, weight_col, cols, num_cols, rev_time, fwd_time,
+      result, status,
+      &deephaven::client::update_by::rollingWavgTime);
+}
 }  // extern "C"
