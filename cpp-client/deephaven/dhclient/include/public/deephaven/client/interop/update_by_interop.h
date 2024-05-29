@@ -9,9 +9,6 @@
 #include "deephaven/dhcore/interop/interop_util.h"
 
 
-namespace deephaven::client::interop {
-}
-
 extern "C" {
 void deephaven_client_UpdateByOperation_dtor(
     deephaven::dhcore::interop::NativePtr<deephaven::client::UpdateByOperation> self);
