@@ -5,6 +5,7 @@
 
 #include "deephaven/client/client.h"
 #include "deephaven/client/client_options.h"
+#include "deephaven/client/update_by.h"
 #include "deephaven/dhcore/interop/interop_util.h"
 
 using deephaven::dhcore::interop::ErrorStatus;
@@ -17,6 +18,19 @@ using deephaven::client::update_by::DeltaControl;
 using deephaven::client::update_by::OperationControl;
 using deephaven::client::utility::DurationSpecifier;
 
+namespace {
+void WithColsHelper(const char **cols, int32_t num_cols,
+    NativePtr<UpdateByOperation> *result,
+    ErrorStatus *status,
+    UpdateByOperation (*fp)(std::vector<std::string>)) {
+  status->Run([=]() {
+    std::vector<std::string> columns(cols, cols + num_cols);
+    auto ubo = (*fp)(std::move(columns));
+    result->Reset(new UpdateByOperation(std::move(ubo)));
+  });
+}
+}  // namespace
+
 extern "C" {
 void deephaven_client_UpdateByOperation_dtor(
     NativePtr<UpdateByOperation> self) {
@@ -26,28 +40,50 @@ void deephaven_client_UpdateByOperation_dtor(
 void deephaven_client_update_by_cumSum(
     const char **cols, int32_t num_cols,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithColsHelper(cols, num_cols, result, status, &deephaven::client::update_by::cumSum);
+}
+
 void deephaven_client_update_by_cumProd(
     const char **cols, int32_t num_cols,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithColsHelper(cols, num_cols, result, status, &deephaven::client::update_by::cumProd);
+}
+
 void deephaven_client_update_by_cumMin(
     const char **cols, int32_t num_cols,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithColsHelper(cols, num_cols, result, status, &deephaven::client::update_by::cumMin);
+}
+
 void deephaven_client_update_by_cumMax(
     const char **cols, int32_t num_cols,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithColsHelper(cols, num_cols, result, status, &deephaven::client::update_by::cumMax);
+}
+
 void deephaven_client_update_by_forwardFill(
     const char **cols, int32_t num_cols,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  WithColsHelper(cols, num_cols, result, status, &deephaven::client::update_by::forwardFill);
+}
+
 void deephaven_client_update_by_delta(
     const char **cols, int32_t num_cols,
     deephaven::client::update_by::DeltaControl delta_control,
     NativePtr<UpdateByOperation> *result,
-    ErrorStatus *status);
+    ErrorStatus *status) {
+  status->Run([=]() {
+    std::vector<std::string> columns(cols, cols + num_cols);
+    auto ubo = deephaven::client::update_by::delta(std::move(columns), delta_control);
+    result->Reset(new UpdateByOperation(std::move(ubo)));
+  });
+}
+
 void deephaven_client_update_by_emaTick(double decay_ticks,
     const char **cols, int32_t num_cols,
     const OperationControl *op_control,
