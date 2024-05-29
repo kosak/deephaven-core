@@ -100,6 +100,8 @@ set(ALL_FILES
     proto/deephaven/proto/ticket.grpc.pb.h
     proto/deephaven/proto/ticket.pb.cc
     proto/deephaven/proto/ticket.pb.h
+        include/public/deephaven/client/interop/update_by_interop.h
+        src/interop/update_by_interop.cc
 )
 
 add_library(dhclient SHARED ${ALL_FILES})
