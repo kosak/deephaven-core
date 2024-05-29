@@ -31,7 +31,7 @@ public readonly struct OperationControl {
 }
 
 public abstract class UpdateByOperation {
-  private protected abstract InternalUpdateByOperation MakeInternal();
+  internal abstract InternalUpdateByOperation MakeInternal();
 
   private sealed class WithCols : UpdateByOperation {
     public delegate void NativeInvoker(string[] cols, Int32 numCols,
@@ -45,7 +45,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       _invoker(_cols, _cols.Length, out var result, out var status);
       status.OkOrThrow();
       return new InternalUpdateByOperation(result);
@@ -66,7 +66,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       _invoker(_cols, _cols.Length, _deltaControl, out var result, out var status);
       status.OkOrThrow();
       return new InternalUpdateByOperation(result);
@@ -91,7 +91,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       _invoker(_decayTicks, _cols, _cols.Length, ref _operationControl, out var result, out var status);
       status.OkOrThrow();
       return new InternalUpdateByOperation(result);
@@ -119,7 +119,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       using var dc = _decayTime.Materialize();
       _invoker(_timestampCol, dc.Self, _cols, _cols.Length, ref _operationControl, out var result, out var status);
       status.OkOrThrow();
@@ -128,7 +128,7 @@ public abstract class UpdateByOperation {
   }
 
   private sealed class WithRollingTicks : UpdateByOperation {
-    public delegate void NativeInvoker(string[] cols, Int32 num_cols, Int32 revTicks, Int32 fwdTicks,
+    public delegate void NativeInvoker(string[] cols, Int32 numCols, Int32 revTicks, Int32 fwdTicks,
       out NativePtr<NativeUpdateByOperation> result, out ErrorStatus status);
 
     private readonly string[] _cols;
@@ -143,7 +143,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       _invoker(_cols, _cols.Length, _revTicks, _fwdTicks, out var result, out var status);
       status.OkOrThrow();
       return new InternalUpdateByOperation(result);
@@ -171,7 +171,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       using var revNative = _revTime.Materialize();
       using var fwdNative = _fwdTime.Materialize();
       _invoker(_timestampCol, _cols, _cols.Length, revNative.Self, fwdNative.Self,
@@ -199,7 +199,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       _invoker(_weightCol, _cols, _cols.Length, _revTicks, _fwdTicks, out var result, out var status);
       status.OkOrThrow();
       return new InternalUpdateByOperation(result);
@@ -229,7 +229,7 @@ public abstract class UpdateByOperation {
       _invoker = invoker;
     }
 
-    private protected override InternalUpdateByOperation MakeInternal() {
+    internal override InternalUpdateByOperation MakeInternal() {
       using var revNative = _revTime.Materialize();
       using var fwdNative = _fwdTime.Materialize();
       _invoker(_timestampCol, _weightCol, _cols, _cols.Length, revNative.Self,
@@ -238,7 +238,6 @@ public abstract class UpdateByOperation {
       return new InternalUpdateByOperation(result);
     }
   }
-
 
   public static UpdateByOperation CumSum(string[] cols) =>
     new WithCols(cols, NativeUpdateByOperation.deephaven_client_update_by_cumSum);
