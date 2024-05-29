@@ -9,6 +9,7 @@
 #include "deephaven/client/client.h"
 #include "deephaven/client/client_options.h"
 #include "deephaven/client/subscription/subscription_handle.h"
+#include "deephaven/client/update_by.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/interop/interop_util.h"
@@ -23,6 +24,7 @@ using deephaven::client::SortDirection;
 using deephaven::client::SortPair;
 using deephaven::client::TableHandle;
 using deephaven::client::TableHandleManager;
+using deephaven::client::UpdateByOperation;
 using deephaven::client::subscription::SubscriptionHandle;
 using deephaven::client::interop::ArrowTable;
 using deephaven::client::utility::ArrowUtil;
@@ -581,6 +583,23 @@ void deephaven_client_TableHandle_Raj(
       columns_to_add, num_columns_to_add,
       result, status,
       &TableHandle::Raj);
+}
+
+void deephaven_client_TableHandle_UpdateBy(
+    NativePtr<TableHandle> self,
+    const NativePtr<UpdateByOperation> *ops, int32_t num_ops,
+    const char **by, int32_t num_by,
+    NativePtr<TableHandle> *result,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    auto ops_vec = MakeReservedVector<UpdateByOperation>(num_ops);
+    for (int32_t i = 0; i != num_ops; ++i) {
+      ops_vec.emplace_back(*ops[i].Get());
+    }
+    std::vector<std::string> by_vec(by, by + num_by);
+    auto res = self->UpdateBy(std::move(ops_vec), std::move(by_vec));
+    result->Reset(new TableHandle(std::move(res)));
+  });
 }
 
 void deephaven_client_TableHandle_AddTable(

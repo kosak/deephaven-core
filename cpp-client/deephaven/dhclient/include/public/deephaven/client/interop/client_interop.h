@@ -240,6 +240,14 @@ void deephaven_client_TableHandle_Raj(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_TableHandle_UpdateBy(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
+    const deephaven::dhcore::interop::NativePtr<deephaven::client::UpdateByOperation> *ops,
+    int32_t num_ops,
+    const char **by, int32_t num_by,
+    deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> *result,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_TableHandle_WhereIn(
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> self,
     deephaven::dhcore::interop::NativePtr<deephaven::client::TableHandle> filter_table,
