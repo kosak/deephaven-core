@@ -361,17 +361,23 @@ public sealed class TableHandle : IDisposable {
   private class TickingWrapper {
     private readonly ITickingCallback _callback;
 
-    public TickingWrapper(ITickingCallback callback) => this._callback = callback;
+    public TickingWrapper(ITickingCallback callback) => _callback = callback;
 
     public void NativeOnUpdate(NativePtr<NativeTickingUpdate> nativeTickingUpdate) {
       using var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
       _callback.OnTick(tickingUpdate);
     }
+
+    public void NativeOnFailure(StringHandle errorHandle, StringPoolHandle stringPoolHandle) {
+      var pool = stringPoolHandle.ExportAndDestroy();
+      var errorText = pool.Get(errorHandle);
+      _callback.OnFailure(errorText);
+    }
   }
 
   public SubscriptionHandle Subscribe(ITickingCallback callback) {
     var tw = new TickingWrapper(callback);
-    NativeTableHandle.deephaven_client_TableHandle_Subscribe(Self, tw.NativeOnUpdate, callback.OnFailure,
+    NativeTableHandle.deephaven_client_TableHandle_Subscribe(Self, tw.NativeOnUpdate, tw.NativeOnFailure,
       out var nativeSusbcriptionHandle, out var status);
     status.OkOrThrow();
     var result = new SubscriptionHandle(nativeSusbcriptionHandle);

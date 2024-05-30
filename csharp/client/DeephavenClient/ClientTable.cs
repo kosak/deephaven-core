@@ -9,6 +9,7 @@ public class ClientTable : IDisposable {
   public readonly Schema Schema;
 
   public Int32 NumCols => Schema.NumCols;
+  public Int64 NumRows => Schema.NumRows;
 
   internal ClientTable(NativePtr<NativeClientTable> self) {
     Self = self;
@@ -36,6 +37,13 @@ public class ClientTable : IDisposable {
     GC.SuppressFinalize(this);
   }
 
+  private void ReleaseUnmanagedResources() {
+    if (!Self.TryRelease(out var old)) {
+      return;
+    }
+    NativeClientTable.deephaven_client_ClientTable_dtor(old);
+  }
+
   public (Array, bool[]) GetColumn(Int32 index) {
     var elementType = Schema.Types[index];
     var factory = ClientTableColumnFactory.Of(elementType);
@@ -49,26 +57,28 @@ public class ClientTable : IDisposable {
     return factory.GetNullableColumn(Self, index, Schema.NumRows);
   }
 
-  private void ReleaseUnmanagedResources() {
-    if (!Self.TryRelease(out var old)) {
-      return;
-    }
-    NativeClientTable.deephaven_client_ClientTable_dtor(old);
+  public string ToString(bool wantHeaders, bool wantLineNumbers) {
+    NativeClientTable.deephaven_client_ClientTable_ToString(Self,
+      (InteropBool)wantHeaders, (InteropBool)wantLineNumbers,
+      out var textHandle, out var poolHandle, out var status);
+    status.OkOrThrow();
+    var pool = poolHandle.ExportAndDestroy();
+    return pool.Get(textHandle);
   }
 }
 
 internal abstract class ClientTableColumnFactory {
   private static readonly ColumnFactory<NativeClientTable>[] Factories = {
-    new ColumnFactory<NativeClientTable>.ForChar(NativeClientTable.deephaven_client_ClientTableHelper_GetCharAsInt16Column),
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<SByte>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt8Column),
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<Int16>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt16Column),
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<Int32>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt32Column),
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<Int64>(NativeClientTable.deephaven_client_ClientTableHelper_GetInt64Column),
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<float>(NativeClientTable.deephaven_client_ClientTableHelper_GetFloatColumn),
-    new ColumnFactory<NativeClientTable>.ForOtherValueType<double>(NativeClientTable.deephaven_client_ClientTableHelper_GetDoubleColumn),
-    new ColumnFactory<NativeClientTable>.ForBool(NativeClientTable.deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn),
-    new ColumnFactory<NativeClientTable>.ForString(NativeClientTable.deephaven_client_ClientTableHelper_GetStringColumn),
-    new ColumnFactory<NativeClientTable>.ForDateTime(NativeClientTable.deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column),
+    new ColumnFactory<NativeClientTable>.ForChar(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetCharAsInt16Column),
+    new ColumnFactory<NativeClientTable>.ForOtherValueType<SByte>(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetInt8Column),
+    new ColumnFactory<NativeClientTable>.ForOtherValueType<Int16>(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetInt16Column),
+    new ColumnFactory<NativeClientTable>.ForOtherValueType<Int32>(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetInt32Column),
+    new ColumnFactory<NativeClientTable>.ForOtherValueType<Int64>(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetInt64Column),
+    new ColumnFactory<NativeClientTable>.ForOtherValueType<float>(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetFloatColumn),
+    new ColumnFactory<NativeClientTable>.ForOtherValueType<double>(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetDoubleColumn),
+    new ColumnFactory<NativeClientTable>.ForBool(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn),
+    new ColumnFactory<NativeClientTable>.ForString(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetStringColumn),
+    new ColumnFactory<NativeClientTable>.ForDateTime(NativeClientTableHelper.deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column),
     // List - TODO(kosak)
   };
 
@@ -94,6 +104,16 @@ internal partial class NativeClientTable {
     out StringPoolHandle stringPool,
     out ErrorStatus status);
 
+  [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
+  public static partial void deephaven_client_ClientTable_ToString(
+    NativePtr<NativeClientTable> self,
+    InteropBool wantHeaders, InteropBool wantRowNumbers,
+    out StringHandle text,
+    out StringPoolHandle stringPool,
+    out ErrorStatus status);
+}
+
+internal partial class NativeClientTableHelper {
   [LibraryImport(LibraryPaths.Dhclient, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_client_ClientTableHelper_GetInt8Column(
     NativePtr<NativeClientTable> self,

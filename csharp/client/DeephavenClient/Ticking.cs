@@ -71,7 +71,7 @@ public interface ITickingCallback {
   /**
    * Invoked if there is an error involving the subscription.
    */
-  void OnFailure(StringHandle errorHandle, StringPoolHandle stringPoolHandle);
+  void OnFailure(string errorText);
 }
 
 internal partial class NativeSubscriptionHandle {
