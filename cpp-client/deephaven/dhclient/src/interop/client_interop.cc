@@ -830,6 +830,21 @@ void deephaven_client_ClientTable_Schema(NativePtr<ClientTableSpWrapper> self,
   });
 }
 
+void deephaven_client_ClientTable_ToString(
+    NativePtr<ClientTableSpWrapper> self,
+    InteropBool want_headers,
+    InteropBool want_row_numbers,
+    StringHandle *text_handle,
+    StringPoolHandle *string_pool_handle,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    StringPoolBuilder builder;
+    auto text = self->table_->ToString((bool)want_headers, (bool)want_row_numbers);
+    *text_handle = builder.Add(text);
+    *string_pool_handle = builder.Build();
+  });
+}
+
 void deephaven_client_ClientTable_dtor(NativePtr<ClientTableSpWrapper> self) {
   delete self.Get();
 }
@@ -843,6 +858,7 @@ void deephaven_client_ClientTableHelper_GetInt8Column(
   status->Run([=]() {
     auto data_chunk = Int8Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -856,6 +872,7 @@ void deephaven_client_ClientTableHelper_GetInt16Column(
   status->Run([=]() {
     auto data_chunk = Int16Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -869,6 +886,7 @@ void deephaven_client_ClientTableHelper_GetInt32Column(
   status->Run([=]() {
     auto data_chunk = Int32Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -882,6 +900,7 @@ void deephaven_client_ClientTableHelper_GetInt64Column(
   status->Run([=]() {
     auto data_chunk = Int64Chunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -894,6 +913,7 @@ void deephaven_client_ClientTableHelper_GetFloatColumn(
   status->Run([=]() {
     auto data_chunk = FloatChunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -906,6 +926,7 @@ void deephaven_client_ClientTableHelper_GetDoubleColumn(
   status->Run([=]() {
     auto data_chunk = DoubleChunk::CreateView(data, num_rows);
     GetColumnHelper(self, column_index, &data_chunk, optional_dest_null_flags, num_rows);
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -922,6 +943,7 @@ void deephaven_client_ClientTableHelper_GetCharAsInt16Column(
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = static_cast<int16_t>(data_chunk.data()[i]);
     }
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -938,6 +960,7 @@ void deephaven_client_ClientTableHelper_GetBooleanAsInteropBoolColumn(
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i] ? 1 : 0;
     }
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }
@@ -972,6 +995,7 @@ void deephaven_client_ClientTableHelper_GetDateTimeAsInt64Column(
     for (int64_t i = 0; i != num_rows; ++i) {
       data[i] = data_chunk.data()[i].Nanos();
     }
+    // return default StringPoolHandle because this type doesn't need a string pool
     *string_pool_handle = StringPoolHandle();
   });
 }

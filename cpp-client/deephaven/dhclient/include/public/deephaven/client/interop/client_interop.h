@@ -423,6 +423,14 @@ void deephaven_client_ClientTable_Schema(
     deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
     deephaven::dhcore::interop::ErrorStatus *status);
 
+void deephaven_client_ClientTable_ToString(
+    deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
+    deephaven::dhcore::interop::InteropBool want_headers,
+    deephaven::dhcore::interop::InteropBool want_row_numbers,
+    deephaven::dhcore::interop::StringHandle *text_handle,
+    deephaven::dhcore::interop::StringPoolHandle *string_pool_handle,
+    deephaven::dhcore::interop::ErrorStatus *status);
+
 void deephaven_client_ClientTableHelper_GetInt8Column(
     deephaven::dhcore::interop::NativePtr<deephaven::client::interop::ClientTableSpWrapper> self,
     int32_t column_index, int8_t *data,
