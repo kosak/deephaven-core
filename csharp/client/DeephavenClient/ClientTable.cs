@@ -51,10 +51,20 @@ public class ClientTable : IDisposable {
     return (data, nulls);
   }
 
+  public (Array, bool[]) GetColumn(string name) {
+    var colIndex = Schema.GetColumnIndex(name);
+    return GetColumn(colIndex);
+  }
+
   public Array GetNullableColumn(Int32 index) {
     var elementType = Schema.Types[index];
     var factory = ClientTableColumnFactory.Of(elementType);
     return factory.GetNullableColumn(Self, index, Schema.NumRows);
+  }
+
+  public Array GetNullableColumn(string name) {
+    var colIndex = Schema.GetColumnIndex(name);
+    return GetNullableColumn(colIndex);
   }
 
   public string ToString(bool wantHeaders, bool wantLineNumbers) {

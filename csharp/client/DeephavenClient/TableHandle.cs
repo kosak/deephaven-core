@@ -365,7 +365,11 @@ public sealed class TableHandle : IDisposable {
 
     public void NativeOnUpdate(NativePtr<NativeTickingUpdate> nativeTickingUpdate) {
       using var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
-      _callback.OnTick(tickingUpdate);
+      try {
+        _callback.OnTick(tickingUpdate);
+      } catch (Exception ex) {
+        _callback.OnFailure(ex.Message);
+      }
     }
 
     public void NativeOnFailure(StringHandle errorHandle, StringPoolHandle stringPoolHandle) {

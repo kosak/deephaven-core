@@ -46,7 +46,7 @@ public class Schema {
       return result;
     }
 
-    throw new ArgumentException($"""Column name "{name}" not found, and strict was set""");
+    throw new ArgumentException($"""Column name "{name}" not found""");
   }
 
   public bool TryGetColumnIndex(string name, out Int32 result) {

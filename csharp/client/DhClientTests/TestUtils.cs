@@ -79,15 +79,18 @@ class TableComparer {
   }
 
   public void AssertEqualTo(TableHandle table) {
+    using var ct = table.ToClientTable();
+    AssertEqualTo(ct);
+  }
+
+  public void AssertEqualTo(ClientTable clientTable) {
     if (_columns.Count == 0) {
       throw new Exception("TableComparer doesn't have any columns");
     }
 
-    if (_columns.Count != table.Schema.NumCols) {
-      throw new Exception($"Expected number of columns is {_columns.Count}. Actual is {table.Schema.NumCols}");
+    if (_columns.Count != clientTable.Schema.NumCols) {
+      throw new Exception($"Expected number of columns is {_columns.Count}. Actual is {clientTable.Schema.NumCols}");
     }
-
-    var clientTable = table.ToClientTable();
 
     foreach (var (name, expectedColumn) in _columns) {
       if (!clientTable.Schema.TryGetColumnIndex(name, out var actualColIndex)) {

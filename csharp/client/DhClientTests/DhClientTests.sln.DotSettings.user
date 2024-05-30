@@ -10,5 +10,7 @@
     &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.SelectTest.TestSimpleWhere&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.SelectTest.TestSelectAFewColumns&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.UngroupTest.UngroupColumns&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.TickingTest.AllEventuallyGreaterThan10&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::3C5EE5FF-3DB8-42FF-B8CA-675F63929F51::net7.0::Deephaven.DhClientTests.TickingTest.AllDataEventuallyPresent&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
