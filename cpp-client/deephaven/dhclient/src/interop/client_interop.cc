@@ -739,6 +739,20 @@ void deephaven_client_TableHandle_Subscribe(
   });
 }
 
+void deephaven_client_TableHandle_Unsubscribe(
+    NativePtr<deephaven::client::TableHandle> self,
+    NativePtr<std::shared_ptr<deephaven::client::subscription::SubscriptionHandle>> native_subscription_handle,
+    ErrorStatus *status) {
+  status->Run([=]() {
+    self->Unsubscribe(*native_subscription_handle);
+  });
+}
+
+void deephaven_client_SubscriptionHandle_dtor(
+    deephaven::dhcore::interop::NativePtr<std::shared_ptr<deephaven::client::subscription::SubscriptionHandle>> self) {
+  delete self.Get();
+}
+
 void deephaven_client_TableHandle_ToClientTable(
     NativePtr<TableHandle> self,
     NativePtr<ClientTableSpWrapper> *client_table,

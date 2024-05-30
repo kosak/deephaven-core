@@ -1887,7 +1887,7 @@ public:
   /**
    * Unsubscribe from the table.
    */
-  void Unsubscribe(std::shared_ptr<SubscriptionHandle> callback);
+  void Unsubscribe(const std::shared_ptr<SubscriptionHandle> &handle);
 
   /**
    * Get access to the bytes of the Deephaven "Ticket" type (without having to reference the

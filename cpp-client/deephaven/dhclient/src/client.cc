@@ -568,8 +568,8 @@ TableHandle::Subscribe(onTickCallback_t on_tick, void *on_tick_user_data,
   return impl_->Subscribe(on_tick, on_tick_user_data, on_error, on_error_user_data);
 }
 
-void TableHandle::Unsubscribe(std::shared_ptr<SubscriptionHandle> callback) {
-  impl_->Unsubscribe(std::move(callback));
+void TableHandle::Unsubscribe(const std::shared_ptr<SubscriptionHandle> &handle) {
+  impl_->Unsubscribe(handle);
 }
 
 const std::string &TableHandle::GetTicketAsString() const {

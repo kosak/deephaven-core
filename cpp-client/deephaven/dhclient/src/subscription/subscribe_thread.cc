@@ -214,7 +214,7 @@ void UpdateProcessor::RunUntilCancelled(std::shared_ptr<UpdateProcessor> self) {
   try {
     self->RunForeverHelper();
   } catch (...) {
-    // If the thread was been cancelled via explicit user action, then swallow all errors.
+    // If the thread has been cancelled via explicit user action, then swallow all errors.
     if (!self->cancelled_) {
       self->callback_->OnFailure(std::current_exception());
     }
