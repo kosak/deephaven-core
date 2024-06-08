@@ -29,12 +29,12 @@ public static class ClientCache {
 }
 
 public static class MyFunctions {
-  // [ExcelFunction(Description = "Fetches a table", IsThreadSafe = true)]
-  // public static object FetchTable(string tableName) {
-  //   // functionName and tableName are used as a key into a dictionary for reusing the same observable.
-  //   const string functionName = "Deephaven.Client.ExcelAddIn.FetchTable";
-  //   return ExcelAsyncUtil.Run(functionName, tableName, () => new FetchTableAsync(tableName));
-  // }
+  [ExcelFunction(Description = "Fetches a table", IsThreadSafe = true)]
+  public static object FetchTable(string tableName) {
+    // functionName and tableName are used as a key into a dictionary for reusing the same observable.
+    const string functionName = "Deephaven.Client.ExcelAddIn.FetchTable";
+    return ExcelAsyncUtil.Run(functionName, tableName, () => FetchTableAsync(tableName));
+  }
 
   [ExcelFunction(Description = "Subscribes to a table", IsThreadSafe = true)]
   public static object Subscribe(string tableName) {
@@ -43,6 +43,34 @@ public static class MyFunctions {
     return ExcelAsyncUtil.Observe(functionName, tableName, () => new SubscribeObservable(tableName));
   }
 
+  private static object?[,] FetchTableAsync(string tableName) {
+    var client = ClientCache.Instance;
+    var th = client.Manager.FetchTable(tableName);
+    return Render(th.ToClientTable());
+  }
+
+  private static object?[,] Render(ClientTable table) {
+    var numRows = table.NumRows;
+    var numCols = table.NumCols;
+    var result = new object?[numRows + 1, numCols];
+
+    var headers = table.Schema.Names;
+    for (var colIndex = 0; colIndex != numCols; ++colIndex) {
+      result[0, colIndex] = headers[colIndex];
+
+      var (col, nulls) = table.GetColumn(colIndex);
+      for (var rowIndex = 0; rowIndex != numRows; ++rowIndex) {
+        var temp = nulls[rowIndex] ? null : col.GetValue(rowIndex);
+        // sad hack, wrong place, inefficient
+        if (temp is DhDateTime dh) {
+          temp = dh.DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        result[rowIndex + 1, colIndex] = temp;
+      }
+    }
+
+    return result;
+  }
 
   private class SubscribeObservable : IExcelObservable, ITickingCallback {
     private readonly string _tableName;
@@ -101,36 +129,49 @@ public static class MyFunctions {
         lock (_sync) {
           _subscriptionHandle = subHandle;
         }
+
+        var thread = new Thread(SadThread) {
+          IsBackground = true
+        };
+        thread.Start();
       } catch (Exception ex) {
         var messages = ex.Message.Split('\n');
         SendStringsToObservers(messages);
       }
     }
 
+    private TickingUpdate? _updateToProcess;
+
     void ITickingCallback.OnTick(TickingUpdate update) {
       var current = update.Current;
-      var numRows = current.NumRows;
-      var numCols = current.NumCols;
-      var result = new object?[numRows + 1, numCols];
 
-      var headers = current.Schema.Names;
-      for (var colIndex = 0; colIndex != numCols; ++colIndex) {
-        result[0, colIndex] = headers[colIndex];
-
-        var (col, nulls) = current.GetColumn(colIndex);
-        for (var rowIndex = 0; rowIndex != numRows; ++rowIndex) {
-          var temp = nulls[rowIndex] ? null : col.GetValue(rowIndex);
-          // sad hack, wrong place, inefficient
-          if (temp is DhDateTime dh) {
-            temp = dh.DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
-          }
-          result[rowIndex + 1, colIndex] = temp;
-        }
+      lock (_sync) {
+        _updateToProcess = update;
+        Monitor.PulseAll(_sync);
       }
+    }
 
-      var observersCopy = GetCopyOfObservers();
-      foreach (var observer in observersCopy) {
-        observer.OnNext(result);
+    void SadThread() {
+      while (true) {
+        // I probably need to synchronize my observer too oh heck
+        TickingUpdate tickingUpdate;
+        lock (_sync) {
+          while (true) {
+            if (_updateToProcess != null) {
+              tickingUpdate = _updateToProcess;
+              _updateToProcess = null;
+              break;
+            }
+
+            Monitor.Wait(_sync);
+          }
+        }
+
+        var result = Render(tickingUpdate.Current);
+        tickingUpdate.Dispose();
+        foreach (var observer in GetCopyOfObservers()) {
+          observer.OnNext(result);
+        }
       }
     }
 
@@ -144,12 +185,7 @@ public static class MyFunctions {
         result[i, 0] = strings[i];
       }
 
-      IExcelObserver[] observersCopy;
-      lock (_sync) {
-        observersCopy = _observers.ToArray();
-      }
-
-      foreach (var observer in observersCopy) {
+      foreach (var observer in GetCopyOfObservers()) {
         observer.OnNext(result);
       }
     }

@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient.Interop;
+﻿using System.Diagnostics;
+using Deephaven.DeephavenClient.Interop;
 using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.UpdateBy;
 using Deephaven.DeephavenClient.Utility;
@@ -364,7 +365,8 @@ public sealed class TableHandle : IDisposable {
     public TickingWrapper(ITickingCallback callback) => _callback = callback;
 
     public void NativeOnUpdate(NativePtr<NativeTickingUpdate> nativeTickingUpdate) {
-      using var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
+      Debug.WriteLine("ALERT - not doing 'using' for the moment because I'm testing 'something'");
+      var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
       try {
         _callback.OnTick(tickingUpdate);
       } catch (Exception ex) {
