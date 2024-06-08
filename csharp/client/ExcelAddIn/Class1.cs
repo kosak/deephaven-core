@@ -48,6 +48,7 @@ public static class MyFunctions {
     }
 
     private void RemoveObserver(IExcelObserver observer) {
+      SubscriptionHandle subHandle;
       lock (_sync) {
         _observers.Remove(observer);
         if (_observers.Count > 0) {
@@ -55,13 +56,19 @@ public static class MyFunctions {
         }
 
         _subscribedToDeephaven = false;
+        if (_subscriptionHandle == null) {
+          return;
+        }
+        subHandle = _subscriptionHandle;
+        _subscriptionHandle = null;
       }
 
+      subHandle.Dispose();
     }
 
     private void PerformDeephavenSubscription() {
       try {
-        const string deephavenServerAddress = "localhost:10000";
+        const string deephavenServerAddress = "10.0.4.60:10000";
         var client = DeephavenClient.Client.Connect(deephavenServerAddress, new ClientOptions());
         var th = client.Manager.FetchTable(_tableName);
         var subHandle = th.Subscribe(this);
@@ -74,14 +81,31 @@ public static class MyFunctions {
       }
     }
 
-    private int _nextIndex = 0;
-
     void ITickingCallback.OnTick(TickingUpdate update) {
-      int nextIndex;
-      lock (_sync) {
-        nextIndex = ++_nextIndex;
+      var current = update.Current;
+      var numRows = current.NumRows;
+      var numCols = current.NumCols;
+      var result = new object?[numRows + 1, numCols];
+
+      var headers = current.Schema.Names;
+      for (var colIndex = 0; colIndex != numCols; ++colIndex) {
+        result[0, colIndex] = headers[colIndex];
+
+        var (col, nulls) = current.GetColumn(colIndex);
+        for (var rowIndex = 0; rowIndex != numRows; ++rowIndex) {
+          var temp = nulls[rowIndex] ? null : col.GetValue(rowIndex);
+          // sad hack, wrong place, inefficient
+          if (temp is DhDateTime dh) {
+            temp = dh.DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+          }
+          result[rowIndex + 1, colIndex] = temp;
+        }
       }
-      SendStringsToObservers(new[]{nextIndex + ": got an update hi"});
+
+      var observersCopy = GetCopyOfObservers();
+      foreach (var observer in observersCopy) {
+        observer.OnNext(result);
+      }
     }
 
     void ITickingCallback.OnFailure(string message) {
@@ -104,18 +128,10 @@ public static class MyFunctions {
       }
     }
 
-    private void SendExceptionToObservers(Exception ex) {
-      IExcelObserver[] observersCopy;
+    private IExcelObserver[] GetCopyOfObservers() {
       lock (_sync) {
-        observersCopy = _observers.ToArray();
+        return _observers.ToArray();
       }
-
-      foreach (var observer in observersCopy) {
-        // observer.OnError(ex);
-        observer.OnNext("stupid");
-      }
-
-      // maybe do oncompleted and also deephaven unsubscribe
     }
 
     private class ActionDisposable : IDisposable {
