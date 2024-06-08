@@ -38,6 +38,16 @@ public class TickingTest {
   }
 
   [Fact]
+  public void AFourthTest() {
+    Assert.Equal(7, 7);
+  }
+
+  [Fact]
+  public void AFifthTest() {
+    Assert.Equal(7, 7);
+  }
+
+  [Fact]
   public void AllEventuallyGreaterThan10() {
     const Int64 maxRows = 10;
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -63,19 +73,18 @@ public class TickingTest {
     table.Unsubscribe(cookie);
   }
 
-  [Fact]
-  public void TestThisIsReallyStartingToAnnoyMe() {
-    Assert.Equal(3, 7);
-
-    const Int64 maxRows = 10;
-    using var ctx = CommonContextForTests.Create(new ClientOptions());
-    var thm = ctx.Client.Manager;
-    var th = thm.FetchTable("zamboni2");
-    using var handle = th.Subscribe(new SuperHate(_output));
-    _output.WriteLine("start");
-    Thread.Sleep(30 * 1000);
-    _output.WriteLine("end WTF");
-  }
+   [Fact]
+   public void ReallyAnnoying() {
+  //   Assert.Equal(10, 10);
+  //   const Int64 maxRows = 10;
+  //   using var ctx = CommonContextForTests.Create(new ClientOptions());
+  //   var thm = ctx.Client.Manager;
+  //   var th = thm.FetchTable("zamboni2");
+  //   using var handle = th.Subscribe(new SuperHate(_output));
+  //   _output.WriteLine("start");
+  //   Thread.Sleep(30 * 1000);
+  //   _output.WriteLine("end WTF");
+   }
 
   private class SuperHate : ITickingCallback {
     private readonly ITestOutputHelper _output;
