@@ -4,11 +4,37 @@ using ExcelDna.Integration;
 
 namespace Deephaven.Client.ExcelAddIn;
 
-public static class MyFunctions {
-  [ExcelFunction(Description = "My first .NET function")]
-  public static string SayHello(string name) {
-    return "Hello " + name;
+public class Doubtful {
+  [ExcelFunction(Description = "instance method", IsThreadSafe = true)]
+  public object SayHello2(string tableName) {
+    return "does not work " + tableName;
   }
+}
+
+public static class ClientCache {
+  private const string ServerAddress = "10.0.4.60:10000";
+
+  private static readonly Task<DeephavenClient.Client> _instance;
+
+  static ClientCache() {
+    _instance = Nubbin();
+  }
+
+  private static async Task<DeephavenClient.Client> Nubbin() {
+    var result = DeephavenClient.Client.Connect(ServerAddress, new ClientOptions());
+    return result;
+  }
+
+  public static DeephavenClient.Client Instance => _instance.Result;
+}
+
+public static class MyFunctions {
+  // [ExcelFunction(Description = "Fetches a table", IsThreadSafe = true)]
+  // public static object FetchTable(string tableName) {
+  //   // functionName and tableName are used as a key into a dictionary for reusing the same observable.
+  //   const string functionName = "Deephaven.Client.ExcelAddIn.FetchTable";
+  //   return ExcelAsyncUtil.Run(functionName, tableName, () => new FetchTableAsync(tableName));
+  // }
 
   [ExcelFunction(Description = "Subscribes to a table", IsThreadSafe = true)]
   public static object Subscribe(string tableName) {
@@ -16,6 +42,7 @@ public static class MyFunctions {
     const string functionName = "Deephaven.Client.ExcelAddIn.Subscribe";
     return ExcelAsyncUtil.Observe(functionName, tableName, () => new SubscribeObservable(tableName));
   }
+
 
   private class SubscribeObservable : IExcelObservable, ITickingCallback {
     private readonly string _tableName;
@@ -68,8 +95,7 @@ public static class MyFunctions {
 
     private void PerformDeephavenSubscription() {
       try {
-        const string deephavenServerAddress = "10.0.4.60:10000";
-        var client = DeephavenClient.Client.Connect(deephavenServerAddress, new ClientOptions());
+        var client = ClientCache.Instance;
         var th = client.Manager.FetchTable(_tableName);
         var subHandle = th.Subscribe(this);
         lock (_sync) {
