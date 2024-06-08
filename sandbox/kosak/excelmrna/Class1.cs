@@ -6,6 +6,7 @@ using System.Linq;
 using ExcelDna.Integration;
 using ExcelDna.Registration;
 using ExcelDna.Registration.Utils;
+using System.Diagnostics;
 
 public static class MyFunctions
 {
@@ -15,7 +16,24 @@ public static class MyFunctions
         return "Hello " + name;
     }
 
-    [ExcelFunction(Description = "My second .NET function")]
+    [ExcelFunction(Description = "My nth,kth .NET function")]
+    public static object[,] IAmACamera(string name, int rows, int cols) {
+      var result = new object[rows, cols];
+      for (var j = 0; j != rows; ++j) {
+        for (var i = 0; i != cols; ++i) {
+          if ((j % 2) == 0) {
+            result[j, i] = $"qqq {name} {j}{i}";
+          } else {
+            result[j, i] = j * 333 + i;
+          }
+        }
+      }
+
+      return result;
+    }
+
+
+  [ExcelFunction(Description = "My second .NET function")]
     public static object Concat2(object[,] values)
     {
         string result = "";
@@ -52,6 +70,61 @@ public static class MyFunctions
       //The actual asyncronous block of code to execute.
       return await myHttpClient.GetStringAsync(url);
     });
+
+  }
+
+  [ExcelFunction(Description = "Provides a thread safe ticking clock", IsThreadSafe = true)]
+  public static object dnaRtdClock_IExcelObservableThreadSafe(string param) {
+    string functionName = nameof(dnaRtdClock_IExcelObservableThreadSafe);
+    object paramInfo = param; // could be one parameter passed in directly, or an object array of all the parameters: new object[] {param1, param2}
+    return ExcelAsyncUtil.Observe(functionName, paramInfo, () => new ExcelObservableClock());
+  }
+
+  class ExcelObservableClock : IExcelObservable {
+    Timer _timer;
+    List<IExcelObserver> _observers;
+
+    public ExcelObservableClock() {
+      _timer = new Timer(timer_tick, null, 0, 100);
+      _observers = new List<IExcelObserver>();
+    }
+
+    public IDisposable Subscribe(IExcelObserver observer) {
+      _observers.Add(observer);
+      var toast = Populate("loveshack1");
+      observer.OnNext(toast);
+      return new ActionDisposable(() => _observers.Remove(observer));
+    }
+
+    void timer_tick(object _) {
+      var toast = Populate("never");
+      foreach (var obs in _observers)
+        obs.OnNext(toast);
+    }
+
+    private object[,] Populate(string what) {
+      const int rows = 10000;
+      const int cols = 8;
+      var result = new object[rows, cols];
+      for (var j = 0; j != rows; ++j) {
+        for (var i = 0; i < cols; ++i) {
+          result[j, i] = DateTime.Now.Microsecond + j * 1000 + i;
+        }
+      }
+      result[0, 0] = what + DateTime.Now.ToString("HH:mm:ss.fff");
+      return result;
+    }
+
+    class ActionDisposable : IDisposable {
+      Action _disposeAction;
+      public ActionDisposable(Action disposeAction) {
+        _disposeAction = disposeAction;
+      }
+      public void Dispose() {
+        _disposeAction();
+        Debug.WriteLine("Disposed");
+      }
+    }
   }
 }
 
