@@ -29,6 +29,7 @@ public static class MyFunctions {
     }
 
     public IDisposable Subscribe(IExcelObserver observer) {
+      observer.OnNext($"Subscribing to \"{_tableName}\"...");
       AddObserver(observer);
       return new ActionDisposable(() => RemoveObserver(observer));
     }
@@ -68,7 +69,8 @@ public static class MyFunctions {
           _subscriptionHandle = subHandle;
         }
       } catch (Exception ex) {
-        SendStringsToObservers(new[]{ex.Message});
+        var messages = ex.Message.Split('\n');
+        SendStringsToObservers(messages);
       }
     }
 
