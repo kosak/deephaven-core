@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ExcelDna.Addin" Version="*-*"/>
+    <PackageReference Include="ExcelDna.Addin" Version="*-*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DeephavenClient\DeephavenClient.csproj" />
   </ItemGroup>
 </Project>
