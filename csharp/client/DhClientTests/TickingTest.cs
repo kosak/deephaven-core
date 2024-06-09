@@ -73,18 +73,18 @@ public class TickingTest {
     table.Unsubscribe(cookie);
   }
 
-   [Fact]
-   public void ReallyAnnoying() {
-  //   Assert.Equal(10, 10);
-  //   const Int64 maxRows = 10;
-  //   using var ctx = CommonContextForTests.Create(new ClientOptions());
-  //   var thm = ctx.Client.Manager;
-  //   var th = thm.FetchTable("zamboni2");
-  //   using var handle = th.Subscribe(new SuperHate(_output));
-  //   _output.WriteLine("start");
-  //   Thread.Sleep(30 * 1000);
-  //   _output.WriteLine("end WTF");
-   }
+  [Fact]
+  public void ReallyAnnoying() {
+    Assert.Equal(10, 10);
+    const Int64 maxRows = 10;
+    using var ctx = CommonContextForTests.Create(new ClientOptions());
+    var thm = ctx.Client.Manager;
+    var th = thm.FetchTable("zamboni2");
+    using var handle = th.Subscribe(new SuperHate(_output));
+    _output.WriteLine("start");
+    Thread.Sleep(30 * 1000);
+    _output.WriteLine("end WTF");
+  }
 
   private class SuperHate : ITickingCallback {
     private readonly ITestOutputHelper _output;
@@ -94,23 +94,20 @@ public class TickingTest {
     }
 
     public void OnTick(TickingUpdate update) {
-      _output.WriteLine("got a tick");
+      _output.WriteLine("got a tick in my eye v3");
       using var ct = update.Current;
       var result = Render(ct);
-      // _output.WriteLine($"rows = {result.GetLength(0)}, cols={result.GetLength(1)}");
+      _output.WriteLine($"rows = {result.GetLength(0)}, cols={result.GetLength(1)}");
     }
 
     private static object?[,] Render(ClientTable table) {
       var numRows = table.NumRows;
       var numCols = table.NumCols;
-      // var result = new object?[numRows + 1, numCols];
-      var result = new object?[10, 10];
-      return result;
+      var result = new object?[numRows + 1, numCols];
 
       var headers = table.Schema.Names;
       for (var colIndex = 0; colIndex != numCols; ++colIndex) {
         result[0, colIndex] = headers[colIndex];
-
 
         var (col, nulls) = table.GetColumn(colIndex);
         for (var rowIndex = 0; rowIndex != numRows; ++rowIndex) {

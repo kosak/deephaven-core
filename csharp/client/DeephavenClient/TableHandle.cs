@@ -361,10 +361,26 @@ public sealed class TableHandle : IDisposable {
 
   private class TickingWrapper {
     private readonly ITickingCallback _callback;
+    /// <summary>
+    /// The point of these fields is to keep the delegates cached so they stay reachable
+    /// (so long as TickingWrapper is itself reachable) and are not garbage collected while
+    /// native code still holds a pointer to them.
+    /// </summary>
+    public NativeTableHandle.NativeOnUpdate NativeOnUpdate;
+    /// <summary>
+    /// The point of these fields is to keep the delegates cached so they stay reachable
+    /// (so long as TickingWrapper is itself reachable) and are not garbage collected while
+    /// native code still holds a pointer to them.
+    /// </summary>
+    public NativeTableHandle.NativeOnFailure NativeOnFailure;
 
-    public TickingWrapper(ITickingCallback callback) => _callback = callback;
+    public TickingWrapper(ITickingCallback callback) {
+      _callback = callback;
+      NativeOnUpdate = NativeOnUpdateImpl;
+      NativeOnFailure = NativeOnFailureImpl;
+    }
 
-    public void NativeOnUpdate(NativePtr<NativeTickingUpdate> nativeTickingUpdate) {
+    private void NativeOnUpdateImpl(NativePtr<NativeTickingUpdate> nativeTickingUpdate) {
       Debug.WriteLine("ALERT - not doing 'using' for the moment because I'm testing 'something'");
       var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
       try {
@@ -374,7 +390,7 @@ public sealed class TableHandle : IDisposable {
       }
     }
 
-    public void NativeOnFailure(StringHandle errorHandle, StringPoolHandle stringPoolHandle) {
+    private void NativeOnFailureImpl(StringHandle errorHandle, StringPoolHandle stringPoolHandle) {
       var pool = stringPoolHandle.ExportAndDestroy();
       var errorText = pool.Get(errorHandle);
       _callback.OnFailure(errorText);
@@ -383,8 +399,8 @@ public sealed class TableHandle : IDisposable {
 
   public SubscriptionHandle Subscribe(ITickingCallback callback) {
     var tw = new TickingWrapper(callback);
-    NativeTableHandle.deephaven_client_TableHandle_Subscribe(Self, tw.NativeOnUpdate, tw.NativeOnFailure,
-      out var nativeSusbcriptionHandle, out var status);
+    NativeTableHandle.deephaven_client_TableHandle_Subscribe(Self, tw.NativeOnUpdate,
+      tw.NativeOnFailure, out var nativeSusbcriptionHandle, out var status);
     status.OkOrThrow();
     var result = new SubscriptionHandle(nativeSusbcriptionHandle);
     Manager.AddSubscription(result, tw);

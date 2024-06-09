@@ -44,9 +44,13 @@ public static class MyFunctions {
   }
 
   private static object?[,] FetchTableAsync(string tableName) {
-    var client = ClientCache.Instance;
-    var th = client.Manager.FetchTable(tableName);
-    return Render(th.ToClientTable());
+    try {
+      var client = ClientCache.Instance;
+      var th = client.Manager.FetchTable(tableName);
+      return Render(th.ToClientTable());
+    } catch (Exception ex) {
+      return RenderException(ex);
+    }
   }
 
   private static object?[,] Render(ClientTable table) {
@@ -69,6 +73,12 @@ public static class MyFunctions {
       }
     }
 
+    return result;
+  }
+
+  private static object[,] RenderException(Exception ex) {
+    var result = new object[1, 1];
+    result[0, 0] = ex.Message;
     return result;
   }
 
