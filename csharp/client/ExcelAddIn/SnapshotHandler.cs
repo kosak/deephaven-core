@@ -1,34 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ExcelDna.Integration;
+﻿using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal abstract class DeephavenHandler : IExcelObservable {
+  protected readonly IClientProvider _clientProvider;
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
 
   public IDisposable Subscribe(IExcelObserver observer) {
+    bool isFirstObserver;
     lock (_sync) {
+      isFirstObserver = _observers.Count == 0;
       _observers.Add(observer);
     }
-    ConnectOrReconnect();
+    // if susbscribing, new observer should just wait for the next message
+    // if snapshotting, everyone should probably do a redo
+    // if first time, both need to do something
+    // ugh
+    OnNewObserver(observer, isFirstObserver);
+    return new ActionDisposable(() => RemoveObserver(observer));
   }
 
-  private protected void DisplayStatusMessage(string message) {
+  private protected void PublishStatusMessage(string message) {
     var matrix = new object[1, 1];
     matrix[0, 0] = message;
-    DisplayResult(matrix);
+    PublishResult(matrix);
   }
 
-  private protected void DisplayException(Exception ex) {
-    DisplayStatusMessage(ex.Message);
+  private protected void PublishException(Exception ex) {
+    PublishStatusMessage(ex.Message);
   }
 
-  private protected void DisplayResult(object?[,] matrix) {
+  private protected void PublishResult(object?[,] matrix) {
     foreach (var observer in GetObservers()) {
       observer.OnNext(matrix);
     }
@@ -40,27 +43,53 @@ internal abstract class DeephavenHandler : IExcelObservable {
     }
   }
 
-  private protected abstract void ConnectOrReconnect(Client client);
+  private void RemoveObserver(IExcelObserver observer) {
+    bool isLastObserver;
+    lock (_sync) {
+      _observers.Remove(observer);
+      isLastObserver = _observers.Count == 0;
+    }
+
+    if (isLastObserver) {
+      OnLastObserverRemoved();
+    }
+  }
+
+  private protected abstract void OnClientChange();
+  private protected abstract void OnNewObserver(IExcelObserver observer, bool isFirstObserver);
+  private protected abstract void OnLastObserverRemoved();
 }
 
 internal class SnapshotHandler : DeephavenHandler {
   private readonly string _tableName;
 
-  private protected override void ConnectOrReconnect(Client client) {
-    DisplayStatusMessage($"Snaphotting \"{_tableName}\"");
-
-    Task.Run(() => PerformFetchTable(client));
+  private protected override void OnClientChange() {
+    Doit();
   }
 
-  private void PerformFetchTable(Client client) {
+  private protected override void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver) {
+    PublishStatusMessage($"Snaphotting \"{_tableName}\"");
+    Doit();
+  }
+
+  private void Doit() {
+    Task.Run(PerformFetchTable);
+  }
+
+  private void PerformFetchTable() {
+    if (!_clientProvider.TryGetClient(out var client)) {
+      PublishStatusMessage("Not connected to Deephaven.");
+      return;
+    }
+
     try {
       using var th = client.Manager.FetchTable(_tableName);
       using var ct = th.ToClientTable();
       // TODO(kosak): Filter the client table here
       var result = Renderer.Render(ct);
-      DisplayResult(result);
+      PublishResult(result);
     } catch (Exception ex) {
-      DisplayException(ex);
+      PublishException(ex);
     }
   }
 }
