@@ -8,10 +8,13 @@ using ExcelDna.Integration;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal abstract class DeephavenHandler : IExcelObservable {
-  private readonly HashSet<IExcelObserver> _observers = new ();
+  private readonly object _sync = new();
+  private readonly HashSet<IExcelObserver> _observers = new();
 
   public IDisposable Subscribe(IExcelObserver observer) {
-    _observers.Add(observer);
+    lock (_sync) {
+      _observers.Add(observer);
+    }
     ConnectOrReconnect();
   }
 
@@ -25,9 +28,15 @@ internal abstract class DeephavenHandler : IExcelObservable {
     DisplayStatusMessage(ex.Message);
   }
 
-  private protected void DisplayResult(object[,] matrix) {
+  private protected void DisplayResult(object?[,] matrix) {
     foreach (var observer in GetObservers()) {
       observer.OnNext(matrix);
+    }
+  }
+
+  private IExcelObserver[] GetObservers() {
+    lock (_sync) {
+      return _observers.ToArray();
     }
   }
 
