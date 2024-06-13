@@ -7,6 +7,10 @@ internal abstract class DeephavenHandler : IExcelObservable {
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
 
+  protected DeephavenHandler(IClientProvider clientProvider) {
+    _clientProvider = clientProvider;
+  }
+
   public IDisposable Subscribe(IExcelObserver observer) {
     bool isFirstObserver;
     lock (_sync) {
@@ -50,9 +54,13 @@ internal abstract class DeephavenHandler : IExcelObservable {
       isLastObserver = _observers.Count == 0;
     }
 
-    if (isLastObserver) {
-      OnLastObserverRemoved();
+    if (!isLastObserver) {
+      return;
     }
+
+    OnLastObserverRemoved();
+    // maybe? Not sure if this is reasonable.
+    zamboniOuter.RemoveHandler();
   }
 
   private protected abstract void OnClientChange();
@@ -62,6 +70,12 @@ internal abstract class DeephavenHandler : IExcelObservable {
 
 internal class SnapshotHandler : DeephavenHandler {
   private readonly string _tableName;
+  private readonly TableFilter _filter;
+
+  public SnapshotHandler(IClientProvider clientProvider, string tableName, TableFilter filter) : base(clientProvider) {
+    _tableName = tableName;
+    _filter = filter;
+  }
 
   private protected override void OnClientChange() {
     Doit();
@@ -72,11 +86,16 @@ internal class SnapshotHandler : DeephavenHandler {
     Doit();
   }
 
+  private protected override void OnLastObserverRemoved() {
+    // Do nothing.
+  }
+
   private void Doit() {
     Task.Run(PerformFetchTable);
   }
 
   private void PerformFetchTable() {
+    Dictionary<int, int> x;
     if (!_clientProvider.TryGetClient(out var client)) {
       PublishStatusMessage("Not connected to Deephaven.");
       return;

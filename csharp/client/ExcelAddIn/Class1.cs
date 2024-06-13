@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics;
-using Deephaven.DeephavenClient;
 using ExcelDna.Integration;
 
-namespace Deephaven.Client.ExcelAddIn;
+namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 public static class ClientCache {
   private const string ServerAddress = "10.0.4.60:10000";
@@ -39,15 +38,15 @@ public static class MyFunctions {
   [ExcelFunction(Description = "QSnaps a table", IsThreadSafe = true)]
   public static object DH_QSnapshot(string tableName) {
     var dsm = DeephavenStateManager.Instance;
-    string key = dsm.MakeUniqueKey();
-    return ExcelAsyncUtil.Observe(key, null, () => dsm.SnapshotTable(tableName, TableFilter.Default));
+    const string functionName = "Deephaven.Client.ExcelAddIn.DH_QSnapshot";
+    return ExcelAsyncUtil.Observe(functionName, tableName, () => dsm.SnapshotTable(tableName, TableFilter.Default));
   }
 
   private static object?[,] FetchTableAsync(string tableName) {
     try {
       var client = ClientCache.Instance;
       var th = client.Manager.FetchTable(tableName);
-      return Render(th.ToClientTable());
+      return Renderer.Render(th.ToClientTable());
     } catch (Exception ex) {
       return RenderException(ex);
     }
@@ -154,7 +153,7 @@ public static class MyFunctions {
           }
         }
 
-        var result = Render(tickingUpdate.Current);
+        var result = Renderer.Render(tickingUpdate.Current);
         tickingUpdate.Dispose();
         foreach (var observer in GetCopyOfObservers()) {
           observer.OnNext(result);
