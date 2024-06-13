@@ -2,14 +2,15 @@
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal abstract class DeephavenHandler : IExcelObservable {
-  protected readonly IClientProvider _clientProvider;
+internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
+  private readonly IObservable<Client> _clientObservable;
+  private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
+  private Client? _client = null;
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  protected DeephavenHandler(IClientProvider clientProvider) {
-    _clientProvider = clientProvider;
-  }
+  protected DeephavenHandler(IObservable<Client> clientObservable) =>
+    _clientObservable = clientObservable;
 
   public IDisposable Subscribe(IExcelObserver observer) {
     bool isFirstObserver;
@@ -17,12 +18,34 @@ internal abstract class DeephavenHandler : IExcelObservable {
       isFirstObserver = _observers.Count == 0;
       _observers.Add(observer);
     }
+
+    // If the first observer, listen for client changes (e.g. reconnect button).
+    if (isFirstObserver) {
+      _clientObserverDisposer = _clientObservable.Subscribe(this);
+    }
+
     // if susbscribing, new observer should just wait for the next message
     // if snapshotting, everyone should probably do a redo
     // if first time, both need to do something
     // ugh
     OnNewObserver(observer, isFirstObserver);
     return new ActionDisposable(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IExcelObserver observer) {
+    lock (_sync) {
+      _observers.Remove(observer);
+      if (_observers.Count != 0) {
+        return;
+      }
+    }
+
+    // No more observers. Stop observing client changes.
+    var temp = _clientObserverDisposer;
+    _clientObserverDisposer = null;
+    temp!.Dispose();
+
+    OnLastObserverRemoved();
   }
 
   private protected void PublishStatusMessage(string message) {
@@ -47,23 +70,28 @@ internal abstract class DeephavenHandler : IExcelObservable {
     }
   }
 
-  private void RemoveObserver(IExcelObserver observer) {
-    bool isLastObserver;
+  protected Client? GetClient() {
     lock (_sync) {
-      _observers.Remove(observer);
-      isLastObserver = _observers.Count == 0;
+      return _client;
     }
-
-    if (!isLastObserver) {
-      return;
-    }
-
-    OnLastObserverRemoved();
-    // maybe? Not sure if this is reasonable.
-    zamboniOuter.RemoveHandler();
   }
 
-  private protected abstract void OnClientChange();
+  void IObserver<Client>.OnCompleted() {
+    // Do nothing (for now)
+  }
+
+  void IObserver<Client>.OnError(Exception error) {
+    // Do nothing (for now)
+  }
+
+  void IObserver<Client>.OnNext(Client value) {
+    lock (_sync) {
+      _client = value;
+    }
+    Refresh();
+  }
+
+  private protected abstract void Refresh();
   private protected abstract void OnNewObserver(IExcelObserver observer, bool isFirstObserver);
   private protected abstract void OnLastObserverRemoved();
 }
@@ -72,31 +100,27 @@ internal class SnapshotHandler : DeephavenHandler {
   private readonly string _tableName;
   private readonly TableFilter _filter;
 
-  public SnapshotHandler(IClientProvider clientProvider, string tableName, TableFilter filter) : base(clientProvider) {
+  public SnapshotHandler(IObservable<Client> clientObservable, string tableName, TableFilter filter) : base(clientObservable) {
     _tableName = tableName;
     _filter = filter;
   }
 
-  private protected override void OnClientChange() {
-    Doit();
+  private protected override void Refresh() {
+    Task.Run(PerformFetchTable);
   }
 
   private protected override void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver) {
     PublishStatusMessage($"Snaphotting \"{_tableName}\"");
-    Doit();
+    Refresh();
   }
 
   private protected override void OnLastObserverRemoved() {
     // Do nothing.
   }
 
-  private void Doit() {
-    Task.Run(PerformFetchTable);
-  }
-
   private void PerformFetchTable() {
-    Dictionary<int, int> x;
-    if (!_clientProvider.TryGetClient(out var client)) {
+    var client = GetClient();
+    if (client == null) {
       PublishStatusMessage("Not connected to Deephaven.");
       return;
     }

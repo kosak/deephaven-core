@@ -12,11 +12,6 @@ internal class TableFilter {
 }
 
 // Can't decide where to put this
-internal interface IClientProvider {
-  bool TryGetClient([MaybeNullWhen(false)]out Client client);
-}
-
-// Can't decide where to put this
 internal class ActionDisposable : IDisposable {
   private Action? _action;
 
