@@ -3,14 +3,14 @@
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
-  private readonly IObservable<Client> _clientObservable;
+  protected readonly ClientLender _clientLender;
   private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
   private Client? _client = null;
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  protected DeephavenHandler(IObservable<Client> clientObservable) =>
-    _clientObservable = clientObservable;
+  protected DeephavenHandler(ClientLender clientLender) =>
+    _clientLender = clientLender;
 
   public IDisposable Subscribe(IExcelObserver observer) {
     bool isFirstObserver;
@@ -21,7 +21,7 @@ internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
 
     // If the first observer, listen for client changes (e.g. reconnect button).
     if (isFirstObserver) {
-      _clientObserverDisposer = _clientObservable.Subscribe(this);
+      _clientObserverDisposer = _clientLender.Subscribe(this);
     }
 
     // if susbscribing, new observer should just wait for the next message
@@ -59,20 +59,13 @@ internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
   }
 
   private protected void PublishResult(object?[,] matrix) {
-    foreach (var observer in GetObservers()) {
+    IExcelObserver[] observers;
+    lock (_sync) {
+      observers = _observers.ToArray();
+    }
+
+    foreach (var observer in observers) {
       observer.OnNext(matrix);
-    }
-  }
-
-  private IExcelObserver[] GetObservers() {
-    lock (_sync) {
-      return _observers.ToArray();
-    }
-  }
-
-  protected Client? GetClient() {
-    lock (_sync) {
-      return _client;
     }
   }
 
@@ -85,9 +78,6 @@ internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
   }
 
   void IObserver<Client>.OnNext(Client value) {
-    lock (_sync) {
-      _client = value;
-    }
     Refresh();
   }
 
@@ -119,7 +109,8 @@ internal class SnapshotHandler : DeephavenHandler {
   }
 
   private void PerformFetchTable() {
-    var client = GetClient();
+    using var borrowedClient = _clientLender.Borrow();
+    var client = borrowedClient.Value;
     if (client == null) {
       PublishStatusMessage("Not connected to Deephaven.");
       return;
