@@ -12,8 +12,7 @@ namespace Deephaven.DeephavenClient.ExcelAddIn;
 internal class DeephavenStateManager {
   public static readonly DeephavenStateManager Instance = new DeephavenStateManager();
 
-  private object _sync = new object();
-  private readonly HashSet<DeephavenHandler> _handlers = new();
+  private readonly Lender _clientLender = new();
 
   public void Connect() {
 
@@ -26,7 +25,7 @@ internal class DeephavenStateManager {
   public IExcelObservable SnapshotTable(string tableName, TableFilter filter) {
     Debug.WriteLine("making another one why");
     var cp = new MyClientProvider();
-    var handler = new SnapshotHandler(cp, tableName, filter);
+    var handler = new SnapshotHandler(_clientLender, tableName, filter);
     AddHandler(handler);
     return handler;
   }

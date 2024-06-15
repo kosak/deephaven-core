@@ -2,14 +2,14 @@
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
-  protected readonly ClientLender _clientLender;
+internal abstract class DeephavenHandler : IExcelObservable, IObserver<bool> {
+  protected readonly Lender _clientLender;
   private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
   private Client? _client = null;
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  protected DeephavenHandler(ClientLender clientLender) =>
+  protected DeephavenHandler(Lender clientLender) =>
     _clientLender = clientLender;
 
   public IDisposable Subscribe(IExcelObserver observer) {
@@ -69,15 +69,15 @@ internal abstract class DeephavenHandler : IExcelObservable, IObserver<Client> {
     }
   }
 
-  void IObserver<Client>.OnCompleted() {
+  void IObserver<bool>.OnCompleted() {
     // Do nothing (for now)
   }
 
-  void IObserver<Client>.OnError(Exception error) {
+  void IObserver<bool>.OnError(Exception error) {
     // Do nothing (for now)
   }
 
-  void IObserver<Client>.OnNext(Client value) {
+  void IObserver<bool>.OnNext(bool ignored) {
     Refresh();
   }
 
@@ -90,7 +90,7 @@ internal class SnapshotHandler : DeephavenHandler {
   private readonly string _tableName;
   private readonly TableFilter _filter;
 
-  public SnapshotHandler(IObservable<Client> clientObservable, string tableName, TableFilter filter) : base(clientObservable) {
+  public SnapshotHandler(Lender<Client> clientLender, string tableName, TableFilter filter) : base(clientLender) {
     _tableName = tableName;
     _filter = filter;
   }
