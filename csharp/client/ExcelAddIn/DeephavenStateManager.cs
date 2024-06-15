@@ -12,7 +12,7 @@ namespace Deephaven.DeephavenClient.ExcelAddIn;
 internal class DeephavenStateManager {
   public static readonly DeephavenStateManager Instance = new DeephavenStateManager();
 
-  private readonly Lender _clientLender = new();
+  private readonly Lender<Client> _clientLender = new();
 
   public void Connect() {
 
