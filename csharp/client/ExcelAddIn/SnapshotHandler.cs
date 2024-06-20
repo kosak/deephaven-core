@@ -6,7 +6,6 @@ internal abstract class DeephavenHandler : IExcelObservable, IObserver<bool> {
   protected readonly Lender _clientLender;
   private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
-  private Client? _client = null;
   private readonly HashSet<IExcelObserver> _observers = new();
 
   protected DeephavenHandler(Lender clientLender) =>
