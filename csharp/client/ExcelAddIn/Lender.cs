@@ -32,7 +32,7 @@ internal class Lender<T> : IObservable<bool> {
     }
   }
 
-  private void Replace(T? newValue) {
+  public void Replace(T? newValue) {
     var toNotify = ReplaceHelper(newValue);
     foreach (var observer in toNotify) {
       observer.OnNext(true);

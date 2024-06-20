@@ -1,21 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal class DeephavenStateManager {
+  private const string ServerAddress = "10.0.4.60:10000";
+
   public static readonly DeephavenStateManager Instance = new();
 
   private readonly Lender<Client> _clientLender = new(1);
 
   public void Connect() {
+    _clientLender.Replace(null);
+    Task.Run(ConnectHelper);
+  }
 
+  private void ConnectHelper() {
+    try {
+      var newClient = DeephavenClient.Client.Connect(ServerAddress, new ClientOptions());
+      _clientLender.Replace(newClient);
+    } catch (Exception ex) {
+      Debug.WriteLine("uh oh");
+      Debug.WriteLine(ex);
+    }
   }
 
   public void Reconnect() {
