@@ -10,9 +10,9 @@ using ExcelDna.Integration;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal class DeephavenStateManager {
-  public static readonly DeephavenStateManager Instance = new DeephavenStateManager();
+  public static readonly DeephavenStateManager Instance = new();
 
-  private readonly Lender<Client> _clientLender = new();
+  private readonly Lender<Client> _clientLender = new(1);
 
   public void Connect() {
 
@@ -24,28 +24,6 @@ internal class DeephavenStateManager {
 
   public IExcelObservable SnapshotTable(string tableName, TableFilter filter) {
     Debug.WriteLine("making another one why");
-    var cp = new MyClientProvider();
-    var handler = new SnapshotHandler(_clientLender, tableName, filter);
-    AddHandler(handler);
-    return handler;
-  }
-
-  // public IExcelObservable SubscribeToTable(string tableName, TableFilter filter) {
-  //   var handler = new SubscribeHandler(this, tableName, filter);
-  //   AddHandler(handler);
-  //   return handler;
-  // }
-
-  private void AddHandler(DeephavenHandler handler) {
-    lock (_sync) {
-      _handlers.Add(handler);
-    }
-  }
-}
-
-class MyClientProvider : IClientProvider {
-  public bool TryGetClient([MaybeNullWhen(false)] out Client client) {
-    client = null;
-    return false;
+    return new SnapshotHandler(_clientLender, tableName, filter);
   }
 }

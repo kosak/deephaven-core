@@ -21,6 +21,13 @@ public static class ClientCache {
 }
 
 public static class MyFunctions {
+  [ExcelCommand(MenuName = "Connect", MenuText = "Connect to Deephaven")]
+  public static void RangeSet() {
+    dynamic xlApp = ExcelDnaUtil.Application;
+
+    xlApp.Range["F1"].Value = "Testing 1... 2... 3... 4";
+  }
+
   [ExcelFunction(Description = "Fetches a table", IsThreadSafe = true)]
   public static object FetchTable(string tableName) {
     // functionName and tableName are used as a key into a dictionary for reusing the same observable.

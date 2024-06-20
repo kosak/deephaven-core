@@ -3,12 +3,12 @@
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal abstract class DeephavenHandler : IExcelObservable, IObserver<bool> {
-  protected readonly Lender _clientLender;
+  protected readonly Lender<Client> _clientLender;
   private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  protected DeephavenHandler(Lender clientLender) =>
+  protected DeephavenHandler(Lender<Client> clientLender) =>
     _clientLender = clientLender;
 
   public IDisposable Subscribe(IExcelObserver observer) {

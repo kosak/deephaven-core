@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal class TableFilter {
-  public static readonly TableFilter Default = new TableFilter();
+  public static readonly TableFilter Default = new ();
 }
 
 // Can't decide where to put this
