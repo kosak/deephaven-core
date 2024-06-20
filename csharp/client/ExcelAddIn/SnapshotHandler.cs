@@ -3,12 +3,12 @@
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal abstract class DeephavenHandler : IExcelObservable, IObserver<bool> {
-  protected readonly Lender<Client> _clientLender;
+  protected readonly Lender<ClientOrStatus> _clientLender;
   private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  protected DeephavenHandler(Lender<Client> clientLender) =>
+  protected DeephavenHandler(Lender<ClientOrStatus> clientLender) =>
     _clientLender = clientLender;
 
   public IDisposable Subscribe(IExcelObserver observer) {
@@ -89,7 +89,7 @@ internal class SnapshotHandler : DeephavenHandler {
   private readonly string _tableName;
   private readonly TableFilter _filter;
 
-  public SnapshotHandler(Lender<Client> clientLender, string tableName, TableFilter filter) : base(clientLender) {
+  public SnapshotHandler(Lender<ClientOrStatus> clientLender, string tableName, TableFilter filter) : base(clientLender) {
     _tableName = tableName;
     _filter = filter;
   }
@@ -109,14 +109,14 @@ internal class SnapshotHandler : DeephavenHandler {
 
   private void PerformFetchTable() {
     using var borrowedClient = _clientLender.Borrow();
-    var client = borrowedClient.Value;
-    if (client == null) {
-      PublishStatusMessage("Not connected to Deephaven.");
+    var cos = borrowedClient.Value;
+    if (cos!.Client== null) {
+      PublishStatusMessage(cos.Status!);
       return;
     }
 
     try {
-      using var th = client.Manager.FetchTable(_tableName);
+      using var th = cos.Client.Manager.FetchTable(_tableName);
       using var ct = th.ToClientTable();
       // TODO(kosak): Filter the client table here
       var result = Renderer.Render(ct);
