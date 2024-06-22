@@ -79,12 +79,19 @@ internal sealed class DeephavenHandler : IExcelObservable, IObserver<bool> {
     Refresh();
   }
 
-  private protected abstract void Refresh();
-  private protected abstract void OnNewObserver(IExcelObserver observer, bool isFirstObserver);
-  private protected abstract void OnLastObserverRemoved();
 }
 
-internal class SnapshotHandler {
+public interface ISuperNubbin {
+  void Refresh();
+  void OnNewObserver(IExcelObserver observer, bool isFirstObserver);
+  void OnLastObserverRemoved();
+}
+
+public interface IStatusNubbin {
+
+}
+
+internal class SnapshotHandler : ISuperNubbin {
   private readonly Lender<ClientOrStatus> _clientLender;
   private readonly string _tableName;
   private readonly TableFilter _filter;
@@ -95,24 +102,24 @@ internal class SnapshotHandler {
     _filter = filter;
   }
 
-  private protected override void Refresh() {
+  public void Refresh() {
     Task.Run(PerformFetchTable);
   }
 
-  private protected override void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver) {
-    PublishStatusMessage($"Snaphotting \"{_tableName}\"");
+  public void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver, IObserver<object?[,]> statusObserver) {
+    nubbin.OnStatus($"Snaphotting \"{_tableName}\"");
     Refresh();
   }
 
-  private protected override void OnLastObserverRemoved() {
+  public void OnLastObserverRemoved() {
     // Do nothing.
   }
 
-  private void PerformFetchTable() {
+  private void PerformFetchTable(IObserver<object?[,]> statusObserver) {
     using var borrowedClient = _clientLender.Borrow();
     var cos = borrowedClient.Value;
     if (cos!.Client == null) {
-      PublishStatusMessage(cos.Status!);
+      nubbin.OnStatus(cos.Status!);
       return;
     }
 
@@ -121,9 +128,9 @@ internal class SnapshotHandler {
       using var ct = th.ToClientTable();
       // TODO(kosak): Filter the client table here
       var result = Renderer.Render(ct);
-      PublishResult(result);
+      statusObserver.OnNext(result);
     } catch (Exception ex) {
-      PublishException(ex);
+      statusObserver.OnError(ex);
     }
   }
 }
