@@ -57,17 +57,6 @@ internal sealed class DeephavenHandler : IExcelObservable, IObserver<Unit> {
     _superNubbin.OnLastObserverRemoved();
   }
 
-  private protected void PublishResult(object?[,] matrix) {
-    IExcelObserver[] observers;
-    lock (_sync) {
-      observers = _observers.ToArray();
-    }
-
-    foreach (var observer in observers) {
-      observer.OnNext(matrix);
-    }
-  }
-
   void IObserver<Unit>.OnCompleted() {
     // Do nothing (for now)
   }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ExcelDna.ComInterop;
+using System;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
@@ -77,6 +78,17 @@ public class Notifier<T> : IObservable<T> {
   private void Unsubscribe(IObserver<T> observer) {
     lock (_sync) {
       _observers.Remove(observer);
+    }
+  }
+
+  public void NotifyAll(T value) {
+    IObserver<T>[] observers;
+    lock (_sync) {
+      observers = _observers.ToArray();
+    }
+
+    foreach (var observer in observers) {
+      observer.OnNext(value);
     }
   }
 }

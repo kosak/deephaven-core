@@ -9,6 +9,7 @@ internal class DeephavenStateManager {
   public static readonly DeephavenStateManager Instance = new();
 
   private readonly Lender<ClientOrStatus> _clientLender = new(1);
+  private readonly Notifier<Unit> _notifier = new();
 
   public DeephavenStateManager() {
     _clientLender.Replace(new ClientOrStatus(null, "Not connected to Deephaven"));
@@ -34,7 +35,8 @@ internal class DeephavenStateManager {
 
   public IExcelObservable SnapshotTable(string tableName, TableFilter filter) {
     Debug.WriteLine("making another one why");
-    return new SnapshotHandler(_clientLender, tableName, filter);
+    var sh = new SnapshotHandler(_clientLender, tableName, filter);
+    return new DeephavenHandler(_notifier, sh);
   }
 }
 
