@@ -47,6 +47,14 @@ public static class MyFunctions {
     return ExcelAsyncUtil.Observe(functionName, tableName, () => dsm.SnapshotTable(tableName, TableFilter.Default));
   }
 
+  // [ExcelFunction(Description = "QSubs a table", IsThreadSafe = true)]
+  // public static object DH_QSubscribe(string tableName) {
+  //   var dsm = DeephavenStateManager.Instance;
+  //   const string functionName = "Deephaven.Client.ExcelAddIn.DH_QSubscribe";
+  //   return ExcelAsyncUtil.Observe(functionName, tableName, () => dsm.SubscribeToTable(tableName, TableFilter.Default));
+  // }
+
+
   private static object?[,] FetchTableAsync(string tableName) {
     try {
       var client = ClientCache.Instance;
