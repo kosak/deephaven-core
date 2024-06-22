@@ -2,13 +2,12 @@
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal class Lender<T> : IObservable<bool> {
+internal class Lender<T> {
   private readonly int _concurrentReaderLimit;
   private readonly object _sync = new();
   private T? _value; 
   private int _numReaders = 0;
   private int _numAwaitingWriters = 0;
-  private readonly HashSet<IObserver<bool>> _observers = new();
 
   public Lender(int concurrentReaderLimit) => _concurrentReaderLimit = concurrentReaderLimit;
 
@@ -33,13 +32,6 @@ internal class Lender<T> : IObservable<bool> {
   }
 
   public void Replace(T? newValue) {
-    var toNotify = ReplaceHelper(newValue);
-    foreach (var observer in toNotify) {
-      observer.OnNext(true);
-    }
-  }
-
-  private IObserver<bool>[] ReplaceHelper(T? newValue) {
     lock (_sync) {
       ++_numAwaitingWriters;
       while (true) {
@@ -47,25 +39,11 @@ internal class Lender<T> : IObservable<bool> {
           --_numAwaitingWriters;
           _value = newValue;
           Monitor.PulseAll(_sync);
-          return _observers.ToArray();
+          return;
         }
 
         Monitor.Wait(_sync);
       }
-    }
-  }
-
-  public IDisposable Subscribe(IObserver<bool> observer) {
-    lock (_sync) {
-      _observers.Add(observer);
-    }
-
-    return new ActionDisposable(() => Unsubscribe(observer));
-  }
-
-  private void Unsubscribe(IObserver<bool> observer) {
-    lock (_sync) {
-      _observers.Remove(observer);
     }
   }
 }
@@ -81,5 +59,24 @@ class ZamboniReturner<T> : IDisposable {
 
   public void Dispose() {
     _lender.Return();
+  }
+}
+
+public class Notifier<T> : IObservable<T> {
+  private readonly object _sync = new();
+  private readonly HashSet<IObserver<T>> _observers = new();
+
+  public IDisposable Subscribe(IObserver<T> observer) {
+    lock (_sync) {
+      _observers.Add(observer);
+    }
+
+    return new ActionDisposable(() => Unsubscribe(observer));
+  }
+
+  private void Unsubscribe(IObserver<T> observer) {
+    lock (_sync) {
+      _observers.Remove(observer);
+    }
   }
 }

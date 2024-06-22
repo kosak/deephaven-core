@@ -2,13 +2,12 @@
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal abstract class DeephavenHandler : IExcelObservable, IObserver<bool> {
-  protected readonly Lender<ClientOrStatus> _clientLender;
+internal sealed class DeephavenHandler : IExcelObservable, IObserver<bool> {
   private IDisposable? _clientObserverDisposer = null;
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  protected DeephavenHandler(Lender<ClientOrStatus> clientLender) =>
+  public DeephavenHandler(Lender<ClientOrStatus> clientLender) =>
     _clientLender = clientLender;
 
   public IDisposable Subscribe(IExcelObserver observer) {
@@ -85,11 +84,13 @@ internal abstract class DeephavenHandler : IExcelObservable, IObserver<bool> {
   private protected abstract void OnLastObserverRemoved();
 }
 
-internal class SnapshotHandler : DeephavenHandler {
+internal class SnapshotHandler {
+  private readonly Lender<ClientOrStatus> _clientLender;
   private readonly string _tableName;
   private readonly TableFilter _filter;
 
-  public SnapshotHandler(Lender<ClientOrStatus> clientLender, string tableName, TableFilter filter) : base(clientLender) {
+  public SnapshotHandler(Lender<ClientOrStatus> clientLender, string tableName, TableFilter filter) {
+    _clientLender = clientLender;
     _tableName = tableName;
     _filter = filter;
   }
@@ -110,7 +111,7 @@ internal class SnapshotHandler : DeephavenHandler {
   private void PerformFetchTable() {
     using var borrowedClient = _clientLender.Borrow();
     var cos = borrowedClient.Value;
-    if (cos!.Client== null) {
+    if (cos!.Client == null) {
       PublishStatusMessage(cos.Status!);
       return;
     }
