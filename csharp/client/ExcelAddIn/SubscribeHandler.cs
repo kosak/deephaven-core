@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,22 +20,22 @@ internal class SusbcribeHandler : ISuperNubbin {
   }
 
   public void Refresh(IStatusObserver statusObserver) {
-    Task.Run(() => PerformSubscriptionTasks(true, statusObserver));
+    Task.Run(() => PerformSubscribe(statusObserver));
   }
 
   public void OnNewObserver(IExcelObserver observer, bool isFirstObserver, IStatusObserver statusObserver) {
     if (isFirstObserver) {
-      Task.Run(() => PerformSubscriptionTasks(true, statusObserver));
+      Task.Run(() => PerformSubscribe(statusObserver));
     }
   }
 
   public void OnLastObserverRemoved() {
-    Task.Run(() => PerformSubscriptionTasks(false, BUT_THERE_IS_NO_OBSERVER));
+    var (oldTh, oldHandle) = Swappytown(null, null);
+    Task.Run(() => PerformUnsubscribe(oldTh, oldHandle));
   }
 
-  private void PerformSubscriptionTasks(bool wantSubscribe, IStatusObserver statusObserver) {
+  private void PerformUnsubscribe(IStatusObserver? statusObserver) {
     try {
-      // First do the unsubscribe step
       lock (_sync) {
         oldTable = _subscriptionTable;
         oldHandle = _subscriptionHandle;
@@ -46,11 +47,16 @@ internal class SusbcribeHandler : ISuperNubbin {
         oldTable.Unsubscribe(oldHandle);
         oldTable.Dispose();
       }
+    } catch(Exception ex) {
+      Debug.WriteLine(ex);
+      statusObserver?.OnError(ex);
+    }
+  }
 
-      if (!wantSubscribe) {
-        return;
-      }
-
+  private void PerformSubscribe(IStatusObserver statusObserver) {
+    var (oldTh, oldHandle) = Swappytown(null, null);
+    PerformUnsubscribe(oldTh, oldHandle);
+    try {
       using var borrowed = _clientLender.Borrow();
       var cos = borrowed.Value;
       if (cos.Status != null) {
@@ -64,10 +70,9 @@ internal class SusbcribeHandler : ISuperNubbin {
 
       var th = cos.Client.Manager.FetchTable(_tableName);
       var subHandle = th.Subscribe(new ZamboniSuperfreak(statusObserver));
-      lock (_sync) {
-        _subscriptionTable = th;
-        _subscriptionHandle = subHandle;
-      }
+      var (oldTh, oldHandle) = Swappytown(th, subHandle);
+      // I don't know why these values would ever be non-null, but unsubscribe if they are
+      PerformUnsubscribe(oldTh, oldHandle, null);
     } catch (Exception ex) {
       statusObserver.OnError(ex);
     }
