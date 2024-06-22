@@ -7,7 +7,7 @@ using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal class SusbcribeHandler : ISuperNubbin, ITickingCallback {
+internal class SusbcribeHandler : ISuperNubbin {
   private readonly Lender<ClientOrStatus> _clientLender;
   private readonly string _tableName;
   private readonly TableFilter _filter;
@@ -19,25 +19,38 @@ internal class SusbcribeHandler : ISuperNubbin, ITickingCallback {
   }
 
   public void Refresh(IStatusObserver statusObserver) {
-    // called when I get a new client. I should unsub the old one then subscribe here, both in a separate task.
-    throw new NotImplementedException();
+    Task.Run(() => PerformSubscriptionTasks(true, statusObserver));
   }
 
   public void OnNewObserver(IExcelObserver observer, bool isFirstObserver, IStatusObserver statusObserver) {
-    if (!isFirstObserver) {
-      return;
+    if (isFirstObserver) {
+      Task.Run(() => PerformSubscriptionTasks(true, statusObserver));
     }
-
-    Task.Run(() => PerformSubscription(statusObserver));
   }
 
   public void OnLastObserverRemoved() {
-    // I could unsub here
-    throw new NotImplementedException();
+    Task.Run(() => PerformSubscriptionTasks(false, BUT_THERE_IS_NO_OBSERVER));
   }
 
-  private void PerformSubscription(IStatusObserver statusObserver) {
+  private void PerformSubscriptionTasks(bool wantSubscribe, IStatusObserver statusObserver) {
     try {
+      // First do the unsubscribe step
+      lock (_sync) {
+        oldTable = _subscriptionTable;
+        oldHandle = _subscriptionHandle;
+        _subscriptionTable = null;
+        _subscriptionHandle = null;
+      }
+
+      if (oldTable != null) {
+        oldTable.Unsubscribe(oldHandle);
+        oldTable.Dispose();
+      }
+
+      if (!wantSubscribe) {
+        return;
+      }
+
       using var borrowed = _clientLender.Borrow();
       var cos = borrowed.Value;
       if (cos.Status != null) {
@@ -50,12 +63,32 @@ internal class SusbcribeHandler : ISuperNubbin, ITickingCallback {
       }
 
       var th = cos.Client.Manager.FetchTable(_tableName);
-      var subHandle = th.Subscribe(this);
+      var subHandle = th.Subscribe(new ZamboniSuperfreak(statusObserver));
       lock (_sync) {
+        _subscriptionTable = th;
         _subscriptionHandle = subHandle;
       }
     } catch (Exception ex) {
       statusObserver.OnError(ex);
     }
+  }
+}
+
+class ZamboniSuperfreak : ITickingCallback {
+  private readonly IStatusObserver _statusObserver;
+
+  public ZamboniSuperfreak(IStatusObserver statusObserver) => _statusObserver = statusObserver;
+
+  public void OnTick(TickingUpdate update) {
+    try {
+      var results = Renderer.Render(update.Current);
+      _statusObserver.OnNext(results);
+    } catch (Exception ex) {
+      _statusObserver.OnError(ex);
+    }
+  }
+
+  public void OnFailure(string errorText) {
+    throw new NotImplementedException();
   }
 }
