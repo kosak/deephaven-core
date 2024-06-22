@@ -139,8 +139,12 @@ internal class SnapshotHandler : ISuperNubbin {
   private void PerformFetchTable(IStatusObserver statusObserver) {
     using var borrowedClient = _clientLender.Borrow();
     var cos = borrowedClient.Value;
-    if (cos!.Client == null) {
-      statusObserver.OnStatus(cos.Status!);
+    if (cos.Status != null) {
+      statusObserver.OnStatus(cos.Status);
+      return;
+    }
+
+    if (cos.Client == null) {
       return;
     }
 

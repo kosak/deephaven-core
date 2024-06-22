@@ -8,24 +8,24 @@ internal class DeephavenStateManager {
 
   public static readonly DeephavenStateManager Instance = new();
 
-  private readonly Lender<ClientOrStatus> _clientLender = new(1);
+  private readonly Lender<ClientOrStatus> _clientLender;
   private readonly Notifier<Unit> _notifier = new();
 
   public DeephavenStateManager() {
-    _clientLender.Replace(new ClientOrStatus(null, "Not connected to Deephaven"));
+    _clientLender = new (1, ClientOrStatus.Of("Not connected to Deephaven"));
   }
 
   public void Connect() {
-    _clientLender.Replace(new ClientOrStatus(null, "Connecting..."));
+    SetStatus("Connecting...");
     Task.Run(ConnectHelper);
   }
 
   private void ConnectHelper() {
     try {
       var newClient = DeephavenClient.Client.Connect(ServerAddress, new ClientOptions());
-      _clientLender.Replace(new ClientOrStatus(newClient, null));
+      SetClient(newClient);
     } catch (Exception ex) {
-      _clientLender.Replace(new ClientOrStatus(null, ex.Message));
+      SetStatus(ex.Message);
     }
   }
 
@@ -38,13 +38,26 @@ internal class DeephavenStateManager {
     var sh = new SnapshotHandler(_clientLender, tableName, filter);
     return new DeephavenHandler(_notifier, sh);
   }
+
+  private void SetStatus(string message) {
+    _clientLender.Replace(ClientOrStatus.Of(message));
+    _notifier.NotifyAll(new Unit());
+  }
+
+  private void SetClient(Client client) {
+    _clientLender.Replace(ClientOrStatus.Of(client));
+    _notifier.NotifyAll(new Unit());
+  }
 }
 
 public class ClientOrStatus {
   public readonly Client? Client;
   public readonly string? Status;
 
-  public ClientOrStatus(Client? client, string? status) {
+  public static ClientOrStatus Of(Client client) => new (client, null);
+  public static ClientOrStatus Of(string status) => new (null, status);
+
+  private ClientOrStatus(Client? client, string? status) {
     Client = client;
     Status = status;
   }

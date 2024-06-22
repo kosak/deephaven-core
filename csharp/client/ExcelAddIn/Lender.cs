@@ -6,11 +6,14 @@ namespace Deephaven.DeephavenClient.ExcelAddIn;
 internal class Lender<T> {
   private readonly int _concurrentReaderLimit;
   private readonly object _sync = new();
-  private T? _value; 
+  private T _value; 
   private int _numReaders = 0;
   private int _numAwaitingWriters = 0;
 
-  public Lender(int concurrentReaderLimit) => _concurrentReaderLimit = concurrentReaderLimit;
+  public Lender(int concurrentReaderLimit, T initialValue) {
+    _concurrentReaderLimit = concurrentReaderLimit;
+    _value = initialValue;
+  }
 
   public ZamboniReturner<T> Borrow() {
     lock (_sync) {
@@ -32,7 +35,7 @@ internal class Lender<T> {
     }
   }
 
-  public void Replace(T? newValue) {
+  public void Replace(T newValue) {
     lock (_sync) {
       ++_numAwaitingWriters;
       while (true) {
@@ -51,9 +54,9 @@ internal class Lender<T> {
 
 class ZamboniReturner<T> : IDisposable {
   private readonly Lender<T> _lender;
-  public readonly T? Value;
+  public readonly T Value;
 
-  public ZamboniReturner(Lender<T> lender, T? value) {
+  public ZamboniReturner(Lender<T> lender, T value) {
     _lender = lender;
     Value = value;
   }
