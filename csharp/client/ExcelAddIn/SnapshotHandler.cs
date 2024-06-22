@@ -2,58 +2,59 @@
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal sealed class DeephavenHandler : IExcelObservable, IObserver<bool> {
-  private IDisposable? _clientObserverDisposer = null;
+internal sealed class DeephavenHandler : IExcelObservable, IObserver<Unit> {
+  private readonly Notifier<Unit> _notifier;
+  private readonly ISuperNubbin _superNubbin;
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
+  private IDisposable? _clientObserverDisposer = null;
 
-  public DeephavenHandler(Lender<ClientOrStatus> clientLender) =>
-    _clientLender = clientLender;
+  public DeephavenHandler(Notifier<Unit> notifier, ISuperNubbin superNubbin) {
+    _notifier = notifier;
+    _superNubbin = superNubbin;
+  }
 
   public IDisposable Subscribe(IExcelObserver observer) {
     bool isFirstObserver;
+    // Optimistically assume we will use this.
+    var tempDisposer = _notifier.Subscribe(this);
     lock (_sync) {
       isFirstObserver = _observers.Count == 0;
       _observers.Add(observer);
+      if (isFirstObserver) {
+        _clientObserverDisposer = tempDisposer;
+      }
     }
 
-    // If the first observer, listen for client changes (e.g. reconnect button).
-    if (isFirstObserver) {
-      _clientObserverDisposer = _clientLender.Subscribe(this);
+    // If not the first observer, then throw away the observer we just created
+    if (!isFirstObserver) {
+      tempDisposer.Dispose();
     }
 
     // if susbscribing, new observer should just wait for the next message
     // if snapshotting, everyone should probably do a redo
     // if first time, both need to do something
     // ugh
-    OnNewObserver(observer, isFirstObserver);
+    var statusObserver = MakeStatusObserver();
+    _superNubbin.OnNewObserver(observer, isFirstObserver, statusObserver);
     return new ActionDisposable(() => RemoveObserver(observer));
   }
 
   private void RemoveObserver(IExcelObserver observer) {
+    IDisposable tempDisposable;
     lock (_sync) {
       _observers.Remove(observer);
       if (_observers.Count != 0) {
         return;
       }
+
+      tempDisposable = _clientObserverDisposer!;
+      _clientObserverDisposer = null;
     }
 
     // No more observers. Stop observing client changes.
-    var temp = _clientObserverDisposer;
-    _clientObserverDisposer = null;
-    temp!.Dispose();
-
-    OnLastObserverRemoved();
-  }
-
-  private protected void PublishStatusMessage(string message) {
-    var matrix = new object[1, 1];
-    matrix[0, 0] = message;
-    PublishResult(matrix);
-  }
-
-  private protected void PublishException(Exception ex) {
-    PublishStatusMessage(ex.Message);
+    tempDisposable.Dispose();
+    _superNubbin.OnLastObserverRemoved();
   }
 
   private protected void PublishResult(object?[,] matrix) {
@@ -67,28 +68,59 @@ internal sealed class DeephavenHandler : IExcelObservable, IObserver<bool> {
     }
   }
 
-  void IObserver<bool>.OnCompleted() {
+  void IObserver<Unit>.OnCompleted() {
     // Do nothing (for now)
   }
 
-  void IObserver<bool>.OnError(Exception error) {
+  void IObserver<Unit>.OnError(Exception error) {
     // Do nothing (for now)
   }
 
-  void IObserver<bool>.OnNext(bool ignored) {
-    Refresh();
+  void IObserver<Unit>.OnNext(Unit _) {
+    var statusObserver = MakeStatusObserver();
+    _superNubbin.Refresh(statusObserver);
   }
 
+  private IStatusObserver MakeStatusObserver() {
+    lock (_sync) {
+      return new SuperNubbin666(_observers.ToArray());
+    }
+  }
+}
+
+public sealed class SuperNubbin666 : IStatusObserver {
+  private readonly IExcelObserver[] _observers;
+
+  public SuperNubbin666(IExcelObserver[] observers) => _observers = observers;
+
+  public void OnNext(object?[,] result) {
+    foreach (var observer in _observers) {
+      observer.OnNext(result);
+    }
+  }
+}
+
+public sealed class Unit {
+}
+
+public interface IStatusObserver {
+  public void OnStatus(string message) {
+    var matrix = new object[1, 1];
+    matrix[0, 0] = message;
+    OnNext(matrix);
+  }
+
+  public void OnNext(object?[,] result);
+
+  public void OnError(Exception error) {
+    OnStatus(error.Message);
+  }
 }
 
 public interface ISuperNubbin {
-  void Refresh();
-  void OnNewObserver(IExcelObserver observer, bool isFirstObserver);
+  void Refresh(IStatusObserver statusObserver);
+  void OnNewObserver(IExcelObserver observer, bool isFirstObserver, IStatusObserver statusObserver);
   void OnLastObserverRemoved();
-}
-
-public interface IStatusNubbin {
-
 }
 
 internal class SnapshotHandler : ISuperNubbin {
@@ -102,24 +134,24 @@ internal class SnapshotHandler : ISuperNubbin {
     _filter = filter;
   }
 
-  public void Refresh() {
-    Task.Run(PerformFetchTable);
-  }
-
-  public void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver, IObserver<object?[,]> statusObserver) {
-    nubbin.OnStatus($"Snaphotting \"{_tableName}\"");
-    Refresh();
+  public void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver, IStatusObserver statusObserver) {
+    statusObserver.OnStatus($"Snaphotting \"{_tableName}\"");
+    Refresh(statusObserver);
   }
 
   public void OnLastObserverRemoved() {
     // Do nothing.
   }
 
-  private void PerformFetchTable(IObserver<object?[,]> statusObserver) {
+  public void Refresh(IStatusObserver statusObserver) {
+    Task.Run(() => PerformFetchTable(statusObserver));
+  }
+
+  private void PerformFetchTable(IStatusObserver statusObserver) {
     using var borrowedClient = _clientLender.Borrow();
     var cos = borrowedClient.Value;
     if (cos!.Client == null) {
-      nubbin.OnStatus(cos.Status!);
+      statusObserver.OnStatus(cos.Status!);
       return;
     }
 
