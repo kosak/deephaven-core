@@ -39,6 +39,12 @@ internal class DeephavenStateManager {
     return new DeephavenHandler(_notifier, sh);
   }
 
+  public IExcelObservable SubscribeToTable(string tableName, TableFilter filter) {
+    Debug.WriteLine("lalalalalalaal making another one why");
+    var sh = new SubscribeHandler(_clientLender, tableName, filter);
+    return new DeephavenHandler(_notifier, sh);
+  }
+
   private void SetStatus(string message) {
     _clientLender.Replace(ClientOrStatus.Of(message));
     _notifier.NotifyAll(new Unit());

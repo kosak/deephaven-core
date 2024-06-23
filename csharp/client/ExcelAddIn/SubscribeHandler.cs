@@ -8,12 +8,15 @@ using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-internal class SusbcribeHandler : ISuperNubbin {
+internal class SubscribeHandler : ISuperNubbin {
   private readonly Lender<ClientOrStatus> _clientLender;
   private readonly string _tableName;
   private readonly TableFilter _filter;
+  private readonly object _sync = new();
+  private TableHandle? _currentTableHandle;
+  private SubscriptionHandle? _currentSubHandle;
 
-  public SusbcribeHandler(Lender<ClientOrStatus> clientLender, string tableName, TableFilter filter) {
+  public SubscribeHandler(Lender<ClientOrStatus> clientLender, string tableName, TableFilter filter) {
     _clientLender = clientLender;
     _tableName = tableName;
     _filter = filter;
@@ -34,22 +37,14 @@ internal class SusbcribeHandler : ISuperNubbin {
     Task.Run(() => PerformUnsubscribe(oldTh, oldHandle));
   }
 
-  private void PerformUnsubscribe(IStatusObserver? statusObserver) {
+  private void PerformUnsubscribe(TableHandle? th, SubscriptionHandle? subHandle) {
     try {
-      lock (_sync) {
-        oldTable = _subscriptionTable;
-        oldHandle = _subscriptionHandle;
-        _subscriptionTable = null;
-        _subscriptionHandle = null;
+      if (th == null) {
+        return;
       }
-
-      if (oldTable != null) {
-        oldTable.Unsubscribe(oldHandle);
-        oldTable.Dispose();
-      }
+      th.Unsubscribe(subHandle!);
     } catch(Exception ex) {
       Debug.WriteLine(ex);
-      statusObserver?.OnError(ex);
     }
   }
 
@@ -70,11 +65,20 @@ internal class SusbcribeHandler : ISuperNubbin {
 
       var th = cos.Client.Manager.FetchTable(_tableName);
       var subHandle = th.Subscribe(new ZamboniSuperfreak(statusObserver));
-      var (oldTh, oldHandle) = Swappytown(th, subHandle);
+      (oldTh, oldHandle) = Swappytown(th, subHandle);
       // I don't know why these values would ever be non-null, but unsubscribe if they are
-      PerformUnsubscribe(oldTh, oldHandle, null);
+      PerformUnsubscribe(oldTh, oldHandle);
     } catch (Exception ex) {
       statusObserver.OnError(ex);
+    }
+  }
+
+  private Tuple<TableHandle?, SubscriptionHandle?> Swappytown(TableHandle? th, SubscriptionHandle? subHandle) {
+    lock (_sync) {
+      var result = Tuple.Create(_currentTableHandle, _currentSubHandle);
+      _currentTableHandle = th;
+      _currentSubHandle = subHandle;
+      return result;
     }
   }
 }
