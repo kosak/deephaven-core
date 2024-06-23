@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using ExcelDna.Integration;
+using System.Windows.Forms;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
@@ -23,6 +24,7 @@ public static class ClientCache {
 public static class MyFunctions {
   [ExcelCommand(MenuName = "Connect", MenuText = "Connect to Deephaven")]
   public static void ConnectToDeephaven() {
+    MessageBox.Show("No.......!");
     DeephavenStateManager.Instance.Connect();
   }
 
