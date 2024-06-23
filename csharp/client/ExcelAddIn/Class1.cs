@@ -25,10 +25,11 @@ public static class ClientCache {
 public static class MyFunctions {
   [ExcelCommand(MenuName = "Connect", MenuText = "Connect to Deephaven")]
   public static void ConnectToDeephaven() {
-    MessageBox.Show("No.......!");
+    // MessageBox.Show("No.......!");
 
-    new Form1().Show();
-    DeephavenStateManager.Instance.Connect();
+    var f = new Form1();
+    f.Show();
+    // DeephavenStateManager.Instance.Connect();
   }
 
   [ExcelFunction(Description = "Fetches a table", IsThreadSafe = true)]

@@ -4,7 +4,7 @@ using ExcelDna.Integration;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal class DeephavenStateManager {
-  private const string ServerAddress = "10.0.4.106:10000";
+  // private const string ServerAddress = "10.0.4.106:10000";
 
   public static readonly DeephavenStateManager Instance = new();
 
@@ -15,14 +15,14 @@ internal class DeephavenStateManager {
     _clientLender = new (1, ClientOrStatus.Of("Not connected to Deephaven"));
   }
 
-  public void Connect() {
+  public void Connect(string connectionString) {
     SetStatus("Connecting...");
-    Task.Run(ConnectHelper);
+    Task.Run(() => ConnectHelper(connectionString));
   }
 
-  private void ConnectHelper() {
+  private void ConnectHelper(string connectionString) {
     try {
-      var newClient = DeephavenClient.Client.Connect(ServerAddress, new ClientOptions());
+      var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
       SetClient(newClient);
     } catch (Exception ex) {
       SetStatus(ex.Message);

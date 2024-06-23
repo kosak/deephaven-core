@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Deephaven.DeephavenClient.ExcelAddIn;
 
 namespace ExcelAddIn {
   public partial class Form1 : Form {
@@ -18,12 +19,10 @@ namespace ExcelAddIn {
 
     }
 
-    private void button1_Click(object sender, EventArgs e) {
-
-    }
-
-    private void label2_Click(object sender, EventArgs e) {
-
+    private void connectButton_Click(object sender, EventArgs e) {
+      var connectionString = this.connectionStringText.Text.Trim();
+      DeephavenStateManager.Instance.Connect(connectionString);
+      Close();
     }
   }
 }

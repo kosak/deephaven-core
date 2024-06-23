@@ -23,67 +23,46 @@
     /// the contents of this method with the code editor.
     /// </summary>
     private void InitializeComponent() {
-      button1 = new Button();
-      textBox1 = new TextBox();
-      textBox2 = new TextBox();
-      label1 = new Label();
-      label2 = new Label();
+      connectButton = new Button();
+      connectionStringText = new TextBox();
+      connectionStringLabel = new Label();
       SuspendLayout();
       // 
-      // button1
+      // connectButton
       // 
-      button1.Location = new Point(254, 157);
-      button1.Margin = new Padding(4, 5, 4, 5);
-      button1.Name = "button1";
-      button1.Size = new Size(125, 43);
-      button1.TabIndex = 0;
-      button1.Text = "Connect";
-      button1.UseVisualStyleBackColor = true;
-      button1.Click += button1_Click;
+      connectButton.Location = new Point(254, 157);
+      connectButton.Margin = new Padding(4, 5, 4, 5);
+      connectButton.Name = "connectButton";
+      connectButton.Size = new Size(125, 43);
+      connectButton.TabIndex = 0;
+      connectButton.Text = "Connect";
+      connectButton.UseVisualStyleBackColor = true;
+      connectButton.Click += connectButton_Click;
       // 
-      // textBox1
+      // connectionStringText
       // 
-      textBox1.Location = new Point(115, 32);
-      textBox1.Name = "textBox1";
-      textBox1.Size = new Size(264, 31);
-      textBox1.TabIndex = 1;
+      connectionStringText.Location = new Point(237, 35);
+      connectionStringText.Name = "connectionStringText";
+      connectionStringText.Size = new Size(264, 31);
+      connectionStringText.TabIndex = 1;
       // 
-      // textBox2
+      // connectionStringLabel
       // 
-      textBox2.Location = new Point(115, 91);
-      textBox2.Name = "textBox2";
-      textBox2.Size = new Size(264, 31);
-      textBox2.TabIndex = 2;
-      // 
-      // label1
-      // 
-      label1.AutoSize = true;
-      label1.Location = new Point(12, 38);
-      label1.Name = "label1";
-      label1.Size = new Size(61, 25);
-      label1.TabIndex = 3;
-      label1.Text = "Server";
-      // 
-      // label2
-      // 
-      label2.AutoSize = true;
-      label2.Location = new Point(12, 94);
-      label2.Name = "label2";
-      label2.Size = new Size(44, 25);
-      label2.TabIndex = 4;
-      label2.Text = "Port";
-      label2.Click += label2_Click;
+      connectionStringLabel.AutoSize = true;
+      connectionStringLabel.Location = new Point(12, 38);
+      connectionStringLabel.Name = "connectionStringLabel";
+      connectionStringLabel.Size = new Size(153, 25);
+      connectionStringLabel.TabIndex = 3;
+      connectionStringLabel.Text = "Connection String";
       // 
       // Form1
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(800, 450);
-      Controls.Add(label2);
-      Controls.Add(label1);
-      Controls.Add(textBox2);
-      Controls.Add(textBox1);
-      Controls.Add(button1);
+      Controls.Add(connectionStringLabel);
+      Controls.Add(connectionStringText);
+      Controls.Add(connectButton);
       Name = "Form1";
       Text = "Form1";
       Load += Form1_Load;
@@ -93,10 +72,8 @@
 
     #endregion
 
-    private Button button1;
-    private TextBox textBox1;
-    private TextBox textBox2;
-    private Label label1;
-    private Label label2;
+    private Button connectButton;
+    private TextBox connectionStringText;
+    private Label connectionStringLabel;
   }
 }
