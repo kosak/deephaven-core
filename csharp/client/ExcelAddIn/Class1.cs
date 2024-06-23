@@ -22,12 +22,38 @@ public static class ClientCache {
   public static DeephavenClient.Client Instance => _instance.Result;
 }
 
+public class Zamboni9 {
+  private string _connectionString = "10.0.4.60:10000";
+
+  public event EventHandler? ConnectionStringChanged;
+
+  public string ConnectionString {
+    get {
+      return _connectionString;
+    }
+
+    set {
+      if (_connectionString == value) {
+        return;
+      }
+      _connectionString = value;
+      OnConnectionStringChanged();
+    }
+  }
+
+  private void OnConnectionStringChanged() {
+    ConnectionStringChanged?.Invoke(this, EventArgs.Empty);
+  }
+}
+
 public static class MyFunctions {
+  private static readonly Zamboni9 zamboni9 = new ();
+
   [ExcelCommand(MenuName = "Connect", MenuText = "Connect to Deephaven")]
   public static void ConnectToDeephaven() {
     // MessageBox.Show("No.......!");
 
-    var f = new Form1();
+    var f = new Form1(zamboni9);
     f.Show();
     // DeephavenStateManager.Instance.Connect();
   }
