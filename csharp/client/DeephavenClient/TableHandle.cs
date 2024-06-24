@@ -381,8 +381,7 @@ public sealed class TableHandle : IDisposable {
     }
 
     private void NativeOnUpdateImpl(NativePtr<NativeTickingUpdate> nativeTickingUpdate) {
-      Debug.WriteLine("ALERT - not doing 'using' for the moment because I'm testing 'something'");
-      var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
+      using var tickingUpdate = new TickingUpdate(nativeTickingUpdate);
       try {
         _callback.OnTick(tickingUpdate);
       } catch (Exception ex) {

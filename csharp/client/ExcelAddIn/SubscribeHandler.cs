@@ -24,6 +24,8 @@ internal class SubscribeHandler : IDeephavenTableOperation {
         return;
       }
 
+      _observerContainer.OnStatus($"Subscribing to \"{_tableName}\"");
+
       _currentTableHandle = clientOrStatus.Client.Manager.FetchTable(_tableName);
       _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observerContainer));
     } catch (Exception ex) {

@@ -9,6 +9,13 @@ using System.Threading.Tasks;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal sealed class TableOperationManager {
+  private readonly object _sync = new();
+  private readonly Queue<Action<TableOperationManagerState>> _actions = new();
+
+  public TableOperationManager() {
+    new Thread(Doit) { IsBackground = true }.Start();
+  }
+
   public void Register(IDeephavenTableOperation tableOperation) {
     Invoke(ts => {
       ts.TableOperations.Add(tableOperation);
@@ -28,7 +35,27 @@ internal sealed class TableOperationManager {
   }
 
   private void Invoke(Action<TableOperationManagerState> a) {
+    lock (_sync) {
+      _actions.Enqueue(a);
+      Monitor.PulseAll(_sync);
+    }
+  }
 
+  private void Doit() {
+    var state = new TableOperationManagerState();
+    while (true) {
+      Action<TableOperationManagerState>? action;
+      lock (_sync) {
+        while (true) {
+          if (_actions.TryDequeue(out action)) {
+            break;
+          }
+          Monitor.Wait(_sync);
+        }
+      }
+
+      action(state);
+    }
   }
 
   private sealed class TableOperationManagerState {

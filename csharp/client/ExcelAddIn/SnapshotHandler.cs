@@ -23,6 +23,8 @@ internal class SnapshotHandler : IDeephavenTableOperation {
       return;
     }
 
+    _observerContainer.OnStatus($"Snapshotting \"{_tableName}\"");
+
     try {
       using var th = clientOrStatus.Client.Manager.FetchTable(_tableName);
       using var ct = th.ToClientTable();

@@ -24,4 +24,3 @@ internal class DeephavenStateManager {
     return new DeephavenHandler(_tableOperationManager, sh, oc);
   }
 }
-
