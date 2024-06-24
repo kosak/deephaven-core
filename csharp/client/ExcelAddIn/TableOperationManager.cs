@@ -9,13 +9,14 @@ using System.Threading.Tasks;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal sealed class TableOperationManager {
+  private ClientOrStatus _clientOrStatus = ClientOrStatus.Of("Not connected to Deephaven");
   private readonly object _sync = new();
   private readonly HashSet<IDeephavenTableOperation> _tableOperations = new();
 
-  public void Register(IDeephavenTableOperation tableOperation, IStatusObserver statusObserver) {
+  public void Register(IDeephavenTableOperation tableOperation) {
     Invoke(() => {
       _tableOperations.Add(tableOperation);
-      tableOperation.Start(_clientOrStatus, statusObserver);
+      tableOperation.Start(_clientOrStatus);
     });
   }
 
