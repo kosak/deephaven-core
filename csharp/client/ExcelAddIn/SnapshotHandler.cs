@@ -2,67 +2,39 @@
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-public sealed class SuperNubbin666 : IStatusObserver {
-  private readonly IExcelObserver[] _observers;
-
-  public SuperNubbin666(IExcelObserver[] observers) => _observers = observers;
-
-  public void OnNext(object?[,] result) {
-    foreach (var observer in _observers) {
-      observer.OnNext(result);
-    }
-  }
-}
-
-public sealed class Unit {
-}
-
-
-
-internal class SnapshotHandler : ISuperNubbin {
-  private readonly Lender<ClientOrStatus> _clientLender;
+internal class SnapshotHandler : IDeephavenTableOperation {
   private readonly string _tableName;
   private readonly TableFilter _filter;
+  private readonly ObserverContainer _observerContainer;
 
-  public SnapshotHandler(Lender<ClientOrStatus> clientLender, string tableName, TableFilter filter) {
-    _clientLender = clientLender;
+  public SnapshotHandler(string tableName, TableFilter filter, ObserverContainer observerContainer) {
     _tableName = tableName;
     _filter = filter;
+    _observerContainer = observerContainer;
   }
 
-  public void OnNewObserver(IExcelObserver newObserver, bool isFirstObserver, IStatusObserver statusObserver) {
-    statusObserver.OnStatus($"Snaphotting \"{_tableName}\"");
-    Refresh(statusObserver);
-  }
-
-  public void OnLastObserverRemoved() {
-    // Do nothing.
-  }
-
-  public void Refresh(IStatusObserver statusObserver) {
-    Task.Run(() => PerformFetchTable(statusObserver));
-  }
-
-  private void PerformFetchTable(IStatusObserver statusObserver) {
-    using var borrowedClient = _clientLender.Borrow();
-    var cos = borrowedClient.Value;
-    if (cos.Status != null) {
-      statusObserver.OnStatus(cos.Status);
+  public void Start(ClientOrStatus clientOrStatus) {
+    if (clientOrStatus.Status != null) {
+      _observerContainer.OnStatus(clientOrStatus.Status);
       return;
     }
 
-    if (cos.Client == null) {
+    if (clientOrStatus.Client == null) {
       return;
     }
 
     try {
-      using var th = cos.Client.Manager.FetchTable(_tableName);
+      using var th = clientOrStatus.Client.Manager.FetchTable(_tableName);
       using var ct = th.ToClientTable();
       // TODO(kosak): Filter the client table here
       var result = Renderer.Render(ct);
-      statusObserver.OnNext(result);
+      _observerContainer.OnNext(result);
     } catch (Exception ex) {
-      statusObserver.OnError(ex);
+      _observerContainer.OnError(ex);
     }
+  }
+
+  public void Stop() {
+    // Nothing to do.
   }
 }
