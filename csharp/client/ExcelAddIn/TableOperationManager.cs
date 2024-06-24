@@ -9,43 +9,68 @@ using System.Threading.Tasks;
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal sealed class TableOperationManager {
-  private ClientOrStatus _clientOrStatus = ClientOrStatus.Of("Not connected to Deephaven");
-  private readonly object _sync = new();
-  private readonly HashSet<IDeephavenTableOperation> _tableOperations = new();
-
   public void Register(IDeephavenTableOperation tableOperation) {
-    Invoke(() => {
-      _tableOperations.Add(tableOperation);
-      tableOperation.Start(_clientOrStatus);
+    Invoke(ts => {
+      ts.TableOperations.Add(tableOperation);
+      tableOperation.Start(ts.ClientOrStatus);
     });
   }
 
   public void Unregister(IDeephavenTableOperation tableOperation) {
-    Invoke(() => {
-      _tableOperations.Remove(tableOperation);
+    Invoke(ts => {
+      ts.TableOperations.Remove(tableOperation);
       tableOperation.Stop();
     });
   }
 
   public void Connect(string connectionString) {
-    Invoke(() => ConnectHelper(connectionString));
+    Invoke(ts => ts.ConnectHelper(connectionString));
   }
 
-  private void ConnectHelper(string connectionString) {
-    try {
-      var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
-      _clientOrStatus = ClientOrStatus.Of(newClient);
-    } catch (Exception ex) {
-      _clientOrStatus = ClientOrStatus.Of(ex.Message);
+  private void Invoke(Action<TableOperationManagerState> a) {
+
+  }
+
+  private sealed class TableOperationManagerState {
+    public ClientOrStatus ClientOrStatus = ClientOrStatus.Of("Not connected to Deephaven");
+    public readonly HashSet<IDeephavenTableOperation> TableOperations = new();
+
+    public void ConnectHelper(string connectionString) {
+      ClientOrStatus = ClientOrStatus.Of("Connecting...");
+      Broadcast();
+      try {
+        var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
+        ClientOrStatus = ClientOrStatus.Of(newClient);
+      } catch (Exception ex) {
+        ClientOrStatus = ClientOrStatus.Of(ex.Message);
+      }
+
+      Broadcast();
     }
 
-    foreach (var top in _tableOperations) {
-      // TODO(kosak): try-catch
-      top.Stop();
+    private void Broadcast() {
+      foreach (var top in TableOperations) {
+        // TODO(kosak): try-catch
+        top.Stop();
+      }
+
+      foreach (var top in TableOperations) {
+        // TODO(kosak): try-catch
+        top.Start(ClientOrStatus);
+      }
     }
-    foreach (var top in _tableOperations) {
-      // TODO(kosak): try-catch
-      top.Start(_clientOrStatus);
-    }
+  }
+}
+
+public sealed class ClientOrStatus {
+  public readonly Client? Client;
+  public readonly string? Status;
+
+  public static ClientOrStatus Of(Client client) => new(client, null);
+  public static ClientOrStatus Of(string status) => new(null, status);
+
+  private ClientOrStatus(Client? client, string? status) {
+    Client = client;
+    Status = status;
   }
 }
