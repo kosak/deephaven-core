@@ -98,6 +98,8 @@ class ZamboniSuperfreak : ITickingCallback {
   }
 
   public void OnFailure(string errorText) {
-    throw new NotImplementedException();
+    var result = new object[1, 1];
+    result[0, 0] = errorText;
+    _statusObserver.OnNext(result);
   }
 }
