@@ -40,12 +40,12 @@ internal sealed class TableOperationManager {
     }
 
     foreach (var top in _tableOperations) {
-      // try-catch
+      // TODO(kosak): try-catch
       top.Stop();
     }
     foreach (var top in _tableOperations) {
-      // try-catch
-      top.Start(_clientOrStatus, statusObserverDoNotWant);
+      // TODO(kosak): try-catch
+      top.Start(_clientOrStatus);
     }
   }
 }

@@ -7,9 +7,11 @@ internal sealed class DeephavenHandler : IExcelObservable {
   private readonly IDeephavenTableOperation _tableOperation;
   private readonly ObserverContainer _observerContainer;
 
-  public DeephavenHandler(TableOperationManager tableOperationManager, IDeephavenTableOperation tableOperation) {
+  public DeephavenHandler(TableOperationManager tableOperationManager, IDeephavenTableOperation tableOperation,
+    ObserverContainer observerContainer) {
     _tableOperationManager = tableOperationManager;
     _tableOperation = tableOperation;
+    _observerContainer = observerContainer;
   }
 
   public IDisposable Subscribe(IExcelObserver observer) {
@@ -26,12 +28,6 @@ internal sealed class DeephavenHandler : IExcelObservable {
     _observerContainer.Remove(observer, out var wasLast);
     if (wasLast) {
       _tableOperationManager.Unregister(_tableOperation);
-    }
-  }
-
-  private IStatusObserver MakeStatusObserver() {
-    lock (_sync) {
-      return new SuperNubbin666(_observers.ToArray());
     }
   }
 }
@@ -74,8 +70,6 @@ public class ObserverContainer {
       observer.OnNext(result);
     }
   }
-
-
 }
 
 public interface IDeephavenTableOperation {
