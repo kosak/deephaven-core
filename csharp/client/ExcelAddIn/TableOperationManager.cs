@@ -31,7 +31,7 @@ internal sealed class TableOperationManager {
   }
 
   public void Connect(string connectionString) {
-    Invoke(ts => ts.ConnectHelper(connectionString));
+    Invoke(ts => ts.StartConnect(this, connectionString));
   }
 
   private void Invoke(Action<TableOperationManagerState> a) {
@@ -61,15 +61,35 @@ internal sealed class TableOperationManager {
   private sealed class TableOperationManagerState {
     public ClientOrStatus ClientOrStatus = ClientOrStatus.Of("Not connected to Deephaven");
     public readonly HashSet<IDeephavenTableOperation> TableOperations = new();
+    private object _connectionCookie = new ();
 
-    public void ConnectHelper(string connectionString) {
-      ClientOrStatus = ClientOrStatus.Of("Connecting...");
+    public void StartConnect(TableOperationManager owner, string connectionString) {
+      ClientOrStatus = ClientOrStatus.Of($"Connecting to {connectionString}");
       Broadcast();
-      try {
-        var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
+      var cc = new object();
+      _connectionCookie = cc;
+      Task.Run(() => {
+        try {
+          var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
+          owner.Invoke(ts => ts.FinishConnect(cc, newClient, null));
+        } catch (Exception ex) {
+          owner.Invoke(ts => ts.FinishConnect(cc, null, ex));
+        }
+      });
+    }
+
+    private void FinishConnect(object expectedConnectionCookie, Client? newClient, Exception? exception) {
+      if (expectedConnectionCookie != _connectionCookie) {
+        newClient?.Dispose();
+        return;
+      }
+
+      if (newClient != null) {
         ClientOrStatus = ClientOrStatus.Of(newClient);
-      } catch (Exception ex) {
-        ClientOrStatus = ClientOrStatus.Of(ex.Message);
+      } else if (exception != null) {
+        ClientOrStatus = ClientOrStatus.Of(exception.Message);
+      } else {
+        return;
       }
 
       Broadcast();
