@@ -718,9 +718,7 @@ public:
     StringPoolBuilder builder;
     auto string_handle = builder.Add(GetWhat(eptr));
     auto pool_handle = builder.Build();
-    fmt::println(std::cerr, "** debug ** got an error {}", GetWhat(eptr));
     (*on_failure_)(string_handle, pool_handle);
-    fmt::println(std::cerr, "** debug ** on the way back, haven't crashed yet {}", GetWhat(eptr));
   }
 
 private:

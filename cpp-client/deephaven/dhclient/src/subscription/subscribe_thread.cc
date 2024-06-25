@@ -214,12 +214,10 @@ void UpdateProcessor::RunUntilCancelled(std::shared_ptr<UpdateProcessor> self) {
   try {
     self->RunForeverHelper();
   } catch (...) {
-    fmt::println(std::cerr, "*** debug *** Caught something");
     // If the thread has been cancelled via explicit user action, then swallow all errors.
     if (!self->cancelled_) {
       self->callback_->OnFailure(std::current_exception());
     }
-    fmt::println(std::cerr, "*** debug *** I'm outie");
   }
 }
 
@@ -228,7 +226,6 @@ void UpdateProcessor::RunForeverHelper() {
   BarrageProcessor bp(schema_);
   // Process Arrow Flight messages until error or cancellation.
   while (true) {
-    fmt::println(std::cerr, "*** debug *** Running again");
     auto chunk = fsr_->Next();
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(chunk));
     if (chunk->data == nullptr) {
