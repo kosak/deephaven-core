@@ -231,6 +231,11 @@ void UpdateProcessor::RunForeverHelper() {
     fmt::println(std::cerr, "*** debug *** Running again");
     auto chunk = fsr_->Next();
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(chunk));
+    if (chunk->data == nullptr) {
+      // Stream ended. This is abnormal for Deephaven.
+      const char *message = "Unexpected end of stream";
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
     const auto &cols = chunk->data->columns();
     auto column_sources = MakeReservedVector<std::shared_ptr<ColumnSource>>(cols.size());
     auto sizes = MakeReservedVector<size_t>(cols.size());
