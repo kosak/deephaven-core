@@ -8,7 +8,7 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connect to Deephaven")]
   public static void ConnectToDeephaven() {
-    var f = new Form1(ConnectionDialogViewModel, (Form self, string connectionString) => {
+    var f = new ConnectionDialog(ConnectionDialogViewModel, (Form self, string connectionString) => {
       DeephavenStateManager.Instance.Connect(connectionString);
       self.Close();
     });
