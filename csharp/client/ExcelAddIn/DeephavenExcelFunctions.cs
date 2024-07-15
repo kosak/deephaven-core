@@ -1,8 +1,20 @@
-﻿using Deephaven.DeephavenClient.Interop.TestApi;
+﻿using System.Runtime.InteropServices;
+using Deephaven.DeephavenClient.Interop.TestApi;
 using ExcelDna.Integration;
 using ExcelAddIn;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
+
+public static partial class EverythingHurts1 {
+  [LibraryImport(@"C:\Users\kosak\dhinstall2\bin\dhsimple2.dll")]
+  public static partial void zamboni_doadd(int a, int b, out int result);
+}
+
+public static partial class EverythingHurts2 {
+  [LibraryImport(@"dhsimple2")]
+  public static partial void zamboni_doadd(int a, int b, out int result);
+}
+
 
 public static class DeephavenExcelFunctions {
   private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();
@@ -17,9 +29,37 @@ public static class DeephavenExcelFunctions {
   }
 
   [ExcelFunction(Description = "Test simple call to add", IsThreadSafe = true)]
-  public static object TEST_ADD(int a, int b) {
-    BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_Add(a, b, out var result);
-    return result;
+  public static object TEST4_ADD(int a, int b) {
+    try {
+      BasicInteropInteractions.deephaven_dhcore_interop_testapi_BasicInteropInteractions_Add(a, b, out var result);
+      return result;
+    } catch (Exception e) {
+      var ts = e.TargetSite != null ? e.TargetSite.ToString() : "ts12";
+      return $"v8a:{e.Message} {ts}";
+    }
+  }
+
+
+  [ExcelFunction(Description = "Test simple call to add", IsThreadSafe = true)]
+  public static object TEST_eh1_ADD(int a, int b) {
+    try {
+      EverythingHurts1.zamboni_doadd(a, b, out var result);
+      return result;
+    } catch (Exception e) {
+      var ts = e.TargetSite != null ? e.TargetSite.ToString() : "ts12";
+      return $"v8b:{e.Message} {ts}";
+    }
+  }
+
+  [ExcelFunction(Description = "Test simple call to add", IsThreadSafe = true)]
+  public static object TEST_eh2_ADD(int a, int b) {
+    try {
+      EverythingHurts2.zamboni_doadd(a, b, out var result);
+      return result;
+    } catch (Exception e) {
+      var ts = e.TargetSite != null ? e.TargetSite.ToString() : "ts12";
+      return $"v8b:{e.Message} {ts}";
+    }
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
