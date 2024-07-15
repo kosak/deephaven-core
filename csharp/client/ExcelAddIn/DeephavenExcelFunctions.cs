@@ -5,16 +5,20 @@ using ExcelAddIn;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
-public static partial class EverythingHurts1 {
-  [LibraryImport(@"C:\Users\kosak\dhinstall2\bin\dhsimple2.dll")]
+public static partial class InvokeWithFullPath {
+  [LibraryImport(@"C:\Users\kosak\Desktop\laboratory\dhsimple2.dll")]
   public static partial void zamboni_doadd(int a, int b, out int result);
 }
 
-public static partial class EverythingHurts2 {
+public static partial class InvokeWithBareName {
   [LibraryImport(@"dhsimple2")]
   public static partial void zamboni_doadd(int a, int b, out int result);
 }
 
+public static partial class InvokeWithDllExtension {
+  [LibraryImport(@"dhsimple2.dll")]
+  public static partial void zamboni_doadd(int a, int b, out int result);
+}
 
 public static class DeephavenExcelFunctions {
   private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();
@@ -39,11 +43,10 @@ public static class DeephavenExcelFunctions {
     }
   }
 
-
   [ExcelFunction(Description = "Test simple call to add", IsThreadSafe = true)]
-  public static object TEST_eh1_ADD(int a, int b) {
+  public static object TEST_FullPath(int a, int b) {
     try {
-      EverythingHurts1.zamboni_doadd(a, b, out var result);
+      InvokeWithFullPath.zamboni_doadd(a, b, out var result);
       return result;
     } catch (Exception e) {
       var ts = e.TargetSite != null ? e.TargetSite.ToString() : "ts12";
@@ -52,9 +55,20 @@ public static class DeephavenExcelFunctions {
   }
 
   [ExcelFunction(Description = "Test simple call to add", IsThreadSafe = true)]
-  public static object TEST_eh2_ADD(int a, int b) {
+  public static object TEST_BareName(int a, int b) {
     try {
-      EverythingHurts2.zamboni_doadd(a, b, out var result);
+      InvokeWithBareName.zamboni_doadd(a, b, out var result);
+      return result;
+    } catch (Exception e) {
+      var ts = e.TargetSite != null ? e.TargetSite.ToString() : "ts12";
+      return $"v8b:{e.Message} {ts}";
+    }
+  }
+
+  [ExcelFunction(Description = "Test simple call to add", IsThreadSafe = true)]
+  public static object TEST_DllExtension(int a, int b) {
+    try {
+      InvokeWithDllExtension.zamboni_doadd(a, b, out var result);
       return result;
     } catch (Exception e) {
       var ts = e.TargetSite != null ? e.TargetSite.ToString() : "ts12";
