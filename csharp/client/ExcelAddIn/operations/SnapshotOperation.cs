@@ -1,9 +1,8 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using ExcelAddIn.operations;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
-internal class SnapshotOperation : IDeephavenTableOperation {
+internal class SnapshotOperation : IOperation {
   private readonly string _tableName;
   private readonly TableFilter _filter;
   private readonly ObserverContainer _observerContainer;
@@ -14,20 +13,21 @@ internal class SnapshotOperation : IDeephavenTableOperation {
     _observerContainer = observerContainer;
   }
 
-  public void Start(ClientOrStatus clientOrStatus) {
-    if (clientOrStatus.Status != null) {
-      _observerContainer.OnStatus(clientOrStatus.Status);
+  public void Start(OperationMessage operationMessage) {
+    if (operationMessage.Status != null) {
+      _observerContainer.OnStatus(operationMessage.Status);
       return;
     }
 
-    if (clientOrStatus.Client == null) {
+    if (operationMessage.Client == null) {
+      // Impossible.
       return;
     }
 
     _observerContainer.OnStatus($"Snapshotting \"{_tableName}\"");
 
     try {
-      using var th = clientOrStatus.Client.Manager.FetchTable(_tableName);
+      using var th = operationMessage.Client.Manager.FetchTable(_tableName);
       using var ct = th.ToClientTable();
       // TODO(kosak): Filter the client table here
       var result = Renderer.Render(ct);

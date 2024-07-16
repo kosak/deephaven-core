@@ -22,7 +22,7 @@ internal sealed class OperationManager {
   public void Register(IOperation operation) {
     Invoke(ts => {
       ts.TableOperations.Add(operation);
-      operation.Start(ts.ClientOrStatus);
+      operation.Start(ts.OperationMessage);
     });
   }
 
@@ -63,12 +63,12 @@ internal sealed class OperationManager {
   }
 
   private sealed class TableOperationManagerState {
-    public ClientOrStatus ClientOrStatus = ClientOrStatus.Of("Not connected to Deephaven");
+    public OperationMessage OperationMessage = OperationMessage.Of("Not connected to Deephaven");
     public readonly HashSet<IOperation> TableOperations = new();
     private object _connectionCookie = new();
 
     public void StartConnect(OperationManager owner, string connectionString) {
-      ClientOrStatus = ClientOrStatus.Of($"Connecting to {connectionString}");
+      OperationMessage = OperationMessage.Of($"Connecting to {connectionString}");
       Broadcast();
       var cc = new object();
       _connectionCookie = cc;
@@ -89,9 +89,9 @@ internal sealed class OperationManager {
       }
 
       if (newClient != null) {
-        ClientOrStatus = ClientOrStatus.Of(newClient);
+        OperationMessage = OperationMessage.Of(newClient);
       } else if (exception != null) {
-        ClientOrStatus = ClientOrStatus.Of(exception.Message);
+        OperationMessage = OperationMessage.Of(exception.Message);
       } else {
         return;
       }
@@ -107,7 +107,7 @@ internal sealed class OperationManager {
 
       foreach (var top in TableOperations) {
         // TODO(kosak): try-catch
-        top.Start(ClientOrStatus);
+        top.Start(OperationMessage);
       }
     }
   }

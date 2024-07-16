@@ -1,15 +1,15 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using ExcelAddIn.operations;
+﻿using Deephaven.DeephavenClient.ExcelAddIn.Operations;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal sealed class DeephavenHandler : IExcelObservable {
-  private readonly TableOperationManager _tableOperationManager;
-  private readonly IDeephavenTableOperation _tableOperation;
+  private readonly OperationManager _tableOperationManager;
+  private readonly IOperation _tableOperation;
   private readonly ObserverContainer _observerContainer;
 
-  public DeephavenHandler(TableOperationManager tableOperationManager, IDeephavenTableOperation tableOperation,
+  public DeephavenHandler(OperationManager tableOperationManager, IOperation tableOperation,
     ObserverContainer observerContainer) {
     _tableOperationManager = tableOperationManager;
     _tableOperation = tableOperation;

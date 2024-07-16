@@ -1,6 +1,5 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using ExcelAddIn.operations;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
@@ -17,20 +16,21 @@ internal class SubscribeOperation : IOperation {
     _observerContainer = observerContainer;
   }
 
-  public void Start(ClientOrStatus clientOrStatus) {
+  public void Start(OperationMessage operationMessage) {
     try {
-      if (clientOrStatus.Status != null) {
-        _observerContainer.OnStatus(clientOrStatus.Status);
+      if (operationMessage.Status != null) {
+        _observerContainer.OnStatus(operationMessage.Status);
         return;
       }
 
-      if (clientOrStatus.Client == null) {
+      if (operationMessage.Client == null) {
+        // Impossible.
         return;
       }
 
       _observerContainer.OnStatus($"Subscribing to \"{_tableName}\"");
 
-      _currentTableHandle = clientOrStatus.Client.Manager.FetchTable(_tableName);
+      _currentTableHandle = operationMessage.Client.Manager.FetchTable(_tableName);
       _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observerContainer));
     } catch (Exception ex) {
       _observerContainer.OnError(ex);
