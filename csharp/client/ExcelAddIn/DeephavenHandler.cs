@@ -1,4 +1,6 @@
-﻿using ExcelDna.Integration;
+﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using ExcelAddIn.operations;
+using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 
@@ -70,9 +72,4 @@ public class ObserverContainer {
       observer.OnNext(result);
     }
   }
-}
-
-public interface IDeephavenTableOperation {
-  void Start(ClientOrStatus clientOrStatus);
-  void Stop();
 }

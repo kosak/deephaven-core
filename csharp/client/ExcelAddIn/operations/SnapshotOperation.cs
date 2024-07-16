@@ -1,5 +1,5 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
+﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using ExcelAddIn.operations;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 

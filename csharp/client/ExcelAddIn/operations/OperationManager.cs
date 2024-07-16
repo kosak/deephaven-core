@@ -1,32 +1,35 @@
-﻿using ExcelDna.Integration;
+﻿using Deephaven.DeephavenClient;
+using Deephaven.DeephavenClient.ExcelAddIn;
+using ExcelDna.Integration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn;
+namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
-internal sealed class TableOperationManager {
+internal sealed class OperationManager {
   private readonly object _sync = new();
   private readonly Queue<Action<TableOperationManagerState>> _actions = new();
 
-  public TableOperationManager() {
+  public OperationManager() {
     new Thread(Doit) { IsBackground = true }.Start();
   }
 
-  public void Register(IDeephavenTableOperation tableOperation) {
+  public void Register(IOperation operation) {
     Invoke(ts => {
-      ts.TableOperations.Add(tableOperation);
-      tableOperation.Start(ts.ClientOrStatus);
+      ts.TableOperations.Add(operation);
+      operation.Start(ts.ClientOrStatus);
     });
   }
 
-  public void Unregister(IDeephavenTableOperation tableOperation) {
+  public void Unregister(IOperation operation) {
     Invoke(ts => {
-      ts.TableOperations.Remove(tableOperation);
-      tableOperation.Stop();
+      ts.TableOperations.Remove(operation);
+      operation.Stop();
     });
   }
 
@@ -50,6 +53,7 @@ internal sealed class TableOperationManager {
           if (_actions.TryDequeue(out action)) {
             break;
           }
+
           Monitor.Wait(_sync);
         }
       }
@@ -60,10 +64,10 @@ internal sealed class TableOperationManager {
 
   private sealed class TableOperationManagerState {
     public ClientOrStatus ClientOrStatus = ClientOrStatus.Of("Not connected to Deephaven");
-    public readonly HashSet<IDeephavenTableOperation> TableOperations = new();
-    private object _connectionCookie = new ();
+    public readonly HashSet<IOperation> TableOperations = new();
+    private object _connectionCookie = new();
 
-    public void StartConnect(TableOperationManager owner, string connectionString) {
+    public void StartConnect(OperationManager owner, string connectionString) {
       ClientOrStatus = ClientOrStatus.Of($"Connecting to {connectionString}");
       Broadcast();
       var cc = new object();
@@ -106,18 +110,5 @@ internal sealed class TableOperationManager {
         top.Start(ClientOrStatus);
       }
     }
-  }
-}
-
-public sealed class ClientOrStatus {
-  public readonly Client? Client;
-  public readonly string? Status;
-
-  public static ClientOrStatus Of(Client client) => new(client, null);
-  public static ClientOrStatus Of(string status) => new(null, status);
-
-  private ClientOrStatus(Client? client, string? status) {
-    Client = client;
-    Status = status;
   }
 }

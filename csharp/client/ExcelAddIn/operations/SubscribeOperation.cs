@@ -1,10 +1,10 @@
 ﻿using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using ExcelAddIn.operations;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
-internal class SubscribeOperation : IDeephavenTableOperation {
+internal class SubscribeOperation : IOperation {
   private readonly string _tableName;
   private readonly TableFilter _filter;
   private readonly ObserverContainer _observerContainer;
