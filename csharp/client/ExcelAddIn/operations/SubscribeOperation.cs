@@ -48,21 +48,21 @@ internal class SubscribeOperation : IOperation {
   }
 
   private class MyTickingCallback : ITickingCallback {
-    private readonly ObserverContainer _observerContainer;
+    private readonly IObserverCollectionSender _sender;
 
-    public MyTickingCallback(ObserverContainer observerContainer) => _observerContainer = observerContainer;
+    public MyTickingCallback(IObserverCollectionSender sender) => _sender = sender;
 
     public void OnTick(TickingUpdate update) {
       try {
         var results = Renderer.Render(update.Current);
-        _observerContainer.OnNext(results);
+        _sender.OnNext(results);
       } catch (Exception ex) {
-        _observerContainer.OnError(ex);
+        _sender.OnError(ex);
       }
     }
 
     public void OnFailure(string errorText) {
-      _observerContainer.OnStatus(errorText);
+      _sender.OnStatus(errorText);
     }
   }
 }
