@@ -1,7 +1,7 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn;
 using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 
-namespace ExcelAddIn {
+namespace Deephaven.DeephavenClient.ExcelAddIn.Views {
   public partial class ConnectionDialog : Form {
     private readonly Action<Form, string> _onConnect;
 

@@ -1,8 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
+using Deephaven.DeephavenClient.ExcelAddIn.Views;
 using Deephaven.DeephavenClient.Interop.TestApi;
 using ExcelDna.Integration;
-using ExcelAddIn;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 

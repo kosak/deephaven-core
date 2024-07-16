@@ -1,4 +1,4 @@
-﻿namespace ExcelAddIn {
+﻿namespace Deephaven.DeephavenClient.ExcelAddIn.Views {
   partial class ConnectionDialog {
     /// <summary>
     /// Required designer variable.
