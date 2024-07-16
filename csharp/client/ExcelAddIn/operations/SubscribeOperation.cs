@@ -1,15 +1,17 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+﻿using Deephaven.DeephavenClient;
+using Deephaven.DeephavenClient.ExcelAddIn;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn;
+namespace ExcelAddIn.operations;
 
-internal class SubscribeHandler : IDeephavenTableOperation {
+internal class SubscribeOperation : IDeephavenTableOperation {
   private readonly string _tableName;
   private readonly TableFilter _filter;
   private readonly ObserverContainer _observerContainer;
   private TableHandle? _currentTableHandle;
   private SubscriptionHandle? _currentSubHandle;
 
-  public SubscribeHandler(string tableName, TableFilter filter, ObserverContainer observerContainer) {
+  public SubscribeOperation(string tableName, TableFilter filter, ObserverContainer observerContainer) {
     _tableName = tableName;
     _filter = filter;
     _observerContainer = observerContainer;
@@ -39,6 +41,7 @@ internal class SubscribeHandler : IDeephavenTableOperation {
     if (_currentTableHandle == null) {
       return;
     }
+
     _currentTableHandle.Unsubscribe(_currentSubHandle!);
     _currentSubHandle!.Dispose();
     _currentSubHandle = null;

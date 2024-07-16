@@ -1,13 +1,14 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+﻿using Deephaven.DeephavenClient.ExcelAddIn;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn;
+namespace ExcelAddIn.operations;
 
-internal class SnapshotHandler : IDeephavenTableOperation {
+internal class SnapshotOperation : IDeephavenTableOperation {
   private readonly string _tableName;
   private readonly TableFilter _filter;
   private readonly ObserverContainer _observerContainer;
 
-  public SnapshotHandler(string tableName, TableFilter filter, ObserverContainer observerContainer) {
+  public SnapshotOperation(string tableName, TableFilter filter, ObserverContainer observerContainer) {
     _tableName = tableName;
     _filter = filter;
     _observerContainer = observerContainer;
