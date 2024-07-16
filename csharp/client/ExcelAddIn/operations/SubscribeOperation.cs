@@ -1,25 +1,23 @@
-﻿using Deephaven.DeephavenClient;
+﻿using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
 internal class SubscribeOperation : IOperation {
   private readonly string _tableName;
-  private readonly TableFilter _filter;
-  private readonly ObserverContainer _observerContainer;
+  private readonly IObserverCollectionSender _sender;
   private TableHandle? _currentTableHandle;
   private SubscriptionHandle? _currentSubHandle;
 
-  public SubscribeOperation(string tableName, TableFilter filter, ObserverContainer observerContainer) {
+  public SubscribeOperation(string tableName, IObserverCollectionSender sender) {
     _tableName = tableName;
-    _filter = filter;
-    _observerContainer = observerContainer;
+    _sender = sender;
   }
 
   public void Start(OperationMessage operationMessage) {
     try {
       if (operationMessage.Status != null) {
-        _observerContainer.OnStatus(operationMessage.Status);
+        _sender.OnStatus(operationMessage.Status);
         return;
       }
 
@@ -28,12 +26,12 @@ internal class SubscribeOperation : IOperation {
         return;
       }
 
-      _observerContainer.OnStatus($"Subscribing to \"{_tableName}\"");
+      _sender.OnStatus($"Subscribing to \"{_tableName}\"");
 
       _currentTableHandle = operationMessage.Client.Manager.FetchTable(_tableName);
-      _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observerContainer));
+      _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_sender));
     } catch (Exception ex) {
-      _observerContainer.OnError(ex);
+      _sender.OnError(ex);
     }
   }
 
