@@ -1,4 +1,5 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn;
+using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 
 namespace ExcelAddIn {
   public partial class ConnectionDialog : Form {

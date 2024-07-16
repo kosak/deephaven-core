@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Deephaven.DeephavenClient.ExcelAddIn;
+﻿namespace Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 internal static class Renderer {
   public static object?[,] Render(ClientTable table) {
@@ -23,6 +17,7 @@ internal static class Renderer {
         if (temp is DhDateTime dh) {
           temp = dh.DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
         }
+
         result[rowIndex + 1, colIndex] = temp;
       }
     }

@@ -1,4 +1,6 @@
-﻿namespace Deephaven.DeephavenClient.ExcelAddIn;
+﻿using ExcelAddIn.util;
+
+namespace Deephaven.DeephavenClient.ExcelAddIn;
 
 internal class SubscribeHandler : IDeephavenTableOperation {
   private readonly string _tableName;

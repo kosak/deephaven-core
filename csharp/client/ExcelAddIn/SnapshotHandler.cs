@@ -1,4 +1,5 @@
-﻿using ExcelDna.Integration;
+﻿using ExcelAddIn.util;
+using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
 

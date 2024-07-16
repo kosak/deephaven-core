@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 using Deephaven.DeephavenClient.Interop.TestApi;
 using ExcelDna.Integration;
 using ExcelAddIn;
@@ -35,26 +36,5 @@ public static class DeephavenExcelFunctions {
     var dsm = DeephavenStateManager.Instance;
     const string functionName = "Deephaven.Client.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
     return ExcelAsyncUtil.Observe(functionName, tableName, () => dsm.SubscribeToTable(tableName, TableFilter.Default));
-  }
-}
-
-public class ConnectionDialogViewModel {
-  private string _connectionString = "10.0.4.106:10000";
-
-  public event EventHandler? ConnectionStringChanged;
-
-  public string ConnectionString {
-    get => _connectionString;
-    set {
-      if (_connectionString == value) {
-        return;
-      }
-      _connectionString = value;
-      OnConnectionStringChanged();
-    }
-  }
-
-  private void OnConnectionStringChanged() {
-    ConnectionStringChanged?.Invoke(this, EventArgs.Empty);
   }
 }
