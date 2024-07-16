@@ -2,7 +2,7 @@
 using Deephaven.DeephavenClient.ExcelAddIn;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
-namespace ExcelAddIn.operations;
+namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
 internal class SubscribeOperation : IDeephavenTableOperation {
   private readonly string _tableName;

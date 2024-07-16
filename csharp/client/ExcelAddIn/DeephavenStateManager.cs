@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Deephaven.DeephavenClient.ExcelAddIn.Operations;
 using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
@@ -14,13 +15,13 @@ internal class DeephavenStateManager {
 
   public IExcelObservable SnapshotTable(string tableName, TableFilter filter) {
     var oc = new ObserverContainer();
-    var sh = new SnapshotHandler(tableName, filter, oc);
+    var sh = new SnapshotOperation(tableName, filter, oc);
     return new DeephavenHandler(_tableOperationManager, sh, oc);
   }
 
   public IExcelObservable SubscribeToTable(string tableName, TableFilter filter) {
     var oc = new ObserverContainer();
-    var sh = new SubscribeHandler(tableName, filter, oc);
+    var sh = new SubscribeOperation(tableName, filter, oc);
     return new DeephavenHandler(_tableOperationManager, sh, oc);
   }
 }
