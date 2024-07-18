@@ -12,7 +12,7 @@ internal class SnapshotOperation : IOperation {
     _sender = sender;
   }
 
-  public void Start(OperationMessage operationMessage) {
+  public void Start(NewClientOrStatus operationMessage) {
     if (operationMessage.Status != null) {
       _sender.OnStatus(operationMessage.Status);
       return;

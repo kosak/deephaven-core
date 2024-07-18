@@ -14,7 +14,7 @@ internal class SubscribeOperation : IOperation {
     _sender = sender;
   }
 
-  public void Start(OperationMessage operationMessage) {
+  public void Start(NewClientOrStatus operationMessage) {
     try {
       if (operationMessage.Status != null) {
         _sender.OnStatus(operationMessage.Status);
