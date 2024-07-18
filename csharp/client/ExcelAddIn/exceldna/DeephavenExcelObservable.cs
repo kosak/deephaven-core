@@ -11,15 +11,15 @@ namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 /// there are no observers, and there has been no attempt
 /// to do the table operation (e.g. no attempt to fetch or subscribe to the table).
 ///
-/// On the first call to Subscribe, we add the observer to our collectionManager
+/// On the first call to Subscribe, we add the observer to our collection
 /// and we also register the operation with the OperationManager. This will in turn
 /// indirectly invoke IOperation.Start(), which will begin the specified interaction
 /// with Deephaven (for example, fetching or subscribing to a Deephaven table).
 ///
-/// Subsequent calls to Subscribe just add the observer to the collectionManager.
+/// Subsequent calls to Subscribe just add the observer to the collection.
 ///
 /// The inverse happens when subscriptions are disposed. When subscriptions (other
-/// than the last) are disposed, they are simply removed from the collectionManager.
+/// than the last) are disposed, they are simply removed from the collection.
 /// When the final subscription is disposed, the table operation is unregistered
 /// from the OperationManager. This in turn will invoke IOperation.Stop() which will
 /// release whatever Deephaven resources (releasing the table handle and/or unsubscribing
@@ -28,17 +28,17 @@ namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 internal sealed class DeephavenExcelObservable : IExcelObservable {
   private readonly OperationManager _operationManager;
   private readonly IOperation _tableOperation;
-  private readonly IObserverCollectionManager _collectionManager;
+  private readonly IObserverCollection _collection;
 
   public DeephavenExcelObservable(OperationManager tableOperationManager, IOperation tableOperation,
-    IObserverCollectionManager collectionManager) {
+    IObserverCollection collection) {
     _operationManager = tableOperationManager;
     _tableOperation = tableOperation;
-    _collectionManager = collectionManager;
+    _collection = collection;
   }
 
   public IDisposable Subscribe(IExcelObserver observer) {
-    _collectionManager.Add(observer, out var isFirst);
+    _collection.Add(observer, out var isFirst);
 
     if (isFirst) {
       _operationManager.Register(_tableOperation);
@@ -48,7 +48,7 @@ internal sealed class DeephavenExcelObservable : IExcelObservable {
   }
 
   private void RemoveObserver(IExcelObserver observer) {
-    _collectionManager.Remove(observer, out var wasLast);
+    _collection.Remove(observer, out var wasLast);
     if (wasLast) {
       _operationManager.Unregister(_tableOperation);
     }

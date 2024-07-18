@@ -2,29 +2,22 @@
 
 internal interface IOperation {
   /// <summary>
-  /// Notifies the operation that there is a valid client.
-  /// After this call, the next call to this interface, if any, will be Stop().
-  /// That is, the caller will not invoke Status() while there is a valid client.
+  /// Notifies the operation that there is a new "client state".
+  /// This will be one of two things:
+  /// (client, null) - there is a new client
+  /// (null, message) - there is no client (either the client has just gone away,
+  /// or the client is still absent), and 'message' contains the latest status or reason why.
+  ///
+  /// The caller promises to never send (null, null), or (client, message).
+  ///
+  /// In either case, the operation should first tear down existing client-related state (releasing any
+  /// current table handles or unsubscribing from ticking tables), if there is any.
+  ///
+  /// Then, if 'client' is not null, the operation should establish new client-related state (snaphhotting
+  /// a table or subscribing to it).
+  ///
+  /// Otherwise (if message is not null), the operation should pass on the message to
+  /// its observers.
   /// </summary>
-  /// <param name="client"></param>
-  void Start(Client client);
-  /// <summary>
-  /// Notifies the operation that the last client is no longer valid.
-  /// The operation should release its resources (close TableHandles, unsubscribe
-  /// to tables, etc). If the operation happened to hold on to the Client
-  /// that was passed in by Start(), it should forget that reference (set it to null).
-  /// However, the operation should *not* call Client.Dispose();
-  /// After this call, the next call to this interface, if any, will be Start() or Status().
-  /// </summary>
-  void Stop();
-  /// <summary>
-  /// Send a status message to the clients (progress notes like "Connecting...") or
-  /// error messages. It is an invariant that the caller will only invoke Status
-  /// messages before Start() or after Stop(). Meaning that the caller will not
-  /// send Status messages when there is an active client.
-  /// After this call, the next call to this interface, if any, will be Start() or
-  /// another Status().
-  /// </summary>
-  /// <param name="message"></param>
-  void Status(string message);
+  void NewClientState(Client? client, string? message);
 }

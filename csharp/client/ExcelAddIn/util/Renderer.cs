@@ -1,24 +1,28 @@
 ﻿namespace Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 internal static class Renderer {
-  public static object?[,] Render(ClientTable table) {
+  public static object?[,] Render(ClientTable table, bool wantHeaders) {
     var numRows = table.NumRows;
     var numCols = table.NumCols;
-    var result = new object?[numRows + 1, numCols];
+    var effectiveNumRows = wantHeaders ? numRows + 1 : numRows;
+    var result = new object?[effectiveNumRows, numCols];
 
     var headers = table.Schema.Names;
     for (var colIndex = 0; colIndex != numCols; ++colIndex) {
-      result[0, colIndex] = headers[colIndex];
+      var destIndex = 0;
+      if (wantHeaders) {
+        result[destIndex++, colIndex] = headers[colIndex];
+      }
 
       var (col, nulls) = table.GetColumn(colIndex);
-      for (var rowIndex = 0; rowIndex != numRows; ++rowIndex) {
-        var temp = nulls[rowIndex] ? null : col.GetValue(rowIndex);
+      for (var i = 0; i != numRows; ++i) {
+        var temp = nulls[i] ? null : col.GetValue(i);
         // sad hack, wrong place, inefficient
         if (temp is DhDateTime dh) {
           temp = dh.DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
         }
 
-        result[rowIndex + 1, colIndex] = temp;
+        result[destIndex++, colIndex] = temp;
       }
     }
 

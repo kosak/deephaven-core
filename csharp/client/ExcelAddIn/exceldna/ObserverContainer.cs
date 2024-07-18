@@ -6,7 +6,7 @@ namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 /// This interface supports managing the mutation (adding and removing) from a collection
 /// of IExcelObservers.
 /// </summary>
-public interface IObserverCollectionManager {
+public interface IObserverCollection {
   /// <summary>
   /// Adds an observer to the collection.
   /// </summary>
@@ -26,7 +26,7 @@ public interface IObserverCollectionManager {
 /// This interface supports the operations for communicating status to a collection
 /// of IExcelObservers.
 /// </summary>
-public interface IObserverCollectionSender {
+public interface IDataListener {
   /// <summary>
   /// Transmits a status message to the observers.
   /// </summary>
@@ -53,15 +53,15 @@ public interface IObserverCollectionSender {
 /// <summary>
 /// This class implements both the above interfaces.
 /// </summary>
-public sealed class ObserverContainer : IObserverCollectionManager, IObserverCollectionSender {
+public sealed class ObserverContainer : IObserverCollection, IDataListener {
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
 
-  IObserverCollectionManager GetManager() {
+  IObserverCollection GetManager() {
     return this;
   }
 
-  IObserverCollectionSender GetSender() {
+  IDataListener GetSender() {
     return this;
   }
 

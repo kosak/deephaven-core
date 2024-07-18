@@ -5,20 +5,22 @@ namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
 internal class SnapshotOperation : IOperation {
   private readonly string _tableName;
-  private readonly IObserverCollectionSender _sender;
+  private readonly bool _wantHeaders;
+  private readonly IDataListener _sender;
 
-  public SnapshotOperation(string tableName, IObserverCollectionSender sender) {
+  public SnapshotOperation(string tableName, bool wantHeaders, IDataListener sender) {
     _tableName = tableName;
+    _wantHeaders = wantHeaders;
     _sender = sender;
   }
 
-  public void Start(NewClientOrStatus operationMessage) {
-    if (operationMessage.Status != null) {
-      _sender.OnStatus(operationMessage.Status);
+  public void NewClientState(Client? client, string? message) {
+    if (message != null) {
+      _sender.OnStatus(message);
       return;
     }
 
-    if (operationMessage.Client == null) {
+    if (client == null) {
       // Impossible.
       return;
     }
@@ -26,17 +28,12 @@ internal class SnapshotOperation : IOperation {
     _sender.OnStatus($"Snapshotting \"{_tableName}\"");
 
     try {
-      using var th = operationMessage.Client.Manager.FetchTable(_tableName);
+      using var th = client.Manager.FetchTable(_tableName);
       using var ct = th.ToClientTable();
-      // TODO(kosak): Filter the client table here
-      var result = Renderer.Render(ct);
+      var result = Renderer.Render(ct, _wantHeaders);
       _sender.OnNext(result);
     } catch (Exception ex) {
       _sender.OnError(ex);
     }
-  }
-
-  public void Stop() {
-    // Nothing to do.
   }
 }

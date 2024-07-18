@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System;
+using System.Diagnostics;
+using System.Net;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
@@ -31,20 +33,24 @@ internal sealed class OperationManager {
 
   private sealed class TableOperationManagerState {
     private readonly object _sync = new();
+
     /// <summary>
     /// Queue of lambdas to be applied to the TableOperationManagerState.
     /// </summary>
     private readonly Queue<Action> _actions = new();
-    /// <summary>
-    /// The current status message, or null. Exactly one of (_currentMessage, _currentClient)
-    /// will always be set.
-    /// </summary>
-    private string? _currentMessage = "Not connected to Deephaven";
+
     /// <summary>
     /// The current client, or null. Exactly one of (_currentMessage, _currentClient)
     /// will always be set.
     /// </summary>
     private Client? _currentClient = null;
+
+    /// <summary>
+    /// The current status message, or null. Exactly one of (_currentMessage, _currentClient)
+    /// will always be set.
+    /// </summary>
+    private string? _currentMessage = "Not connected to Deephaven";
+
     private readonly HashSet<IOperation> _tableOperations = new();
     private object _connectionCookie = new();
 
@@ -55,16 +61,14 @@ internal sealed class OperationManager {
     public void InvokeRegister(IOperation operation) {
       Invoke(() => {
         _tableOperations.Add(operation);
-        SendCurrentStateTo(operation);
+        InvokeNewClientStateAndSwallowErrors(operation, _currentClient, _currentMessage);
       });
     }
 
     public void InvokeUnregister(IOperation operation) {
       Invoke(() => {
         _tableOperations.Remove(operation);
-        if (_currentClient != null) {
-          operation.Stop();
-        }
+        InvokeNewClientStateAndSwallowErrors(operation, null, "Unregistering");
       });
     }
 
@@ -106,10 +110,9 @@ internal sealed class OperationManager {
 
     private void StartConnect(string connectionString) {
       Disconnect();
-      _currentMessage = $"Connecting to {connectionString}";
-      BroadcastCurrentOperationMessage();
-      var cc = new object();
-      _connectionCookie = cc;
+      SetStateAndBroadcast(null, $"Connecting to {connectionString}");
+      var cookie = new object();
+      _connectionCookie = cookie;
       // Because DeephavenClient.Client.Connect takes a long time, we do it in a separate thread.
       // If our user gets impatient, they may fire off a few StartConnects in a row.
       // To deal with this, we use the "_connectionCookie" to remember whether this is the
@@ -117,39 +120,20 @@ internal sealed class OperationManager {
       Task.Run(() => {
         try {
           var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
-          Invoke(() => FinishConnectSuccessfully(cc, newClient));
+          Invoke(() => FinishConnect(cookie, newClient, null));
         } catch (Exception ex) {
-          Invoke(() => FinishConnectWithError(cc, ex));
+          Invoke(() => FinishConnect(cookie, null, ex.Message));
         }
       });
     }
 
-    private void FinishConnectSuccessfully(object expectedConnectionCookie, Client newClient) {
+    private void FinishConnect(object expectedConnectionCookie, Client? newClient, string? failureMessage) {
       if (expectedConnectionCookie != _connectionCookie) {
-        newClient.Dispose();
+        newClient?.Dispose();
         return;
       }
 
-      _currentClient = newClient;
-      _currentMessage = null;
-      foreach (var top in _tableOperations) {
-        // TODO(kosak): try-catch
-        top.Start(_currentClient);
-      }
-    }
-
-
-    private void FinishConnectWithError(object expectedConnectionCookie, Exception exception) {
-      if (expectedConnectionCookie != _connectionCookie) {
-        return;
-      }
-
-      _currentClient = null;
-      _currentMessage = exception.Message;
-      foreach (var top in _tableOperations) {
-        // TODO(kosak): try-catch
-        top.Status(_currentMessage);
-      }
+      SetStateAndBroadcast(newClient, failureMessage);
     }
 
     private void Disconnect() {
@@ -158,14 +142,24 @@ internal sealed class OperationManager {
       }
 
       var cc = _currentClient;
-      _currentClient = null;
-      _currentMessage = "Disconnected";
-      foreach (var top in _tableOperations) {
-        // TODO(kosak): try-catch
-        top.Stop();
-        top.Status(_currentMessage);
+      SetStateAndBroadcast(null, "Disconnected");
+      cc?.Dispose();
+    }
+
+    private void SetStateAndBroadcast(Client? client, string? message) {
+      _currentClient = client;
+      _currentMessage = message;
+      foreach (var op in _tableOperations) {
+        InvokeNewClientStateAndSwallowErrors(op, _currentClient, _currentMessage);
       }
-      cc.Dispose();
+    }
+
+    private static void InvokeNewClientStateAndSwallowErrors(IOperation operation, Client? client, string? message) {
+      try {
+        operation.NewClientState(client, message);
+      } catch (Exception ex) {
+        Debug.WriteLine($"Ignoring {ex}");
+      }
     }
   }
 }
