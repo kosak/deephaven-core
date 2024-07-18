@@ -5,7 +5,7 @@
 /// Connect) are added to a queue and serviced by a dedicated thread.
 /// </summary>
 internal sealed class OperationManager {
-  private TableOperationManagerState _state = new();
+  private readonly TableOperationManagerState _state = new();
 
   public OperationManager() {
     _state.StartThread();
@@ -23,14 +23,26 @@ internal sealed class OperationManager {
     _state.InvokeConnect(connectionString);
   }
 
+  public void Disconnect() {
+    _state.InvokeDisconnect();
+  }
+
   private sealed class TableOperationManagerState {
     private readonly object _sync = new();
     /// <summary>
     /// Queue of lambdas to be applied to the TableOperationManagerState.
     /// </summary>
     private readonly Queue<Action> _actions = new();
-
-    private NewClientOrStatus _operationMessage = NewClientOrStatus.Of("Not connected to Deephaven");
+    /// <summary>
+    /// The current status message, or null. Exactly one of (_currentMessage, _currentClient)
+    /// will always be set.
+    /// </summary>
+    private string _currentMessage = "Not connected to Deephaven";
+    /// <summary>
+    /// The current client, or null. Exactly one of (_currentMessage, _currentClient)
+    /// will always be set.
+    /// </summary>
+    private Client? _currentClient = null;
     private readonly HashSet<IOperation> _tableOperations = new();
     private object _connectionCookie = new();
 
@@ -41,19 +53,25 @@ internal sealed class OperationManager {
     public void InvokeRegister(IOperation operation) {
       Invoke(() => {
         _tableOperations.Add(operation);
-        operation.Start(_operationMessage);
+        SendCurrentStateTo(operation);
       });
     }
 
     public void InvokeUnregister(IOperation operation) {
       Invoke(() => {
         _tableOperations.Remove(operation);
-        operation.Stop();
+        if (_currentClient != null) {
+          operation.Stop();
+        }
       });
     }
 
     public void InvokeConnect(string connectionString) {
       Invoke(() => StartConnect(connectionString));
+    }
+
+    public void InvokeDisconnect() {
+      Invoke(Disconnect);
     }
 
     private void Invoke(Action a) {
@@ -84,17 +102,22 @@ internal sealed class OperationManager {
       }
     }
 
-    private void StartConnect(OperationManager owner, string connectionString) {
-      _operationMessage = NewClientOrStatus.Of($"Connecting to {connectionString}");
+    private void StartConnect(string connectionString) {
+      Disconnect();
+      _currentMessage = $"Connecting to {connectionString}";
       BroadcastCurrentOperationMessage();
       var cc = new object();
       _connectionCookie = cc;
+      // Because DeephavenClient.Client.Connect takes a long time, we do it in a separate thread.
+      // If our user gets impatient, they may fire off a few StartConnects in a row.
+      // To deal with this, we use the "_connectionCookie" to remember whether this is the
+      // latest connection request, or some stale one that should just be discarded.
       Task.Run(() => {
         try {
           var newClient = DeephavenClient.Client.Connect(connectionString, new ClientOptions());
-          owner.Invoke(ts => ts.FinishConnect(cc, newClient, null));
+          Invoke(() => FinishConnectSuccessfully(cc, newClient));
         } catch (Exception ex) {
-          owner.Invoke(ts => ts.FinishConnect(cc, null, ex));
+          Invoke(() => FinishConnectWithError(cc, ex));
         }
       });
     }
@@ -116,15 +139,26 @@ internal sealed class OperationManager {
       Broadcast();
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    private void BroadcastCurrentOperationMessage() {
+    private void Disconnect() {
+      if (_currentClient == null) {
+        return;
+      }
+
+      var cc = _currentClient;
+      _currentClient = null;
+      _currentMessage = "Disconnected";
       foreach (var top in _tableOperations) {
         // TODO(kosak): try-catch
         top.Stop();
+        top.Status(_currentMessage);
       }
+      cc.Dispose();
+    }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    private void BroadcastCurrentState() {
       foreach (var top in _tableOperations) {
         // TODO(kosak): try-catch
         top.Start(OperationMessage);

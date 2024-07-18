@@ -16,7 +16,6 @@ internal interface IOperation {
   /// However, the operation should *not* call Client.Dispose();
   /// After this call, the next call to this interface, if any, will be Start() or Status().
   /// </summary>
-  /// <param name="client"></param>
   void Stop();
   /// <summary>
   /// Send a status message to the clients (progress notes like "Connecting...") or
