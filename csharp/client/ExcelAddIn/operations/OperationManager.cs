@@ -1,4 +1,6 @@
-﻿namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
+﻿using System.Net;
+
+namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
 /// <summary>
 /// In order to simplify the logic, the operations on this class (Register, Unregister,
@@ -37,7 +39,7 @@ internal sealed class OperationManager {
     /// The current status message, or null. Exactly one of (_currentMessage, _currentClient)
     /// will always be set.
     /// </summary>
-    private string _currentMessage = "Not connected to Deephaven";
+    private string? _currentMessage = "Not connected to Deephaven";
     /// <summary>
     /// The current client, or null. Exactly one of (_currentMessage, _currentClient)
     /// will always be set.
@@ -122,21 +124,32 @@ internal sealed class OperationManager {
       });
     }
 
-    private void FinishConnect(object expectedConnectionCookie, Client? newClient, Exception? exception) {
+    private void FinishConnectSuccessfully(object expectedConnectionCookie, Client newClient) {
       if (expectedConnectionCookie != _connectionCookie) {
-        newClient?.Dispose();
+        newClient.Dispose();
         return;
       }
 
-      if (newClient != null) {
-        OperationMessage = NewClientOrStatus.Of(newClient);
-      } else if (exception != null) {
-        OperationMessage = NewClientOrStatus.Of(exception.Message);
-      } else {
+      _currentClient = newClient;
+      _currentMessage = null;
+      foreach (var top in _tableOperations) {
+        // TODO(kosak): try-catch
+        top.Start(_currentClient);
+      }
+    }
+
+
+    private void FinishConnectWithError(object expectedConnectionCookie, Exception exception) {
+      if (expectedConnectionCookie != _connectionCookie) {
         return;
       }
 
-      Broadcast();
+      _currentClient = null;
+      _currentMessage = exception.Message;
+      foreach (var top in _tableOperations) {
+        // TODO(kosak): try-catch
+        top.Status(_currentMessage);
+      }
     }
 
     private void Disconnect() {
@@ -153,16 +166,6 @@ internal sealed class OperationManager {
         top.Status(_currentMessage);
       }
       cc.Dispose();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private void BroadcastCurrentState() {
-      foreach (var top in _tableOperations) {
-        // TODO(kosak): try-catch
-        top.Start(OperationMessage);
-      }
     }
   }
 }
