@@ -1,15 +1,4 @@
-﻿using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn;
-using ExcelDna.Integration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-
-namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
+﻿namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
 internal sealed class OperationManager {
   private readonly object _sync = new();

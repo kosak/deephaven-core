@@ -3,12 +3,22 @@
 namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 
 /// <summary>
-/// Operations (e.g. SnapshotOperation or SubscribeOperation) are designed to support
-/// multiple Excel "observers". This interface describes the add/remove operations
-/// for a collection of IExcelObservers.
+/// This interface supports managing the mutation (adding and removing) from a collection
+/// of IExcelObservers.
 /// </summary>
 public interface IObserverCollectionManager {
+  /// <summary>
+  /// Adds an observer to the collection.
+  /// </summary>
+  /// <param name="observer">The observer</param>
+  /// <param name="isFirst">True iff this was the first observer that was added.</param>
   void Add(IExcelObserver observer, out bool isFirst);
+  /// <summary>
+  /// Removes an observer from the collection.
+  /// </summary>
+  /// <param name="observer">The observer</param>
+  /// <param name="wasLast">True iff this was the final observer that was removed
+  /// (leaving the collection empty)</param>
   void Remove(IExcelObserver observer, out bool wasLast);
 }
 
@@ -17,18 +27,43 @@ public interface IObserverCollectionManager {
 /// of IExcelObservers.
 /// </summary>
 public interface IObserverCollectionSender {
-  public void OnStatus(string message);
-  public void OnError(Exception error);
-  public void OnNext(object?[,] result);
+  /// <summary>
+  /// Transmits a status message to the observers.
+  /// </summary>
+  public void OnStatus(string message) {
+    var matrix = new object[1, 1];
+    matrix[0, 0] = message;
+    OnNext(matrix);
+  }
+
+  /// <summary>
+  /// Transmits an exception to the observers.
+  /// </summary>
+  public void OnError(Exception error) {
+    OnStatus(error.Message);
+  }
+
+  /// <summary>
+  /// Transmits a rectangular array of data to the observers.
+  /// </summary>
+  /// <param name="data"></param>
+  public void OnNext(object?[,] data);
 }
 
 /// <summary>
-/// This class implements both the IObserverCollectionManager and IObserverCollectionSender
-/// roles.
+/// This class implements both the above interfaces.
 /// </summary>
-public class ObserverContainer : IObserverCollectionManager, IObserverCollectionSender {
+public sealed class ObserverContainer : IObserverCollectionManager, IObserverCollectionSender {
   private readonly object _sync = new();
   private readonly HashSet<IExcelObserver> _observers = new();
+
+  IObserverCollectionManager GetManager() {
+    return this;
+  }
+
+  IObserverCollectionSender GetSender() {
+    return this;
+  }
 
   public void Add(IExcelObserver observer, out bool isFirst) {
     lock (_sync) {
@@ -42,16 +77,6 @@ public class ObserverContainer : IObserverCollectionManager, IObserverCollection
       _observers.Remove(observer);
       wasLast = _observers.Count == 0;
     }
-  }
-
-  public void OnStatus(string message) {
-    var matrix = new object[1, 1];
-    matrix[0, 0] = message;
-    OnNext(matrix);
-  }
-
-  public void OnError(Exception error) {
-    OnStatus(error.Message);
   }
 
   public void OnNext(object?[,] result) {
