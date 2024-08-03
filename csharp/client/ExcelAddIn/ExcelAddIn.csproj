@@ -12,6 +12,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DeephavenClient\DeephavenClient.csproj" />
-    <ProjectReference Include="..\DeephavenEnterpriseClient\DeephavenEnterpriseClient.csproj" />
   </ItemGroup>
 </Project>

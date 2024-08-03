@@ -3,7 +3,7 @@ using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Operations;
 using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 using Deephaven.DeephavenClient.ExcelAddIn.Views;
-using Deephaven.DeephavenEnterpriseClient.session;
+using Deephaven.DheClient.session;
 using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;

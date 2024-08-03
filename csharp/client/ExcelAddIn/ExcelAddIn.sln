@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExcelAddIn", "ExcelAddIn.cs
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeephavenClient", "..\DeephavenClient\DeephavenClient.csproj", "{6141AD6F-6E7B-4666-89B8-6568E92D4FE3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeephavenEnterpriseClient", "..\DeephavenEnterpriseClient\DeephavenEnterpriseClient.csproj", "{8C2F1257-1FF6-4D3A-8FD4-15A3D7DA0C14}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{6141AD6F-6E7B-4666-89B8-6568E92D4FE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6141AD6F-6E7B-4666-89B8-6568E92D4FE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6141AD6F-6E7B-4666-89B8-6568E92D4FE3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8C2F1257-1FF6-4D3A-8FD4-15A3D7DA0C14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C2F1257-1FF6-4D3A-8FD4-15A3D7DA0C14}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8C2F1257-1FF6-4D3A-8FD4-15A3D7DA0C14}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8C2F1257-1FF6-4D3A-8FD4-15A3D7DA0C14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
