@@ -1,7 +1,9 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
+﻿using System.Diagnostics;
+using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Operations;
 using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 using Deephaven.DeephavenClient.ExcelAddIn.Views;
+using Deephaven.DeephavenEnterpriseClient.session;
 using ExcelDna.Integration;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn;
@@ -52,4 +54,21 @@ public static class DeephavenExcelFunctions {
     };
     return ExcelAsyncUtil.Observe(functionName, new[]{tableName, wantHeaders}, osrc);
   }
+
+  [ExcelFunction(Description = "Test Enterprise", IsThreadSafe = true)]
+  public static object DHENT_TEST() {
+    const string functionName = "Deephaven.Client.ExcelAddIn.DeephavenExcelFunctions.DHENT_TEST";
+    new Thread(ZamboniDoit) { IsBackground = true }.Start();
+    return "maybe";
+  }
+
+  private static void ZamboniDoit() {
+    try {
+      var z = SessionManager.FromUrl("zamboni", "elzambono");
+    } catch (Exception ex) {
+      var s = ex.Message;
+      Debug.WriteLine(s);
+    }
+  }
+
 }
