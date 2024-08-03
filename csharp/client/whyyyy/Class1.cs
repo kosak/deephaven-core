@@ -65,14 +65,10 @@ public struct MyNativePtr<T> {
 }
 
 struct MyNativePtr3 {
-  public MyNativePtr2 hate;
-
 }
 
 [StructLayout(LayoutKind.Sequential)]
 struct ErrorStatus3 {
-  private ErrorStatus inner;
-
   public void OkOrThrow() {
   }
 }
@@ -81,5 +77,5 @@ struct ErrorStatus3 {
 internal partial class NativeSessionManager {
   [LibraryImport(LibraryPaths.DhEnterprise, StringMarshalling = StringMarshalling.Utf8)]
   public static partial void deephaven_enterprise_session_SessionManager_FromJson(string descriptiveName,
-    string json, out MyNativePtr3 result, out ErrorStatus3 status);
+    string json, out MyNativePtr3 result, out ErrorStatus3 status, out NativePtr<string> x);
 }
