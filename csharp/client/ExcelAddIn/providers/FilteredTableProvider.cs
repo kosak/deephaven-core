@@ -1,25 +1,22 @@
 ﻿using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.Operations;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.Util;
-using ExcelDna.Integration;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableManager {
-  private readonly Dictionary<string, ConnectionProvider> _connectionProviderCollection = new();
+  private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
-    ConnectionProvider cp;
+    SessionProvider sp;
     lock (_sync) {
-      cp = _connectionProviderCollection.LookupOrCreate(descriptor.ConnectionId,
-        () => new ConnectionProvider());
+      sp = _sessionProviderCollection.LookupOrCreate(descriptor.ConnectionId,
+        () => new SessionProvider());
     }
 
-    var mco = new MyConnectionObserver(descriptor, observer);
-    return cp.Subscribe(mco);
+    var mco = new MyComboObserver(descriptor, observer);
+    return sp.Subscribe(mco);
   }
 }
 
@@ -82,8 +79,12 @@ internal class EitherSession {
 
 
 
-internal class MySessionObserver : IObserver<StatusOr<EitherSession>>, IObserver<StatusOr<Client>> {
+internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<StatusOr<Client>> {
   private EitherSession? _eitherSession;
+
+  public MyComboObserver(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
+
+  }
 
   public void OnNext(StatusOr<EitherSession> so) {
     // whatever this is, dispose of old value, Session or below

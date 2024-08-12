@@ -26,61 +26,61 @@ public interface IObserverCollection {
 /// This interface supports the operations for communicating status to a collection
 /// of IExcelObservers.
 /// </summary>
-public interface IDataListener {
+public interface IDataListener<T> {
   /// <summary>
   /// Transmits a status message to the observers.
   /// </summary>
-  public void OnStatus(string message) {
+  public void OnStatusAll(string message) {
     var matrix = new object[1, 1];
     matrix[0, 0] = message;
-    OnNext(matrix);
+    OnNextAll(matrix);
   }
 
   /// <summary>
   /// Transmits an exception to the observers.
   /// </summary>
-  public void OnError(Exception error) {
-    OnStatus(error.Message);
+  public void OnErrorAll(Exception error) {
+    OnStatusAll(error.Message);
   }
 
   /// <summary>
   /// Transmits a rectangular array of data to the observers.
   /// </summary>
   /// <param name="data"></param>
-  public void OnNext(object?[,] data);
+  public void OnNextAll(T data);
 }
 
 /// <summary>
 /// This class implements both the above interfaces.
 /// </summary>
-public sealed class ObserverContainer : IObserverCollection, IDataListener {
+public sealed class ObserverContainer<T> : IObserverCollection, IDataListener<T> {
   private readonly object _sync = new();
-  private readonly HashSet<IExcelObserver> _observers = new();
+  private readonly HashSet<IObserver<T>> _observers = new();
 
   public IObserverCollection GetObserverCollection() {
     return this;
   }
 
-  public IDataListener GetDataListener() {
+  public IDataListener<T> GetDataListener() {
     return this;
   }
 
-  public void Add(IExcelObserver observer, out bool isFirst) {
+  public void Add(IObserver<T> observer, out bool isFirst) {
     lock (_sync) {
       isFirst = _observers.Count == 0;
       _observers.Add(observer);
     }
   }
 
-  public void Remove(IExcelObserver observer, out bool wasLast) {
+  public void Remove(IObserver<T> observer, out bool wasLast) {
     lock (_sync) {
       _observers.Remove(observer);
       wasLast = _observers.Count == 0;
     }
   }
 
-  public void OnNext(object?[,] result) {
-    IExcelObserver[] observers;
+  public void OnNextAll(T result) {
+    IObserver<T>[] observers;
     lock (_sync) {
       observers = _observers.ToArray();
     }
