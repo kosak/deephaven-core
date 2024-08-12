@@ -27,7 +27,7 @@ internal class Credentials {
 
 }
 
-internal class ConnectionProvider : IObservable<StatusOr<Connection>>, IObserver<Credentials> {
+internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
   private Credentials? _credentials;
   private Connection? _connection;
 
@@ -82,8 +82,8 @@ internal class EitherSession {
 
 
 
-internal class MyConnectionObserver : IObserver<StatusOr<EitherSession>> {
-  private Connection? _connection;
+internal class MySessionObserver : IObserver<StatusOr<EitherSession>> {
+  private EitherSession? _eitherSession;
 
   public void OnNext(StatusOr<Connection> so) {
     // whatever this is, dispose of old value
