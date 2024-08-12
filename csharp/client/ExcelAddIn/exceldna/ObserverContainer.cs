@@ -61,8 +61,8 @@ public sealed class ObserverContainer<T> : IObserverCollection<T>, IDataListener
 
   public void Remove(IObserver<T> observer, out bool wasLast) {
     lock (_sync) {
-      _observers.Remove(observer);
-      wasLast = _observers.Count == 0;
+      var removed = _observers.Remove(observer);
+      wasLast = removed && _observers.Count == 0;
     }
   }
 

@@ -60,6 +60,18 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     });
   }
 
+  private void RemoveObserver(IObserver<StatusOr<EitherSession>> observer) {
+    _observerContainer.Remove(observer, out var wasLast);
+    if (!wasLast) {
+      return;
+    }
+
+    if (Util.MakeNuoll(ref _credentialDisposer, out var cd)) {
+      cd.Dispose();
+    }
+
+  }
+
   void IObserver<Credentials>.OnNext(Credentials value) {
     InvokeThread666(() => {
       try {
