@@ -1,5 +1,10 @@
 ﻿using Deephaven.DeephavenClient;
+using Deephaven.DeephavenClient.ExcelAddIn.Operations;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.Util;
+using ExcelDna.Integration;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -22,27 +27,64 @@ internal class Credentials {
 
 }
 
-internal class ConnectionProvider : IObservable<StatusOr<Connection>> {
+internal class ConnectionProvider : IObservable<StatusOr<Connection>>, IObserver<Credentials> {
   private Credentials? _credentials;
   private Connection? _connection;
 
   public IDisposable Subscribe(IObserver<StatusOr<Connection>> observer) {
-    if (_connection != null) {
-      observer.OnNext(_connection);
-      return;
-    }
+    InvokeThread666(() => {
+      if (_connection == null) {
+        observer.OnNext(StatusOr.Of("Not connected"));
+      } else {
+        observer.OnNext(StatusOr.Of(_connection));
+      }
+
+      _collection.Add(observer, out var isFirst);
+
+      if (isFirst) {
+        _operationManager.Register(_tableOperation);
+      }
+    });
+
+    return new ActionAsDisposable(() => RemoveObserver(observer));
+  }
+
+  void IObserver<Credentials>.OnCompleted() {
     throw new NotImplementedException();
+  }
+
+  void IObserver<Credentials>.OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+  void IObserver<Credentials>.OnNext(Credentials value) {
+    InvokeThread666(() => {
+      try {
+        handle_disconnect();
+
+        _observerCollection.MessageAll($"Connecting to {}");
+        _credentials = value;
+        var sm = SessionManager.FromUrl(_descriptor.jsonUrl);
+
+        _connection = Connection.Of(sm);
+        _observerCollection.ValueAll(_connection);
+      } catch (Exception ex) {
+        _observerCollection.ExceptionAll(ex);
+      }
+    });
   }
 }
 
-internal class Connection {
-  // from pq to client providerok lover 
+internal class EitherSession {
+  // from pq to client provider
   private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
 }
 
 
 
-internal class MyConnectionObserver : IObserver<StatusOr<Connection>> {
+internal class MyConnectionObserver : IObserver<StatusOr<EitherSession>> {
+  private Connection? _connection;
+
   public void OnNext(StatusOr<Connection> so) {
     // whatever this is, dispose of old value
     // then...
@@ -53,19 +95,12 @@ internal class MyConnectionObserver : IObserver<StatusOr<Connection>> {
       return;
     }
 
-    // yay we got a connection... then we have to connect to the PQ if CorePlus
-    // or straight to the table if Core
-
-    var hnn = new HatefulNextNubbin();
-
-    var cocp = so.Value;
-    if (cocp.TryGetCorePlus(out var coreplus)) {
-      var sp = coreplus.LookupOrCreate(descriptor.PersistentQueryId);
-      _stupid = sp.Subscribe(nextNubbin);
-      return;
+    so.Select(out var coreSession, out var corePlusSession);
+    if (coreSession != null) {
+      _disposeMonster = coreSession.SubscribeToTable(_tableDescriptor, myHateFulInnerListener);
+    } else {
+      _disposeMonster = corePlusSession.SubscribeToPq(_tableDescriptor.PerQId, myHaterfulOtherListener);
     }
-
-    var hateful = core.LookupOrCreate(descriptor.)
   }
 }
 
