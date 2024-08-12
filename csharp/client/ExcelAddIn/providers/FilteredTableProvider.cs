@@ -82,25 +82,45 @@ internal class EitherSession {
 
 
 
-internal class MySessionObserver : IObserver<StatusOr<EitherSession>> {
+internal class MySessionObserver : IObserver<StatusOr<EitherSession>>, IObserver<StatusOr<Client>> {
   private EitherSession? _eitherSession;
 
-  public void OnNext(StatusOr<Connection> so) {
-    // whatever this is, dispose of old value
+  public void OnNext(StatusOr<EitherSession> so) {
+    // whatever this is, dispose of old value, Session or below
     // then...
 
 
-    if (so.TryGetStatus(out var status)) {
-      innerNubbin.OnNext(status);
+    if (so.Status != null) {
+      innerNubbin.OnNext(so.Status);
       return;
     }
 
     so.Select(out var coreSession, out var corePlusSession);
     if (coreSession != null) {
-      _disposeMonster = coreSession.SubscribeToTable(_tableDescriptor, myHateFulInnerListener);
-    } else {
-      _disposeMonster = corePlusSession.SubscribeToPq(_tableDescriptor.PerQId, myHaterfulOtherListener);
+      OnNext(coreSession.Client);
+      return;
     }
+
+    _disposeMonster = corePlusSession.SubscribeToPq(_tableDescriptor.PerQId, this);
+  }
+
+  public void OnNext(StatusOr<Client> so) {
+    // whatever this is, dispose of old value, Client or below
+
+    if (so.Status != null) {
+      innerNubbin.OnNext(so.Status);
+      return;
+    }
+
+    var client = so.Value;
+    _tableHandle = client.Manager.FetchTable(_tableDescriptor.TableName);
+    if (_tableDescriptor.Filter != "") {
+      var temp = _tableHandle;
+      _tableHandle = temp.Where(_tableDescriptor.Filter);
+      temp.Dispose();
+    }
+
+    _zamboniInner.OnNext(_tableHandle);
   }
 }
 
