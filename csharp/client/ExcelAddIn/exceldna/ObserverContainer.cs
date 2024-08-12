@@ -1,25 +1,23 @@
-﻿using ExcelDna.Integration;
-
-namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
+﻿namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 
 /// <summary>
 /// This interface supports managing the mutation (adding and removing) from a collection
 /// of IExcelObservers.
 /// </summary>
-public interface IObserverCollection {
+public interface IObserverCollection<T> {
   /// <summary>
   /// Adds an observer to the collection.
   /// </summary>
   /// <param name="observer">The observer</param>
   /// <param name="isFirst">True iff this was the first observer that was added.</param>
-  void Add(IExcelObserver observer, out bool isFirst);
+  void Add(IObserver<T> observer, out bool isFirst);
   /// <summary>
   /// Removes an observer from the collection.
   /// </summary>
   /// <param name="observer">The observer</param>
   /// <param name="wasLast">True iff this was the final observer that was removed
   /// (leaving the collection empty)</param>
-  void Remove(IExcelObserver observer, out bool wasLast);
+  void Remove(IObserver<T> observer, out bool wasLast);
 }
 
 /// <summary>
@@ -28,20 +26,9 @@ public interface IObserverCollection {
 /// </summary>
 public interface IDataListener<T> {
   /// <summary>
-  /// Transmits a status message to the observers.
-  /// </summary>
-  public void OnStatusAll(string message) {
-    var matrix = new object[1, 1];
-    matrix[0, 0] = message;
-    OnNextAll(matrix);
-  }
-
-  /// <summary>
   /// Transmits an exception to the observers.
   /// </summary>
-  public void OnErrorAll(Exception error) {
-    OnStatusAll(error.Message);
-  }
+  public void OnErrorAll(Exception error);
 
   /// <summary>
   /// Transmits a rectangular array of data to the observers.
@@ -53,11 +40,11 @@ public interface IDataListener<T> {
 /// <summary>
 /// This class implements both the above interfaces.
 /// </summary>
-public sealed class ObserverContainer<T> : IObserverCollection, IDataListener<T> {
+public sealed class ObserverContainer<T> : IObserverCollection<T>, IDataListener<T> {
   private readonly object _sync = new();
   private readonly HashSet<IObserver<T>> _observers = new();
 
-  public IObserverCollection GetObserverCollection() {
+  public IObserverCollection<T> GetObserverCollection() {
     return this;
   }
 
@@ -80,13 +67,20 @@ public sealed class ObserverContainer<T> : IObserverCollection, IDataListener<T>
   }
 
   public void OnNextAll(T result) {
-    IObserver<T>[] observers;
-    lock (_sync) {
-      observers = _observers.ToArray();
-    }
-
-    foreach (var observer in observers) {
+    foreach (var observer in SafeCopyObservers()) {
       observer.OnNext(result);
+    }
+  }
+
+  public void OnErrorAll(Exception ex) {
+    foreach (var observer in SafeCopyObservers()) {
+      observer.OnError(ex);
+    }
+  }
+
+  private IObserver<T>[] SafeCopyObservers() {
+    lock (_sync) {
+      return _observers.ToArray();
     }
   }
 }

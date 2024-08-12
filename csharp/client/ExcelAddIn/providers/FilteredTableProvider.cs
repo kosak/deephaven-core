@@ -82,7 +82,7 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
         var connectionMessage = StatusOr<EitherSession>.OfValue();
         _observerContainer.OnNextAll(connectionMessage);
       } catch (Exception ex) {
-        _observerContainer.OnExceptionAll(ex);
+        _observerContainer.OnErrorAll(ex);
       }
     });
   }
@@ -93,53 +93,107 @@ internal class EitherSession {
   private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
 }
 
-
-
 internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<StatusOr<Client>> {
-  private EitherSession? _eitherSession;
+  private readonly FilteredTableDescriptor _descriptor;
+  private readonly IObserver<StatusOr<TableHandle>> _callerObserver;
+  private IDisposable? _pqDisposable = null;
+  private TableHandle? _tableHandle = null;
 
   public MyComboObserver(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
-
+    _descriptor = descriptor;
+    _callerObserver = observer;
   }
 
-  public void OnNext(StatusOr<EitherSession> so) {
-    // whatever this is, dispose of old value, Session or below
-    // then...
+  void IObserver<StatusOr<EitherSession>>.OnNext(StatusOr<EitherSession> so) {
+    InvokeThread666(() => {
+      MaybeReleaseTableHandle();
+      MaybeReleasePq();
+      _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus("Disconnecting from session"));
+      _ = Util.TrySetToNull(ref _pqDisposable, out var oldPq);
+      _ = Util.TrySetToNull(ref _tableHandle, out var oldTh);
+      oldTh?.Dispose();
+      oldPq?.Dispose();
 
+      if (!so.TryGetValue(out var eitherSession, out var status)) {
+        var statusMessage = StatusOr<TableHandle>.OfStatus(status);
+        _callerObserver.OnNext(statusMessage);
+        return;
+      }
 
-    if (so.Status != null) {
-      innerNubbin.OnNext(so.Status);
-      return;
-    }
+      eitherSession.Select(out var coreSession, out var corePlusSession);
+      if (coreSession != null) {
+        var clientMessage = StatusOr<Client>.OfValue(coreSession.Client);
+        ((IObserver<StatusOr<Client>>)this).OnNext(clientMessage);
+        return;
+      }
 
-    so.Select(out var coreSession, out var corePlusSession);
-    if (coreSession != null) {
-      OnNext(coreSession.Client);
-      return;
-    }
-
-    _disposeMonster = corePlusSession.SubscribeToPq(_tableDescriptor.PerQId, this);
+      var pqMessage = $"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"";
+      _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(pqMessage);
+      _pqDisposable = corePlusSession.SubscribeToPq(_descriptor.PersistentQueryId, this);
+    });
   }
 
-  public void OnNext(StatusOr<Client> so) {
-    // whatever this is, dispose of old value, Client or below
+  void IObserver<StatusOr<EitherSession>>.OnCompleted() {
+    throw new NotImplementedException();
+  }
 
-    if (so.Status != null) {
-      innerNubbin.OnNext(so.Status);
+  void IObserver<StatusOr<EitherSession>>.OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+
+  void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
+    InvokeThread666(() => {
+      MaybeReleaseTableHandle();
+
+      if (!so.TryGetValue(out var client, out var status)) {
+        var statusMessage = StatusOr<TableHandle>.OfStatus(status);
+        _callerObserver.OnNext(statusMessage);
+        return;
+      }
+
+      var fetchTableMessage = $"Fetching \"{_descriptor.TableName}\"";
+      _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(fetchTableMessage));
+
+      _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
+      if (_descriptor.Filter != "") {
+        var temp = _tableHandle;
+        _tableHandle = temp.Where(_descriptor.Filter);
+        temp.Dispose();
+      }
+
+      var tableMessage = StatusOr.OfValue(_tableHandle);
+      _callerObserver.OnNext(tableMessage);
+    });
+  }
+
+  void IObserver<StatusOr<Client>>.OnCompleted() {
+    throw new NotImplementedException();
+  }
+
+  void IObserver<StatusOr<Client>>.OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+  private void MaybeReleasePq() {
+    if (!Util.TrySetToNull(ref _pqDisposable, out var oldPq)) {
       return;
     }
 
-    var client = so.Value;
-    _tableHandle = client.Manager.FetchTable(_tableDescriptor.TableName);
-    if (_tableDescriptor.Filter != "") {
-      var temp = _tableHandle;
-      _tableHandle = temp.Where(_tableDescriptor.Filter);
-      temp.Dispose();
+    oldPq.Dispose();
+  }
+
+  private void MaybeReleaseTableHandle() {
+    if (!Util.TrySetToNull(ref _tableHandle, out var oldTableHandle)) {
+      return;
     }
 
-    _zamboniInner.OnNext(_tableHandle);
+    oldTableHandle.Dispose();
   }
 }
 
-internal record FilteredTableDescriptor(string ConnectionId, string PersistentQuery, string TableName, string Filter) {
-}
+internal record FilteredTableDescriptor(
+  string ConnectionId,
+  string PersistentQueryId,
+  string TableName,
+  string Filter);
