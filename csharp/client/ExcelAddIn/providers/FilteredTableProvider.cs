@@ -12,19 +12,12 @@ internal class FilteredTableManager {
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
     SessionProvider? sp;
-    var needsToSubscribeToCreds = false;
     lock (_sync) {
       if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
         sp = new SessionProvider();
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
-        needsToSubscribeToCreds = true;
       }
     }
-
-    if (needsToSubscribeToCreds) {
-      someDisposer = _credentialMaster666.Subscribe(sp);
-    }
-
     var mco = new MyComboObserver(descriptor, observer);
     return sp.Subscribe(mco);
   }
@@ -34,11 +27,19 @@ internal class Credentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
+internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials>,
+    IDisposable {
   private readonly FilteredTableDescriptor _descriptor;
-  private Credentials? _credentials;
-  private EitherSession? _eitherSession;
+  private Credentials? _credentials = null;
+  private EitherSession? _eitherSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
+
+  public SessionProvider(FilteredTableDescriptor descriptor) {
+    _descriptor = descriptor;
+    InvokeThread666(() => {
+      _credentialDisposer = _credentialMaster666.Subscribe(this);
+    });
+  }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
     InvokeThread666(() => {
@@ -107,30 +108,29 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
 
   void IObserver<StatusOr<EitherSession>>.OnNext(StatusOr<EitherSession> so) {
     InvokeThread666(() => {
-      MaybeReleaseTableHandle();
-      MaybeReleasePq();
-      _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus("Disconnecting from session"));
-      _ = Util.TrySetToNull(ref _pqDisposable, out var oldPq);
-      _ = Util.TrySetToNull(ref _tableHandle, out var oldTh);
-      oldTh?.Dispose();
-      oldPq?.Dispose();
+      try {
+        MaybeDispose("Table", ref _tableHandle);
+        MaybeDispose("PQ", ref _pqDisposable);
 
-      if (!so.TryGetValue(out var eitherSession, out var status)) {
-        var statusMessage = StatusOr<TableHandle>.OfStatus(status);
-        _callerObserver.OnNext(statusMessage);
-        return;
+        if (!so.TryGetValue(out var eitherSession, out var status)) {
+          var statusMessage = StatusOr<TableHandle>.OfStatus(status);
+          _callerObserver.OnNext(statusMessage);
+          return;
+        }
+
+        eitherSession.Select(out var coreSession, out var corePlusSession);
+        if (coreSession != null) {
+          var clientValue = StatusOr<Client>.OfValue(coreSession.Client);
+          ((IObserver<StatusOr<Client>>)this).OnNext(clientValue);
+          return;
+        }
+
+        var pqMessage = $"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"";
+        _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(pqMessage));
+        _pqDisposable = corePlusSession.SubscribeToPq(_descriptor.PersistentQueryId, this);
+      } catch (Exception ex) {
+        _callerObserver.OnError(ex);
       }
-
-      eitherSession.Select(out var coreSession, out var corePlusSession);
-      if (coreSession != null) {
-        var clientMessage = StatusOr<Client>.OfValue(coreSession.Client);
-        ((IObserver<StatusOr<Client>>)this).OnNext(clientMessage);
-        return;
-      }
-
-      var pqMessage = $"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"";
-      _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(pqMessage);
-      _pqDisposable = corePlusSession.SubscribeToPq(_descriptor.PersistentQueryId, this);
     });
   }
 
