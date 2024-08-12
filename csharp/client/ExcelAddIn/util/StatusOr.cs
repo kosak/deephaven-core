@@ -1,5 +1,13 @@
 ﻿namespace Deephaven.ExcelAddIn.Util;
 
-internal class StatusOr<T> {
+public class StatusOr<T> {
+  public static StatusOr<T> OfStatus(string status) {
+
+  }
+
+  public static StatusOr<T> OfValue(T value) {
+
+  }
+
 
 }

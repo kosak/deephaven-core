@@ -1,4 +1,5 @@
 ﻿using Deephaven.DeephavenClient;
+using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.Util;
@@ -6,13 +7,22 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableManager {
+  private readonly object _sync = new();
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
-    SessionProvider sp;
+    SessionProvider? sp;
+    var needsToSubscribeToCreds = false;
     lock (_sync) {
-      sp = _sessionProviderCollection.LookupOrCreate(descriptor.ConnectionId,
-        () => new SessionProvider());
+      if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
+        sp = new SessionProvider();
+        _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
+        needsToSubscribeToCreds = true;
+      }
+    }
+
+    if (needsToSubscribeToCreds) {
+      someDisposer = _credentialMaster666.Subscribe(sp);
     }
 
     var mco = new MyComboObserver(descriptor, observer);
@@ -26,24 +36,26 @@ internal class Credentials {
 
 internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
   private Credentials? _credentials;
-  private Connection? _connection;
+  private EitherSession? _eitherSession;
+  private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
 
-  public IDisposable Subscribe(IObserver<StatusOr<Connection>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
     InvokeThread666(() => {
-      if (_connection == null) {
-        observer.OnNext(StatusOr.Of("Not connected"));
+      // New observer gets added to the collection and then notified of the current status.
+      _observerContainer.Add(observer, out var isFirst);
+
+      if (_eitherSession == null) {
+        observer.OnNext(StatusOr<EitherSession>.OfStatus("Not connected"));
       } else {
-        observer.OnNext(StatusOr.Of(_connection));
-      }
-
-      _collection.Add(observer, out var isFirst);
-
-      if (isFirst) {
-        _operationManager.Register(_tableOperation);
+        observer.OnNext(StatusOr<EitherSession>.OfValue(_eitherSession));
       }
     });
 
-    return new ActionAsDisposable(() => RemoveObserver(observer));
+    return new ActionAsDisposable(() => {
+      InvokeThread666(() => {
+        RemoveObserver(observer);
+      });
+    });
   }
 
   void IObserver<Credentials>.OnCompleted() {
@@ -59,7 +71,7 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
       try {
         handle_disconnect();
 
-        _observerCollection.MessageAll($"Connecting to {}");
+        _observerContainer.MessageAll($"Connecting to {}");
         _credentials = value;
         var sm = SessionManager.FromUrl(_descriptor.jsonUrl);
 
