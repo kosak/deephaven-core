@@ -3,15 +3,18 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class FilteredTable666 {
+internal class FilteredTableManager {
   private readonly Dictionary<string, ConnectionProvider> _connectionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
-    var cp = _connectionProviderCollection.LookupOrCreate(descriptor.ConnectionId,
-      () => new ConnectionProvider());
+    ConnectionProvider cp;
+    lock (_sync) {
+      cp = _connectionProviderCollection.LookupOrCreate(descriptor.ConnectionId,
+        () => new ConnectionProvider());
+    }
 
-    var myNubbin = new MyNubbin(descriptor, observer);
-    return cp.Subscribe(myNubbin);
+    var mco = new MyConnectionObserver(descriptor, observer);
+    return cp.Subscribe(mco);
   }
 }
 
@@ -19,8 +22,17 @@ internal class Credentials {
 
 }
 
-internal class ConnectionProvider : IObservable<Connection> {
-  private Credentials? credentials;
+internal class ConnectionProvider : IObservable<StatusOr<Connection>> {
+  private Credentials? _credentials;
+  private Connection? _connection;
+
+  public IDisposable Subscribe(IObserver<StatusOr<Connection>> observer) {
+    if (_connection != null) {
+      observer.OnNext(_connection);
+      return;
+    }
+    throw new NotImplementedException();
+  }
 }
 
 internal class Connection {
@@ -30,8 +42,8 @@ internal class Connection {
 
 
 
-internal class MyNubbin : IObserver<StatusOr<CoreOrCorePlusConnection>> {
-  public void OnNext(StatusOr<CoreOrCorePlusConnection> so) {
+internal class MyConnectionObserver : IObserver<StatusOr<Connection>> {
+  public void OnNext(StatusOr<Connection> so) {
     // whatever this is, dispose of old value
     // then...
 
