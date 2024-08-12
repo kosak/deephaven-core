@@ -124,25 +124,5 @@ internal class MySessionObserver : IObserver<StatusOr<EitherSession>>, IObserver
   }
 }
 
-internal class PrefilterNubbin : IObserver<StatusOr<TableHandleProvider>> {
-  public void OnNext(StatusOr<TableHandle> value) {
-    // whatever this is, dispose of old value
-    // then...
-
-    if (so.Status != null) {
-      innerNubbin.OnNext(so.Status);
-      return;
-    }
-
-    // yay we have a TableHandle... but we might need to filter it
-
-
-
-
-
-    throw new NotImplementedException();
-  }
-}
-
 internal record FilteredTableDescriptor(string ConnectionId, string PersistentQuery, string TableName, string Filter) {
 }
