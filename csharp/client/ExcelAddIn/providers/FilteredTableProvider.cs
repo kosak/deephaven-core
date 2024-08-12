@@ -59,14 +59,6 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     });
   }
 
-  void IObserver<Credentials>.OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  void IObserver<Credentials>.OnError(Exception error) {
-    throw new NotImplementedException();
-  }
-
   void IObserver<Credentials>.OnNext(Credentials value) {
     InvokeThread666(() => {
       try {
@@ -86,6 +78,15 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
       }
     });
   }
+
+  void IObserver<Credentials>.OnCompleted() {
+    throw new NotImplementedException();
+  }
+
+  void IObserver<Credentials>.OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
 }
 
 internal class EitherSession {
