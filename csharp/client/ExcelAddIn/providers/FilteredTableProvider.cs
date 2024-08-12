@@ -35,6 +35,7 @@ internal class Credentials {
 }
 
 internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
+  private readonly FilteredTableDescriptor _descriptor;
   private Credentials? _credentials;
   private EitherSession? _eitherSession;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
@@ -70,15 +71,18 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     InvokeThread666(() => {
       try {
         handle_disconnect();
-
-        _observerContainer.MessageAll($"Connecting to {}");
         _credentials = value;
-        var sm = SessionManager.FromUrl(_descriptor.jsonUrl);
+
+        var message = StatusOr<EitherSession>.OfStatus($"Connecting to {_descriptor.ConnectionId}");
+        _observerContainer.OnNextAll(message);
+        var sm = SessionManager.FromUrl(_credentials.JsonUrl);
 
         _connection = Connection.Of(sm);
-        _observerCollection.ValueAll(_connection);
+
+        var connectionMessage = StatusOr<EitherSession>.OfValue();
+        _observerContainer.OnNextAll(connectionMessage);
       } catch (Exception ex) {
-        _observerCollection.ExceptionAll(ex);
+        _observerContainer.OnExceptionAll(ex);
       }
     });
   }
