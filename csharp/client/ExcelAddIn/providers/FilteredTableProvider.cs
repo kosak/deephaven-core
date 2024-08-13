@@ -19,7 +19,6 @@ internal class FilteredTableManager {
         sp = new SessionProvider(_workerThread, descriptor);
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
         sp.SubscriberCount = 1;
-        sp.CredentialDisposer = _credentialMaster666.Subscribe(sp);
       }
 
       var mco = new MyComboObserver(_workerThread, descriptor, observer);
@@ -29,10 +28,10 @@ internal class FilteredTableManager {
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
         // Do nothing if caller Disposes me multiple times.
-        if (disposer == null) {
+        if (!Util.TryResetToNull(ref disposer, out old)) {
           return;
         }
-        disposer.Dispose();
+        old.Dispose();
 
         if (--sp!.SubscriberCount != 0) {
           return;
@@ -56,6 +55,7 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
   private EitherSession? _eitherSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
   private IDisposable? _credentialDisposer = null;
+  private bool _disposed;
 
   /// <summary>
   /// Intrusive member, used by FilteredTableManager
@@ -69,7 +69,19 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
   }
 
   public void Dispose() {
-    _credentialDisposer?.Dispose();
+    if (_disposed) {
+      return;
+    }
+
+    _disposed = true;
+    IDisposable? old2 = null;
+    ((old2, _credentialDisposer) = (_credentialDisposer, null)).old2?.Dispose();
+
+    Util.Swap(ref old2, ref _credentialDisposer);
+    ;
+    if (Util.TryResetToNull(ref _credentialDisposer, out var old)) {
+      old.Dispose();
+    }
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
@@ -90,14 +102,21 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     });
   }
 
-  void IObserver<Credentials>.OnNext(Credentials value) {
+  void IObserver<StatusOr<Credentials>>.OnNext(StatusOr<Credentials> soc) {
     _workerThread.Invoke(() => {
       try {
-        handle_disconnect();
-        _credentials = value;
+        var disconnectMessage = StatusOr<EitherSession>.OfStatus("Disconnected");
+        _observerContainer.OnNextAll(disconnectMessage);
+        MaybeDispose(ref _eitherSession);
 
-        var message = StatusOr<EitherSession>.OfStatus($"Connecting to {_descriptor.ConnectionId}");
-        _observerContainer.OnNextAll(message);
+        if (!soc.TryGetValue(out _credentials, out var socMessageText)) {
+          var socMessage = StatusOr<EitherSession>.OfStatus(socMessageText);
+          _observerContainer.OnNextAll(socMessage);
+          return;
+        }
+
+        var connectingMessage = StatusOr<EitherSession>.OfStatus($"Connecting to {_descriptor.ConnectionId}");
+        _observerContainer.OnNextAll(connectingMessage);
         var sm = SessionManager.FromUrl(_credentials.JsonUrl);
 
         _connection = Connection.Of(sm);
@@ -110,11 +129,11 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     });
   }
 
-  void IObserver<Credentials>.OnCompleted() {
+  void IObserver<StatusOr<Credentials>>.OnCompleted() {
     throw new NotImplementedException();
   }
 
-  void IObserver<Credentials>.OnError(Exception error) {
+  void IObserver<StatusOr<Credentials>>.OnError(Exception error) {
     throw new NotImplementedException();
   }
 
@@ -139,13 +158,13 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
     _callerObserver = observer;
   }
 
-  void IObserver<StatusOr<EitherSession>>.OnNext(StatusOr<EitherSession> so) {
+  void IObserver<StatusOr<EitherSession>>.OnNext(StatusOr<EitherSession> sos) {
     _workerThread.Invoke(() => {
       try {
         MaybeDispose("Table", ref _tableHandle);
         MaybeDispose("PQ", ref _pqDisposable);
 
-        if (!so.TryGetValue(out var eitherSession, out var status)) {
+        if (!sos.TryGetValue(out var eitherSession, out var status)) {
           var statusMessage = StatusOr<TableHandle>.OfStatus(status);
           _callerObserver.OnNext(statusMessage);
           return;
