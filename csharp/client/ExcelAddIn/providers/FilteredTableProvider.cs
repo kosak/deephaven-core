@@ -42,45 +42,13 @@ internal class SessionProviders {
 }
 
 internal class FilteredTableManager {
-  /// <summary>
-  /// Connection Id -> Session Provider
-  /// </summary>
-  private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
-  private readonly WorkerThread _workerThread = new();
-
-  public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable Subscribe(FilteredTableDescriptor descriptor,
+    IObserver<StatusOr<TableHandle>> observer) {
     SessionProvider? sp = null;
     IDisposable? disposer = null;
 
-    _workerThread.Invoke(() => {
-      if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
-        sp = new SessionProvider(_workerThread, descriptor);
-        _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
-        sp.SubscriberCount = 1;
-      }
-
-      var mco = new MyComboObserver(_workerThread, descriptor, observer);
-      disposer = sp.Subscribe(mco);
-    });
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        // Do nothing if caller Disposes me multiple times.
-        if (Util.TryResetToNull(ref disposer, out old)) {
-          old.Dispose();
-        }
-      });
-    });
-  }
-
-  public void SetCredentials(string connectionId, UnifiedCredentials credentials) {
-    _workerThread.Invoke(() => {
-      if (!_sessionProviderCollection.TryGetValue(connectionId, out var sp)) {
-        sp = new SessionProvider(_workerThread, descriptor);
-        _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
-      }
-      sp.SetCredentials(credentials);
-    });
+    var mco = new MyComboObserver(_workerThread, descriptor, observer);
+    return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
   }
 }
 
@@ -88,19 +56,17 @@ internal class UnifiedCredentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserver<StatusOr<UnifiedCredentials>>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private UnifiedCredentials? _unifiedCredentials = null;
   private UnifiedSession? _unifiedSession = null;
-  private readonly StatusOrObserverContainer<UnifiedSession> _observerContainer = new();
-  private IDisposable? _credentialDisposer = null;
+  private readonly ObserverContainer<StatusOr<UnifiedSession>> _observerContainer = new();
   private bool _disposed;
 
   public SessionProvider(WorkerThread workerThread, FilteredTableDescriptor descriptor) {
     _workerThread = workerThread;
     _descriptor = descriptor;
-    _credentialDisposer = _credentialMaster666.Subscribe(descriptor.ConnectionId, this);
   }
 
   public void Dispose() {
@@ -109,25 +75,19 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserve
     }
 
     _disposed = true;
-    IDisposable? old2 = null;
-    ((old2, _credentialDisposer) = (_credentialDisposer, null)).old2?.Dispose();
-
-    Util.Swap(ref old2, ref _credentialDisposer);
-    ;
-    if (Util.TryResetToNull(ref _credentialDisposer, out var old)) {
-      old.Dispose();
-    }
+    // not even sure what to do.... maybe send an "end" to all of my existing observers?
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<UnifiedSession>> observer) {
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observerContainer.Add(observer, out _);
 
-      var nextMessage = _eitherSession == null
-        ? StatusOr<EitherSession>.OfStatus("Not connected")
-        : StatusOr<EitherSession>.OfValue(_eitherSession);
-      observer.OnNext(nextMessage);
+      if (_unifiedSession == null) {
+        Util.OfNextAll(_observerContainer, "Not connected");
+      } else {
+        Util.OfNext(_observerContainer, _unifiedSession);
+      }
     });
 
     return new ActionAsDisposable(() => {
@@ -137,38 +97,19 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserve
     });
   }
 
-  void IObserver<StatusOr<UnifiedCredentials>>.OnNext(StatusOr<UnifiedCredentials> soc) {
+  public void SetCredentials(UnifiedCredentials credentials) {
     _workerThread.Invoke(() => {
       try {
-        var disconnectMessage = StatusOr<EitherSession>.OfStatus("Disconnected");
-        _observerContainer.OnNextAll(disconnectMessage);
-        MaybeDispose(ref _eitherSession);
+        _unifiedSession = null;
+        _observerContainer.StatusAll($"Trying to connect {_descriptor.ConnectionId}");
 
-        if (!soc.TryGetValue(out _credentials, out var socMessageText)) {
-          var socMessage = StatusOr<EitherSession>.OfStatus(socMessageText);
-          _observerContainer.OnNextAll(socMessage);
-          return;
-        }
-
-        var connectingMessage = StatusOr<EitherSession>.OfStatus($"Connecting to {_descriptor.ConnectionId}");
-        _observerContainer.OnNextAll(connectingMessage);
-
-        _unifiedSession = UnifiedSession.Of(_credentials);
-        _observerContainer.OnNextAll(_unifiedSession);
+        _unifiedSession = UnifiedSession.Of(credentials);
+        _observerContainer.ValueAll(_unifiedSession);
       } catch (Exception ex) {
         _observerContainer.OnErrorAll(ex);
       }
     });
   }
-
-  void IObserver<StatusOr<Credentials>>.OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  void IObserver<StatusOr<Credentials>>.OnError(Exception error) {
-    throw new NotImplementedException();
-  }
-
 }
 
 internal class UnifiedSession {
@@ -380,6 +321,18 @@ public class WorkerThread {
 
   public void Doit() {
 
+  }
+}
+
+public static class ObserverContainer_Extensions {
+  public static void StatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
+    var so = StatusOr<T>.OfStatus(message);
+    container.OnNextAll(so);
+  }
+
+  public static void ValueAll<T>(this ObserverContainer<StatusOr<T>> container, T value) {
+    var so = StatusOr<T>.OfValue(value);
+    container.OnNextAll(so);
   }
 }
 
