@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Net;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
@@ -7,7 +9,42 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+internal class SessionProviders {
+  /// <summary>
+  /// Connection Id -> Session Provider
+  /// </summary>
+  private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
+  private readonly WorkerThread _workerThread = new();
+
+  public void SetCredentials(string id, UnifiedCredentials credentials) {
+    ApplyTo(id, sp => sp.SetCredentials(credentials));
+  }
+
+  public IDisposable Subscribe(string id, IObserver<StatusOr<UnifiedSession>> observer) {
+    IDisposable? disposable = null;
+    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => { SetToNull(ref disposable)?.Dispose(); });
+    });
+  }
+
+  private void ApplyTo(string id, Action<SessionProvider> action) {
+    _workerThread.Invoke(() => {
+      if (!_sessionProviderCollection.TryGetValue(id, out var sp)) {
+        sp = new SessionProvider(_workerThread, id);
+        _sessionProviderCollection.Add(id, sp);
+      }
+
+      action(sp);
+    });
+  }
+}
+
 internal class FilteredTableManager {
+  /// <summary>
+  /// Connection Id -> Session Provider
+  /// </summary>
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
   private readonly WorkerThread _workerThread = new();
 
@@ -29,19 +66,20 @@ internal class FilteredTableManager {
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
         // Do nothing if caller Disposes me multiple times.
-        if (!Util.TryResetToNull(ref disposer, out old)) {
-          return;
+        if (Util.TryResetToNull(ref disposer, out old)) {
+          old.Dispose();
         }
-        old.Dispose();
-
-
-        if (--sp!.SubscriberCount != 0) {
-          return;
-        }
-
-        _sessionProviderCollection.Remove(descriptor.ConnectionId);
-        sp!.Dispose();
       });
+    });
+  }
+
+  public void SetCredentials(string connectionId, UnifiedCredentials credentials) {
+    _workerThread.Invoke(() => {
+      if (!_sessionProviderCollection.TryGetValue(connectionId, out var sp)) {
+        sp = new SessionProvider(_workerThread, descriptor);
+        _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
+      }
+      sp.SetCredentials(credentials);
     });
   }
 }
@@ -58,11 +96,6 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserve
   private readonly StatusOrObserverContainer<UnifiedSession> _observerContainer = new();
   private IDisposable? _credentialDisposer = null;
   private bool _disposed;
-
-  /// <summary>
-  /// Intrusive member, used by FilteredTableManager
-  /// </summary>
-  public int SubscriberCount = 0;
 
   public SessionProvider(WorkerThread workerThread, FilteredTableDescriptor descriptor) {
     _workerThread = workerThread;
