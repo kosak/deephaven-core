@@ -10,16 +10,15 @@ internal class FilteredTableManager {
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
+    SessionProvider? sp = null;
     IDisposable? disposer = null;
 
-    void OnLastRemove() {
-      InvokeThread666(() => _sessionProviderCollection.Remove(descriptor.ConnectionId));
-    }
-
     InvokeThread666(() => {
-      if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out var sp)) {
-        sp = new SessionProvider(descriptor, OnLastRemove);
+      if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
+        sp = new SessionProvider(descriptor);
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
+        sp.SubscriberCount = 1;
+        sp.CredentialDisposer = _credentialMaster666.Subscribe(sp);
       }
 
       var mco = new MyComboObserver(descriptor, observer);
@@ -28,6 +27,12 @@ internal class FilteredTableManager {
 
     return new ActionAsDisposable(() => {
       InvokeThread666(() => {
+        if (--sp!.SubscriberCount != 0) {
+          return;
+        }
+
+        _sessionProviderCollection.Remove(descriptor.ConnectionId);
+        sp!.CredentialDisposer!.Dispose();
         disposer?.Dispose();
       });
     });
@@ -44,38 +49,35 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
   private EitherSession? _eitherSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
 
+  /// <summary>
+  /// Intrusive members, used by FilteredTableManager
+  /// </summary>
+  public int SubscriberCount = 0;
+
+  /// <summary>
+  /// Intrusive members, used by FilteredTableManager
+  /// </summary>
+  public IDisposable? CredentialDisposer = null;
+
   public SessionProvider(FilteredTableDescriptor descriptor) {
     _descriptor = descriptor;
-    _credentialDisposer = _credentialMaster666.Subscribe(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
     InvokeThread666(() => {
       // New observer gets added to the collection and then notified of the current status.
-      _observerContainer.Add(observer, out var isFirst);
+      _observerContainer.Add(observer, out _);
 
-      if (_eitherSession == null) {
-        observer.OnNext(StatusOr<EitherSession>.OfStatus("Not connected"));
-      } else {
-        observer.OnNext(StatusOr<EitherSession>.OfValue(_eitherSession));
-      }
+      var nextMessage = _eitherSession == null
+        ? StatusOr<EitherSession>.OfStatus("Not connected")
+        : StatusOr<EitherSession>.OfValue(_eitherSession);
+      observer.OnNext(nextMessage);
     });
 
-    return new ActionAsDisposable(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IObserver<StatusOr<EitherSession>> observer) {
-    InvokeThread666(() => {
-      _observerContainer.Remove(observer, out var wasLast);
-      if (!wasLast) {
-        return;
-      }
-
-      if (Util.MakeNuoll(ref _credentialDisposer, out var cd)) {
-        cd.Dispose();
-      }
-
-      _onLastRemove();
+    return new ActionAsDisposable(() => {
+      InvokeThread666(() => {
+        _observerContainer.Remove(observer, out _);
+      });
     });
   }
 
