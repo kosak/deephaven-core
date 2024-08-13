@@ -28,7 +28,11 @@ internal class FilteredTableManager {
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
-        disposer?.Dispose();
+        // Do nothing if caller Disposes me multiple times.
+        if (disposer == null) {
+          return;
+        }
+        disposer.Dispose();
 
         if (--sp!.SubscriberCount != 0) {
           return;
@@ -46,26 +50,23 @@ internal class Credentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
+internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private Credentials? _credentials = null;
   private EitherSession? _eitherSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
+  private IDisposable? credentialDisposer = null;
 
   /// <summary>
   /// Intrusive member, used by FilteredTableManager
   /// </summary>
   public int SubscriberCount = 0;
 
-  /// <summary>
-  /// Intrusive member, used by FilteredTableManager
-  /// </summary>
-  public IDisposable? CredentialDisposer = null;
-
   public SessionProvider(WorkerThread workerThread, FilteredTableDescriptor descriptor) {
     _workerThread = workerThread;
     _descriptor = descriptor;
+    _credentialDisposer = _credentialMaster666.Subscribe(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
