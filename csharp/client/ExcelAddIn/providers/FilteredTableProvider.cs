@@ -52,9 +52,38 @@ internal class FilteredTableManager {
   }
 }
 
-internal class UnifiedCredentials {
+internal abstract class UnifiedCredentials {
+  /// <summary>
+  /// This is meant to be a typesafe way (sort of like a Visitor pattern)
+  /// that helps the caller cast UnifiedCredentials down to the right type.
+  /// If we ever add a third type, we can add it here. This will help us find
+  /// all the callers that need to change.
+  /// </summary>
+  public void Split(out CoreCredentials? coreCredentials, out CorePlusCredentials? corePlusCredentials) {
+    coreCredentials = null;
+    corePlusCredentials = null;
+    if (this is CoreCredentials cc) {
+      coreCredentials = cc;
+      return;
+    }
+
+    if (this is CorePlusCredentials cpc) {
+      corePlusCredentials = cpc;
+      return;
+    }
+
+    throw new Exception($"Unexpected type {GetType().Name}");
+  }
+}
+
+internal sealed class CoreCredentials : UnifiedCredentials {
 
 }
+
+internal sealed class CorePlusCredentials : UnifiedCredentials {
+
+}
+
 
 internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposable {
   private readonly WorkerThread _workerThread;
