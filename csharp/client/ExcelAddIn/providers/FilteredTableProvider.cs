@@ -10,19 +10,11 @@ internal class FilteredTableManager {
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
-    SessionProvider? sp = null;
     IDisposable? disposer = null;
 
-    void OnLastRemove() {
-      _sessionProviderCollection.Remove(descriptor.ConnectionId);
-      credentialDisposer.Dispose();
-      sp!.Dispose();
-    }
-
     InvokeThread666(() => {
-      if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
-        sp = new SessionProvider(descriptor, OnLastRemove);
-        credentialDisposer = _credentialMaster666.Subscribe(sp);
+      if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out var sp)) {
+        sp = new SessionProvider(descriptor, _sessionProviderCollection);
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
       }
 
@@ -30,10 +22,11 @@ internal class FilteredTableManager {
       disposer = sp.Subscribe(mco);
     });
 
-
-
-
-    return new DeferredSubscribe(this, descriptor, observer);
+    return new ActionAsDisposable(() => {
+      InvokeThread666(() => {
+        disposer?.Dispose();
+      });
+    });
   }
 }
 
@@ -49,9 +42,7 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
 
   public SessionProvider(FilteredTableDescriptor descriptor) {
     _descriptor = descriptor;
-    InvokeThread666(() => {
-      _credentialDisposer = _credentialMaster666.Subscribe(this);
-    });
+    _credentialDisposer = _credentialMaster666.Subscribe(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
@@ -69,10 +60,6 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     return new ActionAsDisposable(() => RemoveObserver(observer));
   }
 
-  public void Unsubscribe(IObserver<StatusOr<EitherSession>> observer, Action onLastRemoval) {
-
-  }
-
   private void RemoveObserver(IObserver<StatusOr<EitherSession>> observer) {
     InvokeThread666(() => {
       _observerContainer.Remove(observer, out var wasLast);
@@ -83,6 +70,8 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
       if (Util.MakeNuoll(ref _credentialDisposer, out var cd)) {
         cd.Dispose();
       }
+
+      _sessionProviderCollection.Remove(_descriptor.ConnectionId);
     });
   }
 
