@@ -39,7 +39,6 @@ internal class FilteredTableManager {
         }
 
         _sessionProviderCollection.Remove(descriptor.ConnectionId);
-        sp!.CredentialDisposer!.Dispose();
         sp!.Dispose();
       });
     });
@@ -50,13 +49,13 @@ internal class Credentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<StatusOr<Credentials>>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private Credentials? _credentials = null;
   private EitherSession? _eitherSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
-  private IDisposable? credentialDisposer = null;
+  private IDisposable? _credentialDisposer = null;
 
   /// <summary>
   /// Intrusive member, used by FilteredTableManager
@@ -66,7 +65,11 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
   public SessionProvider(WorkerThread workerThread, FilteredTableDescriptor descriptor) {
     _workerThread = workerThread;
     _descriptor = descriptor;
-    _credentialDisposer = _credentialMaster666.Subscribe(this);
+    _credentialDisposer = _credentialMaster666.Subscribe(descriptor.ConnectionId, this);
+  }
+
+  public void Dispose() {
+    _credentialDisposer?.Dispose();
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
