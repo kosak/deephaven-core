@@ -44,15 +44,15 @@ internal class FilteredTableManager {
   }
 }
 
-internal class Credentials {
+internal class UnifiedCredentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<StatusOr<Credentials>>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserver<StatusOr<Credentials>>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
-  private Credentials? _credentials = null;
-  private EitherSession? _eitherSession = null;
+  private UnifiedCredentials? _unifiedCredentials = null;
+  private UnifiedSession? _unifiedSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
   private IDisposable? _credentialDisposer = null;
   private bool _disposed;
@@ -102,7 +102,7 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     });
   }
 
-  void IObserver<StatusOr<Credentials>>.OnNext(StatusOr<Credentials> soc) {
+  void IObserver<StatusOr<Credentials>>.OnNext(StatusOr<UnifiedCredentials> soc) {
     _workerThread.Invoke(() => {
       try {
         var disconnectMessage = StatusOr<EitherSession>.OfStatus("Disconnected");
@@ -117,12 +117,9 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
 
         var connectingMessage = StatusOr<EitherSession>.OfStatus($"Connecting to {_descriptor.ConnectionId}");
         _observerContainer.OnNextAll(connectingMessage);
-        var sm = SessionManager.FromUrl(_credentials.JsonUrl);
 
-        _connection = Connection.Of(sm);
-
-        var connectionMessage = StatusOr<EitherSession>.OfValue();
-        _observerContainer.OnNextAll(connectionMessage);
+        _unifiedSession = UnifiedSession.Of(_credentials);
+        _observerContainer.OnNextAll(_unifiedSession);
       } catch (Exception ex) {
         _observerContainer.OnErrorAll(ex);
       }
@@ -139,12 +136,15 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
 
 }
 
-internal class EitherSession {
+internal class UnifiedSession {
+  public static UnifiedSession Of(UnifiedCredentials credentials) {
+
+  }
   // from pq to client provider
   private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
 }
 
-internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<StatusOr<Client>> {
+internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<StatusOr<Client>> {
   private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private readonly IObserver<StatusOr<TableHandle>> _callerObserver;
@@ -158,13 +158,14 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
     _callerObserver = observer;
   }
 
-  void IObserver<StatusOr<EitherSession>>.OnNext(StatusOr<EitherSession> sos) {
+  void IObserver<StatusOr<UnifiedSession>>.OnNext(StatusOr<UnifiedSession> usos) {
     _workerThread.Invoke(() => {
       try {
-        MaybeDispose("Table", ref _tableHandle);
-        MaybeDispose("PQ", ref _pqDisposable);
+        Disconnect();
+        // MaybeDispose("Table", ref _tableHandle);
+        // MaybeDispose("PQ", ref _pqDisposable);
 
-        if (!sos.TryGetValue(out var eitherSession, out var status)) {
+        if (!usos.TryGetValue(out var eitherSession, out var status)) {
           var statusMessage = StatusOr<TableHandle>.OfStatus(status);
           _callerObserver.OnNext(statusMessage);
           return;
@@ -186,14 +187,13 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
     });
   }
 
-  void IObserver<StatusOr<EitherSession>>.OnCompleted() {
+  void IObserver<StatusOr<UnifiedSession>>.OnCompleted() {
     throw new NotImplementedException();
   }
 
-  void IObserver<StatusOr<EitherSession>>.OnError(Exception error) {
+  void IObserver<StatusOr<UnifiedSession>>.OnError(Exception error) {
     throw new NotImplementedException();
   }
-
 
   void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
     _workerThread.Invoke(() => {
