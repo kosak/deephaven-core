@@ -86,21 +86,3 @@ public sealed class ObserverContainer<T> : IObserverCollection<T>, IDataListener
     }
   }
 }
-
-public sealed class StatusOrObserverContainer<T> : IObserverCollection<StatusOr<T>>, IDataListener<StatusOr<T>> {
-  public void Add(IObserver<StatusOr<T>> observer, out bool isFirst) {
-    throw new NotImplementedException();
-  }
-
-  public void Remove(IObserver<StatusOr<T>> observer, out bool wasLast) {
-    throw new NotImplementedException();
-  }
-
-  public void OnErrorAll(Exception error) {
-    throw new NotImplementedException();
-  }
-
-  public void OnNextAll(StatusOr<T> data) {
-    throw new NotImplementedException();
-  }
-}

@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient;
+﻿using System.Runtime.CompilerServices;
+using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
@@ -32,6 +33,7 @@ internal class FilteredTableManager {
           return;
         }
         old.Dispose();
+
 
         if (--sp!.SubscriberCount != 0) {
           return;
@@ -152,6 +154,10 @@ internal class UnifiedSession {
     var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
     return new CorePlusSession(session);
   }
+
+  public void Select(out CoreSession? coreSession, out CorePlusSession? corePlusSession) {
+
+  }
 }
 
 internal class CoreSession(Client client) : UnifiedSession {
@@ -160,12 +166,73 @@ internal class CoreSession(Client client) : UnifiedSession {
 
 internal class CorePlusSession : UnifiedSession {
   private readonly SessionManager _sessionManager;
+
 // from pq to client provider
   private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
 
   public CorePlusSession(SessionManager sessionManager) {
+    _sessionManager = sessionManager;
+  }
+
+  public IDisposable SubscribeToPq(string persistentQueryId, IObserver<StatusOr<Client>> observer) {
+    ClientProvider? cp = null;
+    IDisposable? disposer = null;
+
+    _workerThread.Invoke(() => {
+      if (!_clientProviderCollection.TryGetValue(persistentQueryId, out cp)) {
+        cp = new ClientProvider(_workerThread, persistentQueryId);
+        _clientProviderCollection.Add(persistentQueryId, cp);
+        cp.SubscriberCount = 1;
+      }
+
+      disposer = cp.Subscribe(observer);
+    });
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => {
+        // Do nothing if caller Disposes me multiple times.
+        if (!Util.TryResetToNull(ref disposer, out old)) {
+          return;
+        }
+
+        old.Dispose();
 
 
+        if (--cp!.SubscriberCount != 0) {
+          return;
+        }
+
+        _clientProviderCollection.Remove(persistentQueryId);
+        cp!.Dispose();
+      });
+    });
+  }
+}
+
+internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
+  private readonly StatusOrObserverContainer<UnifiedSession> _observerContainer = new();
+
+  public IDisposable Subscribe(IObserver<StatusOr<UnifiedSession>> observer) {
+    _workerThread.Invoke(() => {
+      // New observer gets added to the collection and then notified of the current status.
+      _observerContainer.Add(observer, out _);
+
+      if (_client == null) {
+        OnNextAll(_observerContainer, "Not connected to PQ \"{blah}\"");
+      } else {
+        OnNextAll(_observerContainer, _client);
+      }
+    });
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => {
+        _observerContainer.Remove(observer, out _);
+      });
+    });
+  }
+
+  public void Dispose() {
+    throw new NotImplementedException();
   }
 }
 
@@ -205,7 +272,7 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
 
         var pqMessage = $"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"";
         _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(pqMessage));
-        _pqDisposable = corePlusSession.SubscribeToPq(_descriptor.PersistentQueryId, this);
+        _pqDisposable = corePlusSession!.SubscribeToPq(_descriptor.PersistentQueryId, this);
       } catch (Exception ex) {
         _callerObserver.OnError(ex);
       }
