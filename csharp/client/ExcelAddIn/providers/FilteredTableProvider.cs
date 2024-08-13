@@ -84,9 +84,9 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
       _observerContainer.Add(observer, out _);
 
       if (_unifiedSession == null) {
-        Util.OfNextAll(_observerContainer, "Not connected");
+        observer.SendStatus("Not connected");
       } else {
-        Util.OfNext(_observerContainer, _unifiedSession);
+        observer.SendValue(_unifiedSession);
       }
     });
 
@@ -101,10 +101,10 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
     _workerThread.Invoke(() => {
       try {
         _unifiedSession = null;
-        _observerContainer.StatusAll($"Trying to connect {_descriptor.ConnectionId}");
+        _observerContainer.SendStatusAll($"Trying to connect {_descriptor.ConnectionId}");
 
         _unifiedSession = UnifiedSession.Of(credentials);
-        _observerContainer.ValueAll(_unifiedSession);
+        _observerContainer.SendValueAll(_unifiedSession);
       } catch (Exception ex) {
         _observerContainer.OnErrorAll(ex);
       }
@@ -325,12 +325,12 @@ public class WorkerThread {
 }
 
 public static class ObserverContainer_Extensions {
-  public static void StatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
+  public static void SendStatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
     var so = StatusOr<T>.OfStatus(message);
     container.OnNextAll(so);
   }
 
-  public static void ValueAll<T>(this ObserverContainer<StatusOr<T>> container, T value) {
+  public static void SendValueAll<T>(this ObserverContainer<StatusOr<T>> container, T value) {
     var so = StatusOr<T>.OfValue(value);
     container.OnNextAll(so);
   }
