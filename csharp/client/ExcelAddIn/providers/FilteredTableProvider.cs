@@ -11,15 +11,30 @@ internal class FilteredTableManager {
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
-    SessionProvider? sp;
-    lock (_sync) {
+    SessionProvider? sp = null;
+    IDisposable? disposer = null;
+
+    void OnLastRemove() {
+      _sessionProviderCollection.Remove(descriptor.ConnectionId);
+      credentialDisposer.Dispose();
+      sp!.Dispose();
+    }
+
+    InvokeThread666(() => {
       if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
-        sp = new SessionProvider();
+        sp = new SessionProvider(descriptor, OnLastRemove);
+        credentialDisposer = _credentialMaster666.Subscribe(sp);
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
       }
-    }
-    var mco = new MyComboObserver(descriptor, observer);
-    return sp.Subscribe(mco);
+
+      var mco = new MyComboObserver(descriptor, observer);
+      disposer = sp.Subscribe(mco);
+    });
+
+
+
+
+    return new DeferredSubscribe(this, descriptor, observer);
   }
 }
 
@@ -27,8 +42,7 @@ internal class Credentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials>,
-    IDisposable {
+internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials>, IDisposable {
   private readonly FilteredTableDescriptor _descriptor;
   private Credentials? _credentials = null;
   private EitherSession? _eitherSession = null;
@@ -53,23 +67,24 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
       }
     });
 
-    return new ActionAsDisposable(() => {
-      InvokeThread666(() => {
-        RemoveObserver(observer);
-      });
-    });
+    return new ActionAsDisposable(() => RemoveObserver(observer));
+  }
+
+  public void Unsubscribe(IObserver<StatusOr<EitherSession>> observer, Action onLastRemoval) {
+
   }
 
   private void RemoveObserver(IObserver<StatusOr<EitherSession>> observer) {
-    _observerContainer.Remove(observer, out var wasLast);
-    if (!wasLast) {
-      return;
-    }
+    InvokeThread666(() => {
+      _observerContainer.Remove(observer, out var wasLast);
+      if (!wasLast) {
+        return;
+      }
 
-    if (Util.MakeNuoll(ref _credentialDisposer, out var cd)) {
-      cd.Dispose();
-    }
-
+      if (Util.MakeNuoll(ref _credentialDisposer, out var cd)) {
+        cd.Dispose();
+      }
+    });
   }
 
   void IObserver<Credentials>.OnNext(Credentials value) {
