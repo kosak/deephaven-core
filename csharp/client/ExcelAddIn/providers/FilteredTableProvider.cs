@@ -166,7 +166,7 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
 
   void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
     InvokeThread666(() => {
-      MaybeReleaseTableHandle();
+      MaybeDispose("TableHandle", ref _tableHandle);
 
       if (!so.TryGetValue(out var client, out var status)) {
         var statusMessage = StatusOr<TableHandle>.OfStatus(status);
@@ -197,20 +197,15 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
     throw new NotImplementedException();
   }
 
-  private void MaybeReleasePq() {
-    if (!Util.TrySetToNull(ref _pqDisposable, out var oldPq)) {
+  private void MaybeDispose<T>(string what, ref T? disposable) where T : IDisposable {
+    if (!Util.TrySetToNull(ref disposable, out var old)) {
       return;
     }
 
-    oldPq.Dispose();
-  }
+    var message = StatusOr<TableHandle>.OfStatus($"Disposing {what}");
+    _callerObserver.OnNext(message);
 
-  private void MaybeReleaseTableHandle() {
-    if (!Util.TrySetToNull(ref _tableHandle, out var oldTableHandle)) {
-      return;
-    }
-
-    oldTableHandle.Dispose();
+    old.Dispose();
   }
 }
 
