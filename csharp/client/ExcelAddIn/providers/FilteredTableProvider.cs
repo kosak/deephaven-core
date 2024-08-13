@@ -8,32 +8,35 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableManager {
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
+  private readonly WorkerThread _workerThread = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
     SessionProvider? sp = null;
     IDisposable? disposer = null;
 
-    InvokeThread666(() => {
+    _workerThread.Invoke(() => {
       if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out sp)) {
-        sp = new SessionProvider(descriptor);
+        sp = new SessionProvider(_workerThread, descriptor);
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
         sp.SubscriberCount = 1;
         sp.CredentialDisposer = _credentialMaster666.Subscribe(sp);
       }
 
-      var mco = new MyComboObserver(descriptor, observer);
+      var mco = new MyComboObserver(_workerThread, descriptor, observer);
       disposer = sp.Subscribe(mco);
     });
 
     return new ActionAsDisposable(() => {
-      InvokeThread666(() => {
+      _workerThread.Invoke(() => {
+        disposer?.Dispose();
+
         if (--sp!.SubscriberCount != 0) {
           return;
         }
 
         _sessionProviderCollection.Remove(descriptor.ConnectionId);
         sp!.CredentialDisposer!.Dispose();
-        disposer?.Dispose();
+        sp!.Dispose();
       });
     });
   }
@@ -44,27 +47,29 @@ internal class Credentials {
 }
 
 internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
+  private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private Credentials? _credentials = null;
   private EitherSession? _eitherSession = null;
   private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
 
   /// <summary>
-  /// Intrusive members, used by FilteredTableManager
+  /// Intrusive member, used by FilteredTableManager
   /// </summary>
   public int SubscriberCount = 0;
 
   /// <summary>
-  /// Intrusive members, used by FilteredTableManager
+  /// Intrusive member, used by FilteredTableManager
   /// </summary>
   public IDisposable? CredentialDisposer = null;
 
-  public SessionProvider(FilteredTableDescriptor descriptor) {
+  public SessionProvider(WorkerThread workerThread, FilteredTableDescriptor descriptor) {
+    _workerThread = workerThread;
     _descriptor = descriptor;
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EitherSession>> observer) {
-    InvokeThread666(() => {
+    _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observerContainer.Add(observer, out _);
 
@@ -75,14 +80,14 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
     });
 
     return new ActionAsDisposable(() => {
-      InvokeThread666(() => {
+      _workerThread.Invoke(() => {
         _observerContainer.Remove(observer, out _);
       });
     });
   }
 
   void IObserver<Credentials>.OnNext(Credentials value) {
-    InvokeThread666(() => {
+    _workerThread.Invoke(() => {
       try {
         handle_disconnect();
         _credentials = value;
@@ -117,18 +122,21 @@ internal class EitherSession {
 }
 
 internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<StatusOr<Client>> {
+  private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private readonly IObserver<StatusOr<TableHandle>> _callerObserver;
   private IDisposable? _pqDisposable = null;
   private TableHandle? _tableHandle = null;
 
-  public MyComboObserver(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
+  public MyComboObserver(WorkerThread workerThread, FilteredTableDescriptor descriptor,
+    IObserver<StatusOr<TableHandle>> observer) {
+    _workerThread = workerThread;
     _descriptor = descriptor;
     _callerObserver = observer;
   }
 
   void IObserver<StatusOr<EitherSession>>.OnNext(StatusOr<EitherSession> so) {
-    InvokeThread666(() => {
+    _workerThread.Invoke(() => {
       try {
         MaybeDispose("Table", ref _tableHandle);
         MaybeDispose("PQ", ref _pqDisposable);
@@ -165,7 +173,7 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
 
 
   void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
-    InvokeThread666(() => {
+    _workerThread.Invoke(() => {
       MaybeDispose("TableHandle", ref _tableHandle);
 
       if (!so.TryGetValue(out var client, out var status)) {
@@ -206,6 +214,24 @@ internal class MyComboObserver : IObserver<StatusOr<EitherSession>>, IObserver<S
     _callerObserver.OnNext(message);
 
     old.Dispose();
+  }
+}
+
+public class WorkerThread {
+  private readonly object _sync = new();
+  private readonly Queue<Action> _queue = new();
+
+  public void Invoke(Action a) {
+    lock (_sync) {
+      _queue.Enqueue(a);
+      if (_queue.Count == 1) {
+        Monitor.PulseAll(_sync);
+      }
+    }
+  }
+
+  public void Doit() {
+
   }
 }
 
