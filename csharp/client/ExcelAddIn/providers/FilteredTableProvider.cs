@@ -48,12 +48,12 @@ internal class UnifiedCredentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserver<StatusOr<Credentials>>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserver<StatusOr<UnifiedCredentials>>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly FilteredTableDescriptor _descriptor;
   private UnifiedCredentials? _unifiedCredentials = null;
   private UnifiedSession? _unifiedSession = null;
-  private readonly ObserverContainer<StatusOr<EitherSession>> _observerContainer = new();
+  private readonly StatusOrObserverContainer<UnifiedSession> _observerContainer = new();
   private IDisposable? _credentialDisposer = null;
   private bool _disposed;
 
@@ -102,7 +102,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserve
     });
   }
 
-  void IObserver<StatusOr<Credentials>>.OnNext(StatusOr<UnifiedCredentials> soc) {
+  void IObserver<StatusOr<UnifiedCredentials>>.OnNext(StatusOr<UnifiedCredentials> soc) {
     _workerThread.Invoke(() => {
       try {
         var disconnectMessage = StatusOr<EitherSession>.OfStatus("Disconnected");
@@ -138,10 +138,35 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IObserve
 
 internal class UnifiedSession {
   public static UnifiedSession Of(UnifiedCredentials credentials) {
+    credentials.Split(out var coreCredentials, out var corePlusCredentials);
+    return coreCredentials != null ? OfCore(coreCredentials) : OfCorePlus(corePlusCredentials);
+  }
+
+  public static CoreSession OfCore(CoreCredentials credentials) {
+    var client = Client.Connect(credentials.ConnectionString, new ClientOptions());
+    return new CoreSession(client);
+  }
+
+  public static CorePlusSession OfCorePlus(CorePlusCredentials credentials) {
+    // TODO(kosak): want a better descriptive name?
+    var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
+    return new CorePlusSession(session);
+  }
+}
+
+internal class CoreSession(Client client) : UnifiedSession {
+  public readonly Client Client = client;
+}
+
+internal class CorePlusSession : UnifiedSession {
+  private readonly SessionManager _sessionManager;
+// from pq to client provider
+  private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
+
+  public CorePlusSession(SessionManager sessionManager) {
+
 
   }
-  // from pq to client provider
-  private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
 }
 
 internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<StatusOr<Client>> {
