@@ -12,9 +12,13 @@ internal class FilteredTableManager {
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
     IDisposable? disposer = null;
 
+    void OnLastRemove() {
+      InvokeThread666(() => _sessionProviderCollection.Remove(descriptor.ConnectionId));
+    }
+
     InvokeThread666(() => {
       if (!_sessionProviderCollection.TryGetValue(descriptor.ConnectionId, out var sp)) {
-        sp = new SessionProvider(descriptor, _sessionProviderCollection);
+        sp = new SessionProvider(descriptor, OnLastRemove);
         _sessionProviderCollection.Add(descriptor.ConnectionId, sp);
       }
 
@@ -34,7 +38,7 @@ internal class Credentials {
 
 }
 
-internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver<Credentials> {
   private readonly FilteredTableDescriptor _descriptor;
   private Credentials? _credentials = null;
   private EitherSession? _eitherSession = null;
@@ -71,7 +75,7 @@ internal class SessionProvider : IObservable<StatusOr<EitherSession>>, IObserver
         cd.Dispose();
       }
 
-      _sessionProviderCollection.Remove(_descriptor.ConnectionId);
+      _onLastRemove();
     });
   }
 
