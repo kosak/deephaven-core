@@ -7,7 +7,6 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableManager {
-  private readonly object _sync = new();
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
 
   public IDisposable Subscribe(FilteredTableDescriptor descriptor, IObserver<StatusOr<TableHandle>> observer) {
