@@ -1,10 +1,12 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Operations;
-using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 using Deephaven.DeephavenClient.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Operations;
+using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
 using ExcelDna.Integration;
+using static System.Net.WebRequestMethods;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -40,45 +42,44 @@ public static class DeephavenExcelFunctions {
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
-    const string functionName = "Deephaven.Client.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
-    if (!TryInterpretArgs(filter, wantHeaders, out var filterVal, out var wantHeadersVal, out string errorText)) {
+    if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var ftd, out var wh, out var errorText)) {
       return errorText;
     }
 
-    ExcelObservableSource eos = () => new SnapshotOperation(tableDescriptor, filterVal, wantHeadersVal, OperationManager);
-    // {
-    //   var oc = new ObserverContainer();
-    //   var op = new SnapshotOperation(tableName, filterVal, wantHeadersVal, oc);
-    //   return new DeephavenExcelObservable(OperationManager, op, oc);
-    // };
-    return ExcelAsyncUtil.Observe(functionName, new[]{ tableDescriptor, filter, wantHeaders}, eos);
+    // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
+    const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
+    var parms = new[] { tableDescriptor, filter, wantHeaders };
+    ExcelObservableSource eos = () => new SnapshotOperation(ftd, wh, OperationManager);
+    return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
   [ExcelFunction(Description = "Subscribes to a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SUBSCRIBE(string tableDescriptor, object filter, object wantHeaders) {
-    const string functionName = "Deephaven.Client.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
-    if (!TryInterpretArgs(filter, wantHeaders, out var filterVal, out var wantHeadersVal, out string errorText)) {
+    if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var ftd, out var wh, out string errorText)) {
       return errorText;
     }
-    ExcelObservableSource osrc = () => {
-      fancyPants.Susbcribe(hatelove);
-      var oc = new ObserverContainer();
-      var op = new SubscribeOperation(tableName, filterVal, wantHeadersVal, oc.GetDataListener());
-      return new DeephavenExcelObservable(OperationManager, op, oc.GetObserverCollection());
-    };
-    return ExcelAsyncUtil.Observe(functionName, new[]{tableName, filter, wantHeaders}, osrc);
+    var parms = new[] { tableDescriptor, filter, wantHeaders };
+    // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
+    const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
+    ExcelObservableSource eos = () => new SubscribeOperation(ftd, wh, OperationManager);
+    return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
-  private static bool TryInterpretArgs(object filter, object wantHeaders, out string filterVal,
-    out bool wantHeadersVal, out string errorText) {
-    filterVal = "";
-    wantHeadersVal = false;
+  private static bool TryInterpretCommonArgs(string tableDescriptor, object filter, object wantHeaders,
+    out FilteredTableDescriptor? filteredTableDescriptorResult, out bool wantHeadersResult, out string errorText) {
+    filteredTableDescriptorResult = null;
+    wantHeadersResult = false;
     errorText = "";
-    if (!InterpretOptional.TryInterpretAs(filter, "", out filterVal)) {
+    if (!InterpretOptional.TryInterpretAs(filter, "", out var filterText)) {
       errorText = "Can't interpret FILTER argument";
       return false;
     }
-    if (!InterpretOptional.TryInterpretAs(wantHeaders, false, out wantHeadersVal)) {
+
+    if (!FilteredTableDescriptor.TryParse(filterText, out filteredTableDescriptorResult)) {
+      return false;
+    }
+
+    if (!InterpretOptional.TryInterpretAs(wantHeaders, false, out wantHeadersResult)) {
       errorText = "Can't interpret WANT_HEADERS argument";
       return false;
     }
