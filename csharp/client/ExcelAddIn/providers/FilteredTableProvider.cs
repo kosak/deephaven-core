@@ -239,20 +239,28 @@ internal class CorePlusSession : UnifiedSession {
 internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
-  private Client? _client = null;
+  private StatusOr<Client> _client = StatusOr<Client>.OfStatus("Not connected");
   public int SubscriberCount = 0;
+
+  public ClientProvider(WorkerThread workerThread, SessionManager sessionManager,
+    string persistentQueryId) {
+    _workerThread = workerThread;
+    _workerThread.Invoke(() => {
+      try {
+        var dndClient = sessionManager.ConnectToPqByName(persistentQueryId, false);
+        _client = StatusOr<Client>.OfValue(dndClient);
+      } catch (Exception ex) {
+        _client = StatusOr<Client>.OfStatus(ex.Message);
+      }
+      _observers.OnNextAll(_client);
+    });
+  }
 
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observers.Add(observer, out _);
-
-      if (_client == null) {
-        observer.SendStatus("Not connected to PQ \"{blah}\"");
-        return;
-      }
-
-      observer.SendValue(_client);
+      observer.OnNext(_client);
     });
 
     return new ActionAsDisposable(() => {
@@ -263,7 +271,12 @@ internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
   }
 
   public void Dispose() {
-    throw new NotImplementedException();
+    _workerThread.Invoke(() => {
+      if (_client.TryGetValue(out var c, out _)) {
+        _client = StatusOr<Client>.OfStatus("Disposed");
+        c.Dispose();
+      }
+    });
   }
 }
 
@@ -284,25 +297,28 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
   void IObserver<StatusOr<UnifiedSession>>.OnNext(StatusOr<UnifiedSession> usos) {
     _workerThread.Invoke(() => {
       try {
-        Disconnect();
-        // MaybeDispose("Table", ref _tableHandle);
-        // MaybeDispose("PQ", ref _pqDisposable);
+        if (_tableHandle != null) {
+          _callerObserver.SendStatus("Disposing TableHandle");
+          Util.SetToNull(ref _tableHandle)?.Dispose();
+        }
+
+        if (_pqDisposable != null) {
+          _callerObserver.SendStatus("Disposing PQ");
+          Util.SetToNull(ref _pqDisposable)?.Dispose();
+        }
 
         if (!usos.TryGetValue(out var eitherSession, out var status)) {
-          var statusMessage = StatusOr<TableHandle>.OfStatus(status);
-          _callerObserver.OnNext(statusMessage);
+          _callerObserver.SendStatus(status);
           return;
         }
 
         eitherSession.Select(out var coreSession, out var corePlusSession);
         if (coreSession != null) {
-          var clientValue = StatusOr<Client>.OfValue(coreSession.Client);
-          ((IObserver<StatusOr<Client>>)this).OnNext(clientValue);
+          this.SendValue(coreSession.Client);
           return;
         }
 
-        var pqMessage = $"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"";
-        _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(pqMessage));
+        _callerObserver.SendStatus($"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"");
         _pqDisposable = corePlusSession!.SubscribeToPq(_descriptor.PersistentQueryId, this);
       } catch (Exception ex) {
         _callerObserver.OnError(ex);
@@ -320,16 +336,17 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
 
   void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
     _workerThread.Invoke(() => {
-      MaybeDispose("TableHandle", ref _tableHandle);
+      if (_tableHandle != null) {
+        _callerObserver.SendStatus("Disposing TableHandle");
+        Util.SetToNull(ref _tableHandle)?.Dispose();
+      }
 
       if (!so.TryGetValue(out var client, out var status)) {
-        var statusMessage = StatusOr<TableHandle>.OfStatus(status);
-        _callerObserver.OnNext(statusMessage);
+        _callerObserver.SendStatus(status);
         return;
       }
 
-      var fetchTableMessage = $"Fetching \"{_descriptor.TableName}\"";
-      _callerObserver.OnNext(StatusOr<TableHandle>.OfStatus(fetchTableMessage));
+      _callerObserver.SendStatus($"Fetching \"{_descriptor.TableName}\"");
 
       _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
       if (_descriptor.Filter != "") {
@@ -338,8 +355,7 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
         temp.Dispose();
       }
 
-      var tableMessage = StatusOr.OfValue(_tableHandle);
-      _callerObserver.OnNext(tableMessage);
+      _callerObserver.SendValue(_tableHandle);
     });
   }
 
@@ -349,17 +365,6 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
 
   void IObserver<StatusOr<Client>>.OnError(Exception error) {
     throw new NotImplementedException();
-  }
-
-  private void MaybeDispose<T>(string what, ref T? disposable) where T : IDisposable {
-    if (!Util.TrySetToNull(ref disposable, out var old)) {
-      return;
-    }
-
-    var message = StatusOr<TableHandle>.OfStatus($"Disposing {what}");
-    _callerObserver.OnNext(message);
-
-    old.Dispose();
   }
 }
 
