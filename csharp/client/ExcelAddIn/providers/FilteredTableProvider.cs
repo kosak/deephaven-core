@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient;
+﻿using System.Diagnostics;
+using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
@@ -7,7 +8,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class StateManager {
-  public readonly WorkerThread WorkerThread = new();
+  public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly SessionProviders _sessionProviders;
 
   public StateManager() {
@@ -406,7 +407,25 @@ public class WorkerThread {
   }
 
   public void Doit() {
+    while (true) {
+      Action? action = null;
+      lock (_sync) {
+        while (true) {
+          if (_queue.Count != 0) {
+            action = _queue.Dequeue();
+            break;
+          }
 
+          Monitor.Wait(_sync);
+        }
+      }
+
+      try {
+        action();
+      } catch (Exception ex) {
+        Debug.WriteLine($"Swallowing exception {ex}");
+      }
+    }
   }
 }
 
