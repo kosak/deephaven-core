@@ -1,6 +1,7 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
@@ -27,7 +28,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
   }
 
   IDisposable IExcelObservable.Subscribe(IExcelObserver observer) {
-    var wrappedObserver = new ZamboniWrapper(observer);
+    var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
     _workerThread.Invoke(() => {
       _observers.Add(wrappedObserver, out var isFirst);
 
