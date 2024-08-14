@@ -4,6 +4,7 @@ using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
+using ExcelAddIn.views;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
@@ -14,10 +15,8 @@ public static class DeephavenExcelFunctions {
   private static readonly StateManager StateManager = new();
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
-  public static void ConnectToDeephaven() {
-    var f = new ConnectionDialog(ConnectionDialogViewModel, (self, connectionString) => {
-      Debug.WriteLine("SAD!");
-    });
+  public static void ManagedConnections() {
+    var f = new ConnectionManager();
     f.Show();
   }
 
