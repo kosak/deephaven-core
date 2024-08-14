@@ -3,7 +3,7 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.ExcelDna;
 
-internal class ExcelDnaUtil {
+internal class ExcelDnaHelpers {
   public static bool TryInterpretAs<T>(object value, T defaultValue, out T result) {
     result = defaultValue;
     if (value is ExcelMissing) {

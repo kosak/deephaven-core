@@ -1,12 +1,10 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
-using Deephaven.DeephavenClient.ExcelAddIn.Operations;
-using Deephaven.DeephavenClient.ExcelAddIn.Views;
+﻿using System.Diagnostics;
+using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
-using ExcelAddIn.views;
+using Deephaven.ExcelAddIn.Views;
 using ExcelDna.Integration;
-using static System.Net.WebRequestMethods;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -15,29 +13,12 @@ public static class DeephavenExcelFunctions {
   private static readonly EnterpriseConnectionDialogViewModel EnterpriseConnectionDialogViewModel = new ();
   private static readonly StateManager StateManager = new();
 
-  [ExcelCommand(MenuName = "Deephaven", MenuText = "Connect to Deephaven")]
+  [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ConnectToDeephaven() {
     var f = new ConnectionDialog(ConnectionDialogViewModel, (self, connectionString) => {
-      OperationManager.Connect(connectionString);
-      self.Close();
+      Debug.WriteLine("SAD!");
     });
     f.Show();
-  }
-
-  [ExcelCommand(MenuName = "Deephaven", MenuText = "Connect to Deephaven Enterprise")]
-  public static void ConnectToDeephavenEnterprise() {
-    var f = new EnterpriseConnectionDialog(EnterpriseConnectionDialogViewModel,
-      (self, jsonUrl, username, password, operateAs, pqName) => {
-      OperationManager.ConnectToEnterprise(jsonUrl, username, password, operateAs, pqName);
-      self.Close();
-    });
-    f.Show();
-  }
-
-  [ExcelCommand(MenuName = "Deephaven", MenuText = "Reconnect")]
-  public static void ReconnectToDeephaven() {
-    // TODO(kosak): Thread safety for reading ConnectionString?
-    OperationManager.Connect(ConnectionDialogViewModel.ConnectionString);
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
@@ -73,13 +54,13 @@ public static class DeephavenExcelFunctions {
       return false;
     }
 
-    if (!InterpretOptional.TryInterpretAs(filter, "", out filterResult)) {
+    if (!ExcelDnaHelpers.TryInterpretAs(filter, "", out filterResult)) {
       errorText = "Can't interpret FILTER argument";
       return false;
     }
 
 
-    if (!InterpretOptional.TryInterpretAs(wantHeaders, false, out wantHeadersResult)) {
+    if (!ExcelDnaHelpers.TryInterpretAs(wantHeaders, false, out wantHeadersResult)) {
       errorText = "Can't interpret WANT_HEADERS argument";
       return false;
     }

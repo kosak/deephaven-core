@@ -1,11 +1,11 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
+﻿using Deephaven.DeephavenClient;
+using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
+namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
   private readonly TableDescriptor _tableDescriptor;
