@@ -4,9 +4,9 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
-using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
+using Deephaven.ExcelAddIn.ViewModels;
 
-namespace ExcelAddIn.views {
+namespace Deephaven.ExcelAddIn.Views {
   public partial class EnterpriseConnectionDialog : Form {
     private readonly EnterpriseConnectionDialogViewModel _vm;
     private readonly Action<Form, string, string, string, string, string> _onConnect;
