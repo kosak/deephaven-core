@@ -78,21 +78,4 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
     // TODO(kosak): TODO
     throw new NotImplementedException();
   }
-
-  private class ZamboniWrapper(IExcelObserver inner) : IObserver<StatusOr<object?[,]>> {
-    public void OnNext(StatusOr<object?[,]> sov) {
-      if (!sov.TryGetValue(out var value, out var status)) {
-        value = new object[,] { { status } };
-      }
-      inner.OnNext(value);
-    }
-
-    public void OnCompleted() {
-      inner.OnCompleted();
-    }
-
-    public void OnError(Exception error) {
-      inner.OnError(error);
-    }
-  }
 }
