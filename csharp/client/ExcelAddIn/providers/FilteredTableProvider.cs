@@ -17,10 +17,7 @@ internal class StateManager {
   public IDisposable Subscribe(TableDescriptor descriptor,
     string filter,
     IObserver<StatusOr<TableHandle>> observer) {
-    SessionProvider? sp = null;
-    IDisposable? disposer = null;
-
-    var mco = new MyComboObserver(WorkerThread, descriptor, observer);
+    var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
     return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
   }
 }
@@ -290,15 +287,17 @@ internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
 
 internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<StatusOr<Client>> {
   private readonly WorkerThread _workerThread;
-  private readonly FilteredTableDescriptor _descriptor;
+  private readonly TableDescriptor _descriptor;
+  private readonly string _filter;
   private readonly IObserver<StatusOr<TableHandle>> _callerObserver;
   private IDisposable? _pqDisposable = null;
   private TableHandle? _tableHandle = null;
 
-  public MyComboObserver(WorkerThread workerThread, FilteredTableDescriptor descriptor,
+  public MyComboObserver(WorkerThread workerThread, TableDescriptor descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
     _workerThread = workerThread;
     _descriptor = descriptor;
+    _filter = filter;
     _callerObserver = observer;
   }
 
@@ -357,9 +356,9 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
       _callerObserver.SendStatus($"Fetching \"{_descriptor.TableName}\"");
 
       _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
-      if (_descriptor.Filter != "") {
+      if (_filter != "") {
         var temp = _tableHandle;
-        _tableHandle = temp.Where(_descriptor.Filter);
+        _tableHandle = temp.Where(_filter);
         temp.Dispose();
       }
 
@@ -377,11 +376,24 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
 }
 
 public class WorkerThread {
+  public static WorkerThread Create() {
+    var result = new WorkerThread();
+    var t = new Thread(result.Doit) { IsBackground = true };
+    result._thisThread = t;
+    t.Start();
+    return result;
+  }
+
   private readonly object _sync = new();
   private readonly Queue<Action> _queue = new();
+  private Thread? _thisThread;
+
+  private WorkerThread() {
+  }
 
   public void Invoke(Action action) {
-    if (threadId is thisThread) {
+    if (ReferenceEquals(Thread.CurrentThread, _thisThread)) {
+      // Can run "action" directly if we're already on our worker thread.
       action();
       return;
     }
