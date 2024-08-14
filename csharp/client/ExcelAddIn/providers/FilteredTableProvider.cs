@@ -25,7 +25,9 @@ internal class SessionProviders {
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
 
     return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => { SetToNull(ref disposable)?.Dispose(); });
+      _workerThread.Invoke(() => {
+        Util.SetToNull(ref disposable)?.Dispose();
+      });
     });
   }
 
@@ -42,6 +44,9 @@ internal class SessionProviders {
 }
 
 internal class FilteredTableManager {
+  private readonly WorkerThread _workerThread;
+  private readonly SessionProviders _sessionProviders;
+
   public IDisposable Subscribe(FilteredTableDescriptor descriptor,
     IObserver<StatusOr<TableHandle>> observer) {
     SessionProvider? sp = null;
@@ -158,7 +163,26 @@ internal class UnifiedSession {
     return new CorePlusSession(session);
   }
 
+  /// <summary>
+  /// This is meant to be a typesafe way (sort of like a Visitor pattern)
+  /// that helps the caller cast UnifiedSession down to the right type.
+  /// If we ever add a third type, we can add it here. This will help us find
+  /// all the callers that need to change.
+  /// </summary>
   public void Select(out CoreSession? coreSession, out CorePlusSession? corePlusSession) {
+    coreSession = null;
+    corePlusSession = null;
+    if (this is CoreSession cs) {
+      coreSession = cs;
+      return;
+    }
+
+    if (this is CorePlusSession cps) {
+      corePlusSession = cps;
+      return;
+    }
+
+    throw new Exception($"Unexpected type {GetType().Name}");
 
   }
 }
@@ -168,9 +192,12 @@ internal class CoreSession(Client client) : UnifiedSession {
 }
 
 internal class CorePlusSession : UnifiedSession {
+  private readonly WorkerThread _workerThread;
   private readonly SessionManager _sessionManager;
 
-// from pq to client provider
+  /// <summary>
+  /// Persistent Query ID -> ClientProvider
+  /// </summary>
   private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
 
   public CorePlusSession(SessionManager sessionManager) {
@@ -353,7 +380,25 @@ public class WorkerThread {
   }
 }
 
-public static class ObserverContainer_Extensions {
+public static class Util {
+  public static T? SetToNull<T>(ref T? item) where T : class {
+    var result = item;
+    item = null;
+    return result;
+  }
+}
+
+public static class ObserverStatusOr_Extensions {
+  public static void SendStatus<T>(this IObserver<StatusOr<T>> observer, string message) {
+    var so = StatusOr<T>.OfStatus(message);
+    observer.OnNext(so);
+  }
+
+  public static void SendValue<T>(this IObserver<StatusOr<T>> observer, T value) {
+    var so = StatusOr<T>.OfValue(value);
+    observer.OnNext(so);
+  }
+
   public static void SendStatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
     var so = StatusOr<T>.OfStatus(message);
     container.OnNextAll(so);
