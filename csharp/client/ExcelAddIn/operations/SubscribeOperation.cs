@@ -1,84 +1,108 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Util;
+using ExcelDna.Integration;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Deephaven.DeephavenClient.ExcelAddIn.Operations;
 
-internal class SubscribeOperation : IOperation {
-  private readonly string _tableName;
+internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
+  private readonly TableDescriptor _tableDescriptor;
   private readonly string _filter;
   private readonly bool _wantHeaders;
-  private readonly IDataListener _sender;
-  private TableHandle? _currentTableHandle;
-  private SubscriptionHandle? _currentSubHandle;
+  private readonly StateManager _stateManager;
+  private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
+  private readonly WorkerThread _workerThread;
+  private IDisposable? _filteredTableDisposer = null;
+  private TableHandle? _currentTableHandle = null;
+  private SubscriptionHandle? _currentSubHandle = null;
 
-  public SubscribeOperation(string tableName, string filter, bool wantHeaders, IDataListener sender) {
-    _tableName = tableName;
+  public SubscribeOperation(TableDescriptor tableDescriptor, string filter, bool wantHeaders,
+    StateManager stateManager) {
+    _tableDescriptor = tableDescriptor;
     _filter = filter;
     _wantHeaders = wantHeaders;
-    _sender = sender;
+    _stateManager = stateManager;
+    // Convenience
+    _workerThread = _stateManager.WorkerThread;
   }
 
-  public void NewClientState(Client? client, string? message) {
-    try {
+  IDisposable IExcelObservable.Subscribe(IExcelObserver observer) {
+    var wrappedObserver = new ZamboniWrapper(observer);
+    _workerThread.Invoke(() => {
+      _observers.Add(wrappedObserver, out var isFirst);
+
+      if (isFirst) {
+        _filteredTableDisposer = _stateManager.Subscribe(_tableDescriptor, _filter, this);
+      }
+    });
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => {
+        _observers.Remove(wrappedObserver, out var wasLast);
+        if (!wasLast) {
+          return;
+        }
+
+        var temp = _filteredTableDisposer;
+        _filteredTableDisposer = null;
+        temp?.Dispose();
+      });
+    });
+  }
+
+  void IObserver<StatusOr<TableHandle>>.OnNext(StatusOr<TableHandle> soth) {
+    _workerThread.Invoke(() => {
       // First tear down old state
       if (_currentTableHandle != null) {
         _currentTableHandle.Unsubscribe(_currentSubHandle!);
         _currentSubHandle!.Dispose();
-        _currentTableHandle.Dispose();
         _currentTableHandle = null;
         _currentSubHandle = null;
       }
 
-      if (message != null) {
-        _sender.OnStatus(message);
+      if (!soth.TryGetValue(out var tableHandle, out var status)) {
+        _observers.SendStatusAll(status);
         return;
       }
 
-      if (client == null) {
-        // Impossible.
-        return;
+      _observers.SendStatusAll($"Subscribing to \"{_tableDescriptor.TableName}\"");
+
+      _currentTableHandle = tableHandle;
+      _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observers, _wantHeaders));
+
+      try {
+        using var ct = tableHandle.ToClientTable();
+        var result = Renderer.Render(ct, _wantHeaders);
+        _observers.SendValueAll(result);
+      } catch (Exception ex) {
+        _observers.SendStatusAll(ex.Message);
       }
-
-      _sender.OnStatus($"Subscribing to \"{_tableName}\"");
-
-      var thToUse = client.Manager.FetchTable(_tableName);
-      if (_filter.Length != 0) {
-        var filtered = thToUse.Where(_filter);
-        thToUse.Dispose();
-        thToUse = filtered;
-      }
-
-      _currentTableHandle = thToUse;
-      _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_sender, _wantHeaders));
-    } catch (Exception ex) {
-      _sender.OnError(ex);
-      // If we catch an exception we might have inconsistent state. We will not try very hard
-      // to dispose / clean it up carefully.
-      _currentSubHandle = null;
-      _currentTableHandle = null;
-    }
+    });
   }
 
   private class MyTickingCallback : ITickingCallback {
-    private readonly IDataListener _sender;
+    private readonly ObserverContainer<StatusOr<object?[,]>> _observers;
     private readonly bool _wantHeaders;
 
-    public MyTickingCallback(IDataListener sender, bool wantHeaders) {
-      _sender = sender;
+    public MyTickingCallback(ObserverContainer<StatusOr<object?[,]>> observers,
+      bool wantHeaders) {
+      _observers = observers;
       _wantHeaders = wantHeaders;
     }
 
     public void OnTick(TickingUpdate update) {
       try {
         var results = Renderer.Render(update.Current, _wantHeaders);
-        _sender.OnNext(results);
-      } catch (Exception ex) {
-        _sender.OnError(ex);
+        _observers.SendValueAll(results);
+      } catch (Exception e) {
+        _observers.SendStatusAll(e.Message);
       }
     }
 
     public void OnFailure(string errorText) {
-      _sender.OnStatus(errorText);
+      _observers.SendStatusAll(errorText);
     }
   }
 }
