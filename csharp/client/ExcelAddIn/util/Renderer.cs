@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.Util;
+﻿using Deephaven.DeephavenClient;
+
+namespace Deephaven.ExcelAddIn.Util;
 
 internal static class Renderer {
   public static object?[,] Render(ClientTable table, bool wantHeaders) {

@@ -7,8 +7,12 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class StateManager {
-  private readonly WorkerThread _workerThread;
+  public readonly WorkerThread WorkerThread = new();
   private readonly SessionProviders _sessionProviders;
+
+  public StateManager() {
+    _sessionProviders = new SessionProviders(WorkerThread);
+  }
 
   public IDisposable Subscribe(TableDescriptor descriptor,
     string filter,
@@ -16,17 +20,20 @@ internal class StateManager {
     SessionProvider? sp = null;
     IDisposable? disposer = null;
 
-    var mco = new MyComboObserver(_workerThread, descriptor, observer);
+    var mco = new MyComboObserver(WorkerThread, descriptor, observer);
     return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
   }
 }
 
 internal class SessionProviders {
+  private readonly WorkerThread _workerThread;
+
   /// <summary>
   /// Connection Id -> Session Provider
   /// </summary>
   private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
-  private readonly WorkerThread _workerThread = new();
+
+  public SessionProviders(WorkerThread workerThread) => _workerThread = workerThread;
 
   public void SetCredentials(string id, UnifiedCredentials credentials) {
     ApplyTo(id, sp => sp.SetCredentials(credentials));
@@ -54,13 +61,6 @@ internal class SessionProviders {
     });
   }
 }
-
-// c:t   connection, table
-// c:p/t connection, pq, table
-// t table at default connection
-// pq/t: pq/t at default connection
-
-
 
 internal abstract class UnifiedCredentials {
   /// <summary>
@@ -380,9 +380,13 @@ public class WorkerThread {
   private readonly object _sync = new();
   private readonly Queue<Action> _queue = new();
 
-  public void Invoke(Action a) {
+  public void Invoke(Action action) {
+    if (threadId is thisThread) {
+      action();
+      return;
+    }
     lock (_sync) {
-      _queue.Enqueue(a);
+      _queue.Enqueue(action);
       if (_queue.Count == 1) {
         Monitor.PulseAll(_sync);
       }
