@@ -6,6 +6,21 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+internal class StateManager {
+  private readonly WorkerThread _workerThread;
+  private readonly SessionProviders _sessionProviders;
+
+  public IDisposable Subscribe(TableDescriptor descriptor,
+    string filter,
+    IObserver<StatusOr<TableHandle>> observer) {
+    SessionProvider? sp = null;
+    IDisposable? disposer = null;
+
+    var mco = new MyComboObserver(_workerThread, descriptor, observer);
+    return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
+  }
+}
+
 internal class SessionProviders {
   /// <summary>
   /// Connection Id -> Session Provider
@@ -46,19 +61,6 @@ internal class SessionProviders {
 // pq/t: pq/t at default connection
 
 
-internal class FilteredTableManager {
-  private readonly WorkerThread _workerThread;
-  private readonly SessionProviders _sessionProviders;
-
-  public IDisposable Subscribe(FilteredTableDescriptor descriptor,
-    IObserver<StatusOr<TableHandle>> observer) {
-    SessionProvider? sp = null;
-    IDisposable? disposer = null;
-
-    var mco = new MyComboObserver(_workerThread, descriptor, observer);
-    return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
-  }
-}
 
 internal abstract class UnifiedCredentials {
   /// <summary>
@@ -422,8 +424,36 @@ public static class ObserverStatusOr_Extensions {
   }
 }
 
-internal record FilteredTableDescriptor(
+internal record TableDescriptor(
   string ConnectionId,
   string PersistentQueryId,
-  string TableName,
-  string Filter);
+  string TableName) {
+  public static bool TryParse(string text, out TableDescriptor result, out string errorText) {
+    // 1. table - ("", "", table)
+    // 2. connection:table - (connection, "", table)
+    // 3. pq/table - ("", pq, table)
+    // 4. connection:pq/table - (connection, pq, table)
+    var cId = "";
+    var pqId = "";
+    var tableName = "";
+    var colonIndex = text.IndexOf(':');
+    if (colonIndex > 0) {
+      // cases 2 and 4: pull out the connection, and then reduce to cases 1 and 3
+      cId = text.Substring(0, colonIndex);
+      text = text.Substring(colonIndex + 1);
+    }
+
+    var slashIndex = text.IndexOf('/');
+    if (slashIndex > 0) {
+      // case 3: pull out the slash, and reduce to case 1
+      pqId = text.Substring(0, slashIndex);
+      text = text.Substring(slashIndex + 1);
+    }
+
+    tableName = text;
+    result = new TableDescriptor(cId, pqId, tableName);
+    errorText = "";
+    // This version never fails to parse, but we leave open the option to do so.
+    return true;
+  }
+}
