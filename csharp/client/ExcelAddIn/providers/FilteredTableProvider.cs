@@ -213,7 +213,7 @@ internal class CorePlusSession : UnifiedSession {
 
     _workerThread.Invoke(() => {
       if (!_clientProviders.TryGetValue(persistentQueryId, out cp)) {
-        cp = new ClientProvider(_workerThread, persistentQueryId);
+        cp = new ClientProvider(_workerThread, _sessionManager, persistentQueryId);
         _clientProviders.Add(persistentQueryId, cp);
         cp.SubscriberCount = 1;
       }
