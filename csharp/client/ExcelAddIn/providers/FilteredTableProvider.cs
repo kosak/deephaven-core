@@ -1,7 +1,4 @@
-﻿using System.Net;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using Deephaven.DeephavenClient;
+﻿using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
@@ -82,25 +79,25 @@ internal abstract class UnifiedCredentials {
 }
 
 internal sealed class CoreCredentials : UnifiedCredentials {
-
+  public readonly string ConnectionString;
 }
 
 internal sealed class CorePlusCredentials : UnifiedCredentials {
-
+  public readonly string JsonUrl;
 }
 
 
 internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposable {
   private readonly WorkerThread _workerThread;
-  private readonly FilteredTableDescriptor _descriptor;
+  private readonly string _connectionId;
   private UnifiedCredentials? _unifiedCredentials = null;
   private UnifiedSession? _unifiedSession = null;
   private readonly ObserverContainer<StatusOr<UnifiedSession>> _observerContainer = new();
   private bool _disposed;
 
-  public SessionProvider(WorkerThread workerThread, FilteredTableDescriptor descriptor) {
+  public SessionProvider(WorkerThread workerThread, string connectionId) {
     _workerThread = workerThread;
-    _descriptor = descriptor;
+    _connectionId = connectionId;
   }
 
   public void Dispose() {
@@ -135,7 +132,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
     _workerThread.Invoke(() => {
       try {
         _unifiedSession = null;
-        _observerContainer.SendStatusAll($"Trying to connect {_descriptor.ConnectionId}");
+        _observerContainer.SendStatusAll($"Trying to connect to {_connectionId}");
 
         _unifiedSession = UnifiedSession.Of(credentials);
         _observerContainer.SendValueAll(_unifiedSession);
@@ -149,7 +146,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
 internal class UnifiedSession {
   public static UnifiedSession Of(UnifiedCredentials credentials) {
     credentials.Split(out var coreCredentials, out var corePlusCredentials);
-    return coreCredentials != null ? OfCore(coreCredentials) : OfCorePlus(corePlusCredentials);
+    return coreCredentials != null ? OfCore(coreCredentials) : OfCorePlus(corePlusCredentials!);
   }
 
   public static CoreSession OfCore(CoreCredentials credentials) {
@@ -158,7 +155,7 @@ internal class UnifiedSession {
   }
 
   public static CorePlusSession OfCorePlus(CorePlusCredentials credentials) {
-    // TODO(kosak): want a better descriptive name?
+    // TODO(kosak): want a better descriptiveName?
     var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
     return new CorePlusSession(session);
   }
@@ -198,7 +195,7 @@ internal class CorePlusSession : UnifiedSession {
   /// <summary>
   /// Persistent Query ID -> ClientProvider
   /// </summary>
-  private readonly Dictionary<string, ClientProvider> _clientProviderCollection = new();
+  private readonly Dictionary<string, ClientProvider> _clientProviders = new();
 
   public CorePlusSession(SessionManager sessionManager) {
     _sessionManager = sessionManager;
@@ -209,9 +206,9 @@ internal class CorePlusSession : UnifiedSession {
     IDisposable? disposer = null;
 
     _workerThread.Invoke(() => {
-      if (!_clientProviderCollection.TryGetValue(persistentQueryId, out cp)) {
+      if (!_clientProviders.TryGetValue(persistentQueryId, out cp)) {
         cp = new ClientProvider(_workerThread, persistentQueryId);
-        _clientProviderCollection.Add(persistentQueryId, cp);
+        _clientProviders.Add(persistentQueryId, cp);
         cp.SubscriberCount = 1;
       }
 
@@ -220,19 +217,19 @@ internal class CorePlusSession : UnifiedSession {
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
+        var old = Util.SetToNull(ref disposer);
         // Do nothing if caller Disposes me multiple times.
-        if (!Util.TryResetToNull(ref disposer, out old)) {
+        if (old == null) {
           return;
         }
-
         old.Dispose();
-
 
         if (--cp!.SubscriberCount != 0) {
           return;
         }
 
-        _clientProviderCollection.Remove(persistentQueryId);
+        // Last one! Remove it from the dictionary and shut it down
+        _clientProviders.Remove(persistentQueryId);
         cp!.Dispose();
       });
     });
@@ -240,23 +237,27 @@ internal class CorePlusSession : UnifiedSession {
 }
 
 internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
-  private readonly StatusOrObserverContainer<UnifiedSession> _observerContainer = new();
+  private readonly WorkerThread _workerThread;
+  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
+  private Client? _client = null;
+  public int SubscriberCount = 0;
 
-  public IDisposable Subscribe(IObserver<StatusOr<UnifiedSession>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
-      _observerContainer.Add(observer, out _);
+      _observers.Add(observer, out _);
 
       if (_client == null) {
-        OnNextAll(_observerContainer, "Not connected to PQ \"{blah}\"");
-      } else {
-        OnNextAll(_observerContainer, _client);
+        observer.SendStatus("Not connected to PQ \"{blah}\"");
+        return;
       }
+
+      observer.SendValue(_client);
     });
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
-        _observerContainer.Remove(observer, out _);
+        _observers.Remove(observer, out _);
       });
     });
   }
