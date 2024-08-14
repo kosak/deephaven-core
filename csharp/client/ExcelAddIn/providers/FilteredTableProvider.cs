@@ -40,6 +40,12 @@ internal class SessionProviders {
   }
 }
 
+// c:t   connection, table
+// c:p/t connection, pq, table
+// t table at default connection
+// pq/t: pq/t at default connection
+
+
 internal class FilteredTableManager {
   private readonly WorkerThread _workerThread;
   private readonly SessionProviders _sessionProviders;

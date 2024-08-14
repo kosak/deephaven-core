@@ -1,4 +1,4 @@
-﻿namespace Deephaven.DeephavenClient.ExcelAddIn;
+﻿namespace Deephaven.ExcelAddIn;
 
 public static class GlobalConstants {
   public const string DefaultConnectionString = "10.0.4.106:10000";

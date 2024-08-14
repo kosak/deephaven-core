@@ -1,4 +1,4 @@
-﻿namespace Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
+﻿namespace Deephaven.ExcelAddIn.ViewModels;
 
 public class EnterpriseConnectionDialogViewModel {
   private string _jsonUrl = EnterpriseConstants.DefaultJsonUrl;

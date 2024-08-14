@@ -2,10 +2,11 @@
 using Deephaven.DeephavenClient.ExcelAddIn.Operations;
 using Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
 using Deephaven.DeephavenClient.ExcelAddIn.Views;
+using Deephaven.ExcelAddIn.Operations;
 using ExcelAddIn.views;
 using ExcelDna.Integration;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn;
+namespace Deephaven.ExcelAddIn;
 
 public static class DeephavenExcelFunctions {
   private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();

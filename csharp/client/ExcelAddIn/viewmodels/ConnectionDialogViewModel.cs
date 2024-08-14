@@ -1,4 +1,6 @@
-﻿namespace Deephaven.DeephavenClient.ExcelAddIn.ViewModels;
+﻿using Deephaven.DeephavenClient.ExcelAddIn;
+
+namespace Deephaven.ExcelAddIn.ViewModels;
 
 public class ConnectionDialogViewModel {
   private string _connectionString = GlobalConstants.DefaultConnectionString;
