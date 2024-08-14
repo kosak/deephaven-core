@@ -1,8 +1,13 @@
 ﻿using ExcelDna.Integration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
+namespace Deephaven.ExcelAddIn.ExcelDna;
 
-internal static class InterpretOptional {
+internal class ExcelDnaUtil {
   public static bool TryInterpretAs<T>(object value, T defaultValue, out T result) {
     result = defaultValue;
     if (value is ExcelMissing) {

@@ -82,6 +82,16 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     });
   }
 
+  void IObserver<StatusOr<TableHandle>>.OnCompleted() {
+    // TODO(kosak): TODO
+    throw new NotImplementedException();
+  }
+
+  void IObserver<StatusOr<TableHandle>>.OnError(Exception error) {
+    // TODO(kosak): TODO
+    throw new NotImplementedException();
+  }
+
   private class MyTickingCallback : ITickingCallback {
     private readonly ObserverContainer<StatusOr<object?[,]>> _observers;
     private readonly bool _wantHeaders;

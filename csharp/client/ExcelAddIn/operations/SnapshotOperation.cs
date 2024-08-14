@@ -4,7 +4,6 @@ using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
-using System;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
