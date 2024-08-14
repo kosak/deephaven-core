@@ -21,6 +21,7 @@ internal class StateManager {
     var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
     return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
   }
+
 }
 
 internal class SessionProviders {

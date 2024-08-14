@@ -40,7 +40,11 @@ namespace ExcelAddIn.views {
       var name = ccc.Name;
       Debug.WriteLine($"zamboni click row={row} col={col})");
     }
+
+
+
   }
+
 
   public class Zamboni {
     public int X { get; set; }
