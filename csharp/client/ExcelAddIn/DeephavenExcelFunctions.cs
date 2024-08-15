@@ -24,6 +24,8 @@ public class MySessionObserver : IObserver<AddOrRemove<ConnectionId>> {
 
   public void OnNext(AddOrRemove<ConnectionId> value) {
     Debug.WriteLine($"Lookie here: {value}");
+
+    //qqq
   }
 }
 
