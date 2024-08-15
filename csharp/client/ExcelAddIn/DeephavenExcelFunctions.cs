@@ -1,7 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Windows.Forms;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using ExcelAddIn.views;
@@ -9,10 +13,16 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
 
-public class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
+internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
   private readonly StateManager _stateManager;
-  public MySessionObserver(Form f) {
+  private readonly ConnectionManagerDialog _cmDialog;
+  private readonly BindingSource _bindingSource;
 
+  public MySessionObserver(StateManager stateManager, ConnectionManagerDialog cmDialog,
+    BindingSource bindingSource) {
+    _stateManager = stateManager;
+    _cmDialog = cmDialog;
+    _bindingSource = bindingSource;
   }
 
   public void OnCompleted() {
@@ -35,25 +45,86 @@ public class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     // Add a row to the form
     // Wire up the OnClick button for that row
     // subscribe to the 
-    Debug.WriteLine($"Lookie here: {value}");
-    var subPain666 = new SubPain666();
+
+    var statusRow = new HyperZamboniRow();
+    var subPain666 = new SubPain666(statusRow);
     var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
+
+    // Not sure what the deal is with threading and BindingSource,
+    // so I'll Invoke it to get this change on the GUI thread.
+    _cmDialog.Invoke(() => _bindingSource.Add(statusRow));
+  }
+}
+
+public class SubPain666 : IObserver<StatusOr<UnifiedSession>> {
+  private readonly HyperZamboniRow _statusRow;
+
+  public SubPain666(HyperZamboniRow statusRow) {
+    _statusRow = statusRow;
+  }
+
+  public void OnCompleted() {
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+  public void OnNext(StatusOr<UnifiedSession> value) {
+    _statusRow.Status = value.TryGetValue(out _, out var status) ? "[Connected]" : status;
+  }
+}
+
+public sealed class HyperZamboniRow : INotifyPropertyChanged {
+  public event PropertyChangedEventHandler? PropertyChanged;
+
+  private string _id;
+  private string _status;
+
+  public string Id {
+    get => _id;
+    set {
+      if (value == _id) {
+        return;
+      }
+
+      _id = value;
+      OnPropertyChanged();
+    }
+  }
+
+  public string Status {
+    get => _status;
+    set {
+      if (value == _status) {
+        return;
+      }
+
+      _status = value;
+      OnPropertyChanged();
+    }
+  }
+
+  private void OnPropertyChanged([CallerMemberName] string? name = null) {
+    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
   }
 }
 
 public static class DeephavenExcelFunctions {
   private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();
   private static readonly EnterpriseConnectionDialogViewModel EnterpriseConnectionDialogViewModel = new ();
-  private static readonly StateManager StateManager = new();
+  private static readonly StateManager _stateManager = new();
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
-
-    var f = new ConnectionManagerDialog();
-    var mso = new MySessionObserver(f);
-    var disposer = StateManager.SubscribeToSessionPopulationChange(mso);
+    var bs = new BindingSource();
+    bs.DataSource = typeof(HyperZamboniRow);
+    var cmDialog = new ConnectionManagerDialog(bs);
+    var mso = new MySessionObserver(_stateManager, cmDialog, bs);
+    var disposer = _stateManager.SubscribeToSessions(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
-    f.Show();
+    cmDialog.Show();
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
@@ -65,7 +136,7 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
-    ExcelObservableSource eos = () => new SnapshotOperation(td!, filt, wh, StateManager);
+    ExcelObservableSource eos = () => new SnapshotOperation(td!, filt, wh, _stateManager);
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
@@ -77,7 +148,7 @@ public static class DeephavenExcelFunctions {
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
-    ExcelObservableSource eos = () => new SubscribeOperation(td, filt, wh, StateManager);
+    ExcelObservableSource eos = () => new SubscribeOperation(td, filt, wh, _stateManager);
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 

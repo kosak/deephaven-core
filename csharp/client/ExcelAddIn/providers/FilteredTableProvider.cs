@@ -29,7 +29,6 @@ internal class StateManager {
     var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
     return _sessionProviders.Subscribe(descriptor.SessionId, mco);
   }
-
 }
 
 public record AddOrRemove<T>(bool IsAdd, T Value) {
@@ -93,7 +92,7 @@ internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
   }
 }
 
-internal abstract class UnifiedCredentials {
+public abstract class UnifiedCredentials {
   /// <summary>
   /// This is meant to be a typesafe way (sort of like a Visitor pattern)
   /// that helps the caller cast UnifiedCredentials down to the right type.
@@ -117,11 +116,11 @@ internal abstract class UnifiedCredentials {
   }
 }
 
-internal sealed class CoreCredentials : UnifiedCredentials {
+public sealed class CoreCredentials : UnifiedCredentials {
   public readonly string ConnectionString;
 }
 
-internal sealed class CorePlusCredentials : UnifiedCredentials {
+public sealed class CorePlusCredentials : UnifiedCredentials {
   public readonly string JsonUrl;
 }
 
@@ -182,7 +181,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
   }
 }
 
-internal class UnifiedSession {
+public class UnifiedSession {
   public static UnifiedSession Of(UnifiedCredentials credentials) {
     credentials.Split(out var coreCredentials, out var corePlusCredentials);
     return coreCredentials != null ? OfCore(coreCredentials) : OfCorePlus(corePlusCredentials!);
@@ -223,11 +222,11 @@ internal class UnifiedSession {
   }
 }
 
-internal class CoreSession(Client client) : UnifiedSession {
+public class CoreSession(Client client) : UnifiedSession {
   public readonly Client Client = client;
 }
 
-internal class CorePlusSession : UnifiedSession {
+public class CorePlusSession : UnifiedSession {
   private readonly WorkerThread _workerThread;
   private readonly SessionManager _sessionManager;
 

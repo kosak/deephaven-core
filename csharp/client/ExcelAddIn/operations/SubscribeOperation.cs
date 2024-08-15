@@ -35,7 +35,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
-        _filteredTableDisposer = _stateManager.Subscribe(_tableDescriptor, _filter, this);
+        _filteredTableDisposer = _stateManager.SubscribeToTriple(_tableDescriptor, _filter, this);
       }
     });
 
