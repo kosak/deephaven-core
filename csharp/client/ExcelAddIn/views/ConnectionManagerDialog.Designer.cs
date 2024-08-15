@@ -1,5 +1,5 @@
 ﻿namespace ExcelAddIn.views {
-  partial class ConnectionManager {
+  partial class ConnectionManagerDialog {
     /// <summary>
     /// Required designer variable.
     /// </summary>
@@ -46,7 +46,7 @@
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(2054, 967);
       Controls.Add(dataGridView1);
-      Name = "ConnectionManager";
+      Name = "ConnectionManagerDialog";
       Text = "ConnectionManager";
       ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
       ResumeLayout(false);

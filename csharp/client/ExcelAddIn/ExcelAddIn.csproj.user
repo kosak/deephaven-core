@@ -5,7 +5,7 @@
     <Compile Update="views\ConnectionDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="views\ConnectionManager.cs">
+    <Compile Update="views\ConnectionManagerDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="views\EnterpriseConnectionDialog.cs">

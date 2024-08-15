@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ExcelAddIn.views {
-  public partial class ConnectionManager : Form {
-    public ConnectionManager() {
+  public partial class ConnectionManagerDialog : Form {
+    public ConnectionManagerDialog() {
       InitializeComponent();
 
       var bs = new BindingSource();

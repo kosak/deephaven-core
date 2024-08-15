@@ -16,7 +16,7 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
-    var f = new ConnectionManager();
+    var f = new ConnectionManagerDialog();
     f.Show();
   }
 
