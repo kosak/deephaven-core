@@ -9,6 +9,24 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
 
+public class MySessionObserver : IObserver<AddOrRemove<ConnectionId>> {
+  public MySessionObserver(Form f) {
+
+  }
+
+  public void OnCompleted() {
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+  public void OnNext(AddOrRemove<ConnectionId> value) {
+    Debug.WriteLine($"Lookie here: {value}");
+  }
+}
+
 public static class DeephavenExcelFunctions {
   private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();
   private static readonly EnterpriseConnectionDialogViewModel EnterpriseConnectionDialogViewModel = new ();
@@ -16,7 +34,11 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
+
     var f = new ConnectionManagerDialog();
+    var mso = new MySessionObserver(f);
+    var disposer = StateManager.SubscribeToSessionPopulationChange(mso);
+    // TODO(kosak): where does disposer go. Maybe the Form's closed event?
     f.Show();
   }
 

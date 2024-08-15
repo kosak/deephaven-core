@@ -22,23 +22,49 @@ internal class StateManager {
     return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
   }
 
+  public IDisposable SubscribeToSessionPopulationChange(IObserver<AddOrRemove<ConnectionId>> observer) {
+    return _sessionProviders.Subscribe(observer);
+  }
 }
 
-internal class SessionProviders {
+public record AddOrRemove<T>(bool IsAdd, T Value) {
+  public static AddOrRemove<T> OfAdd(T value) {
+    return new AddOrRemove<T>(true, value);
+  }
+}
+
+public record ConnectionId(string Id);
+public record PersistentQueryId(string Id);
+
+internal class SessionProviders : IObservable<AddOrRemove<ConnectionId>> {
   private readonly WorkerThread _workerThread;
 
   /// <summary>
   /// Connection Id -> Session Provider
   /// </summary>
-  private readonly Dictionary<string, SessionProvider> _sessionProviderCollection = new();
+  private readonly Dictionary<ConnectionId, SessionProvider> _sessionProviderCollection = new();
+  private readonly ObserverContainer<AddOrRemove<ConnectionId>> _connectionPopulationObservers = new();
 
   public SessionProviders(WorkerThread workerThread) => _workerThread = workerThread;
 
-  public void SetCredentials(string id, UnifiedCredentials credentials) {
+  public void SetCredentials(ConnectionId id, UnifiedCredentials credentials) {
     ApplyTo(id, sp => sp.SetCredentials(credentials));
   }
 
-  public IDisposable Subscribe(string id, IObserver<StatusOr<UnifiedSession>> observer) {
+  public IDisposable Subscribe(IObserver<AddOrRemove<ConnectionId>> observer) {
+    IDisposable? disposable = null;
+    _workerThread.Invoke(() => {
+      _connectionPopulationObservers.Add(observer, out _);
+    });
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => {
+        Util.SetToNull(ref disposable)?.Dispose();
+      });
+    });
+  }
+
+  public IDisposable Subscribe(ConnectionId id, IObserver<StatusOr<UnifiedSession>> observer) {
     IDisposable? disposable = null;
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
 
@@ -49,11 +75,12 @@ internal class SessionProviders {
     });
   }
 
-  private void ApplyTo(string id, Action<SessionProvider> action) {
+  private void ApplyTo(ConnectionId id, Action<SessionProvider> action) {
     _workerThread.Invoke(() => {
       if (!_sessionProviderCollection.TryGetValue(id, out var sp)) {
         sp = new SessionProvider(_workerThread, id);
         _sessionProviderCollection.Add(id, sp);
+        _connectionPopulationObservers.OnNextAll(AddOrRemove<ConnectionId>.OfAdd(id));
       }
 
       action(sp);
@@ -96,13 +123,13 @@ internal sealed class CorePlusCredentials : UnifiedCredentials {
 
 internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposable {
   private readonly WorkerThread _workerThread;
-  private readonly string _connectionId;
+  private readonly ConnectionId _connectionId;
   private UnifiedCredentials? _unifiedCredentials = null;
   private UnifiedSession? _unifiedSession = null;
   private readonly ObserverContainer<StatusOr<UnifiedSession>> _observerContainer = new();
   private bool _disposed;
 
-  public SessionProvider(WorkerThread workerThread, string connectionId) {
+  public SessionProvider(WorkerThread workerThread, ConnectionId connectionId) {
     _workerThread = workerThread;
     _connectionId = connectionId;
   }
@@ -202,13 +229,14 @@ internal class CorePlusSession : UnifiedSession {
   /// <summary>
   /// Persistent Query ID -> ClientProvider
   /// </summary>
-  private readonly Dictionary<string, ClientProvider> _clientProviders = new();
+  private readonly Dictionary<PersistentQueryId, ClientProvider> _clientProviders = new();
 
   public CorePlusSession(SessionManager sessionManager) {
     _sessionManager = sessionManager;
   }
 
-  public IDisposable SubscribeToPq(string persistentQueryId, IObserver<StatusOr<Client>> observer) {
+  public IDisposable SubscribeToPq(PersistentQueryId persistentQueryId,
+    IObserver<StatusOr<Client>> observer) {
     ClientProvider? cp = null;
     IDisposable? disposer = null;
 
@@ -250,11 +278,11 @@ internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
   public int SubscriberCount = 0;
 
   public ClientProvider(WorkerThread workerThread, SessionManager sessionManager,
-    string persistentQueryId) {
+    PersistentQueryId persistentQueryId) {
     _workerThread = workerThread;
     _workerThread.Invoke(() => {
       try {
-        var dndClient = sessionManager.ConnectToPqByName(persistentQueryId, false);
+        var dndClient = sessionManager.ConnectToPqByName(persistentQueryId.Id, false);
         _client = StatusOr<Client>.OfValue(dndClient);
       } catch (Exception ex) {
         _client = StatusOr<Client>.OfStatus(ex.Message);
@@ -461,33 +489,34 @@ public static class ObserverStatusOr_Extensions {
 }
 
 internal record TableDescriptor(
-  string ConnectionId,
-  string PersistentQueryId,
+  ConnectionId ConnectionId,
+  PersistentQueryId PersistentQueryId,
   string TableName) {
   public static bool TryParse(string text, out TableDescriptor result, out string errorText) {
     // 1. table - ("", "", table)
     // 2. connection:table - (connection, "", table)
     // 3. pq/table - ("", pq, table)
     // 4. connection:pq/table - (connection, pq, table)
-    var cId = "";
-    var pqId = "";
+    var cid = "";
+    var pqid = "";
     var tableName = "";
     var colonIndex = text.IndexOf(':');
     if (colonIndex > 0) {
       // cases 2 and 4: pull out the connection, and then reduce to cases 1 and 3
-      cId = text.Substring(0, colonIndex);
+      cid = text.Substring(0, colonIndex);
       text = text.Substring(colonIndex + 1);
     }
 
     var slashIndex = text.IndexOf('/');
     if (slashIndex > 0) {
       // case 3: pull out the slash, and reduce to case 1
-      pqId = text.Substring(0, slashIndex);
+      pqid = text.Substring(0, slashIndex);
       text = text.Substring(slashIndex + 1);
     }
 
     tableName = text;
-    result = new TableDescriptor(cId, pqId, tableName);
+    result = new TableDescriptor(new ConnectionId(cid),
+      new PersistentQueryId(pqid), tableName);
     errorText = "";
     // This version never fails to parse, but we leave open the option to do so.
     return true;
