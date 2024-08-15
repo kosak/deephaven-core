@@ -9,23 +9,35 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
 
-public class MySessionObserver : IObserver<AddOrRemove<ConnectionId>> {
+public class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
+  private readonly StateManager _stateManager;
   public MySessionObserver(Form f) {
 
   }
 
   public void OnCompleted() {
+    // TODO(kosak)
     throw new NotImplementedException();
   }
 
   public void OnError(Exception error) {
+    // TODO(kosak)
     throw new NotImplementedException();
   }
 
-  public void OnNext(AddOrRemove<ConnectionId> value) {
-    Debug.WriteLine($"Lookie here: {value}");
+  public void OnNext(AddOrRemove<SessionId> aor) {
+    if (!aor.IsAdd) {
+      // TODO(kosak)
+      Debug.WriteLine("Remove is not handled");
+      return;
+    }
 
-    //qqq
+    // Add a row to the form
+    // Wire up the OnClick button for that row
+    // subscribe to the 
+    Debug.WriteLine($"Lookie here: {value}");
+    var subPain666 = new SubPain666();
+    var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
   }
 }
 

@@ -15,16 +15,21 @@ internal class StateManager {
     _sessionProviders = new SessionProviders(WorkerThread);
   }
 
-  public IDisposable Subscribe(TableDescriptor descriptor,
+  public IDisposable SubscribeToSessions(IObserver<AddOrRemove<SessionId>> observer) {
+    return _sessionProviders.Subscribe(observer);
+  }
+
+  public IDisposable SubscribeToSession(SessionId sessionId, IObserver<StatusOr<UnifiedSession>> observer) {
+    return _sessionProviders.Subscribe(sessionId, observer);
+  }
+
+  public IDisposable SubscribeToTriple(TableDescriptor descriptor,
     string filter,
     IObserver<StatusOr<TableHandle>> observer) {
     var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
-    return _sessionProviders.Subscribe(descriptor.ConnectionId, mco);
+    return _sessionProviders.Subscribe(descriptor.SessionId, mco);
   }
 
-  public IDisposable SubscribeToSessionPopulationChange(IObserver<AddOrRemove<ConnectionId>> observer) {
-    return _sessionProviders.Subscribe(observer);
-  }
 }
 
 public record AddOrRemove<T>(bool IsAdd, T Value) {
@@ -33,28 +38,28 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
   }
 }
 
-public record ConnectionId(string Id);
+public record SessionId(string Id);
 public record PersistentQueryId(string Id);
 
-internal class SessionProviders : IObservable<AddOrRemove<ConnectionId>> {
+internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
   private readonly WorkerThread _workerThread;
 
   /// <summary>
   /// Connection Id -> Session Provider
   /// </summary>
-  private readonly Dictionary<ConnectionId, SessionProvider> _sessionProviderCollection = new();
-  private readonly ObserverContainer<AddOrRemove<ConnectionId>> _connectionPopulationObservers = new();
+  private readonly Dictionary<SessionId, SessionProvider> _sessions = new();
+  private readonly ObserverContainer<AddOrRemove<SessionId>> _sessionsObservers = new();
 
   public SessionProviders(WorkerThread workerThread) => _workerThread = workerThread;
 
-  public void SetCredentials(ConnectionId id, UnifiedCredentials credentials) {
+  public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
     ApplyTo(id, sp => sp.SetCredentials(credentials));
   }
 
-  public IDisposable Subscribe(IObserver<AddOrRemove<ConnectionId>> observer) {
+  public IDisposable Subscribe(IObserver<AddOrRemove<SessionId>> observer) {
     IDisposable? disposable = null;
     _workerThread.Invoke(() => {
-      _connectionPopulationObservers.Add(observer, out _);
+      _sessionsObservers.Add(observer, out _);
     });
 
     return new ActionAsDisposable(() => {
@@ -64,7 +69,7 @@ internal class SessionProviders : IObservable<AddOrRemove<ConnectionId>> {
     });
   }
 
-  public IDisposable Subscribe(ConnectionId id, IObserver<StatusOr<UnifiedSession>> observer) {
+  public IDisposable Subscribe(SessionId id, IObserver<StatusOr<UnifiedSession>> observer) {
     IDisposable? disposable = null;
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
 
@@ -75,12 +80,12 @@ internal class SessionProviders : IObservable<AddOrRemove<ConnectionId>> {
     });
   }
 
-  private void ApplyTo(ConnectionId id, Action<SessionProvider> action) {
+  private void ApplyTo(SessionId id, Action<SessionProvider> action) {
     _workerThread.Invoke(() => {
-      if (!_sessionProviderCollection.TryGetValue(id, out var sp)) {
+      if (!_sessions.TryGetValue(id, out var sp)) {
         sp = new SessionProvider(_workerThread, id);
-        _sessionProviderCollection.Add(id, sp);
-        _connectionPopulationObservers.OnNextAll(AddOrRemove<ConnectionId>.OfAdd(id));
+        _sessions.Add(id, sp);
+        _sessionsObservers.OnNextAll(AddOrRemove<SessionId>.OfAdd(id));
       }
 
       action(sp);
@@ -123,15 +128,15 @@ internal sealed class CorePlusCredentials : UnifiedCredentials {
 
 internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposable {
   private readonly WorkerThread _workerThread;
-  private readonly ConnectionId _connectionId;
+  private readonly SessionId _sessionId;
   private UnifiedCredentials? _unifiedCredentials = null;
   private UnifiedSession? _unifiedSession = null;
   private readonly ObserverContainer<StatusOr<UnifiedSession>> _observerContainer = new();
   private bool _disposed;
 
-  public SessionProvider(WorkerThread workerThread, ConnectionId connectionId) {
+  public SessionProvider(WorkerThread workerThread, SessionId sessionId) {
     _workerThread = workerThread;
-    _connectionId = connectionId;
+    _sessionId = sessionId;
   }
 
   public void Dispose() {
@@ -166,7 +171,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
     _workerThread.Invoke(() => {
       try {
         _unifiedSession = null;
-        _observerContainer.SendStatusAll($"Trying to connect to {_connectionId}");
+        _observerContainer.SendStatusAll($"Trying to connect to {_sessionId}");
 
         _unifiedSession = UnifiedSession.Of(credentials);
         _observerContainer.SendValueAll(_unifiedSession);
@@ -489,7 +494,7 @@ public static class ObserverStatusOr_Extensions {
 }
 
 internal record TableDescriptor(
-  ConnectionId ConnectionId,
+  SessionId SessionId,
   PersistentQueryId PersistentQueryId,
   string TableName) {
   public static bool TryParse(string text, out TableDescriptor result, out string errorText) {
@@ -515,7 +520,7 @@ internal record TableDescriptor(
     }
 
     tableName = text;
-    result = new TableDescriptor(new ConnectionId(cid),
+    result = new TableDescriptor(new SessionId(cid),
       new PersistentQueryId(pqid), tableName);
     errorText = "";
     // This version never fails to parse, but we leave open the option to do so.
