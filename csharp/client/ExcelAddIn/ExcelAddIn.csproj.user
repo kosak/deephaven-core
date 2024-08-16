@@ -8,6 +8,9 @@
     <Compile Update="views\ConnectionManagerDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="views\CredentialsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="views\EnterpriseConnectionDialog.cs">
       <SubType>Form</SubType>
     </Compile>
