@@ -16,13 +16,10 @@ namespace Deephaven.ExcelAddIn;
 internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
   private readonly StateManager _stateManager;
   private readonly ConnectionManagerDialog _cmDialog;
-  private readonly BindingSource _bindingSource;
 
-  public MySessionObserver(StateManager stateManager, ConnectionManagerDialog cmDialog,
-    BindingSource bindingSource) {
+  public MySessionObserver(StateManager stateManager, ConnectionManagerDialog cmDialog) {
     _stateManager = stateManager;
     _cmDialog = cmDialog;
-    _bindingSource = bindingSource;
   }
 
   public void OnCompleted() {
@@ -51,9 +48,15 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     // TODO(kosak): what now
     var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
 
+    var onClick = () => {
+      Debug.WriteLine($"I {aor.Value.Id} WAS CLICKED");
+    };
+
     // Not sure what the deal is with threading and BindingSource,
     // so I'll Invoke it to get this change on the GUI thread.
-    _cmDialog.Invoke(() => _bindingSource.Add(statusRow));
+    _cmDialog.Invoke(() => {
+      _cmDialog.AddRow(statusRow, onClick);
+    });
   }
 }
 
@@ -106,10 +109,8 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
-    var bs = new BindingSource();
-    bs.DataSource = typeof(HyperZamboniRow);
-    var cmDialog = new ConnectionManagerDialog(bs);
-    var mso = new MySessionObserver(StateManager, cmDialog, bs);
+    var cmDialog = new ConnectionManagerDialog();
+    var mso = new MySessionObserver(StateManager, cmDialog);
     var disposer = StateManager.SubscribeToSessions(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
     cmDialog.Show();
