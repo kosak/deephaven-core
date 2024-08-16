@@ -37,7 +37,11 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
   }
 }
 
-public record SessionId(string Id);
+public record SessionId(string Id) {
+  public override string ToString() {
+    return Id == "" ? "[Default]" : Id;
+  }
+}
 public record PersistentQueryId(string Id);
 
 internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {

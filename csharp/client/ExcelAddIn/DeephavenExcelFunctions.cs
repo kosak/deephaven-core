@@ -46,8 +46,9 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     // Wire up the OnClick button for that row
     // subscribe to the 
 
-    var statusRow = new HyperZamboniRow();
+    var statusRow = new HyperZamboniRow(aor.Value.ToString(), "[disconnected]");
     var subPain666 = new SubPain666(statusRow);
+    // TODO(kosak): what now
     var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
 
     // Not sure what the deal is with threading and BindingSource,
@@ -76,32 +77,19 @@ public class SubPain666 : IObserver<StatusOr<UnifiedSession>> {
   }
 }
 
-public sealed class HyperZamboniRow : INotifyPropertyChanged {
+public sealed class HyperZamboniRow(string id, string status) : INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  private string _id;
-  private string _status;
-
-  public string Id {
-    get => _id;
-    set {
-      if (value == _id) {
-        return;
-      }
-
-      _id = value;
-      OnPropertyChanged();
-    }
-  }
+  public string Id => id;
 
   public string Status {
-    get => _status;
+    get => status;
     set {
-      if (value == _status) {
+      if (value == status) {
         return;
       }
 
-      _status = value;
+      status = value;
       OnPropertyChanged();
     }
   }
@@ -114,15 +102,15 @@ public sealed class HyperZamboniRow : INotifyPropertyChanged {
 public static class DeephavenExcelFunctions {
   private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();
   private static readonly EnterpriseConnectionDialogViewModel EnterpriseConnectionDialogViewModel = new ();
-  private static readonly StateManager _stateManager = new();
+  private static readonly StateManager StateManager = new();
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
     var bs = new BindingSource();
     bs.DataSource = typeof(HyperZamboniRow);
     var cmDialog = new ConnectionManagerDialog(bs);
-    var mso = new MySessionObserver(_stateManager, cmDialog, bs);
-    var disposer = _stateManager.SubscribeToSessions(mso);
+    var mso = new MySessionObserver(StateManager, cmDialog, bs);
+    var disposer = StateManager.SubscribeToSessions(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
     cmDialog.Show();
   }
@@ -136,7 +124,7 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
-    ExcelObservableSource eos = () => new SnapshotOperation(td!, filt, wh, _stateManager);
+    ExcelObservableSource eos = () => new SnapshotOperation(td!, filt, wh, StateManager);
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
@@ -148,7 +136,7 @@ public static class DeephavenExcelFunctions {
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
-    ExcelObservableSource eos = () => new SubscribeOperation(td, filt, wh, _stateManager);
+    ExcelObservableSource eos = () => new SubscribeOperation(td, filt, wh, StateManager);
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
