@@ -120,6 +120,9 @@ public static class DeephavenExcelFunctions {
       StateManager.SetCredentials(new SessionId("c1"), creds);
     }) { IsBackground = true };
     t.Start();
+
+    var zamboniTime = new CredentialsDialogViewModel();
+    new CredentialsDialog(zamboniTime).Show();
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
