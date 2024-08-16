@@ -113,6 +113,13 @@ public static class DeephavenExcelFunctions {
     var disposer = StateManager.SubscribeToSessions(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
     cmDialog.Show();
+
+    var t = new Thread(() => {
+      Thread.Sleep(10 * 1000);
+      var creds = UnifiedCredentials.OfCore("localhost:10000");
+      StateManager.SetCredentials(new SessionId("c1"), creds);
+    }) { IsBackground = true };
+    t.Start();
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]

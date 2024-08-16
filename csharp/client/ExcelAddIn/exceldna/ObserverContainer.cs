@@ -27,16 +27,9 @@ public interface IObserverCollection<out T> {
 /// of IObserver&lt;T&gt;
 /// </summary>
 public interface IDataListener<in T> {
-  /// <summary>
-  /// Transmits an exception to the observers.
-  /// </summary>
   public void OnErrorAll(Exception error);
-
-  /// <summary>
-  /// Transmits a rectangular array of data to the observers.
-  /// </summary>
-  /// <param name="data"></param>
   public void OnNextAll(T data);
+  public void OnCompletedAll();
 }
 
 /// <summary>
@@ -77,6 +70,12 @@ public sealed class ObserverContainer<T> : IObserverCollection<T>, IDataListener
   public void OnErrorAll(Exception ex) {
     foreach (var observer in SafeCopyObservers()) {
       observer.OnError(ex);
+    }
+  }
+
+  public void OnCompletedAll() {
+    foreach (var observer in SafeCopyObservers()) {
+      observer.OnCompleted();
     }
   }
 

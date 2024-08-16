@@ -29,6 +29,10 @@ internal class StateManager {
     var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
     return _sessionProviders.Subscribe(descriptor.SessionId, mco);
   }
+
+  public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
+    _sessionProviders.SetCredentials(id, credentials);
+  }
 }
 
 public record AddOrRemove<T>(bool IsAdd, T Value) {
@@ -63,6 +67,10 @@ internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
     IDisposable? disposable = null;
     _workerThread.Invoke(() => {
       _sessionsObservers.Add(observer, out _);
+      // To avoid any possibility of reentrancy while iterating over the dict, make a copy of the keys
+      foreach (var sessionId in _sessions.Keys.ToArray()) {
+        observer.OnNext(AddOrRemove<SessionId>.OfAdd(sessionId));
+      }
     });
 
     return new ActionAsDisposable(() => {
@@ -97,6 +105,10 @@ internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
 }
 
 public abstract class UnifiedCredentials {
+  public static UnifiedCredentials OfCore(string connectionString) {
+    return new CoreCredentials(connectionString);
+  }
+
   /// <summary>
   /// This is meant to be a typesafe way (sort of like a Visitor pattern)
   /// that helps the caller cast UnifiedCredentials down to the right type.
@@ -120,8 +132,8 @@ public abstract class UnifiedCredentials {
   }
 }
 
-public sealed class CoreCredentials : UnifiedCredentials {
-  public readonly string ConnectionString;
+public sealed class CoreCredentials(string connectionString) : UnifiedCredentials {
+  public readonly string ConnectionString = connectionString;
 }
 
 public sealed class CorePlusCredentials : UnifiedCredentials {
@@ -133,7 +145,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
   private readonly WorkerThread _workerThread;
   private readonly SessionId _sessionId;
   private UnifiedCredentials? _unifiedCredentials = null;
-  private UnifiedSession? _unifiedSession = null;
+  private StatusOr<UnifiedSession> _unifiedSession = StatusOr<UnifiedSession>.OfStatus("No credentials");
   private readonly ObserverContainer<StatusOr<UnifiedSession>> _observerContainer = new();
   private bool _disposed;
 
@@ -155,12 +167,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observerContainer.Add(observer, out _);
-
-      if (_unifiedSession == null) {
-        observer.SendStatus("Not connected");
-      } else {
-        observer.SendValue(_unifiedSession);
-      }
+      observer.OnNext(_unifiedSession);
     });
 
     return new ActionAsDisposable(() => {
@@ -173,14 +180,15 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
   public void SetCredentials(UnifiedCredentials credentials) {
     _workerThread.Invoke(() => {
       try {
-        _unifiedSession = null;
-        _observerContainer.SendStatusAll($"Trying to connect to {_sessionId}");
+        _unifiedSession = StatusOr<UnifiedSession>.OfStatus("Trying to connect");
+        _observerContainer.OnNextAll(_unifiedSession);
 
-        _unifiedSession = UnifiedSession.Of(credentials);
-        _observerContainer.SendValueAll(_unifiedSession);
+        var session = UnifiedSession.Of(credentials);
+        _unifiedSession = StatusOr<UnifiedSession>.OfValue(session);
       } catch (Exception ex) {
-        _observerContainer.OnErrorAll(ex);
+        _unifiedSession = StatusOr<UnifiedSession>.OfStatus(ex.Message);
       }
+      _observerContainer.OnNextAll(_unifiedSession);
     });
   }
 }
