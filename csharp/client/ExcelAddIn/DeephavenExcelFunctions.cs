@@ -49,6 +49,8 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
 
     var onClick = () => {
+      var cvm = new CredentialsDialogViewModel.OfStupid();
+      var xyzDialog = new CredentialsDialog(cvm);
       Debug.WriteLine($"I {aor.Value.Id} WAS CLICKED");
     };
 
