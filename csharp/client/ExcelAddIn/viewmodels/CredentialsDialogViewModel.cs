@@ -11,6 +11,18 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 namespace Deephaven.ExcelAddIn.ViewModels;
 
 public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
+  public static CredentialsDialogViewModel OfNew(string id) {
+
+  }
+
+  public static CredentialsDialogViewModel OfCredentials(UnifiedCredentialsWithEnable credentials) {
+    var enabled = credentials.Enabled;
+
+
+
+  }
+
+
   private string _id = "";
   private bool _isCorePlus = true;
 

@@ -10,7 +10,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly SessionProviders _sessionProviders;
-  private readonly 
 
   public StateManager() {
     _sessionProviders = new SessionProviders(WorkerThread);
@@ -43,10 +42,11 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
 }
 
 public record SessionId(string Id) {
-  public override string ToString() {
-    return Id == "" ? "[Default]" : Id;
-  }
+  public string HumanReadableString() => Id == "" ? "[Default]" : Id;
+
+  public override string ToString() => HumanReadableString();
 }
+
 public record PersistentQueryId(string Id);
 
 internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
