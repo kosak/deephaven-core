@@ -43,30 +43,15 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     // Wire up the OnClick button for that row
     // subscribe to the 
 
-    var statusRow = new HyperZamboniRow(aor.Value.ToString(), "[disconnected]");
-    var subPain666 = new SubPain666(statusRow);
+    var statusRow = new HyperZamboniRow(aor.Value.HumanReadableString);
     // TODO(kosak): what now
-    var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
-
-    var onClick = () => {
-      // I want to snapshot the credentials at the moment of the click. I don't want
-      // to listen to them. ok?  OK?
-      // unless... UNLESS... the hyper zamboni row is itself a subscriber. that would be ok
-      // In for a dime, in for a dollar. No... I don't want this one to be live.
-      // TODO(kosak)
-      var disposer9 = _stateManager.SubscribeToCredentials(aor.Value, this);
-
-
-
-      var cvm = new CredentialsDialogViewModel.OfStupid();
-      var xyzDialog = new CredentialsDialog(cvm);
-      Debug.WriteLine($"I {aor.Value.Id} WAS CLICKED");
-    };
+    var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, statusRow);
+    var disposer9 = _stateManager.SubscribeToCredentials(aor.Value, statusRow);
 
     // Not sure what the deal is with threading and BindingSource,
     // so I'll Invoke it to get this change on the GUI thread.
     _cmDialog.Invoke(() => {
-      _cmDialog.AddRow(statusRow, onClick);
+      _cmDialog.AddRow(statusRow, statusRow.OnClick);
     });
   }
 }
@@ -109,8 +94,14 @@ public sealed class HyperZamboniRow(string id) :
     }
   }
 
-  public bool Enabled {
-    get => _credentials?.Enabled ?? false;
+  public bool Enabled => _credentials?.Enabled ?? false;
+
+  public void OnClick() {
+    var cvm = _credentials == null
+      ? CredentialsDialogViewModel.OfNew(Id)
+      : CredentialsDialogViewModel.OfCredentials(_credentials);
+    var dialog = new CredentialsDialog(cvm);
+    dialog.Show();
   }
 
   public void OnNext(StatusOr<UnifiedSession> value) {
