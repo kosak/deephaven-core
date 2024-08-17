@@ -49,6 +49,15 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, subPain666);
 
     var onClick = () => {
+      // I want to snapshot the credentials at the moment of the click. I don't want
+      // to listen to them. ok?  OK?
+      // unless... UNLESS... the hyper zamboni row is itself a subscriber. that would be ok
+      // In for a dime, in for a dollar. No... I don't want this one to be live.
+      // TODO(kosak)
+      var disposer9 = _stateManager.SubscribeToCredentials(aor.Value, this);
+
+
+
       var cvm = new CredentialsDialogViewModel.OfStupid();
       var xyzDialog = new CredentialsDialog(cvm);
       Debug.WriteLine($"I {aor.Value.Id} WAS CLICKED");
@@ -62,41 +71,76 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
   }
 }
 
-public class SubPain666 : IObserver<StatusOr<UnifiedSession>> {
-  private readonly HyperZamboniRow _statusRow;
-
-  public SubPain666(HyperZamboniRow statusRow) {
-    _statusRow = statusRow;
-  }
-
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
-  }
-
-  public void OnNext(StatusOr<UnifiedSession> value) {
-    _statusRow.Status = value.TryGetValue(out _, out var status) ? "[Connected]" : status;
-  }
+public class UnifiedCredentialsWithEnable(bool enabled, UnifiedCredentials credentials) {
+  public bool Enabled => enabled;
+  public UnifiedCredentials Credentials = credentials;
 }
 
-public sealed class HyperZamboniRow(string id, string status) : INotifyPropertyChanged {
+public sealed class HyperZamboniRow(string id) :
+  IObserver<StatusOr<UnifiedSession>>,
+  IObserver<UnifiedCredentialsWithEnable>,
+  INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
+
+  private string _status = "[Disconnected]";
+  private UnifiedCredentialsWithEnable? _credentials;
 
   public string Id => id;
 
   public string Status {
-    get => status;
-    set {
-      if (value == status) {
+    get => _status;
+    private set {
+      if (value == _status) {
         return;
       }
 
-      status = value;
+      _status = value;
       OnPropertyChanged();
     }
+  }
+
+  public string ServerType {
+    get {
+      if (_credentials == null) {
+        return "[Not set]";
+      }
+
+      return _credentials.Credentials.Visit(_ => "Core", _ => "Core+");
+    }
+  }
+
+  public bool Enabled {
+    get => _credentials?.Enabled ?? false;
+  }
+
+  public void OnNext(StatusOr<UnifiedSession> value) {
+    // If we get a valid UnifiedSession, report it as [Connected].
+    // Otherwise report the status indication.
+    Status = value.TryGetValue(out _, out var status) ? "[Connected]" : status;
+  }
+
+  public void OnNext(UnifiedCredentialsWithEnable value) {
+    SetCredentials(value);
+  }
+
+  // For now, this implements both IObserver<StatusOr<UnifiedSession>>.OnCompleted and
+  // IObserver<UnifiedCredentialsWithEnable>.OnCompleted
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  // For now, this implements both IObserver<StatusOr<UnifiedSession>>.OnError and
+  // IObserver<UnifiedCredentialsWithEnable>.OnError
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  private void SetCredentials(UnifiedCredentialsWithEnable uce) {
+    _credentials = uce;
+    OnPropertyChanged("ServerType");
+    OnPropertyChanged("Enabled");
   }
 
   private void OnPropertyChanged([CallerMemberName] string? name = null) {
@@ -113,7 +157,7 @@ public static class DeephavenExcelFunctions {
   public static void ManagedConnections() {
     var cmDialog = new ConnectionManagerDialog();
     var mso = new MySessionObserver(StateManager, cmDialog);
-    var disposer = StateManager.SubscribeToSessions(mso);
+    var disposer1 = StateManager.SubscribeToSessions(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
     cmDialog.Show();
 

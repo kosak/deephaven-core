@@ -10,6 +10,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly SessionProviders _sessionProviders;
+  private readonly 
 
   public StateManager() {
     _sessionProviders = new SessionProviders(WorkerThread);
@@ -110,22 +111,15 @@ public abstract class UnifiedCredentials {
   }
 
   /// <summary>
-  /// This is meant to be a typesafe way (sort of like a Visitor pattern)
-  /// that helps the caller cast UnifiedCredentials down to the right type.
-  /// If we ever add a third type, we can add it here. This will help us find
-  /// all the callers that need to change.
+  /// This is meant to act like a Visitor pattern with lambdas.
   /// </summary>
-  public void Split(out CoreCredentials? coreCredentials, out CorePlusCredentials? corePlusCredentials) {
-    coreCredentials = null;
-    corePlusCredentials = null;
+  public T Visit<T>(Func<CoreCredentials, T> onCore, Func<CorePlusCredentials, T> onCorePlus) {
     if (this is CoreCredentials cc) {
-      coreCredentials = cc;
-      return;
+      return onCore(cc);
     }
 
     if (this is CorePlusCredentials cpc) {
-      corePlusCredentials = cpc;
-      return;
+      return onCorePlus(cpc);
     }
 
     throw new Exception($"Unexpected type {GetType().Name}");
@@ -195,8 +189,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
 
 public class UnifiedSession {
   public static UnifiedSession Of(UnifiedCredentials credentials) {
-    credentials.Split(out var coreCredentials, out var corePlusCredentials);
-    return coreCredentials != null ? OfCore(coreCredentials) : OfCorePlus(corePlusCredentials!);
+    return credentials.Visit(cc => (UnifiedSession)OfCore(cc), OfCorePlus);
   }
 
   public static CoreSession OfCore(CoreCredentials credentials) {
