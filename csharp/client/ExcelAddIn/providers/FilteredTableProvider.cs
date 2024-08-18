@@ -92,9 +92,9 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
     });
   }
 
-  public IDisposable Subscribe(SessionId id, IObserver<StatusOr<UnifiedSession>> observer) {
+  public IDisposable Subscribe(EndpointId id, IObserver<EndpointState> observer) {
     IDisposable? disposable = null;
-    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+    ApplyTo(id, ep => disposable = ep.Subscribe(observer));
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
@@ -103,15 +103,15 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
     });
   }
 
-  private void ApplyTo(SessionId id, Action<SessionProvider> action) {
+  private void ApplyTo(EndpointId id, Action<EndpointProvider> action) {
     _workerThread.Invoke(() => {
-      if (!_sessions.TryGetValue(id, out var ep)) {
-        ep = new EndpointProvider(_workerThread, id);
-        _sessions.Add(id, sp);
-        _sessionsObservers.OnNextAll(AddOrRemove<SessionId>.OfAdd(id));
+      if (!_providerMap.TryGetValue(id, out var ep)) {
+        ep = new EndpointProvider(id, _workerThread);
+        _providerMap.Add(id, ep);
+        _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
       }
 
-      action(sp);
+      action(ep);
     });
   }
 }
