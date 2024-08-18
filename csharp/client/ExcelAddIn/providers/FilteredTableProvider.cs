@@ -116,8 +116,8 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
   }
 }
 
-public abstract class UnifiedCredentials {
-  public static UnifiedCredentials OfCore(string connectionString) {
+public abstract class CredentialsBase {
+  public static CredentialsBase OfCore(string connectionString) {
     return new CoreCredentials(connectionString);
   }
 
@@ -137,30 +137,33 @@ public abstract class UnifiedCredentials {
   }
 }
 
-public sealed class CoreCredentials(string connectionString) : UnifiedCredentials {
+public sealed class CoreCredentials(string connectionString) : CredentialsBase {
   public readonly string ConnectionString = connectionString;
 }
 
-public sealed class CorePlusCredentials : UnifiedCredentials {
+public sealed class CorePlusCredentials : CredentialsBase {
   public readonly string JsonUrl;
+  public readonly string User;
+  public readonly string Password;
+  public readonly string OperateAs;
 }
 
-public class Endpoint(CredentialsBase? credentials,
+public class EndpointState(CredentialsBase? credentials,
   StatusOr<SessionBase> session) {
   public CredentialsBase? Credentials = credentials;
   public StatusOr<SessionBase> Session = session;
 }
 
-internal class EndpointProvider : IObservable<Endpoint>, IDisposable {
+internal class EndpointProvider : IObservable<EndpointState>, IDisposable {
+  private readonly EndpointId _endpointId;
   private readonly WorkerThread _workerThread;
-  private readonly SessionId _sessionId;
-  private Endpoint? _endpoint = null;
-  private readonly ObserverContainer<Endpoint> _observerContainer = new();
+  private EndpointState? _endpointState = null;
+  private readonly ObserverContainer<EndpointState> _observerContainer = new();
   private bool _disposed;
 
-  public EndpointProvider(WorkerThread workerThread, SessionId sessionId) {
+  public EndpointProvider(EndpointId endpointId, WorkerThread workerThread) {
+    _endpointId = endpointId;
     _workerThread = workerThread;
-    _sessionId = sessionId;
   }
 
   public void Dispose() {
@@ -202,9 +205,9 @@ internal class EndpointProvider : IObservable<Endpoint>, IDisposable {
   }
 }
 
-public class UnifiedSession {
-  public static UnifiedSession Of(UnifiedCredentials credentials) {
-    return credentials.Visit(cc => (UnifiedSession)OfCore(cc), OfCorePlus);
+public class SessionBase {
+  public static SessionBase Of(CredentialsBase credentials) {
+    return credentials.Visit(cc => (SessionBase)OfCore(cc), OfCorePlus);
   }
 
   public static CoreSession OfCore(CoreCredentials credentials) {
@@ -238,15 +241,14 @@ public class UnifiedSession {
     }
 
     throw new Exception($"Unexpected type {GetType().Name}");
-
   }
 }
 
-public class CoreSession(Client client) : UnifiedSession {
+public class CoreSession(Client client) : SessionBase {
   public readonly Client Client = client;
 }
 
-public class CorePlusSession : UnifiedSession {
+public class CorePlusSession : SessionBase {
   private readonly WorkerThread _workerThread;
   private readonly SessionManager _sessionManager;
 
@@ -257,6 +259,7 @@ public class CorePlusSession : UnifiedSession {
 
   public CorePlusSession(SessionManager sessionManager) {
     _sessionManager = sessionManager;
+    _workerThread = sessionManager.WorkerThread
   }
 
   public IDisposable SubscribeToPq(PersistentQueryId persistentQueryId,
