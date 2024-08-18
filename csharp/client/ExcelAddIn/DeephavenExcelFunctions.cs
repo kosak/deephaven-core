@@ -32,7 +32,7 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     throw new NotImplementedException();
   }
 
-  public void OnNext(AddOrRemove<SessionId> aor) {
+  public void OnNext(AddOrRemove<EndpointId> aor) {
     if (!aor.IsAdd) {
       // TODO(kosak)
       Debug.WriteLine("Remove is not handled");
@@ -56,11 +56,11 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
   }
 }
 
-public sealed class HyperZamboniRow(string id) : IObserver<Endpoint>, INotifyPropertyChanged {
+public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private string _status = "[Disconnected]";
-  private Endpoint? _endpoint;
+  private EndpointState _endpointState;
 
   public string Id => id;
 
@@ -78,32 +78,28 @@ public sealed class HyperZamboniRow(string id) : IObserver<Endpoint>, INotifyPro
 
   public string ServerType {
     get {
-      if (_credentials == null) {
+      var creds = _endpointState.Credentials;
+      if (creds == null) {
         return "[Not set]";
       }
 
-      return _credentials.Credentials.Visit(_ => "Core", _ => "Core+");
+      return creds.Visit(_ => "Core", _ => "Core+");
     }
   }
 
-  public bool Enabled => _credentials?.Enabled ?? false;
-
   public void OnClick() {
-    var cvm = _credentials == null
+    var creds = _endpointState.Credentials;
+    var cvm = creds == null
       ? CredentialsDialogViewModel.OfNew(Id)
-      : CredentialsDialogViewModel.OfCredentials(_credentials);
+      : CredentialsDialogViewModel.OfCredentials(creds);
     var dialog = new CredentialsDialog(cvm);
     dialog.Show();
   }
 
-  public void OnNext(Endpoint value) {
+  public void OnNext(EndpointState value) {
     // If we get a valid UnifiedSession, report it as [Connected].
     // Otherwise report the status indication.
     Status = value.TryGetValue(out _, out var status) ? "[Connected]" : status;
-  }
-
-  public void OnNext(UnifiedCredentialsWithEnable value) {
-    SetCredentials(value);
   }
 
   // For now, this implements both IObserver<StatusOr<UnifiedSession>>.OnCompleted and

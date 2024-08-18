@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using Deephaven.ExcelAddIn.Providers;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
@@ -15,8 +11,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   }
 
-  public static CredentialsDialogViewModel OfCredentials(UnifiedCredentialsWithEnable credentials) {
-    var enabled = credentials.Enabled;
+  public static CredentialsDialogViewModel OfCredentials(CredentialsBase credentials) {
 
 
 
