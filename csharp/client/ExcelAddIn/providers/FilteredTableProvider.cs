@@ -148,8 +148,18 @@ public sealed class CorePlusCredentials : CredentialsBase {
   public readonly string OperateAs;
 }
 
-public class EndpointState(CredentialsBase? credentials,
-  StatusOr<SessionBase> session) {
+public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
+  public static EndpointState OfCredentials(CredentialsBase credentials) {
+    var sb = SessionBase.Of(credentials);
+    var s = StatusOr<SessionBase>.OfValue(sb);
+    return new EndpointState(credentials, s);
+  }
+
+  public static EndpointState OfStatus(string status) {
+    var s = StatusOr<SessionBase>.OfStatus(status);
+    return new EndpointState(null, s);
+  }
+
   public CredentialsBase? Credentials = credentials;
   public StatusOr<SessionBase> Session = session;
 }
@@ -157,7 +167,7 @@ public class EndpointState(CredentialsBase? credentials,
 internal class EndpointProvider : IObservable<EndpointState>, IDisposable {
   private readonly EndpointId _endpointId;
   private readonly WorkerThread _workerThread;
-  private EndpointState? _endpointState = null;
+  private EndpointState _endpointState = EndpointState.OfStatus("[Disconnected]");
   private readonly ObserverContainer<EndpointState> _observerContainer = new();
   private bool _disposed;
 
@@ -175,11 +185,11 @@ internal class EndpointProvider : IObservable<EndpointState>, IDisposable {
     // not even sure what to do.... maybe send an "end" to all of my existing observers?
   }
 
-  public IDisposable Subscribe(IObserver<Endpoint> observer) {
+  public IDisposable Subscribe(IObserver<EndpointState> observer) {
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observerContainer.Add(observer, out _);
-      observer.OnNext(_unifiedSession);
+      observer.OnNext(_endpointState);
     });
 
     return new ActionAsDisposable(() => {
@@ -189,18 +199,17 @@ internal class EndpointProvider : IObservable<EndpointState>, IDisposable {
     });
   }
 
-  public void SetCredentials(UnifiedCredentials credentials) {
+  public void SetCredentials(CredentialsBase credentials) {
     _workerThread.Invoke(() => {
       try {
-        _unifiedSession = StatusOr<UnifiedSession>.OfStatus("Trying to connect");
-        _observerContainer.OnNextAll(_unifiedSession);
+        _endpointState = EndpointState.OfStatus("Trying to connect");
+        _observerContainer.OnNext(_endpointState);
 
-        var session = UnifiedSession.Of(credentials);
-        _unifiedSession = StatusOr<UnifiedSession>.OfValue(session);
+        _endpointState = EndpointState.OfCredentials(credentials);
       } catch (Exception ex) {
-        _unifiedSession = StatusOr<UnifiedSession>.OfStatus(ex.Message);
+        _endpointState = EndpointState.OfStatus(ex.Message);
       }
-      _observerContainer.OnNextAll(_unifiedSession);
+      _observerContainer.OnNext(_endpointState);
     });
   }
 }
@@ -249,17 +258,17 @@ public class CoreSession(Client client) : SessionBase {
 }
 
 public class CorePlusSession : SessionBase {
-  private readonly WorkerThread _workerThread;
   private readonly SessionManager _sessionManager;
+  private readonly WorkerThread _workerThread;
 
   /// <summary>
   /// Persistent Query ID -> ClientProvider
   /// </summary>
   private readonly Dictionary<PersistentQueryId, ClientProvider> _clientProviders = new();
 
-  public CorePlusSession(SessionManager sessionManager) {
+  public CorePlusSession(SessionManager sessionManager, WorkerThread workerThread) {
     _sessionManager = sessionManager;
-    _workerThread = sessionManager.WorkerThread
+    _workerThread = workerThread;
   }
 
   public IDisposable SubscribeToPq(PersistentQueryId persistentQueryId,
@@ -314,7 +323,7 @@ internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
       } catch (Exception ex) {
         _client = StatusOr<Client>.OfStatus(ex.Message);
       }
-      _observers.OnNextAll(_client);
+      _observers.OnNext(_client);
     });
   }
 
@@ -342,7 +351,7 @@ internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
   }
 }
 
-internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<StatusOr<Client>> {
+internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Client>> {
   private readonly WorkerThread _workerThread;
   private readonly TableDescriptor _descriptor;
   private readonly string _filter;
@@ -358,7 +367,7 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
     _callerObserver = observer;
   }
 
-  void IObserver<StatusOr<UnifiedSession>>.OnNext(StatusOr<UnifiedSession> usos) {
+  void IObserver<EndpointState>.OnNext(EndpointState es) {
     _workerThread.Invoke(() => {
       try {
         if (_tableHandle != null) {
@@ -390,11 +399,11 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
     });
   }
 
-  void IObserver<StatusOr<UnifiedSession>>.OnCompleted() {
+  public void OnCompleted() {
     throw new NotImplementedException();
   }
 
-  void IObserver<StatusOr<UnifiedSession>>.OnError(Exception error) {
+  public void OnError(Exception error) {
     throw new NotImplementedException();
   }
 
@@ -421,14 +430,6 @@ internal class MyComboObserver : IObserver<StatusOr<UnifiedSession>>, IObserver<
 
       _callerObserver.SendValue(_tableHandle);
     });
-  }
-
-  void IObserver<StatusOr<Client>>.OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  void IObserver<StatusOr<Client>>.OnError(Exception error) {
-    throw new NotImplementedException();
   }
 }
 
