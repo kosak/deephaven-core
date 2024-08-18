@@ -10,27 +10,25 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
-  private readonly SessionProviders _sessionProviders;
-  private readonly CredentialsProviders _credentialsProviders;
+  private readonly EndpointStateProviders _endpointStateProviders;
 
   public StateManager() {
-    _sessionProviders = new SessionProviders(WorkerThread);
-    _credentialsProviders = new CredentialsProviders(WorkerThread);
+    _endpointStateProviders = new EndpointStateProviders(WorkerThread);
   }
 
-  public IDisposable SubscribeToSessions(IObserver<AddOrRemove<SessionId>> observer) {
-    return _sessionProviders.Subscribe(observer);
+  public IDisposable SubscribeToSessions(IObserver<AddOrRemove<EndpointId>> observer) {
+    return _endpointStateProviders.Subscribe(observer);
   }
 
-  public IDisposable SubscribeToSession(SessionId sessionId, IObserver<StatusOr<UnifiedSession>> observer) {
-    return _sessionProviders.Subscribe(sessionId, observer);
+  public IDisposable SubscribeToSession(EndpointId sessionId, IObserver<EndpointState> observer) {
+    return _endpointStateProviders.Subscribe(sessionId, observer);
   }
 
-  public IDisposable SubscribeToTriple(TableDescriptor descriptor,
+  public IDisposable SubscribeToTableTriple(TableDescriptor descriptor,
     string filter,
     IObserver<StatusOr<TableHandle>> observer) {
     var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
-    return _sessionProviders.Subscribe(descriptor.SessionId, mco);
+    return _endpointStateProviders.Subscribe(descriptor.SessionId, mco);
   }
 
   public IDisposable SubscribeToCredentials(SessionId id, IObserver<UnifiedCredentialsWithEnable> observer) {
@@ -253,10 +251,6 @@ public class CoreSession(Client client) : SessionBase {
 public class CorePlusSession : SessionBase {
   private readonly SessionManager _sessionManager;
   private readonly WorkerThread _workerThread;
-
-  /// <summary>
-  /// Persistent Query ID -> ClientProvider
-  /// </summary>
   private readonly Dictionary<PersistentQueryId, ClientProvider> _clientProviders = new();
 
   public CorePlusSession(SessionManager sessionManager, WorkerThread workerThread) {
@@ -509,22 +503,22 @@ public static class ObserverStatusOr_Extensions {
   }
 }
 
-internal record TableDescriptor(
-  SessionId SessionId,
+internal record TableTriple(
+  EndpointId EndpointId,
   PersistentQueryId PersistentQueryId,
   string TableName) {
-  public static bool TryParse(string text, out TableDescriptor result, out string errorText) {
+  public static bool TryParse(string text, out TableTriple result, out string errorText) {
     // 1. table - ("", "", table)
     // 2. connection:table - (connection, "", table)
     // 3. pq/table - ("", pq, table)
     // 4. connection:pq/table - (connection, pq, table)
-    var cid = "";
+    var eid = "";
     var pqid = "";
     var tableName = "";
     var colonIndex = text.IndexOf(':');
     if (colonIndex > 0) {
       // cases 2 and 4: pull out the connection, and then reduce to cases 1 and 3
-      cid = text.Substring(0, colonIndex);
+      eid = text.Substring(0, colonIndex);
       text = text.Substring(colonIndex + 1);
     }
 
@@ -536,8 +530,7 @@ internal record TableDescriptor(
     }
 
     tableName = text;
-    result = new TableDescriptor(new SessionId(cid),
-      new PersistentQueryId(pqid), tableName);
+    result = new TableTriple(new EndpointId(eid), new PersistentQueryId(pqid), tableName);
     errorText = "";
     // This version never fails to parse, but we leave open the option to do so.
     return true;
