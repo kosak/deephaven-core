@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
@@ -10,9 +11,11 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly SessionProviders _sessionProviders;
+  private readonly CredentialsProviders _credentialsProviders;
 
   public StateManager() {
     _sessionProviders = new SessionProviders(WorkerThread);
+    _credentialsProviders = new CredentialsProviders(WorkerThread);
   }
 
   public IDisposable SubscribeToSessions(IObserver<AddOrRemove<SessionId>> observer) {
@@ -30,6 +33,12 @@ internal class StateManager {
     return _sessionProviders.Subscribe(descriptor.SessionId, mco);
   }
 
+  public IDisposable SubscribeToCredentials(SessionId id, IObserver<UnifiedCredentialsWithEnable> observer) {
+
+
+
+  }
+
   public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
     _sessionProviders.SetCredentials(id, credentials);
   }
@@ -42,19 +51,50 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
 }
 
 public record SessionId(string Id) {
-  public string HumanReadableString() => Id == "" ? "[Default]" : Id;
+  public string HumanReadableString => Id == "" ? "[Default]" : Id;
 
-  public override string ToString() => HumanReadableString();
+  public override string ToString() => HumanReadableString;
 }
 
 public record PersistentQueryId(string Id);
 
+internal class CredentialsProviders : IObservable<UnifiedCredentialsWithEnable> {
+  private readonly WorkerThread _workerThread;
+  private readonly Dictionary<SessionId, CredentialsProvider> _credentialsObservables = new();
+
+  public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
+    ApplyTo(id, sp => sp.SetCredentials(credentials));
+  }
+
+  public IDisposable Subscribe(SessionId id, IObserver<UnifiedCredentialsWithEnable> observer) {
+    IDisposable? disposable = null;
+    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => {
+        Util.SetToNull(ref disposable)?.Dispose();
+      });
+    });
+  }
+
+  private void ApplyTo(SessionId id, Action<SessionProvider> action) {
+    _workerThread.Invoke(() => {
+      if (!_sessions.TryGetValue(id, out var sp)) {
+        sp = new SessionProvider(_workerThread, id);
+        _sessions.Add(id, sp);
+        _sessionsObservers.OnNextAll(AddOrRemove<SessionId>.OfAdd(id));
+      }
+
+      action(sp);
+    });
+  }
+
+
+}
+
 internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
   private readonly WorkerThread _workerThread;
 
-  /// <summary>
-  /// Connection Id -> Session Provider
-  /// </summary>
   private readonly Dictionary<SessionId, SessionProvider> _sessions = new();
   private readonly ObserverContainer<AddOrRemove<SessionId>> _sessionsObservers = new();
 
@@ -66,10 +106,14 @@ internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
 
   public IDisposable Subscribe(IObserver<AddOrRemove<SessionId>> observer) {
     IDisposable? disposable = null;
+    // We need to run this on our worker thread because we want to protect
+    // access ot our dictionary.
     _workerThread.Invoke(() => {
       _sessionsObservers.Add(observer, out _);
-      // To avoid any possibility of reentrancy while iterating over the dict, make a copy of the keys
-      foreach (var sessionId in _sessions.Keys.ToArray()) {
+      // To avoid any further possibility of reentrancy while iterating over the dict,
+      // make a copy of the keys
+      var keys = _sessions.Keys.ToArray();
+      foreach (var sessionId in keys) {
         observer.OnNext(AddOrRemove<SessionId>.OfAdd(sessionId));
       }
     });
