@@ -63,7 +63,7 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
   private readonly WorkerThread _workerThread;
 
   private readonly Dictionary<EndpointId, EndpointStateProvider> _providerMap = new();
-  private readonly ObserverContainer<AddOrRemove<EndpointId>> _sessionsObservers = new();
+  private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
   public EndpointStateProviders(WorkerThread workerThread) => _workerThread = workerThread;
 
@@ -71,17 +71,17 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
     ApplyTo(id, ep => ep.SetCredentials(credentials));
   }
 
-  public IDisposable Subscribe(IObserver<AddOrRemove<SessionId>> observer) {
+  public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
     IDisposable? disposable = null;
     // We need to run this on our worker thread because we want to protect
     // access ot our dictionary.
     _workerThread.Invoke(() => {
-      _sessionsObservers.Add(observer, out _);
+      _endpointsObservers.Add(observer, out _);
       // To avoid any further possibility of reentrancy while iterating over the dict,
       // make a copy of the keys
-      var keys = _sessions.Keys.ToArray();
-      foreach (var sessionId in keys) {
-        observer.OnNext(AddOrRemove<SessionId>.OfAdd(sessionId));
+      var keys = _providerMap.Keys.ToArray();
+      foreach (var endpointId in keys) {
+        observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
       }
     });
 
