@@ -231,22 +231,15 @@ public class SessionBase {
   }
 
   /// <summary>
-  /// This is meant to be a typesafe way (sort of like a Visitor pattern)
-  /// that helps the caller cast UnifiedSession down to the right type.
-  /// If we ever add a third type, we can add it here. This will help us find
-  /// all the callers that need to change.
+  /// This is meant to act like a Visitor pattern with lambdas.
   /// </summary>
-  public void Select(out CoreSession? coreSession, out CorePlusSession? corePlusSession) {
-    coreSession = null;
-    corePlusSession = null;
+  public T Visit<T>(Func<CoreSession, T> onCore, Func<CorePlusSession, T> onCorePlus) {
     if (this is CoreSession cs) {
-      coreSession = cs;
-      return;
+      return onCore(cs);
     }
 
     if (this is CorePlusSession cps) {
-      corePlusSession = cps;
-      return;
+      return onCorePlus(cps);
     }
 
     throw new Exception($"Unexpected type {GetType().Name}");
@@ -380,12 +373,12 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
           Util.SetToNull(ref _pqDisposable)?.Dispose();
         }
 
-        if (!usos.TryGetValue(out var eitherSession, out var status)) {
+        if (!es.Session.TryGetValue(out var sessionBase, out var status)) {
           _callerObserver.SendStatus(status);
           return;
         }
 
-        eitherSession.Select(out var coreSession, out var corePlusSession);
+        sessionBase.Select(out var coreSession, out var corePlusSession);
         if (coreSession != null) {
           this.SendValue(coreSession.Client);
           return;
