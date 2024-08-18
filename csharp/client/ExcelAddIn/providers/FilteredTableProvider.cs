@@ -141,15 +141,14 @@ public sealed class CorePlusCredentials : CredentialsBase {
 }
 
 public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
-  public static EndpointState OfCredentials(CredentialsBase credentials) {
-    var sb = SessionBase.Of(credentials);
-    var s = StatusOr<SessionBase>.OfValue(sb);
+  public static EndpointState OfStatus(CredentialsBase? credentials, string status) {
+    var s = StatusOr<SessionBase>.OfStatus(status);
     return new EndpointState(credentials, s);
   }
 
-  public static EndpointState OfStatus(string status) {
-    var s = StatusOr<SessionBase>.OfStatus(status);
-    return new EndpointState(null, s);
+  public static EndpointState OfValue(CredentialsBase credentials, SessionBase sessionBase) {
+    var s = StatusOr<SessionBase>.OfValue(sessionBase);
+    return new EndpointState(credentials, s);
   }
 
   public CredentialsBase? Credentials = credentials;
@@ -159,7 +158,7 @@ public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> s
 internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
   private readonly EndpointId _endpointId;
   private readonly WorkerThread _workerThread;
-  private EndpointState _endpointState = EndpointState.OfStatus("[Disconnected]");
+  private EndpointState _endpointState = EndpointState.OfStatus(null, "[Disconnected]");
   private readonly ObserverContainer<EndpointState> _observerContainer = new();
   private bool _disposed;
 
@@ -194,12 +193,13 @@ internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
   public void SetCredentials(CredentialsBase credentials) {
     _workerThread.Invoke(() => {
       try {
-        _endpointState = EndpointState.OfStatus("Trying to connect");
+        _endpointState = EndpointState.OfStatus(credentials, "Trying to connect");
         _observerContainer.OnNext(_endpointState);
 
-        _endpointState = EndpointState.OfCredentials(credentials);
+        var sb = SessionBase.Of(credentials, _workerThread);
+        _endpointState = EndpointState.OfValue(credentials, sb);
       } catch (Exception ex) {
-        _endpointState = EndpointState.OfStatus(ex.Message);
+        _endpointState = EndpointState.OfStatus(credentials, ex.Message);
       }
       _observerContainer.OnNext(_endpointState);
     });
@@ -207,8 +207,10 @@ internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
 }
 
 public class SessionBase {
-  public static SessionBase Of(CredentialsBase credentials) {
-    return credentials.Visit(cc => (SessionBase)OfCore(cc), OfCorePlus);
+  public static SessionBase Of(CredentialsBase credentials, WorkerThread workerThread) {
+    return credentials.Visit(
+      cc => OfCore(cc),
+      ccp => (SessionBase)OfCorePlus(ccp, workerThread));
   }
 
   public static CoreSession OfCore(CoreCredentials credentials) {
@@ -216,10 +218,10 @@ public class SessionBase {
     return new CoreSession(client);
   }
 
-  public static CorePlusSession OfCorePlus(CorePlusCredentials credentials) {
+  public static CorePlusSession OfCorePlus(CorePlusCredentials credentials, WorkerThread workerThread) {
     // TODO(kosak): want a better descriptiveName?
     var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
-    return new CorePlusSession(session);
+    return new CorePlusSession(session, workerThread);
   }
 
   /// <summary>
