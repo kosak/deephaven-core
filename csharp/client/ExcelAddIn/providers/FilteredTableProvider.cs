@@ -58,39 +58,6 @@ public record SessionId(string Id) {
 
 public record PersistentQueryId(string Id);
 
-internal class CredentialsProviders : IObservable<UnifiedCredentialsWithEnable> {
-  private readonly WorkerThread _workerThread;
-  private readonly Dictionary<SessionId, CredentialsProvider> _credentialsObservables = new();
-
-  public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
-    ApplyTo(id, sp => sp.SetCredentials(credentials));
-  }
-
-  public IDisposable Subscribe(SessionId id, IObserver<UnifiedCredentialsWithEnable> observer) {
-    IDisposable? disposable = null;
-    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        Util.SetToNull(ref disposable)?.Dispose();
-      });
-    });
-  }
-
-  private void ApplyTo(SessionId id, Action<SessionProvider> action) {
-    _workerThread.Invoke(() => {
-      if (!_sessions.TryGetValue(id, out var sp)) {
-        sp = new SessionProvider(_workerThread, id);
-        _sessions.Add(id, sp);
-        _sessionsObservers.OnNextAll(AddOrRemove<SessionId>.OfAdd(id));
-      }
-
-      action(sp);
-    });
-  }
-
-
-}
 
 internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
   private readonly WorkerThread _workerThread;
@@ -178,16 +145,20 @@ public sealed class CorePlusCredentials : UnifiedCredentials {
   public readonly string JsonUrl;
 }
 
+public class Endpoint(CredentialsBase? credentials,
+  StatusOr<SessionBase> session) {
+  public CredentialsBase? Credentials = credentials;
+  public StatusOr<SessionBase> Session = session;
+}
 
-internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposable {
+internal class EndpointProvider : IObservable<Endpoint>, IDisposable {
   private readonly WorkerThread _workerThread;
   private readonly SessionId _sessionId;
-  private UnifiedCredentials? _unifiedCredentials = null;
-  private StatusOr<UnifiedSession> _unifiedSession = StatusOr<UnifiedSession>.OfStatus("No credentials");
-  private readonly ObserverContainer<StatusOr<UnifiedSession>> _observerContainer = new();
+  private Endpoint? _endpoint = null;
+  private readonly ObserverContainer<Endpoint> _observerContainer = new();
   private bool _disposed;
 
-  public SessionProvider(WorkerThread workerThread, SessionId sessionId) {
+  public EndpointProvider(WorkerThread workerThread, SessionId sessionId) {
     _workerThread = workerThread;
     _sessionId = sessionId;
   }
@@ -201,7 +172,7 @@ internal class SessionProvider : IObservable<StatusOr<UnifiedSession>>, IDisposa
     // not even sure what to do.... maybe send an "end" to all of my existing observers?
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<UnifiedSession>> observer) {
+  public IDisposable Subscribe(IObserver<Endpoint> observer) {
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observerContainer.Add(observer, out _);

@@ -61,14 +61,11 @@ public class UnifiedCredentialsWithEnable(bool enabled, UnifiedCredentials crede
   public UnifiedCredentials Credentials = credentials;
 }
 
-public sealed class HyperZamboniRow(string id) :
-  IObserver<StatusOr<UnifiedSession>>,
-  IObserver<UnifiedCredentialsWithEnable>,
-  INotifyPropertyChanged {
+public sealed class HyperZamboniRow(string id) : IObserver<Endpoint>, INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private string _status = "[Disconnected]";
-  private UnifiedCredentialsWithEnable? _credentials;
+  private Endpoint? _endpoint;
 
   public string Id => id;
 
@@ -104,7 +101,7 @@ public sealed class HyperZamboniRow(string id) :
     dialog.Show();
   }
 
-  public void OnNext(StatusOr<UnifiedSession> value) {
+  public void OnNext(Endpoint value) {
     // If we get a valid UnifiedSession, report it as [Connected].
     // Otherwise report the status indication.
     Status = value.TryGetValue(out _, out var status) ? "[Connected]" : status;
