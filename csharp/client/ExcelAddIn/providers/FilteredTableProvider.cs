@@ -24,21 +24,15 @@ internal class StateManager {
     return _endpointStateProviders.Subscribe(sessionId, observer);
   }
 
-  public IDisposable SubscribeToTableTriple(TableDescriptor descriptor,
+  public IDisposable SubscribeToTableTriple(TableTriple descriptor,
     string filter,
     IObserver<StatusOr<TableHandle>> observer) {
     var mco = new MyComboObserver(WorkerThread, descriptor, filter, observer);
-    return _endpointStateProviders.Subscribe(descriptor.SessionId, mco);
+    return _endpointStateProviders.Subscribe(descriptor.EndpointId, mco);
   }
 
-  public IDisposable SubscribeToCredentials(SessionId id, IObserver<UnifiedCredentialsWithEnable> observer) {
-
-
-
-  }
-
-  public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
-    _sessionProviders.SetCredentials(id, credentials);
+  public void SetCredentials(EndpointId id, CredentialsBase credentials) {
+    _endpointStateProviders.SetCredentials(id, credentials);
   }
 }
 
@@ -101,10 +95,10 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
     });
   }
 
-  private void ApplyTo(EndpointId id, Action<EndpointProvider> action) {
+  private void ApplyTo(EndpointId id, Action<EndpointStateProvider> action) {
     _workerThread.Invoke(() => {
       if (!_providerMap.TryGetValue(id, out var ep)) {
-        ep = new EndpointProvider(id, _workerThread);
+        ep = new EndpointStateProvider(id, _workerThread);
         _providerMap.Add(id, ep);
         _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
       }
@@ -162,14 +156,14 @@ public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> s
   public StatusOr<SessionBase> Session = session;
 }
 
-internal class EndpointProvider : IObservable<EndpointState>, IDisposable {
+internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
   private readonly EndpointId _endpointId;
   private readonly WorkerThread _workerThread;
   private EndpointState _endpointState = EndpointState.OfStatus("[Disconnected]");
   private readonly ObserverContainer<EndpointState> _observerContainer = new();
   private bool _disposed;
 
-  public EndpointProvider(EndpointId endpointId, WorkerThread workerThread) {
+  public EndpointStateProvider(EndpointId endpointId, WorkerThread workerThread) {
     _endpointId = endpointId;
     _workerThread = workerThread;
   }
@@ -340,13 +334,13 @@ internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
 
 internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Client>> {
   private readonly WorkerThread _workerThread;
-  private readonly TableDescriptor _descriptor;
+  private readonly TableTriple _descriptor;
   private readonly string _filter;
   private readonly IObserver<StatusOr<TableHandle>> _callerObserver;
   private IDisposable? _pqDisposable = null;
   private TableHandle? _tableHandle = null;
 
-  public MyComboObserver(WorkerThread workerThread, TableDescriptor descriptor, string filter,
+  public MyComboObserver(WorkerThread workerThread, TableTriple descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
     _workerThread = workerThread;
     _descriptor = descriptor;
@@ -372,14 +366,15 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
           return;
         }
 
-        sessionBase.Select(out var coreSession, out var corePlusSession);
-        if (coreSession != null) {
+        // Visit needs a return type and value, so we return (object)null
+        _ = sessionBase.Visit(coreSession => {
           this.SendValue(coreSession.Client);
-          return;
-        }
-
-        _callerObserver.SendStatus($"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"");
-        _pqDisposable = corePlusSession!.SubscribeToPq(_descriptor.PersistentQueryId, this);
+          return (object)null;
+        }, corePlusSession => {
+          _callerObserver.SendStatus($"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"");
+          _pqDisposable = corePlusSession.SubscribeToPq(_descriptor.PersistentQueryId, this);
+          return null;
+        });
       } catch (Exception ex) {
         _callerObserver.OnError(ex);
       }
@@ -492,15 +487,15 @@ public static class ObserverStatusOr_Extensions {
     observer.OnNext(so);
   }
 
-  public static void SendStatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
-    var so = StatusOr<T>.OfStatus(message);
-    container.OnNextAll(so);
-  }
-
-  public static void SendValueAll<T>(this ObserverContainer<StatusOr<T>> container, T value) {
-    var so = StatusOr<T>.OfValue(value);
-    container.OnNextAll(so);
-  }
+  // public static void SendStatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
+  //   var so = StatusOr<T>.OfStatus(message);
+  //   container.OnNextAll(so);
+  // }
+  //
+  // public static void SendValueAll<T>(this ObserverContainer<StatusOr<T>> container, T value) {
+  //   var so = StatusOr<T>.OfValue(value);
+  //   container.OnNextAll(so);
+  // }
 }
 
 internal record TableTriple(

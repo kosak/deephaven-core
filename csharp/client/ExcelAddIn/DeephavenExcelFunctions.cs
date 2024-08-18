@@ -56,11 +56,6 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
   }
 }
 
-public class UnifiedCredentialsWithEnable(bool enabled, UnifiedCredentials credentials) {
-  public bool Enabled => enabled;
-  public UnifiedCredentials Credentials = credentials;
-}
-
 public sealed class HyperZamboniRow(string id) : IObserver<Endpoint>, INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
