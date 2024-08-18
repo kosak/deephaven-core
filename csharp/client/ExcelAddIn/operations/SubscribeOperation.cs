@@ -9,7 +9,7 @@ using ExcelDna.Integration;
 namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
-  private readonly TableDescriptor _tableDescriptor;
+  private readonly TableTriple _tableDescriptor;
   private readonly string _filter;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
@@ -19,7 +19,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
   private TableHandle? _currentTableHandle = null;
   private SubscriptionHandle? _currentSubHandle = null;
 
-  public SubscribeOperation(TableDescriptor tableDescriptor, string filter, bool wantHeaders,
+  public SubscribeOperation(TableTriple tableDescriptor, string filter, bool wantHeaders,
     StateManager stateManager) {
     _tableDescriptor = tableDescriptor;
     _filter = filter;
@@ -35,7 +35,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
-        _filteredTableDisposer = _stateManager.SubscribeToTriple(_tableDescriptor, _filter, this);
+        _filteredTableDisposer = _stateManager.SubscribeToTableTriple(_tableDescriptor, _filter, this);
       }
     });
 
@@ -64,11 +64,11 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       }
 
       if (!soth.TryGetValue(out var tableHandle, out var status)) {
-        _observers.SendStatusAll(status);
+        _observers.SendStatus(status);
         return;
       }
 
-      _observers.SendStatusAll($"Subscribing to \"{_tableDescriptor.TableName}\"");
+      _observers.SendStatus($"Subscribing to \"{_tableDescriptor.TableName}\"");
 
       _currentTableHandle = tableHandle;
       _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observers, _wantHeaders));
@@ -76,9 +76,9 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       try {
         using var ct = tableHandle.ToClientTable();
         var result = Renderer.Render(ct, _wantHeaders);
-        _observers.SendValueAll(result);
+        _observers.SendValue(result);
       } catch (Exception ex) {
-        _observers.SendStatusAll(ex.Message);
+        _observers.SendStatus(ex.Message);
       }
     });
   }
@@ -106,14 +106,14 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     public void OnTick(TickingUpdate update) {
       try {
         var results = Renderer.Render(update.Current, _wantHeaders);
-        _observers.SendValueAll(results);
+        _observers.SendValue(results);
       } catch (Exception e) {
-        _observers.SendStatusAll(e.Message);
+        _observers.SendStatus(e.Message);
       }
     }
 
     public void OnFailure(string errorText) {
-      _observers.SendStatusAll(errorText);
+      _observers.SendStatus(errorText);
     }
   }
 }

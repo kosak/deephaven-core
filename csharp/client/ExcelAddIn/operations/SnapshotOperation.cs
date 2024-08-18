@@ -9,7 +9,7 @@ using ExcelDna.Integration;
 namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
-  private readonly TableDescriptor _tableDescriptor;
+  private readonly TableTriple _tableDescriptor;
   private readonly string _filter;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
@@ -17,7 +17,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
   private readonly WorkerThread _workerThread;
   private IDisposable? _filteredTableDisposer = null;
 
-  public SnapshotOperation(TableDescriptor tableDescriptor, string filter, bool wantHeaders,
+  public SnapshotOperation(TableTriple tableDescriptor, string filter, bool wantHeaders,
     StateManager stateManager) {
     _tableDescriptor = tableDescriptor;
     _filter = filter;
@@ -33,7 +33,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
-        _filteredTableDisposer = _stateManager.SubscribeToTriple(_tableDescriptor, _filter, this);
+        _filteredTableDisposer = _stateManager.SubscribeToTableTriple(_tableDescriptor, _filter, this);
       }
     });
 
@@ -54,18 +54,18 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
   void IObserver<StatusOr<TableHandle>>.OnNext(StatusOr<TableHandle> soth) {
     _workerThread.Invoke(() => {
       if (!soth.TryGetValue(out var tableHandle, out var status)) {
-        _observers.SendStatusAll(status);
+        _observers.SendStatus(status);
         return;
       }
 
-      _observers.SendStatusAll($"Snapshotting \"{_tableDescriptor.TableName}\"");
+      _observers.SendStatus($"Snapshotting \"{_tableDescriptor.TableName}\"");
 
       try {
         using var ct = tableHandle.ToClientTable();
         var result = Renderer.Render(ct, _wantHeaders);
-        _observers.SendValueAll(result);
+        _observers.SendValue(result);
       } catch (Exception ex) {
-        _observers.SendStatusAll(ex.Message);
+        _observers.SendStatus(ex.Message);
       }
     });
   }
