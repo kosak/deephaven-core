@@ -50,7 +50,7 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
   }
 }
 
-public record SessionId(string Id) {
+public record EndpointId(string Id) {
   public string HumanReadableString => Id == "" ? "[Default]" : Id;
 
   public override string ToString() => HumanReadableString;
@@ -59,16 +59,16 @@ public record SessionId(string Id) {
 public record PersistentQueryId(string Id);
 
 
-internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
+internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
   private readonly WorkerThread _workerThread;
 
-  private readonly Dictionary<SessionId, SessionProvider> _sessions = new();
-  private readonly ObserverContainer<AddOrRemove<SessionId>> _sessionsObservers = new();
+  private readonly Dictionary<EndpointId, EndpointStateProvider> _providerMap = new();
+  private readonly ObserverContainer<AddOrRemove<EndpointId>> _sessionsObservers = new();
 
-  public SessionProviders(WorkerThread workerThread) => _workerThread = workerThread;
+  public EndpointStateProviders(WorkerThread workerThread) => _workerThread = workerThread;
 
-  public void SetCredentials(SessionId id, UnifiedCredentials credentials) {
-    ApplyTo(id, sp => sp.SetCredentials(credentials));
+  public void SetCredentials(EndpointId id, CredentialsBase credentials) {
+    ApplyTo(id, ep => ep.SetCredentials(credentials));
   }
 
   public IDisposable Subscribe(IObserver<AddOrRemove<SessionId>> observer) {
@@ -105,8 +105,8 @@ internal class SessionProviders : IObservable<AddOrRemove<SessionId>> {
 
   private void ApplyTo(SessionId id, Action<SessionProvider> action) {
     _workerThread.Invoke(() => {
-      if (!_sessions.TryGetValue(id, out var sp)) {
-        sp = new SessionProvider(_workerThread, id);
+      if (!_sessions.TryGetValue(id, out var ep)) {
+        ep = new EndpointProvider(_workerThread, id);
         _sessions.Add(id, sp);
         _sessionsObservers.OnNextAll(AddOrRemove<SessionId>.OfAdd(id));
       }
