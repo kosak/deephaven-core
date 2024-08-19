@@ -402,19 +402,21 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
 
   void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
     _workerThread.Invoke(() => {
-      if (_tableHandle != null) {
-        _callerObserver.SendStatus("Disposing TableHandle");
-        Util.SetToNull(ref _tableHandle)?.Dispose();
-      }
-
-      if (!so.TryGetValue(out var client, out var status)) {
-        _callerObserver.SendStatus(status);
-        return;
-      }
-
-      _callerObserver.SendStatus($"Fetching \"{_descriptor.TableName}\"");
-
       try {
+        var oldTh = Util.SetToNull(ref _tableHandle);
+
+        if (oldTh != null) {
+          _callerObserver.SendStatus("Disposing TableHandle");
+          oldTh.Dispose();
+        }
+
+        if (!so.TryGetValue(out var client, out var status)) {
+          _callerObserver.SendStatus(status);
+          return;
+        }
+
+        _callerObserver.SendStatus($"Fetching \"{_descriptor.TableName}\"");
+
         _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
         if (_filter != "") {
           var temp = _tableHandle;
