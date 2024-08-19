@@ -58,7 +58,6 @@ internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
 public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  public readonly string Id;
   private readonly StateManager _stateManager;
 
   private readonly object _sync = new();
@@ -68,6 +67,8 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
     Id = id;
     _stateManager = stateManager;
   }
+
+  public string Id { get; init; }
 
   public string Status {
     get {
@@ -148,10 +149,10 @@ public static class DeephavenExcelFunctions {
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
     var cmDialog = new ConnectionManagerDialog();
+    cmDialog.Show();
     var mso = new MySessionObserver(StateManager, cmDialog);
     var disposer1 = StateManager.SubscribeToEndpoints(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
-    cmDialog.Show();
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]

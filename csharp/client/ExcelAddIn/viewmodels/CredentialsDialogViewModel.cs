@@ -13,10 +13,12 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
     var result = new CredentialsDialogViewModel { Id = id };
     _ = credentials.Visit(
       core => {
+        result._isCorePlus = false;
         result.ConnectionString = core.ConnectionString;
         return (object)null;
       },
       corePlus => {
+        result._isCorePlus = true;
         result.JsonUrl = corePlus.JsonUrl;
         result.UserId = corePlus.User;
         result.Password = corePlus.Password;

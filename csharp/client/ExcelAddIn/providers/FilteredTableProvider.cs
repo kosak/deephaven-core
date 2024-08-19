@@ -359,14 +359,17 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
   void IObserver<EndpointState>.OnNext(EndpointState es) {
     _workerThread.Invoke(() => {
       try {
-        if (_tableHandle != null) {
+        var oldTh = Util.SetToNull(ref _tableHandle);
+        var oldPq = Util.SetToNull(ref _pqDisposable);
+
+        if (oldTh != null) {
           _callerObserver.SendStatus("Disposing TableHandle");
-          Util.SetToNull(ref _tableHandle)?.Dispose();
+          oldTh.Dispose();
         }
 
-        if (_pqDisposable != null) {
+        if (oldPq != null) {
           _callerObserver.SendStatus("Disposing PQ");
-          Util.SetToNull(ref _pqDisposable)?.Dispose();
+          oldPq.Dispose();
         }
 
         if (!es.Session.TryGetValue(out var sessionBase, out var status)) {
@@ -411,14 +414,18 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
 
       _callerObserver.SendStatus($"Fetching \"{_descriptor.TableName}\"");
 
-      _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
-      if (_filter != "") {
-        var temp = _tableHandle;
-        _tableHandle = temp.Where(_filter);
-        temp.Dispose();
-      }
+      try {
+        _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
+        if (_filter != "") {
+          var temp = _tableHandle;
+          _tableHandle = temp.Where(_filter);
+          temp.Dispose();
+        }
 
-      _callerObserver.SendValue(_tableHandle);
+        _callerObserver.SendValue(_tableHandle);
+      } catch (Exception ex) {
+        _callerObserver.SendStatus(ex.Message);
+      }
     });
   }
 }
