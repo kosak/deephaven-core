@@ -13,7 +13,7 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
 
-internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
+internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
   private readonly StateManager _stateManager;
   private readonly ConnectionManagerDialog _cmDialog;
 
@@ -45,7 +45,7 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
 
     var statusRow = new HyperZamboniRow(aor.Value.HumanReadableString);
     // TODO(kosak): what now
-    var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, statusRow);
+    var subPainDisposable = _stateManager.SubscribeToEndpoint(aor.Value, statusRow);
 
     // Not sure what the deal is with threading and BindingSource,
     // so I'll Invoke it to get this change on the GUI thread.
@@ -88,7 +88,7 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
     var creds = GetCredsUnderLock();
     var cvm = creds == null
       ? CredentialsDialogViewModel.OfNew(Id)
-      : CredentialsDialogViewModel.OfCredentials(creds);
+      : CredentialsDialogViewModel.OfCredentials(Id, creds);
     var dialog = new CredentialsDialog(cvm);
     dialog.Show();
   }
@@ -97,8 +97,9 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
     lock (_sync) {
       _endpointState = value;
     }
-    OnPropertyChanged("Status");
-    OnPropertyChanged("ServerType");
+
+    OnPropertyChanged(nameof(Status));
+    OnPropertyChanged(nameof(ServerType));
   }
 
   public void OnCompleted() {
@@ -131,19 +132,9 @@ public static class DeephavenExcelFunctions {
   public static void ManagedConnections() {
     var cmDialog = new ConnectionManagerDialog();
     var mso = new MySessionObserver(StateManager, cmDialog);
-    var disposer1 = StateManager.SubscribeToSessions(mso);
+    var disposer1 = StateManager.SubscribeToEndpoints(mso);
     // TODO(kosak): where does disposer go. Maybe the Form's closed event?
     cmDialog.Show();
-
-    var t = new Thread(() => {
-      Thread.Sleep(10 * 1000);
-      var creds = UnifiedCredentials.OfCore("localhost:10000");
-      StateManager.SetCredentials(new SessionId("c1"), creds);
-    }) { IsBackground = true };
-    t.Start();
-
-    var zamboniTime = new CredentialsDialogViewModel();
-    new CredentialsDialog(zamboniTime).Show();
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
@@ -172,10 +163,10 @@ public static class DeephavenExcelFunctions {
   }
 
   private static bool TryInterpretCommonArgs(string tableDescriptor, object filter, object wantHeaders,
-    out TableDescriptor? tableDescriptorResult, out string filterResult, out bool wantHeadersResult, out string errorText) {
+    out TableTriple? tableDescriptorResult, out string filterResult, out bool wantHeadersResult, out string errorText) {
     filterResult = "";
     wantHeadersResult = false;
-    if (!TableDescriptor.TryParse(tableDescriptor, out tableDescriptorResult, out errorText)) {
+    if (!TableTriple.TryParse(tableDescriptor, out tableDescriptorResult, out errorText)) {
       return false;
     }
 

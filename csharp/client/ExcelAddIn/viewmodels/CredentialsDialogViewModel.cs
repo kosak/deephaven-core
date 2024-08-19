@@ -1,20 +1,30 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Deephaven.ExcelAddIn.Providers;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
 public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
   public static CredentialsDialogViewModel OfNew(string id) {
-
+    return new CredentialsDialogViewModel { Id = id };
   }
 
-  public static CredentialsDialogViewModel OfCredentials(CredentialsBase credentials) {
+  public static CredentialsDialogViewModel OfCredentials(string id, CredentialsBase credentials) {
+    var result = new CredentialsDialogViewModel { Id = id };
+    _ = credentials.Visit(
+      core => {
+        result.ConnectionString = core.ConnectionString;
+        return (object)null;
+      },
+      corePlus => {
+        result.JsonUrl = corePlus.JsonUrl;
+        result.UserId = corePlus.User;
+        result.Password = corePlus.Password;
+        result.OperateAs = corePlus.OperateAs;
+        return null;
+      });
 
-
-
+    return result;
   }
 
 
@@ -26,6 +36,9 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   // Core+ properties
   private string _jsonUrl = "";
+  private string _userId = "";
+  private string _password = "";
+  private string _operateAs = "";
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -48,11 +61,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
    * variable. Setters on either one trigger property change events for both.
    */
   public bool IsCore {
-    get {
-      var zamboni = !_isCorePlus;
-      Debug.WriteLine($"returning IsCore={zamboni}");
-      return zamboni;
-    }
+    get => !_isCorePlus;
     set {
       if (_isCorePlus == !value) {
         return;
@@ -65,11 +74,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
   }
 
   public bool IsCorePlus {
-    get {
-      var zamboni = _isCorePlus;
-      Debug.WriteLine($"returning IsCorePlus={zamboni}");
-      return zamboni;
-    }
+    get => _isCorePlus;
     set {
       if (_isCorePlus == value) {
         return;
@@ -101,6 +106,42 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
       }
 
       _jsonUrl = value;
+      OnPropertyChanged();
+    }
+  }
+
+  public string UserId {
+    get => _userId;
+    set {
+      if (_userId == value) {
+        return;
+      }
+
+      _userId = value;
+      OnPropertyChanged();
+    }
+  }
+
+  public string Password {
+    get => _password;
+    set {
+      if (_password == value) {
+        return;
+      }
+
+      _password = value;
+      OnPropertyChanged();
+    }
+  }
+
+  public string OperateAs {
+    get => _operateAs;
+    set {
+      if (_operateAs == value) {
+        return;
+      }
+
+      _operateAs = value;
       OnPropertyChanged();
     }
   }

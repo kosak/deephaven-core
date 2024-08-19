@@ -16,11 +16,11 @@ internal class StateManager {
     _endpointStateProviders = new EndpointStateProviders(WorkerThread);
   }
 
-  public IDisposable SubscribeToSessions(IObserver<AddOrRemove<EndpointId>> observer) {
+  public IDisposable SubscribeToEndpoints(IObserver<AddOrRemove<EndpointId>> observer) {
     return _endpointStateProviders.Subscribe(observer);
   }
 
-  public IDisposable SubscribeToSession(EndpointId sessionId, IObserver<EndpointState> observer) {
+  public IDisposable SubscribeToEndpoint(EndpointId sessionId, IObserver<EndpointState> observer) {
     return _endpointStateProviders.Subscribe(sessionId, observer);
   }
 
