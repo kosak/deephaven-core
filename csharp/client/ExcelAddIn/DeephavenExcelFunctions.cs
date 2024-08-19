@@ -46,7 +46,6 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
     var statusRow = new HyperZamboniRow(aor.Value.HumanReadableString);
     // TODO(kosak): what now
     var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, statusRow);
-    var disposer9 = _stateManager.SubscribeToCredentials(aor.Value, statusRow);
 
     // Not sure what the deal is with threading and BindingSource,
     // so I'll Invoke it to get this change on the GUI thread.
@@ -59,26 +58,24 @@ internal class MySessionObserver : IObserver<AddOrRemove<SessionId>> {
 public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  private string _status = "[Disconnected]";
+  private readonly object _sync = new();
   private EndpointState _endpointState;
 
   public string Id => id;
 
   public string Status {
-    get => _status;
-    private set {
-      if (value == _status) {
-        return;
+    get {
+      if (!_endpointState.Session.TryGetValue(out var sb, out var status)) {
+        return status;
       }
 
-      _status = value;
-      OnPropertyChanged();
+      return "[Connected]";
     }
   }
 
   public string ServerType {
     get {
-      var creds = _endpointState.Credentials;
+      var creds = GetCredsUnderLock();
       if (creds == null) {
         return "[Not set]";
       }
@@ -88,7 +85,7 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
   }
 
   public void OnClick() {
-    var creds = _endpointState.Credentials;
+    var creds = GetCredsUnderLock();
     var cvm = creds == null
       ? CredentialsDialogViewModel.OfNew(Id)
       : CredentialsDialogViewModel.OfCredentials(creds);
@@ -97,32 +94,30 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
   }
 
   public void OnNext(EndpointState value) {
-    // If we get a valid UnifiedSession, report it as [Connected].
-    // Otherwise report the status indication.
-    Status = value.TryGetValue(out _, out var status) ? "[Connected]" : status;
+    lock (_sync) {
+      _endpointState = value;
+    }
+    OnPropertyChanged("Status");
+    OnPropertyChanged("ServerType");
   }
 
-  // For now, this implements both IObserver<StatusOr<UnifiedSession>>.OnCompleted and
-  // IObserver<UnifiedCredentialsWithEnable>.OnCompleted
   public void OnCompleted() {
     // TODO(kosak)
     throw new NotImplementedException();
   }
 
-  // For now, this implements both IObserver<StatusOr<UnifiedSession>>.OnError and
-  // IObserver<UnifiedCredentialsWithEnable>.OnError
   public void OnError(Exception error) {
     // TODO(kosak)
     throw new NotImplementedException();
   }
 
-  private void SetCredentials(UnifiedCredentialsWithEnable uce) {
-    _credentials = uce;
-    OnPropertyChanged("ServerType");
-    OnPropertyChanged("Enabled");
+  private CredentialsBase? GetCredsUnderLock() {
+    lock (_sync) {
+      return _endpointState.Credentials;
+    }
   }
 
-  private void OnPropertyChanged([CallerMemberName] string? name = null) {
+  private void OnPropertyChanged(string name) {
     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
   }
 }
