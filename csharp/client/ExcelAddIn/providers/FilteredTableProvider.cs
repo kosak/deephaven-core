@@ -8,7 +8,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class StateManager {
+public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly EndpointStateProviders _endpointStateProviders;
 
@@ -113,6 +113,11 @@ public abstract class CredentialsBase {
     return new CoreCredentials(connectionString);
   }
 
+  public static CredentialsBase OfCorePlus(string jsonUrl, string userId,
+    string password, string operateAs) {
+    return new CorePlusCredentials(jsonUrl, userId, password, operateAs);
+  }
+
   /// <summary>
   /// This is meant to act like a Visitor pattern with lambdas.
   /// </summary>
@@ -133,11 +138,12 @@ public sealed class CoreCredentials(string connectionString) : CredentialsBase {
   public readonly string ConnectionString = connectionString;
 }
 
-public sealed class CorePlusCredentials : CredentialsBase {
-  public readonly string JsonUrl;
-  public readonly string User;
-  public readonly string Password;
-  public readonly string OperateAs;
+public sealed class CorePlusCredentials(string jsonUrl, string user, string password,
+  string operateAs) : CredentialsBase {
+  public readonly string JsonUrl = jsonUrl;
+  public readonly string User = user;
+  public readonly string Password = password;
+  public readonly string OperateAs = operateAs;
 }
 
 public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
@@ -500,7 +506,7 @@ public static class ObserverStatusOr_Extensions {
   // }
 }
 
-internal record TableTriple(
+public record TableTriple(
   EndpointId EndpointId,
   PersistentQueryId PersistentQueryId,
   string TableName) {

@@ -43,7 +43,7 @@ internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
     // Wire up the OnClick button for that row
     // subscribe to the 
 
-    var statusRow = new HyperZamboniRow(aor.Value.HumanReadableString);
+    var statusRow = new HyperZamboniRow(aor.Value.HumanReadableString, _stateManager);
     // TODO(kosak): what now
     var subPainDisposable = _stateManager.SubscribeToEndpoint(aor.Value, statusRow);
 
@@ -55,17 +55,27 @@ internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
   }
 }
 
-public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INotifyPropertyChanged {
+public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  private readonly object _sync = new();
-  private EndpointState _endpointState;
+  public readonly string Id;
+  private readonly StateManager _stateManager;
 
-  public string Id => id;
+  private readonly object _sync = new();
+  private EndpointState? _endpointState;
+
+  public HyperZamboniRow(string id, StateManager stateManager) {
+    Id = id;
+    _stateManager = stateManager;
+  }
 
   public string Status {
     get {
-      if (!_endpointState.Session.TryGetValue(out var sb, out var status)) {
+      var es = GetEndpointStateUnderLock();
+      if (es == null) {
+        return "?";
+      }
+      if (!es.Session.TryGetValue(out _, out var status)) {
         return status;
       }
 
@@ -75,7 +85,7 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
 
   public string ServerType {
     get {
-      var creds = GetCredsUnderLock();
+      var creds = GetEndpointStateUnderLock()?.Credentials;
       if (creds == null) {
         return "[Unknown]";
       }
@@ -85,11 +95,18 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
   }
 
   public void OnClick() {
-    var creds = GetCredsUnderLock();
+    var creds = GetEndpointStateUnderLock()?.Credentials;
     var cvm = creds == null
       ? CredentialsDialogViewModel.OfNew(Id)
       : CredentialsDialogViewModel.OfCredentials(Id, creds);
-    var dialog = new CredentialsDialog(cvm);
+
+    var onSetCredentialsButtonClicked = () => {
+      if (cvm.TryMakeCredentials(out var newCreds)) {
+        _stateManager.SetCredentials(new EndpointId(Id), newCreds);
+      }
+    };
+
+    var dialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked);
     dialog.Show();
   }
 
@@ -112,9 +129,9 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
     throw new NotImplementedException();
   }
 
-  private CredentialsBase? GetCredsUnderLock() {
+  private EndpointState? GetEndpointStateUnderLock() {
     lock (_sync) {
-      return _endpointState.Credentials;
+      return _endpointState;
     }
   }
 

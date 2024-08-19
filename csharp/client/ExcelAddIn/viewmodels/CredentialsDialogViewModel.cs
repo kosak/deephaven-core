@@ -41,6 +41,16 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
+  public bool TryMakeCredentials(out CredentialsBase result) {
+    if (_isCorePlus) {
+      result = CredentialsBase.OfCorePlus(_jsonUrl, _userId, _password, _operateAs);
+      return true;
+    }
+
+    result = CredentialsBase.OfCore(_connectionString);
+    return true;
+  }
+
   public string Id {
     get => _id;
     set {

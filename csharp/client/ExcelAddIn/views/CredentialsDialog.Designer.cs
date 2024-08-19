@@ -25,6 +25,12 @@
     private void InitializeComponent() {
       flowLayoutPanel1 = new FlowLayoutPanel();
       corePlusPanel = new Panel();
+      operateAsBox = new TextBox();
+      passwordBox = new TextBox();
+      label5 = new Label();
+      label4 = new Label();
+      userIdBox = new TextBox();
+      userIdLabel = new Label();
       jsonUrlBox = new TextBox();
       label3 = new Label();
       corePanel = new Panel();
@@ -32,16 +38,10 @@
       label2 = new Label();
       isCorePlusRadioButton = new RadioButton();
       isCoreRadioButton = new RadioButton();
-      button1 = new Button();
+      setCredentialsButton = new Button();
       endpointIdBox = new TextBox();
       label1 = new Label();
       connectionTypeGroup = new GroupBox();
-      userIdLabel = new Label();
-      userIdBox = new TextBox();
-      label4 = new Label();
-      label5 = new Label();
-      passwordBox = new TextBox();
-      operateAsBox = new TextBox();
       flowLayoutPanel1.SuspendLayout();
       corePlusPanel.SuspendLayout();
       corePanel.SuspendLayout();
@@ -71,6 +71,54 @@
       corePlusPanel.Name = "corePlusPanel";
       corePlusPanel.Size = new Size(774, 242);
       corePlusPanel.TabIndex = 0;
+      // 
+      // operateAsBox
+      // 
+      operateAsBox.Location = new Point(170, 177);
+      operateAsBox.Name = "operateAsBox";
+      operateAsBox.Size = new Size(444, 31);
+      operateAsBox.TabIndex = 7;
+      // 
+      // passwordBox
+      // 
+      passwordBox.Location = new Point(170, 130);
+      passwordBox.Name = "passwordBox";
+      passwordBox.Size = new Size(444, 31);
+      passwordBox.TabIndex = 6;
+      // 
+      // label5
+      // 
+      label5.AutoSize = true;
+      label5.Location = new Point(35, 183);
+      label5.Name = "label5";
+      label5.Size = new Size(96, 25);
+      label5.TabIndex = 5;
+      label5.Text = "OperateAs";
+      // 
+      // label4
+      // 
+      label4.AutoSize = true;
+      label4.Location = new Point(35, 136);
+      label4.Name = "label4";
+      label4.Size = new Size(87, 25);
+      label4.TabIndex = 4;
+      label4.Text = "Password";
+      // 
+      // userIdBox
+      // 
+      userIdBox.Location = new Point(170, 82);
+      userIdBox.Name = "userIdBox";
+      userIdBox.Size = new Size(444, 31);
+      userIdBox.TabIndex = 3;
+      // 
+      // userIdLabel
+      // 
+      userIdLabel.AutoSize = true;
+      userIdLabel.Location = new Point(35, 88);
+      userIdLabel.Name = "userIdLabel";
+      userIdLabel.Size = new Size(63, 25);
+      userIdLabel.TabIndex = 2;
+      userIdLabel.Text = "UserId";
       // 
       // jsonUrlBox
       // 
@@ -112,7 +160,6 @@
       label2.Size = new Size(153, 25);
       label2.TabIndex = 0;
       label2.Text = "Connection String";
-      label2.Click += label2_Click;
       // 
       // isCorePlusRadioButton
       // 
@@ -124,7 +171,6 @@
       isCorePlusRadioButton.TabStop = true;
       isCorePlusRadioButton.Text = "Deephaven Core+";
       isCorePlusRadioButton.UseVisualStyleBackColor = true;
-      isCorePlusRadioButton.CheckedChanged += radioButton1_CheckedChanged;
       // 
       // isCoreRadioButton
       // 
@@ -136,16 +182,16 @@
       isCoreRadioButton.TabStop = true;
       isCoreRadioButton.Text = "Deephaven Core";
       isCoreRadioButton.UseVisualStyleBackColor = true;
-      isCoreRadioButton.CheckedChanged += radioButton2_CheckedChanged;
       // 
-      // button1
+      // setCredentialsButton
       // 
-      button1.Location = new Point(709, 630);
-      button1.Name = "button1";
-      button1.Size = new Size(200, 34);
-      button1.TabIndex = 3;
-      button1.Text = "Add Credentials";
-      button1.UseVisualStyleBackColor = true;
+      setCredentialsButton.Location = new Point(709, 630);
+      setCredentialsButton.Name = "setCredentialsButton";
+      setCredentialsButton.Size = new Size(200, 34);
+      setCredentialsButton.TabIndex = 3;
+      setCredentialsButton.Text = "Set Credentials";
+      setCredentialsButton.UseVisualStyleBackColor = true;
+      setCredentialsButton.Click += setCredentialsButton_Click;
       // 
       // endpointIdBox
       // 
@@ -174,54 +220,6 @@
       connectionTypeGroup.TabStop = false;
       connectionTypeGroup.Text = "Connection Type";
       // 
-      // userIdLabel
-      // 
-      userIdLabel.AutoSize = true;
-      userIdLabel.Location = new Point(35, 88);
-      userIdLabel.Name = "userIdLabel";
-      userIdLabel.Size = new Size(63, 25);
-      userIdLabel.TabIndex = 2;
-      userIdLabel.Text = "UserId";
-      // 
-      // userIdBox
-      // 
-      userIdBox.Location = new Point(170, 82);
-      userIdBox.Name = "userIdBox";
-      userIdBox.Size = new Size(444, 31);
-      userIdBox.TabIndex = 3;
-      // 
-      // label4
-      // 
-      label4.AutoSize = true;
-      label4.Location = new Point(35, 136);
-      label4.Name = "label4";
-      label4.Size = new Size(87, 25);
-      label4.TabIndex = 4;
-      label4.Text = "Password";
-      // 
-      // label5
-      // 
-      label5.AutoSize = true;
-      label5.Location = new Point(35, 183);
-      label5.Name = "label5";
-      label5.Size = new Size(96, 25);
-      label5.TabIndex = 5;
-      label5.Text = "OperateAs";
-      // 
-      // passwordBox
-      // 
-      passwordBox.Location = new Point(170, 130);
-      passwordBox.Name = "passwordBox";
-      passwordBox.Size = new Size(444, 31);
-      passwordBox.TabIndex = 6;
-      // 
-      // operateAsBox
-      // 
-      operateAsBox.Location = new Point(170, 177);
-      operateAsBox.Name = "operateAsBox";
-      operateAsBox.Size = new Size(444, 31);
-      operateAsBox.TabIndex = 7;
-      // 
       // CredentialsDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
@@ -230,7 +228,7 @@
       Controls.Add(connectionTypeGroup);
       Controls.Add(label1);
       Controls.Add(endpointIdBox);
-      Controls.Add(button1);
+      Controls.Add(setCredentialsButton);
       Controls.Add(flowLayoutPanel1);
       Name = "CredentialsDialog";
       Text = "CredentialsDialog";
@@ -250,7 +248,7 @@
     private FlowLayoutPanel flowLayoutPanel1;
     private RadioButton isCorePlusRadioButton;
     private RadioButton isCoreRadioButton;
-    private Button button1;
+    private Button setCredentialsButton;
     private TextBox endpointIdBox;
     private Label label1;
     private GroupBox connectionTypeGroup;

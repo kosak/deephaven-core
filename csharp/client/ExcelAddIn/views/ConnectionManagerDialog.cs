@@ -1,15 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
-
 namespace Deephaven.ExcelAddIn.Views;
 
 public partial class ConnectionManagerDialog : Form {
@@ -25,7 +16,7 @@ public partial class ConnectionManagerDialog : Form {
     var buttonColumn = new DataGridViewButtonColumn();
     buttonColumn.Name = ClickableColumnName;
     buttonColumn.HeaderText = "Settings";
-    buttonColumn.Text = "Edit";
+    buttonColumn.Text = "Change";
     buttonColumn.UseColumnTextForButtonValue = true;
     dataGridView1.Columns.Add(buttonColumn);
     dataGridView1.CellClick += DataGridView1_CellClick;
