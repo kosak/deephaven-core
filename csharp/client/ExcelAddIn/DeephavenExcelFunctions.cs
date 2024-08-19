@@ -77,7 +77,7 @@ public sealed class HyperZamboniRow(string id) : IObserver<EndpointState>, INoti
     get {
       var creds = GetCredsUnderLock();
       if (creds == null) {
-        return "[Not set]";
+        return "[Unknown]";
       }
 
       return creds.Visit(_ => "Core", _ => "Core+");

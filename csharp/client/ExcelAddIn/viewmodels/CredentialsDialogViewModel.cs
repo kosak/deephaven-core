@@ -27,7 +27,6 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
     return result;
   }
 
-
   private string _id = "";
   private bool _isCorePlus = true;
 
