@@ -142,8 +142,6 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
 }
 
 public static class DeephavenExcelFunctions {
-  private static readonly ConnectionDialogViewModel ConnectionDialogViewModel = new ();
-  private static readonly EnterpriseConnectionDialogViewModel EnterpriseConnectionDialogViewModel = new ();
   private static readonly StateManager StateManager = new();
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]

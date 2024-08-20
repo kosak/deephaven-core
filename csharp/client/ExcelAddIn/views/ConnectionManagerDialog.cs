@@ -28,7 +28,6 @@ public partial class ConnectionManagerDialog : Form {
   }
 
   private void DataGridView1_CellClick(object? sender, DataGridViewCellEventArgs e) {
-    var x = dataGridView1.Columns[e.ColumnIndex].Name;
     if (e.RowIndex < 0 || dataGridView1.Columns[e.ColumnIndex].Name != ClickableColumnName) {
       return;
     }
