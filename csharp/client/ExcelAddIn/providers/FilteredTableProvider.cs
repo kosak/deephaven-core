@@ -227,6 +227,10 @@ public class SessionBase {
   public static CorePlusSession OfCorePlus(CorePlusCredentials credentials, WorkerThread workerThread) {
     // TODO(kosak): want a better descriptiveName?
     var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
+    if (!session.PasswordAuthentication(credentials.User, credentials.Password, credentials.OperateAs)) {
+      // TODO(kosak)
+      throw new Exception("SAD");
+    }
     return new CorePlusSession(session, workerThread);
   }
 
