@@ -50,7 +50,7 @@ internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
     // Not sure what the deal is with threading and BindingSource,
     // so I'll Invoke it to get this change on the GUI thread.
     _cmDialog.Invoke(() => {
-      _cmDialog.AddRow(statusRow, statusRow.OnClick);
+      _cmDialog.AddRow(statusRow);
     });
   }
 }
@@ -95,7 +95,7 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
     }
   }
 
-  public void OnClick() {
+  public void SettingsClicked() {
     var creds = GetEndpointStateUnderLock()?.Credentials;
     var cvm = creds == null
       ? CredentialsDialogViewModel.OfNew(Id)
@@ -109,6 +109,10 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
 
     var dialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked);
     dialog.Show();
+  }
+
+  public void ReconnectClicked() {
+    Console.WriteLine("ok now what");
   }
 
   public void OnNext(EndpointState value) {
