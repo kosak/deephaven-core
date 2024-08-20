@@ -112,7 +112,7 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
   }
 
   public void ReconnectClicked() {
-    Console.WriteLine("ok now what");
+    _stateManager.Reconnect(new EndpointId(Id));
   }
 
   public void OnNext(EndpointState value) {

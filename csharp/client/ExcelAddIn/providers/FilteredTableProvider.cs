@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
@@ -34,6 +35,10 @@ public class StateManager {
   public void SetCredentials(EndpointId id, CredentialsBase credentials) {
     _endpointStateProviders.SetCredentials(id, credentials);
   }
+
+  public void Reconnect(EndpointId id) {
+    _endpointStateProviders.Reconnect(id);
+  }
 }
 
 public record AddOrRemove<T>(bool IsAdd, T Value) {
@@ -61,6 +66,10 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
 
   public void SetCredentials(EndpointId id, CredentialsBase credentials) {
     ApplyTo(id, ep => ep.SetCredentials(credentials));
+  }
+
+  public void Reconnect(EndpointId id) {
+    ApplyTo(id, ep => ep.Reconnect());
   }
 
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
@@ -193,6 +202,15 @@ internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
       _workerThread.Invoke(() => {
         _observerContainer.Remove(observer, out _);
       });
+    });
+  }
+
+  public void Reconnect() {
+    _workerThread.Invoke(() => {
+      if (_endpointState.Credentials == null) {
+        return;
+      }
+      SetCredentials(_endpointState.Credentials);
     });
   }
 
