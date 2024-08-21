@@ -26,6 +26,7 @@
       colorDialog1 = new ColorDialog();
       dataGridView1 = new DataGridView();
       newButton = new Button();
+      connectionsLabel = new Label();
       ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
       SuspendLayout();
       // 
@@ -34,7 +35,7 @@
       dataGridView1.AllowUserToAddRows = false;
       dataGridView1.AllowUserToDeleteRows = false;
       dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-      dataGridView1.Location = new Point(68, 50);
+      dataGridView1.Location = new Point(68, 83);
       dataGridView1.Name = "dataGridView1";
       dataGridView1.ReadOnly = true;
       dataGridView1.RowHeadersWidth = 62;
@@ -43,7 +44,7 @@
       // 
       // newButton
       // 
-      newButton.Location = new Point(869, 527);
+      newButton.Location = new Point(869, 560);
       newButton.Name = "newButton";
       newButton.Size = new Size(178, 34);
       newButton.TabIndex = 1;
@@ -51,17 +52,28 @@
       newButton.UseVisualStyleBackColor = true;
       newButton.Click += newButton_Click;
       // 
+      // connectionsLabel
+      // 
+      connectionsLabel.AutoSize = true;
+      connectionsLabel.Location = new Point(65, 31);
+      connectionsLabel.Name = "connectionsLabel";
+      connectionsLabel.Size = new Size(110, 25);
+      connectionsLabel.TabIndex = 2;
+      connectionsLabel.Text = "Connections";
+      // 
       // ConnectionManagerDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(1115, 615);
+      Controls.Add(connectionsLabel);
       Controls.Add(newButton);
       Controls.Add(dataGridView1);
       Name = "ConnectionManagerDialog";
       Text = "ConnectionManager";
       ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
       ResumeLayout(false);
+      PerformLayout();
     }
 
     #endregion
@@ -69,5 +81,6 @@
     private ColorDialog colorDialog1;
     private DataGridView dataGridView1;
     private Button newButton;
+    private Label connectionsLabel;
   }
 }

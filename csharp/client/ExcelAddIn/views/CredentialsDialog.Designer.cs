@@ -36,15 +36,20 @@
       corePanel = new Panel();
       connectionStringBox = new TextBox();
       label2 = new Label();
+      panel1 = new Panel();
+      setCredentialsButton = new Button();
       isCorePlusRadioButton = new RadioButton();
       isCoreRadioButton = new RadioButton();
-      setCredentialsButton = new Button();
       endpointIdBox = new TextBox();
       label1 = new Label();
       connectionTypeGroup = new GroupBox();
+      testCredentialsButton = new Button();
+      credentialStatusLabel = new Label();
+      testResultsLabel = new Label();
       flowLayoutPanel1.SuspendLayout();
       corePlusPanel.SuspendLayout();
       corePanel.SuspendLayout();
+      panel1.SuspendLayout();
       connectionTypeGroup.SuspendLayout();
       SuspendLayout();
       // 
@@ -52,9 +57,10 @@
       // 
       flowLayoutPanel1.Controls.Add(corePlusPanel);
       flowLayoutPanel1.Controls.Add(corePanel);
-      flowLayoutPanel1.Location = new Point(58, 209);
+      flowLayoutPanel1.Controls.Add(panel1);
+      flowLayoutPanel1.Location = new Point(28, 160);
       flowLayoutPanel1.Name = "flowLayoutPanel1";
-      flowLayoutPanel1.Size = new Size(851, 403);
+      flowLayoutPanel1.Size = new Size(695, 531);
       flowLayoutPanel1.TabIndex = 0;
       // 
       // corePlusPanel
@@ -69,19 +75,19 @@
       corePlusPanel.Controls.Add(label3);
       corePlusPanel.Location = new Point(3, 3);
       corePlusPanel.Name = "corePlusPanel";
-      corePlusPanel.Size = new Size(774, 242);
+      corePlusPanel.Size = new Size(668, 242);
       corePlusPanel.TabIndex = 0;
       // 
       // operateAsBox
       // 
-      operateAsBox.Location = new Point(170, 177);
+      operateAsBox.Location = new Point(189, 183);
       operateAsBox.Name = "operateAsBox";
       operateAsBox.Size = new Size(444, 31);
       operateAsBox.TabIndex = 7;
       // 
       // passwordBox
       // 
-      passwordBox.Location = new Point(170, 130);
+      passwordBox.Location = new Point(189, 130);
       passwordBox.Name = "passwordBox";
       passwordBox.Size = new Size(444, 31);
       passwordBox.TabIndex = 6;
@@ -106,7 +112,7 @@
       // 
       // userIdBox
       // 
-      userIdBox.Location = new Point(170, 82);
+      userIdBox.Location = new Point(189, 82);
       userIdBox.Name = "userIdBox";
       userIdBox.Size = new Size(444, 31);
       userIdBox.TabIndex = 3;
@@ -122,7 +128,7 @@
       // 
       // jsonUrlBox
       // 
-      jsonUrlBox.Location = new Point(170, 33);
+      jsonUrlBox.Location = new Point(189, 33);
       jsonUrlBox.Name = "jsonUrlBox";
       jsonUrlBox.Size = new Size(444, 31);
       jsonUrlBox.TabIndex = 1;
@@ -142,12 +148,12 @@
       corePanel.Controls.Add(label2);
       corePanel.Location = new Point(3, 251);
       corePanel.Name = "corePanel";
-      corePanel.Size = new Size(585, 150);
+      corePanel.Size = new Size(585, 76);
       corePanel.TabIndex = 1;
       // 
       // connectionStringBox
       // 
-      connectionStringBox.Location = new Point(210, 20);
+      connectionStringBox.Location = new Point(189, 20);
       connectionStringBox.Name = "connectionStringBox";
       connectionStringBox.Size = new Size(323, 31);
       connectionStringBox.TabIndex = 1;
@@ -160,6 +166,27 @@
       label2.Size = new Size(153, 25);
       label2.TabIndex = 0;
       label2.Text = "Connection String";
+      // 
+      // panel1
+      // 
+      panel1.Controls.Add(testResultsLabel);
+      panel1.Controls.Add(credentialStatusLabel);
+      panel1.Controls.Add(testCredentialsButton);
+      panel1.Controls.Add(setCredentialsButton);
+      panel1.Location = new Point(3, 333);
+      panel1.Name = "panel1";
+      panel1.Size = new Size(668, 89);
+      panel1.TabIndex = 4;
+      // 
+      // setCredentialsButton
+      // 
+      setCredentialsButton.Location = new Point(465, 0);
+      setCredentialsButton.Name = "setCredentialsButton";
+      setCredentialsButton.Size = new Size(200, 34);
+      setCredentialsButton.TabIndex = 3;
+      setCredentialsButton.Text = "Set Credentials";
+      setCredentialsButton.UseVisualStyleBackColor = true;
+      setCredentialsButton.Click += setCredentialsButton_Click;
       // 
       // isCorePlusRadioButton
       // 
@@ -183,19 +210,9 @@
       isCoreRadioButton.Text = "Deephaven Core";
       isCoreRadioButton.UseVisualStyleBackColor = true;
       // 
-      // setCredentialsButton
-      // 
-      setCredentialsButton.Location = new Point(709, 630);
-      setCredentialsButton.Name = "setCredentialsButton";
-      setCredentialsButton.Size = new Size(200, 34);
-      setCredentialsButton.TabIndex = 3;
-      setCredentialsButton.Text = "Set Credentials";
-      setCredentialsButton.UseVisualStyleBackColor = true;
-      setCredentialsButton.Click += setCredentialsButton_Click;
-      // 
       // endpointIdBox
       // 
-      endpointIdBox.Location = new Point(201, 35);
+      endpointIdBox.Location = new Point(201, 16);
       endpointIdBox.Name = "endpointIdBox";
       endpointIdBox.Size = new Size(393, 31);
       endpointIdBox.TabIndex = 4;
@@ -203,7 +220,7 @@
       // label1
       // 
       label1.AutoSize = true;
-      label1.Location = new Point(50, 43);
+      label1.Location = new Point(34, 22);
       label1.Name = "label1";
       label1.Size = new Size(125, 25);
       label1.TabIndex = 5;
@@ -213,12 +230,38 @@
       // 
       connectionTypeGroup.Controls.Add(isCorePlusRadioButton);
       connectionTypeGroup.Controls.Add(isCoreRadioButton);
-      connectionTypeGroup.Location = new Point(58, 123);
+      connectionTypeGroup.Location = new Point(28, 74);
       connectionTypeGroup.Name = "connectionTypeGroup";
       connectionTypeGroup.Size = new Size(588, 80);
       connectionTypeGroup.TabIndex = 8;
       connectionTypeGroup.TabStop = false;
       connectionTypeGroup.Text = "Connection Type";
+      // 
+      // testCredentialsButton
+      // 
+      testCredentialsButton.Location = new Point(-3, 3);
+      testCredentialsButton.Name = "testCredentialsButton";
+      testCredentialsButton.Size = new Size(175, 34);
+      testCredentialsButton.TabIndex = 4;
+      testCredentialsButton.Text = "Test Credentials";
+      testCredentialsButton.UseVisualStyleBackColor = true;
+      // 
+      // credentialStatusLabel
+      // 
+      credentialStatusLabel.AutoSize = true;
+      credentialStatusLabel.Location = new Point(13, 47);
+      credentialStatusLabel.Name = "credentialStatusLabel";
+      credentialStatusLabel.Size = new Size(106, 25);
+      credentialStatusLabel.TabIndex = 5;
+      credentialStatusLabel.Text = "Test Results:";
+      // 
+      // testResultsLabel
+      // 
+      testResultsLabel.AutoSize = true;
+      testResultsLabel.Location = new Point(125, 47);
+      testResultsLabel.Name = "testResultsLabel";
+      testResultsLabel.Size = new Size(0, 25);
+      testResultsLabel.TabIndex = 6;
       // 
       // CredentialsDialog
       // 
@@ -228,7 +271,6 @@
       Controls.Add(connectionTypeGroup);
       Controls.Add(label1);
       Controls.Add(endpointIdBox);
-      Controls.Add(setCredentialsButton);
       Controls.Add(flowLayoutPanel1);
       Name = "CredentialsDialog";
       Text = "CredentialsDialog";
@@ -237,6 +279,8 @@
       corePlusPanel.PerformLayout();
       corePanel.ResumeLayout(false);
       corePanel.PerformLayout();
+      panel1.ResumeLayout(false);
+      panel1.PerformLayout();
       connectionTypeGroup.ResumeLayout(false);
       connectionTypeGroup.PerformLayout();
       ResumeLayout(false);
@@ -264,5 +308,9 @@
     private TextBox operateAsBox;
     private TextBox passwordBox;
     private Label label5;
+    private Panel panel1;
+    private Button testCredentialsButton;
+    private Label testResultsLabel;
+    private Label credentialStatusLabel;
   }
 }
