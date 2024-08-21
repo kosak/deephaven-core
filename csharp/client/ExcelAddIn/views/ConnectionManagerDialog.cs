@@ -3,17 +3,20 @@
 public partial class ConnectionManagerDialog : Form {
   private const string SettingsButtonColumnName = "settings_button_column";
   private const string ReconnectButtonColumnName = "reconnect_button_column";
+  private readonly Action _onNewButtonClicked;
   private readonly BindingSource _bindingSource = new();
 
-  public ConnectionManagerDialog() {
+  public ConnectionManagerDialog(Action onNewButtonClicked) {
+    _onNewButtonClicked = onNewButtonClicked;
+
     InitializeComponent();
 
     _bindingSource.DataSource = typeof(HyperZamboniRow);
     dataGridView1.DataSource = _bindingSource;
     var settingsButtonColumn = new DataGridViewButtonColumn {
       Name = SettingsButtonColumnName,
-      HeaderText = "Settings",
-      Text = "Change",
+      HeaderText = "Credentials",
+      Text = "Edit",
       UseColumnTextForButtonValue = true
     };
     var reconnectButtonColumn = new DataGridViewButtonColumn {
@@ -48,5 +51,9 @@ public partial class ConnectionManagerDialog : Form {
     } else if (name == ReconnectButtonColumnName) {
       row.ReconnectClicked();
     }
+  }
+
+  private void newButton_Click(object sender, EventArgs e) {
+    _onNewButtonClicked();
   }
 }

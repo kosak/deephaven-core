@@ -5,11 +5,15 @@ using Deephaven.ExcelAddIn.Providers;
 namespace Deephaven.ExcelAddIn.ViewModels;
 
 public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
-  public static CredentialsDialogViewModel OfNew(string id) {
+  public static CredentialsDialogViewModel OfEmpty() {
+    return new CredentialsDialogViewModel();
+  }
+
+  public static CredentialsDialogViewModel OfIdButOtherwiseEmpty(string id) {
     return new CredentialsDialogViewModel { Id = id };
   }
 
-  public static CredentialsDialogViewModel OfCredentials(string id, CredentialsBase credentials) {
+  public static CredentialsDialogViewModel OfIdAndCredentials(string id, CredentialsBase credentials) {
     var result = new CredentialsDialogViewModel { Id = id };
     _ = credentials.Visit(
       core => {

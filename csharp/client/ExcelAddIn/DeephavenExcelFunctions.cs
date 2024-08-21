@@ -98,8 +98,8 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
   public void SettingsClicked() {
     var creds = GetEndpointStateUnderLock()?.Credentials;
     var cvm = creds == null
-      ? CredentialsDialogViewModel.OfNew(Id)
-      : CredentialsDialogViewModel.OfCredentials(Id, creds);
+      ? CredentialsDialogViewModel.OfIdButOtherwiseEmpty(Id)
+      : CredentialsDialogViewModel.OfIdAndCredentials(Id, creds);
 
     var onSetCredentialsButtonClicked = () => {
       if (cvm.TryMakeCredentials(out var newCreds)) {
@@ -150,7 +150,19 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ManagedConnections() {
-    var cmDialog = new ConnectionManagerDialog();
+    var onNewButtonClicked = () => {
+      var cvm = CredentialsDialogViewModel.OfEmpty();
+
+      var onSetCredentialsButtonClicked = () => {
+        if (cvm.TryMakeCredentials(out var newCreds)) {
+          StateManager.SetCredentials(new EndpointId(cvm.Id), newCreds);
+        }
+      };
+
+      var dialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked);
+      dialog.Show();
+    };
+    var cmDialog = new ConnectionManagerDialog(onNewButtonClicked);
     cmDialog.Show();
     var mso = new MySessionObserver(StateManager, cmDialog);
     var disposer1 = StateManager.SubscribeToEndpoints(mso);

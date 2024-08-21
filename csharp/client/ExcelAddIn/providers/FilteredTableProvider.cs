@@ -21,8 +21,8 @@ public class StateManager {
     return _endpointStateProviders.Subscribe(observer);
   }
 
-  public IDisposable SubscribeToEndpoint(EndpointId sessionId, IObserver<EndpointState> observer) {
-    return _endpointStateProviders.Subscribe(sessionId, observer);
+  public IDisposable SubscribeToEndpoint(EndpointId endpointId, IObserver<EndpointState> observer) {
+    return _endpointStateProviders.Subscribe(endpointId, observer);
   }
 
   public IDisposable SubscribeToTableTriple(TableTriple descriptor,
@@ -246,8 +246,7 @@ public class SessionBase {
     // TODO(kosak): want a better descriptiveName?
     var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
     if (!session.PasswordAuthentication(credentials.User, credentials.Password, credentials.OperateAs)) {
-      // TODO(kosak)
-      throw new Exception("SAD");
+      throw new Exception("Authentication failed");
     }
     return new CorePlusSession(session, workerThread);
   }
