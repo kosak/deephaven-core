@@ -3,9 +3,12 @@
 namespace ExcelAddIn.views {
   public partial class CredentialsDialog : Form {
     private readonly Action _onSetCredentialsButtonClicked;
+    private readonly Action _onTestCredentialsButtonClicked;
 
-    public CredentialsDialog(CredentialsDialogViewModel vm, Action onSetCredentialsButtonClicked) {
+    public CredentialsDialog(CredentialsDialogViewModel vm, Action onSetCredentialsButtonClicked,
+      Action onTestCredentialsButtonClicked) {
       _onSetCredentialsButtonClicked = onSetCredentialsButtonClicked;
+      _onTestCredentialsButtonClicked = onTestCredentialsButtonClicked;
 
       InitializeComponent();
       // Need to fire these bindings on property changed rather than simply on validation,
@@ -37,8 +40,16 @@ namespace ExcelAddIn.views {
         vm, nameof(vm.ConnectionString));
     }
 
+    public void SetPainState(string painState) {
+      Invoke(() => testResultsTextBox.Text = painState);
+    }
+
     private void setCredentialsButton_Click(object sender, EventArgs e) {
       _onSetCredentialsButtonClicked();
+    }
+
+    private void testCredentialsButton_Click(object sender, EventArgs e) {
+      _onTestCredentialsButtonClicked();
     }
   }
 }

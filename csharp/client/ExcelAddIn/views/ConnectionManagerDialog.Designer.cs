@@ -70,7 +70,7 @@
       Controls.Add(newButton);
       Controls.Add(dataGridView1);
       Name = "ConnectionManagerDialog";
-      Text = "ConnectionManager";
+      Text = "Connection Manager";
       ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
       ResumeLayout(false);
       PerformLayout();

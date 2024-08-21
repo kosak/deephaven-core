@@ -1,11 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Windows.Forms;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
-using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using ExcelAddIn.views;
@@ -101,14 +98,8 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
       ? CredentialsDialogViewModel.OfIdButOtherwiseEmpty(Id)
       : CredentialsDialogViewModel.OfIdAndCredentials(Id, creds);
 
-    var onSetCredentialsButtonClicked = () => {
-      if (cvm.TryMakeCredentials(out var newCreds)) {
-        _stateManager.SetCredentials(new EndpointId(Id), newCreds);
-      }
-    };
-
-    var dialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked);
-    dialog.Show();
+    var cd = DontKnowDontCare.MakeCredentialsDialog(_stateManager, cvm);
+    cd.Show();
   }
 
   public void ReconnectClicked() {
@@ -145,6 +136,43 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
   }
 }
 
+public static class DontKnowDontCare {
+  public static CredentialsDialog MakeCredentialsDialog(StateManager sm, CredentialsDialogViewModel cvm) {
+    var onSetCredentialsButtonClicked = () => {
+      if (cvm.TryMakeCredentials(out var newCreds)) {
+        sm.SetCredentials(new EndpointId(cvm.Id), newCreds);
+      }
+    };
+
+    CredentialsDialog credentialsDialog = null;
+
+    var onTestCredentialsButtonClicked = () => {
+      if (!cvm.TryMakeCredentials(out var newCreds)) {
+        return;
+      }
+
+      // ok this is painful
+
+      credentialsDialog!.SetPainState("Checking credentials");
+
+      sm.WorkerThread.Invoke(() => {
+        var state = "OK";
+        try {
+          _ = SessionBase.Of(newCreds, sm.WorkerThread);
+        } catch (Exception ex) {
+          state = ex.Message;
+        }
+
+        // TODO(kosak): OK where is your disposer of SessionBase???
+        credentialsDialog!.SetPainState(state);
+      });
+    };
+
+    credentialsDialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked, onTestCredentialsButtonClicked);
+    return credentialsDialog;
+  }
+}
+
 public static class DeephavenExcelFunctions {
   private static readonly StateManager StateManager = new();
 
@@ -152,14 +180,7 @@ public static class DeephavenExcelFunctions {
   public static void ManagedConnections() {
     var onNewButtonClicked = () => {
       var cvm = CredentialsDialogViewModel.OfEmpty();
-
-      var onSetCredentialsButtonClicked = () => {
-        if (cvm.TryMakeCredentials(out var newCreds)) {
-          StateManager.SetCredentials(new EndpointId(cvm.Id), newCreds);
-        }
-      };
-
-      var dialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked);
+      var dialog = DontKnowDontCare.MakeCredentialsDialog(StateManager, cvm);
       dialog.Show();
     };
     var cmDialog = new ConnectionManagerDialog(onNewButtonClicked);

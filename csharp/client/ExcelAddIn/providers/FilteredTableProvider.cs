@@ -483,7 +483,7 @@ public class WorkerThread {
     }
   }
 
-  public void Doit() {
+  private void Doit() {
     while (true) {
       Action? action = null;
       lock (_sync) {

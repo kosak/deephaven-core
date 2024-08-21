@@ -37,15 +37,16 @@
       connectionStringBox = new TextBox();
       label2 = new Label();
       panel1 = new Panel();
+      testResultsTextBox = new TextBox();
+      testResultsLabel = new Label();
+      credentialStatusLabel = new Label();
+      testCredentialsButton = new Button();
       setCredentialsButton = new Button();
       isCorePlusRadioButton = new RadioButton();
       isCoreRadioButton = new RadioButton();
       endpointIdBox = new TextBox();
       label1 = new Label();
       connectionTypeGroup = new GroupBox();
-      testCredentialsButton = new Button();
-      credentialStatusLabel = new Label();
-      testResultsLabel = new Label();
       flowLayoutPanel1.SuspendLayout();
       corePlusPanel.SuspendLayout();
       corePanel.SuspendLayout();
@@ -169,14 +170,50 @@
       // 
       // panel1
       // 
+      panel1.Controls.Add(testResultsTextBox);
       panel1.Controls.Add(testResultsLabel);
       panel1.Controls.Add(credentialStatusLabel);
       panel1.Controls.Add(testCredentialsButton);
       panel1.Controls.Add(setCredentialsButton);
       panel1.Location = new Point(3, 333);
       panel1.Name = "panel1";
-      panel1.Size = new Size(668, 89);
+      panel1.Size = new Size(668, 110);
       panel1.TabIndex = 4;
+      // 
+      // testResultsTextBox
+      // 
+      testResultsTextBox.Location = new Point(143, 51);
+      testResultsTextBox.Name = "testResultsTextBox";
+      testResultsTextBox.ReadOnly = true;
+      testResultsTextBox.Size = new Size(513, 31);
+      testResultsTextBox.TabIndex = 7;
+      // 
+      // testResultsLabel
+      // 
+      testResultsLabel.AutoSize = true;
+      testResultsLabel.Location = new Point(125, 47);
+      testResultsLabel.Name = "testResultsLabel";
+      testResultsLabel.Size = new Size(0, 25);
+      testResultsLabel.TabIndex = 6;
+      // 
+      // credentialStatusLabel
+      // 
+      credentialStatusLabel.AutoSize = true;
+      credentialStatusLabel.Location = new Point(19, 57);
+      credentialStatusLabel.Name = "credentialStatusLabel";
+      credentialStatusLabel.Size = new Size(106, 25);
+      credentialStatusLabel.TabIndex = 5;
+      credentialStatusLabel.Text = "Test Results:";
+      // 
+      // testCredentialsButton
+      // 
+      testCredentialsButton.Location = new Point(19, 3);
+      testCredentialsButton.Name = "testCredentialsButton";
+      testCredentialsButton.Size = new Size(175, 34);
+      testCredentialsButton.TabIndex = 4;
+      testCredentialsButton.Text = "Test Credentials";
+      testCredentialsButton.UseVisualStyleBackColor = true;
+      testCredentialsButton.Click += testCredentialsButton_Click;
       // 
       // setCredentialsButton
       // 
@@ -237,32 +274,6 @@
       connectionTypeGroup.TabStop = false;
       connectionTypeGroup.Text = "Connection Type";
       // 
-      // testCredentialsButton
-      // 
-      testCredentialsButton.Location = new Point(-3, 3);
-      testCredentialsButton.Name = "testCredentialsButton";
-      testCredentialsButton.Size = new Size(175, 34);
-      testCredentialsButton.TabIndex = 4;
-      testCredentialsButton.Text = "Test Credentials";
-      testCredentialsButton.UseVisualStyleBackColor = true;
-      // 
-      // credentialStatusLabel
-      // 
-      credentialStatusLabel.AutoSize = true;
-      credentialStatusLabel.Location = new Point(13, 47);
-      credentialStatusLabel.Name = "credentialStatusLabel";
-      credentialStatusLabel.Size = new Size(106, 25);
-      credentialStatusLabel.TabIndex = 5;
-      credentialStatusLabel.Text = "Test Results:";
-      // 
-      // testResultsLabel
-      // 
-      testResultsLabel.AutoSize = true;
-      testResultsLabel.Location = new Point(125, 47);
-      testResultsLabel.Name = "testResultsLabel";
-      testResultsLabel.Size = new Size(0, 25);
-      testResultsLabel.TabIndex = 6;
-      // 
       // CredentialsDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
@@ -273,7 +284,7 @@
       Controls.Add(endpointIdBox);
       Controls.Add(flowLayoutPanel1);
       Name = "CredentialsDialog";
-      Text = "CredentialsDialog";
+      Text = "Credentials Editor";
       flowLayoutPanel1.ResumeLayout(false);
       corePlusPanel.ResumeLayout(false);
       corePlusPanel.PerformLayout();
@@ -312,5 +323,6 @@
     private Button testCredentialsButton;
     private Label testResultsLabel;
     private Label credentialStatusLabel;
+    private TextBox testResultsTextBox;
   }
 }
