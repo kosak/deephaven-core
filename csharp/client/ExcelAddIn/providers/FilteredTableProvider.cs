@@ -238,7 +238,8 @@ public class SessionBase {
   }
 
   public static CoreSession OfCore(CoreCredentials credentials) {
-    var client = Client.Connect(credentials.ConnectionString, new ClientOptions());
+    // TODO(kosak): set session type!!!!
+    var client = Client.Connect(credentials.ConnectionString, new ClientOptions().SetSessionType("groovy"));
     return new CoreSession(client);
   }
 
