@@ -8,3 +8,10 @@ internal static class Utility {
     return result;
   }
 }
+
+public class Unit {
+  public static readonly Unit Instance = new Unit();
+
+  private Unit() {
+  }
+}

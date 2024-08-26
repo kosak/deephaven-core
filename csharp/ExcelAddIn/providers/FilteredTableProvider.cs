@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices.JavaScript;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -134,157 +136,66 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
 //   public StatusOr<SessionBase> Session = session;
 // }
 
-internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
-  private readonly EndpointId _endpointId;
-  private readonly WorkerThread _workerThread;
-  private EndpointState _endpointState = EndpointState.OfStatus(null, "[Disconnected]");
-  private readonly ObserverContainer<EndpointState> _observerContainer = new();
-  private bool _disposed;
+// internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
+//   private readonly EndpointId _endpointId;
+//   private readonly WorkerThread _workerThread;
+//   private EndpointState _endpointState = EndpointState.OfStatus(null, "[Disconnected]");
+//   private readonly ObserverContainer<EndpointState> _observerContainer = new();
+//   private bool _disposed;
+//
+//   public EndpointStateProvider(EndpointId endpointId, WorkerThread workerThread) {
+//     _endpointId = endpointId;
+//     _workerThread = workerThread;
+//   }
+//
+//   public void Dispose() {
+//     if (_disposed) {
+//       return;
+//     }
+//
+//     _disposed = true;
+//     // not even sure what to do.... maybe send an "end" to all of my existing observers?
+//   }
+//
+//   public IDisposable Subscribe(IObserver<EndpointState> observer) {
+//     _workerThread.Invoke(() => {
+//       // New observer gets added to the collection and then notified of the current status.
+//       _observerContainer.Add(observer, out _);
+//       observer.OnNext(_endpointState);
+//     });
+//
+//     return new ActionAsDisposable(() => {
+//       _workerThread.Invoke(() => {
+//         _observerContainer.Remove(observer, out _);
+//       });
+//     });
+//   }
+//
+//   public void Reconnect() {
+//     _workerThread.Invoke(() => {
+//       if (_endpointState.Credentials == null) {
+//         return;
+//       }
+//       SetCredentials(_endpointState.Credentials);
+//     });
+//   }
+//
+//   public void SetCredentials(CredentialsBase credentials) {
+//     _workerThread.Invoke(() => {
+//       try {
+//         _endpointState = EndpointState.OfStatus(credentials, "Trying to connect");
+//         _observerContainer.OnNext(_endpointState);
+//
+//         var sb = SessionBase.Of(credentials, _workerThread);
+//         _endpointState = EndpointState.OfValue(credentials, sb);
+//       } catch (Exception ex) {
+//         _endpointState = EndpointState.OfStatus(credentials, ex.Message);
+//       }
+//       _observerContainer.OnNext(_endpointState);
+//     });
+//   }
+// }
 
-  public EndpointStateProvider(EndpointId endpointId, WorkerThread workerThread) {
-    _endpointId = endpointId;
-    _workerThread = workerThread;
-  }
-
-  public void Dispose() {
-    if (_disposed) {
-      return;
-    }
-
-    _disposed = true;
-    // not even sure what to do.... maybe send an "end" to all of my existing observers?
-  }
-
-  public IDisposable Subscribe(IObserver<EndpointState> observer) {
-    _workerThread.Invoke(() => {
-      // New observer gets added to the collection and then notified of the current status.
-      _observerContainer.Add(observer, out _);
-      observer.OnNext(_endpointState);
-    });
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        _observerContainer.Remove(observer, out _);
-      });
-    });
-  }
-
-  public void Reconnect() {
-    _workerThread.Invoke(() => {
-      if (_endpointState.Credentials == null) {
-        return;
-      }
-      SetCredentials(_endpointState.Credentials);
-    });
-  }
-
-  public void SetCredentials(CredentialsBase credentials) {
-    _workerThread.Invoke(() => {
-      try {
-        _endpointState = EndpointState.OfStatus(credentials, "Trying to connect");
-        _observerContainer.OnNext(_endpointState);
-
-        var sb = SessionBase.Of(credentials, _workerThread);
-        _endpointState = EndpointState.OfValue(credentials, sb);
-      } catch (Exception ex) {
-        _endpointState = EndpointState.OfStatus(credentials, ex.Message);
-      }
-      _observerContainer.OnNext(_endpointState);
-    });
-  }
-}
-
-internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Client>> {
-  private readonly WorkerThread _workerThread;
-  private readonly TableTriple _descriptor;
-  private readonly string _filter;
-  private readonly IObserver<StatusOr<TableHandle>> _callerObserver;
-  private IDisposable? _pqDisposable = null;
-  private TableHandle? _tableHandle = null;
-
-  public MyComboObserver(WorkerThread workerThread, TableTriple descriptor, string filter,
-    IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread = workerThread;
-    _descriptor = descriptor;
-    _filter = filter;
-    _callerObserver = observer;
-  }
-
-  void IObserver<EndpointState>.OnNext(EndpointState es) {
-    _workerThread.Invoke(() => {
-      try {
-        var oldTh = Utility.Exchange(ref _tableHandle, null);
-        var oldPq = Utility.Exchange(ref _pqDisposable, null);
-
-        if (oldTh != null) {
-          _callerObserver.SendStatus("Disposing TableHandle");
-          oldTh.Dispose();
-        }
-
-        if (oldPq != null) {
-          _callerObserver.SendStatus("Disposing PQ");
-          oldPq.Dispose();
-        }
-
-        if (!es.Session.TryGetValue(out var sessionBase, out var status)) {
-          _callerObserver.SendStatus(status);
-          return;
-        }
-
-        // Visit needs a return type and value, so we return (object)null
-        _ = sessionBase.Visit(coreSession => {
-          this.SendValue(coreSession.Client);
-          return (object)null;
-        }, corePlusSession => {
-          _callerObserver.SendStatus($"Subscribing to PQ \"{_descriptor.PersistentQueryId}\"");
-          _pqDisposable = corePlusSession.SubscribeToPq(_descriptor.PersistentQueryId, this);
-          return null;
-        });
-      } catch (Exception ex) {
-        _callerObserver.OnError(ex);
-      }
-    });
-  }
-
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
-  }
-
-  void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
-    _workerThread.Invoke(() => {
-      try {
-        var oldTh = Utility.Exchange(ref _tableHandle, null);
-
-        if (oldTh != null) {
-          _callerObserver.SendStatus("Disposing TableHandle");
-          oldTh.Dispose();
-        }
-
-        if (!so.TryGetValue(out var client, out var status)) {
-          _callerObserver.SendStatus(status);
-          return;
-        }
-
-        _callerObserver.SendStatus($"Fetching \"{_descriptor.TableName}\"");
-
-        _tableHandle = client.Manager.FetchTable(_descriptor.TableName);
-        if (_filter != "") {
-          var temp = _tableHandle;
-          _tableHandle = temp.Where(_filter);
-          temp.Dispose();
-        }
-
-        _callerObserver.SendValue(_tableHandle);
-      } catch (Exception ex) {
-        _callerObserver.SendStatus(ex.Message);
-      }
-    });
-  }
-}
 
 public static class ObserverStatusOr_Extensions {
   public static void SendStatus<T>(this IObserver<StatusOr<T>> observer, string message) {
