@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Net;
 using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.ExcelDna;
@@ -194,95 +193,6 @@ internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
     });
   }
 }
-
-public class SessionBase {
-  public static SessionBase Of(CredentialsBase credentials, WorkerThread workerThread) {
-    return credentials.AcceptVisitor(
-      cc => OfCore(cc),
-      ccp => (SessionBase)OfCorePlus(ccp, workerThread));
-  }
-
-  public static CoreSession OfCore(CoreCredentials credentials) {
-    // TODO(kosak): set session type!!!!
-    var client = Client.Connect(credentials.ConnectionString, new ClientOptions().SetSessionType("groovy"));
-    return new CoreSession(client);
-  }
-
-  public static CorePlusSession OfCorePlus(CorePlusCredentials credentials, WorkerThread workerThread) {
-    // TODO(kosak): want a better descriptiveName?
-    var session = SessionManager.FromUrl("Deephaven Excel", credentials.JsonUrl);
-    if (!session.PasswordAuthentication(credentials.User, credentials.Password, credentials.OperateAs)) {
-      throw new Exception("Authentication failed");
-    }
-    return new CorePlusSession(session, workerThread);
-  }
-
-  /// <summary>
-  /// This is meant to act like a Visitor pattern with lambdas.
-  /// </summary>
-  public T Visit<T>(Func<CoreSession, T> onCore, Func<CorePlusSession, T> onCorePlus) {
-    if (this is CoreSession cs) {
-      return onCore(cs);
-    }
-
-    if (this is CorePlusSession cps) {
-      return onCorePlus(cps);
-    }
-
-    throw new Exception($"Unexpected type {GetType().Name}");
-  }
-}
-
-public class CoreSession(Client client) : SessionBase {
-  public readonly Client Client = client;
-}
-
-public class CorePlusSession : SessionBase {
-  private readonly SessionManager _sessionManager;
-  private readonly WorkerThread _workerThread;
-  private readonly Dictionary<PersistentQueryId, ClientProvider> _clientProviders = new();
-
-  public CorePlusSession(SessionManager sessionManager, WorkerThread workerThread) {
-    _sessionManager = sessionManager;
-    _workerThread = workerThread;
-  }
-
-  public IDisposable SubscribeToPq(PersistentQueryId persistentQueryId,
-    IObserver<StatusOr<Client>> observer) {
-    ClientProvider? cp = null;
-    IDisposable? disposer = null;
-
-    _workerThread.Invoke(() => {
-      if (!_clientProviders.TryGetValue(persistentQueryId, out cp)) {
-        cp = new ClientProvider(_workerThread, _sessionManager, persistentQueryId);
-        _clientProviders.Add(persistentQueryId, cp);
-        cp.SubscriberCount = 1;
-      }
-
-      disposer = cp.Subscribe(observer);
-    });
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        var old = Utility.Exchange(ref disposer, null);
-        // Do nothing if caller Disposes me multiple times.
-        if (old == null) {
-          return;
-        }
-        old.Dispose();
-
-        if (--cp!.SubscriberCount != 0) {
-          return;
-        }
-
-        // Last one! Remove it from the dictionary and shut it down
-        _clientProviders.Remove(persistentQueryId);
-        cp!.Dispose();
-      });
-    });
-  }
-}
-
 
 internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Client>> {
   private readonly WorkerThread _workerThread;
