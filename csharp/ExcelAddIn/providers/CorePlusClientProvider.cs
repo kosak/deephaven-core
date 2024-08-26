@@ -11,7 +11,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// If it can successfully connect to a PQ on Core+, it will send a Client.
 /// In the future it will be an Observer of PQ up/down messages.
 /// </summary>
-
 internal class CorePlusClientProvider : IObservable<StatusOr<Client>>, IDisposable {
   public static CorePlusClientProvider Create(WorkerThread workerThread, SessionManager sessionManager,
     PersistentQueryId persistentQueryId) {
@@ -50,11 +49,12 @@ internal class CorePlusClientProvider : IObservable<StatusOr<Client>>, IDisposab
   }
 
   public void Dispose() {
-    _workerThread.Invoke(() => {
-      if (_client.TryGetValue(out var c, out _)) {
-        _client = StatusOr<Client>.OfStatus("Disposed");
-        c.Dispose();
-      }
-    });
+    if (_workerThread.InvokeIfRequired(Dispose)) {
+      return;
+    }
+
+    _ = _client.GetValueOrStatus(out var c, out _);
+    _client = StatusOr<Client>.OfStatus("Disposed");
+    c?.Dispose();
   }
 }

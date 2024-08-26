@@ -34,6 +34,10 @@ public class WorkerThread {
     }
   }
 
+  public bool InvokeIfRequired(Action action) {
+
+  }
+
   private void Doit() {
     while (true) {
       Action action;

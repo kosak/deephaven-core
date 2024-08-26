@@ -119,20 +119,20 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
 }
 
 
-public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
-  public static EndpointState OfStatus(CredentialsBase? credentials, string status) {
-    var s = StatusOr<SessionBase>.OfStatus(status);
-    return new EndpointState(credentials, s);
-  }
-
-  public static EndpointState OfValue(CredentialsBase credentials, SessionBase sessionBase) {
-    var s = StatusOr<SessionBase>.OfValue(sessionBase);
-    return new EndpointState(credentials, s);
-  }
-
-  public CredentialsBase? Credentials = credentials;
-  public StatusOr<SessionBase> Session = session;
-}
+// public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
+//   public static EndpointState OfStatus(CredentialsBase? credentials, string status) {
+//     var s = StatusOr<SessionBase>.OfStatus(status);
+//     return new EndpointState(credentials, s);
+//   }
+//
+//   public static EndpointState OfValue(CredentialsBase credentials, SessionBase sessionBase) {
+//     var s = StatusOr<SessionBase>.OfValue(sessionBase);
+//     return new EndpointState(credentials, s);
+//   }
+//
+//   public CredentialsBase? Credentials = credentials;
+//   public StatusOr<SessionBase> Session = session;
+// }
 
 internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
   private readonly EndpointId _endpointId;
