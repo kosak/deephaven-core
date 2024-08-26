@@ -5,6 +5,7 @@ using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -463,49 +464,5 @@ public static class ObserverStatusOr_Extensions {
   public static void SendValue<T>(this IObserver<StatusOr<T>> observer, T value) {
     var so = StatusOr<T>.OfValue(value);
     observer.OnNext(so);
-  }
-
-  // public static void SendStatusAll<T>(this ObserverContainer<StatusOr<T>> container, string message) {
-  //   var so = StatusOr<T>.OfStatus(message);
-  //   container.OnNextAll(so);
-  // }
-  //
-  // public static void SendValueAll<T>(this ObserverContainer<StatusOr<T>> container, T value) {
-  //   var so = StatusOr<T>.OfValue(value);
-  //   container.OnNextAll(so);
-  // }
-}
-
-public record TableTriple(
-  EndpointId EndpointId,
-  PersistentQueryId PersistentQueryId,
-  string TableName) {
-  public static bool TryParse(string text, out TableTriple result, out string errorText) {
-    // 1. table - ("", "", table)
-    // 2. connection:table - (connection, "", table)
-    // 3. pq/table - ("", pq, table)
-    // 4. connection:pq/table - (connection, pq, table)
-    var eid = "";
-    var pqid = "";
-    var tableName = "";
-    var colonIndex = text.IndexOf(':');
-    if (colonIndex > 0) {
-      // cases 2 and 4: pull out the connection, and then reduce to cases 1 and 3
-      eid = text.Substring(0, colonIndex);
-      text = text.Substring(colonIndex + 1);
-    }
-
-    var slashIndex = text.IndexOf('/');
-    if (slashIndex > 0) {
-      // case 3: pull out the slash, and reduce to case 1
-      pqid = text.Substring(0, slashIndex);
-      text = text.Substring(slashIndex + 1);
-    }
-
-    tableName = text;
-    result = new TableTriple(new EndpointId(eid), new PersistentQueryId(pqid), tableName);
-    errorText = "";
-    // This version never fails to parse, but we leave open the option to do so.
-    return true;
   }
 }
