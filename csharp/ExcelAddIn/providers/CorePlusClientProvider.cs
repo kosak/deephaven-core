@@ -42,7 +42,7 @@ internal class CorePlusClientProvider : IObservable<StatusOr<Client>>, IDisposab
       observer.OnNext(_client);
     });
 
-    return new ActionAsDisposable(() => {
+    return ActionAsDisposable.Create(() => {
       _workerThread.Invoke(() => {
         _observers.Remove(observer, out _);
       });
