@@ -19,7 +19,7 @@ public class StatusOr<T> {
     _value = value;
   }
 
-  public bool TryGetValue(
+  public bool GetValueOrStatus(
     [NotNullWhen(true)]out T? value,
     [NotNullWhen(false)]out string? status) {
     status = _status;

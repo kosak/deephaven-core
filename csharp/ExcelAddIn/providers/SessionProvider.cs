@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Deephaven.DeephavenClient;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
@@ -32,6 +33,20 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     }
 
     _observers.OnNext(_session);
+  }
+
+  public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
+    _workerThread.Invoke(() => {
+      // New observer gets added to the collection and then notified of the current status.
+      _observers.Add(observer, out _);
+      observer.OnNext(_session);
+    });
+
+    return ActionAsDisposable.Create(() => {
+      _workerThread.Invoke(() => {
+        _observers.Remove(observer, out _);
+      });
+    });
   }
 
   private StatusOr<SessionBase> MakeSession(CredentialsBase credentials) {
