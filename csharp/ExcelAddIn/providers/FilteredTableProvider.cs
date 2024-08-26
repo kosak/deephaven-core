@@ -197,7 +197,7 @@ internal class EndpointStateProvider : IObservable<EndpointState>, IDisposable {
 
 public class SessionBase {
   public static SessionBase Of(CredentialsBase credentials, WorkerThread workerThread) {
-    return credentials.Visit(
+    return credentials.AcceptVisitor(
       cc => OfCore(cc),
       ccp => (SessionBase)OfCorePlus(ccp, workerThread));
   }
