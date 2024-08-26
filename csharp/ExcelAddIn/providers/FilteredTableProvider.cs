@@ -454,58 +454,6 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
   }
 }
 
-public class WorkerThread {
-  public static WorkerThread Create() {
-    var result = new WorkerThread();
-    var t = new Thread(result.Doit) { IsBackground = true };
-    result._thisThread = t;
-    t.Start();
-    return result;
-  }
-
-  private readonly object _sync = new();
-  private readonly Queue<Action> _queue = new();
-  private Thread? _thisThread;
-
-  private WorkerThread() {
-  }
-
-  public void Invoke(Action action) {
-    if (ReferenceEquals(Thread.CurrentThread, _thisThread)) {
-      // Can run "action" directly if we're already on our worker thread.
-      action();
-      return;
-    }
-    lock (_sync) {
-      _queue.Enqueue(action);
-      if (_queue.Count == 1) {
-        Monitor.PulseAll(_sync);
-      }
-    }
-  }
-
-  private void Doit() {
-    while (true) {
-      Action? action = null;
-      lock (_sync) {
-        while (true) {
-          if (_queue.Count != 0) {
-            action = _queue.Dequeue();
-            break;
-          }
-
-          Monitor.Wait(_sync);
-        }
-      }
-
-      try {
-        action();
-      } catch (Exception ex) {
-        Debug.WriteLine($"Swallowing exception {ex}");
-      }
-    }
-  }
-}
 
 public static class Util {
   public static T? SetToNull<T>(ref T? item) where T : class {
