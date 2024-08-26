@@ -5,6 +5,7 @@ using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
+using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
@@ -118,43 +119,6 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
   }
 }
 
-public abstract class CredentialsBase {
-  public static CredentialsBase OfCore(string connectionString) {
-    return new CoreCredentials(connectionString);
-  }
-
-  public static CredentialsBase OfCorePlus(string jsonUrl, string userId,
-    string password, string operateAs) {
-    return new CorePlusCredentials(jsonUrl, userId, password, operateAs);
-  }
-
-  /// <summary>
-  /// This is meant to act like a Visitor pattern with lambdas.
-  /// </summary>
-  public T Visit<T>(Func<CoreCredentials, T> onCore, Func<CorePlusCredentials, T> onCorePlus) {
-    if (this is CoreCredentials cc) {
-      return onCore(cc);
-    }
-
-    if (this is CorePlusCredentials cpc) {
-      return onCorePlus(cpc);
-    }
-
-    throw new Exception($"Unexpected type {GetType().Name}");
-  }
-}
-
-public sealed class CoreCredentials(string connectionString) : CredentialsBase {
-  public readonly string ConnectionString = connectionString;
-}
-
-public sealed class CorePlusCredentials(string jsonUrl, string user, string password,
-  string operateAs) : CredentialsBase {
-  public readonly string JsonUrl = jsonUrl;
-  public readonly string User = user;
-  public readonly string Password = password;
-  public readonly string OperateAs = operateAs;
-}
 
 public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
   public static EndpointState OfStatus(CredentialsBase? credentials, string status) {

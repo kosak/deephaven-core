@@ -1,9 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Util;
+﻿namespace Deephaven.ExcelAddIn.ExcelDna;
 
-namespace Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
-/// <summary>
-/// This class implements both the above interfaces.
-/// </summary>
 public sealed class ObserverContainer<T> : IObserver<T> {
   private readonly object _sync = new();
   private readonly HashSet<IObserver<T>> _observers = new();
