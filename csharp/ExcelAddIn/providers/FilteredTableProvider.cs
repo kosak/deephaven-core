@@ -88,7 +88,7 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
-        Util.SetToNull(ref disposable)?.Dispose();
+        Utility.Exchange(ref disposable, null)?.Dispose();
       });
     });
   }
@@ -99,7 +99,7 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
-        Util.SetToNull(ref disposable)?.Dispose();
+        Utility.Exchange(ref disposable, null)?.Dispose();
       });
     });
   }
@@ -299,7 +299,7 @@ public class CorePlusSession : SessionBase {
 
     return new ActionAsDisposable(() => {
       _workerThread.Invoke(() => {
-        var old = Util.SetToNull(ref disposer);
+        var old = Utility.Exchange(ref disposer, null);
         // Do nothing if caller Disposes me multiple times.
         if (old == null) {
           return;
@@ -381,8 +381,8 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
   void IObserver<EndpointState>.OnNext(EndpointState es) {
     _workerThread.Invoke(() => {
       try {
-        var oldTh = Util.SetToNull(ref _tableHandle);
-        var oldPq = Util.SetToNull(ref _pqDisposable);
+        var oldTh = Utility.Exchange(ref _tableHandle, null);
+        var oldPq = Utility.Exchange(ref _pqDisposable, null);
 
         if (oldTh != null) {
           _callerObserver.SendStatus("Disposing TableHandle");
@@ -425,7 +425,7 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
   void IObserver<StatusOr<Client>>.OnNext(StatusOr<Client> so) {
     _workerThread.Invoke(() => {
       try {
-        var oldTh = Util.SetToNull(ref _tableHandle);
+        var oldTh = Utility.Exchange(ref _tableHandle, null);
 
         if (oldTh != null) {
           _callerObserver.SendStatus("Disposing TableHandle");
@@ -451,15 +451,6 @@ internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Cl
         _callerObserver.SendStatus(ex.Message);
       }
     });
-  }
-}
-
-
-public static class Util {
-  public static T? SetToNull<T>(ref T? item) where T : class {
-    var result = item;
-    item = null;
-    return result;
   }
 }
 
