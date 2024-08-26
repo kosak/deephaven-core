@@ -3,11 +3,6 @@ using Deephaven.DeephavenClient;
 using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Util;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
