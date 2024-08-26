@@ -283,49 +283,6 @@ public class CorePlusSession : SessionBase {
   }
 }
 
-internal class ClientProvider : IObservable<StatusOr<Client>>, IDisposable {
-  private readonly WorkerThread _workerThread;
-  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
-  private StatusOr<Client> _client = StatusOr<Client>.OfStatus("Not connected");
-  public int SubscriberCount = 0;
-
-  public ClientProvider(WorkerThread workerThread, SessionManager sessionManager,
-    PersistentQueryId persistentQueryId) {
-    _workerThread = workerThread;
-    _workerThread.Invoke(() => {
-      try {
-        var dndClient = sessionManager.ConnectToPqByName(persistentQueryId.Id, false);
-        _client = StatusOr<Client>.OfValue(dndClient);
-      } catch (Exception ex) {
-        _client = StatusOr<Client>.OfStatus(ex.Message);
-      }
-      _observers.OnNext(_client);
-    });
-  }
-
-  public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
-    _workerThread.Invoke(() => {
-      // New observer gets added to the collection and then notified of the current status.
-      _observers.Add(observer, out _);
-      observer.OnNext(_client);
-    });
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        _observers.Remove(observer, out _);
-      });
-    });
-  }
-
-  public void Dispose() {
-    _workerThread.Invoke(() => {
-      if (_client.TryGetValue(out var c, out _)) {
-        _client = StatusOr<Client>.OfStatus("Disposed");
-        c.Dispose();
-      }
-    });
-  }
-}
 
 internal class MyComboObserver : IObserver<EndpointState>, IObserver<StatusOr<Client>> {
   private readonly WorkerThread _workerThread;

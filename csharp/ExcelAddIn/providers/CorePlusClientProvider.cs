@@ -1,0 +1,65 @@
+﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using Deephaven.DeephavenClient;
+using Deephaven.DheClient.session;
+using Deephaven.ExcelAddIn.ExcelDna;
+using Deephaven.ExcelAddIn.Util;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Deephaven.ExcelAddIn.Providers;
+
+/// <summary>
+/// This Observable provides StatusOr&lt;Client&gt; objects for Core+.
+/// If it can successfully connect to a PQ on Core+, it will send a Client.
+/// In the future it will be an Observer of PQ up/down messages.
+/// </summary>
+
+internal class CorePlusClientProvider : IObservable<StatusOr<Client>>, IDisposable {
+  public static CorePlusClientProvider Create(WorkerThread workerThread, SessionManager sessionManager,
+    PersistentQueryId persistentQueryId) {
+    var self = new CorePlusClientProvider(workerThread);
+    workerThread.Invoke(() => {
+      try {
+        var dndClient = sessionManager.ConnectToPqByName(persistentQueryId.Id, false);
+        self._client = StatusOr<Client>.OfValue(dndClient);
+      } catch (Exception ex) {
+        self._client = StatusOr<Client>.OfStatus(ex.Message);
+      }
+    });
+    return self;
+  }
+
+  private readonly WorkerThread _workerThread;
+  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
+  private StatusOr<Client> _client = StatusOr<Client>.OfStatus("Not connected");
+
+  private CorePlusClientProvider(WorkerThread workerThread) {
+    _workerThread = workerThread;
+  }
+
+  public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
+    _workerThread.Invoke(() => {
+      // New observer gets added to the collection and then notified of the current status.
+      _observers.Add(observer, out _);
+      observer.OnNext(_client);
+    });
+
+    return new ActionAsDisposable(() => {
+      _workerThread.Invoke(() => {
+        _observers.Remove(observer, out _);
+      });
+    });
+  }
+
+  public void Dispose() {
+    _workerThread.Invoke(() => {
+      if (_client.TryGetValue(out var c, out _)) {
+        _client = StatusOr<Client>.OfStatus("Disposed");
+        c.Dispose();
+      }
+    });
+  }
+}
