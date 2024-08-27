@@ -1,10 +1,13 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using ExcelDna.Integration;
@@ -41,7 +44,7 @@ internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
     // Wire up the OnClick button for that row
     // subscribe to the 
 
-    var statusRow = new HyperZamboniRow(aor.Value.HumanReadableString, _stateManager);
+    var statusRow = new ConnectionManagerDialogRow(aor.Value.HumanReadableString, _stateManager);
     // TODO(kosak): what now
     var subPainDisposable = _stateManager.SubscribeToEndpoint(aor.Value, statusRow);
 
@@ -57,17 +60,8 @@ public static class DeephavenExcelFunctions {
   private static readonly StateManager StateManager = new();
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
-  public static void ManagedConnections() {
-    var onNewButtonClicked = () => {
-      var cvm = CredentialsDialogViewModel.OfEmpty();
-      var dialog = CredentialsDialogFactory.Create(StateManager, cvm);
-      dialog.Show();
-    };
-    var cmDialog = new ConnectionManagerDialog(onNewButtonClicked);
-    cmDialog.Show();
-    var mso = new MySessionObserver(StateManager, cmDialog);
-    var disposer1 = StateManager.SubscribeToEndpoints(mso);
-    // TODO(kosak): where does disposer go. Maybe the Form's closed event?
+  public static void ShowConnectionsDialog() {
+    ConnectionManagerDialogFactory.CreateAndShow(StateManager);
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
@@ -88,15 +82,15 @@ public static class DeephavenExcelFunctions {
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var td, out var filt, out var wh, out string errorText)) {
       return errorText;
     }
-    var parms = new[] { tableDescriptor, filter, wantHeaders };
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
+    var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => new SubscribeOperation(td, filt, wh, StateManager);
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
   private static bool TryInterpretCommonArgs(string tableDescriptor, object filter, object wantHeaders,
-    out TableTriple? tableDescriptorResult, out string filterResult, out bool wantHeadersResult, out string errorText) {
+    [NotNullWhen(true)]out TableTriple? tableDescriptorResult, out string filterResult, out bool wantHeadersResult, out string errorText) {
     filterResult = "";
     wantHeadersResult = false;
     if (!TableTriple.TryParse(tableDescriptor, out tableDescriptorResult, out errorText)) {

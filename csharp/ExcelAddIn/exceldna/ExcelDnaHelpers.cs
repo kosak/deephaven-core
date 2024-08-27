@@ -24,7 +24,8 @@ internal class ExcelDnaHelpers {
 
   private class ExcelObserverWrapper(IExcelObserver inner) : IObserver<StatusOr<object?[,]>> {
     public void OnNext(StatusOr<object?[,]> sov) {
-      if (!sov.TryGetValue(out var value, out var status)) {
+      if (!sov.GetValueOrStatus(out var value, out var status)) {
+        // Reformat the status text as an object[,] 2D array so Excel renders it as 1x1 "table".
         value = new object[,] { { status } };
       }
       inner.OnNext(value);

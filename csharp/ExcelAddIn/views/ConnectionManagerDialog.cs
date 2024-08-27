@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.Views;
+﻿using Deephaven.ExcelAddIn.Viewmodels;
+
+namespace Deephaven.ExcelAddIn.Views;
 
 public partial class ConnectionManagerDialog : Form {
   private const string SettingsButtonColumnName = "settings_button_column";
@@ -11,7 +13,7 @@ public partial class ConnectionManagerDialog : Form {
 
     InitializeComponent();
 
-    _bindingSource.DataSource = typeof(HyperZamboniRow);
+    _bindingSource.DataSource = typeof(ConnectionManagerDialogRow);
     dataGridView1.DataSource = _bindingSource;
     var settingsButtonColumn = new DataGridViewButtonColumn {
       Name = SettingsButtonColumnName,
@@ -33,7 +35,7 @@ public partial class ConnectionManagerDialog : Form {
     dataGridView1.CellClick += DataGridView1_CellClick;
   }
 
-  public void AddRow(HyperZamboniRow row) {
+  public void AddRow(ConnectionManagerDialogRow row) {
     _bindingSource.Add(row);
   }
 
@@ -42,7 +44,7 @@ public partial class ConnectionManagerDialog : Form {
       return;
     }
 
-    if (_bindingSource[e.RowIndex] is not HyperZamboniRow row) {
+    if (_bindingSource[e.RowIndex] is not ConnectionManagerDialogRow row) {
       return;
     }
     var name = dataGridView1.Columns[e.ColumnIndex].Name;
