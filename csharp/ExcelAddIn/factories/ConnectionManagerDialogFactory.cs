@@ -16,7 +16,7 @@ internal static class ConnectionManagerDialogFactory {
     var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked);
     cmDialog.Show();
     var mso = new MySessionObserver(sm, cmDialog);
-    var disposer = sm.SubscribeToEndpoints(mso);
+    var disposer = sm.SubscribeToSessions(mso);
 
     cmDialog.Closed += (_, _) => disposer.Dispose();
   }

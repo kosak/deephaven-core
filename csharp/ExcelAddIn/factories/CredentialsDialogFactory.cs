@@ -9,9 +9,11 @@ internal static class CredentialsDialogFactory {
     CredentialsDialog credentialsDialog = null;
 
     void OnSetCredentialsButtonClicked() {
-      if (cvm.TryMakeCredentials(out var newCreds)) {
-        sm.SetCredentials(new EndpointId(cvm.Id), newCreds);
+      if (!cvm.TryMakeCredentials(out var newCreds)) {
+        return;
       }
+
+      sm.SetCredentials(new EndpointId(cvm.Id), newCreds);
     }
 
     void OnTestCredentialsButtonClicked() {

@@ -1,7 +1,6 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DeephavenClient;
 using Deephaven.DheClient.Session;
-using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;

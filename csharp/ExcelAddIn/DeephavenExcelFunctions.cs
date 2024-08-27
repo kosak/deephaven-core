@@ -1,14 +1,11 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Viewmodels;
-using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using ExcelDna.Integration;
 
@@ -46,7 +43,8 @@ internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
 
     var statusRow = new ConnectionManagerDialogRow(aor.Value.HumanReadableString, _stateManager);
     // TODO(kosak): what now
-    var subPainDisposable = _stateManager.SubscribeToEndpoint(aor.Value, statusRow);
+    var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, statusRow);
+    var subPainDisposable2 = _stateManager.SubscribeToCredentials(aor.Value, statusRow);
 
     // Not sure what the deal is with threading and BindingSource,
     // so I'll Invoke it to get this change on the GUI thread.

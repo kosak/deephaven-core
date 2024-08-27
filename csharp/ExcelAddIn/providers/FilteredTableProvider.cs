@@ -8,17 +8,23 @@ namespace Deephaven.ExcelAddIn.Providers;
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly SessionProviders _sessionProviders;
+  private readonly CredentialsProviders _credentialsProviders;
 
   public StateManager() {
     _sessionProviders = new SessionProviders(WorkerThread);
+    _credentialsProviders = new CredentialsProviders(WorkerThread);
   }
 
-  public IDisposable SubscribeToEndpoints(IObserver<AddOrRemove<EndpointId>> observer) {
+  public IDisposable SubscribeToSessions(IObserver<AddOrRemove<EndpointId>> observer) {
     return _sessionProviders.Subscribe(observer);
   }
 
-  public IDisposable SubscribeToEndpoint(EndpointId endpointId, IObserver<StatusOr<SessionBase>> observer) {
+  public IDisposable SubscribeToSession(EndpointId endpointId, IObserver<StatusOr<SessionBase>> observer) {
     return _sessionProviders.Subscribe(endpointId, observer);
+  }
+
+  public IDisposable SubscribeToCredentials(EndpointId endpointId, IObserver<StatusOr<CredentialsBase>> observer) {
+    return _credentialsProviders.Subscribe(endpointId, observer);
   }
 
   public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
@@ -34,7 +40,7 @@ public class StateManager {
     // 4. Return a dispose action that disposes both Subscribes
 
     var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
-    var disposer1 = _sessionProviders.Subscribe(descriptor.EndpointId, thp);
+    var disposer1 = SubscribeToSession(descriptor.EndpointId, thp);
     var disposer2 = thp.Subscribe(observer);
 
     // The disposer for this needs to dispose both
@@ -48,9 +54,9 @@ public class StateManager {
     });
   }
 
-  // public void SetCredentials(EndpointId id, CredentialsBase credentials) {
-  //   _sessionProviders.SetCredentials(id, credentials);
-  // }
+  public void SetCredentials(EndpointId id, CredentialsBase credentials) {
+    _credentialsProviders.SetCredentials(id, credentials);
+  }
 
   public void Reconnect(EndpointId id) {
     _endpointStateProviders.Reconnect(id);
