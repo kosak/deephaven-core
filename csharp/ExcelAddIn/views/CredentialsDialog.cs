@@ -40,7 +40,7 @@ namespace ExcelAddIn.views {
         vm, nameof(vm.ConnectionString));
     }
 
-    public void SetPainState(string painState) {
+    public void SetTestResultsBox(string painState) {
       Invoke(() => testResultsTextBox.Text = painState);
     }
 

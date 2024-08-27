@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DheClient.session;
+using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
@@ -51,19 +52,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
 
   private StatusOr<SessionBase> MakeSession(CredentialsBase credentials) {
     try {
-      var sb = credentials.AcceptVisitor<SessionBase>(
-        core => {
-          var client = Client.Connect(core.ConnectionString, new ClientOptions());
-          return new CoreSession(client);
-        },
-
-        corePlus => {
-          var session = SessionManager.FromUrl("Deephaven Excel", corePlus.JsonUrl);
-          if (!session.PasswordAuthentication(corePlus.User, corePlus.Password, corePlus.OperateAs)) {
-            throw new Exception("Authentication failed");
-          }
-          return new CorePlusSession(session, _workerThread);
-        });
+      var sb = SessionBaseFactory.Create(credentials, _workerThread);
       return StatusOr<SessionBase>.OfValue(sb);
     } catch (Exception ex) {
       return StatusOr<SessionBase>.OfStatus(ex.Message);

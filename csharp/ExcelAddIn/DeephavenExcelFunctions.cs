@@ -137,42 +137,6 @@ public sealed class HyperZamboniRow : IObserver<EndpointState>, INotifyPropertyC
   }
 }
 
-public static class DontKnowDontCare {
-  public static CredentialsDialog MakeCredentialsDialog(StateManager sm, CredentialsDialogViewModel cvm) {
-    var onSetCredentialsButtonClicked = () => {
-      if (cvm.TryMakeCredentials(out var newCreds)) {
-        sm.SetCredentials(new EndpointId(cvm.Id), newCreds);
-      }
-    };
-
-    CredentialsDialog credentialsDialog = null;
-
-    var onTestCredentialsButtonClicked = () => {
-      if (!cvm.TryMakeCredentials(out var newCreds)) {
-        return;
-      }
-
-      // ok this is painful
-
-      credentialsDialog!.SetPainState("Checking credentials");
-
-      sm.WorkerThread.Invoke(() => {
-        var state = "OK";
-        try {
-          _ = SessionBase.Of(newCreds, sm.WorkerThread);
-        } catch (Exception ex) {
-          state = ex.Message;
-        }
-
-        // TODO(kosak): OK where is your disposer of SessionBase???
-        credentialsDialog!.SetPainState(state);
-      });
-    };
-
-    credentialsDialog = new CredentialsDialog(cvm, onSetCredentialsButtonClicked, onTestCredentialsButtonClicked);
-    return credentialsDialog;
-  }
-}
 
 public static class DeephavenExcelFunctions {
   private static readonly StateManager StateManager = new();
