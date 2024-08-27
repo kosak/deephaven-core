@@ -196,15 +196,3 @@ internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
 //   }
 // }
 
-
-public static class ObserverStatusOr_Extensions {
-  public static void SendStatus<T>(this IObserver<StatusOr<T>> observer, string message) {
-    var so = StatusOr<T>.OfStatus(message);
-    observer.OnNext(so);
-  }
-
-  public static void SendValue<T>(this IObserver<StatusOr<T>> observer, T value) {
-    var so = StatusOr<T>.OfValue(value);
-    observer.OnNext(so);
-  }
-}

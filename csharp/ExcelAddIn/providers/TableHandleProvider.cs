@@ -11,64 +11,82 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class TableHandleProvider(WorkerThread workerThread, TableTriple descriptor, string filter) :
-      IObserver<StatusOr<SessionBase>>, IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>>, IDisposable {
+internal class TableHandleProvider(
+  WorkerThread workerThread,
+  TableTriple descriptor,
+  string filter) : IObserver<StatusOr<SessionBase>>, IObserver<StatusOr<Client>>,
+  IObservable<StatusOr<TableHandle>>, IDisposable {
+
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private IDisposable? _pqDisposable = null;
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[no TableHandle]");
 
   public void OnNext(StatusOr<SessionBase> session) {
+    // Get onto the worker thread if we're not already on it.
     if (workerThread.InvokeIfRequired(() => OnNext(session))) {
       return;
     }
 
     try {
+      // Dispose whatever state we had before.
       DisposePqAndThState();
 
+      // If the new state is just a status message, make that our status and transmit to our observers
       if (!session.GetValueOrStatus(out var sb, out var status)) {
-        _observers.SendStatus(status);
+        _observers.SetAndSendStatus(ref _tableHandle, status);
         return;
       }
 
-      // Visit needs a return type and value, so we return (object)null
+      // New state is a Core or CorePlus Session.
       _ = sb.Visit(coreSession => {
-        this.SendValue(coreSession.Client);
+        // It's a Core session so just forward its client field to our own OnNext(Client) method.
+        OnNext(StatusOr<Client>.OfValue(coreSession.Client));
         return Unit.Instance;
       }, corePlusSession => {
+        // It's a CorePlus session so subscribe us to its PQ observer for the appropriate PQ ID
         var pqid = descriptor.PersistentQueryId;
-        _observers.SendStatus($"Subscribing to PQ \"{pqid}\"");
+        _observers.SetAndSendStatus(ref _tableHandle, $"Subscribing to PQ \"{pqid}\"");
         _pqDisposable = corePlusSession.SubscribeToPq(pqid, this);
         return Unit.Instance;
       });
     } catch (Exception ex) {
-      _observers.SendStatus(ex.Message);
+      _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
     }
   }
 
   public void OnNext(StatusOr<Client> client) {
+    // Get onto the worker thread if we're not already on it.
     if (workerThread.InvokeIfRequired(() => OnNext(client))) {
       return;
     }
 
     try {
+      // Dispose whatever state we had before.
       DisposePqAndThState();
 
+      // If the new state is just a status message, make that our state and transmit to our observers
       if (!client.GetValueOrStatus(out var cli, out var status)) {
         _observers.SetAndSendStatus(ref _tableHandle, status);
         return;
       }
 
+      // It's a real client so start fetching the table. First notify our observers.
       _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{descriptor.TableName}\"");
 
+      // Now fetch the table. This might block but we're on the worker thread. In the future
+      // we might move this to yet another thread.
       var th = cli.Manager.FetchTable(descriptor.TableName);
       if (filter != "") {
+        // If there's a filter, take this table handle and surround it with a Where.
         var temp = th;
         th = temp.Where(filter);
         temp.Dispose();
       }
 
+      // Success! Make this our state and send the table handle to our observers.
       _observers.SetAndSendValue(ref _tableHandle, th);
     } catch (Exception ex) {
+      // Some exception. Make the exception message our state and send it to our observers.
       _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
     }
   }

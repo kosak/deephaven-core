@@ -27,3 +27,27 @@ public class StatusOr<T> {
     return value != null;
   }
 }
+
+public static class ObserverStatusOr_Extensions {
+  public static void SendStatus<T>(this IObserver<StatusOr<T>> observer, string message) {
+    var so = StatusOr<T>.OfStatus(message);
+    observer.OnNext(so);
+  }
+
+  public static void SetAndSendStatus<T>(this IObserver<StatusOr<T>> observer, ref StatusOr<T> sor,
+    string message) {
+    sor = StatusOr<T>.OfStatus(message);
+    observer.OnNext(sor);
+  }
+
+  public static void SendValue<T>(this IObserver<StatusOr<T>> observer, T value) {
+    var so = StatusOr<T>.OfValue(value);
+    observer.OnNext(so);
+  }
+
+  public static void SetAndSendValue<T>(this IObserver<StatusOr<T>> observer, ref StatusOr<T> sor,
+    T value) {
+    sor = StatusOr<T>.OfValue(value);
+    observer.OnNext(sor);
+  }
+}

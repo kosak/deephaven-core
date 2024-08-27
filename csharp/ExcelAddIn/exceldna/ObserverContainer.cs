@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.ExcelDna;
+﻿using Deephaven.ExcelAddIn.Util;
+
+namespace Deephaven.ExcelAddIn.ExcelDna;
 
 public sealed class ObserverContainer<T> : IObserver<T> {
   private readonly object _sync = new();
