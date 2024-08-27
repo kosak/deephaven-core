@@ -2,7 +2,7 @@
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Interop;
 
-namespace Deephaven.DheClient.session;
+namespace Deephaven.DheClient.Session;
 
 public sealed class DndTableHandleManager : TableHandleManager {
   internal new NativePtr<NativeDndTableHandleManager> Self;

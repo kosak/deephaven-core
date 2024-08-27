@@ -2,7 +2,7 @@
 using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.Interop;
 
-namespace Deephaven.DheClient.session;
+namespace Deephaven.DheClient.Session;
 
 public sealed class DndClient : Client {
   internal new NativePtr<NativeDndClient> Self;

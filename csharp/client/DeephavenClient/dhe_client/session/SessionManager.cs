@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using Deephaven.DeephavenClient.Interop;
 
-namespace Deephaven.DheClient.session;
+namespace Deephaven.DheClient.Session;
 
 public class SessionManager : IDisposable {
   internal NativePtr<NativeSessionManager> Self;
