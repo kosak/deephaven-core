@@ -21,6 +21,9 @@ internal class TableHandleProvider(
   private IDisposable? _pqDisposable = null;
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[no TableHandle]");
 
+  public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
+  }
+
   public void OnNext(StatusOr<SessionBase> session) {
     // Get onto the worker thread if we're not already on it.
     if (workerThread.InvokeIfRequired(() => OnNext(session))) {
