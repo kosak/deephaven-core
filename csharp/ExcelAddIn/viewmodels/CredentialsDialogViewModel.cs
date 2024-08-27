@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
@@ -15,11 +16,11 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   public static CredentialsDialogViewModel OfIdAndCredentials(string id, CredentialsBase credentials) {
     var result = new CredentialsDialogViewModel { Id = id };
-    _ = credentials.Visit(
+    _ = credentials.AcceptVisitor(
       core => {
         result._isCorePlus = false;
         result.ConnectionString = core.ConnectionString;
-        return (object)null;
+        return Unit.Instance;
       },
       corePlus => {
         result._isCorePlus = true;
@@ -27,7 +28,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
         result.UserId = corePlus.User;
         result.Password = corePlus.Password;
         result.OperateAs = corePlus.OperateAs;
-        return null;
+        return Unit.Instance;
       });
 
     return result;
