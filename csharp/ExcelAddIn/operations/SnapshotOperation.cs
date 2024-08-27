@@ -1,7 +1,7 @@
 ﻿using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ExcelDna;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
@@ -27,7 +27,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
     _workerThread = _stateManager.WorkerThread;
   }
 
-  IDisposable IExcelObservable.Subscribe(IExcelObserver observer) {
+  public IDisposable Subscribe(IExcelObserver observer) {
     var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
     _workerThread.Invoke(() => {
       _observers.Add(wrappedObserver, out var isFirst);
@@ -37,37 +37,37 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       }
     });
 
-    return new ActionAsDisposable(() => {
+    return ActionAsDisposable.Create(() => {
       _workerThread.Invoke(() => {
         _observers.Remove(wrappedObserver, out var wasLast);
         if (!wasLast) {
           return;
         }
 
-        var temp = _filteredTableDisposer;
-        _filteredTableDisposer = null;
-        temp?.Dispose();
+        Utility.Exchange(ref _filteredTableDisposer, null)?.Dispose();
       });
     });
   }
 
-  void IObserver<StatusOr<TableHandle>>.OnNext(StatusOr<TableHandle> soth) {
-    _workerThread.Invoke(() => {
-      if (!soth.TryGetValue(out var tableHandle, out var status)) {
-        _observers.SendStatus(status);
-        return;
-      }
+  public void OnNext(StatusOr<TableHandle> soth) {
+    if (_workerThread.InvokeIfRequired(() => OnNext(soth))) {
+      return;
+    }
 
-      _observers.SendStatus($"Snapshotting \"{_tableDescriptor.TableName}\"");
+    if (!soth.TryGetValue(out var tableHandle, out var status)) {
+      _observers.SendStatus(status);
+      return;
+    }
 
-      try {
-        using var ct = tableHandle.ToClientTable();
-        var result = Renderer.Render(ct, _wantHeaders);
-        _observers.SendValue(result);
-      } catch (Exception ex) {
-        _observers.SendStatus(ex.Message);
-      }
-    });
+    _observers.SendStatus($"Snapshotting \"{_tableDescriptor.TableName}\"");
+
+    try {
+      using var ct = tableHandle.ToClientTable();
+      var result = Renderer.Render(ct, _wantHeaders);
+      _observers.SendValue(result);
+    } catch (Exception ex) {
+      _observers.SendStatus(ex.Message);
+    }
   }
 
   void IObserver<StatusOr<TableHandle>>.OnCompleted() {

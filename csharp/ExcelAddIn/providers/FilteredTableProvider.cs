@@ -1,14 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.Net;
-using System.Runtime.InteropServices.JavaScript;
-using Deephaven.DeephavenClient;
+﻿using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using Deephaven.DheClient.session;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Deephaven.ExcelAddIn.Providers;
 

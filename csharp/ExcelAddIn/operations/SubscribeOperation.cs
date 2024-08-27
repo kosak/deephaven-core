@@ -2,6 +2,7 @@
 using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ExcelDna;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
@@ -29,7 +30,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     _workerThread = _stateManager.WorkerThread;
   }
 
-  IDisposable IExcelObservable.Subscribe(IExcelObserver observer) {
+  public IDisposable Subscribe(IExcelObserver observer) {
     var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
     _workerThread.Invoke(() => {
       _observers.Add(wrappedObserver, out var isFirst);
@@ -39,7 +40,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       }
     });
 
-    return new ActionAsDisposable(() => {
+    return ActionAsDisposable.Create(() => {
       _workerThread.Invoke(() => {
         _observers.Remove(wrappedObserver, out var wasLast);
         if (!wasLast) {
@@ -53,34 +54,36 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     });
   }
 
-  void IObserver<StatusOr<TableHandle>>.OnNext(StatusOr<TableHandle> soth) {
-    _workerThread.Invoke(() => {
-      // First tear down old state
-      if (_currentTableHandle != null) {
-        _currentTableHandle.Unsubscribe(_currentSubHandle!);
-        _currentSubHandle!.Dispose();
-        _currentTableHandle = null;
-        _currentSubHandle = null;
-      }
+  public void OnNext(StatusOr<TableHandle> soth) {
+    if (_workerThread.InvokeIfRequired(() => OnNext(soth))) {
+      return;
+    }
 
-      if (!soth.TryGetValue(out var tableHandle, out var status)) {
-        _observers.SendStatus(status);
-        return;
-      }
+    // First tear down old state
+    if (_currentTableHandle != null) {
+      _currentTableHandle.Unsubscribe(_currentSubHandle!);
+      _currentSubHandle!.Dispose();
+      _currentTableHandle = null;
+      _currentSubHandle = null;
+    }
 
-      _observers.SendStatus($"Subscribing to \"{_tableDescriptor.TableName}\"");
+    if (!soth.TryGetValue(out var tableHandle, out var status)) {
+      _observers.SendStatus(status);
+      return;
+    }
 
-      _currentTableHandle = tableHandle;
-      _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observers, _wantHeaders));
+    _observers.SendStatus($"Subscribing to \"{_tableDescriptor.TableName}\"");
 
-      try {
-        using var ct = tableHandle.ToClientTable();
-        var result = Renderer.Render(ct, _wantHeaders);
-        _observers.SendValue(result);
-      } catch (Exception ex) {
-        _observers.SendStatus(ex.Message);
-      }
-    });
+    _currentTableHandle = tableHandle;
+    _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observers, _wantHeaders));
+
+    try {
+      using var ct = tableHandle.ToClientTable();
+      var result = Renderer.Render(ct, _wantHeaders);
+      _observers.SendValue(result);
+    } catch (Exception ex) {
+      _observers.SendStatus(ex.Message);
+    }
   }
 
   void IObserver<StatusOr<TableHandle>>.OnCompleted() {
