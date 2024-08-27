@@ -2,7 +2,7 @@
 
 namespace Deephaven.ExcelAddIn.Util;
 
-public class StatusOr<T> {
+public sealed class StatusOr<T> {
   private readonly string? _status;
   private readonly T? _value;
 
@@ -10,11 +10,13 @@ public class StatusOr<T> {
     return new StatusOr<T>(status, default);
   }
 
+  public static StatusOr<T> OfStatusUnknown() => OfStatus("[Unknown]");
+
   public static StatusOr<T> OfValue(T value) {
     return new StatusOr<T>(null, value);
   }
 
-  public StatusOr(string? status, T? value) {
+  private StatusOr(string? status, T? value) {
     _status = status;
     _value = value;
   }
@@ -25,6 +27,10 @@ public class StatusOr<T> {
     status = _status;
     value = _value;
     return value != null;
+  }
+
+  public U AcceptVisitor<U>(Func<T, U> onValue, Func<string, U> onStatus) {
+
   }
 }
 

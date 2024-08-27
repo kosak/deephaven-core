@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using Deephaven.DheClient.session;
+﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;

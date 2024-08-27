@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Models;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
