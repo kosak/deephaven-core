@@ -11,22 +11,29 @@ namespace Deephaven.ExcelAddIn.Models;
 /// For Core, this means having a valid Client.
 /// For Core+, this means having a SessionManager, through which you can subscribe to PQs and get Clients.
 /// </summary>
-public abstract class SessionBase {
+public abstract class SessionBase : IDisposable {
   /// <summary>
   /// This is meant to act like a Visitor pattern with lambdas.
   /// </summary>
   public abstract T Visit<T>(Func<CoreSession, T> onCore, Func<CorePlusSession, T> onCorePlus);
+
+  public abstract void Dispose();
 }
 
-public class CoreSession(Client client) : SessionBase {
-  public readonly Client Client = client;
+public sealed class CoreSession(Client client) : SessionBase {
+  public Client? Client = client;
 
   public override T Visit<T>(Func<CoreSession, T> onCore, Func<CorePlusSession, T> onCorePlus) {
     return onCore(this);
   }
+
+  public override void Dispose() {
+    Utility.Exchange(ref Client, null)?.Dispose();
+  }
 }
 
-public class CorePlusSession(SessionManager sessionManager, WorkerThread workerThread) : SessionBase {
+public sealed class CorePlusSession(SessionManager sessionManager, WorkerThread workerThread) : SessionBase {
+  private SessionManager? _sessionManager = sessionManager;
   private readonly Dictionary<PersistentQueryId, CorePlusClientProvider> _clientProviders = new();
 
   public override T Visit<T>(Func<CoreSession, T> onCore, Func<CorePlusSession, T> onCorePlus) {
@@ -35,12 +42,16 @@ public class CorePlusSession(SessionManager sessionManager, WorkerThread workerT
 
   public IDisposable SubscribeToPq(PersistentQueryId persistentQueryId,
     IObserver<StatusOr<Client>> observer) {
+    if (_sessionManager == null) {
+      throw new Exception("Object has been disposed");
+    }
+
     CorePlusClientProvider? cp = null;
     IDisposable? disposer = null;
 
     workerThread.Invoke(() => {
       if (!_clientProviders.TryGetValue(persistentQueryId, out cp)) {
-        cp = CorePlusClientProvider.Create(workerThread, sessionManager, persistentQueryId);
+        cp = CorePlusClientProvider.Create(workerThread, _sessionManager, persistentQueryId);
         _clientProviders.Add(persistentQueryId, cp);
       }
 
@@ -66,5 +77,18 @@ public class CorePlusSession(SessionManager sessionManager, WorkerThread workerT
       });
     });
   }
-}
 
+  public override void Dispose() {
+    if (workerThread.InvokeIfRequired(Dispose)) {
+      return;
+    }
+
+    var localCps = _clientProviders.Values.ToArray();
+    _clientProviders.Clear();
+    Utility.Exchange(ref _sessionManager, null)?.Dispose();
+
+    foreach (var cp in localCps) {
+      cp.Dispose();
+    }
+  }
+}
