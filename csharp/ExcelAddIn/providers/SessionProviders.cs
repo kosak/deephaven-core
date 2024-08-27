@@ -17,7 +17,7 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
     IDisposable? disposable = null;
     // We need to run this on our worker thread because we want to protect
-    // access ot our dictionary.
+    // access to our dictionary.
     workerThread.Invoke(() => {
       _endpointsObservers.Add(observer, out _);
       // To avoid any further possibility of reentrancy while iterating over the dict,

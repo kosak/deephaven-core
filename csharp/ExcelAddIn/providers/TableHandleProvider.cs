@@ -1,13 +1,8 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Deephaven.ExcelAddIn.ExcelDna;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -22,6 +17,27 @@ internal class TableHandleProvider(
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[no TableHandle]");
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
+    // We need to run this on our worker thread because we want to protect
+    // access to our dictionary.
+    workerThread.Invoke(() => {
+      _observers.Add(observer, out _);
+      observer.OnNext(_tableHandle);
+    });
+
+    return ActionAsDisposable.Create(() => {
+      workerThread.Invoke(() => {
+        _observers.Remove(observer, out _);
+      });
+    });
+  }
+
+  public void Dispose() {
+    // Get onto the worker thread if we're not already on it.
+    if (workerThread.InvokeIfRequired(Dispose)) {
+      return;
+    }
+
+    DisposePqAndThState();
   }
 
   public void OnNext(StatusOr<SessionBase> session) {
@@ -44,7 +60,7 @@ internal class TableHandleProvider(
       _ = sb.Visit(coreSession => {
         // It's a Core session so just forward its client field to our own OnNext(Client) method.
         OnNext(StatusOr<Client>.OfValue(coreSession.Client));
-        return Unit.Instance;
+        return Unit.Instance;  // Essentially a "void" value that is ignored.
       }, corePlusSession => {
         // It's a CorePlus session so subscribe us to its PQ observer for the appropriate PQ ID
         var pqid = descriptor.PersistentQueryId;

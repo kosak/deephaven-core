@@ -1,16 +1,31 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
+internal class SessionProvider(WorkerThread workerThread) : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[no credentials]");
-  private readonly WorkerThread _workerThread;
+  private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
+
+  public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
+    workerThread.Invoke(() => {
+      // New observer gets added to the collection and then notified of the current status.
+      _observers.Add(observer, out _);
+      observer.OnNext(_session);
+    });
+
+    return ActionAsDisposable.Create(() => {
+      workerThread.Invoke(() => {
+        _observers.Remove(observer, out _);
+      });
+    });
+  }
 
   public void OnNext(StatusOr<CredentialsBase> credentials) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(credentials))) {
+    if (workerThread.InvokeIfRequired(() => OnNext(credentials))) {
       return;
     }
 
@@ -29,23 +44,19 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     _observers.OnNext(_session);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
-    _workerThread.Invoke(() => {
-      // New observer gets added to the collection and then notified of the current status.
-      _observers.Add(observer, out _);
-      observer.OnNext(_session);
-    });
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
 
-    return ActionAsDisposable.Create(() => {
-      _workerThread.Invoke(() => {
-        _observers.Remove(observer, out _);
-      });
-    });
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
   }
 
   private StatusOr<SessionBase> MakeSession(CredentialsBase credentials) {
     try {
-      var sb = SessionBaseFactory.Create(credentials, _workerThread);
+      var sb = SessionBaseFactory.Create(credentials, workerThread);
       return StatusOr<SessionBase>.OfValue(sb);
     } catch (Exception ex) {
       return StatusOr<SessionBase>.OfStatus(ex.Message);
