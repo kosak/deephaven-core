@@ -53,66 +53,6 @@ public record EndpointId(string Id) {
 public record PersistentQueryId(string Id);
 
 
-internal class EndpointStateProviders : IObservable<AddOrRemove<EndpointId>> {
-  private readonly WorkerThread _workerThread;
-
-  private readonly Dictionary<EndpointId, EndpointStateProvider> _providerMap = new();
-  private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
-
-  public EndpointStateProviders(WorkerThread workerThread) => _workerThread = workerThread;
-
-  public void SetCredentials(EndpointId id, CredentialsBase credentials) {
-    ApplyTo(id, ep => ep.SetCredentials(credentials));
-  }
-
-  public void Reconnect(EndpointId id) {
-    ApplyTo(id, ep => ep.Reconnect());
-  }
-
-  public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
-    IDisposable? disposable = null;
-    // We need to run this on our worker thread because we want to protect
-    // access ot our dictionary.
-    _workerThread.Invoke(() => {
-      _endpointsObservers.Add(observer, out _);
-      // To avoid any further possibility of reentrancy while iterating over the dict,
-      // make a copy of the keys
-      var keys = _providerMap.Keys.ToArray();
-      foreach (var endpointId in keys) {
-        observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
-      }
-    });
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        Utility.Exchange(ref disposable, null)?.Dispose();
-      });
-    });
-  }
-
-  public IDisposable Subscribe(EndpointId id, IObserver<EndpointState> observer) {
-    IDisposable? disposable = null;
-    ApplyTo(id, ep => disposable = ep.Subscribe(observer));
-
-    return new ActionAsDisposable(() => {
-      _workerThread.Invoke(() => {
-        Utility.Exchange(ref disposable, null)?.Dispose();
-      });
-    });
-  }
-
-  private void ApplyTo(EndpointId id, Action<EndpointStateProvider> action) {
-    _workerThread.Invoke(() => {
-      if (!_providerMap.TryGetValue(id, out var ep)) {
-        ep = new EndpointStateProvider(id, _workerThread);
-        _providerMap.Add(id, ep);
-        _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
-      }
-
-      action(ep);
-    });
-  }
-}
 
 
 // public class EndpointState(CredentialsBase? credentials, StatusOr<SessionBase> session) {
