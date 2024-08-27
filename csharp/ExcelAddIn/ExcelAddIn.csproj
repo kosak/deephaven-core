@@ -13,7 +13,4 @@
 	<ItemGroup>
 		<ProjectReference Include="..\client\DeephavenClient\DeephavenClient.csproj" />
 	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="observers\" />
-	</ItemGroup>
 </Project>
