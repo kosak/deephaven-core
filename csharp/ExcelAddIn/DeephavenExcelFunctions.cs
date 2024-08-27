@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using Deephaven.ExcelAddIn.ExcelDna;
+using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
@@ -145,7 +146,7 @@ public static class DeephavenExcelFunctions {
   public static void ManagedConnections() {
     var onNewButtonClicked = () => {
       var cvm = CredentialsDialogViewModel.OfEmpty();
-      var dialog = DontKnowDontCare.MakeCredentialsDialog(StateManager, cvm);
+      var dialog = CredentialsDialogFactory.Create(StateManager, cvm);
       dialog.Show();
     };
     var cmDialog = new ConnectionManagerDialog(onNewButtonClicked);

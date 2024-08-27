@@ -1,5 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Providers;
+﻿using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
 
@@ -25,7 +24,7 @@ internal static class CredentialsDialogFactory {
       sm.WorkerThread.Invoke(() => {
         var state = "OK";
         try {
-          var temp = SessionBaseFactory.Of(newCreds, sm.WorkerThread);
+          var temp = SessionBaseFactory.Create(newCreds, sm.WorkerThread);
           temp.Dispose();
         } catch (Exception ex) {
           state = ex.Message;
