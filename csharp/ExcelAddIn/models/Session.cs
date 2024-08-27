@@ -1,6 +1,6 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DeephavenClient;
-using Deephaven.DheClient.session;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 
@@ -40,7 +40,7 @@ public class CorePlusSession(SessionManager sessionManager, WorkerThread workerT
 
     workerThread.Invoke(() => {
       if (!_clientProviders.TryGetValue(persistentQueryId, out cp)) {
-        cp = new CorePlusClientProvider(workerThread, sessionManager, persistentQueryId);
+        cp = CorePlusClientProvider.Create(workerThread, sessionManager, persistentQueryId);
         _clientProviders.Add(persistentQueryId, cp);
       }
 
