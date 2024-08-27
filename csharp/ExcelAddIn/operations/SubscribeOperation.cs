@@ -1,5 +1,4 @@
 ﻿using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.ExcelDna;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
@@ -67,7 +66,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       _currentSubHandle = null;
     }
 
-    if (!soth.TryGetValue(out var tableHandle, out var status)) {
+    if (!soth.GetValueOrStatus(out var tableHandle, out var status)) {
       _observers.SendStatus(status);
       return;
     }
