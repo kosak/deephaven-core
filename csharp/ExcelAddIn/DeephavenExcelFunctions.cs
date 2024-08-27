@@ -7,7 +7,6 @@ using Deephaven.ExcelAddIn.Operations;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
-using ExcelAddIn.views;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
