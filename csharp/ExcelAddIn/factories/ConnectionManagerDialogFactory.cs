@@ -3,6 +3,7 @@ using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using System.Diagnostics;
+using Deephaven.ExcelAddIn.Models;
 
 namespace Deephaven.ExcelAddIn.Factories;
 

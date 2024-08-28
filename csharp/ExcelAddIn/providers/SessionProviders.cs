@@ -51,7 +51,7 @@ internal class SessionProviders(CredentialsProviders credentialsProviders, Worke
     }
 
     if (!_providerMap.TryGetValue(id, out var sp)) {
-      sp = new SessionProvider(workerThread);
+      sp = SessionProvider.Create(id, credentialsProviders, workerThread);
       _providerMap.Add(id, sp);
       _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
     }
