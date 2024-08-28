@@ -59,17 +59,23 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
 
     // Dispose existing session
     if (_session.GetValueOrStatus(out var sess, out _)) {
+      _observers.SetAndSendStatus(ref _session, "Disposing old session");
       sess.Dispose();
     }
 
-    _session = StatusOr<SessionBase>.OfStatus("Trying to connect");
     if (!_credentials.GetValueOrStatus(out var creds, out var credStatus)) {
-      _session = StatusOr<SessionBase>.OfStatus(credStatus);
-    } else {
-      _session = MakeSession(creds);
+      _observers.SetAndSendStatus(ref _session, credStatus);
+      return;
     }
 
-    _observers.OnNext(_session);
+    _observers.SetAndSendStatus(ref _session, "Trying to connect");
+
+    try {
+      var sb = SessionBaseFactory.Create(creds, _workerThread);
+      _observers.SetAndSendValue(ref _session, sb);
+    } catch (Exception ex) {
+      _observers.SetAndSendStatus(ref _session, ex.Message);
+    }
   }
 
   public void Reconnect() {
@@ -90,14 +96,5 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   public void OnError(Exception error) {
     // TODO(kosak)
     throw new NotImplementedException();
-  }
-
-  private StatusOr<SessionBase> MakeSession(CredentialsBase credentials) {
-    try {
-      var sb = SessionBaseFactory.Create(credentials, _workerThread);
-      return StatusOr<SessionBase>.OfValue(sb);
-    } catch (Exception ex) {
-      return StatusOr<SessionBase>.OfStatus(ex.Message);
-    }
   }
 }
