@@ -36,6 +36,8 @@ internal static class CredentialsDialogFactory {
       });
     }
 
-    return new CredentialsDialog(cvm, OnSetCredentialsButtonClicked, OnTestCredentialsButtonClicked);
+    // Save in captured variable so that the lambdas can access it.
+    credentialsDialog = new CredentialsDialog(cvm, OnSetCredentialsButtonClicked, OnTestCredentialsButtonClicked);
+    return credentialsDialog;
   }
 }
