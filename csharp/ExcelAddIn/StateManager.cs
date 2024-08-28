@@ -8,12 +8,12 @@ namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
-  private readonly SessionProviders _sessionProviders;
   private readonly CredentialsProviders _credentialsProviders;
+  private readonly SessionProviders _sessionProviders;
 
   public StateManager() {
-    _sessionProviders = new SessionProviders(WorkerThread);
     _credentialsProviders = new CredentialsProviders(WorkerThread);
+    _sessionProviders = new SessionProviders(_credentialsProviders, WorkerThread);
   }
 
   public IDisposable SubscribeToSessions(IObserver<AddOrRemove<EndpointId>> observer) {

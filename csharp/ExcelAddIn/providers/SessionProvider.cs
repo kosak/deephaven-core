@@ -6,27 +6,52 @@ using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider(WorkerThread workerThread) : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
+internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>>, IDisposable {
+  public static SessionProvider Create(EndpointId endpointId, CredentialsProviders credentialsProviders,
+    WorkerThread workerThread) {
+    var result = new SessionProvider(workerThread);
+    result._credentialsDisposer = credentialsProviders.Subscribe(endpointId, result);
+    return result;
+  }
+
+  private readonly WorkerThread _workerThread;
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
   private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
+  private IDisposable? _credentialsDisposer = null;
+
+  private SessionProvider(WorkerThread workerThread) {
+    _workerThread = workerThread;
+  }
+
+  public void Dispose() {
+    if (_workerThread.InvokeIfRequired(Dispose)) {
+      return;
+    }
+
+    // TODO(kosak)
+    // I feel like we should send an OnComplete to any remaining observers
+
+    Utility.Exchange(ref _credentialsDisposer, null)?.Dispose();
+  }
+
 
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
-    workerThread.Invoke(() => {
+    _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _observers.Add(observer, out _);
       observer.OnNext(_session);
     });
 
     return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
+      _workerThread.Invoke(() => {
         _observers.Remove(observer, out _);
       });
     });
   }
 
   public void OnNext(StatusOr<CredentialsBase> credentials) {
-    if (workerThread.InvokeIfRequired(() => OnNext(credentials))) {
+    if (_workerThread.InvokeIfRequired(() => OnNext(credentials))) {
       return;
     }
 
@@ -48,7 +73,7 @@ internal class SessionProvider(WorkerThread workerThread) : IObserver<StatusOr<C
   }
 
   public void Reconnect() {
-    if (workerThread.InvokeIfRequired(Reconnect)) {
+    if (_workerThread.InvokeIfRequired(Reconnect)) {
       return;
     }
 
@@ -69,7 +94,7 @@ internal class SessionProvider(WorkerThread workerThread) : IObserver<StatusOr<C
 
   private StatusOr<SessionBase> MakeSession(CredentialsBase credentials) {
     try {
-      var sb = SessionBaseFactory.Create(credentials, workerThread);
+      var sb = SessionBaseFactory.Create(credentials, _workerThread);
       return StatusOr<SessionBase>.OfValue(sb);
     } catch (Exception ex) {
       return StatusOr<SessionBase>.OfStatus(ex.Message);

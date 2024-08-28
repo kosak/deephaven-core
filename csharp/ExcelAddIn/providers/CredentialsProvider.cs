@@ -1,8 +1,6 @@
 ﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using Microsoft.Office.Interop.Excel;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
