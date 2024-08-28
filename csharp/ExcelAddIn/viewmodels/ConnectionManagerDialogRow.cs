@@ -7,22 +7,15 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRow : IObserver<StatusOr<CredentialsBase>>, IObserver<StatusOr<SessionBase>>,
+public sealed class ConnectionManagerDialogRow(string id, StateManager stateManager) : IObserver<StatusOr<CredentialsBase>>, IObserver<StatusOr<SessionBase>>,
   INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
-
-  private readonly StateManager _stateManager;
 
   private readonly object _sync = new();
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
 
-  public ConnectionManagerDialogRow(string id, StateManager stateManager) {
-    Id = id;
-    _stateManager = stateManager;
-  }
-
-  public string Id { get; init; }
+  public string Id { get; init; } = id;
 
   public string Status {
     get {
@@ -53,12 +46,12 @@ public sealed class ConnectionManagerDialogRow : IObserver<StatusOr<CredentialsB
     var cvm = creds.AcceptVisitor(
       crs => CredentialsDialogViewModel.OfIdAndCredentials(Id, crs),
       _ => CredentialsDialogViewModel.OfIdButOtherwiseEmpty(Id));
-    var cd = CredentialsDialogFactory.Create(_stateManager, cvm);
+    var cd = CredentialsDialogFactory.Create(stateManager, cvm);
     cd.Show();
   }
 
   public void ReconnectClicked() {
-    _stateManager.Reconnect(new EndpointId(Id));
+    stateManager.Reconnect(new EndpointId(Id));
   }
 
   public void OnNext(StatusOr<CredentialsBase> value) {

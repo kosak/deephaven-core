@@ -2,11 +2,13 @@
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProvider(WorkerThread workerThread) : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
-  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[no credentials]");
+  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
+  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
   private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
 
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
@@ -28,19 +30,31 @@ internal class SessionProvider(WorkerThread workerThread) : IObserver<StatusOr<C
       return;
     }
 
+    _credentials = credentials;
+
     // Dispose existing session
-    if (_session.GetValueOrStatus(out var sess, out var status)) {
+    if (_session.GetValueOrStatus(out var sess, out _)) {
       sess.Dispose();
     }
 
     _session = StatusOr<SessionBase>.OfStatus("Trying to connect");
-    if (!credentials.GetValueOrStatus(out var creds, out var credStatus)) {
+    if (!_credentials.GetValueOrStatus(out var creds, out var credStatus)) {
       _session = StatusOr<SessionBase>.OfStatus(credStatus);
     } else {
       _session = MakeSession(creds);
     }
 
     _observers.OnNext(_session);
+  }
+
+  public void Reconnect() {
+    if (workerThread.InvokeIfRequired(Reconnect)) {
+      return;
+    }
+
+    // Can be accomplished by feeding ourselves our saved credentials (works both when
+    // credentials are valid or invalid).
+    OnNext(_credentials);
   }
 
   public void OnCompleted() {

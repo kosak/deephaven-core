@@ -8,10 +8,6 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
-  // public void Reconnect(EndpointId id) {
-  //   ApplyTo(id, ep => ep.Reconnect());
-  // }
-
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
     IDisposable? disposable = null;
     // We need to run this on our worker thread because we want to protect
@@ -42,6 +38,10 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
         Utility.Exchange(ref disposable, null)?.Dispose();
       });
     });
+  }
+
+  public void Reconnect(EndpointId id) {
+    ApplyTo(id, sp => sp.Reconnect());
   }
 
   private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
