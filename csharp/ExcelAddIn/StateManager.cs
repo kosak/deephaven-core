@@ -3,17 +3,16 @@ using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
+using System.Net;
 
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
-  private readonly CredentialsProviders _credentialsProviders;
   private readonly SessionProviders _sessionProviders;
 
   public StateManager() {
-    _credentialsProviders = new CredentialsProviders(WorkerThread);
-    _sessionProviders = new SessionProviders(_credentialsProviders, WorkerThread);
+    _sessionProviders = new SessionProviders(WorkerThread);
   }
 
   public IDisposable SubscribeToSessions(IObserver<AddOrRemove<EndpointId>> observer) {
@@ -21,11 +20,11 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToSession(EndpointId endpointId, IObserver<StatusOr<SessionBase>> observer) {
-    return _sessionProviders.Subscribe(endpointId, observer);
+    return _sessionProviders.SubscribeToSession(endpointId, observer);
   }
 
   public IDisposable SubscribeToCredentials(EndpointId endpointId, IObserver<StatusOr<CredentialsBase>> observer) {
-    return _credentialsProviders.Subscribe(endpointId, observer);
+    return _sessionProviders.SubscribeToCredentials(endpointId, observer);
   }
 
   public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
@@ -56,7 +55,7 @@ public class StateManager {
   }
 
   public void SetCredentials(EndpointId id, CredentialsBase credentials) {
-    _credentialsProviders.SetCredentials(id, credentials);
+    _sessionProviders.SetCredentials(id, credentials);
   }
 
   public void Reconnect(EndpointId id) {

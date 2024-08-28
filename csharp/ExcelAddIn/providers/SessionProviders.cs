@@ -4,8 +4,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProviders(CredentialsProviders credentialsProviders, WorkerThread workerThread)
-  : IObservable<AddOrRemove<EndpointId>> {
+internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
@@ -30,7 +29,7 @@ internal class SessionProviders(CredentialsProviders credentialsProviders, Worke
     });
   }
 
-  public IDisposable Subscribe(EndpointId id, IObserver<StatusOr<SessionBase>> observer) {
+  public IDisposable SubscribeToSession(EndpointId id, IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposable = null;
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
 
@@ -39,6 +38,21 @@ internal class SessionProviders(CredentialsProviders credentialsProviders, Worke
         Utility.Exchange(ref disposable, null)?.Dispose();
       });
     });
+  }
+
+  public IDisposable SubscribeToCredentials(EndpointId id, IObserver<StatusOr<CredentialsBase>> observer) {
+    IDisposable? disposable = null;
+    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+
+    return ActionAsDisposable.Create(() => {
+      workerThread.Invoke(() => {
+        Utility.Exchange(ref disposable, null)?.Dispose();
+      });
+    });
+  }
+
+  public void SetCredentials(EndpointId id, CredentialsBase credentials) {
+    ApplyTo(id, sp => sp.SetCredentials(credentials));
   }
 
   public void Reconnect(EndpointId id) {
@@ -51,7 +65,7 @@ internal class SessionProviders(CredentialsProviders credentialsProviders, Worke
     }
 
     if (!_providerMap.TryGetValue(id, out var sp)) {
-      sp = SessionProvider.Create(id, credentialsProviders, workerThread);
+      sp = new SessionProvider(workerThread);
       _providerMap.Add(id, sp);
       _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
     }

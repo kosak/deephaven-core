@@ -6,35 +6,27 @@ using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable<StatusOr<CredentialsBase>>, IDisposable {
-  public static SessionProvider Create(EndpointId endpointId, CredentialsProviders credentialsProviders,
-    WorkerThread workerThread) {
-    var result = new SessionProvider(workerThread);
-    result._credentialsDisposer = credentialsProviders.Subscribe(endpointId, result);
-    return result;
-  }
-
-  private readonly WorkerThread _workerThread;
+internal class SessionProvider(WorkerThread workerThread) : IObservable<StatusOr<SessionBase>>, IObservable<StatusOr<CredentialsBase>>, IDisposable {
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
   private readonly ObserverContainer<StatusOr<CredentialsBase>> _credentialsObservers = new();
   private readonly ObserverContainer<StatusOr<SessionBase>> _sessionObservers = new();
 
-  private SessionProvider(WorkerThread workerThread) {
-    _workerThread = workerThread;
-  }
-
   public void Dispose() {
-    if (_workerThread.InvokeIfRequired(Dispose)) {
+    // Get on the worker thread if not there already.
+    if (workerThread.InvokeIfRequired(Dispose)) {
       return;
     }
 
     // TODO(kosak)
     // I feel like we should send an OnComplete to any remaining observers
 
-    dispose_the_session();
+    if (!_session.GetValueOrStatus(out var sess, out _)) {
+      return;
+    }
 
-    Utility.Exchange(ref _credentialsDisposer, null)?.Dispose();
+    _sessionObservers.SetAndSendStatus(ref _session, "Disposing");
+    sess.Dispose();
   }
 
   /// <summary>
@@ -43,14 +35,14 @@ internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable
   /// <param name="observer"></param>
   /// <returns></returns>
   public IDisposable Subscribe(IObserver<StatusOr<CredentialsBase>> observer) {
-    _workerThread.Invoke(() => {
+    workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _credentialsObservers.Add(observer, out _);
       observer.OnNext(_credentials);
     });
 
     return ActionAsDisposable.Create(() => {
-      _workerThread.Invoke(() => {
+      workerThread.Invoke(() => {
         _credentialsObservers.Remove(observer, out _);
       });
     });
@@ -62,14 +54,14 @@ internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable
   /// <param name="observer"></param>
   /// <returns></returns>
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
-    _workerThread.Invoke(() => {
+    workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
       _sessionObservers.Add(observer, out _);
       observer.OnNext(_session);
     });
 
     return ActionAsDisposable.Create(() => {
-      _workerThread.Invoke(() => {
+      workerThread.Invoke(() => {
         _sessionObservers.Remove(observer, out _);
       });
     });
@@ -77,7 +69,7 @@ internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable
 
   public void SetCredentials(CredentialsBase credentials) {
     // Get on the worker thread if not there already.
-    if (_workerThread.InvokeIfRequired(() => SetCredentials(credentials))) {
+    if (workerThread.InvokeIfRequired(() => SetCredentials(credentials))) {
       return;
     }
 
@@ -92,7 +84,7 @@ internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable
     _sessionObservers.SetAndSendStatus(ref _session, "Trying to connect");
 
     try {
-      var sb = SessionBaseFactory.Create(credentials, _workerThread);
+      var sb = SessionBaseFactory.Create(credentials, workerThread);
       _sessionObservers.SetAndSendValue(ref _session, sb);
     } catch (Exception ex) {
       _sessionObservers.SetAndSendStatus(ref _session, ex.Message);
@@ -100,7 +92,8 @@ internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable
   }
 
   public void Reconnect() {
-    if (_workerThread.InvokeIfRequired(Reconnect)) {
+    // Get on the worker thread if not there already.
+    if (workerThread.InvokeIfRequired(Reconnect)) {
       return;
     }
 
