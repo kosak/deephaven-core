@@ -2,7 +2,6 @@
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
 
@@ -54,7 +53,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       return;
     }
 
-    if (!soth.TryGetValue(out var tableHandle, out var status)) {
+    if (!soth.GetValueOrStatus(out var tableHandle, out var status)) {
       _observers.SendStatus(status);
       return;
     }

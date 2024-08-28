@@ -56,4 +56,17 @@ internal class CorePlusClientProvider : IObservable<StatusOr<Client>>, IDisposab
     _client = StatusOr<Client>.OfStatus("Disposed");
     c?.Dispose();
   }
+
+  public void DisposeIfEmpty(Action onEmpty) {
+    if (_workerThread.InvokeIfRequired(() => DisposeIfEmpty(onEmpty))) {
+      return;
+    }
+
+    if (_observers.Count != 0) {
+      return;
+    }
+
+    Dispose();
+    onEmpty();
+  }
 }

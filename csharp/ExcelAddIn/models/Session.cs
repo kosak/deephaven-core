@@ -67,13 +67,9 @@ public sealed class CorePlusSession(SessionManager sessionManager, WorkerThread 
         }
         old.Dispose();
 
-        if (cp!.SubscriberCount != 0) {
-          return;
-        }
-
-        // Last one! Remove the CorePlusClientProvider from the dictionary and shut it down
-        _clientProviders.Remove(persistentQueryId);
-        cp!.Dispose();
+        // Slightly weird. If "old.Dispose()" has removed the last subscriber,
+        // then dispose it and remove it from our dictionary.
+        cp!.DisposeIfEmpty(() => _clientProviders.Remove(persistentQueryId));
       });
     });
   }

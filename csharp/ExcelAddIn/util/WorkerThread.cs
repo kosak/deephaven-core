@@ -19,11 +19,17 @@ public class WorkerThread {
   }
 
   public void Invoke(Action action) {
-    if (ReferenceEquals(Thread.CurrentThread, _thisThread)) {
-      // Can run "action" directly if we're already on our worker thread.
+    if (!InvokeIfRequired(action)) {
       action();
-      return;
     }
+  }
+
+  public bool InvokeIfRequired(Action action) {
+    if (ReferenceEquals(Thread.CurrentThread, _thisThread)) {
+      // Appending to thread queue was not required. Return false.
+      return false;
+    }
+
     lock (_sync) {
       _queue.Enqueue(action);
       if (_queue.Count == 1) {
@@ -32,10 +38,9 @@ public class WorkerThread {
         Monitor.PulseAll(_sync);
       }
     }
-  }
 
-  public bool InvokeIfRequired(Action action) {
-
+    // Appending to thread queue was required.
+    return true;
   }
 
   private void Doit() {

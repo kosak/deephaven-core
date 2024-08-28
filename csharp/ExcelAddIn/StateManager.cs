@@ -59,7 +59,7 @@ public class StateManager {
     _credentialsProviders.SetCredentials(id, credentials);
   }
 
-  public void Reconnect(EndpointId id) {
-    _endpointStateProviders.Reconnect(id);
-  }
+  // public void Reconnect(EndpointId id) {
+  //   _endpointStateProviders.Reconnect(id);
+  // }
 }

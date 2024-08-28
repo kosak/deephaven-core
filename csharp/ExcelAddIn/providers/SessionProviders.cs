@@ -8,9 +8,9 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
-  public void Reconnect(EndpointId id) {
-    ApplyTo(id, ep => ep.Reconnect());
-  }
+  // public void Reconnect(EndpointId id) {
+  //   ApplyTo(id, ep => ep.Reconnect());
+  // }
 
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
     IDisposable? disposable = null;

@@ -4,6 +4,14 @@ public sealed class ObserverContainer<T> : IObserver<T> {
   private readonly object _sync = new();
   private readonly HashSet<IObserver<T>> _observers = new();
 
+  public int Count {
+    get {
+      lock (_sync) {
+        return _observers.Count;
+      }
+    }
+  }
+
   public void Add(IObserver<T> observer, out bool isFirst) {
     lock (_sync) {
       isFirst = _observers.Count == 0;
