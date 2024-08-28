@@ -6,7 +6,7 @@ using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable<StatusOr<CredentialsBase>>, IDisposable {
   public static SessionProvider Create(EndpointId endpointId, CredentialsProviders credentialsProviders,
     WorkerThread workerThread) {
     var result = new SessionProvider(workerThread);
@@ -17,8 +17,8 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   private readonly WorkerThread _workerThread;
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
-  private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
-  private IDisposable? _credentialsDisposer = null;
+  private readonly ObserverContainer<StatusOr<CredentialsBase>> _credentialsObservers = new();
+  private readonly ObserverContainer<StatusOr<SessionBase>> _sessionObservers = new();
 
   private SessionProvider(WorkerThread workerThread) {
     _workerThread = workerThread;
@@ -32,49 +32,70 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     // TODO(kosak)
     // I feel like we should send an OnComplete to any remaining observers
 
+    dispose_the_session();
+
     Utility.Exchange(ref _credentialsDisposer, null)?.Dispose();
   }
 
+  /// <summary>
+  /// Subscribe to credentials changes
+  /// </summary>
+  /// <param name="observer"></param>
+  /// <returns></returns>
+  public IDisposable Subscribe(IObserver<StatusOr<CredentialsBase>> observer) {
+    _workerThread.Invoke(() => {
+      // New observer gets added to the collection and then notified of the current status.
+      _credentialsObservers.Add(observer, out _);
+      observer.OnNext(_credentials);
+    });
 
+    return ActionAsDisposable.Create(() => {
+      _workerThread.Invoke(() => {
+        _credentialsObservers.Remove(observer, out _);
+      });
+    });
+  }
+
+  /// <summary>
+  /// Subscribe to session changes
+  /// </summary>
+  /// <param name="observer"></param>
+  /// <returns></returns>
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
     _workerThread.Invoke(() => {
       // New observer gets added to the collection and then notified of the current status.
-      _observers.Add(observer, out _);
+      _sessionObservers.Add(observer, out _);
       observer.OnNext(_session);
     });
 
     return ActionAsDisposable.Create(() => {
       _workerThread.Invoke(() => {
-        _observers.Remove(observer, out _);
+        _sessionObservers.Remove(observer, out _);
       });
     });
   }
 
-  public void OnNext(StatusOr<CredentialsBase> credentials) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(credentials))) {
+  public void SetCredentials(CredentialsBase credentials) {
+    // Get on the worker thread if not there already.
+    if (_workerThread.InvokeIfRequired(() => SetCredentials(credentials))) {
       return;
     }
-
-    _credentials = credentials;
 
     // Dispose existing session
     if (_session.GetValueOrStatus(out var sess, out _)) {
-      _observers.SetAndSendStatus(ref _session, "Disposing old session");
+      _sessionObservers.SetAndSendStatus(ref _session, "Disposing session");
       sess.Dispose();
     }
 
-    if (!_credentials.GetValueOrStatus(out var creds, out var credStatus)) {
-      _observers.SetAndSendStatus(ref _session, credStatus);
-      return;
-    }
+    _credentialsObservers.SetAndSendValue(ref _credentials, credentials);
 
-    _observers.SetAndSendStatus(ref _session, "Trying to connect");
+    _sessionObservers.SetAndSendStatus(ref _session, "Trying to connect");
 
     try {
-      var sb = SessionBaseFactory.Create(creds, _workerThread);
-      _observers.SetAndSendValue(ref _session, sb);
+      var sb = SessionBaseFactory.Create(credentials, _workerThread);
+      _sessionObservers.SetAndSendValue(ref _session, sb);
     } catch (Exception ex) {
-      _observers.SetAndSendStatus(ref _session, ex.Message);
+      _sessionObservers.SetAndSendStatus(ref _session, ex.Message);
     }
   }
 
@@ -83,9 +104,10 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
       return;
     }
 
-    // Can be accomplished by feeding ourselves our saved credentials (works both when
-    // credentials are valid or invalid).
-    OnNext(_credentials);
+    // We implement this as a SetCredentials call, with credentials we already have.
+    if (_credentials.GetValueOrStatus(out var creds, out _)) {
+      SetCredentials(creds);
+    }
   }
 
   public void OnCompleted() {
