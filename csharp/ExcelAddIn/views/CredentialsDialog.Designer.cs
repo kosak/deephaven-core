@@ -61,8 +61,8 @@
       flowLayoutPanel1.Controls.Add(panel1);
       flowLayoutPanel1.Location = new Point(28, 160);
       flowLayoutPanel1.Name = "flowLayoutPanel1";
-      flowLayoutPanel1.Size = new Size(695, 531);
-      flowLayoutPanel1.TabIndex = 0;
+      flowLayoutPanel1.Size = new Size(994, 531);
+      flowLayoutPanel1.TabIndex = 200;
       // 
       // corePlusPanel
       // 
@@ -76,27 +76,28 @@
       corePlusPanel.Controls.Add(label3);
       corePlusPanel.Location = new Point(3, 3);
       corePlusPanel.Name = "corePlusPanel";
-      corePlusPanel.Size = new Size(668, 242);
-      corePlusPanel.TabIndex = 0;
+      corePlusPanel.Size = new Size(991, 242);
+      corePlusPanel.TabIndex = 210;
       // 
       // operateAsBox
       // 
       operateAsBox.Location = new Point(189, 183);
       operateAsBox.Name = "operateAsBox";
-      operateAsBox.Size = new Size(444, 31);
-      operateAsBox.TabIndex = 7;
+      operateAsBox.Size = new Size(768, 31);
+      operateAsBox.TabIndex = 214;
       // 
       // passwordBox
       // 
       passwordBox.Location = new Point(189, 130);
       passwordBox.Name = "passwordBox";
-      passwordBox.Size = new Size(444, 31);
-      passwordBox.TabIndex = 6;
+      passwordBox.PasswordChar = '●';
+      passwordBox.Size = new Size(768, 31);
+      passwordBox.TabIndex = 213;
       // 
       // label5
       // 
       label5.AutoSize = true;
-      label5.Location = new Point(35, 183);
+      label5.Location = new Point(18, 189);
       label5.Name = "label5";
       label5.Size = new Size(96, 25);
       label5.TabIndex = 5;
@@ -105,7 +106,7 @@
       // label4
       // 
       label4.AutoSize = true;
-      label4.Location = new Point(35, 136);
+      label4.Location = new Point(18, 136);
       label4.Name = "label4";
       label4.Size = new Size(87, 25);
       label4.TabIndex = 4;
@@ -115,13 +116,13 @@
       // 
       userIdBox.Location = new Point(189, 82);
       userIdBox.Name = "userIdBox";
-      userIdBox.Size = new Size(444, 31);
-      userIdBox.TabIndex = 3;
+      userIdBox.Size = new Size(768, 31);
+      userIdBox.TabIndex = 212;
       // 
       // userIdLabel
       // 
       userIdLabel.AutoSize = true;
-      userIdLabel.Location = new Point(35, 88);
+      userIdLabel.Location = new Point(18, 88);
       userIdLabel.Name = "userIdLabel";
       userIdLabel.Size = new Size(63, 25);
       userIdLabel.TabIndex = 2;
@@ -131,13 +132,13 @@
       // 
       jsonUrlBox.Location = new Point(189, 33);
       jsonUrlBox.Name = "jsonUrlBox";
-      jsonUrlBox.Size = new Size(444, 31);
-      jsonUrlBox.TabIndex = 1;
+      jsonUrlBox.Size = new Size(768, 31);
+      jsonUrlBox.TabIndex = 211;
       // 
       // label3
       // 
       label3.AutoSize = true;
-      label3.Location = new Point(35, 39);
+      label3.Location = new Point(18, 33);
       label3.Name = "label3";
       label3.Size = new Size(91, 25);
       label3.TabIndex = 0;
@@ -149,20 +150,20 @@
       corePanel.Controls.Add(label2);
       corePanel.Location = new Point(3, 251);
       corePanel.Name = "corePanel";
-      corePanel.Size = new Size(585, 76);
-      corePanel.TabIndex = 1;
+      corePanel.Size = new Size(991, 76);
+      corePanel.TabIndex = 220;
       // 
       // connectionStringBox
       // 
       connectionStringBox.Location = new Point(189, 20);
       connectionStringBox.Name = "connectionStringBox";
-      connectionStringBox.Size = new Size(323, 31);
-      connectionStringBox.TabIndex = 1;
+      connectionStringBox.Size = new Size(768, 31);
+      connectionStringBox.TabIndex = 221;
       // 
       // label2
       // 
       label2.AutoSize = true;
-      label2.Location = new Point(19, 26);
+      label2.Location = new Point(18, 26);
       label2.Name = "label2";
       label2.Size = new Size(153, 25);
       label2.TabIndex = 0;
@@ -177,15 +178,15 @@
       panel1.Controls.Add(setCredentialsButton);
       panel1.Location = new Point(3, 333);
       panel1.Name = "panel1";
-      panel1.Size = new Size(668, 110);
-      panel1.TabIndex = 4;
+      panel1.Size = new Size(991, 110);
+      panel1.TabIndex = 230;
       // 
       // testResultsTextBox
       // 
-      testResultsTextBox.Location = new Point(143, 51);
+      testResultsTextBox.Location = new Point(189, 51);
       testResultsTextBox.Name = "testResultsTextBox";
       testResultsTextBox.ReadOnly = true;
-      testResultsTextBox.Size = new Size(513, 31);
+      testResultsTextBox.Size = new Size(768, 31);
       testResultsTextBox.TabIndex = 7;
       // 
       // testResultsLabel
@@ -199,7 +200,7 @@
       // credentialStatusLabel
       // 
       credentialStatusLabel.AutoSize = true;
-      credentialStatusLabel.Location = new Point(19, 57);
+      credentialStatusLabel.Location = new Point(35, 54);
       credentialStatusLabel.Name = "credentialStatusLabel";
       credentialStatusLabel.Size = new Size(106, 25);
       credentialStatusLabel.TabIndex = 5;
@@ -207,20 +208,20 @@
       // 
       // testCredentialsButton
       // 
-      testCredentialsButton.Location = new Point(19, 3);
+      testCredentialsButton.Location = new Point(189, 3);
       testCredentialsButton.Name = "testCredentialsButton";
       testCredentialsButton.Size = new Size(175, 34);
-      testCredentialsButton.TabIndex = 4;
+      testCredentialsButton.TabIndex = 231;
       testCredentialsButton.Text = "Test Credentials";
       testCredentialsButton.UseVisualStyleBackColor = true;
       testCredentialsButton.Click += testCredentialsButton_Click;
       // 
       // setCredentialsButton
       // 
-      setCredentialsButton.Location = new Point(465, 0);
+      setCredentialsButton.Location = new Point(757, 0);
       setCredentialsButton.Name = "setCredentialsButton";
       setCredentialsButton.Size = new Size(200, 34);
-      setCredentialsButton.TabIndex = 3;
+      setCredentialsButton.TabIndex = 232;
       setCredentialsButton.Text = "Set Credentials";
       setCredentialsButton.UseVisualStyleBackColor = true;
       setCredentialsButton.Click += setCredentialsButton_Click;
@@ -230,29 +231,29 @@
       isCorePlusRadioButton.AutoSize = true;
       isCorePlusRadioButton.Location = new Point(6, 39);
       isCorePlusRadioButton.Name = "isCorePlusRadioButton";
-      isCorePlusRadioButton.Size = new Size(180, 29);
-      isCorePlusRadioButton.TabIndex = 1;
+      isCorePlusRadioButton.Size = new Size(169, 29);
+      isCorePlusRadioButton.TabIndex = 110;
       isCorePlusRadioButton.TabStop = true;
-      isCorePlusRadioButton.Text = "Deephaven Core+";
+      isCorePlusRadioButton.Text = "Enterprise Core+";
       isCorePlusRadioButton.UseVisualStyleBackColor = true;
       // 
       // isCoreRadioButton
       // 
       isCoreRadioButton.AutoSize = true;
-      isCoreRadioButton.Location = new Point(308, 39);
+      isCoreRadioButton.Location = new Point(195, 39);
       isCoreRadioButton.Name = "isCoreRadioButton";
-      isCoreRadioButton.Size = new Size(168, 29);
-      isCoreRadioButton.TabIndex = 2;
+      isCoreRadioButton.Size = new Size(172, 29);
+      isCoreRadioButton.TabIndex = 111;
       isCoreRadioButton.TabStop = true;
-      isCoreRadioButton.Text = "Deephaven Core";
+      isCoreRadioButton.Text = "Community Core";
       isCoreRadioButton.UseVisualStyleBackColor = true;
       // 
       // endpointIdBox
       // 
-      endpointIdBox.Location = new Point(201, 16);
+      endpointIdBox.Location = new Point(220, 19);
       endpointIdBox.Name = "endpointIdBox";
-      endpointIdBox.Size = new Size(393, 31);
-      endpointIdBox.TabIndex = 4;
+      endpointIdBox.Size = new Size(768, 31);
+      endpointIdBox.TabIndex = 1;
       // 
       // label1
       // 
@@ -270,7 +271,7 @@
       connectionTypeGroup.Location = new Point(28, 74);
       connectionTypeGroup.Name = "connectionTypeGroup";
       connectionTypeGroup.Size = new Size(588, 80);
-      connectionTypeGroup.TabIndex = 8;
+      connectionTypeGroup.TabIndex = 100;
       connectionTypeGroup.TabStop = false;
       connectionTypeGroup.Text = "Connection Type";
       // 
@@ -278,7 +279,7 @@
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(1243, 732);
+      ClientSize = new Size(1086, 714);
       Controls.Add(connectionTypeGroup);
       Controls.Add(label1);
       Controls.Add(endpointIdBox);
