@@ -59,7 +59,7 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
       _credentials = value;
     }
 
-    OnPropertyChanged(nameof(Status));
+    OnPropertyChanged(nameof(ServerType));
   }
 
   public void OnNext(StatusOr<SessionBase> value) {
@@ -67,7 +67,7 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
       _session = value;
     }
 
-    OnPropertyChanged(nameof(ServerType));
+    OnPropertyChanged(nameof(Status));
   }
 
 

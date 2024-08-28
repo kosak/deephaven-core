@@ -49,12 +49,12 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
       return;
     }
 
-    if (!_providerMap.TryGetValue(id, out var ep)) {
-      ep = new SessionProvider(workerThread);
-      _providerMap.Add(id, ep);
+    if (!_providerMap.TryGetValue(id, out var sp)) {
+      sp = new SessionProvider(workerThread);
+      _providerMap.Add(id, sp);
       _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
     }
 
-    action(ep);
+    action(sp);
   }
 }

@@ -11,49 +11,6 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
 
-internal class MySessionObserver : IObserver<AddOrRemove<EndpointId>> {
-  private readonly StateManager _stateManager;
-  private readonly ConnectionManagerDialog _cmDialog;
-
-  public MySessionObserver(StateManager stateManager, ConnectionManagerDialog cmDialog) {
-    _stateManager = stateManager;
-    _cmDialog = cmDialog;
-  }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnNext(AddOrRemove<EndpointId> aor) {
-    if (!aor.IsAdd) {
-      // TODO(kosak)
-      Debug.WriteLine("Remove is not handled");
-      return;
-    }
-
-    // Add a row to the form
-    // Wire up the OnClick button for that row
-    // subscribe to the 
-
-    var statusRow = new ConnectionManagerDialogRow(aor.Value.HumanReadableString, _stateManager);
-    // TODO(kosak): what now
-    var subPainDisposable = _stateManager.SubscribeToSession(aor.Value, statusRow);
-    var subPainDisposable2 = _stateManager.SubscribeToCredentials(aor.Value, statusRow);
-
-    // Not sure what the deal is with threading and BindingSource,
-    // so I'll Invoke it to get this change on the GUI thread.
-    _cmDialog.Invoke(() => {
-      _cmDialog.AddRow(statusRow);
-    });
-  }
-}
-
 public static class DeephavenExcelFunctions {
   private static readonly StateManager StateManager = new();
 

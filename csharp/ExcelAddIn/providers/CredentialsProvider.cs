@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using Microsoft.Office.Interop.Excel;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -24,6 +25,10 @@ internal class CredentialsProvider(WorkerThread workerThread) : IObservable<Stat
   }
 
   public void SetCredentials(CredentialsBase credentials) {
+    if (workerThread.InvokeIfRequired(() => SetCredentials(credentials))) {
+      return;
+    }
     _credentials = StatusOr<CredentialsBase>.OfValue(credentials);
+    _observers.SetAndSendValue(ref _credentials, credentials);
   }
 }

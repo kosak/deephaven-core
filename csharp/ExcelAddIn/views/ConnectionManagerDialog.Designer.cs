@@ -55,9 +55,10 @@
       // connectionsLabel
       // 
       connectionsLabel.AutoSize = true;
-      connectionsLabel.Location = new Point(65, 31);
+      connectionsLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+      connectionsLabel.Location = new Point(68, 33);
       connectionsLabel.Name = "connectionsLabel";
-      connectionsLabel.Size = new Size(110, 25);
+      connectionsLabel.Size = new Size(147, 32);
       connectionsLabel.TabIndex = 2;
       connectionsLabel.Text = "Connections";
       // 
