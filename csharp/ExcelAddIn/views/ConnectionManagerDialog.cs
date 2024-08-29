@@ -3,6 +3,7 @@
 namespace Deephaven.ExcelAddIn.Views;
 
 public partial class ConnectionManagerDialog : Form {
+  private const string IsDefaultColumnName = "IsDefault";
   private const string SettingsButtonColumnName = "settings_button_column";
   private const string ReconnectButtonColumnName = "reconnect_button_column";
   private readonly Action _onNewButtonClicked;
@@ -49,10 +50,22 @@ public partial class ConnectionManagerDialog : Form {
       return;
     }
     var name = dataGridView1.Columns[e.ColumnIndex].Name;
-    if (name == SettingsButtonColumnName) {
-      row.SettingsClicked();
-    } else if (name == ReconnectButtonColumnName) {
-      row.ReconnectClicked();
+
+    switch (name) {
+      case SettingsButtonColumnName: {
+        row.SettingsClicked();
+        break;
+      }
+
+      case ReconnectButtonColumnName: {
+        row.ReconnectClicked();
+        break;
+      }
+
+      case IsDefaultColumnName: {
+        row.IsDefaultClicked();
+        break;
+      }
     }
   }
 

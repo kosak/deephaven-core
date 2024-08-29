@@ -41,27 +41,10 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
   }
 
-  public bool IsDefault {
-    get => _credentials.GetValueOrStatus(out var creds1, out _) &&
-           _defaultCredentials.GetValueOrStatus(out var creds2, out _) &&
-           creds1.Id == creds2.Id;
-
-    set {
-      // The setter is very special. It only does something if you try to click from false to true.
-      // If the value is already true, it does nothing. If you are trying to set it to false,
-      // it also does nothing.
-      if (IsDefault || !value) {
-        return;
-      }
-
-      // If we don't have credentials, then we can't make them the default.
-      if (!_credentials.GetValueOrStatus(out var creds, out var _)) {
-        return;
-      }
-
-      stateManager.SetDefaultCredentials(creds);
-    }
-  }
+  public bool IsDefault =>
+    _credentials.GetValueOrStatus(out var creds1, out _) &&
+    _defaultCredentials.GetValueOrStatus(out var creds2, out _) &&
+    creds1.Id == creds2.Id;
 
   public void SettingsClicked() {
     var creds = GetCredentialsSynced();
@@ -75,6 +58,20 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
 
   public void ReconnectClicked() {
     stateManager.Reconnect(new EndpointId(Id));
+  }
+
+  public void IsDefaultClicked() {
+    // If the box is already checked, do nothing.
+    if (IsDefault) {
+      return;
+    }
+
+    // If we don't have credentials, then we can't make them the default.
+    if (!_credentials.GetValueOrStatus(out var creds, out _)) {
+      return;
+    }
+
+    stateManager.SetDefaultCredentials(creds);
   }
 
   public void OnNext(StatusOr<CredentialsBase> value) {
