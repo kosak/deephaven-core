@@ -15,7 +15,7 @@ internal static class CredentialsDialogFactory {
         return;
       }
 
-      sm.SetCredentials(new EndpointId(cvm.Id), newCreds);
+      sm.SetCredentials(new EndpointId(cvm.Id), newCreds, cvm.IsDefault);
     }
 
     void OnTestCredentialsButtonClicked() {
