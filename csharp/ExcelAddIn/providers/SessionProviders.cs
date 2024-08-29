@@ -78,13 +78,14 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
-  public void SetCredentials(EndpointId id, CredentialsBase credentials, bool isDefault) {
-    ApplyTo(id, sp => {
+  public void SetCredentials(CredentialsBase credentials) {
+    ApplyTo(credentials.Id, sp => {
       sp.SetCredentials(credentials);
-      if (isDefault) {
-        _defaultProvider.SetParent(sp);
-      }
     });
+  }
+
+  public void SetDefaultCredentials(CredentialsBase credentials) {
+    ApplyTo(credentials.Id, _defaultProvider.SetParent);
   }
 
   public void Reconnect(EndpointId id) {

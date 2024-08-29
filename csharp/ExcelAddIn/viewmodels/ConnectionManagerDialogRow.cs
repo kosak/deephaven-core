@@ -41,10 +41,23 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
   }
 
-  public bool IsDefault =>
-    _credentials.GetValueOrStatus(out var creds1, out _) &&
-    _defaultCredentials.GetValueOrStatus(out var creds2, out _) &&
-    creds1.Id == creds2.Id;
+  public bool IsDefault {
+    get => _credentials.GetValueOrStatus(out var creds1, out _) &&
+           _defaultCredentials.GetValueOrStatus(out var creds2, out _) &&
+           creds1.Id == creds2.Id;
+
+    set {
+      // The setter is very special. It only does something if you try to click from false to true.
+      // If the value is already true, it does nothing. If you are trying to set it to false,
+      // it also does nothing.
+      if (IsDefault || !value) {
+        return;
+      }
+
+      stateManager.SetCredentials();
+
+    }
+  }
 
   public void SettingsClicked() {
     var creds = GetCredentialsSynced();

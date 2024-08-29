@@ -64,8 +64,12 @@ public class StateManager {
     });
   }
 
-  public void SetCredentials(EndpointId id, CredentialsBase credentials, bool isDefault) {
-    _sessionProviders.SetCredentials(id, credentials, isDefault);
+  public void SetCredentials(CredentialsBase credentials) {
+    _sessionProviders.SetCredentials(credentials);
+  }
+
+  public void SetDefaultCredentials(CredentialsBase credentials) {
+    _sessionProviders.SetDefaultCredentials(credentials);
   }
 
   public void Reconnect(EndpointId id) {

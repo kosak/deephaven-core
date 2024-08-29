@@ -1,13 +1,13 @@
 ﻿namespace Deephaven.ExcelAddIn.Models;
 
-public abstract class CredentialsBase(string id) {
-  public readonly string Id = id;
+public abstract class CredentialsBase(EndpointId id) {
+  public readonly EndpointId Id = id;
 
   public static CredentialsBase OfCore(string id, string connectionString) {
     return new CoreCredentials(id, connectionString);
   }
 
-  public static CredentialsBase OfCorePlus(string id, string jsonUrl, string userId,
+  public static CredentialsBase OfCorePlus(EndpointId id, string jsonUrl, string userId,
     string password, string operateAs) {
     return new CorePlusCredentials(id, jsonUrl, userId, password, operateAs);
   }
@@ -24,7 +24,7 @@ public sealed class CoreCredentials(string id, string connectionString) : Creden
   }
 }
 
-public sealed class CorePlusCredentials(string id, string jsonUrl, string user, string password,
+public sealed class CorePlusCredentials(EndpointId id, string jsonUrl, string user, string password,
   string operateAs) : CredentialsBase(id) {
   public readonly string JsonUrl = jsonUrl;
   public readonly string User = user;
