@@ -19,10 +19,11 @@ run it.
 If you don't have a Deephaven Community Core server installation,
 you can use these instructions to build one.
 https://deephaven.io/core/docs/how-to-guides/launch-build/
-For Deephaven Enterprise Core+, contact your administrator.
 
-Furthermore, note that it is only possible to build a server on Linux.
-Building a server on Windows is not currently supported.
+Note that it is only possible to build a server on Linux. Building a server
+on Windows is not currently supported.
+
+For Deephaven Enterprise Core+, contact your IT administrator.
 
 # Building the Excel Add-In on Windows 10 / Windows 11
 
@@ -30,36 +31,43 @@ Building a server on Windows is not currently supported.
 
 ## Tooling
 
-1. You will need a recent version of Excel installed. We recommend Office 21
-   or Office 365. Note that the Add-In only works with installed versions of
-   Excel. It does not work with the browser-based web version.
+### Excel
 
-2. Install the .NET Core SDK, version 8.0
+You will need a recent version of Excel installed. We recommend Office 21
+or Office 365. Note that the Add-In only works with locally-installed
+versions of Excel (i.e. software installed on your computer). It does not
+work with the browser-based web version of Excel.
 
-   Look for the "Windows | x64" link at
-   https://dotnet.microsoft.com/en-us/download/dotnet/8.0
+### .NET
 
-3. Install Visual Studio 2022 Community Edition (or Professional, or Enterprise)
-   from here:
+Install the .NET Core SDK, version 8.0.
+Look for the "Windows | x64" link
+[here](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
-   https://visualstudio.microsoft.com/downloads/
+### Visual Studio
 
-   When the installer runs, select both workloads
-   "Desktop development with C++" and ".NET desktop development".
+Install Visual Studio 2022 Community Edition (or Professional, or Enterprise)
+from [here](https://visualstudio.microsoft.com/downloads/)
 
-   If Visual Studio is already installed, use Tools -> Get Tools and Features
-   to add those workloads if necessary.
+When the installer runs, select both workloads
+"Desktop development with C++" and ".NET desktop development".
 
-4. Use your preferred version of git, or install Git from here:
+If Visual Studio is already installed, use Tools -> Get Tools and Features
+to add those workloads if necessary.
 
-   https://git-scm.com/download/win
+### git
+
+Use your preferred version of git, or install Git from
+[here](https://git-scm.com/download/win)
 
 ## C++ client
 
 The Deephaven Excel Add-In relies on the Deephaven C# Client, which in turn
-requires the Deephaven C++ Client (Community Core version). To use Enterprise
-Core+ features, it also requires the Deephaven C++ Client (Enterprise Core+
-version).
+requires the Deephaven C++ Client (Community Core version). Furthermore, if
+you want to use Enterprise Core+ features, you also need the Deephaven C++
+Client for Enterprise Core+.
+
+The instructions below describe how to build these libraries.
 
 ### Build the Deephaven C++ Client (Community Core version)
 
