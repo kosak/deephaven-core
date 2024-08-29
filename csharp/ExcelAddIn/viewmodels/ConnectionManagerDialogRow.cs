@@ -54,8 +54,12 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
         return;
       }
 
-      stateManager.SetCredentials();
+      // If we don't have credentials, then we can't make them the default.
+      if (!_credentials.GetValueOrStatus(out var creds, out var _)) {
+        return;
+      }
 
+      stateManager.SetDefaultCredentials(creds);
     }
   }
 

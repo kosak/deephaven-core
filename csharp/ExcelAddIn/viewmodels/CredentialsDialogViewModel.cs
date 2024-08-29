@@ -78,9 +78,10 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
       return false;
     }
 
+    var epId = new EndpointId(_id);
     result = _isCorePlus
-      ? CredentialsBase.OfCorePlus(_id, _jsonUrl, _userId, _password, _operateAs)
-      : CredentialsBase.OfCore(_id, _connectionString);
+      ? CredentialsBase.OfCorePlus(epId, _jsonUrl, _userId, _password, _operateAs)
+      : CredentialsBase.OfCore(epId, _connectionString);
     return true;
   }
 

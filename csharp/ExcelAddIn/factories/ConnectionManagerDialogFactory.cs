@@ -42,10 +42,6 @@ internal class ConnectionManagerSessionObserver(
 
     var endpointId = aor.Value;
 
-    // Add a row to the form
-    // Wire up the OnClick button for that row
-    // subscribe to the 
-
     var statusRow = new ConnectionManagerDialogRow(endpointId.Id, stateManager);
     // We watch for session and credential state changes in our ID
     var sessDisposable = stateManager.SubscribeToSession(endpointId, statusRow);

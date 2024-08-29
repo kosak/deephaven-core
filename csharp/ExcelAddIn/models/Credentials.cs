@@ -3,7 +3,7 @@
 public abstract class CredentialsBase(EndpointId id) {
   public readonly EndpointId Id = id;
 
-  public static CredentialsBase OfCore(string id, string connectionString) {
+  public static CredentialsBase OfCore(EndpointId id, string connectionString) {
     return new CoreCredentials(id, connectionString);
   }
 
@@ -16,7 +16,7 @@ public abstract class CredentialsBase(EndpointId id) {
     Func<CorePlusCredentials, T> ofCorePlus);
 }
 
-public sealed class CoreCredentials(string id, string connectionString) : CredentialsBase(id) {
+public sealed class CoreCredentials(EndpointId id, string connectionString) : CredentialsBase(id) {
   public readonly string ConnectionString = connectionString;
 
   public override T AcceptVisitor<T>(Func<CoreCredentials, T> ofCore, Func<CorePlusCredentials, T> ofCorePlus) {
