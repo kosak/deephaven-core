@@ -18,25 +18,20 @@ internal static class ConnectionManagerDialogFactory {
 
     var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked);
     cmDialog.Show();
-    var mso = new ConnectionManagerSessionObserver(sm, cmDialog);
-    var disposer = sm.SubscribeToSessions(mso);
+    var cmso = new ConnectionManagerSessionObserver(sm, cmDialog);
+    var disposer = sm.SubscribeToSessions(cmso);
 
-    cmDialog.Closed += (_, _) => disposer.Dispose();
+    cmDialog.Closed += (_, _) => {
+      disposer.Dispose();
+      cmso.Dispose();
+    };
   }
 }
 
-internal class ConnectionManagerSessionObserver(StateManager stateManager,
-  ConnectionManagerDialog cmDialog) : IObserver<AddOrRemove<EndpointId>> {
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
+internal class ConnectionManagerSessionObserver(
+  StateManager stateManager,
+  ConnectionManagerDialog cmDialog) : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+  private readonly List<IDisposable> _disposables = new();
 
   public void OnNext(AddOrRemove<EndpointId> aor) {
     if (!aor.IsAdd) {
@@ -50,14 +45,37 @@ internal class ConnectionManagerSessionObserver(StateManager stateManager,
     // subscribe to the 
 
     var statusRow = new ConnectionManagerDialogRow(aor.Value.HumanReadableString, stateManager);
-    // TODO(kosak): what now
-    var subPainDisposable = stateManager.SubscribeToSession(aor.Value, statusRow);
-    var subPainDisposable2 = stateManager.SubscribeToCredentials(aor.Value, statusRow);
+    var sessDisposable = stateManager.SubscribeToSession(aor.Value, statusRow);
+    var credDisposable = stateManager.SubscribeToCredentials(aor.Value, statusRow);
 
-    // Not sure what the deal is with threading and BindingSource,
-    // so I'll Invoke it to get this change on the GUI thread.
+    // We'll do our AddRow on the GUI thread, and, while we're on the GUI thread, we'll add
+    // our disposables to our saved disposables.
     cmDialog.Invoke(() => {
+      _disposables.Add(sessDisposable);
+      _disposables.Add(credDisposable);
       cmDialog.AddRow(statusRow);
     });
+  }
+
+  public void Dispose() {
+    // Since the GUI thread is where we added these disposables, the GUI thread is where we will
+    // access and dispose them.
+    cmDialog.Invoke(() => {
+      var temp = _disposables.ToArray();
+      _disposables.Clear();
+      foreach (var disposable in temp) {
+        disposable.Dispose();
+      }
+    });
+  }
+
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
   }
 }
