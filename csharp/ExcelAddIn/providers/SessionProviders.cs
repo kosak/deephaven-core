@@ -5,6 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
+  private readonly SessionProvider _defaultProvider = new(workerThread);
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
@@ -32,6 +33,19 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   public IDisposable SubscribeToSession(EndpointId id, IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposable = null;
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+
+    return ActionAsDisposable.Create(() => {
+      workerThread.Invoke(() => {
+        Utility.Exchange(ref disposable, null)?.Dispose();
+      });
+    });
+  }
+
+  public IDisposable SubscribeToDefaultSession(IObserver<StatusOr<SessionBase>> observer) {
+    IDisposable? disposable = null;
+    workerThread.Invoke(() => {
+      disposable = _defaultProvider.Subscribe(observer);
+    });
 
     return ActionAsDisposable.Create(() => {
       workerThread.Invoke(() => {
