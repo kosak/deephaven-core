@@ -41,6 +41,17 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
+  public IDisposable SubscribeToCredentials(EndpointId id, IObserver<StatusOr<CredentialsBase>> observer) {
+    IDisposable? disposable = null;
+    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+
+    return ActionAsDisposable.Create(() => {
+      workerThread.Invoke(() => {
+        Utility.Exchange(ref disposable, null)?.Dispose();
+      });
+    });
+  }
+
   public IDisposable SubscribeToDefaultSession(IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposable = null;
     workerThread.Invoke(() => {
@@ -54,9 +65,11 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
-  public IDisposable SubscribeToCredentials(EndpointId id, IObserver<StatusOr<CredentialsBase>> observer) {
+  public IDisposable SubscribeToDefaultCredentials(IObserver<StatusOr<CredentialsBase>> observer) {
     IDisposable? disposable = null;
-    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+    workerThread.Invoke(() => {
+      disposable = _defaultProvider.Subscribe(observer);
+    });
 
     return ActionAsDisposable.Create(() => {
       workerThread.Invoke(() => {

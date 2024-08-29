@@ -6,13 +6,15 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRow(string id, StateManager stateManager) : IObserver<StatusOr<CredentialsBase>>, IObserver<StatusOr<SessionBase>>,
+public sealed class ConnectionManagerDialogRow(string id, StateManager stateManager) :
+  IObserver<StatusOr<CredentialsBase>>, IObserver<StatusOr<SessionBase>>,
   INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
+  private StatusOr<CredentialsBase> _defaultCredentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
 
   public string Id { get; init; } = id;
 
@@ -39,7 +41,10 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
   }
 
-  public bool IsDefault => true;
+  public bool IsDefault =>
+    _credentials.GetValueOrStatus(out var creds1, out _) &&
+    _defaultCredentials.GetValueOrStatus(out var creds2, out _) &&
+    creds1.Id == creds2.Id;
 
   public void SettingsClicked() {
     var creds = GetCredentialsSynced();
@@ -61,6 +66,7 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
 
     OnPropertyChanged(nameof(ServerType));
+    OnPropertyChanged(nameof(IsDefault));
   }
 
   public void OnNext(StatusOr<SessionBase> value) {
@@ -71,6 +77,12 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     OnPropertyChanged(nameof(Status));
   }
 
+  public void SetDefaultCredentials(StatusOr<CredentialsBase> creds) {
+    lock (_sync) {
+      _defaultCredentials = creds;
+    }
+    OnPropertyChanged(nameof(IsDefault));
+  }
 
   public void OnCompleted() {
     // TODO(kosak)

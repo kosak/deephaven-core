@@ -22,12 +22,16 @@ public class StateManager {
     return _sessionProviders.SubscribeToSession(endpointId, observer);
   }
 
+  public IDisposable SubscribeToCredentials(EndpointId endpointId, IObserver<StatusOr<CredentialsBase>> observer) {
+    return _sessionProviders.SubscribeToCredentials(endpointId, observer);
+  }
+
   public IDisposable SubscribeToDefaultSession(IObserver<StatusOr<SessionBase>> observer) {
     return _sessionProviders.SubscribeToDefaultSession(observer);
   }
 
-  public IDisposable SubscribeToCredentials(EndpointId endpointId, IObserver<StatusOr<CredentialsBase>> observer) {
-    return _sessionProviders.SubscribeToCredentials(endpointId, observer);
+  public IDisposable SubscribeToDefaultCredentials(IObserver<StatusOr<CredentialsBase>> observer) {
+    return _sessionProviders.SubscribeToDefaultCredentials(observer);
   }
 
   public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,

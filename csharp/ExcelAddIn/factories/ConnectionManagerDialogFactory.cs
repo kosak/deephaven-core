@@ -3,6 +3,7 @@ using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using System.Diagnostics;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
@@ -39,19 +40,28 @@ internal class ConnectionManagerSessionObserver(
       return;
     }
 
+    var endpointId = aor.Value;
+
     // Add a row to the form
     // Wire up the OnClick button for that row
     // subscribe to the 
 
-    var statusRow = new ConnectionManagerDialogRow(aor.Value.Id, stateManager);
-    var sessDisposable = stateManager.SubscribeToSession(aor.Value, statusRow);
-    var credDisposable = stateManager.SubscribeToCredentials(aor.Value, statusRow);
+    var statusRow = new ConnectionManagerDialogRow(endpointId.Id, stateManager);
+    // We watch for session and credential state changes in our ID
+    var sessDisposable = stateManager.SubscribeToSession(endpointId, statusRow);
+    var credDisposable = stateManager.SubscribeToCredentials(endpointId, statusRow);
+
+    // And we also watch for credentials changes in the default session (just to keep
+    // track of whether we are still the default)
+    var dct = new DefaultCredentialsTracker(statusRow);
+    var defaultCredDisposable = stateManager.SubscribeToDefaultCredentials(dct);
 
     // We'll do our AddRow on the GUI thread, and, while we're on the GUI thread, we'll add
     // our disposables to our saved disposables.
     cmDialog.Invoke(() => {
       _disposables.Add(sessDisposable);
       _disposables.Add(credDisposable);
+      _disposables.Add(defaultCredDisposable);
       cmDialog.AddRow(statusRow);
     });
   }
@@ -66,6 +76,22 @@ internal class ConnectionManagerSessionObserver(
         disposable.Dispose();
       }
     });
+  }
+
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+}
+
+internal class DefaultCredentialsTracker(ConnectionManagerDialogRow statusRow) : IObserver<StatusOr<CredentialsBase>> {
+  public void OnNext(StatusOr<CredentialsBase> value) {
+    statusRow.SetDefaultCredentials(value);
   }
 
   public void OnCompleted() {
