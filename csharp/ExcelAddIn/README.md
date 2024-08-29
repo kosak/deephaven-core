@@ -114,94 +114,57 @@ If you are doing a Release build, change "Debug" to "Release" in the above path.
 
 ### From standalone Excel
 
-The steps 
+To install the add-in into Excel, we need put the relevant files into a
+directory and then point to that directory. For simplicity, we will use
+the already-established %DHINSTALL%\bin directory, which already has all the
+relevant files except for the add-in's XLL file.
+
+```
+copy [repository root]\csharp\ExcelAddIn\bin\Debug\net8.0-windows\publish\ExcelAddIn-Addin64-packed.xll %DHINSTALL%\bin
+```
+
+Note the above file comes from the "publish" subdirectory.
+
+Then, run Excel and follow the following steps.
+1. Click on "Options" at the lower left of the window.
+2. Click on "Add-ins" on the left, second from the bottom.
+3. At the bottom of the screen click, near "Manage", select "Excel Add-ins"
+   from the pulldown, and then click "Go..."
+4. In the next screen click "Browse..." 
+5. Navigate to your %DHINSTALL%\bin directory and click on the ExcelAddIn-Addin64-packed.xll file that you recently copied there
+6. Click OK
+7. Click OK
 
 
+## Test the add-in
 
+### Without connecting to a Deephaven server
 
+1. In Excel, click on Add-ins -> Deephaven -> Connections. This should bring
+   up a Connections form. If so, the C# code is functioning correctly.
 
+2. Inside Connections, click the "New Connection" button. A "Credentials
+   Editor" window will pop up. Inside this window, enter "con1" for the
+   Connection ID, select the "Community Core" button, and enter a known-bad
+   endpoint address like "abc.def"
 
-6. Build the C++ 
+3. Press Test Credentials. You should immediately see an error like
+   "Can't get configuration constants. Error 14: DNS resolution failed for
+   abc.def"
 
-
-[repository root]/csharp/client/README.md (does not exist yet).
-
-
-4. Mkae
-
-3. We will do the actual build process inside a Visual Studio developer
-   command prompt. Run the developer command prompt by navigating here:
-
-   Start -> V -> Visual Studio 2022 -> Developer Command Prompt for VS 2022
-
-4. Make a 'dhsrc' directory that will hold the two repositories: the vcpkg
-   package manager and Deephaven Core. Then make a 'dhinstall' directory that
-   will hold the libraries and executables that are the result of this
-   build process.  You can decide on the locations you want for those directories,
-   the code below creates them under the home directory of the Windows user
-   running the command prompt; change the definitions of the environment variables
-   DHSRC and DHINSTALL if you decide to place them somewhere else.
+4. Enterprise users can do a similar test by pressing the Enterprise Core+
+   button and putting in placeholder data.
    
-   ```
-   set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
-   set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
-   mkdir %DHSRC%
-   mkdir %DHINSTALL%
-   ```
+### By connecting to a Deephaven server
 
-5. Use git to clone the two repositories mentioned above.
-   If you are using Git for Windows, you can run the "Git Bash Shell"
-   and type these commands into it:
-   ```
-   cd $HOME/dhsrc  # change if dhsrc on a different location
-   git clone https://github.com/microsoft/vcpkg.git
-   git clone https://github.com/deephaven/deephaven-core.git
-   ```
+If the above tests pass, the add-in is probably installed correctly.
 
-6. Come back to the Visual Studio developer command prompt and do the
-   one-time installation steps for vcpkg.
-   ```
-   cd /d %DHSRC%\vcpkg
-   .\bootstrap-vcpkg.bat
-   ```
+To test the add-in with a Deephaven server, you will need the following
+information.
 
-7. Set VCPKG_ROOT. Note that steps 8 and 9 both rely on it being set correctly.
-   If you come back to these instructions at a future date, make sure that VCPKG_ROOT
-   is set before re-running those steps.
-   ```
-   set VCPKG_ROOT=%DHSRC%\vcpkg
-   ```
+1. For Community Core, you will need a Connection string in the form of
+   address:port. For example, 10.0.1.50:10000
 
-8. Change to the Deephaven core directory and build/install the dependent
-   packages. On my computer this process took about 20 minutes.
-   ```
-   cd /d %DHSRC%\deephaven-core\cpp-client\deephaven
-   %VCPKG_ROOT%\vcpkg.exe install --triplet x64-windows
-    ```
-
-9. Now configure the build for Deephaven Core:
-   ``` 
-   cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%DHINSTALL% -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
-   ```
-   
-10. Finally, build and install Deephaven Core. Note that the build type (RelWithDebInfo) is specified differently for the Windows build
-    than it is for the Ubuntu build. For Windows, we specify the configuration type directly in the build step using the --config flag.
-   ```
-   # Replace '16' by the number of CPU threads you want to use for building
-   cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16 -m:1
-   ```
-
-11. Run the tests.
-    First, make sure Deephaven is running. If your Deephaven instance
-    is running somewhere other than the default location of localhost:10000,
-    then set these environment variables appropriately:
-    ```
-    set DH_HOST=...
-    set DH_PORT=...
-    ```
-
-    then run the tests executable:
-    ```
-    cd /d %DHINSTALL%\bin
-    .\dhclient_tests.exe
-    ```
+2. For Enterprise Core+, you will need a JSON URL that references your
+   Core+ installation. For example 
+   https://10.0.1.50:8123/iris/connection.json
