@@ -1,5 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Providers;
-using Deephaven.ExcelAddIn.Viewmodels;
+﻿using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
 using System.Diagnostics;

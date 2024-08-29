@@ -3,8 +3,8 @@
 namespace Deephaven.ExcelAddIn.Models;
 
 public record TableTriple(
-  EndpointId EndpointId,
-  PersistentQueryId PersistentQueryId,
+  EndpointId? EndpointId,
+  PersistentQueryId? PersistentQueryId,
   string TableName) {
 
   public static bool TryParse(string text, out TableTriple result, out string errorText) {
