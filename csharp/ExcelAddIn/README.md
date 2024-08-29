@@ -28,13 +28,16 @@ Building a server on Windows is not currently supported.
 
 ## Prerequisites
 
+## Tooling
+
 1. You will need a recent version of Excel installed. We recommend Office 21
    or Office 365. Note that the Add-In only works with installed versions of
    Excel. It does not work with the browser-based web version.
 
 2. Install the .NET Core SDK, version 8.0
 
-   Look for the "Windows | x64" link at https://dotnet.microsoft.com/en-us/download/dotnet/8.0
+   Look for the "Windows | x64" link at
+   https://dotnet.microsoft.com/en-us/download/dotnet/8.0
 
 3. Install Visual Studio 2022 Community Edition (or Professional, or Enterprise)
    from here:
@@ -50,6 +53,79 @@ Building a server on Windows is not currently supported.
 4. Use your preferred version of git, or install Git from here:
 
    https://git-scm.com/download/win
+
+## C++ client
+
+The Deephaven Excel Add-In relies on the Deephaven C# Client, which in turn
+requires the Deephaven C++ Client (Community Core version). To use Enterprise
+Core+ features, it also requires the Deephaven C++ Client (Enterprise Core+
+version).
+
+### Build the Deephaven C++ Client (Community Core version)
+
+Follow the instructions at [repository root]/cpp-client/README.md under the
+section, under "Building the C++ client on Windows 10 / Windows 11".
+
+When that process is done, you will have C++ client binaries in a
+directory referred to by the DHINSTALL environment variable.
+
+### (Optional) build the Deephaven C++ Client (Enterprise Core+ version)
+
+To access Enterprise features, build the Enterprise Core+ version as well.
+It will also store its binaries in the same DHINSTALL directory.
+
+(instructions TODO)
+
+## Build the Excel Add-In and C# Add-In
+
+You can build the Add-In from inside Visual Studio or from the Visual Studio
+Command Prompt.
+
+### From within Visual Studio
+
+1. Open the Visual Studio solution file
+[repository root]\csharp\ExcelAddIn\ExcelAddIn.sln
+
+2. Click on BUILD -> Build solution
+
+### From the Visual Studio Command Prompt
+
+```
+cd [repository root]\csharp\ExcelAddIn
+devenv ExcelAddIn.sln /build Release
+```
+
+## Run the Add-In
+
+### From within Visual Studio
+
+1. In order to actually function, the Add-In requires the C++ Client binaries
+   built in the above steps. The easiest thing to do is simply copy all the
+   binaries into your Visual Studio build directory:
+
+Assuming a Debug build:
+
+copy -Y %DHINSTALL%\bin [repository root]\csharp\ExcelAddIn\bin\Debug\net8.0-windows
+
+If you are doing a Release build, change "Debug" to "Release" in the above path.
+
+2. Inside Visual Studio Select Debug -> Start Debugging
+
+
+### From standalone Excel
+
+The steps 
+
+
+
+
+
+
+6. Build the C++ 
+
+
+[repository root]/csharp/client/README.md (does not exist yet).
+
 
 4. Mkae
 
