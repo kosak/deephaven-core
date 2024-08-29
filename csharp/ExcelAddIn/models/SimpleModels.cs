@@ -7,9 +7,7 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
 }
 
 public record EndpointId(string Id) {
-  public string HumanReadableString => Id == "" ? "[Default]" : Id;
-
-  public override string ToString() => HumanReadableString;
+  public override string ToString() => Id;
 }
 
 public record PersistentQueryId(string Id);

@@ -43,7 +43,7 @@ internal class ConnectionManagerSessionObserver(
     // Wire up the OnClick button for that row
     // subscribe to the 
 
-    var statusRow = new ConnectionManagerDialogRow(aor.Value.HumanReadableString, stateManager);
+    var statusRow = new ConnectionManagerDialogRow(aor.Value.Id, stateManager);
     var sessDisposable = stateManager.SubscribeToSession(aor.Value, statusRow);
     var credDisposable = stateManager.SubscribeToCredentials(aor.Value, statusRow);
 
