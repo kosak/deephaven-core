@@ -10,8 +10,6 @@ public sealed class StatusOr<T> {
     return new StatusOr<T>(status, default);
   }
 
-  public static StatusOr<T> OfStatusUnknown() => OfStatus("[Unknown]");
-
   public static StatusOr<T> OfValue(T value) {
     return new StatusOr<T>(null, value);
   }

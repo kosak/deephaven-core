@@ -7,8 +7,8 @@ using System.Net;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProvider(WorkerThread workerThread) : IObservable<StatusOr<SessionBase>>, IObservable<StatusOr<CredentialsBase>>, IDisposable {
-  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
-  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
+  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
+  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
   private readonly ObserverContainer<StatusOr<CredentialsBase>> _credentialsObservers = new();
   private readonly ObserverContainer<StatusOr<SessionBase>> _sessionObservers = new();
 

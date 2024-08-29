@@ -1,5 +1,4 @@
 ﻿using Deephaven.ExcelAddIn.Factories;
-using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
 using System.ComponentModel;
 using Deephaven.ExcelAddIn.Models;
@@ -12,8 +11,8 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
-  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatusUnknown();
-  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatusUnknown();
+  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
+  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
 
   public string Id { get; init; } = id;
 
