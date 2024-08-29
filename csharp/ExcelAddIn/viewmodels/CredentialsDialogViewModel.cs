@@ -162,9 +162,6 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
     }
   }
 
-  public bool TestCredentialsButtonEnabled => false;
-  public bool SetCredentialsButtonEnabled => false;
-
   private void OnPropertyChanged([CallerMemberName] string? name = null) {
     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
   }
