@@ -39,7 +39,7 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
   }
 
-  public bool ZamboniTime => true;
+  public bool IsDefault => true;
 
   public void SettingsClicked() {
     var creds = GetCredentialsSynced();

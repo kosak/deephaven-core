@@ -36,6 +36,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
   }
 
   private string _id = "";
+  private bool _isDefault = false;
   private bool _isCorePlus = true;
 
   // Core properties
@@ -91,6 +92,18 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
       }
 
       _id = value;
+      OnPropertyChanged();
+    }
+  }
+
+  public bool IsDefault {
+    get => _isDefault;
+    set {
+      if (value == _isDefault) {
+        return;
+      }
+
+      _isDefault = value;
       OnPropertyChanged();
     }
   }

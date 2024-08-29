@@ -38,6 +38,10 @@ namespace ExcelAddIn.views {
       // Bind the Core property (there's just one)
       connectionStringBox.DataBindings.Add(nameof(connectionStringBox.Text),
         vm, nameof(vm.ConnectionString));
+
+      // Bind the IsDefault property
+      makeDefaultCheckBox.DataBindings.Add(nameof(makeDefaultCheckBox.Checked),
+        vm, nameof(vm.IsDefault));
     }
 
     public void SetTestResultsBox(string painState) {

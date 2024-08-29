@@ -2,7 +2,6 @@
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
