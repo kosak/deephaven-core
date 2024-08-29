@@ -5,7 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
-  private readonly DefaultSessionProvider _defaultProvider = new();
+  private readonly DefaultSessionProvider _defaultProvider = new(workerThread);
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
