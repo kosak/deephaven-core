@@ -30,7 +30,7 @@ public class StateManager {
   public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
     // There is a chain with three elements.
-    // The observer (argument to this method) will be a subscriber to a TableHandleProvider that we create here.
+    // The final observer (i.e. the argument to this method) will be a subscriber to a TableHandleProvider that we create here.
     // That TableHandleProvider will in turn be a subscriber to a session.
 
     // So:
@@ -43,7 +43,7 @@ public class StateManager {
     var disposer1 = SubscribeToSession(descriptor.EndpointId, thp);
     var disposer2 = thp.Subscribe(observer);
 
-    // The disposer for this needs to dispose both
+    // The disposer for this needs to dispose both "inner" disposers.
     return ActionAsDisposable.Create(() => {
       WorkerThread.Invoke(() => {
         var temp1 = Utility.Exchange(ref disposer1, null);
