@@ -39,6 +39,8 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
   }
 
+  public bool ZamboniTime => true;
+
   public void SettingsClicked() {
     var creds = GetCredentialsSynced();
     // If we have valid credentials, 

@@ -15,19 +15,20 @@ public partial class ConnectionManagerDialog : Form {
 
     _bindingSource.DataSource = typeof(ConnectionManagerDialogRow);
     dataGridView1.DataSource = _bindingSource;
+
     var settingsButtonColumn = new DataGridViewButtonColumn {
       Name = SettingsButtonColumnName,
       HeaderText = "Credentials",
       Text = "Edit",
       UseColumnTextForButtonValue = true
     };
+
     var reconnectButtonColumn = new DataGridViewButtonColumn {
       Name = ReconnectButtonColumnName,
       HeaderText = "Reconnect",
       Text = "Reconnect",
       UseColumnTextForButtonValue = true
     };
-
 
     dataGridView1.Columns.Add(settingsButtonColumn);
     dataGridView1.Columns.Add(reconnectButtonColumn);
