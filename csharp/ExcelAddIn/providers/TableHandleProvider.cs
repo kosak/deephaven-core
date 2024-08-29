@@ -58,11 +58,19 @@ internal class TableHandleProvider(
       // New state is a Core or CorePlus Session.
       _ = sb.Visit(coreSession => {
         // It's a Core session so just forward its client field to our own OnNext(Client) method.
-        OnNext(StatusOr<Client>.OfValue(coreSession.Client));
+        // We test against null in the unlikely/impossible case that the session is Disposed
+        if (coreSession.Client != null) {
+          OnNext(StatusOr<Client>.OfValue(coreSession.Client));
+        }
+
         return Unit.Instance;  // Essentially a "void" value that is ignored.
       }, corePlusSession => {
         // It's a CorePlus session so subscribe us to its PQ observer for the appropriate PQ ID
+        // If no PQ id was provided, that's a problem
         var pqid = descriptor.PersistentQueryId;
+        if (pqid == null) {
+          throw new Exception("PQ id is required");
+        }
         _observers.SetAndSendStatus(ref _tableHandle, $"Subscribing to PQ \"{pqid}\"");
         _pqDisposable = corePlusSession.SubscribeToPq(pqid, this);
         return Unit.Instance;

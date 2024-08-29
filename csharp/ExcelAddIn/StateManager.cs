@@ -3,7 +3,6 @@ using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
-using System.Net;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -23,6 +22,10 @@ public class StateManager {
     return _sessionProviders.SubscribeToSession(endpointId, observer);
   }
 
+  public IDisposable SubscribeToDefaultSession(IObserver<StatusOr<SessionBase>> observer) {
+    return _sessionProviders.SubscribeToDefaultSession(observer);
+  }
+
   public IDisposable SubscribeToCredentials(EndpointId endpointId, IObserver<StatusOr<CredentialsBase>> observer) {
     return _sessionProviders.SubscribeToCredentials(endpointId, observer);
   }
@@ -35,12 +38,15 @@ public class StateManager {
 
     // So:
     // 1. Make a TableHandleProvider
-    // 2. Subscribe it to the session provider
+    // 2. Subscribe it to either the session provider named by the endpoint id
+    // or to the default session provider
     // 3. Subscribe our observer to it
     // 4. Return a dispose action that disposes both Subscribes
 
     var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
-    var disposer1 = SubscribeToSession(descriptor.EndpointId, thp);
+    var disposer1 = descriptor.EndpointId == null ?
+      SubscribeToDefaultSession(thp) :
+      SubscribeToSession(descriptor.EndpointId, thp);
     var disposer2 = thp.Subscribe(observer);
 
     // The disposer for this needs to dispose both "inner" disposers.

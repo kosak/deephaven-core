@@ -7,7 +7,7 @@ namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class CredentialsDialogFactory {
   public static CredentialsDialog Create(StateManager sm, CredentialsDialogViewModel cvm) {
-    CredentialsDialog credentialsDialog = null;
+    CredentialsDialog? credentialsDialog = null;
 
     void OnSetCredentialsButtonClicked() {
       if (!cvm.TryMakeCredentials(out var newCreds)) {
