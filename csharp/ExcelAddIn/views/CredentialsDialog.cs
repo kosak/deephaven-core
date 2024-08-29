@@ -29,6 +29,12 @@ namespace ExcelAddIn.views {
       // Bind the ID
       endpointIdBox.DataBindings.Add(nameof(endpointIdBox.Text), vm, nameof(vm.Id));
 
+      // Bind the "Enabled" flags of the "Test" and "Set Credentials" buttons
+      testCredentialsButton.DataBindings.Add(nameof(testCredentialsButton.Enabled), vm,
+        nameof(vm.TestCredentialsButtonEnabled));
+      setCredentialsButton.DataBindings.Add(nameof(setCredentialsButton.Enabled), vm,
+        nameof(vm.SetCredentialsButtonEnabled));
+
       // Bind the Core+ properties
       jsonUrlBox.DataBindings.Add(nameof(jsonUrlBox.Text), vm, nameof(vm.JsonUrl));
       userIdBox.DataBindings.Add(nameof(userIdBox.Text), vm, nameof(vm.UserId));

@@ -36,10 +36,9 @@
       corePanel = new Panel();
       connectionStringBox = new TextBox();
       label2 = new Label();
-      panel1 = new Panel();
+      finalPanel = new Panel();
       testResultsTextBox = new TextBox();
       testResultsLabel = new Label();
-      credentialStatusLabel = new Label();
       testCredentialsButton = new Button();
       setCredentialsButton = new Button();
       isCorePlusRadioButton = new RadioButton();
@@ -47,10 +46,11 @@
       endpointIdBox = new TextBox();
       label1 = new Label();
       connectionTypeGroup = new GroupBox();
+      makeDefaultCheckBox = new CheckBox();
       flowLayoutPanel1.SuspendLayout();
       corePlusPanel.SuspendLayout();
       corePanel.SuspendLayout();
-      panel1.SuspendLayout();
+      finalPanel.SuspendLayout();
       connectionTypeGroup.SuspendLayout();
       SuspendLayout();
       // 
@@ -58,7 +58,7 @@
       // 
       flowLayoutPanel1.Controls.Add(corePlusPanel);
       flowLayoutPanel1.Controls.Add(corePanel);
-      flowLayoutPanel1.Controls.Add(panel1);
+      flowLayoutPanel1.Controls.Add(finalPanel);
       flowLayoutPanel1.Location = new Point(28, 160);
       flowLayoutPanel1.Name = "flowLayoutPanel1";
       flowLayoutPanel1.Size = new Size(994, 531);
@@ -169,21 +169,21 @@
       label2.TabIndex = 0;
       label2.Text = "Connection String";
       // 
-      // panel1
+      // finalPanel
       // 
-      panel1.Controls.Add(testResultsTextBox);
-      panel1.Controls.Add(testResultsLabel);
-      panel1.Controls.Add(credentialStatusLabel);
-      panel1.Controls.Add(testCredentialsButton);
-      panel1.Controls.Add(setCredentialsButton);
-      panel1.Location = new Point(3, 333);
-      panel1.Name = "panel1";
-      panel1.Size = new Size(991, 110);
-      panel1.TabIndex = 230;
+      finalPanel.Controls.Add(makeDefaultCheckBox);
+      finalPanel.Controls.Add(testResultsTextBox);
+      finalPanel.Controls.Add(testResultsLabel);
+      finalPanel.Controls.Add(testCredentialsButton);
+      finalPanel.Controls.Add(setCredentialsButton);
+      finalPanel.Location = new Point(3, 333);
+      finalPanel.Name = "finalPanel";
+      finalPanel.Size = new Size(991, 132);
+      finalPanel.TabIndex = 230;
       // 
       // testResultsTextBox
       // 
-      testResultsTextBox.Location = new Point(189, 51);
+      testResultsTextBox.Location = new Point(189, 17);
       testResultsTextBox.Name = "testResultsTextBox";
       testResultsTextBox.ReadOnly = true;
       testResultsTextBox.Size = new Size(768, 31);
@@ -197,18 +197,9 @@
       testResultsLabel.Size = new Size(0, 25);
       testResultsLabel.TabIndex = 6;
       // 
-      // credentialStatusLabel
-      // 
-      credentialStatusLabel.AutoSize = true;
-      credentialStatusLabel.Location = new Point(35, 54);
-      credentialStatusLabel.Name = "credentialStatusLabel";
-      credentialStatusLabel.Size = new Size(106, 25);
-      credentialStatusLabel.TabIndex = 5;
-      credentialStatusLabel.Text = "Test Results:";
-      // 
       // testCredentialsButton
       // 
-      testCredentialsButton.Location = new Point(189, 3);
+      testCredentialsButton.Location = new Point(8, 17);
       testCredentialsButton.Name = "testCredentialsButton";
       testCredentialsButton.Size = new Size(175, 34);
       testCredentialsButton.TabIndex = 231;
@@ -218,7 +209,7 @@
       // 
       // setCredentialsButton
       // 
-      setCredentialsButton.Location = new Point(757, 0);
+      setCredentialsButton.Location = new Point(757, 65);
       setCredentialsButton.Name = "setCredentialsButton";
       setCredentialsButton.Size = new Size(200, 34);
       setCredentialsButton.TabIndex = 232;
@@ -275,6 +266,16 @@
       connectionTypeGroup.TabStop = false;
       connectionTypeGroup.Text = "Connection Type";
       // 
+      // makeDefaultCheckBox
+      // 
+      makeDefaultCheckBox.AutoSize = true;
+      makeDefaultCheckBox.Location = new Point(599, 70);
+      makeDefaultCheckBox.Name = "makeDefaultCheckBox";
+      makeDefaultCheckBox.Size = new Size(143, 29);
+      makeDefaultCheckBox.TabIndex = 234;
+      makeDefaultCheckBox.Text = "Make Default";
+      makeDefaultCheckBox.UseVisualStyleBackColor = true;
+      // 
       // CredentialsDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
@@ -291,8 +292,8 @@
       corePlusPanel.PerformLayout();
       corePanel.ResumeLayout(false);
       corePanel.PerformLayout();
-      panel1.ResumeLayout(false);
-      panel1.PerformLayout();
+      finalPanel.ResumeLayout(false);
+      finalPanel.PerformLayout();
       connectionTypeGroup.ResumeLayout(false);
       connectionTypeGroup.PerformLayout();
       ResumeLayout(false);
@@ -320,10 +321,10 @@
     private TextBox operateAsBox;
     private TextBox passwordBox;
     private Label label5;
-    private Panel panel1;
+    private Panel finalPanel;
     private Button testCredentialsButton;
     private Label testResultsLabel;
-    private Label credentialStatusLabel;
     private TextBox testResultsTextBox;
+    private CheckBox makeDefaultCheckBox;
   }
 }
