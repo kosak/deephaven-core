@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
@@ -10,7 +11,8 @@ internal static class CredentialsDialogFactory {
     CredentialsDialog? credentialsDialog = null;
 
     void OnSetCredentialsButtonClicked() {
-      if (!cvm.TryMakeCredentials(out var newCreds)) {
+      if (!cvm.TryMakeCredentials(out var newCreds, out var error)) {
+        ShowMessageBox(error);
         return;
       }
 
@@ -18,7 +20,8 @@ internal static class CredentialsDialogFactory {
     }
 
     void OnTestCredentialsButtonClicked() {
-      if (!cvm.TryMakeCredentials(out var newCreds)) {
+      if (!cvm.TryMakeCredentials(out var newCreds, out var error)) {
+        ShowMessageBox(error);
         return;
       }
 
@@ -40,5 +43,9 @@ internal static class CredentialsDialogFactory {
     // Save in captured variable so that the lambdas can access it.
     credentialsDialog = new CredentialsDialog(cvm, OnSetCredentialsButtonClicked, OnTestCredentialsButtonClicked);
     return credentialsDialog;
+  }
+
+  private static void ShowMessageBox(string error) {
+    MessageBox.Show(error, "Please provide missing fields", MessageBoxButtons.OK);
   }
 }

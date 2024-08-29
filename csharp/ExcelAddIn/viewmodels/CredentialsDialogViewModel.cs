@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
@@ -48,13 +49,37 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  public bool TryMakeCredentials(out CredentialsBase result) {
-    if (_isCorePlus) {
-      result = CredentialsBase.OfCorePlus(_jsonUrl, _userId, _password, _operateAs);
-      return true;
+  public bool TryMakeCredentials([NotNullWhen(true)] out CredentialsBase? result,
+    [NotNullWhen(false)] out string? errorText) {
+    result = null;
+    errorText = null;
+
+    var missingFields = new List<string>();
+    void CheckMissing(string field, string name) {
+      if (field.Length == 0) {
+        missingFields.Add(name);
+      }
     }
 
-    result = CredentialsBase.OfCore(_connectionString);
+    CheckMissing(_id, "Connection Id");
+
+    if (!_isCorePlus) {
+      CheckMissing(_connectionString, "Connection String");
+    } else {
+      CheckMissing(_jsonUrl, "JSON URL");
+      CheckMissing(_userId, "User Id");
+      CheckMissing(_password, "Password");
+      CheckMissing(_operateAs, "Operate As");
+    }
+
+    if (missingFields.Count > 0) {
+      errorText = string.Join(", ", missingFields);
+      return false;
+    }
+
+    result = _isCorePlus
+      ? CredentialsBase.OfCorePlus(_id, _jsonUrl, _userId, _password, _operateAs)
+      : CredentialsBase.OfCore(_id, _connectionString);
     return true;
   }
 
