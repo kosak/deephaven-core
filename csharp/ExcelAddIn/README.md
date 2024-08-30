@@ -74,8 +74,8 @@ The instructions below describe how to build these libraries.
 Follow the instructions at [repository root]/cpp-client/README.md under the
 section, under "Building the C++ client on Windows 10 / Windows 11".
 
-When that process is done, you will have C++ client binaries in a
-directory referred to by the DHINSTALL environment variable.
+When that process is done, you will have C++ client binaries in the
+directory you specified in your DHINSTALL environment variable.
 
 ### (Optional) build the Deephaven C++ Client (Enterprise Core+ version)
 
