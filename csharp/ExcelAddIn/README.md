@@ -155,17 +155,23 @@ Then, run Excel and follow the following steps.
 1. In Excel, click on Add-ins -> Deephaven -> Connections. This should bring
    up a Connections form. If so, the C# code is functioning correctly.
 
-2. Inside Connections, click the "New Connection" button. A "Credentials
+2. In the following steps we deliberately use nonsense connection settings
+   in order to quickly trigger an error. Even thought he connection settings
+   are nonsense, getting an error quickly confirms that the functionality
+   of the C++ code is working.
+
+3. Inside Connections, click the "New Connection" button. A "Credentials
    Editor" window will pop up. Inside this window, enter "con1" for the
-   Connection ID, select the "Community Core" button, and enter a known-bad
+   Connection ID, select the "Community Core" button, and enter a nonsense
    endpoint address like "abc.def"
 
-3. Press Test Credentials. You should immediately see an error like
+4. Press Test Credentials. You should immediately see an error like
    "Can't get configuration constants. Error 14: DNS resolution failed for
    abc.def"
 
-4. Enterprise users can do a similar test by pressing the Enterprise Core+
-   button and putting in "abc" in each field.
+5. Enterprise users can do a similar test by selecting the Enterprise Core+
+   button. Putting a nonsense protocol like abc://def in the JSON URl field
+   will quickly lead to an error.
    
 ### By connecting to a Deephaven server
 
