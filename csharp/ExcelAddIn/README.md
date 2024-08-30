@@ -134,6 +134,7 @@ copy [repository root]\csharp\ExcelAddIn\bin\Debug\net8.0-windows\publish\ExcelA
 Note the above file comes from the "publish" subdirectory.
 
 Then, run Excel and follow the following steps.
+
 1. Click on "Options" at the lower left of the window.
 2. Click on "Add-ins" on the left, second from the bottom.
 3. At the bottom of the screen click, near "Manage", select "Excel Add-ins"
@@ -161,7 +162,7 @@ Then, run Excel and follow the following steps.
    abc.def"
 
 4. Enterprise users can do a similar test by pressing the Enterprise Core+
-   button and putting in placeholder data.
+   button and putting in "abc" in each field.
    
 ### By connecting to a Deephaven server
 
