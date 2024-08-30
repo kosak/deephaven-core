@@ -113,7 +113,7 @@ devenv ExcelAddIn.sln /build Release
 
 Assuming a Debug build:
 
-copy -Y %DHINSTALL%\bin [repository root]\csharp\ExcelAddIn\bin\Debug\net8.0-windows
+copy /Y %DHINSTALL%\bin [repository root]\csharp\ExcelAddIn\bin\Debug\net8.0-windows
 
 If you are doing a Release build, change "Debug" to "Release" in the above path.
 
