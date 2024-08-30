@@ -119,6 +119,9 @@ If you are doing a Release build, change "Debug" to "Release" in the above path.
 
 2. Inside Visual Studio Select Debug -> Start Debugging
 
+Visual Studio will launch Excel automatically. Excel will launch with a
+Security Notice because the add-in is not signed. Click "Enable this add-in
+for this session only."
 
 ### From standalone Excel
 
