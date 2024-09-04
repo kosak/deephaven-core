@@ -52,7 +52,11 @@ public sealed class CorePlusSession(SessionManager sessionManager, WorkerThread 
       return;
     }
 
-    Utility.Exchange(ref _sessionManager, null)?.Dispose();
+    var temp = Utility.Exchange(ref _sessionManager, null);
+    if (temp != null) {
+      // Back on a helper thread
+      Utility.RunInBackground(temp.Dispose);
+    }
   }
 
   public SessionManager SessionManager {
