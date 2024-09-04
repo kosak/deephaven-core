@@ -42,7 +42,7 @@ public partial class ConnectionManagerDialog : Form {
   }
 
   private void DataGridView1_CellClick(object? sender, DataGridViewCellEventArgs e) {
-    if (e.RowIndex < 0) {
+    if (e.RowIndex < 0 || e.ColumnIndex < 0) {
       return;
     }
 
