@@ -85,18 +85,3 @@ internal class ConnectionManagerSessionObserver(
   }
 }
 
-internal class DefaultCredentialsTracker(ConnectionManagerDialogRow statusRow) : IObserver<StatusOr<CredentialsBase>> {
-  public void OnNext(StatusOr<CredentialsBase> value) {
-    statusRow.SetDefaultCredentials(value);
-  }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-}

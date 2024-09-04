@@ -8,7 +8,7 @@ using System.Net;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<CredentialsBase>>,
+public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread) : IObserver<StatusOr<CredentialsBase>>,
   IObserver<StatusOr<SessionBase>>, IDisposable {
 
   public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
@@ -18,9 +18,13 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     return result;
   }
 
-  private IDisposable _sessionDisposable;
+  private List<IDisposable> _disposables;
 
   private void Resubscribe() {
+    if (workerThread.InvokeIfRequired(Resubscribe)) {
+      return;
+    }
+
     if (_disposables.Count != 0) {
       throw new Exception("State error: already subscribed");
     }
@@ -28,15 +32,19 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     _disposables.Add(stateManager.SubscribeToSession(endpointId, result));
     _disposables.Add(SubscribeToCredentials(endpointId, result));
     // Now we have a problem. We would also like to watch for credential
-    // state changes in the default session, but it also wants an IObserver<StatusOr<CredentialsBase>>
-    // which we are already using to watch for regular credential changes.
-    // To deal with this, we change the type of the observed object to something
-    // we made up, just so it has a different type.
-    var wrappedResult = Utility.SuperNubbin<StatusOr<CredentialsBase>, MyWrappedSOCB>(result);
+    // state changes in the default session. But the default session
+    // has the same observable type (IObservable<StatusOr<SessionBase>>)
+    // as the specific session we are watching. To work around this,
+    // we create an Observer that translates StatusOr<SessionBase> to
+    // MyWrappedSOSB and then we subscribe to that.
+    var wrappedResult = Utility.SuperNubbin<StatusOr<CredentialsBase>, MyWrappedSOCB>(this);
     _disposables.Add(stateManager.SubscribeToDefaultCredentials(wrappedResult));
   }
 
   private void Unsubcribe() {
+    if (workerThread.InvokeIfRequired(Unsubcribe)) {
+      return;
+    }
     var temp = _disposables.ToArray();
     _disposables.Clear();
 
