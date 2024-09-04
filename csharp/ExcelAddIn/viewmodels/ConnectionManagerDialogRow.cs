@@ -9,15 +9,15 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRowObserver : IObserver<StatusOr<CredentialsBase>>,
-  IObserver<StatusOr<SessionBase>> {
+public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<CredentialsBase>>,
+  IObserver<StatusOr<SessionBase>>, IDisposable {
 
-
-  public static ConnectionManagerDialogRow Create(string id, StateManager stateManager) {
+  public static ConnectionManagerDialogRowManager Create(EndpointId endpointId, StateManager stateManager) {
+    var result = new ConnectionManagerDialogRowManager();
     var statusRow = new ConnectionManagerDialogRow(endpointId.Id, stateManager);
     // We watch for session and credential state changes in our ID
-    var sessDisposable = stateManager.SubscribeToSession(endpointId, statusRow);
-    var credDisposable = stateManager.SubscribeToCredentials(endpointId, statusRow);
+    var sessDisposable = stateManager.SubscribeToSession(endpointId, result);
+    var credDisposable = stateManager.SubscribeToCredentials(endpointId, result);
 
     // And we also watch for credentials changes in the default session (just to keep
     // track of whether we are still the default)
@@ -86,6 +86,22 @@ public sealed class ConnectionManagerDialogRowObserver : IObserver<StatusOr<Cred
     stateManager.SetDefaultCredentials(creds);
   }
 
+
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+}
+
+internal class DefaultCredentialsTracker(ConnectionManagerDialogRow statusRow) : IObserver<StatusOr<CredentialsBase>> {
+  public void OnNext(StatusOr<CredentialsBase> value) {
+    statusRow.SetDefaultCredentials(value);
+  }
 
   public void OnCompleted() {
     // TODO(kosak)
