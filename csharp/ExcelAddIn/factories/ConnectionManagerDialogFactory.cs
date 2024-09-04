@@ -16,26 +16,26 @@ internal static class ConnectionManagerDialogFactory {
     }
 
     void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
-      Debug.WriteLine("would be nice");
+      Debug.WriteLine("would be nice1");
     }
 
     void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
-      Debug.WriteLine("would be nice");
+      Debug.WriteLine("would be nice2");
     }
 
     void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
-      Debug.WriteLine("would be nice");
+      Debug.WriteLine("would be nice3");
     }
 
     var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked, OnDeleteButtonClicked,
       OnReconnectButtonClicked, OnEditButtonClicked);
     cmDialog.Show();
-    var newThing = new ConnectionManagerDialogManager(cmDialog, sm);
-    var disposer = sm.SubscribeToSessions(newThing);
+    var dm = new ConnectionManagerDialogManager(cmDialog, sm);
+    var disposer = sm.SubscribeToSessions(dm);
 
     cmDialog.Closed += (_, _) => {
       disposer.Dispose();
-      newThing.Dispose();
+      dm.Dispose();
     };
   }
 }

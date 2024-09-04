@@ -73,6 +73,7 @@
       editButton.TabIndex = 3;
       editButton.Text = "Edit...";
       editButton.UseVisualStyleBackColor = true;
+      editButton.Click += editButton_Click;
       // 
       // deleteButton
       // 
@@ -82,6 +83,7 @@
       deleteButton.TabIndex = 4;
       deleteButton.Text = "Delete";
       deleteButton.UseVisualStyleBackColor = true;
+      deleteButton.Click += deleteButton_Click;
       // 
       // reconnectButton
       // 
