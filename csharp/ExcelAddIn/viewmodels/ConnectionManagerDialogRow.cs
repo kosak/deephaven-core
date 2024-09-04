@@ -3,12 +3,103 @@ using Deephaven.ExcelAddIn.ViewModels;
 using System.ComponentModel;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using System.Net;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRow(string id, StateManager stateManager) :
-  IObserver<StatusOr<CredentialsBase>>, IObserver<StatusOr<SessionBase>>,
-  INotifyPropertyChanged {
+public sealed class ConnectionManagerDialogRowObserver : IObserver<StatusOr<CredentialsBase>>,
+  IObserver<StatusOr<SessionBase>> {
+
+
+  public static ConnectionManagerDialogRow Create(string id, StateManager stateManager) {
+    var statusRow = new ConnectionManagerDialogRow(endpointId.Id, stateManager);
+    // We watch for session and credential state changes in our ID
+    var sessDisposable = stateManager.SubscribeToSession(endpointId, statusRow);
+    var credDisposable = stateManager.SubscribeToCredentials(endpointId, statusRow);
+
+    // And we also watch for credentials changes in the default session (just to keep
+    // track of whether we are still the default)
+    var dct = new DefaultCredentialsTracker(statusRow);
+    var defaultCredDisposable = stateManager.SubscribeToDefaultCredentials(dct);
+
+    // We'll do our AddRow on the GUI thread, and, while we're on the GUI thread, we'll add
+    // our disposables to our saved disposables.
+    cmDialog.Invoke(() => {
+      _disposables.Add(sessDisposable);
+      _disposables.Add(credDisposable);
+      _disposables.Add(defaultCredDisposable);
+      cmDialog.AddRow(statusRow);
+    });
+
+  }
+
+
+  public void OnNext(StatusOr<CredentialsBase> value) {
+    lock (_sync) {
+      _credentials = value;
+    }
+
+    OnPropertyChanged(nameof(ServerType));
+    OnPropertyChanged(nameof(IsDefault));
+  }
+
+  public void OnNext(StatusOr<SessionBase> value) {
+    lock (_sync) {
+      _session = value;
+    }
+
+    OnPropertyChanged(nameof(Status));
+  }
+
+
+  public void SettingsClicked() {
+    var creds = GetCredentialsSynced();
+    // If we have valid credentials, 
+    var cvm = creds.AcceptVisitor(
+      crs => CredentialsDialogViewModel.OfIdAndCredentials(Id, crs),
+      _ => CredentialsDialogViewModel.OfIdButOtherwiseEmpty(Id));
+    var cd = CredentialsDialogFactory.Create(stateManager, cvm);
+    cd.Show();
+  }
+
+  public void DeleteClicked() {
+    stateManager.SetCredentials();
+  }
+
+  public void ReconnectClicked() {
+    stateManager.Reconnect(new EndpointId(Id));
+  }
+
+  public void IsDefaultClicked() {
+    // If the box is already checked, do nothing.
+    if (IsDefault) {
+      return;
+    }
+
+    // If we don't have credentials, then we can't make them the default.
+    if (!_credentials.GetValueOrStatus(out var creds, out _)) {
+      return;
+    }
+
+    stateManager.SetDefaultCredentials(creds);
+  }
+
+
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+}
+
+public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChanged {
+
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
@@ -41,54 +132,14 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     }
   }
 
-  public bool IsDefault =>
-    _credentials.GetValueOrStatus(out var creds1, out _) &&
-    _defaultCredentials.GetValueOrStatus(out var creds2, out _) &&
-    creds1.Id == creds2.Id;
-
-  public void SettingsClicked() {
-    var creds = GetCredentialsSynced();
-    // If we have valid credentials, 
-    var cvm = creds.AcceptVisitor(
-      crs => CredentialsDialogViewModel.OfIdAndCredentials(Id, crs),
-      _ => CredentialsDialogViewModel.OfIdButOtherwiseEmpty(Id));
-    var cd = CredentialsDialogFactory.Create(stateManager, cvm);
-    cd.Show();
-  }
-
-  public void ReconnectClicked() {
-    stateManager.Reconnect(new EndpointId(Id));
-  }
-
-  public void IsDefaultClicked() {
-    // If the box is already checked, do nothing.
-    if (IsDefault) {
-      return;
+  public bool IsDefault {
+    get {
+      var creds = GetCredentialsSynced();
+      var defaultCreds = GetDefaultCredentialsSynced();
+      return creds.GetValueOrStatus(out var creds1, out _) &&
+             defaultCreds.GetValueOrStatus(out var creds2, out _) &&
+             creds1.Id == creds2.Id;
     }
-
-    // If we don't have credentials, then we can't make them the default.
-    if (!_credentials.GetValueOrStatus(out var creds, out _)) {
-      return;
-    }
-
-    stateManager.SetDefaultCredentials(creds);
-  }
-
-  public void OnNext(StatusOr<CredentialsBase> value) {
-    lock (_sync) {
-      _credentials = value;
-    }
-
-    OnPropertyChanged(nameof(ServerType));
-    OnPropertyChanged(nameof(IsDefault));
-  }
-
-  public void OnNext(StatusOr<SessionBase> value) {
-    lock (_sync) {
-      _session = value;
-    }
-
-    OnPropertyChanged(nameof(Status));
   }
 
   public void SetDefaultCredentials(StatusOr<CredentialsBase> creds) {
@@ -98,19 +149,15 @@ public sealed class ConnectionManagerDialogRow(string id, StateManager stateMana
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
   private StatusOr<CredentialsBase> GetCredentialsSynced() {
     lock (_sync) {
       return _credentials;
+    }
+  }
+
+  private StatusOr<CredentialsBase> GetDefaultCredentialsSynced() {
+    lock (_sync) {
+      return _defaultCredentials;
     }
   }
 
