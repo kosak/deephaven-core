@@ -30,6 +30,10 @@ public partial class ConnectionManagerDialog : Form {
   }
 
   public void AddRow(ConnectionManagerDialogRow row) {
+    if (InvokeRequired) {
+      Invoke(() => AddRow(row));
+      return;
+    }
     _bindingSource.Add(row);
   }
 
@@ -44,7 +48,8 @@ public partial class ConnectionManagerDialog : Form {
     }
     var name = dataGridView1.Columns[e.ColumnIndex].Name;
     if (name == IsDefaultColumnName) {
-      row.IsDefaultClicked();
+      Console.WriteLine("TODO");
+      // row.IsDefaultClicked();
     }
   }
 
@@ -54,23 +59,17 @@ public partial class ConnectionManagerDialog : Form {
 
   private void reconnectButton_Click(object sender, EventArgs e) {
     var selections = GetSelectedRows();
-    foreach (var selection in selections) {
-      selection.ReconnectClicked();
-    }
+    _onReconnectButtonClicked(selections);
   }
 
   private void editButton_Click(object sender, EventArgs e) {
     var selections = GetSelectedRows();
-    foreach (var selection in selections) {
-      selection.SettingsClicked();
-    }
+    _onEditButtonClicked(selections);
   }
 
   private void deleteButton_Click(object sender, EventArgs e) {
     var selections = GetSelectedRows();
-    foreach (var selection in selections) {
-      selection.DeleteClicked();  // maybe
-    }
+    _onDeleteButtonClicked(selections);
   }
 
   private ConnectionManagerDialogRow[] GetSelectedRows() {

@@ -16,5 +16,19 @@ internal static class ObservableConverter {
 
 
 internal class ObservableConverter<TFrom, TTo> : IObserver<TFrom>, IObservable<TTo> {
+  public void OnCompleted() {
+    throw new NotImplementedException();
+  }
 
+  public void OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+  public void OnNext(TFrom value) {
+    throw new NotImplementedException();
+  }
+
+  public IDisposable Subscribe(IObserver<TTo> observer) {
+    throw new NotImplementedException();
+  }
 }

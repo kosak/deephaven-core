@@ -1,6 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Factories;
-using Deephaven.ExcelAddIn.ViewModels;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
