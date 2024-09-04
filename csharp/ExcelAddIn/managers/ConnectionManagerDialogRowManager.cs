@@ -7,7 +7,7 @@ using Deephaven.ExcelAddIn.ViewModels;
 namespace Deephaven.ExcelAddIn.Managers;
 
 public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<CredentialsBase>>,
-  IObserver<StatusOr<SessionBase>>, IDisposable {
+  IObserver<StatusOr<SessionBase>>, IObserver<ConnectionManagerDialogRowManager.MyWrappedSocb>, IDisposable {
 
   public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
     EndpointId endpointId, StateManager stateManager, WorkerThread workerThread) {
@@ -51,9 +51,9 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     // as the specific session we are watching. To work around this,
     // we create an Observer that translates StatusOr<SessionBase> to
     // MyWrappedSOSB and then we subscribe to that.
-    var translator = Utility.SuperNubbin<StatusOr<CredentialsBase>, MyWrappedSOCB>(this);
-    var d3 = _stateManager.SubscribeToDefaultCredentials(translator);
-    var d4 = translator.Subscribe(this);
+    var converter = ObservableConverter.Create<StatusOr<CredentialsBase>, MyWrappedSocb>(socb => new MyWrappedSocb(socb));
+    var d3 = _stateManager.SubscribeToDefaultCredentials(converter);
+    var d4 = converter.Subscribe(this);
 
     _disposables.AddRange(new[] { d1, d2, d3, d4 });
   }
@@ -78,7 +78,7 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     _row.SetSessionSynced(value);
   }
 
-  public void OnNext(MyWrappedSOCB value) {
+  public void OnNext(MyWrappedSocb value) {
     _row.SetDefaultCredentialsSynced(value.Value);
   }
 
@@ -131,5 +131,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
   public void OnError(Exception error) {
     // TODO(kosak)
     throw new NotImplementedException();
+  }
+
+  public record MyWrappedSocb(StatusOr<CredentialsBase> Value) {
   }
 }
