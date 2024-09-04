@@ -3,9 +3,7 @@ using Deephaven.ExcelAddIn.ViewModels;
 using System.ComponentModel;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using System.Net;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
