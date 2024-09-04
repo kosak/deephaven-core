@@ -19,11 +19,13 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
   }
 
   private readonly ConnectionManagerDialogRow _row;
+  private readonly EndpointId _endpointId;
+  private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private List<IDisposable> _disposables;
 
   private void Resubscribe() {
-    if (workerThread.InvokeIfRequired(Resubscribe)) {
+    if (_workerThread.InvokeIfRequired(Resubscribe)) {
       return;
     }
 
@@ -31,20 +33,23 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
       throw new Exception("State error: already subscribed");
     }
     // We watch for session and credential state changes in our ID
-    _disposables.Add(stateManager.SubscribeToSession(endpointId, result));
-    _disposables.Add(SubscribeToCredentials(endpointId, result));
+    var d1 = _stateManager.SubscribeToSession(_endpointId, this);
+    var d2 = _stateManager.SubscribeToCredentials(_endpointId, this);
     // Now we have a problem. We would also like to watch for credential
     // state changes in the default session. But the default session
     // has the same observable type (IObservable<StatusOr<SessionBase>>)
     // as the specific session we are watching. To work around this,
     // we create an Observer that translates StatusOr<SessionBase> to
     // MyWrappedSOSB and then we subscribe to that.
-    var wrappedResult = Utility.SuperNubbin<StatusOr<CredentialsBase>, MyWrappedSOCB>(this);
-    _disposables.Add(stateManager.SubscribeToDefaultCredentials(wrappedResult));
+    var translator = Utility.SuperNubbin<StatusOr<CredentialsBase>, MyWrappedSOCB>(this);
+    var d3 = _stateManager.SubscribeToDefaultCredentials(translator);
+    var d4 = translator.Subscribe(this);
+
+    _disposables.AddRange(new[]{d1, d2, d3, d4});
   }
 
   private void Unsubcribe() {
-    if (workerThread.InvokeIfRequired(Unsubcribe)) {
+    if (_workerThread.InvokeIfRequired(Unsubcribe)) {
       return;
     }
     var temp = _disposables.ToArray();
@@ -60,9 +65,6 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     lock (_sync) {
       _credentials = value;
     }
-
-    OnPropertyChanged(nameof(ServerType));
-    OnPropertyChanged(nameof(IsDefault));
   }
 
   public void OnNext(StatusOr<SessionBase> value) {
@@ -189,17 +191,19 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
   }
 
-  public void SetDefaultCredentials(StatusOr<CredentialsBase> creds) {
-    lock (_sync) {
-      _defaultCredentials = creds;
-    }
-    OnPropertyChanged(nameof(IsDefault));
-  }
-
-  private StatusOr<CredentialsBase> GetCredentialsSynced() {
+  public StatusOr<CredentialsBase> GetCredentialsSynced() {
     lock (_sync) {
       return _credentials;
     }
+  }
+
+  public void SetCredentialsSynced(StatusOr<CredentialsBase> value) {
+    lock (_sync) {
+      _credentials = value;
+    }
+
+    OnPropertyChanged(nameof(ServerType));
+    OnPropertyChanged(nameof(IsDefault));
   }
 
   private StatusOr<CredentialsBase> GetDefaultCredentialsSynced() {
@@ -208,10 +212,24 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
   }
 
-  private StatusOr<SessionBase> GetSessionSynced() {
+  public void SetDefaultCredentialsSynced(StatusOr<CredentialsBase> value) {
+    lock (_sync) {
+      _defaultCredentials = value;
+    }
+    OnPropertyChanged(nameof(IsDefault));
+  }
+
+  public StatusOr<SessionBase> GetSessionSynced() {
     lock (_sync) {
       return _session;
     }
+  }
+
+  public void SetSessionSynced(StatusOr<SessionBase> value) {
+    lock (_sync) {
+      _session = value;
+    }
+    OnPropertyChanged(nameof(Status));
   }
 
   private void OnPropertyChanged(string name) {
