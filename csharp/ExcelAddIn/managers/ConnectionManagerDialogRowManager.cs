@@ -51,7 +51,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     // as the specific session we are watching. To work around this,
     // we create an Observer that translates StatusOr<SessionBase> to
     // MyWrappedSOSB and then we subscribe to that.
-    var converter = ObservableConverter.Create<StatusOr<CredentialsBase>, MyWrappedSocb>(socb => new MyWrappedSocb(socb));
+    var converter = ObservableConverter.Create(
+      (StatusOr<CredentialsBase> socb) => new MyWrappedSocb(socb), _workerThread);
     var d3 = _stateManager.SubscribeToDefaultCredentials(converter);
     var d4 = converter.Subscribe(this);
 
