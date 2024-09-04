@@ -27,6 +27,9 @@
       dataGridView1 = new DataGridView();
       newButton = new Button();
       connectionsLabel = new Label();
+      editButton = new Button();
+      deleteButton = new Button();
+      reconnectButton = new Button();
       ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
       SuspendLayout();
       // 
@@ -44,11 +47,11 @@
       // 
       // newButton
       // 
-      newButton.Location = new Point(869, 560);
+      newButton.Location = new Point(919, 560);
       newButton.Name = "newButton";
-      newButton.Size = new Size(178, 34);
+      newButton.Size = new Size(128, 34);
       newButton.TabIndex = 1;
-      newButton.Text = "New Connection";
+      newButton.Text = "New...";
       newButton.UseVisualStyleBackColor = true;
       newButton.Click += newButton_Click;
       // 
@@ -62,11 +65,42 @@
       connectionsLabel.TabIndex = 2;
       connectionsLabel.Text = "Connections";
       // 
+      // editButton
+      // 
+      editButton.Location = new Point(776, 560);
+      editButton.Name = "editButton";
+      editButton.Size = new Size(112, 34);
+      editButton.TabIndex = 3;
+      editButton.Text = "Edit...";
+      editButton.UseVisualStyleBackColor = true;
+      // 
+      // deleteButton
+      // 
+      deleteButton.Location = new Point(483, 560);
+      deleteButton.Name = "deleteButton";
+      deleteButton.Size = new Size(112, 34);
+      deleteButton.TabIndex = 4;
+      deleteButton.Text = "Delete";
+      deleteButton.UseVisualStyleBackColor = true;
+      // 
+      // reconnectButton
+      // 
+      reconnectButton.Location = new Point(636, 560);
+      reconnectButton.Name = "reconnectButton";
+      reconnectButton.Size = new Size(112, 34);
+      reconnectButton.TabIndex = 5;
+      reconnectButton.Text = "Reconnect";
+      reconnectButton.UseVisualStyleBackColor = true;
+      reconnectButton.Click += reconnectButton_Click;
+      // 
       // ConnectionManagerDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(1115, 615);
+      Controls.Add(reconnectButton);
+      Controls.Add(deleteButton);
+      Controls.Add(editButton);
       Controls.Add(connectionsLabel);
       Controls.Add(newButton);
       Controls.Add(dataGridView1);
@@ -83,5 +117,8 @@
     private DataGridView dataGridView1;
     private Button newButton;
     private Label connectionsLabel;
+    private Button editButton;
+    private Button deleteButton;
+    private Button reconnectButton;
   }
 }

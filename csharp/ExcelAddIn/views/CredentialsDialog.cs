@@ -52,7 +52,19 @@ namespace ExcelAddIn.views {
     }
 
     public void SetTestResultsBox(string testResultsState) {
-      Invoke(() => testResultsTextBox.Text = testResultsState);
+      if (InvokeRequired) {
+        try {
+          Invoke(() => SetTestResultsBox(testResultsState));
+        } catch (InvalidOperationException) {
+          // TODO(kosak): figure out a better way to handle this race
+          // Invoke will fail if it is called after the form was closed. There is a race
+          // here that is pretty hard to get rid of. For now we catch the exception and
+          // throw away the value.
+        }
+        return;
+      }
+
+      testResultsTextBox.Text = testResultsState;
     }
 
     private void setCredentialsButton_Click(object sender, EventArgs e) {

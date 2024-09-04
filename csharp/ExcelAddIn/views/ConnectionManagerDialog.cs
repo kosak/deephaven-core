@@ -2,14 +2,20 @@
 
 namespace Deephaven.ExcelAddIn.Views;
 
+using SelectedRowsAction = Action<ConnectionManagerDialogRow[]>;
+
 public partial class ConnectionManagerDialog : Form {
   private const string IsDefaultColumnName = "IsDefault";
-  private const string SettingsButtonColumnName = "settings_button_column";
-  private const string ReconnectButtonColumnName = "reconnect_button_column";
   private readonly Action _onNewButtonClicked;
+  private readonly Action _onDeleteButtonClicked;
+  private readonly Action _onReconnectButtonClicked;
+  private readonly Action _onEditButtonClicked;
   private readonly BindingSource _bindingSource = new();
 
-  public ConnectionManagerDialog(Action onNewButtonClicked) {
+  public ConnectionManagerDialog(Action onNewButtonClicked,
+    SelectedRowsAction onDeleteButtonClicked,
+    SelectedRowsAction onReconnectButtonClicked,
+    SelectedRowsAction onEditButtonClicked) {
     _onNewButtonClicked = onNewButtonClicked;
 
     InitializeComponent();
@@ -53,23 +59,33 @@ public partial class ConnectionManagerDialog : Form {
 
     switch (name) {
       case SettingsButtonColumnName: {
-        row.SettingsClicked();
-        break;
-      }
+          row.SettingsClicked();
+          break;
+        }
 
       case ReconnectButtonColumnName: {
-        row.ReconnectClicked();
-        break;
-      }
+          row.ReconnectClicked();
+          break;
+        }
 
       case IsDefaultColumnName: {
-        row.IsDefaultClicked();
-        break;
-      }
+          row.IsDefaultClicked();
+          break;
+        }
     }
   }
 
   private void newButton_Click(object sender, EventArgs e) {
     _onNewButtonClicked();
+  }
+
+  private void reconnectButton_Click(object sender, EventArgs e) {
+    var selections = new List<ConnectionManagerDialogRow>();
+    var sr = dataGridView1.SelectedRows;
+    var count = sr.Count;
+    for (var i = 0; i != count; ++i) {
+      selections.Add((ConnectionManagerDialogRow)sr[i].DataBoundItem);
+    }
+    Console.WriteLine("FUN");
   }
 }

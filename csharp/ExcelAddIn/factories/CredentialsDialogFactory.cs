@@ -30,7 +30,6 @@ internal static class CredentialsDialogFactory {
     var sharedTestCredentialsCookie = new SimpleAtomicReference<object>(new object());
 
     void TestCredentials(CredentialsBase creds) {
-      Debug.WriteLine("do we see these messages?");
       // Make a unique sentinel object to indicate that this thread should be
       // the one privileged to provide the system with the answer to the "Test
       // Credentials" question. If the user doesn't press the button again,
@@ -59,9 +58,7 @@ internal static class CredentialsDialogFactory {
       }
 
       // Our results are valid. Keep them and tell everyone about it.
-      // Oh hell, the dialog might even be disposed by the time you get here. god
-      // todo_if_diposse();
-      // credentialsDialog!.SetTestResultsBox(state);
+      credentialsDialog!.SetTestResultsBox(state);
     }
 
     void OnTestCredentialsButtonClicked() {
