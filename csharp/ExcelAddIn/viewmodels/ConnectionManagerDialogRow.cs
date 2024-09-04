@@ -8,7 +8,7 @@ using System.Net;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread) : IObserver<StatusOr<CredentialsBase>>,
+public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<CredentialsBase>>,
   IObserver<StatusOr<SessionBase>>, IDisposable {
 
   public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
@@ -18,6 +18,8 @@ public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread)
     return result;
   }
 
+  private readonly ConnectionManagerDialogRow _row;
+  private readonly WorkerThread _workerThread;
   private List<IDisposable> _disposables;
 
   private void Resubscribe() {
@@ -54,6 +56,7 @@ public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread)
   }
 
   public void OnNext(StatusOr<CredentialsBase> value) {
+    _row.SetCredentials(value);
     lock (_sync) {
       _credentials = value;
     }
@@ -63,6 +66,8 @@ public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread)
   }
 
   public void OnNext(StatusOr<SessionBase> value) {
+    _row.SetSession(value);
+
     lock (_sync) {
       _session = value;
     }
@@ -71,11 +76,11 @@ public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread)
   }
 
   public void OnNext(DefaultStatusOr value) {
-    statusRow.SetDefaultCredentials(value);
+    _row.SetDefaultCredentials(value);
   }
 
   public void SettingsClicked() {
-    var creds = GetCredentialsSynced();
+    var creds = _row.GetCredentialsSynced();
     // If we have valid credentials, 
     var cvm = creds.AcceptVisitor(
       crs => CredentialsDialogViewModel.OfIdAndCredentials(Id, crs),
@@ -112,7 +117,6 @@ public sealed class ConnectionManagerDialogRowManager(WorkerThread workerThread)
 
     stateManager.SetDefaultCredentials(creds);
   }
-
 
   public void OnCompleted() {
     // TODO(kosak)
