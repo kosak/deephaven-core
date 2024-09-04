@@ -4,35 +4,46 @@ using System.ComponentModel;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Net;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
 public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<CredentialsBase>>,
   IObserver<StatusOr<SessionBase>>, IDisposable {
 
-  public static ConnectionManagerDialogRowManager Create(EndpointId endpointId, StateManager stateManager) {
+  public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
+    EndpointId endpointId, StateManager stateManager) {
     var result = new ConnectionManagerDialogRowManager();
-    var statusRow = new ConnectionManagerDialogRow(endpointId.Id, stateManager);
-    // We watch for session and credential state changes in our ID
-    var sessDisposable = stateManager.SubscribeToSession(endpointId, result);
-    var credDisposable = stateManager.SubscribeToCredentials(endpointId, result);
-
-    // And we also watch for credentials changes in the default session (just to keep
-    // track of whether we are still the default)
-    var dct = new DefaultCredentialsTracker(statusRow);
-    var defaultCredDisposable = stateManager.SubscribeToDefaultCredentials(dct);
-
-    // We'll do our AddRow on the GUI thread, and, while we're on the GUI thread, we'll add
-    // our disposables to our saved disposables.
-    cmDialog.Invoke(() => {
-      _disposables.Add(sessDisposable);
-      _disposables.Add(credDisposable);
-      _disposables.Add(defaultCredDisposable);
-      cmDialog.AddRow(statusRow);
-    });
-
+    result.Resubscribe();
+    return result;
   }
 
+  private IDisposable _sessionDisposable;
+
+  private void Resubscribe() {
+    if (_disposables.Count != 0) {
+      throw new Exception("State error: already subscribed");
+    }
+    // We watch for session and credential state changes in our ID
+    _disposables.Add(stateManager.SubscribeToSession(endpointId, result));
+    _disposables.Add(SubscribeToCredentials(endpointId, result));
+    // Now we have a problem. We would also like to watch for credential
+    // state changes in the default session, but it also wants an IObserver<StatusOr<CredentialsBase>>
+    // which we are already using to watch for regular credential changes.
+    // To deal with this, we change the type of the observed object to something
+    // we made up, just so it has a different type.
+    var wrappedResult = Utility.SuperNubbin<StatusOr<CredentialsBase>, MyWrappedSOCB>(result);
+    _disposables.Add(stateManager.SubscribeToDefaultCredentials(wrappedResult));
+  }
+
+  private void Unsubcribe() {
+    var temp = _disposables.ToArray();
+    _disposables.Clear();
+
+    foreach (var disposable in temp) {
+      disposable.Dispose();
+    }
+  }
 
   public void OnNext(StatusOr<CredentialsBase> value) {
     lock (_sync) {
@@ -51,6 +62,9 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     OnPropertyChanged(nameof(Status));
   }
 
+  public void OnNext(DefaultStatusOr value) {
+    statusRow.SetDefaultCredentials(value);
+  }
 
   public void SettingsClicked() {
     var creds = GetCredentialsSynced();
@@ -63,7 +77,14 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
   }
 
   public void DeleteClicked() {
-    stateManager.SetCredentials();
+    // Strategy:
+    // 1. Unsubscribe to everything
+    // 2. If it turns out that we were the last subscriber to the session, then great, the
+    //    delete can proceed.
+    // 3. Otherwise (there is some other subscriber to the session), then the delete operation
+    //    is denied. In that case we resubscribe.
+    Unsubcribe();
+    stateManager.LooseyGoosey(() => Resubscribe());
   }
 
   public void ReconnectClicked() {
