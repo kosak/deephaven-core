@@ -10,8 +10,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
   IObserver<StatusOr<SessionBase>>, IObserver<ConnectionManagerDialogRowManager.MyWrappedSocb>, IDisposable {
 
   public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
-    EndpointId endpointId, StateManager stateManager, WorkerThread workerThread) {
-    var result = new ConnectionManagerDialogRowManager(row, endpointId, stateManager, workerThread);
+    EndpointId endpointId, StateManager stateManager) {
+    var result = new ConnectionManagerDialogRowManager(row, endpointId, stateManager);
     result.Resubscribe();
     return result;
   }
@@ -23,11 +23,11 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
   private readonly List<IDisposable> _disposables = new();
 
   private ConnectionManagerDialogRowManager(ConnectionManagerDialogRow row, EndpointId endpointId,
-    StateManager stateManager, WorkerThread workerThread) {
+    StateManager stateManager) {
     _row = row;
     _endpointId = endpointId;
     _stateManager = stateManager;
-    _workerThread = workerThread;
+    _workerThread = stateManager.WorkerThread;
   }
 
   public void Dispose() {

@@ -8,12 +8,12 @@ namespace Deephaven.ExcelAddIn.Managers;
 
 internal class ConnectionManagerDialogManager(
   ConnectionManagerDialog cmDialog,
-  StateManager stateManager,
-  WorkerThread workerThread) : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+  StateManager stateManager) : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+  private readonly WorkerThread _workerThread = stateManager.WorkerThread;
   private readonly List<IDisposable> _disposables = new();
 
   public void OnNext(AddOrRemove<EndpointId> aor) {
-    if (workerThread.InvokeIfRequired(() => OnNext(aor))) {
+    if (_workerThread.InvokeIfRequired(() => OnNext(aor))) {
       return;
     }
 
@@ -25,7 +25,7 @@ internal class ConnectionManagerDialogManager(
 
     var endpointId = aor.Value;
     var row = new ConnectionManagerDialogRow(endpointId.Id);
-    var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, stateManager, workerThread);
+    var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, stateManager);
     _disposables.Add(statusRowManager);
 
     cmDialog.AddRow(row);

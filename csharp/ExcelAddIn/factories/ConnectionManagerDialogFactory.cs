@@ -1,8 +1,8 @@
-﻿using Deephaven.ExcelAddIn.Viewmodels;
+﻿using System.Diagnostics;
+using Deephaven.ExcelAddIn.Managers;
+using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
-using System.Diagnostics;
-using Deephaven.ExcelAddIn.Models;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
@@ -15,14 +15,27 @@ internal static class ConnectionManagerDialogFactory {
       dialog.Show();
     }
 
-    var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked);
+    void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
+      Debug.WriteLine("would be nice");
+    }
+
+    void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
+      Debug.WriteLine("would be nice");
+    }
+
+    void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
+      Debug.WriteLine("would be nice");
+    }
+
+    var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked, OnDeleteButtonClicked,
+      OnReconnectButtonClicked, OnEditButtonClicked);
     cmDialog.Show();
-    var cmso = new ConnectionManagerSessionObserver(sm, cmDialog);
-    var disposer = sm.SubscribeToSessions(cmso);
+    var newThing = new ConnectionManagerDialogManager(cmDialog, sm);
+    var disposer = sm.SubscribeToSessions(newThing);
 
     cmDialog.Closed += (_, _) => {
       disposer.Dispose();
-      cmso.Dispose();
+      newThing.Dispose();
     };
   }
 }
