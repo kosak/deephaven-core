@@ -37,6 +37,8 @@
       // 
       dataGridView1.AllowUserToAddRows = false;
       dataGridView1.AllowUserToDeleteRows = false;
+      dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
       dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
       dataGridView1.Location = new Point(68, 83);
       dataGridView1.Name = "dataGridView1";
@@ -47,6 +49,7 @@
       // 
       // newButton
       // 
+      newButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
       newButton.Location = new Point(919, 560);
       newButton.Name = "newButton";
       newButton.Size = new Size(128, 34);
@@ -67,6 +70,7 @@
       // 
       // editButton
       // 
+      editButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
       editButton.Location = new Point(776, 560);
       editButton.Name = "editButton";
       editButton.Size = new Size(112, 34);
@@ -77,6 +81,7 @@
       // 
       // deleteButton
       // 
+      deleteButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
       deleteButton.Location = new Point(483, 560);
       deleteButton.Name = "deleteButton";
       deleteButton.Size = new Size(112, 34);
@@ -87,6 +92,7 @@
       // 
       // reconnectButton
       // 
+      reconnectButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
       reconnectButton.Location = new Point(636, 560);
       reconnectButton.Name = "reconnectButton";
       reconnectButton.Size = new Size(112, 34);
