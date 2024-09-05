@@ -35,3 +35,10 @@ public record TableTriple(
     return true;
   }
 }
+
+public record TableTripleWithFilter(
+  EndpointId? EndpointId,
+  PersistentQueryId? PersistentQueryId,
+  string TableName,
+  string filter) {
+}

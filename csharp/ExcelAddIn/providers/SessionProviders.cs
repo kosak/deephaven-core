@@ -267,6 +267,18 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
   }
 
+  private IDisposable LookupAndSubscribeSession(
+    EndpointId id, IObserver<SessionBase> observable) {
+  }
+
+  private IDisposable LookupAndSubscribePq(
+    TableTriple descriptor, IObserver<PqBase> observable) {
+  }
+
+  private IDisposable LookupAndSubscribeTableProvider(
+    TableTriple descriptor, IObserver<Client> observable) {
+  }
+
   private IDisposable LookupAndSubscribeFilteredTableProvider(
     TableTriple descriptor, string filter, IObserver<TableHandle> observable) {
 
@@ -284,7 +296,8 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
       return;
     }
 
-    var key = new TableTripleWithFilter(descriptor, filter);
+    var key = new TableTripleWithFilter(descriptor.EndpointId, descriptor.PersistentQueryId,
+      descriptor.TableName, filter);
     if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
       // No FilteredTableProvider with that key. Make a new one.
       ftp = new FilteredTableProvider(workerThread);
