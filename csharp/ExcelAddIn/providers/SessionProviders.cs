@@ -135,37 +135,37 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
       Utility.Exchange(ref disposable, null)?.Dispose();
       Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
     });
-    // There is a chain with multiple elements:
+    // // There is a chain with multiple elements:
+    // //
+    // // 1. Make a TableHandleProvider
+    // // 2. Make a ClientProvider
+    // // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
+    // //    or to the default session provider
+    // // 4. Subscribe the TableHandleProvider to the ClientProvider
+    // // 4. Subscribe our observer to the TableHandleProvider
+    // // 5. Return a dispose action that disposes all the needfuls.
     //
-    // 1. Make a TableHandleProvider
-    // 2. Make a ClientProvider
-    // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
-    //    or to the default session provider
-    // 4. Subscribe the TableHandleProvider to the ClientProvider
-    // 4. Subscribe our observer to the TableHandleProvider
-    // 5. Return a dispose action that disposes all the needfuls.
-
-    var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
-    var cp = new ClientProvider(WorkerThread, descriptor);
-
-    var disposer1 = descriptor.EndpointId == null
-      ? SubscribeToDefaultSession(cp)
-      : SubscribeToSession(descriptor.EndpointId, cp);
-    var disposer2 = cp.Subscribe(thp);
-    var disposer3 = thp.Subscribe(observer);
-
-    // The disposer for this needs to dispose both "inner" disposers.
-    return ActionAsDisposable.Create(() => {
-      // TODO(kosak): probably don't need to be on the worker thread here
-      WorkerThread.Invoke(() => {
-        var temp1 = Utility.Exchange(ref disposer1, null);
-        var temp2 = Utility.Exchange(ref disposer2, null);
-        var temp3 = Utility.Exchange(ref disposer3, null);
-        temp3?.Dispose();
-        temp2?.Dispose();
-        temp1?.Dispose();
-      });
-    });
+    // var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
+    // var cp = new ClientProvider(WorkerThread, descriptor);
+    //
+    // var disposer1 = descriptor.EndpointId == null
+    //   ? SubscribeToDefaultSession(cp)
+    //   : SubscribeToSession(descriptor.EndpointId, cp);
+    // var disposer2 = cp.Subscribe(thp);
+    // var disposer3 = thp.Subscribe(observer);
+    //
+    // // The disposer for this needs to dispose both "inner" disposers.
+    // return ActionAsDisposable.Create(() => {
+    //   // TODO(kosak): probably don't need to be on the worker thread here
+    //   WorkerThread.Invoke(() => {
+    //     var temp1 = Utility.Exchange(ref disposer1, null);
+    //     var temp2 = Utility.Exchange(ref disposer2, null);
+    //     var temp3 = Utility.Exchange(ref disposer3, null);
+    //     temp3?.Dispose();
+    //     temp2?.Dispose();
+    //     temp1?.Dispose();
+    //   });
+    // });
   }
 
   public IDisposable SubscribeToFilteredTableTriple(TableTriple descriptor, string filter,
@@ -174,9 +174,8 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
       return SubscribeToTableTriple(descriptor, observer);
     }
 
-    var key = new FilteredTableTripleKey(descriptor, filter);
     IDisposable? disposable = null;
-    var mapEntryDisposer = LookupOrCreateFilteredTableTriple(key,
+    var mapEntryDisposer = LookupOrCreateFilteredTableTriple(descriptor, filter,
       thp => disposable = thp.Subscribe(observer), null);
 
     return workerThread.InvokeWhenDisposed(() => {
@@ -186,46 +185,46 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   }
 
 
-  IDisposable? disposable = null;
-    var mapEntryDisposer = LookupOrCreateFilteredTableTriple(key, thp => disposable = thp.Subscribe(observer));
-
-    return workerThread.InvokeWhenDisposed(() => {
-      Utility.Exchange(ref disposable, null)?.Dispose();
-      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
-    });
-
-    // There is a chain with multiple elements:
-    //
-    // 1. Make a TableHandleProvider
-    // 2. Make a ClientProvider
-    // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
-    //    or to the default session provider
-    // 4. Subscribe the TableHandleProvider to the ClientProvider
-    // 4. Subscribe our observer to the TableHandleProvider
-    // 5. Return a dispose action that disposes all the needfuls.
-
-    var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
-    var cp = new ClientProvider(WorkerThread, descriptor);
-
-    var disposer1 = descriptor.EndpointId == null
-      ? SubscribeToDefaultSession(cp)
-      : SubscribeToSession(descriptor.EndpointId, cp);
-    var disposer2 = cp.Subscribe(thp);
-    var disposer3 = thp.Subscribe(observer);
-
-    // The disposer for this needs to dispose both "inner" disposers.
-    return ActionAsDisposable.Create(() => {
-      // TODO(kosak): probably don't need to be on the worker thread here
-      WorkerThread.Invoke(() => {
-        var temp1 = Utility.Exchange(ref disposer1, null);
-        var temp2 = Utility.Exchange(ref disposer2, null);
-        var temp3 = Utility.Exchange(ref disposer3, null);
-        temp3?.Dispose();
-        temp2?.Dispose();
-        temp1?.Dispose();
-      });
-    });
-  }
+  // IDisposable? disposable = null;
+  //   var mapEntryDisposer = LookupOrCreateFilteredTableTriple(key, thp => disposable = thp.Subscribe(observer));
+  //
+  //   return workerThread.InvokeWhenDisposed(() => {
+  //     Utility.Exchange(ref disposable, null)?.Dispose();
+  //     Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
+  //   });
+  //
+  //   // There is a chain with multiple elements:
+  //   //
+  //   // 1. Make a TableHandleProvider
+  //   // 2. Make a ClientProvider
+  //   // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
+  //   //    or to the default session provider
+  //   // 4. Subscribe the TableHandleProvider to the ClientProvider
+  //   // 4. Subscribe our observer to the TableHandleProvider
+  //   // 5. Return a dispose action that disposes all the needfuls.
+  //
+  //   var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
+  //   var cp = new ClientProvider(WorkerThread, descriptor);
+  //
+  //   var disposer1 = descriptor.EndpointId == null
+  //     ? SubscribeToDefaultSession(cp)
+  //     : SubscribeToSession(descriptor.EndpointId, cp);
+  //   var disposer2 = cp.Subscribe(thp);
+  //   var disposer3 = thp.Subscribe(observer);
+  //
+  //   // The disposer for this needs to dispose both "inner" disposers.
+  //   return ActionAsDisposable.Create(() => {
+  //     // TODO(kosak): probably don't need to be on the worker thread here
+  //     WorkerThread.Invoke(() => {
+  //       var temp1 = Utility.Exchange(ref disposer1, null);
+  //       var temp2 = Utility.Exchange(ref disposer2, null);
+  //       var temp3 = Utility.Exchange(ref disposer3, null);
+  //       temp3?.Dispose();
+  //       temp2?.Dispose();
+  //       temp1?.Dispose();
+  //     });
+  //   });
+  // }
 
   public void SetCredentials(CredentialsBase credentials) {
     ApplyTo(credentials.Id, sp => {
@@ -268,8 +267,28 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
   }
 
+  private IDisposable LookupOrCreateFilteredTableTriple(
+    TableTriple descriptor, string filter, Action<IObservable<TableHandle>> observable) {
 
-  private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
+    // problem 1: get self on thread
+
+    EndpointId id, Action<SessionProvider> action) {
+    if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
+      return;
+    }
+
+    if (!_providerMap.TryGetValue(id, out var sp)) {
+      // No Session Provider with that EndpointId. Make a new one
+      sp = new SessionProvider(workerThread);
+      _providerMap.Add(id, sp);
+      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
+    }
+
+    action(sp);
+  }
+
+
+private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
     if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
       return;
     }

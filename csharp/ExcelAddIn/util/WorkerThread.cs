@@ -43,6 +43,10 @@ public class WorkerThread {
     return true;
   }
 
+  public IDisposable InvokeWhenDisposed(Action action) {
+
+  }
+
   private void Doit() {
     while (true) {
       Action action;
