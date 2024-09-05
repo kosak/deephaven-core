@@ -21,17 +21,42 @@ internal class StateManager : IObservable<AddOrRemove<EndpointId>> {
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
+  /// <summary>
+  /// The major difference between the credentials providers and the other providers
+  /// is that the credential providers don't remove themselves from the map
+  /// upon the last dispose of the subscriber. That is, they hang around until we
+  /// manually remove them.
+  /// </summary>
   public IDisposable LookupAndSubscribeToCredentials(EndpointId endpointId,
     IObserver<StatusOr<CredentialsBase>> observer) {
-    // CredentialsProviders are special because they don't automatically go way with the last unsubscriber
+    IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
         cp = CredentialsProvider.Create(endpointId, this);
         _credentialsProviders.Add(endpointId, cp);
       }
+
+      disposer = cp.Subscribe(observer);
     });
 
-    return NoopDisposable.Instance;
+    return WorkerThread.InvokeWhenDisposed(() =>
+      Utility.Exchange(ref disposer, null)?.Dispose());
+  }
+
+  public IDisposable LookupAndSubscribeToSession(EndpointId endpointId,
+    IObserver<StatusOr<SessionBase>> observer) {
+    IDisposable? disposer = null;
+    WorkerThread.Invoke(() => {
+      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
+        sp = SessionProvider.Create(endpointId, this, WorkerThread,
+          () => _sessionProviders.Remove(endpointId));
+        _sessionProviders.Add(endpointId, sp);
+      }
+      disposer = sp.Subscribe(observer);
+    });
+
+    return WorkerThread.InvokeWhenDisposed(() =>
+      Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
 
@@ -289,21 +314,6 @@ internal class StateManager : IObservable<AddOrRemove<EndpointId>> {
     };
 
     sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
-  }
-
-  public IDisposable LookupAndSubscribeToSession(EndpointId endpointId,
-    IObserver<StatusOr<SessionBase>> observer) {
-    IDisposable? disposer = null;
-    workerThread.Invoke(() => {
-      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = SessionProvider.Create(endpointId, this, workerThread,
-          () => _sessionProviders.Remove(endpointId));
-        _sessionProviders.Add(endpointId, sp);
-      }
-      disposer = sp.Subscribe(observer);
-    });
-
-    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
 

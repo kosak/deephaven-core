@@ -1,12 +1,9 @@
-﻿using Deephaven.DeephavenClient;
-using Deephaven.DheClient.Session;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
-
   public static CredentialsProvider Create(EndpointId endpointId, StateManager sm) {
     return new CredentialsProvider(sm.WorkerThread);
   }
