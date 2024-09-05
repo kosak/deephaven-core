@@ -267,28 +267,64 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
   }
 
-  private IDisposable LookupOrCreateFilteredTableTriple(
+  private IDisposable LookupAndSubscribeFilteredTableProvider(
     TableTriple descriptor, string filter, Action<IObservable<TableHandle>> observable) {
 
     // problem 1: get self on thread
 
-    EndpointId id, Action<SessionProvider> action) {
-    if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
+    EndpointId id, Action<SessionProvider > action) {
+      if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
+        return;
+      }
+
+      if (!_providerMap.TryGetValue(id, out var sp)) {
+        // No Session Provider with that EndpointId. Make a new one
+        sp = new SessionProvider(workerThread);
+        _providerMap.Add(id, sp);
+        _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
+      }
+
+      action(sp);
+    }
+  }
+
+  private void LookupAndSubscribeFilteredTableProviderHelper(
+    TableTriple descriptor, string filter, Action<IObserver<TableHandle>> observer) {
+    if (!workerThread.InvokeIfRequired(() => LookupAndSubscribeFilteredTableProviderHelper(
+          descriptor, filter, observer))) {
       return;
     }
 
-    if (!_providerMap.TryGetValue(id, out var sp)) {
-      // No Session Provider with that EndpointId. Make a new one
-      sp = new SessionProvider(workerThread);
-      _providerMap.Add(id, sp);
-      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
+    var key = new TableTripleWithFilter(descriptor, filter);
+    if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
+      // No FilteredTableProvider with that key. Make a new one.
+      ftp = new FilteredTableProvider(workerThread);
+
+      var parentSubscriptionDisposer = LookupAndSubscribeTableProvider(descriptor, ftp);
+
+      var maybeCleanup = () => {
+        if (ftp == null || ftp.HasObserversUnsafe) {
+          return;
+        }
+        _filteredTableProviders.Remove(key);
+        Utility.Exchange(ref parentSubscriptionDisposer, null)?.Dispose();
+        Utility.Exchange(ref ftp, null).Dispose();
+      };
+
+      _filteredTableProviders.Add(key, new NubbinWithCleanup(ftp, cleanup));
     }
 
-    action(sp);
+    var subscriptionDisposer = ftp.Subscribe(observer);
+
+    disp3 = () => {
+      // Unconditionally dipose the subscription
+      Utility.Exchange(ref subscriptionDisposer, null)?.Dispose();
+      ftp.MaybeCleanup();
+    };
+    DoSomethingWith(disp3);
   }
 
-
-private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
+  private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
     if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
       return;
     }
