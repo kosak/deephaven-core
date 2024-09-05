@@ -110,7 +110,7 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     _stateManager.Reconnect(_endpointId);
   }
 
-  public void IsDefaultClicked() {
+  public void DoSetAsDefault() {
     // If the connection is already the default, do nothing.
     if (_row.IsDefault) {
       return;

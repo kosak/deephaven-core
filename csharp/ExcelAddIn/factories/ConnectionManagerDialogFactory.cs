@@ -35,6 +35,20 @@ internal static class ConnectionManagerDialogFactory {
       }
     }
 
+    void OnMakeDefaultButtonClicked(ConnectionManagerDialogRow[] rows) {
+      // Make the last selected row the default
+      if (rows.Length == 0) {
+        return;
+      }
+
+      var row = rows[^1];
+      if (!rowToManager.TryGetValue(row, out var manager)) {
+        return;
+      }
+
+      manager.DoSetAsDefault();
+    }
+
     void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
       foreach (var row in rows) {
         if (!rowToManager.TryGetValue(row, out var manager)) {
@@ -45,7 +59,7 @@ internal static class ConnectionManagerDialogFactory {
     }
 
     var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked, OnDeleteButtonClicked,
-      OnReconnectButtonClicked, OnEditButtonClicked);
+      OnReconnectButtonClicked, OnMakeDefaultButtonClicked, OnEditButtonClicked);
     cmDialog.Show();
     var dm = new ConnectionManagerDialogManager(cmDialog, rowToManager, sm);
     var disposer = sm.SubscribeToSessions(dm);

@@ -63,7 +63,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  private StatusOr<CredentialsBase> GetDefaultCredentialsSynced() {
+  public StatusOr<CredentialsBase> GetDefaultCredentialsSynced() {
     lock (_sync) {
       return _defaultCredentials;
     }
