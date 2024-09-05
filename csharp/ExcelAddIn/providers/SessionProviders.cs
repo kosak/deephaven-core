@@ -2,6 +2,7 @@
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -11,22 +12,18 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
-    // We need to run this on our worker thread because we want to protect
-    // access to our dictionary.
     workerThread.Invoke(() => {
       _endpointsObservers.Add(observer, out _);
-      // To avoid any further possibility of reentrancy while iterating over the dict,
-      // make a copy of the keys
+
+      // Give this observer the current set of endpoint ids.
       var keys = _providerMap.Keys.ToArray();
       foreach (var endpointId in keys) {
         observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
       }
     });
 
-    return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
-        _endpointsObservers.Remove(observer, out _);
-      });
+    return workerThread.InvokeWhenDisposed(() => {
+      _endpointsObservers.Remove(observer, out _);
     });
   }
 
@@ -34,10 +31,9 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     IDisposable? disposable = null;
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
 
-    return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
-        Utility.Exchange(ref disposable, null)?.Dispose();
-      });
+    return workerThread.InvokeWhenDisposed(() => {
+      var disp = Utility.Exchange(ref disposable, null);
+      FinishDisposingUnsafe(id, disp);
     });
   }
 
@@ -45,14 +41,26 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     IDisposable? disposable = null;
     ApplyTo(id, sp => disposable = sp.Subscribe(observer));
 
-    return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
-        Utility.Exchange(ref disposable, null)?.Dispose();
-      });
+    return workerThread.InvokeWhenDisposed(() => {
+      var disp = Utility.Exchange(ref disposable, null);
+      FinishDisposingUnsafe(id, disp);
     });
   }
 
-  public IDisposable SubscribeToDefaultSession(IObserver<StatusOr<SessionBase>> observer) {
+  private void FinishDisposingUnsafe(EndpointId id, IDisposable? disp) {
+    if (disp == null) {
+      return;
+    }
+    disp.Dispose();
+
+    if (_providerMap.TryGetValue(id, out var sp) && !sp.HasObserversUnsafe) {
+      _providerMap.Remove(id);
+      sp.Dispose();
+      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
+    }
+  }
+
+  public IDisposable SubscribeToDefaultSessionWRONG(IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposable = null;
     workerThread.Invoke(() => {
       disposable = _defaultProvider.Subscribe(observer);
@@ -65,7 +73,7 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
-  public IDisposable SubscribeToDefaultCredentials(IObserver<StatusOr<CredentialsBase>> observer) {
+  public IDisposable SubscribeToDefaultCredentialsWRONG(IObserver<StatusOr<CredentialsBase>> observer) {
     IDisposable? disposable = null;
     workerThread.Invoke(() => {
       disposable = _defaultProvider.Subscribe(observer);
@@ -80,6 +88,45 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
 
   public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
+    // There is a chain with multiple elements:
+    //
+    // 1. Make a TableHandleProvider
+    // 2. Make a ClientProvider
+    // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
+    //    or to the default session provider
+    // 4. Subscribe the TableHandleProvider to the ClientProvider
+    // 4. Subscribe our observer to the TableHandleProvider
+    // 5. Return a dispose action that disposes all the needfuls.
+
+    var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
+    var cp = new ClientProvider(WorkerThread, descriptor);
+
+    var disposer1 = descriptor.EndpointId == null
+      ? SubscribeToDefaultSession(cp)
+      : SubscribeToSession(descriptor.EndpointId, cp);
+    var disposer2 = cp.Subscribe(thp);
+    var disposer3 = thp.Subscribe(observer);
+
+    // The disposer for this needs to dispose both "inner" disposers.
+    return ActionAsDisposable.Create(() => {
+      // TODO(kosak): probably don't need to be on the worker thread here
+      WorkerThread.Invoke(() => {
+        var temp1 = Utility.Exchange(ref disposer1, null);
+        var temp2 = Utility.Exchange(ref disposer2, null);
+        var temp3 = Utility.Exchange(ref disposer3, null);
+        temp3?.Dispose();
+        temp2?.Dispose();
+        temp1?.Dispose();
+      });
+    });
+  }
+
+
+  public IDisposable SubscribeToFilteredTableTriple(TableTriple descriptor, string filter,
+    IObserver<StatusOr<TableHandle>> observer) {
+
+
+
     // There is a chain with multiple elements:
     //
     // 1. Make a TableHandleProvider
@@ -161,6 +208,7 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     }
 
     if (!_providerMap.TryGetValue(id, out var sp)) {
+      // No Session Provider with that EndpointId. Make a new one
       sp = new SessionProvider(workerThread);
       _providerMap.Add(id, sp);
       _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
