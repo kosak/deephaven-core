@@ -267,28 +267,28 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
   }
 
-  private IDisposable LookupAndSubscribeSession(
+  private IDisposable LookupAndSubscribeToSession(
     EndpointId id, IObserver<SessionBase> observable) {
   }
 
-  private IDisposable LookupAndSubscribePq(
-    TableTriple descriptor, IObserver<PqBase> observable) {
-  }
-
-  private IDisposable LookupAndSubscribeTableProvider(
+  private IDisposable LookupAndSubscribeToPq(
     TableTriple descriptor, IObserver<Client> observable) {
   }
 
-  private IDisposable LookupAndSubscribeFilteredTableProvider(
+  private IDisposable LookupAndSubscribeToTableProvider(
+    TableTriple descriptor, IObserver<TableHandle> observable) {
+  }
+
+  private IDisposable LookupAndSubscribeToFilteredTableProvider(
     TableTriple descriptor, string filter, IObserver<TableHandle> observable) {
 
     var holder = new DisposableHolder();
-    LookupAndSubscribeFilteredTableProviderHelper(descriptor, filter, observable, holder);
+    LookupAndSubscribeToFilteredTableProviderHelper(descriptor, filter, observable, holder);
 
     return workerThread.InvokeWhenDisposed(() => holder.Dispose());
   }
 
-  private void LookupAndSubscribeFilteredTableProviderHelper(
+  private void LookupAndSubscribeToFilteredTableProviderHelper(
     TableTriple descriptor, string filter, IObserver<TableHandle> observer,
     DisposableHolder holder) {
     if (!workerThread.InvokeIfRequired(() => LookupAndSubscribeFilteredTableProviderHelper(
