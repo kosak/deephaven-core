@@ -36,9 +36,7 @@ namespace ExcelAddIn.views {
       passwordBox.DataBindings.Add(nameof(passwordBox.Text), vm, nameof(vm.Password));
 
       operateAsBox.DataBindings.Add(nameof(operateAsBox.Text), vm, nameof(vm.OperateAs));
-      operateAsBox.DataBindings.Add(nameof(operateAsBox.ReadOnly), vm, nameof(vm.NotOperateAsChecked));
 
-      operateAsCheckBox.DataBindings.Add(nameof(operateAsCheckBox.Checked), vm, nameof(vm.OperateAsChecked));
       validateCertCheckBox.DataBindings.Add(nameof(validateCertCheckBox.Checked), vm, nameof(vm.ValidateCertificate));
 
       // Bind the Core property (there's just one)

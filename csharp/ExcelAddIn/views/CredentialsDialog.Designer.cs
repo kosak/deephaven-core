@@ -24,7 +24,7 @@
     /// </summary>
     private void InitializeComponent() {
       corePlusPanel = new Panel();
-      operateAsCheckBox = new CheckBox();
+      label1 = new Label();
       validateCertCheckBox = new CheckBox();
       operateAsBox = new TextBox();
       passwordBox = new TextBox();
@@ -61,7 +61,7 @@
       // 
       // corePlusPanel
       // 
-      corePlusPanel.Controls.Add(operateAsCheckBox);
+      corePlusPanel.Controls.Add(label1);
       corePlusPanel.Controls.Add(validateCertCheckBox);
       corePlusPanel.Controls.Add(operateAsBox);
       corePlusPanel.Controls.Add(passwordBox);
@@ -74,17 +74,16 @@
       corePlusPanel.Location = new Point(0, 191);
       corePlusPanel.Name = "corePlusPanel";
       corePlusPanel.Size = new Size(1054, 299);
-      corePlusPanel.TabIndex = 210;
+      corePlusPanel.TabIndex = 2;
       // 
-      // operateAsCheckBox
+      // label1
       // 
-      operateAsCheckBox.AutoSize = true;
-      operateAsCheckBox.Location = new Point(49, 182);
-      operateAsCheckBox.Name = "operateAsCheckBox";
-      operateAsCheckBox.Size = new Size(122, 29);
-      operateAsCheckBox.TabIndex = 217;
-      operateAsCheckBox.Text = "OperateAs";
-      operateAsCheckBox.UseVisualStyleBackColor = true;
+      label1.AutoSize = true;
+      label1.Location = new Point(75, 183);
+      label1.Name = "label1";
+      label1.Size = new Size(96, 25);
+      label1.TabIndex = 217;
+      label1.Text = "OperateAs";
       // 
       // validateCertCheckBox
       // 
@@ -93,7 +92,7 @@
       validateCertCheckBox.Name = "validateCertCheckBox";
       validateCertCheckBox.RightToLeft = RightToLeft.No;
       validateCertCheckBox.Size = new Size(183, 29);
-      validateCertCheckBox.TabIndex = 216;
+      validateCertCheckBox.TabIndex = 5;
       validateCertCheckBox.Text = "Validate Certificate";
       validateCertCheckBox.UseVisualStyleBackColor = true;
       // 
@@ -102,8 +101,9 @@
       operateAsBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       operateAsBox.Location = new Point(194, 180);
       operateAsBox.Name = "operateAsBox";
+      operateAsBox.PlaceholderText = "Leave blank for default";
       operateAsBox.Size = new Size(795, 31);
-      operateAsBox.TabIndex = 214;
+      operateAsBox.TabIndex = 4;
       // 
       // passwordBox
       // 
@@ -112,7 +112,7 @@
       passwordBox.Name = "passwordBox";
       passwordBox.PasswordChar = '●';
       passwordBox.Size = new Size(795, 31);
-      passwordBox.TabIndex = 213;
+      passwordBox.TabIndex = 3;
       // 
       // passwordLabel
       // 
@@ -129,12 +129,12 @@
       userIdBox.Location = new Point(194, 82);
       userIdBox.Name = "userIdBox";
       userIdBox.Size = new Size(795, 31);
-      userIdBox.TabIndex = 212;
+      userIdBox.TabIndex = 2;
       // 
       // userIdLabel
       // 
       userIdLabel.AutoSize = true;
-      userIdLabel.Location = new Point(108, 88);
+      userIdLabel.Location = new Point(108, 85);
       userIdLabel.Name = "userIdLabel";
       userIdLabel.Size = new Size(63, 25);
       userIdLabel.TabIndex = 2;
@@ -146,7 +146,7 @@
       jsonUrlBox.Location = new Point(194, 27);
       jsonUrlBox.Name = "jsonUrlBox";
       jsonUrlBox.Size = new Size(795, 31);
-      jsonUrlBox.TabIndex = 211;
+      jsonUrlBox.TabIndex = 1;
       // 
       // jsonUrlLabel
       // 
@@ -166,7 +166,7 @@
       corePanel.Location = new Point(0, 490);
       corePanel.Name = "corePanel";
       corePanel.Size = new Size(1054, 170);
-      corePanel.TabIndex = 220;
+      corePanel.TabIndex = 3;
       // 
       // connectionStringBox
       // 
@@ -174,7 +174,7 @@
       connectionStringBox.Location = new Point(194, 20);
       connectionStringBox.Name = "connectionStringBox";
       connectionStringBox.Size = new Size(795, 31);
-      connectionStringBox.TabIndex = 221;
+      connectionStringBox.TabIndex = 1;
       // 
       // label2
       // 
@@ -192,7 +192,7 @@
       groupBox1.Location = new Point(18, 80);
       groupBox1.Name = "groupBox1";
       groupBox1.Size = new Size(970, 71);
-      groupBox1.TabIndex = 231;
+      groupBox1.TabIndex = 2;
       groupBox1.TabStop = false;
       groupBox1.Text = "Session Type";
       // 
@@ -202,7 +202,7 @@
       sessionTypeIsGroovyButton.Location = new Point(338, 30);
       sessionTypeIsGroovyButton.Name = "sessionTypeIsGroovyButton";
       sessionTypeIsGroovyButton.Size = new Size(95, 29);
-      sessionTypeIsGroovyButton.TabIndex = 1;
+      sessionTypeIsGroovyButton.TabIndex = 2;
       sessionTypeIsGroovyButton.TabStop = true;
       sessionTypeIsGroovyButton.Text = "Groovy";
       sessionTypeIsGroovyButton.UseVisualStyleBackColor = true;
@@ -213,7 +213,7 @@
       sessionTypeIsPythonButton.Location = new Point(192, 30);
       sessionTypeIsPythonButton.Name = "sessionTypeIsPythonButton";
       sessionTypeIsPythonButton.Size = new Size(93, 29);
-      sessionTypeIsPythonButton.TabIndex = 0;
+      sessionTypeIsPythonButton.TabIndex = 1;
       sessionTypeIsPythonButton.TabStop = true;
       sessionTypeIsPythonButton.Text = "Python";
       sessionTypeIsPythonButton.UseVisualStyleBackColor = true;
@@ -226,26 +226,26 @@
       finalPanel.Controls.Add(testCredentialsButton);
       finalPanel.Controls.Add(setCredentialsButton);
       finalPanel.Dock = DockStyle.Bottom;
-      finalPanel.Location = new Point(0, 492);
+      finalPanel.Location = new Point(0, 481);
       finalPanel.Name = "finalPanel";
-      finalPanel.Size = new Size(1054, 98);
-      finalPanel.TabIndex = 230;
+      finalPanel.Size = new Size(1054, 106);
+      finalPanel.TabIndex = 4;
       // 
       // makeDefaultCheckBox
       // 
       makeDefaultCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       makeDefaultCheckBox.AutoSize = true;
-      makeDefaultCheckBox.Location = new Point(640, 47);
+      makeDefaultCheckBox.Location = new Point(616, 53);
       makeDefaultCheckBox.Name = "makeDefaultCheckBox";
       makeDefaultCheckBox.Size = new Size(143, 29);
-      makeDefaultCheckBox.TabIndex = 234;
+      makeDefaultCheckBox.TabIndex = 2;
       makeDefaultCheckBox.Text = "Make Default";
       makeDefaultCheckBox.UseVisualStyleBackColor = true;
       // 
       // testResultsTextBox
       // 
       testResultsTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      testResultsTextBox.Location = new Point(187, 0);
+      testResultsTextBox.Location = new Point(188, 13);
       testResultsTextBox.Name = "testResultsTextBox";
       testResultsTextBox.ReadOnly = true;
       testResultsTextBox.Size = new Size(801, 31);
@@ -261,10 +261,10 @@
       // 
       // testCredentialsButton
       // 
-      testCredentialsButton.Location = new Point(46, 0);
+      testCredentialsButton.Location = new Point(46, 11);
       testCredentialsButton.Name = "testCredentialsButton";
       testCredentialsButton.Size = new Size(134, 34);
-      testCredentialsButton.TabIndex = 231;
+      testCredentialsButton.TabIndex = 1;
       testCredentialsButton.Text = "Test Creds";
       testCredentialsButton.UseVisualStyleBackColor = true;
       testCredentialsButton.Click += testCredentialsButton_Click;
@@ -272,10 +272,10 @@
       // setCredentialsButton
       // 
       setCredentialsButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      setCredentialsButton.Location = new Point(789, 44);
+      setCredentialsButton.Location = new Point(789, 48);
       setCredentialsButton.Name = "setCredentialsButton";
       setCredentialsButton.Size = new Size(200, 34);
-      setCredentialsButton.TabIndex = 232;
+      setCredentialsButton.TabIndex = 3;
       setCredentialsButton.Text = "Set Credentials";
       setCredentialsButton.UseVisualStyleBackColor = true;
       setCredentialsButton.Click += setCredentialsButton_Click;
@@ -286,7 +286,7 @@
       isCorePlusRadioButton.Location = new Point(192, 30);
       isCorePlusRadioButton.Name = "isCorePlusRadioButton";
       isCorePlusRadioButton.Size = new Size(169, 29);
-      isCorePlusRadioButton.TabIndex = 110;
+      isCorePlusRadioButton.TabIndex = 3;
       isCorePlusRadioButton.TabStop = true;
       isCorePlusRadioButton.Text = "Enterprise Core+";
       isCorePlusRadioButton.UseVisualStyleBackColor = true;
@@ -297,7 +297,7 @@
       isCoreRadioButton.Location = new Point(388, 30);
       isCoreRadioButton.Name = "isCoreRadioButton";
       isCoreRadioButton.Size = new Size(172, 29);
-      isCoreRadioButton.TabIndex = 111;
+      isCoreRadioButton.TabIndex = 4;
       isCoreRadioButton.TabStop = true;
       isCoreRadioButton.Text = "Community Core";
       isCoreRadioButton.UseVisualStyleBackColor = true;
@@ -326,7 +326,7 @@
       connectionTypeGroup.Location = new Point(34, 84);
       connectionTypeGroup.Name = "connectionTypeGroup";
       connectionTypeGroup.Size = new Size(588, 80);
-      connectionTypeGroup.TabIndex = 100;
+      connectionTypeGroup.TabIndex = 2;
       connectionTypeGroup.TabStop = false;
       connectionTypeGroup.Text = "Connection Type";
       // 
@@ -339,13 +339,13 @@
       connectionIdPanel.Location = new Point(0, 0);
       connectionIdPanel.Name = "connectionIdPanel";
       connectionIdPanel.Size = new Size(1054, 191);
-      connectionIdPanel.TabIndex = 231;
+      connectionIdPanel.TabIndex = 1;
       // 
       // CredentialsDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(1054, 590);
+      ClientSize = new Size(1054, 587);
       Controls.Add(finalPanel);
       Controls.Add(corePanel);
       Controls.Add(corePlusPanel);
@@ -395,6 +395,6 @@
     private RadioButton sessionTypeIsGroovyButton;
     private RadioButton sessionTypeIsPythonButton;
     private Panel connectionIdPanel;
-    private CheckBox operateAsCheckBox;
+    private Label label1;
   }
 }

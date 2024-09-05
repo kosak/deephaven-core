@@ -31,7 +31,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
         result.JsonUrl = corePlus.JsonUrl;
         result.UserId = corePlus.User;
         result.Password = corePlus.Password;
-        result.OperateAs = corePlus.OperateAs;
+        result.OperateAs = corePlus.OperateAs.Equals(corePlus.User) ? "" : corePlus.OperateAs;
         result.ValidateCertificate = corePlus.ValidateCertificate;
         return Unit.Instance;
       });
@@ -52,7 +52,6 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
   private bool _validateCertificate = true;
   private string _userId = "";
   private string _password = "";
-  private bool _operateAsChecked = false;
   private string _operateAs = "";
 
   public event PropertyChangedEventHandler? PropertyChanged;
@@ -77,7 +76,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
       CheckMissing(JsonUrl, "JSON URL");
       CheckMissing(UserId, "User Id");
       CheckMissing(Password, "Password");
-      CheckMissing(OperateAs, "Operate As");
+      CheckMissing(OperateAsToUse, "Operate As");
     }
 
     if (missingFields.Count > 0) {
@@ -87,7 +86,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
     var epId = new EndpointId(_id);
     result = _isCorePlus
-      ? CredentialsBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAs, ValidateCertificate)
+      ? CredentialsBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
       : CredentialsBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
     return true;
   }
@@ -196,28 +195,9 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
     }
   }
 
-  public bool OperateAsChecked {
-    get => _operateAsChecked;
-    set {
-      if (_operateAsChecked == value) {
-        return;
-      }
-
-      _operateAsChecked = value;
-      OnPropertyChanged();
-      OnPropertyChanged(nameof(NotOperateAsChecked));
-      OnPropertyChanged(nameof(OperateAs));
-    }
-  }
-
-  public bool NotOperateAsChecked => !OperateAsChecked;
-
   public string OperateAs {
-    get => OperateAsChecked ? _operateAs : UserId;
+    get => _operateAs;
     set {
-      if (!OperateAsChecked) {
-        return;
-      }
       if (_operateAs == value) {
         return;
       }
@@ -226,6 +206,8 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
       OnPropertyChanged();
     }
   }
+
+  public string OperateAsToUse => _operateAs.Length != 0 ? _operateAs : UserId;
 
   public bool ValidateCertificate {
     get => _validateCertificate;
