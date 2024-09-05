@@ -281,47 +281,20 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   }
 
   private IDisposable LookupAndSubscribeToFilteredTableProvider(
-    TableTriple descriptor, string filter, IObserver<StatusOr<TableHandle>> observable) {
-    var holder = new ValueHolder<Action>();
-    LookupAndSubscribeToFilteredTableProviderHelper(descriptor, filter, observable, holder);
-    return workerThread.InvokeWhenDisposed(() => holder.Value());
-  }
+    TableTriple descriptor, string filter, IObserver<StatusOr<TableHandle>> observer) {
 
-  private void LookupAndSubscribeToFilteredTableProviderHelper(
-    TableTriple descriptor, string filter, IObserver<StatusOr<TableHandle>> observer,
-    ValueHolder<Action> holder) {
-    if (!workerThread.InvokeIfRequired(() => LookupAndSubscribeToFilteredTableProviderHelper(
-          descriptor, filter, observer, holder))) {
-      return;
-    }
+    IDisposable? disposer = null;
+    workerThread.Invoke(() => {
+      var key = new FilteredTableProviderKey(descriptor.EndpointId, descriptor.PersistentQueryId,
+        descriptor.TableName, filter);
+      if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
+        ftp = FilteredTableProvider.Create(descriptor, this, workerThread, () => _filteredTableProviders.Remove(key));
+        _filteredTableProviders.Add(key, ftp);
+      }
+      disposer = ftp.Subscribe(observer);
+    });
 
-    var key = new FilteredTableProviderKey(descriptor.EndpointId, descriptor.PersistentQueryId,
-      descriptor.TableName, filter);
-    if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
-      // No FilteredTableProvider with that key. Make a new one.
-      ftp = FilteredTableProvider.Create(descriptor, this, workerThread, () => _filteredTableProviders.Remove(key));
-      _filteredTableProviders.Add(key, ftp);
-      //
-      // var parentSubscriptionDisposer = LookupAndSubscribeTableProvider(descriptor, ftp);
-      //
-      // var maybeCleanup = () => {
-      //   if (ftp == null || ftp.HasObserversUnsafe) {
-      //     return;
-      //   }
-      //   _filteredTableProviders.Remove(key);
-      //   Utility.Exchange(ref parentSubscriptionDisposer, null)?.Dispose();
-      //   Utility.Exchange(ref ftp, null).Dispose();
-      // };
-    }
-
-    var subscriptionDisposer = ftp.Subscribe(observer);
-
-    holder.Value = () => {
-      // Unconditionally dispose the subscription
-      Utility.Exchange(ref subscriptionDisposer, null)?.Dispose();
-      // Conditionally dispose the provider
-      Utility.Exchange(ref ftp, null)?.DisposeIfNoObserversUnsafe();
-    };
+    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
