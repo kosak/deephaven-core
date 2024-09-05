@@ -1,7 +1,6 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -12,9 +11,12 @@ internal class TableHandleProvider :
     SessionProviders sps, WorkerThread workerThread, Action onDispose) {
 
     var result = new TableHandleProvider(descriptor.TableName, workerThread, onDispose);
-    // or don't subscribe if there's no default ugh
-    var usd = sps.LookupAndSubscribeToPq(descriptor.EndpointId, descriptor.PersistentQueryId, result);
-    result._upstreamSubscriptionDisposer = usd;
+    // Don't subscribe to upstream if descriptor specifies null, the "default" endpoint
+    if (descriptor.EndpointId != null) {
+      var usd = sps.LookupAndSubscribeToPq(descriptor.EndpointId, descriptor.PersistentQueryId, result);
+      result._upstreamSubscriptionDisposer = usd;
+    }
+
     return result;
   }
 

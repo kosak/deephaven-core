@@ -8,7 +8,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
   private readonly DefaultSessionProvider _defaultProvider = new(workerThread);
-  private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
+  private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
+  private readonly Dictionary<PqKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
@@ -273,7 +274,21 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     EndpointId id, IObserver<SessionBase> observer) {
   }
 
-  public IDisposable LookupAndSubscribeToPq(PqKey key, IObserver<StatusOr<Client>> observer) {
+  public IDisposable LookupAndSubscribeToPq(EndpointId endpointId, PersistentQueryId? pqId,
+    IObserver<StatusOr<Client>> observer) {
+
+    IDisposable? disposer = null;
+    workerThread.Invoke(() => {
+      var key = new PqKey(endpointId, pqId);
+      if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
+        pqp = PersistentQueryProvider.Create(pqId, this, workerThread,
+          () => _persistentQueryProviders.Remove(key));
+        _persistentQueryProviders.Add(key, pqp);
+      }
+      disposer = pqp.Subscribe(observer);
+    });
+
+    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   public IDisposable LookupAndSubscribeToTableHandleProvider(
