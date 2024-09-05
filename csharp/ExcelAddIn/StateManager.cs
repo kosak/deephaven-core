@@ -6,6 +6,11 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn;
 
+/// <summary>
+/// Currently this class delegates everything to SessionProviders. When originally
+/// envisioned, it was expected to do more. It can possibly be merged with
+/// SessionProviders.
+/// </summary>
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly SessionProviders _sessionProviders;
@@ -36,37 +41,7 @@ public class StateManager {
 
   public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
-    // There is a chain with multiple elements:
-    //
-    // 1. Make a TableHandleProvider
-    // 2. Make a ClientProvider
-    // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
-    //    or to the default session provider
-    // 4. Subscribe the TableHandleProvider to the ClientProvider
-    // 4. Subscribe our observer to the TableHandleProvider
-    // 5. Return a dispose action that disposes all the needfuls.
-
-    var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
-    var cp = new ClientProvider(WorkerThread, descriptor);
-
-    var disposer1 = descriptor.EndpointId == null ?
-      SubscribeToDefaultSession(cp) :
-      SubscribeToSession(descriptor.EndpointId, cp);
-    var disposer2 = cp.Subscribe(thp);
-    var disposer3 = thp.Subscribe(observer);
-
-    // The disposer for this needs to dispose both "inner" disposers.
-    return ActionAsDisposable.Create(() => {
-      // TODO(kosak): probably don't need to be on the worker thread here
-      WorkerThread.Invoke(() => {
-        var temp1 = Utility.Exchange(ref disposer1, null);
-        var temp2 = Utility.Exchange(ref disposer2, null);
-        var temp3 = Utility.Exchange(ref disposer3, null);
-        temp3?.Dispose();
-        temp2?.Dispose();
-        temp1?.Dispose();
-      });
-    });
+    return _sessionProviders.SubscribeToTableTriple(descriptor, filter, observer);
   }
 
   public void SetCredentials(CredentialsBase credentials) {
