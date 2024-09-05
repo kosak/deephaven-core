@@ -22,8 +22,23 @@ internal static class Utility {
 }
 
 public class Unit {
-  public static readonly Unit Instance = new Unit();
+  public static readonly Unit Instance = new ();
 
   private Unit() {
+  }
+}
+
+public class ValueHolder<T> where T : class {
+  private T? _value = null;
+
+  public T Value {
+    get {
+      if (_value == null) {
+        throw new Exception("Value is unset");
+      }
+
+      return _value;
+    }
+    set => _value = value;
   }
 }

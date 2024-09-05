@@ -9,6 +9,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
   private readonly DefaultSessionProvider _defaultProvider = new(workerThread);
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
+  private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
@@ -275,28 +276,26 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     TableTriple descriptor, IObserver<Client> observable) {
   }
 
-  private IDisposable LookupAndSubscribeToTableProvider(
-    TableTriple descriptor, IObserver<TableHandle> observable) {
+  public IDisposable LookupAndSubscribeToTableProvider(
+    TableTriple descriptor, IObserver<StatusOr<TableHandle>> observable) {
   }
 
   private IDisposable LookupAndSubscribeToFilteredTableProvider(
-    TableTriple descriptor, string filter, IObserver<TableHandle> observable) {
-
+    TableTriple descriptor, string filter, IObserver<StatusOr<TableHandle>> observable) {
     var holder = new ValueHolder<Action>();
     LookupAndSubscribeToFilteredTableProviderHelper(descriptor, filter, observable, holder);
-
     return workerThread.InvokeWhenDisposed(() => holder.Value());
   }
 
   private void LookupAndSubscribeToFilteredTableProviderHelper(
-    TableTriple descriptor, string filter, IObserver<TableHandle> observer,
+    TableTriple descriptor, string filter, IObserver<StatusOr<TableHandle>> observer,
     ValueHolder<Action> holder) {
     if (!workerThread.InvokeIfRequired(() => LookupAndSubscribeToFilteredTableProviderHelper(
           descriptor, filter, observer, holder))) {
       return;
     }
 
-    var key = new TableTripleWithFilter(descriptor.EndpointId, descriptor.PersistentQueryId,
+    var key = new FilteredTableProviderKey(descriptor.EndpointId, descriptor.PersistentQueryId,
       descriptor.TableName, filter);
     if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
       // No FilteredTableProvider with that key. Make a new one.

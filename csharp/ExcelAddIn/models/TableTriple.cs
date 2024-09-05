@@ -36,9 +36,9 @@ public record TableTriple(
   }
 }
 
-public record TableTripleWithFilter(
+public record FilteredTableProviderKey(
   EndpointId? EndpointId,
   PersistentQueryId? PersistentQueryId,
   string TableName,
-  string filter) {
+  string Filter) {
 }
