@@ -64,7 +64,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
+internal class SessionProviders666(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
