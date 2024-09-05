@@ -80,10 +80,7 @@ internal class TableHandleProvider :
     }
 
     // Then, back on the worker thread, set the result
-    _workerThread.Invoke(() => {
-      DisposeTableHandleState();
-      _observers.SetAndSend(ref _tableHandle, result);
-    });
+    _workerThread.Invoke(() => _observers.SetAndSend(ref _tableHandle, result));
   }
 
   private void DisposeTableHandleState() {

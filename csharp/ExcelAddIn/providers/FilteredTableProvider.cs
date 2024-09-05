@@ -54,6 +54,8 @@ internal class FilteredTableProvider :
       return;
     }
 
+    DisposeTableHandleState();
+
     // If the new state is just a status message, make that our state and transmit to our observers
     if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
       _observers.SetAndSendStatus(ref _filteredTableHandle, status);
@@ -76,10 +78,7 @@ internal class FilteredTableProvider :
     }
 
     // Then, back on the worker thread, set the result
-    _workerThread.Invoke(() => {
-      DisposeTableHandleState();
-      _observers.SetAndSend(ref _filteredTableHandle, result);
-    });
+    _workerThread.Invoke(() => _observers.SetAndSend(ref _filteredTableHandle, result));
   }
 
   private void DisposeTableHandleState() {

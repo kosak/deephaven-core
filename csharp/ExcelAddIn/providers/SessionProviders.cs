@@ -2,14 +2,12 @@
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
-  private readonly DefaultSessionProvider _defaultProvider = new(workerThread);
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
-  private readonly Dictionary<PqKey, PersistentQueryProvider> _persistentQueryProviders = new();
+  private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
@@ -270,8 +268,34 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
   }
 
-  private IDisposable LookupAndSubscribeToSession(
-    EndpointId id, IObserver<SessionBase> observer) {
+  public IDisposable LookupAndSubscribeToSession(EndpointId endpointId,
+    IObserver<StatusOr<SessionBase>> observer) {
+    IDisposable? disposer = null;
+    workerThread.Invoke(() => {
+      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
+        sp = SessionProvider.Create(endpointId, this, workerThread,
+          () => _sessionProviders.Remove(endpointId));
+        _sessionProviders.Add(endpointId, sp);
+      }
+      disposer = sp.Subscribe(observer);
+    });
+
+    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
+  }
+
+  public IDisposable LookupAndSubscribeToCredentials(EndpointId endpointId,
+    IObserver<StatusOr<CredentialsBase>> observer) {
+    IDisposable? disposer = null;
+    workerThread.Invoke(() => {
+      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
+        sp = SessionProvider.Create(endpointId, this, workerThread,
+          () => _sessionProviders.Remove(endpointId));
+        _sessionProviders.Add(endpointId, sp);
+      }
+      disposer = sp.Subscribe(observer);
+    });
+
+    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   public IDisposable LookupAndSubscribeToPq(EndpointId endpointId, PersistentQueryId? pqId,
@@ -279,9 +303,9 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
 
     IDisposable? disposer = null;
     workerThread.Invoke(() => {
-      var key = new PqKey(endpointId, pqId);
+      var key = new PersistentQueryKey(endpointId, pqId);
       if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
-        pqp = PersistentQueryProvider.Create(pqId, this, workerThread,
+        pqp = PersistentQueryProvider.Create(endpointId, pqId, this, workerThread,
           () => _persistentQueryProviders.Remove(key));
         _persistentQueryProviders.Add(key, pqp);
       }
@@ -327,20 +351,5 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
 
     return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  private void ApplyToDELETE_ME(EndpointId id, Action<SessionProvider> action) {
-    if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
-      return;
-    }
-
-    if (!_providerMap.TryGetValue(id, out var sp)) {
-      // No Session Provider with that EndpointId. Make a new one
-      sp = new SessionProvider(workerThread);
-      _providerMap.Add(id, sp);
-      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
-    }
-
-    action(sp);
   }
 }

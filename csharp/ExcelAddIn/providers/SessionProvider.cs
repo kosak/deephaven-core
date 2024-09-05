@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using Deephaven.DeephavenClient;
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
@@ -6,7 +8,19 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider(WorkerThread workerThread) : IObservable<StatusOr<SessionBase>>, IObservable<StatusOr<CredentialsBase>>, IDisposable {
+internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable<StatusOr<CredentialsBase>> {
+  public static SessionProvider Create(EndpointId endpointId,
+    SessionProviders sps, WorkerThread workerThread, Action onDispose) {
+
+    var result = new SessionProvider(endpointId, workerThread, onDispose);
+    result._upstreamSubscriptionDisposer = usd;
+    return result;
+  }
+
+  private readonly EndpointId _endpointId;
+  private readonly WorkerThread _workerThread;
+  private Action? _onDispose;
+  private IDisposable? _upstreamSubscriptionDisposer = null;
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
   private readonly ObserverContainer<StatusOr<CredentialsBase>> _credentialsObservers = new();
@@ -17,59 +31,51 @@ internal class SessionProvider(WorkerThread workerThread) : IObservable<StatusOr
   /// </summary>
   private readonly SimpleAtomicReference<object> _sharedSetCredentialsCookie = new(new object());
 
-  public void Dispose() {
-    // Get on the worker thread if not there already.
-    if (workerThread.InvokeIfRequired(Dispose)) {
-      return;
-    }
-
-    // TODO(kosak)
-    // I feel like we should send an OnComplete to any remaining observers
-
-    if (!_session.GetValueOrStatus(out var sess, out _)) {
-      return;
-    }
-
-    _sessionObservers.SetAndSendStatus(ref _session, "Disposing");
-    sess.Dispose();
+  public SessionProvider(EndpointId endpointId, WorkerThread workerThread, Action onDispose) {
+    _endpointId = endpointId;
+    _workerThread = workerThread;
+    _onDispose = onDispose;
   }
 
   /// <summary>
   /// Subscribe to credentials changes
   /// </summary>
-  /// <param name="observer"></param>
-  /// <returns></returns>
   public IDisposable Subscribe(IObserver<StatusOr<CredentialsBase>> observer) {
-    workerThread.Invoke(() => {
-      // New observer gets added to the collection and then notified of the current status.
+    _workerThread.Invoke(() => {
       _credentialsObservers.Add(observer, out _);
       observer.OnNext(_credentials);
     });
 
-    return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
-        _credentialsObservers.Remove(observer, out _);
-      });
+    return _workerThread.InvokeWhenDisposed(() => {
+      _credentialsObservers.Remove(observer, out var isLast);
+      if (!isLast || !_sessionObservers.Empty) {
+        return;
+      }
+
+      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Invoke();
+      DisposeSessionState();
     });
   }
 
   /// <summary>
   /// Subscribe to session changes
   /// </summary>
-  /// <param name="observer"></param>
-  /// <returns></returns>
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
-    workerThread.Invoke(() => {
-      // New observer gets added to the collection and then notified of the current status.
-      _sessionObservers.Add(observer, out _);
-      observer.OnNext(_session);
+    _workerThread.Invoke(() => {
+      _credentialsObservers.Add(observer, out _);
+      observer.OnNext(_credentials);
     });
 
-    return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
-        _sessionObservers.Remove(observer, out var isLast);
-        Debug.WriteLine(isLast);
-      });
+    return _workerThread.InvokeWhenDisposed(() => {
+      _credentialsObservers.Remove(observer, out var isLast);
+      if (!isLast || !_sessionObservers.Empty) {
+        return;
+      }
+
+      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Invoke();
+      DisposeSessionState();
     });
   }
 

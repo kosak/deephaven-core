@@ -1,5 +1,10 @@
 ﻿namespace Deephaven.ExcelAddIn.Models;
 
+public record PersistentQueryKey(
+  EndpointId EndpointId,
+  PersistentQueryId? PersistentQueryId) {
+}
+
 public record TableTriple(
   EndpointId? EndpointId,
   PersistentQueryId? PersistentQueryId,
