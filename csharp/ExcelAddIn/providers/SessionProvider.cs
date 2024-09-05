@@ -63,8 +63,8 @@ internal class SessionProvider : IObservable<StatusOr<SessionBase>>, IObservable
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
     _workerThread.Invoke(() => {
-      _credentialsObservers.Add(observer, out _);
-      observer.OnNext(_credentials);
+      _sessionObservers.Add(observer, out _);
+      observer.OnNext(_session);
     });
 
     return _workerThread.InvokeWhenDisposed(() => {
