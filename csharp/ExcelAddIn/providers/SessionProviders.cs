@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+﻿using System.Diagnostics;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
@@ -90,6 +91,35 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   public void Reconnect(EndpointId id) {
     ApplyTo(id, sp => sp.Reconnect());
   }
+
+  public void SwitchOnEmpty(EndpointId id, Action callerOnEmpty, Action callerOnNotEmpty) {
+    if (workerThread.InvokeIfRequired(() => SwitchOnEmpty(id, callerOnEmpty, callerOnNotEmpty))) {
+      return;
+    }
+
+    Debug.WriteLine("It's SwitchOnEmpty time");
+    if (!_providerMap.TryGetValue(id, out var sp)) {
+      // No provider. That's weird. callerOnEmpty I guess
+      callerOnEmpty();
+      return;
+    }
+
+    // Make a wrapped onEmpty that removes stuff from my dictionary and invokes
+    // the observer, then calls the caller's onEmpty
+
+    Action? myOnEmpty = null;
+    myOnEmpty = () => {
+      if (workerThread.InvokeIfRequired(myOnEmpty!)) {
+        return;
+      }
+      _providerMap.Remove(id);
+      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
+      callerOnEmpty();
+    };
+
+    sp.SwitchOnEmpty(myOnEmpty, callerOnNotEmpty);
+  }
+
 
   private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
     if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {

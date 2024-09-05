@@ -102,8 +102,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     // 3. Otherwise (there is some other subscriber to the session), then the delete operation
     //    should be denied. In that case we restore our state by resubscribing to everything.
     Unsubcribe();
-    Console.WriteLine("This is where the magic happens");
-    // _stateManager.LooseyGoosey(() => Resubscribe());
+
+    _stateManager.SwitchOnEmpty(_endpointId, () => { }, Resubscribe);
   }
 
   public void DoReconnect() {

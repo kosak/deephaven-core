@@ -37,6 +37,14 @@ public partial class ConnectionManagerDialog : Form {
     _bindingSource.Add(row);
   }
 
+  public void RemoveRow(ConnectionManagerDialogRow row) {
+    if (InvokeRequired) {
+      Invoke(() => RemoveRow(row));
+      return;
+    }
+    _bindingSource.Remove(row);
+  }
+
   private void DataGridView1_CellClick(object? sender, DataGridViewCellEventArgs e) {
     // Quite a bit of drama here to support the clicking inside the "IsDefault" checkbox column
     if (e.RowIndex < 0 || e.ColumnIndex < 0) {

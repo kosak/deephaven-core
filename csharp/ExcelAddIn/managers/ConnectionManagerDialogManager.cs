@@ -12,6 +12,7 @@ internal class ConnectionManagerDialogManager(
   ConcurrentDictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> rowToManager,
   StateManager stateManager) : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   private readonly WorkerThread _workerThread = stateManager.WorkerThread;
+  private readonly Dictionary<EndpointId, ConnectionManagerDialogRow> _idToRow = new();
   private readonly List<IDisposable> _disposables = new();
 
   public void OnNext(AddOrRemove<EndpointId> aor) {
@@ -19,19 +20,26 @@ internal class ConnectionManagerDialogManager(
       return;
     }
 
-    if (!aor.IsAdd) {
-      // TODO(kosak)
-      Debug.WriteLine("Remove is not handled");
+    if (aor.IsAdd) {
+      var endpointId = aor.Value;
+      var row = new ConnectionManagerDialogRow(endpointId.Id);
+      var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, stateManager);
+      _ = rowToManager.TryAdd(row, statusRowManager);
+      _idToRow.Add(endpointId, row);
+      _disposables.Add(statusRowManager);
+
+      cmDialog.AddRow(row);
       return;
     }
 
-    var endpointId = aor.Value;
-    var row = new ConnectionManagerDialogRow(endpointId.Id);
-    var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, stateManager);
-    _ = rowToManager.TryAdd(row, statusRowManager);
-    _disposables.Add(statusRowManager);
+    // Remove!
+    if (!_idToRow.Remove(aor.Value, out var rowToDelete) ||
+        !rowToManager.TryRemove(rowToDelete, out var rowManager)) {
+      return;
+    }
 
-    cmDialog.AddRow(row);
+    cmDialog.RemoveRow(rowToDelete);
+    rowManager.Dispose();
   }
 
   public void Dispose() {
