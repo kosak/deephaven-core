@@ -1,6 +1,5 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.DheClient.Session;
-using Deephaven.ExcelAddIn.Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 

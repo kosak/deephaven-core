@@ -6,70 +6,34 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn;
 
-public class StateManager {
+internal class StateManager : IObservable<AddOrRemove<EndpointId>> {
+  class NoopDisposable : IDisposable {
+    public static readonly NoopDisposable Instance = new ();
+    public void Dispose() {
+      // do nothing
+    }
+  }
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
-  private readonly SessionProviders _sessionProviders;
-
-  public StateManager() {
-    _sessionProviders = new SessionProviders(WorkerThread);
-  }
-
-  public IDisposable SubscribeToSessions(IObserver<AddOrRemove<EndpointId>> observer) {
-    return _sessionProviders.Subscribe(observer);
-  }
-
-  public IDisposable SubscribeToSession(EndpointId endpointId, IObserver<StatusOr<SessionBase>> observer) {
-    return _sessionProviders.SubscribeToSession(endpointId, observer);
-  }
-
-  public IDisposable SubscribeToCredentials(EndpointId endpointId, IObserver<StatusOr<CredentialsBase>> observer) {
-    return _sessionProviders.SubscribeToCredentials(endpointId, observer);
-  }
-
-  public IDisposable SubscribeToDefaultSession(IObserver<StatusOr<SessionBase>> observer) {
-    return _sessionProviders.SubscribeToDefaultSession(observer);
-  }
-
-  public IDisposable SubscribeToDefaultCredentials(IObserver<StatusOr<CredentialsBase>> observer) {
-    return _sessionProviders.SubscribeToDefaultCredentials(observer);
-  }
-
-  public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
-    IObserver<StatusOr<TableHandle>> observer) {
-    return _sessionProviders.SubscribeToTableTriple(descriptor, filter, observer);
-  }
-
-  public void SetCredentials(CredentialsBase credentials) {
-    _sessionProviders.SetCredentials(credentials);
-  }
-
-  public void SetDefaultCredentials(CredentialsBase credentials) {
-    _sessionProviders.SetDefaultCredentials(credentials);
-  }
-
-  public void Reconnect(EndpointId id) {
-    _sessionProviders.Reconnect(id);
-  }
-
-  public void SwitchOnEmpty(EndpointId id, Action onEmpty, Action onNotEmpty) {
-    _sessionProviders.SwitchOnEmpty(id, onEmpty, onNotEmpty);
-  }
-}
-
-
-using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
-
-namespace Deephaven.ExcelAddIn.Providers;
-
-internal class SessionProviders666(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
+  private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
+
+  public IDisposable LookupAndSubscribeToCredentials(EndpointId endpointId,
+    IObserver<StatusOr<CredentialsBase>> observer) {
+    // CredentialsProviders are special because they don't automatically go way with the last unsubscriber
+    WorkerThread.Invoke(() => {
+      if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
+        cp = CredentialsProvider.Create(endpointId, this);
+        _credentialsProviders.Add(endpointId, cp);
+      }
+    });
+
+    return NoopDisposable.Instance;
+  }
+
 
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
     workerThread.Invoke(() => {
@@ -342,20 +306,6 @@ internal class SessionProviders666(WorkerThread workerThread) : IObservable<AddO
     return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable LookupAndSubscribeToCredentials(EndpointId endpointId,
-    IObserver<StatusOr<CredentialsBase>> observer) {
-    IDisposable? disposer = null;
-    workerThread.Invoke(() => {
-      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = SessionProvider.Create(endpointId, this, workerThread,
-          () => _sessionProviders.Remove(endpointId));
-        _sessionProviders.Add(endpointId, sp);
-      }
-      disposer = sp.Subscribe(observer);
-    });
-
-    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
-  }
 
   public IDisposable LookupAndSubscribeToPq(EndpointId endpointId, PersistentQueryId? pqId,
     IObserver<StatusOr<Client>> observer) {
