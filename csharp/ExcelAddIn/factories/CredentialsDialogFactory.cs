@@ -24,21 +24,10 @@ internal static class CredentialsDialogFactory {
       credentialsDialog!.Close();
     }
 
-    // This is used to ignore the results from stale "Test Credentials" invocations
-    // and to only use the results from the latest. It is read and written from different
-    // threads so we protect it with a synchronization object.
-    var sharedTestCredentialsCookie = new SimpleAtomicReference<object>(new object());
+    var versionTracker = new VersionTracker();
 
     void TestCredentials(CredentialsBase creds) {
-      // Make a unique sentinel object to indicate that this thread should be
-      // the one privileged to provide the system with the answer to the "Test
-      // Credentials" question. If the user doesn't press the button again,
-      // we will go ahead and provide our answer to the system. However, if the
-      // user presses the button again, triggering a new thread, then that
-      // new thread will usurp our privilege and it will be the one to provide
-      // the answer.
-      var localLatestTcc = new object();
-      sharedTestCredentialsCookie.Value = localLatestTcc;
+      var latestCookie = versionTracker.SetNewVersion();
 
       var state = "OK";
       try {
@@ -49,10 +38,7 @@ internal static class CredentialsDialogFactory {
         state = ex.Message;
       }
 
-      // If sharedTestCredentialsCookie is still the same, then our privilege
-      // has not been usurped and we can provide our answer to the system.
-      // On the other hand, if it changes, then we will just throw away our work.
-      if (!ReferenceEquals(localLatestTcc, sharedTestCredentialsCookie.Value)) {
+      if (!latestCookie.IsCurrent) {
         // Our results are moot. Dispose of them.
         return;
       }

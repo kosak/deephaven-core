@@ -2,7 +2,6 @@
 using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
 

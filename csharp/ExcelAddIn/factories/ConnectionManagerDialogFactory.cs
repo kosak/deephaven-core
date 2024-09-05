@@ -62,7 +62,7 @@ internal static class ConnectionManagerDialogFactory {
       OnReconnectButtonClicked, OnMakeDefaultButtonClicked, OnEditButtonClicked);
     cmDialog.Show();
     var dm = new ConnectionManagerDialogManager(cmDialog, rowToManager, sm);
-    var disposer = sm.SubscribeToSessions(dm);
+    var disposer = sm.SubscribeToCredentialsPopulation(dm);
 
     cmDialog.Closed += (_, _) => {
       disposer.Dispose();

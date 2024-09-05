@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient.ExcelAddIn.Util;
+﻿using System.Diagnostics;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
@@ -67,7 +68,7 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable LookupAndSubscribeToPq(EndpointId endpointId, PersistentQueryId? pqId,
+  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryId? pqId,
     IObserver<StatusOr<Client>> observer) {
 
     IDisposable? disposer = null;
@@ -84,7 +85,7 @@ public class StateManager {
     return WorkerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToTableHandleProvider(
+  public IDisposable SubscribeToTableHandle(
     TableTriple descriptor, IObserver<StatusOr<TableHandle>> observer) {
 
     IDisposable? disposer = null;
@@ -100,12 +101,11 @@ public class StateManager {
     return WorkerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-
-  private IDisposable SubscribeToFilteredTableProvider(
+  public IDisposable SubscribeToFilteredTableHandle(
     TableTriple descriptor, string condition, IObserver<StatusOr<TableHandle>> observer) {
     if (condition.Length == 0) {
       // No filter, so just delegate to LookupAndSubscribeToFilteredTableProvider
-      return SubscribeToTableHandleProvider(descriptor, observer);
+      return SubscribeToTableHandle(descriptor, observer);
     }
 
     IDisposable? disposer = null;
@@ -123,17 +123,15 @@ public class StateManager {
     return WorkerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  // public void SetCredentials(CredentialsBase credentials) {
-  //   ApplyTo(credentials.Id, sp => {
-  //     sp.SetCredentials(credentials);
-  //   });
-  // }
-  //
-  // public void SetDefaultCredentials(CredentialsBase credentials) {
-  //   ApplyTo(credentials.Id, _defaultProvider.SetParent);
-  // }
-  //
-  // public void Reconnect(EndpointId id) {
-  //   ApplyTo(id, sp => sp.Reconnect());
-  // }
+  public void SetCredentials(CredentialsBase credentials) {
+    Debug.WriteLine("Not setting credentials");
+  }
+  
+  public void SetDefaultCredentials(CredentialsBase credentials) {
+    Debug.WriteLine("Not setting default credentials");
+  }
+
+  public void Reconnect(EndpointId id) {
+    Debug.WriteLine("Not reconnecting");
+  }
 }

@@ -12,7 +12,7 @@ internal class PersistentQueryProvider :
     StateManager sm, Action onDispose) {
 
     var result = new PersistentQueryProvider(pqId, sm.WorkerThread, onDispose);
-    var usd = sm.LookupAndSubscribeToSession(endpointId, result);
+    var usd = sm.SubscribeToSession(endpointId, result);
     result._upstreamSubscriptionDisposer = usd;
 
     return result;

@@ -8,7 +8,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   public static SessionProvider Create(EndpointId endpointId, StateManager sm, Action onDispose) {
 
     var result = new SessionProvider(endpointId, sm.WorkerThread, onDispose);
-    var usd = sm.LookupAndSubscribeToCredentials(endpointId, result);
+    var usd = sm.SubscribeToCredentials(endpointId, result);
     result._upstreamSubscriptionDisposer = usd;
     return result;
   }
@@ -66,7 +66,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     Utility.RunInBackground(() => CreateSessionBaseInSeparateThread(cb, cookie));
   }
 
-  private void CreateSessionBaseInSeparateThread(CredentialsBase credentials, VersionTracker.Cookie versionCookie) {
+  private void CreateSessionBaseInSeparateThread(CredentialsBase credentials, VersionTrackerCookie versionCookie) {
     StatusOr<SessionBase> result;
     try {
       // This operation might take some time.
