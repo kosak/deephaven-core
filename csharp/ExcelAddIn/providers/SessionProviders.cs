@@ -51,19 +51,6 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
-  private void FinishDisposingUnsafe(EndpointId id, IDisposable? disp) {
-    if (disp == null) {
-      return;
-    }
-    disp.Dispose();
-
-    if (_providerMap.TryGetValue(id, out var sp) && !sp.HasObserversUnsafe) {
-      _providerMap.Remove(id);
-      sp.Dispose();
-      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
-    }
-  }
-
   public IDisposable SubscribeToDefaultSessionWRONG(IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposable = null;
     workerThread.Invoke(() => {
@@ -87,6 +74,18 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
       workerThread.Invoke(() => {
         Utility.Exchange(ref disposable, null)?.Dispose();
       });
+    });
+  }
+
+  public IDisposable SubscribeToPq(EndpointId? endpoint, PersistentQueryId? pqId,
+    IObserver<StatusOr<Client>> observer) {
+    IDisposable? disposable = null;
+    var mapEntryDisposer = LookupOrCreatePqProvider(endpoint, pqId,
+      thp => disposable = thp.Subscribe(observer), null);
+
+    return workerThread.InvokeWhenDisposed(() => {
+      Utility.Exchange(ref disposable, null)?.Dispose();
+      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
     });
   }
 
@@ -125,6 +124,49 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
+  public IDisposable SubscribeToTableTriple(TableTriple descriptor,
+    IObserver<StatusOr<TableHandle>> observer) {
+
+    IDisposable? disposable = null;
+    var mapEntryDisposer = LookupOrCreateTableProvider(descriptor,
+      thp => disposable = thp.Subscribe(observer), null);
+
+    return workerThread.InvokeWhenDisposed(() => {
+      Utility.Exchange(ref disposable, null)?.Dispose();
+      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
+    });
+    // There is a chain with multiple elements:
+    //
+    // 1. Make a TableHandleProvider
+    // 2. Make a ClientProvider
+    // 3. Subscribe the ClientProvider to either the session provider named by the endpoint id
+    //    or to the default session provider
+    // 4. Subscribe the TableHandleProvider to the ClientProvider
+    // 4. Subscribe our observer to the TableHandleProvider
+    // 5. Return a dispose action that disposes all the needfuls.
+
+    var thp = new TableHandleProvider(WorkerThread, descriptor, filter);
+    var cp = new ClientProvider(WorkerThread, descriptor);
+
+    var disposer1 = descriptor.EndpointId == null
+      ? SubscribeToDefaultSession(cp)
+      : SubscribeToSession(descriptor.EndpointId, cp);
+    var disposer2 = cp.Subscribe(thp);
+    var disposer3 = thp.Subscribe(observer);
+
+    // The disposer for this needs to dispose both "inner" disposers.
+    return ActionAsDisposable.Create(() => {
+      // TODO(kosak): probably don't need to be on the worker thread here
+      WorkerThread.Invoke(() => {
+        var temp1 = Utility.Exchange(ref disposer1, null);
+        var temp2 = Utility.Exchange(ref disposer2, null);
+        var temp3 = Utility.Exchange(ref disposer3, null);
+        temp3?.Dispose();
+        temp2?.Dispose();
+        temp1?.Dispose();
+      });
+    });
+  }
 
   public IDisposable SubscribeToFilteredTableTriple(TableTriple descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
@@ -132,8 +174,19 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
       return SubscribeToTableTriple(descriptor, observer);
     }
 
-    IDisposable? disposable = null;
     var key = new FilteredTableTripleKey(descriptor, filter);
+    IDisposable? disposable = null;
+    var mapEntryDisposer = LookupOrCreateFilteredTableTriple(key,
+      thp => disposable = thp.Subscribe(observer), null);
+
+    return workerThread.InvokeWhenDisposed(() => {
+      Utility.Exchange(ref disposable, null)?.Dispose();
+      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
+    });
+  }
+
+
+  IDisposable? disposable = null;
     var mapEntryDisposer = LookupOrCreateFilteredTableTriple(key, thp => disposable = thp.Subscribe(observer));
 
     return workerThread.InvokeWhenDisposed(() => {
