@@ -35,6 +35,7 @@ public partial class ConnectionManagerDialog : Form {
       return;
     }
     _bindingSource.Add(row);
+    dataGridView1.ClearSelection();
   }
 
   public void RemoveRow(ConnectionManagerDialogRow row) {

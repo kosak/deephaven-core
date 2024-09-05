@@ -44,6 +44,7 @@
       dataGridView1.Name = "dataGridView1";
       dataGridView1.ReadOnly = true;
       dataGridView1.RowHeadersWidth = 62;
+      dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
       dataGridView1.Size = new Size(979, 454);
       dataGridView1.TabIndex = 0;
       // 
