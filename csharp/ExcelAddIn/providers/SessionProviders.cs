@@ -10,7 +10,6 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
   public IDisposable Subscribe(IObserver<AddOrRemove<EndpointId>> observer) {
-    IDisposable? disposable = null;
     // We need to run this on our worker thread because we want to protect
     // access to our dictionary.
     workerThread.Invoke(() => {
@@ -25,7 +24,7 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
 
     return ActionAsDisposable.Create(() => {
       workerThread.Invoke(() => {
-        Utility.Exchange(ref disposable, null)?.Dispose();
+        _endpointsObservers.Remove(observer, out _);
       });
     });
   }
