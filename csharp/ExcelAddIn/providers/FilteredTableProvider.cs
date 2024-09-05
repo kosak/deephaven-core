@@ -7,24 +7,33 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>, IObservable<StatusOr<TableHandle>> {
 
-  public static FilteredTableProvider Create(TableTriple descriptor, SessionProviders sps,
-    WorkerThread workerThread, Action onDispose) {
+  public static FilteredTableProvider Create(TableTriple descriptor, string condition,
+    SessionProviders sps, WorkerThread workerThread, Action onDispose) {
 
-    var result = new FilteredTableProvider(workerThread, onDispose);
+    var result = new FilteredTableProvider(condition, workerThread, onDispose);
     // or don't subscribe if there's no default ugh
-    var parentSubscriptionDisposer = sps.LookupAndSubscribeToTableProvider(descriptor, result);
-    result.ParentSubscriptionDisposer = parentSubscriptionDisposer;
+    var usd = sps.LookupAndSubscribeToTableProvider(descriptor, result);
+    result._upstreamSubscriptionDisposer = usd;
     return result;
   }
 
+  public FilteredTableProvider(string condition, WorkerThread workerThread, Action onDispose) {
+    _condition = condition;
+    _workerThread = workerThread;
+    _onDispose = onDispose;
+  }
+
+  private readonly string _condition;
   private readonly WorkerThread _workerThread;
+  private Action? _onDispose;
+  private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _filteredTableHandle = StatusOr<TableHandle>.OfStatus("[No Filtered Table]");
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     _workerThread.Invoke(() => {
       _observers.Add(observer, out _);
-      observer.OnNext(_tableHandle);
+      observer.OnNext(_filteredTableHandle);
     });
 
     return _workerThread.InvokeWhenDisposed(() => {
@@ -33,8 +42,8 @@ internal class FilteredTableProvider :
         return;
       }
 
-      Utility.Exchange(ref _parentSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _ownerDisposeAction, null)?.Whatever();
+      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Invoke();
       DisposeTableHandleState();
     });
   }
@@ -54,7 +63,7 @@ internal class FilteredTableProvider :
     // It's a real TableHandle so start fetching the table. First notify our observers.
     _observers.SetAndSendStatus(ref _filteredTableHandle, "Filtering");
 
-    Utility.RunInBackground(() => PerformFilterInBackground(th));
+    Utility.RunInBackground(() => PerformFilterInBackground(th, _condition));
   }
 
   private void PerformFilterInBackground(TableHandle tableHandle, string condition) {

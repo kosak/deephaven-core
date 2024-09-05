@@ -281,14 +281,15 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   }
 
   private IDisposable LookupAndSubscribeToFilteredTableProvider(
-    TableTriple descriptor, string filter, IObserver<StatusOr<TableHandle>> observer) {
+    TableTriple descriptor, string condition, IObserver<StatusOr<TableHandle>> observer) {
 
     IDisposable? disposer = null;
     workerThread.Invoke(() => {
       var key = new FilteredTableProviderKey(descriptor.EndpointId, descriptor.PersistentQueryId,
-        descriptor.TableName, filter);
+        descriptor.TableName, condition);
       if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
-        ftp = FilteredTableProvider.Create(descriptor, this, workerThread, () => _filteredTableProviders.Remove(key));
+        ftp = FilteredTableProvider.Create(descriptor, condition, this, workerThread,
+          () => _filteredTableProviders.Remove(key));
         _filteredTableProviders.Add(key, ftp);
       }
       disposer = ftp.Subscribe(observer);
@@ -297,7 +298,7 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
+  private void ApplyToDELETE_ME(EndpointId id, Action<SessionProvider> action) {
     if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
       return;
     }
