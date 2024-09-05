@@ -5,86 +5,95 @@ using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class TableHandleProvider(
-  WorkerThread workerThread,
-  TableTriple descriptor,
-  string filter) : IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>>, IDisposable {
+internal class TableHandleProvider :
+  IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>> {
 
+  public static TableHandleProvider Create(TableTriple descriptor,
+    SessionProviders sps, WorkerThread workerThread, Action onDispose) {
+
+    var result = new TableHandleProvider(descriptor.TableName, workerThread, onDispose);
+    // or don't subscribe if there's no default ugh
+    var usd = sps.LookupAndSubscribeToPq(descriptor.EndpointId, descriptor.PersistentQueryId, result);
+    result._upstreamSubscriptionDisposer = usd;
+    return result;
+  }
+
+  private readonly string _tableName;
+  private readonly WorkerThread _workerThread;
+  private Action? _onDispose;
+  private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[no TableHandle]");
+  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[No Table]");
+
+  public TableHandleProvider(string tableName, WorkerThread workerThread, Action onDispose) {
+    _tableName = tableName;
+    _workerThread = workerThread;
+    _onDispose = onDispose;
+  }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    // We need to run this on our worker thread because we want to protect
-    // access to our dictionary.
-    workerThread.Invoke(() => {
+    _workerThread.Invoke(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_tableHandle);
     });
 
-    return ActionAsDisposable.Create(() => {
-      workerThread.Invoke(() => {
-        _observers.Remove(observer, out _);
-      });
-    });
-  }
-
-  public void Dispose() {
-    // Get onto the worker thread if we're not already on it.
-    if (workerThread.InvokeIfRequired(Dispose)) {
-      return;
-    }
-
-    DisposePqAndThState();
-  }
-
-  public void OnNext(StatusOr<Client> client) {
-    // Get onto the worker thread if we're not already on it.
-    if (workerThread.InvokeIfRequired(() => OnNext(client))) {
-      return;
-    }
-
-    try {
-      // Dispose whatever state we had before.
-      DisposePqAndThState();
-
-      // If the new state is just a status message, make that our state and transmit to our observers
-      if (!client.GetValueOrStatus(out var cli, out var status)) {
-        _observers.SetAndSendStatus(ref _tableHandle, status);
+    return _workerThread.InvokeWhenDisposed(() => {
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
         return;
       }
 
-      // It's a real client so start fetching the table. First notify our observers.
-      _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{descriptor.TableName}\"");
-
-      // Now fetch the table. This might block but we're on the worker thread. In the future
-      // we might move this to yet another thread.
-      var th = cli.Manager.FetchTable(descriptor.TableName);
-      if (filter != "") {
-        // If there's a filter, take this table handle and surround it with a Where.
-        var temp = th;
-        th = temp.Where(filter);
-        temp.Dispose();
-      }
-
-      // Success! Make this our state and send the table handle to our observers.
-      _observers.SetAndSendValue(ref _tableHandle, th);
-    } catch (Exception ex) {
-      // Some exception. Make the exception message our state and send it to our observers.
-      _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
-    }
+      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Invoke();
+      DisposeTableHandleState();
+    });
   }
 
-  private void DisposePqAndThState() {
-    // Get onto the worker thread if we're not already on it.
-    if (workerThread.InvokeIfRequired(DisposePqAndThState)) {
+  public void OnNext(StatusOr<Client> client) {
+    if (_workerThread.InvokeIfRequired(() => OnNext(client))) {
+      return;
+    }
+
+    DisposeTableHandleState();
+
+    // If the new state is just a status message, make that our state and transmit to our observers
+    if (!client.GetValueOrStatus(out var cli, out var status)) {
+      _observers.SetAndSendStatus(ref _tableHandle, status);
+      return;
+    }
+
+    // It's a real client so start fetching the table. First notify our observers.
+    _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{_tableName}\"");
+
+    Utility.RunInBackground(() => PerformLookupInBackground(cli, _tableName));
+  }
+
+  public void PerformLookupInBackground(Client client, string tableName) {
+    StatusOr<TableHandle> result;
+    try {
+      var th = client.Manager.FetchTable(tableName);
+      result = StatusOr<TableHandle>.OfValue(th);
+    } catch (Exception ex) {
+      result = StatusOr<TableHandle>.OfStatus(ex.Message);
+    }
+
+    // Then, back on the worker thread, set the result
+    _workerThread.Invoke(() => {
+      DisposeTableHandleState();
+      _observers.SetAndSend(ref _tableHandle, result);
+    });
+  }
+
+  private void DisposeTableHandleState() {
+    if (_workerThread.InvokeIfRequired(DisposeTableHandleState)) {
       return;
     }
 
     _ = _tableHandle.GetValueOrStatus(out var oldTh, out _);
+    _observers.SetAndSendStatus(ref _tableHandle, "Disposing TableHandle");
 
     if (oldTh != null) {
-      _observers.SetAndSendStatus(ref _tableHandle, "Disposing TableHandle");
-      oldTh.Dispose();
+      Utility.RunInBackground(oldTh.Dispose);
     }
   }
 

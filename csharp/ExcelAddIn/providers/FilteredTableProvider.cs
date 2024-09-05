@@ -12,15 +12,9 @@ internal class FilteredTableProvider :
 
     var result = new FilteredTableProvider(condition, workerThread, onDispose);
     // or don't subscribe if there's no default ugh
-    var usd = sps.LookupAndSubscribeToTableProvider(descriptor, result);
+    var usd = sps.LookupAndSubscribeToTableHandleProvider(descriptor, result);
     result._upstreamSubscriptionDisposer = usd;
     return result;
-  }
-
-  public FilteredTableProvider(string condition, WorkerThread workerThread, Action onDispose) {
-    _condition = condition;
-    _workerThread = workerThread;
-    _onDispose = onDispose;
   }
 
   private readonly string _condition;
@@ -29,6 +23,12 @@ internal class FilteredTableProvider :
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _filteredTableHandle = StatusOr<TableHandle>.OfStatus("[No Filtered Table]");
+
+  public FilteredTableProvider(string condition, WorkerThread workerThread, Action onDispose) {
+    _condition = condition;
+    _workerThread = workerThread;
+    _onDispose = onDispose;
+  }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     _workerThread.Invoke(() => {
@@ -77,13 +77,8 @@ internal class FilteredTableProvider :
 
     // Then, back on the worker thread, set the result
     _workerThread.Invoke(() => {
-      _filteredTableHandle.GetValueOrStatus(out var oldTh, out _);
+      DisposeTableHandleState();
       _observers.SetAndSend(ref _filteredTableHandle, result);
-
-      // And finally, dispose the old table handle on yet another background thread
-      if (oldTh != null) {
-        Utility.RunInBackground(oldTh.Dispose);
-      }
     });
   }
 

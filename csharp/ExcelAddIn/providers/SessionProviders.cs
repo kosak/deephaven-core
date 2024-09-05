@@ -9,6 +9,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRemove<EndpointId>> {
   private readonly DefaultSessionProvider _defaultProvider = new(workerThread);
   private readonly Dictionary<EndpointId, SessionProvider> _providerMap = new();
+  private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointsObservers = new();
 
@@ -269,19 +270,34 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   }
 
   private IDisposable LookupAndSubscribeToSession(
-    EndpointId id, IObserver<SessionBase> observable) {
+    EndpointId id, IObserver<SessionBase> observer) {
   }
 
-  private IDisposable LookupAndSubscribeToPq(
-    TableTriple descriptor, IObserver<Client> observable) {
+  public IDisposable LookupAndSubscribeToPq(PqKey key, IObserver<StatusOr<Client>> observer) {
   }
 
-  public IDisposable LookupAndSubscribeToTableProvider(
-    TableTriple descriptor, IObserver<StatusOr<TableHandle>> observable) {
+  public IDisposable LookupAndSubscribeToTableHandleProvider(
+    TableTriple descriptor, IObserver<StatusOr<TableHandle>> observer) {
+
+    IDisposable? disposer = null;
+    workerThread.Invoke(() => {
+      if (!_tableHandleProviders.TryGetValue(descriptor, out var tp)) {
+        tp = TableHandleProvider.Create(descriptor, this, workerThread,
+          () => _tableHandleProviders.Remove(descriptor));
+        _tableHandleProviders.Add(descriptor, tp);
+      }
+      disposer = tp.Subscribe(observer);
+    });
+
+    return workerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   private IDisposable LookupAndSubscribeToFilteredTableProvider(
     TableTriple descriptor, string condition, IObserver<StatusOr<TableHandle>> observer) {
+    if (condition.Length == 0) {
+      // No filter, so just delegate to LookupAndSubscribeToFilteredTableProvider
+      return LookupAndSubscribeToTableHandleProvider(descriptor, observer);
+    }
 
     IDisposable? disposer = null;
     workerThread.Invoke(() => {
