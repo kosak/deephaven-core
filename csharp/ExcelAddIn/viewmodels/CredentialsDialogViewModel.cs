@@ -52,6 +52,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
   private bool _validateCertificate = true;
   private string _userId = "";
   private string _password = "";
+  private bool _operateAsChecked = false;
   private string _operateAs = "";
 
   public event PropertyChangedEventHandler? PropertyChanged;
@@ -68,15 +69,15 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
       }
     }
 
-    CheckMissing(_id, "Connection Id");
+    CheckMissing(Id, "Connection Id");
 
     if (!_isCorePlus) {
-      CheckMissing(_connectionString, "Connection String");
+      CheckMissing(ConnectionString, "Connection String");
     } else {
-      CheckMissing(_jsonUrl, "JSON URL");
-      CheckMissing(_userId, "User Id");
-      CheckMissing(_password, "Password");
-      CheckMissing(_operateAs, "Operate As");
+      CheckMissing(JsonUrl, "JSON URL");
+      CheckMissing(UserId, "User Id");
+      CheckMissing(Password, "Password");
+      CheckMissing(OperateAs, "Operate As");
     }
 
     if (missingFields.Count > 0) {
@@ -86,8 +87,8 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
     var epId = new EndpointId(_id);
     result = _isCorePlus
-      ? CredentialsBase.OfCorePlus(epId, _jsonUrl, _userId, _password, _operateAs, _validateCertificate)
-      : CredentialsBase.OfCore(epId, _connectionString, _sessionTypeIsPython);
+      ? CredentialsBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAs, ValidateCertificate)
+      : CredentialsBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
     return true;
   }
 
@@ -195,9 +196,28 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
     }
   }
 
-  public string OperateAs {
-    get => _operateAs;
+  public bool OperateAsChecked {
+    get => _operateAsChecked;
     set {
+      if (_operateAsChecked == value) {
+        return;
+      }
+
+      _operateAsChecked = value;
+      OnPropertyChanged();
+      OnPropertyChanged(nameof(NotOperateAsChecked));
+      OnPropertyChanged(nameof(OperateAs));
+    }
+  }
+
+  public bool NotOperateAsChecked => !OperateAsChecked;
+
+  public string OperateAs {
+    get => OperateAsChecked ? _operateAs : UserId;
+    set {
+      if (!OperateAsChecked) {
+        return;
+      }
       if (_operateAs == value) {
         return;
       }

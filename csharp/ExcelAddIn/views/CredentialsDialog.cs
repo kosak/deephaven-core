@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.ViewModels;
+﻿using System.Diagnostics;
+using Deephaven.ExcelAddIn.ViewModels;
 
 namespace ExcelAddIn.views {
   public partial class CredentialsDialog : Form {
@@ -33,7 +34,11 @@ namespace ExcelAddIn.views {
       jsonUrlBox.DataBindings.Add(nameof(jsonUrlBox.Text), vm, nameof(vm.JsonUrl));
       userIdBox.DataBindings.Add(nameof(userIdBox.Text), vm, nameof(vm.UserId));
       passwordBox.DataBindings.Add(nameof(passwordBox.Text), vm, nameof(vm.Password));
+
       operateAsBox.DataBindings.Add(nameof(operateAsBox.Text), vm, nameof(vm.OperateAs));
+      operateAsBox.DataBindings.Add(nameof(operateAsBox.ReadOnly), vm, nameof(vm.NotOperateAsChecked));
+
+      operateAsCheckBox.DataBindings.Add(nameof(operateAsCheckBox.Checked), vm, nameof(vm.OperateAsChecked));
       validateCertCheckBox.DataBindings.Add(nameof(validateCertCheckBox.Checked), vm, nameof(vm.ValidateCertificate));
 
       // Bind the Core property (there's just one)

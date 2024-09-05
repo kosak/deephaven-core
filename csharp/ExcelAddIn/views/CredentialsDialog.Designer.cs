@@ -24,15 +24,15 @@
     /// </summary>
     private void InitializeComponent() {
       corePlusPanel = new Panel();
+      operateAsCheckBox = new CheckBox();
       validateCertCheckBox = new CheckBox();
       operateAsBox = new TextBox();
       passwordBox = new TextBox();
-      label5 = new Label();
-      label4 = new Label();
+      passwordLabel = new Label();
       userIdBox = new TextBox();
       userIdLabel = new Label();
       jsonUrlBox = new TextBox();
-      label3 = new Label();
+      jsonUrlLabel = new Label();
       corePanel = new Panel();
       connectionStringBox = new TextBox();
       label2 = new Label();
@@ -48,7 +48,7 @@
       isCorePlusRadioButton = new RadioButton();
       isCoreRadioButton = new RadioButton();
       endpointIdBox = new TextBox();
-      label1 = new Label();
+      connectionIdLabel = new Label();
       connectionTypeGroup = new GroupBox();
       connectionIdPanel = new Panel();
       corePlusPanel.SuspendLayout();
@@ -61,20 +61,30 @@
       // 
       // corePlusPanel
       // 
+      corePlusPanel.Controls.Add(operateAsCheckBox);
       corePlusPanel.Controls.Add(validateCertCheckBox);
       corePlusPanel.Controls.Add(operateAsBox);
       corePlusPanel.Controls.Add(passwordBox);
-      corePlusPanel.Controls.Add(label5);
-      corePlusPanel.Controls.Add(label4);
+      corePlusPanel.Controls.Add(passwordLabel);
       corePlusPanel.Controls.Add(userIdBox);
       corePlusPanel.Controls.Add(userIdLabel);
       corePlusPanel.Controls.Add(jsonUrlBox);
-      corePlusPanel.Controls.Add(label3);
+      corePlusPanel.Controls.Add(jsonUrlLabel);
       corePlusPanel.Dock = DockStyle.Top;
       corePlusPanel.Location = new Point(0, 191);
       corePlusPanel.Name = "corePlusPanel";
       corePlusPanel.Size = new Size(1054, 299);
       corePlusPanel.TabIndex = 210;
+      // 
+      // operateAsCheckBox
+      // 
+      operateAsCheckBox.AutoSize = true;
+      operateAsCheckBox.Location = new Point(49, 182);
+      operateAsCheckBox.Name = "operateAsCheckBox";
+      operateAsCheckBox.Size = new Size(122, 29);
+      operateAsCheckBox.TabIndex = 217;
+      operateAsCheckBox.Text = "OperateAs";
+      operateAsCheckBox.UseVisualStyleBackColor = true;
       // 
       // validateCertCheckBox
       // 
@@ -104,23 +114,14 @@
       passwordBox.Size = new Size(795, 31);
       passwordBox.TabIndex = 213;
       // 
-      // label5
+      // passwordLabel
       // 
-      label5.AutoSize = true;
-      label5.Location = new Point(84, 183);
-      label5.Name = "label5";
-      label5.Size = new Size(96, 25);
-      label5.TabIndex = 5;
-      label5.Text = "OperateAs";
-      // 
-      // label4
-      // 
-      label4.AutoSize = true;
-      label4.Location = new Point(84, 133);
-      label4.Name = "label4";
-      label4.Size = new Size(87, 25);
-      label4.TabIndex = 4;
-      label4.Text = "Password";
+      passwordLabel.AutoSize = true;
+      passwordLabel.Location = new Point(84, 133);
+      passwordLabel.Name = "passwordLabel";
+      passwordLabel.Size = new Size(87, 25);
+      passwordLabel.TabIndex = 4;
+      passwordLabel.Text = "Password";
       // 
       // userIdBox
       // 
@@ -147,14 +148,14 @@
       jsonUrlBox.Size = new Size(795, 31);
       jsonUrlBox.TabIndex = 211;
       // 
-      // label3
+      // jsonUrlLabel
       // 
-      label3.AutoSize = true;
-      label3.Location = new Point(89, 30);
-      label3.Name = "label3";
-      label3.Size = new Size(91, 25);
-      label3.TabIndex = 0;
-      label3.Text = "JSON URL";
+      jsonUrlLabel.AutoSize = true;
+      jsonUrlLabel.Location = new Point(89, 30);
+      jsonUrlLabel.Name = "jsonUrlLabel";
+      jsonUrlLabel.Size = new Size(91, 25);
+      jsonUrlLabel.TabIndex = 0;
+      jsonUrlLabel.Text = "JSON URL";
       // 
       // corePanel
       // 
@@ -309,14 +310,14 @@
       endpointIdBox.Size = new Size(795, 31);
       endpointIdBox.TabIndex = 1;
       // 
-      // label1
+      // connectionIdLabel
       // 
-      label1.AutoSize = true;
-      label1.Location = new Point(46, 29);
-      label1.Name = "label1";
-      label1.Size = new Size(125, 25);
-      label1.TabIndex = 5;
-      label1.Text = "Connection ID";
+      connectionIdLabel.AutoSize = true;
+      connectionIdLabel.Location = new Point(46, 29);
+      connectionIdLabel.Name = "connectionIdLabel";
+      connectionIdLabel.Size = new Size(125, 25);
+      connectionIdLabel.TabIndex = 5;
+      connectionIdLabel.Text = "Connection ID";
       // 
       // connectionTypeGroup
       // 
@@ -331,7 +332,7 @@
       // 
       // connectionIdPanel
       // 
-      connectionIdPanel.Controls.Add(label1);
+      connectionIdPanel.Controls.Add(connectionIdLabel);
       connectionIdPanel.Controls.Add(endpointIdBox);
       connectionIdPanel.Controls.Add(connectionTypeGroup);
       connectionIdPanel.Dock = DockStyle.Top;
@@ -371,20 +372,19 @@
     private RadioButton isCoreRadioButton;
     private Button setCredentialsButton;
     private TextBox endpointIdBox;
-    private Label label1;
+    private Label connectionIdLabel;
     private GroupBox connectionTypeGroup;
     private Panel corePlusPanel;
     private Panel corePanel;
-    private Label label3;
+    private Label jsonUrlLabel;
     private Label label2;
     private TextBox jsonUrlBox;
     private TextBox connectionStringBox;
-    private Label label4;
+    private Label passwordLabel;
     private TextBox userIdBox;
     private Label userIdLabel;
     private TextBox operateAsBox;
     private TextBox passwordBox;
-    private Label label5;
     private Panel finalPanel;
     private Button testCredentialsButton;
     private Label testResultsLabel;
@@ -395,5 +395,6 @@
     private RadioButton sessionTypeIsGroovyButton;
     private RadioButton sessionTypeIsPythonButton;
     private Panel connectionIdPanel;
+    private CheckBox operateAsCheckBox;
   }
 }
