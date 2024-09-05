@@ -36,36 +36,43 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       }
     });
 
-    return ActionAsDisposable.Create(() => {
-      _workerThread.Invoke(() => {
-        _observers.Remove(wrappedObserver, out var wasLast);
-        if (!wasLast) {
-          return;
-        }
+    return _workerThread.InvokeWhenDisposed(() => {
+      _observers.Remove(wrappedObserver, out var wasLast);
+      if (!wasLast) {
+        return;
+      }
 
-        Utility.Exchange(ref _filteredTableDisposer, null)?.Dispose();
-      });
+      Utility.Exchange(ref _filteredTableDisposer, null)?.Dispose();
     });
   }
 
-  public void OnNext(StatusOr<TableHandle> soth) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(soth))) {
+  public void OnNext(StatusOr<TableHandle> tableHandle) {
+    if (_workerThread.InvokeIfRequired(() => OnNext(tableHandle))) {
       return;
     }
 
-    if (!soth.GetValueOrStatus(out var tableHandle, out var status)) {
+    if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
       _observers.SendStatus(status);
       return;
     }
 
     _observers.SendStatus($"Snapshotting \"{_tableDescriptor.TableName}\"");
 
-    try {
-      using var ct = tableHandle.ToClientTable();
-      var result = Renderer.Render(ct, _wantHeaders);
-      _observers.SendValue(result);
-    } catch (Exception ex) {
-      _observers.SendStatus(ex.Message);
+    Utility.RunInBackground(RenderInBackground);
+    return;
+
+    void RenderInBackground() {
+      StatusOr<object?[,]> result;
+      try {
+        // TODO(kosak): possible race with TableHandle dispose here
+        using var ct = th.ToClientTable();
+        var rendered = Renderer.Render(ct, _wantHeaders);
+        result = StatusOr<object?[,]>.OfValue(rendered);
+      } catch (Exception ex) {
+        result = StatusOr<object?[,]>.OfStatus(ex.Message);
+      }
+
+      _workerThread.Invoke(() => _observers.OnNext(result));
     }
   }
 

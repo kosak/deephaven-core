@@ -14,7 +14,7 @@ internal class TableHandleProvider :
     // If endpointId is specified, then subscribe to the upstream PQ.
     // Otherwise (if not specified), don't bother subscribing.
     if (descriptor.EndpointId != null) {
-      var usd = sm.LookupAndSubscribeToPq(descriptor.EndpointId, descriptor.PersistentQueryId, result);
+      var usd = sm.SubscribeToPersistentQuery(descriptor.EndpointId, descriptor.PersistentQueryId, result);
       result._upstreamSubscriptionDisposer = usd;
     }
 
