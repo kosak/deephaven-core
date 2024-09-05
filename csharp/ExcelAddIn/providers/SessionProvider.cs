@@ -2,7 +2,6 @@
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using System.Net;
 
 namespace Deephaven.ExcelAddIn.Providers;
 

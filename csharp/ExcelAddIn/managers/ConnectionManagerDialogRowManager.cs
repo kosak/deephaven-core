@@ -83,7 +83,7 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     _row.SetDefaultCredentialsSynced(value.Value);
   }
 
-  public void SettingsClicked() {
+  public void DoEdit() {
     var creds = _row.GetCredentialsSynced();
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
@@ -94,7 +94,7 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     cd.Show();
   }
 
-  public void DeleteClicked() {
+  public void DoDelete() {
     // Strategy:
     // 1. Unsubscribe to everything
     // 2. If it turns out that we were the last subscriber to the session, then great, the
@@ -106,7 +106,7 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     // _stateManager.LooseyGoosey(() => Resubscribe());
   }
 
-  public void ReconnectClicked() {
+  public void DoReconnect() {
     _stateManager.Reconnect(_endpointId);
   }
 

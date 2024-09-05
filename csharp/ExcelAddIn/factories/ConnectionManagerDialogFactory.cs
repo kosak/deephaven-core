@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
 using Deephaven.ExcelAddIn.Managers;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
@@ -8,6 +8,8 @@ namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class ConnectionManagerDialogFactory {
   public static void CreateAndShow(StateManager sm) {
+    var rowToManager = new ConcurrentDictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager>();
+
     // The "new" button creates a "New/Edit Credentials" dialog
     void OnNewButtonClicked() {
       var cvm = CredentialsDialogViewModel.OfEmpty();
@@ -16,21 +18,36 @@ internal static class ConnectionManagerDialogFactory {
     }
 
     void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
-      Debug.WriteLine("would be nice1");
+      foreach (var row in rows) {
+        if (!rowToManager.TryGetValue(row, out var manager)) {
+          continue;
+        }
+        manager.DoDelete();
+      }
     }
 
     void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
-      Debug.WriteLine("would be nice2");
+      foreach (var row in rows) {
+        if (!rowToManager.TryGetValue(row, out var manager)) {
+          continue;
+        }
+        manager.DoReconnect();
+      }
     }
 
     void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
-      Debug.WriteLine("would be nice3");
+      foreach (var row in rows) {
+        if (!rowToManager.TryGetValue(row, out var manager)) {
+          continue;
+        }
+        manager.DoEdit();
+      }
     }
 
     var cmDialog = new ConnectionManagerDialog(OnNewButtonClicked, OnDeleteButtonClicked,
       OnReconnectButtonClicked, OnEditButtonClicked);
     cmDialog.Show();
-    var dm = new ConnectionManagerDialogManager(cmDialog, sm);
+    var dm = new ConnectionManagerDialogManager(cmDialog, rowToManager, sm);
     var disposer = sm.SubscribeToSessions(dm);
 
     cmDialog.Closed += (_, _) => {

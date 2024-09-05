@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Models;
+﻿using System.Collections.Concurrent;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using System.Diagnostics;
@@ -8,6 +9,7 @@ namespace Deephaven.ExcelAddIn.Managers;
 
 internal class ConnectionManagerDialogManager(
   ConnectionManagerDialog cmDialog,
+  ConcurrentDictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> rowToManager,
   StateManager stateManager) : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   private readonly WorkerThread _workerThread = stateManager.WorkerThread;
   private readonly List<IDisposable> _disposables = new();
@@ -26,6 +28,7 @@ internal class ConnectionManagerDialogManager(
     var endpointId = aor.Value;
     var row = new ConnectionManagerDialogRow(endpointId.Id);
     var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, stateManager);
+    _ = rowToManager.TryAdd(row, statusRowManager);
     _disposables.Add(statusRowManager);
 
     cmDialog.AddRow(row);
