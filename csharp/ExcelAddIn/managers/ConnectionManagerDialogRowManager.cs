@@ -53,8 +53,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     // MyWrappedSOSB and then we subscribe to that.
     var converter = ObservableConverter.Create(
       (StatusOr<CredentialsBase> socb) => new MyWrappedSocb(socb), _workerThread);
-    var d3 = _stateManager.SubscribeToDefaultCredentials(converter);
-    var d4 = converter.Subscribe(this);
+    var d3 = converter.Subscribe(this);
+    var d4 = _stateManager.SubscribeToDefaultCredentials(converter);
 
     _disposables.AddRange(new[] { d1, d2, d3, d4 });
   }
