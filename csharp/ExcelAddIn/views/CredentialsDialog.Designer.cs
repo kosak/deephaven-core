@@ -23,7 +23,6 @@
     /// the contents of this method with the code editor.
     /// </summary>
     private void InitializeComponent() {
-      flowLayoutPanel1 = new FlowLayoutPanel();
       corePlusPanel = new Panel();
       validateCertCheckBox = new CheckBox();
       operateAsBox = new TextBox();
@@ -51,23 +50,12 @@
       endpointIdBox = new TextBox();
       label1 = new Label();
       connectionTypeGroup = new GroupBox();
-      flowLayoutPanel1.SuspendLayout();
       corePlusPanel.SuspendLayout();
       corePanel.SuspendLayout();
       groupBox1.SuspendLayout();
       finalPanel.SuspendLayout();
       connectionTypeGroup.SuspendLayout();
       SuspendLayout();
-      // 
-      // flowLayoutPanel1
-      // 
-      flowLayoutPanel1.Controls.Add(corePlusPanel);
-      flowLayoutPanel1.Controls.Add(corePanel);
-      flowLayoutPanel1.Controls.Add(finalPanel);
-      flowLayoutPanel1.Location = new Point(28, 160);
-      flowLayoutPanel1.Name = "flowLayoutPanel1";
-      flowLayoutPanel1.Size = new Size(994, 676);
-      flowLayoutPanel1.TabIndex = 200;
       // 
       // corePlusPanel
       // 
@@ -80,7 +68,7 @@
       corePlusPanel.Controls.Add(userIdLabel);
       corePlusPanel.Controls.Add(jsonUrlBox);
       corePlusPanel.Controls.Add(label3);
-      corePlusPanel.Location = new Point(3, 3);
+      corePlusPanel.Location = new Point(34, 186);
       corePlusPanel.Name = "corePlusPanel";
       corePlusPanel.Size = new Size(991, 299);
       corePlusPanel.TabIndex = 210;
@@ -166,7 +154,7 @@
       corePanel.Controls.Add(connectionStringBox);
       corePanel.Controls.Add(label2);
       corePanel.Controls.Add(groupBox1);
-      corePanel.Location = new Point(3, 308);
+      corePanel.Location = new Point(34, 510);
       corePanel.Name = "corePanel";
       corePanel.Size = new Size(991, 170);
       corePanel.TabIndex = 220;
@@ -227,7 +215,7 @@
       finalPanel.Controls.Add(testResultsLabel);
       finalPanel.Controls.Add(testCredentialsButton);
       finalPanel.Controls.Add(setCredentialsButton);
-      finalPanel.Location = new Point(3, 484);
+      finalPanel.Location = new Point(34, 698);
       finalPanel.Name = "finalPanel";
       finalPanel.Size = new Size(991, 152);
       finalPanel.TabIndex = 230;
@@ -332,13 +320,14 @@
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(1086, 887);
+      Controls.Add(finalPanel);
+      Controls.Add(corePanel);
+      Controls.Add(corePlusPanel);
       Controls.Add(connectionTypeGroup);
       Controls.Add(label1);
       Controls.Add(endpointIdBox);
-      Controls.Add(flowLayoutPanel1);
       Name = "CredentialsDialog";
       Text = "Credentials Editor";
-      flowLayoutPanel1.ResumeLayout(false);
       corePlusPanel.ResumeLayout(false);
       corePlusPanel.PerformLayout();
       corePanel.ResumeLayout(false);
@@ -354,8 +343,6 @@
     }
 
     #endregion
-
-    private FlowLayoutPanel flowLayoutPanel1;
     private RadioButton isCorePlusRadioButton;
     private RadioButton isCoreRadioButton;
     private Button setCredentialsButton;
