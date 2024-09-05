@@ -29,21 +29,25 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
 
   public IDisposable SubscribeToSession(EndpointId id, IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposable = null;
-    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+    var mapEntryDisposer = LookupOrCreateSessionProvider(id,
+      sp => disposable = sp.Subscribe(observer),
+      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id)));
 
     return workerThread.InvokeWhenDisposed(() => {
-      var disp = Utility.Exchange(ref disposable, null);
-      FinishDisposingUnsafe(id, disp);
+      Utility.Exchange(ref disposable, null)?.Dispose();
+      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
     });
   }
 
   public IDisposable SubscribeToCredentials(EndpointId id, IObserver<StatusOr<CredentialsBase>> observer) {
     IDisposable? disposable = null;
-    ApplyTo(id, sp => disposable = sp.Subscribe(observer));
+    var mapEntryDisposer = LookupOrCreateSessionProvider(id,
+      sp => disposable = sp.Subscribe(observer),
+      _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id)));
 
     return workerThread.InvokeWhenDisposed(() => {
-      var disp = Utility.Exchange(ref disposable, null);
-      FinishDisposingUnsafe(id, disp);
+      Utility.Exchange(ref disposable, null)?.Dispose();
+      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
     });
   }
 
@@ -86,7 +90,7 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
     });
   }
 
-  public IDisposable SubscribeToTableTriple(TableTriple descriptor, string filter,
+  public IDisposable SubscribeToTableTriple(TableTriple descriptor,
     IObserver<StatusOr<TableHandle>> observer) {
     // There is a chain with multiple elements:
     //
@@ -124,8 +128,18 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
 
   public IDisposable SubscribeToFilteredTableTriple(TableTriple descriptor, string filter,
     IObserver<StatusOr<TableHandle>> observer) {
+    if (filter.Length == 0) {
+      return SubscribeToTableTriple(descriptor, observer);
+    }
 
+    IDisposable? disposable = null;
+    var key = new FilteredTableTripleKey(descriptor, filter);
+    var mapEntryDisposer = LookupOrCreateFilteredTableTriple(key, thp => disposable = thp.Subscribe(observer));
 
+    return workerThread.InvokeWhenDisposed(() => {
+      Utility.Exchange(ref disposable, null)?.Dispose();
+      Utility.Exchange(ref mapEntryDisposer, null)?.Dispose();
+    });
 
     // There is a chain with multiple elements:
     //
