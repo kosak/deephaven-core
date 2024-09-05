@@ -19,11 +19,6 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
   private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
-  /// <summary>
-  /// This is used to track the results from multiple invocations of "SetCredentials" and
-  /// to keep only the latest.
-  /// </summary>
-  private readonly SimpleAtomicReference<object> _sharedSetCredentialsCookie = new(new object());
   private readonly VersionTracker _versionTracker = new();
 
   public SessionProvider(EndpointId endpointId, WorkerThread workerThread, Action onDispose) {

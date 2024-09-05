@@ -9,10 +9,10 @@ internal class PersistentQueryProvider :
   IObserver<StatusOr<SessionBase>>, IObservable<StatusOr<Client>> {
 
   public static PersistentQueryProvider Create(EndpointId endpointId, PersistentQueryId? pqId,
-    SessionProviders sps, WorkerThread workerThread, Action onDispose) {
+    StateManager sm, Action onDispose) {
 
-    var result = new PersistentQueryProvider(pqId, workerThread, onDispose);
-    var usd = sps.LookupAndSubscribeToSession(endpointId, result);
+    var result = new PersistentQueryProvider(pqId, sm.WorkerThread, onDispose);
+    var usd = sm.LookupAndSubscribeToSession(endpointId, result);
     result._upstreamSubscriptionDisposer = usd;
 
     return result;

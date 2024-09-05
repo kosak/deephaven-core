@@ -8,12 +8,14 @@ internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>, IObservable<StatusOr<TableHandle>> {
 
   public static FilteredTableProvider Create(TableTriple descriptor, string condition,
-    SessionProviders sps, WorkerThread workerThread, Action onDispose) {
-
-    var result = new FilteredTableProvider(condition, workerThread, onDispose);
-    // or don't subscribe if there's no default ugh
-    var usd = sps.LookupAndSubscribeToTableHandleProvider(descriptor, result);
-    result._upstreamSubscriptionDisposer = usd;
+    StateManager sm,  Action onDispose) {
+    var result = new FilteredTableProvider(condition, sm.WorkerThread, onDispose);
+    // If endpointId is specified, then subscribe to the upstream PQ.
+    // Otherwise (if not specified), don't bother subscribing.
+    if (descriptor.EndpointId != null) {
+      var usd = sm.LookupAndSubscribeToTableHandleProvider(descriptor, result);
+      result._upstreamSubscriptionDisposer = usd;
+    }
     return result;
   }
 

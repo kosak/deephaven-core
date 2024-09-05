@@ -8,12 +8,13 @@ internal class TableHandleProvider :
   IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>> {
 
   public static TableHandleProvider Create(TableTriple descriptor,
-    SessionProviders sps, WorkerThread workerThread, Action onDispose) {
+    StateManager sm, Action onDispose) {
 
-    var result = new TableHandleProvider(descriptor.TableName, workerThread, onDispose);
-    // Don't subscribe to upstream if descriptor specifies null, the "default" endpoint
+    var result = new TableHandleProvider(descriptor.TableName, sm.WorkerThread, onDispose);
+    // If endpointId is specified, then subscribe to the upstream PQ.
+    // Otherwise (if not specified), don't bother subscribing.
     if (descriptor.EndpointId != null) {
-      var usd = sps.LookupAndSubscribeToPq(descriptor.EndpointId, descriptor.PersistentQueryId, result);
+      var usd = sm.LookupAndSubscribeToPq(descriptor.EndpointId, descriptor.PersistentQueryId, result);
       result._upstreamSubscriptionDisposer = usd;
     }
 
