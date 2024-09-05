@@ -268,30 +268,19 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
   }
 
   private IDisposable LookupAndSubscribeFilteredTableProvider(
-    TableTriple descriptor, string filter, Action<IObservable<TableHandle>> observable) {
+    TableTriple descriptor, string filter, IObserver<TableHandle> observable) {
 
-    // problem 1: get self on thread
+    var holder = new DisposableHolder();
+    LookupAndSubscribeFilteredTableProviderHelper(descriptor, filter, observable, holder);
 
-    EndpointId id, Action<SessionProvider > action) {
-      if (workerThread.InvokeIfRequired(() => ApplyTo(id, action))) {
-        return;
-      }
-
-      if (!_providerMap.TryGetValue(id, out var sp)) {
-        // No Session Provider with that EndpointId. Make a new one
-        sp = new SessionProvider(workerThread);
-        _providerMap.Add(id, sp);
-        _endpointsObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(id));
-      }
-
-      action(sp);
-    }
+    return workerThread.InvokeWhenDisposed(() => holder.Dispose());
   }
 
   private void LookupAndSubscribeFilteredTableProviderHelper(
-    TableTriple descriptor, string filter, Action<IObserver<TableHandle>> observer) {
+    TableTriple descriptor, string filter, IObserver<TableHandle> observer,
+    DisposableHolder holder) {
     if (!workerThread.InvokeIfRequired(() => LookupAndSubscribeFilteredTableProviderHelper(
-          descriptor, filter, observer))) {
+          descriptor, filter, observer, holder))) {
       return;
     }
 
@@ -311,17 +300,16 @@ internal class SessionProviders(WorkerThread workerThread) : IObservable<AddOrRe
         Utility.Exchange(ref ftp, null).Dispose();
       };
 
-      _filteredTableProviders.Add(key, new NubbinWithCleanup(ftp, cleanup));
+      _filteredTableProviders.Add(key, new NubbinWithCleanup(ftp, maybeCleanup));
     }
 
     var subscriptionDisposer = ftp.Subscribe(observer);
 
-    disp3 = () => {
+    holder.SetDisposeAction(() => {
       // Unconditionally dipose the subscription
       Utility.Exchange(ref subscriptionDisposer, null)?.Dispose();
       ftp.MaybeCleanup();
-    };
-    DoSomethingWith(disp3);
+    });
   }
 
   private void ApplyTo(EndpointId id, Action<SessionProvider> action) {
