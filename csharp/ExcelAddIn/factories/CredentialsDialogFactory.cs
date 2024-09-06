@@ -6,7 +6,7 @@ using ExcelAddIn.views;
 namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class CredentialsDialogFactory {
-  public static CredentialsDialog Create(StateManager sm, CredentialsDialogViewModel cvm) {
+  public static CredentialsDialog Create(StateManager sm, CredentialsDialogViewModel cvm, Control guiThreadRepresentative) {
     CredentialsDialog? credentialsDialog = null;
 
     void OnSetCredentialsButtonClicked() {
