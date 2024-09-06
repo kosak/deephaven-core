@@ -80,7 +80,7 @@ internal class FilteredTableProvider :
     _observers.SetAndSendStatus(ref _filteredTableHandle, "Disposing TableHandle");
 
     if (oldTh != null) {
-      Utility.RunInBackground666(oldTh.Dispose);
+      Utility.RunInBackground(oldTh.Dispose);
     }
   }
 

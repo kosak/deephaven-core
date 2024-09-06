@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Deephaven.ExcelAddIn.Managers;
+using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 using Deephaven.ExcelAddIn.Views;
@@ -18,11 +20,29 @@ internal static class ConnectionManagerDialogFactory {
     }
 
     void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
+      var rowsLeft = rows.Length;
+      var failures = new List<EndpointId>();
+      void Func(EndpointId id, bool success) {
+        if (!success) {
+          failures.Add(id);
+        }
+
+        --rowsLeft;
+        if (rowsLeft > 0 || failures.Count == 0) {
+          return;
+        }
+
+        var text = $"ids still in use: {string.Join(", ", failures.Select(f => f.ToString()))}";
+
+        Utility.RunInBackground(() =>
+          MessageBox.Show(text, "Couldn't delete all selections", MessageBoxButtons.OK));
+      }
+
       foreach (var row in rows) {
         if (!rowToManager.TryGetValue(row, out var manager)) {
           continue;
         }
-        manager.DoDelete();
+        manager.DoDelete(Func);
       }
     }
 

@@ -32,4 +32,6 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
   public void Resend() {
     _observers.OnNext(_credentials);
   }
+
+  public int ObserverCountUnsafe => _observers.Count;
 }

@@ -70,6 +70,26 @@ public class StateManager {
     LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
   }
 
+  public void TryDeleteCredentials(EndpointId id, Action<bool> onResult) {
+    if (WorkerThread.InvokeIfRequired(() => TryDeleteCredentials(id, onResult))) {
+      return;
+    }
+
+    if (!_credentialsProviders.TryGetValue(id, out var cp)) {
+      onResult(false);
+      return;
+    }
+
+    if (cp.ObserverCountUnsafe != 0) {
+      onResult(false);
+      return;
+    }
+
+    _credentialsProviders.Remove(id);
+    _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
+    onResult(true);
+  }
+
   private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
     Action<CredentialsProvider> action) {
     if (WorkerThread.InvokeIfRequired(() => LookupOrCreateCredentialsProvider(endpointId, action))) {

@@ -10,7 +10,7 @@ internal static class Utility {
     return result;
   }
 
-  public static void RunInBackground666(Action a) {
+  public static void RunInBackground(Action a) {
     void Doit() {
       try {
         a();

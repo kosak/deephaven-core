@@ -35,7 +35,7 @@ public sealed class ConnectionManagerDialogRowManager :
   }
 
   public void Dispose() {
-    Unsubcribe();
+    Unsubscribe();
   }
 
   private void Resubscribe() {
@@ -53,8 +53,8 @@ public sealed class ConnectionManagerDialogRowManager :
     _disposables.AddRange(new[] { d1, d2, d3 });
   }
 
-  private void Unsubcribe() {
-    if (_workerThread.InvokeIfRequired(Unsubcribe)) {
+  private void Unsubscribe() {
+    if (_workerThread.InvokeIfRequired(Unsubscribe)) {
       return;
     }
     var temp = _disposables.ToArray();
@@ -88,17 +88,25 @@ public sealed class ConnectionManagerDialogRowManager :
     cd.Show();
   }
 
-  public void DoDelete() {
-    Debug.WriteLine("need a plan for delete");
+  public void DoDelete(Action<EndpointId, bool> onResult) {
+    if (_workerThread.InvokeIfRequired(() => DoDelete(onResult))) {
+      return;
+    }
+
     // Strategy:
     // 1. Unsubscribe to everything
-    // 2. If it turns out that we were the last subscriber to the session, then great, the
+    // 2. If it turns out that we were the last subscriber to the credentials, then great, the
     //    delete can proceed.
-    // 3. Otherwise (there is some other subscriber to the session), then the delete operation
+    // 3. If the credentials we are deleting are the default credentials, then unset default credentials
+    // 4. Otherwise (there is some other subscriber to the credentials), then the delete operation
     //    should be denied. In that case we restore our state by resubscribing to everything.
-    // Unsubcribe();
-    //
-    // _stateManager.SwitchOnEmpty(_endpointId, () => { }, Resubscribe);
+    Unsubscribe();
+    _stateManager.TryDeleteCredentials(_endpointId, success => {
+      if (!success) {
+        Resubscribe();
+      }
+      onResult(_endpointId, success);
+    });
   }
 
   public void DoReconnect() {

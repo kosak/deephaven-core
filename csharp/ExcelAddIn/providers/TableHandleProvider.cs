@@ -84,7 +84,7 @@ internal class TableHandleProvider :
     _observers.SetAndSendStatus(ref _tableHandle, "Disposing TableHandle");
 
     if (oldTh != null) {
-      Utility.RunInBackground666(oldTh.Dispose);
+      Utility.RunInBackground(oldTh.Dispose);
     }
   }
 

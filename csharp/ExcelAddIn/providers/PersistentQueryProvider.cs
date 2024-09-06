@@ -98,7 +98,7 @@ internal class PersistentQueryProvider :
     _observers.SetAndSendStatus(ref _client, "Disposing Client");
     var oldClient = Utility.Exchange(ref _ownedDndClient, null);
     if (oldClient != null) {
-      Utility.RunInBackground666(oldClient.Dispose);
+      Utility.RunInBackground(oldClient.Dispose);
     }
   }
 

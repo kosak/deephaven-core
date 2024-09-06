@@ -63,7 +63,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     _observers.SetAndSendStatus(ref _session, "Trying to connect");
 
     var cookie = _versionTracker.SetNewVersion();
-    Utility.RunInBackground666(() => CreateSessionBaseInSeparateThread(cbase, cookie));
+    Utility.RunInBackground(() => CreateSessionBaseInSeparateThread(cbase, cookie));
   }
 
   private void CreateSessionBaseInSeparateThread(CredentialsBase credentials, VersionTrackerCookie versionCookie) {
@@ -97,7 +97,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     _observers.SetAndSendStatus(ref _session, "Disposing Session");
 
     if (oldSession != null) {
-      Utility.RunInBackground666(oldSession.Dispose);
+      Utility.RunInBackground(oldSession.Dispose);
     }
   }
 

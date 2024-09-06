@@ -32,7 +32,7 @@ public sealed class CoreSession(Client client) : SessionBase {
     }
 
     // Do the actual dispose work on a helper thread.
-    Utility.RunInBackground666(temp.Dispose);
+    Utility.RunInBackground(temp.Dispose);
   }
 
   public Client Client {
@@ -64,7 +64,7 @@ public sealed class CorePlusSession(SessionManager sessionManager, WorkerThread 
     }
 
     // Do the actual dispose work on a helper thread.
-    Utility.RunInBackground666(temp.Dispose);
+    Utility.RunInBackground(temp.Dispose);
   }
 
   public SessionManager SessionManager {
