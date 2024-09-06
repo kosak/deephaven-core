@@ -11,7 +11,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
   private readonly object _sync = new();
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
-  private StatusOr<CredentialsBase> _defaultCredentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
+  private EndpointId? _defaultEndpointId = null;
 
   public string Id { get; init; } = id;
 
@@ -40,11 +40,10 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
 
   public bool IsDefault {
     get {
-      var creds = GetCredentialsSynced();
-      var defaultCreds = GetDefaultCredentialsSynced();
-      return creds.GetValueOrStatus(out var creds1, out _) &&
-             defaultCreds.GetValueOrStatus(out var creds2, out _) &&
-             creds1.Id == creds2.Id;
+      var credentials = GetCredentialsSynced();
+      var defaultEp = GetDefaultEndpointIdSynced();
+      return credentials.GetValueOrStatus(out var creds, out _) &&
+             creds.Id.Equals(defaultEp);
     }
   }
 
@@ -63,15 +62,15 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  public StatusOr<CredentialsBase> GetDefaultCredentialsSynced() {
+  public EndpointId? GetDefaultEndpointIdSynced() {
     lock (_sync) {
-      return _defaultCredentials;
+      return _defaultEndpointId;
     }
   }
 
-  public void SetDefaultCredentialsSynced(StatusOr<CredentialsBase> value) {
+  public void SetDefaultEndpointIdSynced(EndpointId? value) {
     lock (_sync) {
-      _defaultCredentials = value;
+      _defaultEndpointId = value;
     }
     OnPropertyChanged(nameof(IsDefault));
   }

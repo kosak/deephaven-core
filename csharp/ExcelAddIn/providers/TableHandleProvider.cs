@@ -7,14 +7,13 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableHandleProvider :
   IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>> {
 
-  public static TableHandleProvider Create(TableTriple descriptor,
+  public static TableHandleProvider Create(TableTriple descriptor, EndpointId? defaultEndpointId,
     StateManager sm, Action onDispose) {
-
     var result = new TableHandleProvider(descriptor.TableName, sm.WorkerThread, onDispose);
-    // If endpointId is specified, then subscribe to the upstream PQ.
-    // Otherwise (if not specified), don't bother subscribing.
-    if (descriptor.EndpointId != null) {
-      var usd = sm.SubscribeToPersistentQuery(descriptor.EndpointId, descriptor.PersistentQueryId, result);
+
+    var endpointToUse = descriptor.EndpointId ?? defaultEndpointId;
+    if (endpointToUse != null) {
+      var usd = sm.SubscribeToPersistentQuery(endpointToUse, descriptor.PersistentQueryId, result);
       result._upstreamSubscriptionDisposer = usd;
     }
 

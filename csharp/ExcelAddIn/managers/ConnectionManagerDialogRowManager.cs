@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Factories;
+﻿using System.Diagnostics;
+using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Viewmodels;
@@ -6,8 +7,11 @@ using Deephaven.ExcelAddIn.ViewModels;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
-public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<CredentialsBase>>,
-  IObserver<StatusOr<SessionBase>>, IObserver<ConnectionManagerDialogRowManager.MyWrappedSocb>, IDisposable {
+public sealed class ConnectionManagerDialogRowManager :
+  IObserver<StatusOr<CredentialsBase>>,
+  IObserver<StatusOr<SessionBase>>,
+  IObserver<EndpointId?>,
+  IDisposable {
 
   public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
     EndpointId endpointId, StateManager stateManager) {
@@ -45,18 +49,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     // We watch for session and credential state changes in our ID
     var d1 = _stateManager.SubscribeToSession(_endpointId, this);
     var d2 = _stateManager.SubscribeToCredentials(_endpointId, this);
-    // Now we have a problem. We would also like to watch for credential
-    // state changes in the default session. But the default session
-    // has the same observable type (IObservable<StatusOr<SessionBase>>)
-    // as the specific session we are watching. To work around this,
-    // we create an Observer that translates StatusOr<SessionBase> to
-    // MyWrappedSOSB and then we subscribe to that.
-    var converter = ObservableConverter.Create(
-      (StatusOr<CredentialsBase> socb) => new MyWrappedSocb(socb), _workerThread);
-    var d3 = converter.Subscribe(this);
-    var d4 = _stateManager.SubscribeToDefaultCredentials(converter);
-
-    _disposables.AddRange(new[] { d1, d2, d3, d4 });
+    var d3 = _stateManager.SubscribeToDefaultEndpointSelection(this);
+    _disposables.AddRange(new[] { d1, d2, d3 });
   }
 
   private void Unsubcribe() {
@@ -79,8 +73,8 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
     _row.SetSessionSynced(value);
   }
 
-  public void OnNext(MyWrappedSocb value) {
-    _row.SetDefaultCredentialsSynced(value.Value);
+  public void OnNext(EndpointId? value) {
+    _row.SetDefaultEndpointIdSynced(value);
   }
 
   public void DoEdit() {
@@ -95,15 +89,16 @@ public sealed class ConnectionManagerDialogRowManager : IObserver<StatusOr<Crede
   }
 
   public void DoDelete() {
+    Debug.WriteLine("need a plan for delete");
     // Strategy:
     // 1. Unsubscribe to everything
     // 2. If it turns out that we were the last subscriber to the session, then great, the
     //    delete can proceed.
     // 3. Otherwise (there is some other subscriber to the session), then the delete operation
     //    should be denied. In that case we restore our state by resubscribing to everything.
-    Unsubcribe();
-
-    _stateManager.SwitchOnEmpty(_endpointId, () => { }, Resubscribe);
+    // Unsubcribe();
+    //
+    // _stateManager.SwitchOnEmpty(_endpointId, () => { }, Resubscribe);
   }
 
   public void DoReconnect() {

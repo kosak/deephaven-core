@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
 using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
@@ -15,6 +14,9 @@ public class StateManager {
   private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
+  private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
+
+  private EndpointId? _defaultEndpointId = null;
 
   public IDisposable SubscribeToCredentialsPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.Invoke(() => {
@@ -29,6 +31,16 @@ public class StateManager {
 
     return WorkerThread.InvokeWhenDisposed(
       () => _credentialsPopulationObservers.Remove(observer, out _));
+  }
+
+  public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
+    WorkerThread.Invoke(() => {
+      _defaultEndpointSelectionObservers.Add(observer, out _);
+      observer.OnNext(_defaultEndpointId);
+    });
+
+    return WorkerThread.InvokeWhenDisposed(
+      () => _defaultEndpointSelectionObservers.Remove(observer, out _));
   }
 
   /// <summary>
@@ -82,7 +94,8 @@ public class StateManager {
       disposer = pqp.Subscribe(observer);
     });
 
-    return WorkerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
+    return WorkerThread.InvokeWhenDisposed(
+      () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   public IDisposable SubscribeToTableHandle(
@@ -91,14 +104,15 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_tableHandleProviders.TryGetValue(descriptor, out var tp)) {
-        tp = TableHandleProvider.Create(descriptor, this,
+        tp = TableHandleProvider.Create(descriptor, _defaultEndpointId, this,
           () => _tableHandleProviders.Remove(descriptor));
         _tableHandleProviders.Add(descriptor, tp);
       }
       disposer = tp.Subscribe(observer);
     });
 
-    return WorkerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
+    return WorkerThread.InvokeWhenDisposed(
+      () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   public IDisposable SubscribeToFilteredTableHandle(
@@ -120,7 +134,8 @@ public class StateManager {
       disposer = ftp.Subscribe(observer);
     });
 
-    return WorkerThread.InvokeWhenDisposed(() => Utility.Exchange(ref disposer, null)?.Dispose());
+    return WorkerThread.InvokeWhenDisposed(
+      () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   public void SetCredentials(CredentialsBase credentials) {
