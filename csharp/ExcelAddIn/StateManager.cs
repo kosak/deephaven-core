@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
@@ -52,17 +53,30 @@ public class StateManager {
   public IDisposable SubscribeToCredentials(EndpointId endpointId,
     IObserver<StatusOr<CredentialsBase>> observer) {
     IDisposable? disposer = null;
-    WorkerThread.Invoke(() => {
-      if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
-        cp = CredentialsProvider.Create(endpointId, this);
-        _credentialsProviders.Add(endpointId, cp);
-      }
-
-      disposer = cp.Subscribe(observer);
-    });
+    LookupOrCreateCredentialsProvider(endpointId,
+      cp => disposer = cp.Subscribe(observer));
 
     return WorkerThread.InvokeWhenDisposed(() =>
       Utility.Exchange(ref disposer, null)?.Dispose());
+  }
+
+  public void SetCredentials(CredentialsBase credentials) {
+    LookupOrCreateCredentialsProvider(credentials.Id,
+      cp => cp.SetCredentials(credentials));
+  }
+
+  private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
+    Action<CredentialsProvider> action) {
+    if (WorkerThread.InvokeIfRequired(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
+      return;
+    }
+    if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
+      cp = CredentialsProvider.Create(endpointId, this);
+      _credentialsProviders.Add(endpointId, cp);
+      _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
+    }
+
+    action(cp);
   }
 
   public IDisposable SubscribeToSession(EndpointId endpointId,
@@ -136,10 +150,6 @@ public class StateManager {
 
     return WorkerThread.InvokeWhenDisposed(
       () => Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  public void SetCredentials(CredentialsBase credentials) {
-    Debug.WriteLine("Not setting credentials");
   }
   
   public void SetDefaultCredentials(CredentialsBase credentials) {

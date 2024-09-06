@@ -24,4 +24,8 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
 
     return _workerThread.InvokeWhenDisposed(() => _observers.Remove(observer, out _));
   }
+
+  public void SetCredentials(CredentialsBase newCredentials) {
+    _observers.SetAndSendValue(ref _credentials, newCredentials);
+  }
 }
