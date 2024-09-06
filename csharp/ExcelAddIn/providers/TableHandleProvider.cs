@@ -8,20 +8,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableHandleProvider :
   IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>> {
 
-  public static TableHandleProvider Create(TableTriple descriptor, EndpointId? defaultEndpointId,
-    StateManager sm, Action onDispose) {
-    var result = new TableHandleProvider(descriptor.TableName, sm.WorkerThread, onDispose);
-
-    var endpointToUse = descriptor.EndpointId ?? defaultEndpointId;
-    if (endpointToUse != null) {
-      Debug.WriteLine($"TH is subscribing to PQ ({endpointToUse}, {descriptor.PersistentQueryId})");
-      var usd = sm.SubscribeToPersistentQuery(endpointToUse, descriptor.PersistentQueryId, result);
-      result._upstreamSubscriptionDisposer = usd;
-    }
-
-    return result;
-  }
-
   private readonly string _tableName;
   private readonly WorkerThread _workerThread;
   private Action? _onDispose;
@@ -33,6 +19,24 @@ internal class TableHandleProvider :
     _tableName = tableName;
     _workerThread = workerThread;
     _onDispose = onDispose;
+  }
+
+  public void Init(StateManager sm, EndpointId? endpointId, PersistentQueryId persistentQueryId) {
+    UpdateUpstreamDependencies(sm, endpointId, persistentQueryId);
+  }
+
+  public void UpdateUpstreamDependencies(StateManager sm, EndpointId? endpointId,
+    PersistentQueryId persistentQueryId) {
+    // Unsubscribe from old dependencies
+
+    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+
+    // If endpoint is null, then don't subscribe.
+    if (endpointId == null) {
+      return;
+    }
+    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {persistentQueryId})");
+    _upstreamSubscriptionDisposer = sm.SubscribeToPersistentQuery(endpointId, persistentQueryId, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {

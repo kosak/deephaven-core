@@ -15,14 +15,15 @@ internal class FilteredTableProvider :
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _filteredTableHandle = StatusOr<TableHandle>.OfStatus("[No Filtered Table]");
 
-  public FilteredTableProvider(string condition, WorkerThread workerThread, Action onDispose) {
+  public FilteredTableProvider(string condition, WorkerThread workerThread,
+    Action onDispose) {
     _condition = condition;
     _workerThread = workerThread;
     _onDispose = onDispose;
   }
 
-  public void Init(StateManager sm) {
-    Debug.WriteLine($"FTP is subscribing to th {descriptor}");
+  public void Init(StateManager sm, TableTriple descriptor) {
+    Debug.WriteLine($"FTP is subscribing to TableHandle with {descriptor}");
     _upstreamSubscriptionDisposer = sm.SubscribeToTableHandle(descriptor, this);
   }
 
