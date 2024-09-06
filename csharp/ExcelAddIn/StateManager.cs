@@ -70,24 +70,24 @@ public class StateManager {
     LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
   }
 
-  public void TryDeleteCredentials(EndpointId id, Action<bool> onResult) {
-    if (WorkerThread.InvokeIfRequired(() => TryDeleteCredentials(id, onResult))) {
+  public void TryDeleteCredentials(EndpointId id, Action onSuccess, Action<string> onFailure) {
+    if (WorkerThread.InvokeIfRequired(() => TryDeleteCredentials(id, onSuccess, onFailure))) {
       return;
     }
 
     if (!_credentialsProviders.TryGetValue(id, out var cp)) {
-      onResult(false);
+      onFailure($"{id} unknown");
       return;
     }
 
     if (cp.ObserverCountUnsafe != 0) {
-      onResult(false);
+      onFailure($"{id} is still active");
       return;
     }
 
     _credentialsProviders.Remove(id);
     _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
-    onResult(true);
+    onSuccess();
   }
 
   private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
@@ -181,7 +181,12 @@ public class StateManager {
       () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
   
-  public void SetDefaultCredentials(CredentialsBase credentials) {
-    Debug.WriteLine("Not setting default credentials");
+  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
+    if (WorkerThread.InvokeIfRequired(() => SetDefaultEndpointId(defaultEndpointId))) {
+      return;
+    }
+
+    _defaultEndpointId = defaultEndpointId;
+    _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
   }
 }
