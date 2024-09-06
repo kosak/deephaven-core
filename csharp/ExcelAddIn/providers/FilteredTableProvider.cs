@@ -8,15 +8,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>, IObservable<StatusOr<TableHandle>> {
 
-  public static FilteredTableProvider Create(TableTriple descriptor, string condition,
-    StateManager sm, Action onDispose) {
-    var result = new FilteredTableProvider(condition, sm.WorkerThread, onDispose);
-    Debug.WriteLine($"FTP is subscribing to th {descriptor}");
-    var usd = sm.SubscribeToTableHandle(descriptor, result);
-    result._upstreamSubscriptionDisposer = usd;
-    return result;
-  }
-
   private readonly string _condition;
   private readonly WorkerThread _workerThread;
   private Action? _onDispose;
@@ -28,6 +19,11 @@ internal class FilteredTableProvider :
     _condition = condition;
     _workerThread = workerThread;
     _onDispose = onDispose;
+  }
+
+  public void Init(StateManager sm) {
+    Debug.WriteLine($"FTP is subscribing to th {descriptor}");
+    _upstreamSubscriptionDisposer = sm.SubscribeToTableHandle(descriptor, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
