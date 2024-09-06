@@ -85,6 +85,10 @@ public class StateManager {
       return;
     }
 
+    if (id.Equals(_defaultEndpointId)) {
+      SetDefaultEndpointId(null);
+    }
+
     _credentialsProviders.Remove(id);
     _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
     onSuccess();

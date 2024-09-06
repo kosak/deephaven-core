@@ -88,8 +88,8 @@ public sealed class ConnectionManagerDialogRowManager :
     cd.Show();
   }
 
-  public void DoDelete(Action<EndpointId, bool> onResult) {
-    if (_workerThread.InvokeIfRequired(() => DoDelete(onResult))) {
+  public void DoDelete(Action<EndpointId> onSuccess, Action<EndpointId, string> onFailure) {
+    if (_workerThread.InvokeIfRequired(() => DoDelete(onSuccess, onFailure))) {
       return;
     }
 
@@ -101,12 +101,12 @@ public sealed class ConnectionManagerDialogRowManager :
     // 4. Otherwise (there is some other subscriber to the credentials), then the delete operation
     //    should be denied. In that case we restore our state by resubscribing to everything.
     Unsubscribe();
-    _stateManager.TryDeleteCredentials(_endpointId, success => {
-      if (!success) {
+    _stateManager.TryDeleteCredentials(_endpointId,
+      () => onSuccess(_endpointId),
+      reason => {
         Resubscribe();
-      }
-      onResult(_endpointId, success);
-    });
+        onFailure(_endpointId, reason);
+      });
   }
 
   public void DoReconnect() {
