@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Deephaven.ExcelAddIn.ViewModels;
+﻿using Deephaven.ExcelAddIn.ViewModels;
 
 namespace ExcelAddIn.views {
   public partial class CredentialsDialog : Form {
