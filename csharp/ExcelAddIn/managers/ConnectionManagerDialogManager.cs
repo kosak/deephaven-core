@@ -16,7 +16,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   // StateManager stateManager) 
   public static ConnectionManagerDialogManager Create(StateManager stateManager,
     ConnectionManagerDialog cmDialog) {
-    var result = new ConnectionManagerDialogManager(stateManager);
+    var result = new ConnectionManagerDialogManager(stateManager, cmDialog);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
     cmDialog.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
     cmDialog.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
@@ -97,10 +97,14 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   private class FailureCollector {
-    private readonly Control _guiThreadRepresentative;
+    private readonly ConnectionManagerDialog _cmDialog;
     private readonly object _sync = new();
     private int _rowsLeft = 0;
     private List<EndpointId> _failures = new();
+
+    public FailureCollector(ConnectionManagerDialog cmDialog) {
+      _cmDialog = cmDialog;
+    }
 
     public void OnFailure(EndpointId id, string reason) {
       lock (_sync) {
@@ -110,11 +114,11 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
       FinalSteps();
     }
 
-    void OnSuccess(EndpointId id) {
+    public void OnSuccess(EndpointId id) {
       FinalSteps();
     }
 
-    void FinalSteps() {
+    private void FinalSteps() {
       string text;
       lock (_sync) {
         --_rowsLeft;
@@ -125,11 +129,9 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
         text = $"ids still in use: {string.Join(", ", _failures.Select(f => f.ToString()))}";
       }
 
-      _guiThreadRepresentative.Invoke(() => {
-        const string caption = "Couldn't delete all selections";
-        var mbox = new DeephavenMessageBox(caption, text);
-        mbox.Show();
-      });
+      const string caption = "Couldn't delete all selections";
+      var mbox = new DeephavenMessageBox(caption, text);
+      mbox.ShowDialog(_cmDialog);
     }
   }
 
@@ -138,12 +140,12 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
       return;
     }
 
-    var fc = new FailureCollector();
+    var fc = new FailureCollector(_cmDialog);
     foreach (var row in rows) {
       if (!_rowToManager.TryGetValue(row, out var manager)) {
         continue;
       }
-      manager.DoDelete(fc.SuccessFunc, fc.FailureFunc);
+      manager.DoDelete(fc.OnSuccess, fc.OnFailure);
     }
   }
 
