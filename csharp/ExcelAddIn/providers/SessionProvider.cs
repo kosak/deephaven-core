@@ -55,7 +55,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
 
     DisposeSessionState();
 
-    if (!credentials.GetValueOrStatus(out var cb, out var status)) {
+    if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
       _observers.SetAndSendStatus(ref _session, status);
       return;
     }
@@ -63,14 +63,15 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     _observers.SetAndSendStatus(ref _session, "Trying to connect");
 
     var cookie = _versionTracker.SetNewVersion();
-    Utility.RunInBackground(() => CreateSessionBaseInSeparateThread(cb, cookie));
+    Utility.RunInBackground666(() => CreateSessionBaseInSeparateThread(cbase, cookie));
   }
 
   private void CreateSessionBaseInSeparateThread(CredentialsBase credentials, VersionTrackerCookie versionCookie) {
+    SessionBase? sb = null;
     StatusOr<SessionBase> result;
     try {
       // This operation might take some time.
-      var sb = SessionBaseFactory.Create(credentials, _workerThread);
+      sb = SessionBaseFactory.Create(credentials, _workerThread);
       result = StatusOr<SessionBase>.OfValue(sb);
     } catch (Exception ex) {
       result = StatusOr<SessionBase>.OfStatus(ex.Message);
@@ -79,10 +80,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     // Some time has passed. It's possible that the VersionTracker has been reset
     // with a newer version. If so, we should throw away our work and leave.
     if (!versionCookie.IsCurrent) {
-      // Our results are moot. Dispose of them.
-      if (result.GetValueOrStatus(out var sb, out _)) {
-        sb.Dispose();
-      }
+      sb?.Dispose();
       return;
     }
 
@@ -99,7 +97,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     _observers.SetAndSendStatus(ref _session, "Disposing Session");
 
     if (oldSession != null) {
-      Utility.RunInBackground(oldSession.Dispose);
+      Utility.RunInBackground666(oldSession.Dispose);
     }
   }
 

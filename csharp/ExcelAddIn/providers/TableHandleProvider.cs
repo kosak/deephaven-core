@@ -68,20 +68,12 @@ internal class TableHandleProvider :
     // It's a real client so start fetching the table. First notify our observers.
     _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{_tableName}\"");
 
-    Utility.RunInBackground(() => PerformLookupInBackground(cli, _tableName));
-  }
-
-  public void PerformLookupInBackground(Client client, string tableName) {
-    StatusOr<TableHandle> result;
     try {
-      var th = client.Manager.FetchTable(tableName);
-      result = StatusOr<TableHandle>.OfValue(th);
+      var th = cli.Manager.FetchTable(_tableName);
+      _observers.SetAndSendValue(ref _tableHandle, th);
     } catch (Exception ex) {
-      result = StatusOr<TableHandle>.OfStatus(ex.Message);
+      _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
     }
-
-    // Then, back on the worker thread, set the result
-    _workerThread.Invoke(() => _observers.SetAndSend(ref _tableHandle, result));
   }
 
   private void DisposeTableHandleState() {
@@ -93,7 +85,7 @@ internal class TableHandleProvider :
     _observers.SetAndSendStatus(ref _tableHandle, "Disposing TableHandle");
 
     if (oldTh != null) {
-      Utility.RunInBackground(oldTh.Dispose);
+      Utility.RunInBackground666(oldTh.Dispose);
     }
   }
 

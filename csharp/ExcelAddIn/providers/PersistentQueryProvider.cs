@@ -24,6 +24,7 @@ internal class PersistentQueryProvider :
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
   private StatusOr<Client> _client = StatusOr<Client>.OfStatus("[No Client]");
+  private Client? _ownedDndClient = null;
 
   public PersistentQueryProvider(PersistentQueryId? pqId, WorkerThread workerThread, Action onDispose) {
     _pqId = pqId;
@@ -80,27 +81,13 @@ internal class PersistentQueryProvider :
         _observers.SetAndSendStatus(ref _client, "Attaching to PQ \"{pqId}\"");
 
         try {
-          var dndClient = sm.ConnectToPqByName(pqId.Id, false);
-          result = StatusOr<Client>.OfValue(dndClient);
+          _ownedDndClient = corePlus.SessionManager.ConnectToPqByName(_pqId.Id, false);
+          _observers.SetAndSendValue(ref _client, _ownedDndClient);
         } catch (Exception ex) {
-          result = StatusOr<Client>.OfStatus(ex.Message);
+          _observers.SetAndSendStatus(ref _client, ex.Message);
         }
-        Utility.RunInBackground(() => PerformAttachInBackground(corePlus.SessionManager, _pqId));
         return Unit.Instance;
       });
-  }
-
-  public void PerformAttachInBackground(SessionManager sm, PersistentQueryId pqId) {
-    StatusOr<Client> result;
-    try {
-      var dndClient = sm.ConnectToPqByName(pqId.Id, false);
-      result = StatusOr<Client>.OfValue(dndClient);
-    } catch (Exception ex) {
-      result = StatusOr<Client>.OfStatus(ex.Message);
-    }
-
-    // Then, back on the worker thread, set the result
-    _workerThread.Invoke(() => _observers.SetAndSend(ref _client, result));
   }
 
   private void DisposeClientState() {
@@ -108,11 +95,10 @@ internal class PersistentQueryProvider :
       return;
     }
 
-    _ = _client.GetValueOrStatus(out var oldClient, out _);
     _observers.SetAndSendStatus(ref _client, "Disposing Client");
-
+    var oldClient = Utility.Exchange(ref _ownedDndClient, null);
     if (oldClient != null) {
-      Utility.RunInBackground(oldClient.Dispose);
+      Utility.RunInBackground666(oldClient.Dispose);
     }
   }
 
