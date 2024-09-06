@@ -6,37 +6,48 @@ using System.Diagnostics;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class TableHandleProvider :
-  IObserver<StatusOr<Client>>, IObservable<StatusOr<TableHandle>> {
+  IObserver<StatusOr<Client>>,
+  IObserver<EndpointId?>,
+  IObservable<StatusOr<TableHandle>> {
 
-  private readonly string _tableName;
+  private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
+  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly string _tableName;
   private Action? _onDispose;
+  private IDisposable? _upstreamEndpointDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[No Table]");
 
-  public TableHandleProvider(string tableName, WorkerThread workerThread, Action onDispose) {
+  public TableHandleProvider(StateManager stateManager, PersistentQueryId? persistentQueryId, string tableName,
+    Action onDispose) {
+    _stateManager = stateManager;
+    _workerThread = stateManager.WorkerThread;
+    _persistentQueryId = persistentQueryId;
     _tableName = tableName;
-    _workerThread = workerThread;
     _onDispose = onDispose;
   }
 
-  public void Init(StateManager sm, EndpointId? endpointId, PersistentQueryId persistentQueryId) {
-    UpdateUpstreamDependencies(sm, endpointId, persistentQueryId);
+  public void Init(StateManager sm) {
+    _upstreamEndpointDisposer = sm.SubscribeToDefaultEndpointSelection(this);
   }
 
-  public void UpdateUpstreamDependencies(StateManager sm, EndpointId? endpointId,
-    PersistentQueryId persistentQueryId) {
+  public void OnNext(EndpointId? endpointId) {
     // Unsubscribe from old dependencies
-
     Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
 
-    // If endpoint is null, then don't subscribe.
+    // Forget TableHandleState
+    DisposeTableHandleState();
+
+    // If endpoint is null, then don't subscribe to anything.
     if (endpointId == null) {
       return;
     }
-    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {persistentQueryId})");
-    _upstreamSubscriptionDisposer = sm.SubscribeToPersistentQuery(endpointId, persistentQueryId, this);
+
+    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {_persistentQueryId})");
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
+      endpointId, _persistentQueryId, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -51,6 +62,7 @@ internal class TableHandleProvider :
         return;
       }
 
+      Utility.Exchange(ref _upstreamEndpointDisposer, null)?.Dispose();
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _onDispose, null)?.Invoke();
       DisposeTableHandleState();
