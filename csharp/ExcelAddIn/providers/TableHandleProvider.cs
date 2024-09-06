@@ -9,6 +9,7 @@ internal class TableHandleProvider :
   IObserver<StatusOr<Client>>,
   IObserver<EndpointId?>,
   IObservable<StatusOr<TableHandle>> {
+  private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
@@ -18,7 +19,7 @@ internal class TableHandleProvider :
   private IDisposable? _upstreamEndpointDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus("[No Table]");
+  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
 
   public TableHandleProvider(StateManager stateManager, PersistentQueryId? persistentQueryId, string tableName,
     Action onDispose) {
@@ -29,25 +30,8 @@ internal class TableHandleProvider :
     _onDispose = onDispose;
   }
 
-  public void Init(StateManager sm) {
-    _upstreamEndpointDisposer = sm.SubscribeToDefaultEndpointSelection(this);
-  }
-
-  public void OnNext(EndpointId? endpointId) {
-    // Unsubscribe from old dependencies
-    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-
-    // Forget TableHandleState
-    DisposeTableHandleState();
-
-    // If endpoint is null, then don't subscribe to anything.
-    if (endpointId == null) {
-      return;
-    }
-
-    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {_persistentQueryId})");
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
-      endpointId, _persistentQueryId, this);
+  public void Init() {
+    _upstreamEndpointDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -67,6 +51,23 @@ internal class TableHandleProvider :
       Utility.Exchange(ref _onDispose, null)?.Invoke();
       DisposeTableHandleState();
     });
+  }
+
+  public void OnNext(EndpointId? endpointId) {
+    // Unsubscribe from old dependencies
+    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+
+    // Forget TableHandleState
+    DisposeTableHandleState();
+
+    // If endpoint is null, then don't subscribe to anything.
+    if (endpointId == null) {
+      return;
+    }
+
+    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {_persistentQueryId})");
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
+      endpointId, _persistentQueryId, this);
   }
 
   public void OnNext(StatusOr<Client> client) {
@@ -99,7 +100,7 @@ internal class TableHandleProvider :
     }
 
     _ = _tableHandle.GetValueOrStatus(out var oldTh, out _);
-    _observers.SetAndSendStatus(ref _tableHandle, "Disposing TableHandle");
+    _observers.SetAndSendStatus(ref _tableHandle, UnsetTableHandleText);
 
     if (oldTh != null) {
       Utility.RunInBackground(oldTh.Dispose);

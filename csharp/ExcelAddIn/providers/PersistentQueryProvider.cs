@@ -8,28 +8,27 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class PersistentQueryProvider :
   IObserver<StatusOr<SessionBase>>, IObservable<StatusOr<Client>> {
 
-  public static PersistentQueryProvider Create(EndpointId endpointId, PersistentQueryId? pqId,
-    StateManager sm, Action onDispose) {
-
-    var result = new PersistentQueryProvider(pqId, sm.WorkerThread, onDispose);
-    var usd = sm.SubscribeToSession(endpointId, result);
-    result._upstreamSubscriptionDisposer = usd;
-
-    return result;
-  }
-
-  private readonly PersistentQueryId? _pqId;
+  private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
+  private readonly EndpointId _endpointId;
+  private readonly PersistentQueryId? _pqId;
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
   private StatusOr<Client> _client = StatusOr<Client>.OfStatus("[No Client]");
   private Client? _ownedDndClient = null;
 
-  public PersistentQueryProvider(PersistentQueryId? pqId, WorkerThread workerThread, Action onDispose) {
+  public PersistentQueryProvider(StateManager stateManager,
+    EndpointId endpointId, PersistentQueryId? pqId, Action onDispose) {
+    _stateManager = stateManager;
+    _workerThread = stateManager.WorkerThread;
+    _endpointId = endpointId;
     _pqId = pqId;
-    _workerThread = workerThread;
     _onDispose = onDispose;
+  }
+
+  public void Init() {
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToSession(_endpointId, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {

@@ -4,28 +4,25 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>>  {
-  private readonly EndpointId _endpointId;
+internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
+  private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
+  private readonly EndpointId _endpointId;
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
   private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
 
-  public SessionProvider(EndpointId endpointId, WorkerThread workerThread, Action onDispose) {
+  public SessionProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
+    _stateManager = stateManager;
+    _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
-    _workerThread = workerThread;
     _onDispose = onDispose;
   }
 
-  public void Init(StateManager sm) {
-    if (_upstreamSubscriptionDisposer != null) {
-      throw new Exception("Can't call Init() twice");
-    }
-
-    var usd = sm.SubscribeToCredentials(_endpointId, this);
-    _upstreamSubscriptionDisposer = usd;
+  public void Init() {
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToCredentials(_endpointId, this);
   }
 
   /// <summary>

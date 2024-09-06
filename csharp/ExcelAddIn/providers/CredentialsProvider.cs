@@ -12,7 +12,7 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
     _workerThread = workerThread;
   }
 
-  public void Init(StateManager sm) {
+  public void Init() {
     // Do nothing
   }
 

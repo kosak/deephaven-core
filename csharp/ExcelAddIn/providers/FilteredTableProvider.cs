@@ -8,21 +8,26 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>, IObservable<StatusOr<TableHandle>> {
 
-  private readonly string _condition;
+  private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
+  private readonly string _condition;
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _filteredTableHandle = StatusOr<TableHandle>.OfStatus("[No Filtered Table]");
 
-  public FilteredTableProvider(string condition, WorkerThread workerThread,
+  public FilteredTableProvider(StateManager stateManager, string condition,
     Action onDispose) {
+    _stateManager = stateManager;
+    _workerThread = stateManager.WorkerThread;
     _condition = condition;
-    _workerThread = workerThread;
     _onDispose = onDispose;
   }
 
-  public void Init(StateManager sm, TableTriple descriptor) {
+  public void Init() {
+    // Unsubscribe from old dependencies
+    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+
     Debug.WriteLine($"FTP is subscribing to TableHandle with {descriptor}");
     _upstreamSubscriptionDisposer = sm.SubscribeToTableHandle(descriptor, this);
   }
