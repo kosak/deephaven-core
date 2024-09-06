@@ -1,4 +1,6 @@
 ﻿
+using System.Diagnostics;
+
 namespace Deephaven.ExcelAddIn.Util;
 
 internal static class Utility {
@@ -8,16 +10,15 @@ internal static class Utility {
     return result;
   }
 
-  public static void RunInBackground(Action a) {
-    new Thread(() => a()) { IsBackground = true }.Start();
-  }
-
-  public static void IgnoreExceptions(Action action) {
-    try {
-      action();
-    } catch {
-      // Ignore errors
+  public static void RunInBackground666(Action a) {
+    void Doit() {
+      try {
+        a();
+      } catch (Exception e) {
+        Debug.WriteLine($"Ignoring exception {e}");
+      }
     }
+    new Thread(Doit) { IsBackground = true }.Start();
   }
 }
 

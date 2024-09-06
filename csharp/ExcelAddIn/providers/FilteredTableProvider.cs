@@ -67,20 +67,12 @@ internal class FilteredTableProvider :
     // It's a real TableHandle so start fetching the table. First notify our observers.
     _observers.SetAndSendStatus(ref _filteredTableHandle, "Filtering");
 
-    Utility.RunInBackground(() => PerformFilterInBackground(th, _condition));
-  }
-
-  private void PerformFilterInBackground(TableHandle tableHandle, string condition) {
-    StatusOr<TableHandle> result;
     try {
-      var filtered = tableHandle.Where(condition);
-      result = StatusOr<TableHandle>.OfValue(filtered);
+      var filtered = th.Where(_condition);
+      _observers.SetAndSendValue(ref _filteredTableHandle, filtered);
     } catch (Exception ex) {
-      result = StatusOr<TableHandle>.OfStatus(ex.Message);
+      _observers.SetAndSendStatus(ref _filteredTableHandle, ex.Message);
     }
-
-    // Then, back on the worker thread, set the result
-    _workerThread.Invoke(() => _observers.SetAndSend(ref _filteredTableHandle, result));
   }
 
   private void DisposeTableHandleState() {
@@ -92,7 +84,7 @@ internal class FilteredTableProvider :
     _observers.SetAndSendStatus(ref _filteredTableHandle, "Disposing TableHandle");
 
     if (oldTh != null) {
-      Utility.RunInBackground(oldTh.Dispose);
+      Utility.RunInBackground666(oldTh.Dispose);
     }
   }
 

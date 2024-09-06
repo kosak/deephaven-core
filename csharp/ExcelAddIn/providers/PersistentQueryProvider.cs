@@ -68,7 +68,6 @@ internal class PersistentQueryProvider :
         var result = _pqId == null
           ? StatusOr<Client>.OfValue(core.Client)
           : StatusOr<Client>.OfStatus("Community Core cannot connect to PQ \"{pqId}\"");
-        // Community Core either has a message or a value, so we are done.
         _observers.SetAndSend(ref _client, result);
         return Unit.Instance;
       },
@@ -79,6 +78,13 @@ internal class PersistentQueryProvider :
         }
 
         _observers.SetAndSendStatus(ref _client, "Attaching to PQ \"{pqId}\"");
+
+        try {
+          var dndClient = sm.ConnectToPqByName(pqId.Id, false);
+          result = StatusOr<Client>.OfValue(dndClient);
+        } catch (Exception ex) {
+          result = StatusOr<Client>.OfStatus(ex.Message);
+        }
         Utility.RunInBackground(() => PerformAttachInBackground(corePlus.SessionManager, _pqId));
         return Unit.Instance;
       });

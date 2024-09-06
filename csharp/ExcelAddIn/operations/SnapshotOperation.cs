@@ -58,21 +58,12 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
 
     _observers.SendStatus($"Snapshotting \"{_tableDescriptor.TableName}\"");
 
-    Utility.RunInBackground(RenderInBackground);
-    return;
-
-    void RenderInBackground() {
-      StatusOr<object?[,]> result;
-      try {
-        // TODO(kosak): possible race with TableHandle dispose here
-        using var ct = th.ToClientTable();
-        var rendered = Renderer.Render(ct, _wantHeaders);
-        result = StatusOr<object?[,]>.OfValue(rendered);
-      } catch (Exception ex) {
-        result = StatusOr<object?[,]>.OfStatus(ex.Message);
-      }
-
-      _workerThread.Invoke(() => _observers.OnNext(result));
+    try {
+      using var ct = th.ToClientTable();
+      var rendered = Renderer.Render(ct, _wantHeaders);
+      _observers.SendValue(rendered);
+    } catch (Exception ex) {
+      _observers.SendStatus(ex.Message);
     }
   }
 

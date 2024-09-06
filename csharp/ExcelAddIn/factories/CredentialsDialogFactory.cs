@@ -55,7 +55,7 @@ internal static class CredentialsDialogFactory {
 
       credentialsDialog!.SetTestResultsBox("Checking credentials");
       // Check credentials on its own thread
-      Utility.RunInBackground(() => TestCredentials(newCreds));
+      Utility.RunInBackground666(() => TestCredentials(newCreds));
     }
 
     // Save in captured variable so that the lambdas can access it.

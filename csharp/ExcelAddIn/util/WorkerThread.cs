@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Util;
 
@@ -44,7 +45,7 @@ public class WorkerThread {
   }
 
   public IDisposable InvokeWhenDisposed(Action action) {
-
+    return ActionAsDisposable.Create(() => Invoke(action));
   }
 
   private void Doit() {
