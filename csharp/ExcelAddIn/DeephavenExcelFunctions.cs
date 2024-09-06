@@ -1,12 +1,8 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Operations;
-using Deephaven.ExcelAddIn.Providers;
-using Deephaven.ExcelAddIn.Viewmodels;
-using Deephaven.ExcelAddIn.Views;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;

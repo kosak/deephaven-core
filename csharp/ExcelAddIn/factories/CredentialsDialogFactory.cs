@@ -6,63 +6,69 @@ using ExcelAddIn.views;
 namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class CredentialsDialogFactory {
-  public static CredentialsDialog Create(StateManager sm, CredentialsDialogViewModel cvm, Control guiThreadRepresentative) {
-    CredentialsDialog? credentialsDialog = null;
+  public static CredentialsDialog Create(StateManager stateManager, CredentialsDialogViewModel cvm) {
+    var cd = new CredentialsDialog(cvm);
+    var state = new CredentialsDialogState(stateManager, cd, cvm);
+    cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
+    cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
+    return cd;
+  }
+}
 
-    void OnSetCredentialsButtonClicked() {
-      if (!cvm.TryMakeCredentials(out var newCreds, out var error)) {
-        ShowMessageBox(error);
-        return;
-      }
+internal class CredentialsDialogState(
+  StateManager stateManager,
+  CredentialsDialog credentialsDialog,
+  CredentialsDialogViewModel cvm) {
+  private readonly VersionTracker _versionTracker = new();
 
-      sm.SetCredentials(newCreds);
-      if (cvm.IsDefault) {
-        sm.SetDefaultEndpointId(newCreds.Id);
-      }
-
-      credentialsDialog!.Close();
+  public void OnSetCredentials() {
+    if (!cvm.TryMakeCredentials(out var newCreds, out var error)) {
+      ShowMessageBox(error);
+      return;
     }
 
-    var versionTracker = new VersionTracker();
-
-    void TestCredentials(CredentialsBase creds) {
-      var latestCookie = versionTracker.SetNewVersion();
-
-      var state = "OK";
-      try {
-        // This operation might take some time.
-        var temp = SessionBaseFactory.Create(creds, sm.WorkerThread);
-        temp.Dispose();
-      } catch (Exception ex) {
-        state = ex.Message;
-      }
-
-      if (!latestCookie.IsCurrent) {
-        // Our results are moot. Dispose of them.
-        return;
-      }
-
-      // Our results are valid. Keep them and tell everyone about it.
-      credentialsDialog!.SetTestResultsBox(state);
+    stateManager.SetCredentials(newCreds);
+    if (cvm.IsDefault) {
+      stateManager.SetDefaultEndpointId(newCreds.Id);
     }
 
-    void OnTestCredentialsButtonClicked() {
-      if (!cvm.TryMakeCredentials(out var newCreds, out var error)) {
-        ShowMessageBox(error);
-        return;
-      }
-
-      credentialsDialog!.SetTestResultsBox("Checking credentials");
-      // Check credentials on its own thread
-      Utility.RunInBackground(() => TestCredentials(newCreds));
-    }
-
-    // Save in captured variable so that the lambdas can access it.
-    credentialsDialog = new CredentialsDialog(cvm, OnSetCredentialsButtonClicked, OnTestCredentialsButtonClicked);
-    return credentialsDialog;
+    credentialsDialog!.Close();
   }
 
-  private static void ShowMessageBox(string error) {
-    MessageBox.Show(error, "Please provide missing fields", MessageBoxButtons.OK);
+  public void OnTestCredentials() {
+    if (!cvm.TryMakeCredentials(out var newCreds, out var error)) {
+      ShowMessageBox(error);
+      return;
+    }
+
+    credentialsDialog!.SetTestResultsBox("Checking credentials");
+    // Check credentials on its own thread
+    Utility.RunInBackground(() => TestCredentialsThreadFunc(newCreds));
+  }
+
+  private void TestCredentialsThreadFunc(CredentialsBase creds) {
+    var latestCookie = _versionTracker.SetNewVersion();
+
+    var state = "OK";
+    try {
+      // This operation might take some time.
+      var temp = SessionBaseFactory.Create(creds, stateManager.WorkerThread);
+      temp.Dispose();
+    } catch (Exception ex) {
+      state = ex.Message;
+    }
+
+    if (!latestCookie.IsCurrent) {
+      // Our results are moot. Dispose of them.
+      return;
+    }
+
+    // Our results are valid. Keep them and tell everyone about it.
+    credentialsDialog!.SetTestResultsBox(state);
+  }
+
+  private void ShowMessageBox(string error) {
+    var dhm = new DeephavenMessageBox("Please provide missing fields", error);
+    dhm.ShowDialog(credentialsDialog);
   }
 }

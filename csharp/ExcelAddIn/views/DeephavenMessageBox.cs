@@ -10,8 +10,11 @@ using System.Windows.Forms;
 
 namespace ExcelAddIn.views {
   public partial class DeephavenMessageBox : Form {
-    public DeephavenMessageBox() {
+    public DeephavenMessageBox(string caption, string text) {
       InitializeComponent();
+
+      captionLabel.Text = caption;
+      contentsBox.Text = text;
     }
   }
 }

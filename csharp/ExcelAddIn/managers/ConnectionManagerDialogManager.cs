@@ -5,6 +5,7 @@ using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.ViewModels;
+using ExcelAddIn.views;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
@@ -15,7 +16,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   // StateManager stateManager) 
   public static ConnectionManagerDialogManager Create(StateManager stateManager,
     ConnectionManagerDialog cmDialog) {
-    var result = new ConnectionManagerDialogManager(stateManager.WorkerThread);
+    var result = new ConnectionManagerDialogManager(stateManager);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
     cmDialog.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
     cmDialog.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
@@ -34,8 +35,10 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   private readonly Dictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> _rowToManager = new();
   private readonly List<IDisposable> _disposables = new();
 
-  public ConnectionManagerDialogManager(WorkerThread workerThread) {
-    _workerThread = workerThread;
+  public ConnectionManagerDialogManager(StateManager stateManager, ConnectionManagerDialog cmDialog) {
+    _stateManager = stateManager;
+    _workerThread = stateManager.WorkerThread;
+    _cmDialog = cmDialog;
   }
 
   public void OnNext(AddOrRemove<EndpointId> aor) {
@@ -89,33 +92,44 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
   void OnNewButtonClicked() {
     var cvm = CredentialsDialogViewModel.OfEmpty();
-    // This is OK because we are on the GUI thread
     var dialog = CredentialsDialogFactory.Create(_stateManager, cvm);
     dialog.Show();
   }
 
   private class FailureCollector {
+    private readonly Control _guiThreadRepresentative;
+    private readonly object _sync = new();
     private int _rowsLeft = 0;
     private List<EndpointId> _failures = new();
 
-    public void FailureFunc(EndpointId id, string reason) {
-      failures.Add(id);
-      FinishFunc(id);
-    }
-
-    void SuccessFunc(EndpointId id) {
-    }
-
-    void FinishFunc(EndpointId id) {
-      --rowsLeft;
-      if (rowsLeft > 0 || failures.Count == 0) {
-        return;
+    public void OnFailure(EndpointId id, string reason) {
+      lock (_sync) {
+        _failures.Add(id);
       }
 
-      var text = $"ids still in use: {string.Join(", ", failures.Select(f => f.ToString()))}";
+      FinalSteps();
+    }
 
-      Utility.RunInBackground(() =>
-        MessageBox.Show(text, "Couldn't delete all selections", MessageBoxButtons.OK));
+    void OnSuccess(EndpointId id) {
+      FinalSteps();
+    }
+
+    void FinalSteps() {
+      string text;
+      lock (_sync) {
+        --_rowsLeft;
+        if (_rowsLeft > 0 || _failures.Count == 0) {
+          return;
+        }
+
+        text = $"ids still in use: {string.Join(", ", _failures.Select(f => f.ToString()))}";
+      }
+
+      _guiThreadRepresentative.Invoke(() => {
+        const string caption = "Couldn't delete all selections";
+        var mbox = new DeephavenMessageBox(caption, text);
+        mbox.Show();
+      });
     }
   }
 
