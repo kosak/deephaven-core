@@ -8,8 +8,8 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
   private readonly ObserverContainer<StatusOr<CredentialsBase>> _observers = new();
   private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[No Credentials]");
 
-  public CredentialsProvider(WorkerThread workerThread) {
-    _workerThread = workerThread;
+  public CredentialsProvider(StateManager stateManager) {
+    _workerThread = stateManager.WorkerThread;
   }
 
   public void Init() {

@@ -96,8 +96,9 @@ public class StateManager {
       return;
     }
     if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
-      cp = CredentialsProvider.Create(endpointId, this);
+      cp = new CredentialsProvider(this);
       _credentialsProviders.Add(endpointId, cp);
+      cp.Init();
       _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
     }
 
@@ -109,12 +110,9 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = SessionProvider.Create(endpointId, this, () => _sessionProviders.Remove(endpointId));
-        try {
-          _sessionProviders.Add(endpointId, sp);
-        } catch (Exception e) {
-          Debug.WriteLine($"what fresh hell is this {e}");
-        }
+        sp = new SessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
+        _sessionProviders.Add(endpointId, sp);
+        sp.Init();
       }
       disposer = sp.Subscribe(observer);
     });
@@ -130,9 +128,10 @@ public class StateManager {
     WorkerThread.Invoke(() => {
       var key = new PersistentQueryKey(endpointId, pqId);
       if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
-        pqp = PersistentQueryProvider.Create(endpointId, pqId, this,
+        pqp = new PersistentQueryProvider(this, endpointId, pqId,
           () => _persistentQueryProviders.Remove(key));
         _persistentQueryProviders.Add(key, pqp);
+        pqp.Init();
       }
       disposer = pqp.Subscribe(observer);
     });
@@ -147,9 +146,9 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_tableHandleProviders.TryGetValue(descriptor, out var tp)) {
-        tp = TableHandleProvider.Create(descriptor, _defaultEndpointId, this,
-          () => _tableHandleProviders.Remove(descriptor));
+        tp = new TableHandleProvider(this, descriptor, () => _tableHandleProviders.Remove(descriptor));
         _tableHandleProviders.Add(descriptor, tp);
+        tp.Init();
       }
       disposer = tp.Subscribe(observer);
     });
@@ -170,9 +169,10 @@ public class StateManager {
       var key = new FilteredTableProviderKey(descriptor.EndpointId, descriptor.PersistentQueryId,
         descriptor.TableName, condition);
       if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
-        ftp = FilteredTableProvider.Create(descriptor, condition, this,
+        ftp = new FilteredTableProvider(this, descriptor, condition,
           () => _filteredTableProviders.Remove(key));
         _filteredTableProviders.Add(key, ftp);
+        ftp.Init();
       }
       disposer = ftp.Subscribe(observer);
     });
