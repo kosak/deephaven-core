@@ -10,26 +10,25 @@ internal class FilteredTableProvider :
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
+  private readonly TableTriple _descriptor;
   private readonly string _condition;
   private Action? _onDispose;
-  private IDisposable? _upstreamSubscriptionDisposer = null;
+  private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _filteredTableHandle = StatusOr<TableHandle>.OfStatus("[No Filtered Table]");
 
-  public FilteredTableProvider(StateManager stateManager, string condition,
-    Action onDispose) {
+  public FilteredTableProvider(StateManager stateManager, TableTriple descriptor,
+    string condition, Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
+    _descriptor = descriptor;
     _condition = condition;
     _onDispose = onDispose;
   }
 
   public void Init() {
-    // Unsubscribe from old dependencies
-    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-
-    Debug.WriteLine($"FTP is subscribing to TableHandle with {descriptor}");
-    _upstreamSubscriptionDisposer = sm.SubscribeToTableHandle(descriptor, this);
+    Debug.WriteLine($"FTP is subscribing to TableHandle with {_descriptor}");
+    _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTableHandle(_descriptor, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -44,7 +43,7 @@ internal class FilteredTableProvider :
         return;
       }
 
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _tableHandleSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _onDispose, null)?.Invoke();
       DisposeTableHandleState();
     });

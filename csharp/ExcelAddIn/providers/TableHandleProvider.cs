@@ -13,25 +13,33 @@ internal class TableHandleProvider :
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
-  private readonly PersistentQueryId? _persistentQueryId;
-  private readonly string _tableName;
+  private readonly TableTriple _descriptor;
   private Action? _onDispose;
-  private IDisposable? _upstreamEndpointDisposer = null;
-  private IDisposable? _upstreamSubscriptionDisposer = null;
+  private IDisposable? _endpointSubscriptionDisposer = null;
+  private IDisposable? _pqSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
 
-  public TableHandleProvider(StateManager stateManager, PersistentQueryId? persistentQueryId, string tableName,
+  public TableHandleProvider(StateManager stateManager, TableTriple descriptor,
     Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
-    _persistentQueryId = persistentQueryId;
-    _tableName = tableName;
+    _descriptor = descriptor;
     _onDispose = onDispose;
   }
 
   public void Init() {
-    _upstreamEndpointDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
+    // If we have an endpointId, subscribe directly to the PQ
+    if (_descriptor.EndpointId != null) {
+      _pqSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
+        _descriptor.EndpointId, _descriptor.PersistentQueryId, this);
+      return;
+    }
+
+    // If we don't, that means the caller wanted the default endpoint, so subscribe
+    // to the observable for default endpoints. When we get one, then we can subscribe
+    // to a PQ.
+    _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -46,16 +54,16 @@ internal class TableHandleProvider :
         return;
       }
 
-      Utility.Exchange(ref _upstreamEndpointDisposer, null)?.Dispose();
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _pqSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _onDispose, null)?.Invoke();
       DisposeTableHandleState();
     });
   }
 
   public void OnNext(EndpointId? endpointId) {
-    // Unsubscribe from old dependencies
-    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+    // Unsubscribe from old PQs
+    Utility.Exchange(ref _pqSubscriptionDisposer, null)?.Dispose();
 
     // Forget TableHandleState
     DisposeTableHandleState();
@@ -65,9 +73,9 @@ internal class TableHandleProvider :
       return;
     }
 
-    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {_persistentQueryId})");
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
-      endpointId, _persistentQueryId, this);
+    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {_descriptor.PersistentQueryId})");
+    _pqSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
+      endpointId, _descriptor.PersistentQueryId, this);
   }
 
   public void OnNext(StatusOr<Client> client) {
@@ -84,10 +92,10 @@ internal class TableHandleProvider :
     }
 
     // It's a real client so start fetching the table. First notify our observers.
-    _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{_tableName}\"");
+    _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{_descriptor.TableName}\"");
 
     try {
-      var th = cli.Manager.FetchTable(_tableName);
+      var th = cli.Manager.FetchTable(_descriptor.TableName);
       _observers.SetAndSendValue(ref _tableHandle, th);
     } catch (Exception ex) {
       _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
