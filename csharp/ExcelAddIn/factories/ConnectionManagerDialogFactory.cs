@@ -22,11 +22,8 @@ internal static class ConnectionManagerDialogFactory {
     void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
       var rowsLeft = rows.Length;
       var failures = new List<EndpointId>();
-      void Func(EndpointId id, bool success) {
-        if (!success) {
-          failures.Add(id);
-        }
 
+      void SuccessFunc(EndpointId id) {
         --rowsLeft;
         if (rowsLeft > 0 || failures.Count == 0) {
           return;
@@ -38,11 +35,17 @@ internal static class ConnectionManagerDialogFactory {
           MessageBox.Show(text, "Couldn't delete all selections", MessageBoxButtons.OK));
       }
 
+      void FailureFunc(EndpointId id, string reason) {
+        failures.Add(id);
+        SuccessFunc(id);
+      }
+
       foreach (var row in rows) {
         if (!rowToManager.TryGetValue(row, out var manager)) {
           continue;
         }
-        manager.DoDelete(Func);
+
+        manager.DoDelete(SuccessFunc, FailureFunc);
       }
     }
 

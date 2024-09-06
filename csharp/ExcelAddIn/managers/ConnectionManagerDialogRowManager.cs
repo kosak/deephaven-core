@@ -125,7 +125,7 @@ public sealed class ConnectionManagerDialogRowManager :
       return;
     }
 
-    _stateManager.SetDefaultCredentials(creds);
+    _stateManager.SetDefaultEndpointId(creds.Id);
   }
 
   public void OnCompleted() {

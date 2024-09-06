@@ -17,7 +17,7 @@ internal static class CredentialsDialogFactory {
 
       sm.SetCredentials(newCreds);
       if (cvm.IsDefault) {
-        sm.SetDefaultCredentials(newCreds);
+        sm.SetDefaultEndpointId(newCreds.Id);
       }
 
       credentialsDialog!.Close();
