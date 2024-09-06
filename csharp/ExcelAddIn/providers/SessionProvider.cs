@@ -101,18 +101,6 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     }
   }
 
-  // public void Reconnect() {
-  //   // Get on the worker thread if not there already.
-  //   if (workerThread.InvokeIfRequired(Reconnect)) {
-  //     return;
-  //   }
-  //
-  //   // We implement this as a SetCredentials call, with credentials we already have.
-  //   if (_credentials.GetValueOrStatus(out var creds, out _)) {
-  //     SetCredentials(creds);
-  //   }
-  // }
-
   public void OnCompleted() {
     // TODO(kosak)
     throw new NotImplementedException();

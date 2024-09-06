@@ -28,4 +28,8 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
   public void SetCredentials(CredentialsBase newCredentials) {
     _observers.SetAndSendValue(ref _credentials, newCredentials);
   }
+
+  public void Resend() {
+    _observers.OnNext(_credentials);
+  }
 }

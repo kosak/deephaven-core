@@ -65,6 +65,11 @@ public class StateManager {
       cp => cp.SetCredentials(credentials));
   }
 
+  public void Reconnect(EndpointId id) {
+    // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
+    LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
+  }
+
   private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
     Action<CredentialsProvider> action) {
     if (WorkerThread.InvokeIfRequired(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
@@ -154,9 +159,5 @@ public class StateManager {
   
   public void SetDefaultCredentials(CredentialsBase credentials) {
     Debug.WriteLine("Not setting default credentials");
-  }
-
-  public void Reconnect(EndpointId id) {
-    Debug.WriteLine("Not reconnecting");
   }
 }
