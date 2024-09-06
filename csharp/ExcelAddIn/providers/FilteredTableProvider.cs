@@ -1,4 +1,5 @@
-﻿using Deephaven.DeephavenClient;
+﻿using System.Diagnostics;
+using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
@@ -10,6 +11,7 @@ internal class FilteredTableProvider :
   public static FilteredTableProvider Create(TableTriple descriptor, string condition,
     StateManager sm, Action onDispose) {
     var result = new FilteredTableProvider(condition, sm.WorkerThread, onDispose);
+    Debug.WriteLine($"FTP is subscribing to th {descriptor}");
     var usd = sm.SubscribeToTableHandle(descriptor, result);
     result._upstreamSubscriptionDisposer = usd;
     return result;

@@ -1,6 +1,7 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -13,6 +14,7 @@ internal class TableHandleProvider :
 
     var endpointToUse = descriptor.EndpointId ?? defaultEndpointId;
     if (endpointToUse != null) {
+      Debug.WriteLine($"TH is subscribing to PQ ({endpointToUse}, {descriptor.PersistentQueryId})");
       var usd = sm.SubscribeToPersistentQuery(endpointToUse, descriptor.PersistentQueryId, result);
       result._upstreamSubscriptionDisposer = usd;
     }

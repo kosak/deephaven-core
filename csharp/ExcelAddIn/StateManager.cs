@@ -110,7 +110,11 @@ public class StateManager {
     WorkerThread.Invoke(() => {
       if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
         sp = SessionProvider.Create(endpointId, this, () => _sessionProviders.Remove(endpointId));
-        _sessionProviders.Add(endpointId, sp);
+        try {
+          _sessionProviders.Add(endpointId, sp);
+        } catch (Exception e) {
+          Debug.WriteLine($"what fresh hell is this {e}");
+        }
       }
       disposer = sp.Subscribe(observer);
     });
