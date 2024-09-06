@@ -77,7 +77,7 @@ public sealed class ConnectionManagerDialogRowManager :
     _row.SetDefaultEndpointIdSynced(value);
   }
 
-  public void DoEdit() {
+  public void DoEdi123t() {
     var creds = _row.GetCredentialsSynced();
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.

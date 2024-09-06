@@ -89,13 +89,22 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
   void OnNewButtonClicked() {
     var cvm = CredentialsDialogViewModel.OfEmpty();
-    var dialog = CredentialsDialogFactory.Create(sm, cvm);
+    // This is OK because we are on the GUI thread
+    var dialog = CredentialsDialogFactory.Create(_stateManager, cvm);
     dialog.Show();
   }
 
-  void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
-    var rowsLeft = rows.Length;
-    var failures = new List<EndpointId>();
+  private class FailureCollector {
+    private int _rowsLeft = 0;
+    private List<EndpointId> _failures = new();
+
+    public void FailureFunc(EndpointId id, string reason) {
+      failures.Add(id);
+      FinishFunc(id);
+    }
+
+    void SuccessFunc(EndpointId id) {
+    }
 
     void FinishFunc(EndpointId id) {
       --rowsLeft;
@@ -108,39 +117,47 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
       Utility.RunInBackground(() =>
         MessageBox.Show(text, "Couldn't delete all selections", MessageBoxButtons.OK));
     }
+  }
 
-    void FailureFunc(EndpointId id, string reason) {
-      failures.Add(id);
-      FinishFunc(id);
+  void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
+    if (_workerThread.InvokeIfRequired(() => OnDeleteButtonClicked(rows))) {
+      return;
     }
 
+    var fc = new FailureCollector();
     foreach (var row in rows) {
-      if (!rowToManager.TryGetValue(row, out var manager)) {
+      if (!_rowToManager.TryGetValue(row, out var manager)) {
         continue;
       }
-
-      manager.DoDelete(FinishFunc, FailureFunc);
+      manager.DoDelete(fc.SuccessFunc, fc.FailureFunc);
     }
   }
 
   void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
+    if (_workerThread.InvokeIfRequired(() => OnReconnectButtonClicked(rows))) {
+      return;
+    }
+
     foreach (var row in rows) {
-      if (!rowToManager.TryGetValue(row, out var manager)) {
+      if (!_rowToManager.TryGetValue(row, out var manager)) {
         continue;
       }
       manager.DoReconnect();
     }
   }
 
-
   void OnMakeDefaultButtonClicked(ConnectionManagerDialogRow[] rows) {
+    if (_workerThread.InvokeIfRequired(() => OnMakeDefaultButtonClicked(rows))) {
+      return;
+    }
+
     // Make the last selected row the default
     if (rows.Length == 0) {
       return;
     }
 
     var row = rows[^1];
-    if (!rowToManager.TryGetValue(row, out var manager)) {
+    if (!_rowToManager.TryGetValue(row, out var manager)) {
       return;
     }
 
@@ -148,8 +165,12 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
+    if (_workerThread.InvokeIfRequired(() => OnMakeDefaultButtonClicked(rows))) {
+      return;
+    }
+
     foreach (var row in rows) {
-      if (!rowToManager.TryGetValue(row, out var manager)) {
+      if (!_rowToManager.TryGetValue(row, out var manager)) {
         continue;
       }
       manager.DoEdit();
