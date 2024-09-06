@@ -5,14 +5,6 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>>  {
-  public static SessionProvider Create(EndpointId endpointId, StateManager sm, Action onDispose) {
-
-    var result = new SessionProvider(endpointId, sm.WorkerThread, onDispose);
-    var usd = sm.SubscribeToCredentials(endpointId, result);
-    result._upstreamSubscriptionDisposer = usd;
-    return result;
-  }
-
   private readonly EndpointId _endpointId;
   private readonly WorkerThread _workerThread;
   private Action? _onDispose;
@@ -25,6 +17,15 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     _endpointId = endpointId;
     _workerThread = workerThread;
     _onDispose = onDispose;
+  }
+
+  public void Init(StateManager sm) {
+    if (_upstreamSubscriptionDisposer != null) {
+      throw new Exception("Can't call Init() twice");
+    }
+
+    var usd = sm.SubscribeToCredentials(_endpointId, this);
+    _upstreamSubscriptionDisposer = usd;
   }
 
   /// <summary>
