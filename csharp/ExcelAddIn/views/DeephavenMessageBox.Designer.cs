@@ -26,48 +26,62 @@
       captionLabel = new Label();
       contentsBox = new TextBox();
       okButton = new Button();
+      captionPanel = new Panel();
+      captionPanel.SuspendLayout();
       SuspendLayout();
       // 
       // captionLabel
       // 
-      captionLabel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      captionLabel.AutoSize = true;
+      captionLabel.Dock = DockStyle.Fill;
       captionLabel.Font = new Font("Segoe UI", 20F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      captionLabel.Location = new Point(306, 32);
+      captionLabel.Location = new Point(0, 0);
       captionLabel.Name = "captionLabel";
-      captionLabel.Size = new Size(162, 54);
+      captionLabel.Size = new Size(751, 73);
       captionLabel.TabIndex = 0;
       captionLabel.Text = "Caption";
+      captionLabel.TextAlign = ContentAlignment.MiddleCenter;
       // 
       // contentsBox
       // 
       contentsBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      contentsBox.Location = new Point(40, 122);
+      contentsBox.Location = new Point(40, 105);
       contentsBox.Multiline = true;
       contentsBox.Name = "contentsBox";
-      contentsBox.Size = new Size(716, 215);
+      contentsBox.ReadOnly = true;
+      contentsBox.Size = new Size(716, 207);
       contentsBox.TabIndex = 1;
       // 
       // okButton
       // 
       okButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      okButton.Location = new Point(644, 385);
+      okButton.Location = new Point(644, 343);
       okButton.Name = "okButton";
       okButton.Size = new Size(112, 34);
       okButton.TabIndex = 2;
-      okButton.Text = "button1";
+      okButton.Text = "OK";
       okButton.UseVisualStyleBackColor = true;
+      okButton.Click += okButton_Click;
+      // 
+      // captionPanel
+      // 
+      captionPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      captionPanel.Controls.Add(captionLabel);
+      captionPanel.Location = new Point(24, 12);
+      captionPanel.Name = "captionPanel";
+      captionPanel.Size = new Size(751, 73);
+      captionPanel.TabIndex = 3;
       // 
       // DeephavenMessageBox
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(800, 450);
+      ClientSize = new Size(800, 401);
+      Controls.Add(captionPanel);
       Controls.Add(okButton);
       Controls.Add(contentsBox);
-      Controls.Add(captionLabel);
       Name = "DeephavenMessageBox";
-      Text = "DeephavenMessageBox";
+      Text = "Deephaven Message";
+      captionPanel.ResumeLayout(false);
       ResumeLayout(false);
       PerformLayout();
     }
@@ -77,5 +91,6 @@
     private Label captionLabel;
     private TextBox contentsBox;
     private Button okButton;
+    private Panel captionPanel;
   }
 }

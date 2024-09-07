@@ -92,8 +92,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
   void OnNewButtonClicked() {
     var cvm = CredentialsDialogViewModel.OfEmpty();
-    var dialog = CredentialsDialogFactory.Create(_stateManager, cvm);
-    dialog.Show();
+    CredentialsDialogFactory.CreateAndShow(_stateManager, cvm);
   }
 
   private class FailureCollector {
@@ -102,8 +101,9 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     private int _rowsLeft = 0;
     private List<EndpointId> _failures = new();
 
-    public FailureCollector(ConnectionManagerDialog cmDialog) {
+    public FailureCollector(ConnectionManagerDialog cmDialog, int rowsLeft) {
       _cmDialog = cmDialog;
+      _rowsLeft = rowsLeft;
     }
 
     public void OnFailure(EndpointId id, string reason) {
@@ -126,12 +126,14 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
           return;
         }
 
-        text = $"ids still in use: {string.Join(", ", _failures.Select(f => f.ToString()))}";
+        text = $"Ids still in use: {string.Join(", ", _failures.Select(f => f.ToString()))}";
       }
 
-      const string caption = "Couldn't delete all selections";
-      var mbox = new DeephavenMessageBox(caption, text);
-      mbox.ShowDialog(_cmDialog);
+      const string caption = "Couldn't delete some selections";
+      _cmDialog.Invoke(() => {
+        var mbox = new DeephavenMessageBox(caption, text);
+        mbox.ShowDialog(_cmDialog);
+      });
     }
   }
 
@@ -140,7 +142,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
       return;
     }
 
-    var fc = new FailureCollector(_cmDialog);
+    var fc = new FailureCollector(_cmDialog, rows.Length);
     foreach (var row in rows) {
       if (!_rowToManager.TryGetValue(row, out var manager)) {
         continue;

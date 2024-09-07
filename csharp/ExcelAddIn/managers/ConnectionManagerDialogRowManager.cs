@@ -84,8 +84,7 @@ public sealed class ConnectionManagerDialogRowManager :
     var cvm = creds.AcceptVisitor(
       crs => CredentialsDialogViewModel.OfIdAndCredentials(_endpointId.Id, crs),
       _ => CredentialsDialogViewModel.OfIdButOtherwiseEmpty(_endpointId.Id));
-    var cd = CredentialsDialogFactory.Create(_stateManager, cvm);
-    cd.Show();
+    CredentialsDialogFactory.CreateAndShow(_stateManager, cvm);
   }
 
   public void DoDelete(Action<EndpointId> onSuccess, Action<EndpointId, string> onFailure) {
@@ -136,8 +135,5 @@ public sealed class ConnectionManagerDialogRowManager :
   public void OnError(Exception error) {
     // TODO(kosak)
     throw new NotImplementedException();
-  }
-
-  public record MyWrappedSocb(StatusOr<CredentialsBase> Value) {
   }
 }

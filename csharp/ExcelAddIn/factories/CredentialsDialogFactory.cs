@@ -6,12 +6,15 @@ using ExcelAddIn.views;
 namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class CredentialsDialogFactory {
-  public static CredentialsDialog Create(StateManager stateManager, CredentialsDialogViewModel cvm) {
-    var cd = new CredentialsDialog(cvm);
-    var state = new CredentialsDialogState(stateManager, cd, cvm);
-    cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
-    cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
-    return cd;
+  public static void CreateAndShow(StateManager stateManager, CredentialsDialogViewModel cvm) {
+    Utility.RunInBackground(() => {
+      var cd = new CredentialsDialog(cvm);
+      var state = new CredentialsDialogState(stateManager, cd, cvm);
+      cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
+      cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
+      // Blocks forever
+      cd.ShowDialog();
+    });
   }
 }
 
