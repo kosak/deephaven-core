@@ -41,9 +41,9 @@ public record TableTriple(
   }
 }
 
-public record FilteredTableProviderKey(
+public record TableQuad(
   EndpointId? EndpointId,
   PersistentQueryId? PersistentQueryId,
   string TableName,
-  string Filter) {
+  string Condition) {
 }

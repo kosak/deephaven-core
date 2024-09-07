@@ -10,39 +10,34 @@ public interface SuperNubbin : IDisposable, IObservable<StatusOr<TableHandle>> {
 }
 
 internal class DefaultEndpointTableProvider :
-  IObserver<StatusOr<Client>>,
+  IObserver<StatusOr<TableHandle>>,
   IObserver<EndpointId?>,
   IObservable<StatusOr<TableHandle>> {
-  private const string UnsetTableHandleText = "[No Table]";
+  private const string UnsetTableHandleText = "[No Default Table]";
 
   private readonly StateManager _stateManager;
+  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly string _tableName;
+  private readonly string _condition;
   private readonly WorkerThread _workerThread;
-  private readonly TableTriple _descriptor;
   private Action? _onDispose;
   private IDisposable? _endpointSubscriptionDisposer = null;
-  private IDisposable? _pqSubscriptionDisposer = null;
+  private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
 
-  public TableProvider(StateManager stateManager, TableTriple descriptor,
+  public DefaultEndpointTableProvider(StateManager stateManager,
+    PersistentQueryId? persistentQueryId, string tableName, string condition,
     Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
-    _descriptor = descriptor;
+    _persistentQueryId = persistentQueryId;
+    _tableName = tableName;
+    _condition = condition;
     _onDispose = onDispose;
   }
 
   public void Init() {
-    // If we have an endpointId, subscribe directly to the PQ
-    if (_descriptor.EndpointId != null) {
-      _pqSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
-        _descriptor.EndpointId, _descriptor.PersistentQueryId, this);
-      return;
-    }
-
-    // If we don't, that means the caller wanted the default endpoint, so subscribe
-    // to the observable for default endpoints. When we get one, then we can subscribe
-    // to a PQ.
     _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
   }
 
@@ -59,64 +54,27 @@ internal class DefaultEndpointTableProvider :
       }
 
       Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _pqSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _onDispose, null)?.Invoke();
-      DisposeTableHandleState();
     });
   }
 
   public void OnNext(EndpointId? endpointId) {
-    // Unsubscribe from old PQs
-    Utility.Exchange(ref _pqSubscriptionDisposer, null)?.Dispose();
-
-    // Forget TableHandleState
-    DisposeTableHandleState();
+    // Unsubscribe from old upstream
+    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
 
     // If endpoint is null, then don't subscribe to anything.
     if (endpointId == null) {
+      _observers.SetAndSendStatus(ref _tableHandle, UnsetTableHandleText);
       return;
     }
 
-    Debug.WriteLine($"TH is subscribing to PQ ({endpointId}, {_descriptor.PersistentQueryId})");
-    _pqSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
-      endpointId, _descriptor.PersistentQueryId, this);
+    var tq = new TableQuad(endpointId, _persistentQueryId, _tableName, _condition);
+    Debug.WriteLine($"DETH is subscribing to TH ({tq})");
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public void OnNext(StatusOr<Client> client) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(client))) {
-      return;
-    }
-
-    DisposeTableHandleState();
-
-    // If the new state is just a status message, make that our state and transmit to our observers
-    if (!client.GetValueOrStatus(out var cli, out var status)) {
-      _observers.SetAndSendStatus(ref _tableHandle, status);
-      return;
-    }
-
-    // It's a real client so start fetching the table. First notify our observers.
-    _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{_descriptor.TableName}\"");
-
-    try {
-      var th = cli.Manager.FetchTable(_descriptor.TableName);
-      _observers.SetAndSendValue(ref _tableHandle, th);
-    } catch (Exception ex) {
-      _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
-    }
-  }
-
-  private void DisposeTableHandleState() {
-    if (_workerThread.InvokeIfRequired(DisposeTableHandleState)) {
-      return;
-    }
-
-    _ = _tableHandle.GetValueOrStatus(out var oldTh, out _);
-    _observers.SetAndSendStatus(ref _tableHandle, UnsetTableHandleText);
-
-    if (oldTh != null) {
-      Utility.RunInBackground(oldTh.Dispose);
-    }
+  public void OnNext(StatusOr<TableHandle> value) {
+    _observers.SetAndSend(ref _tableHandle, value);
   }
 
   public void OnCompleted() {

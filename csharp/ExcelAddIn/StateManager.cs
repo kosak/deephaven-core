@@ -143,10 +143,8 @@ public class StateManager {
       () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToTable(
-    TableTriple descriptor, string condition, IObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
     IDisposable? disposer = null;
-    var key = new TableQuad(descriptor.EndpointId, descriptor.PersistentQueryId, descriptor.TableName, condition);
     WorkerThread.Invoke(() => {
       if (!_tableProviders.TryGetValue(key, out var tp)) {
         var remover = () => _tableProviders.Remove(key);
