@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Deephaven.ExcelAddIn.Factories;
+﻿using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Viewmodels;
@@ -118,13 +117,7 @@ public sealed class ConnectionManagerDialogRowManager :
       return;
     }
 
-    // If we don't have credentials, then we can't make them the default.
-    var credentials = _row.GetCredentialsSynced();
-    if (!credentials.GetValueOrStatus(out var creds, out _)) {
-      return;
-    }
-
-    _stateManager.SetDefaultEndpointId(creds.Id);
+    _stateManager.SetDefaultEndpointId(_endpointId);
   }
 
   public void OnCompleted() {

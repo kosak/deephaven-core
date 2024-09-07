@@ -40,10 +40,9 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
 
   public bool IsDefault {
     get {
-      var credentials = GetCredentialsSynced();
+      var id = Id;  // readonly so no synchronization needed.
       var defaultEp = GetDefaultEndpointIdSynced();
-      return credentials.GetValueOrStatus(out var creds, out _) &&
-             creds.Id.Equals(defaultEp);
+      return defaultEp != null && defaultEp.Id == id;
     }
   }
 

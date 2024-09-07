@@ -183,7 +183,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
-    if (_workerThread.InvokeIfRequired(() => OnMakeDefaultButtonClicked(rows))) {
+    if (_workerThread.InvokeIfRequired(() => OnEditButtonClicked(rows))) {
       return;
     }
 

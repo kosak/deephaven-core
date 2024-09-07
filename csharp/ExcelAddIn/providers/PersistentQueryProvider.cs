@@ -1,7 +1,6 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.DheClient.Session;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -67,7 +66,7 @@ internal class PersistentQueryProvider :
       core => {
         var result = _pqId == null
           ? StatusOr<Client>.OfValue(core.Client)
-          : StatusOr<Client>.OfStatus("Community Core cannot connect to PQ \"{pqId}\"");
+          : StatusOr<Client>.OfStatus("PQ specified, but Community Core cannot connect to a PQ");
         _observers.SetAndSend(ref _client, result);
         return Unit.Instance;
       },
