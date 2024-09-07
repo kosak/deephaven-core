@@ -8,18 +8,15 @@ using ExcelDna.Integration;
 namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
-  private readonly TableTriple _tableDescriptor;
-  private readonly string _filter;
+  private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private readonly WorkerThread _workerThread;
   private IDisposable? _filteredTableDisposer = null;
 
-  public SnapshotOperation(TableTriple tableDescriptor, string filter, bool wantHeaders,
-    StateManager stateManager) {
-    _tableDescriptor = tableDescriptor;
-    _filter = filter;
+  public SnapshotOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
+    _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
     // Convenience
@@ -32,7 +29,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
-        _filteredTableDisposer = _stateManager.SubscribeToFilteredTableHandle(_tableDescriptor, _filter, this);
+        _filteredTableDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
       }
     });
 
@@ -56,7 +53,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       return;
     }
 
-    _observers.SendStatus($"Snapshotting \"{_tableDescriptor.TableName}\"");
+    _observers.SendStatus($"Snapshotting \"{_tableQuad.TableName}\"");
 
     try {
       using var ct = th.ToClientTable();

@@ -8,20 +8,17 @@ using ExcelDna.Integration;
 namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
-  private readonly TableTriple _tableDescriptor;
-  private readonly string _filter;
+  private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private readonly WorkerThread _workerThread;
-  private IDisposable? _filteredTableDisposer = null;
+  private IDisposable? _tableDisposer = null;
   private TableHandle? _currentTableHandle = null;
   private SubscriptionHandle? _currentSubHandle = null;
 
-  public SubscribeOperation(TableTriple tableDescriptor, string filter, bool wantHeaders,
-    StateManager stateManager) {
-    _tableDescriptor = tableDescriptor;
-    _filter = filter;
+  public SubscribeOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
+    _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
     // Convenience
@@ -34,7 +31,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
-        _filteredTableDisposer = _stateManager.SubscribeToFilteredTableHandle(_tableDescriptor, _filter, this);
+        _tableDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
       }
     });
 
@@ -45,9 +42,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
           return;
         }
 
-        var temp = _filteredTableDisposer;
-        _filteredTableDisposer = null;
-        temp?.Dispose();
+        Utility.Exchange(ref _tableDisposer, null)?.Dispose();
       });
     });
   }
@@ -70,7 +65,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       return;
     }
 
-    _observers.SendStatus($"Subscribing to \"{_tableDescriptor.TableName}\"");
+    _observers.SendStatus($"Subscribing to \"{_tableQuad.TableName}\"");
 
     _currentTableHandle = tableHandle;
     _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observers, _wantHeaders));
