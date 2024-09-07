@@ -6,29 +6,37 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<StatusOr<TableHandle>>, IObservable<StatusOr<TableHandle>> {
+  IObserver<StatusOr<TableHandle>>,
+  IObservable<StatusOr<TableHandle>> {
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
-  private readonly TableTriple _descriptor;
+  private readonly EndpointId _endpointId;
+  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly string _tableName;
   private readonly string _condition;
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _filteredTableHandle = StatusOr<TableHandle>.OfStatus("[No Filtered Table]");
 
-  public FilteredTableProvider(StateManager stateManager, TableTriple descriptor,
-    string condition, Action onDispose) {
+  public FilteredTableProvider(StateManager stateManager,
+    EndpointId endpointId, PersistentQueryId? persistentQueryId, string tableName, string condition,
+    Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
-    _descriptor = descriptor;
+    _endpointId = endpointId;
+    _persistentQueryId = persistentQueryId;
+    _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
   }
 
   public void Init() {
-    Debug.WriteLine($"FTP is subscribing to TableHandle with {_descriptor}");
-    _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTableHandle(_descriptor, this);
+    // Subscribe to a condition-free table
+    var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
+    Debug.WriteLine($"FTP is subscribing to TableHandle with {tq}");
+    _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
