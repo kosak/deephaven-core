@@ -54,10 +54,13 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
 
     // First tear down old state
     if (_currentTableHandle != null) {
-      _currentTableHandle.Unsubscribe(_currentSubHandle!);
-      _currentSubHandle!.Dispose();
+      if (_currentSubHandle != null) {
+        _currentTableHandle.Unsubscribe(_currentSubHandle!);
+        _currentSubHandle!.Dispose();
+        _currentSubHandle = null;
+      }
+
       _currentTableHandle = null;
-      _currentSubHandle = null;
     }
 
     if (!soth.GetValueOrStatus(out var tableHandle, out var status)) {

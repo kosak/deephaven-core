@@ -51,6 +51,7 @@
       contentsBox.ReadOnly = true;
       contentsBox.Size = new Size(716, 207);
       contentsBox.TabIndex = 1;
+      contentsBox.TabStop = false;
       // 
       // okButton
       // 

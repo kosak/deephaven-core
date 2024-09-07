@@ -76,7 +76,7 @@ internal class PersistentQueryProvider :
           return Unit.Instance;
         }
 
-        _observers.SetAndSendStatus(ref _client, $"Attaching to \"{pqId}\"");
+        _observers.SetAndSendStatus(ref _client, $"Attaching to \"{_pqId}\"");
 
         try {
           _ownedDndClient = corePlus.SessionManager.ConnectToPqByName(_pqId.Id, false);
