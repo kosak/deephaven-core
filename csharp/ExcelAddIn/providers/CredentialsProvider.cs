@@ -17,7 +17,7 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<CredentialsBase>> observer) {
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_credentials);
     });

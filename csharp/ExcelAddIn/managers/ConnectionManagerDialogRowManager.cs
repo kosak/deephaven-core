@@ -38,7 +38,7 @@ public sealed class ConnectionManagerDialogRowManager :
   }
 
   private void Resubscribe() {
-    if (_workerThread.InvokeIfRequired(Resubscribe)) {
+    if (_workerThread.EnqueueOrNop(Resubscribe)) {
       return;
     }
 
@@ -53,7 +53,7 @@ public sealed class ConnectionManagerDialogRowManager :
   }
 
   private void Unsubscribe() {
-    if (_workerThread.InvokeIfRequired(Unsubscribe)) {
+    if (_workerThread.EnqueueOrNop(Unsubscribe)) {
       return;
     }
     var temp = _disposables.ToArray();
@@ -87,7 +87,7 @@ public sealed class ConnectionManagerDialogRowManager :
   }
 
   public void DoDelete(Action<EndpointId> onSuccess, Action<EndpointId, string> onFailure) {
-    if (_workerThread.InvokeIfRequired(() => DoDelete(onSuccess, onFailure))) {
+    if (_workerThread.EnqueueOrNop(() => DoDelete(onSuccess, onFailure))) {
       return;
     }
 

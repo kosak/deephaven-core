@@ -19,13 +19,15 @@ public class WorkerThread {
   private WorkerThread() {
   }
 
-  public void Invoke(Action action) {
-    if (!InvokeIfRequired(action)) {
+  // enquee or run
+  public void EnqueueOrRun(Action action) {
+    if (!EnqueueOrNop(action)) {
       action();
     }
   }
 
-  public bool InvokeIfRequired(Action action) {
+  // conditionalenqueue
+  public bool EnqueueOrNop(Action action) {
     if (ReferenceEquals(Thread.CurrentThread, _thisThread)) {
       // Appending to thread queue was not required. Return false.
       return false;
@@ -45,7 +47,7 @@ public class WorkerThread {
   }
 
   public IDisposable InvokeWhenDisposed(Action action) {
-    return ActionAsDisposable.Create(() => Invoke(action));
+    return ActionAsDisposable.Create(() => EnqueueOrRun(action));
   }
 
   private void Doit() {

@@ -25,7 +25,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
 
   public IDisposable Subscribe(IExcelObserver observer) {
     var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
@@ -44,7 +44,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
   }
 
   public void OnNext(StatusOr<TableHandle> tableHandle) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(tableHandle))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(tableHandle))) {
       return;
     }
 

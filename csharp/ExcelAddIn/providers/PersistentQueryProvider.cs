@@ -31,7 +31,7 @@ internal class PersistentQueryProvider :
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_client);
     });
@@ -49,7 +49,7 @@ internal class PersistentQueryProvider :
   }
 
   public void OnNext(StatusOr<SessionBase> sessionBase) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(sessionBase))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(sessionBase))) {
       return;
     }
 
@@ -89,7 +89,7 @@ internal class PersistentQueryProvider :
   }
 
   private void DisposeClientState() {
-    if (_workerThread.InvokeIfRequired(DisposeClientState)) {
+    if (_workerThread.EnqueueOrNop(DisposeClientState)) {
       return;
     }
 

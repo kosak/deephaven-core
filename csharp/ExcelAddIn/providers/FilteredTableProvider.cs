@@ -41,7 +41,7 @@ internal class FilteredTableProvider :
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_filteredTableHandle);
     });
@@ -60,7 +60,7 @@ internal class FilteredTableProvider :
 
   public void OnNext(StatusOr<TableHandle> tableHandle) {
     // Get onto the worker thread if we're not already on it.
-    if (_workerThread.InvokeIfRequired(() => OnNext(tableHandle))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(tableHandle))) {
       return;
     }
 
@@ -84,7 +84,7 @@ internal class FilteredTableProvider :
   }
 
   private void DisposeTableHandleState() {
-    if (_workerThread.InvokeIfRequired(DisposeTableHandleState)) {
+    if (_workerThread.EnqueueOrNop(DisposeTableHandleState)) {
       return;
     }
 

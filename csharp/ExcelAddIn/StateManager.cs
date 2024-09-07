@@ -19,7 +19,7 @@ public class StateManager {
   private EndpointId? _defaultEndpointId = null;
 
   public IDisposable SubscribeToCredentialsPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
-    WorkerThread.Invoke(() => {
+    WorkerThread.EnqueueOrRun(() => {
       _credentialsPopulationObservers.Add(observer, out _);
 
       // Give this observer the current set of endpoint ids.
@@ -34,7 +34,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
-    WorkerThread.Invoke(() => {
+    WorkerThread.EnqueueOrRun(() => {
       _defaultEndpointSelectionObservers.Add(observer, out _);
       observer.OnNext(_defaultEndpointId);
     });
@@ -70,7 +70,7 @@ public class StateManager {
   }
 
   public void TryDeleteCredentials(EndpointId id, Action onSuccess, Action<string> onFailure) {
-    if (WorkerThread.InvokeIfRequired(() => TryDeleteCredentials(id, onSuccess, onFailure))) {
+    if (WorkerThread.EnqueueOrNop(() => TryDeleteCredentials(id, onSuccess, onFailure))) {
       return;
     }
 
@@ -95,7 +95,7 @@ public class StateManager {
 
   private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
     Action<CredentialsProvider> action) {
-    if (WorkerThread.InvokeIfRequired(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
+    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
       return;
     }
     if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
@@ -111,7 +111,7 @@ public class StateManager {
   public IDisposable SubscribeToSession(EndpointId endpointId,
     IObserver<StatusOr<SessionBase>> observer) {
     IDisposable? disposer = null;
-    WorkerThread.Invoke(() => {
+    WorkerThread.EnqueueOrRun(() => {
       if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
         sp = new SessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
         _sessionProviders.Add(endpointId, sp);
@@ -128,7 +128,7 @@ public class StateManager {
     IObserver<StatusOr<Client>> observer) {
 
     IDisposable? disposer = null;
-    WorkerThread.Invoke(() => {
+    WorkerThread.EnqueueOrRun(() => {
       var key = new PersistentQueryKey(endpointId, pqId);
       if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
         pqp = new PersistentQueryProvider(this, endpointId, pqId,
@@ -145,7 +145,7 @@ public class StateManager {
 
   public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
     IDisposable? disposer = null;
-    WorkerThread.Invoke(() => {
+    WorkerThread.EnqueueOrRun(() => {
       if (!_tableProviders.TryGetValue(key, out var tp)) {
         Action onDispose = () => _tableProviders.Remove(key);
         if (key.EndpointId == null) {
@@ -168,7 +168,7 @@ public class StateManager {
   }
   
   public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
-    if (WorkerThread.InvokeIfRequired(() => SetDefaultEndpointId(defaultEndpointId))) {
+    if (WorkerThread.EnqueueOrNop(() => SetDefaultEndpointId(defaultEndpointId))) {
       return;
     }
 

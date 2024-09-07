@@ -27,7 +27,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
 
   public IDisposable Subscribe(IExcelObserver observer) {
     var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(wrappedObserver, out var isFirst);
 
       if (isFirst) {
@@ -36,7 +36,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     });
 
     return ActionAsDisposable.Create(() => {
-      _workerThread.Invoke(() => {
+      _workerThread.EnqueueOrRun(() => {
         _observers.Remove(wrappedObserver, out var wasLast);
         if (!wasLast) {
           return;
@@ -48,7 +48,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
   }
 
   public void OnNext(StatusOr<TableHandle> soth) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(soth))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(soth))) {
       return;
     }
 

@@ -36,7 +36,7 @@ internal class TableProvider :
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_tableHandle);
     });
@@ -54,7 +54,7 @@ internal class TableProvider :
   }
 
   public void OnNext(StatusOr<Client> client) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(client))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(client))) {
       return;
     }
 
@@ -78,7 +78,7 @@ internal class TableProvider :
   }
 
   private void DisposeTableHandleState() {
-    if (_workerThread.InvokeIfRequired(DisposeTableHandleState)) {
+    if (_workerThread.EnqueueOrNop(DisposeTableHandleState)) {
       return;
     }
 

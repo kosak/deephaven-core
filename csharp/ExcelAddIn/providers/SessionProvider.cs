@@ -29,7 +29,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   /// Subscribe to session changes
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_session);
     });
@@ -47,7 +47,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   }
 
   public void OnNext(StatusOr<CredentialsBase> credentials) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(credentials))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(credentials))) {
       return;
     }
 
@@ -83,11 +83,11 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
     }
 
     // Our results are valid. Keep them and tell everyone about it (on the worker thread).
-    _workerThread.Invoke(() => _observers.SetAndSend(ref _session, result));
+    _workerThread.EnqueueOrRun(() => _observers.SetAndSend(ref _session, result));
   }
 
   private void DisposeSessionState() {
-    if (_workerThread.InvokeIfRequired(DisposeSessionState)) {
+    if (_workerThread.EnqueueOrNop(DisposeSessionState)) {
       return;
     }
 

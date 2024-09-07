@@ -39,7 +39,7 @@ internal class DefaultEndpointTableProvider :
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread.Invoke(() => {
+    _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_tableHandle);
     });

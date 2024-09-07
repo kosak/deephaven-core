@@ -42,7 +42,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   public void OnNext(AddOrRemove<EndpointId> aor) {
-    if (_workerThread.InvokeIfRequired(() => OnNext(aor))) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(aor))) {
       return;
     }
 
@@ -69,7 +69,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   public void Dispose() {
-    if (_workerThread.InvokeIfRequired(Dispose)) {
+    if (_workerThread.EnqueueOrNop(Dispose)) {
       return;
     }
 
@@ -138,7 +138,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
-    if (_workerThread.InvokeIfRequired(() => OnDeleteButtonClicked(rows))) {
+    if (_workerThread.EnqueueOrNop(() => OnDeleteButtonClicked(rows))) {
       return;
     }
 
@@ -152,7 +152,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
-    if (_workerThread.InvokeIfRequired(() => OnReconnectButtonClicked(rows))) {
+    if (_workerThread.EnqueueOrNop(() => OnReconnectButtonClicked(rows))) {
       return;
     }
 
@@ -165,7 +165,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnMakeDefaultButtonClicked(ConnectionManagerDialogRow[] rows) {
-    if (_workerThread.InvokeIfRequired(() => OnMakeDefaultButtonClicked(rows))) {
+    if (_workerThread.EnqueueOrNop(() => OnMakeDefaultButtonClicked(rows))) {
       return;
     }
 
@@ -183,7 +183,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
-    if (_workerThread.InvokeIfRequired(() => OnEditButtonClicked(rows))) {
+    if (_workerThread.EnqueueOrNop(() => OnEditButtonClicked(rows))) {
       return;
     }
 
