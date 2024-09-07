@@ -10,7 +10,7 @@ internal class DefaultEndpointTableProvider :
   IObserver<EndpointId?>,
   // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
   ITableProvider {
-  private const string UnsetTableHandleText = "[No Default Table]";
+  private const string UnsetTableHandleText = "[No Default Connection]";
 
   private readonly StateManager _stateManager;
   private readonly PersistentQueryId? _persistentQueryId;
@@ -66,7 +66,6 @@ internal class DefaultEndpointTableProvider :
     }
 
     var tq = new TableQuad(endpointId, _persistentQueryId, _tableName, _condition);
-    Debug.WriteLine($"DETH is subscribing to TH ({tq})");
     _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
