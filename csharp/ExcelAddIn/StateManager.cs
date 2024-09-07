@@ -12,8 +12,7 @@ public class StateManager {
   private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableTriple, TableProvider> _tableHandleProviders = new();
-  private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
+  private readonly Dictionary<TableTriple, SuperNubbin> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -144,41 +143,24 @@ public class StateManager {
       () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToTableHandle(
-    TableTriple descriptor, IObserver<StatusOr<TableHandle>> observer) {
-
+  public IDisposable SubscribeToTable(
+    TableTriple descriptor, string condition, IObserver<StatusOr<TableHandle>> observer) {
     IDisposable? disposer = null;
+    var key = new TableQuad(descriptor.EndpointId, descriptor.PersistentQueryId, descriptor.TableName, condition);
     WorkerThread.Invoke(() => {
-      if (!_tableHandleProviders.TryGetValue(descriptor, out var tp)) {
-        tp = new TableProvider(this, descriptor, () => _tableHandleProviders.Remove(descriptor));
-        _tableHandleProviders.Add(descriptor, tp);
+      if (!_tableProviders.TryGetValue(key, out var tp)) {
+        var remover = () => _tableProviders.Remove(key);
+        if (key.Endpoint == null) {
+          tp = new DefaultEndpointTableProvider();
+        } else if (key.Condition.Length != 0) {
+          tp = new FilteredTableProvider();
+        } else {
+          tp = new TableProvider();
+        }
+        _tableProviders.Add(descriptor, tp);
         tp.Init();
       }
       disposer = tp.Subscribe(observer);
-    });
-
-    return WorkerThread.InvokeWhenDisposed(
-      () => Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  public IDisposable SubscribeToFilteredTableHandle(
-    TableTriple descriptor, string condition, IObserver<StatusOr<TableHandle>> observer) {
-    if (condition.Length == 0) {
-      // No filter, so just delegate to LookupAndSubscribeToFilteredTableProvider
-      return SubscribeToTableHandle(descriptor, observer);
-    }
-
-    IDisposable? disposer = null;
-    WorkerThread.Invoke(() => {
-      var key = new FilteredTableProviderKey(descriptor.EndpointId, descriptor.PersistentQueryId,
-        descriptor.TableName, condition);
-      if (!_filteredTableProviders.TryGetValue(key, out var ftp)) {
-        ftp = new FilteredTableProvider(this, descriptor, condition,
-          () => _filteredTableProviders.Remove(key));
-        _filteredTableProviders.Add(key, ftp);
-        ftp.Init();
-      }
-      disposer = ftp.Subscribe(observer);
     });
 
     return WorkerThread.InvokeWhenDisposed(
