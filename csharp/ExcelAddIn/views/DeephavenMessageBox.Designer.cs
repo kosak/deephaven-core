@@ -27,6 +27,7 @@
       contentsBox = new TextBox();
       okButton = new Button();
       captionPanel = new Panel();
+      cancelButton = new Button();
       captionPanel.SuspendLayout();
       SuspendLayout();
       // 
@@ -71,11 +72,23 @@
       captionPanel.Size = new Size(751, 73);
       captionPanel.TabIndex = 3;
       // 
+      // cancelButton
+      // 
+      cancelButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+      cancelButton.Location = new Point(513, 343);
+      cancelButton.Name = "cancelButton";
+      cancelButton.Size = new Size(112, 34);
+      cancelButton.TabIndex = 4;
+      cancelButton.Text = "Cancel";
+      cancelButton.UseVisualStyleBackColor = true;
+      cancelButton.Click += cancelButton_Click;
+      // 
       // DeephavenMessageBox
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(800, 401);
+      Controls.Add(cancelButton);
       Controls.Add(captionPanel);
       Controls.Add(okButton);
       Controls.Add(contentsBox);
@@ -92,5 +105,6 @@
     private TextBox contentsBox;
     private Button okButton;
     private Panel captionPanel;
+    private Button cancelButton;
   }
 }

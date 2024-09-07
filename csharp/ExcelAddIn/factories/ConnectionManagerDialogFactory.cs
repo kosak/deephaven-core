@@ -10,7 +10,7 @@ internal static class ConnectionManagerDialogFactory {
       var cmDialog = new ConnectionManagerDialog();
       var dm = ConnectionManagerDialogManager.Create(stateManager, cmDialog);
       cmDialog.Closed += (_, _) => dm.Dispose();
-      // Blocks forever
+      // Blocks forever (in this private thread)
       cmDialog.ShowDialog(); 
     });
   }

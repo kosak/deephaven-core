@@ -131,7 +131,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
       const string caption = "Couldn't delete some selections";
       _cmDialog.Invoke(() => {
-        var mbox = new DeephavenMessageBox(caption, text);
+        var mbox = new DeephavenMessageBox(caption, text, false);
         mbox.ShowDialog(_cmDialog);
       });
     }

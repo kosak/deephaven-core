@@ -12,7 +12,7 @@ internal static class CredentialsDialogFactory {
       var state = new CredentialsDialogState(stateManager, cd, cvm);
       cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
       cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
-      // Blocks forever
+      // Blocks forever (in this private thread)
       cd.ShowDialog();
     });
   }
@@ -72,7 +72,7 @@ internal class CredentialsDialogState(
 
   private void ShowMessageBox(string error) {
     credentialsDialog.Invoke(() => {
-      var dhm = new DeephavenMessageBox("Please provide missing fields", error);
+      var dhm = new DeephavenMessageBox("Please provide missing fields", error, false);
       dhm.ShowDialog(credentialsDialog);
     });
   }

@@ -13,6 +13,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
   private EndpointId? _defaultEndpointId = null;
 
+  [DisplayName("Name")]
   public string Id { get; init; } = id;
 
   public string Status {
@@ -25,6 +26,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
   }
 
+  [DisplayName("Server Type")]
   public string ServerType {
     get {
       var creds = GetCredentialsSynced();
@@ -38,6 +40,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
   }
 
+  [DisplayName("Default")]
   public bool IsDefault {
     get {
       var id = Id;  // readonly so no synchronization needed.
