@@ -5,14 +5,11 @@ using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-public interface SuperNubbin : IDisposable, IObservable<StatusOr<TableHandle>> {
-  void Init();
-}
-
 internal class DefaultEndpointTableProvider :
   IObserver<StatusOr<TableHandle>>,
   IObserver<EndpointId?>,
-  IObservable<StatusOr<TableHandle>> {
+  // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
+  ITableProvider {
   private const string UnsetTableHandleText = "[No Default Table]";
 
   private readonly StateManager _stateManager;

@@ -12,7 +12,7 @@ public class StateManager {
   private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableQuad, SuperNubbin> _tableProviders = new();
+  private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -147,16 +147,15 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_tableProviders.TryGetValue(key, out var tp)) {
-        var onDispose = () => {
-          _tableProviders.Remove(key);
-        };
+        Action onDispose = () => _tableProviders.Remove(key);
         if (key.EndpointId == null) {
           tp = new DefaultEndpointTableProvider(this, key.PersistentQueryId, key.TableName, key.Condition,
             onDispose);
         } else if (key.Condition.Length != 0) {
-          tp = new FilteredTableProvider();
+          tp = new FilteredTableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName,
+            key.Condition, onDispose);
         } else {
-          tp = new TableProvider();
+          tp = new TableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName, onDispose);
         }
         _tableProviders.Add(key, tp);
         tp.Init();
