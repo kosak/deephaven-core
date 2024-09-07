@@ -99,7 +99,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     private readonly ConnectionManagerDialog _cmDialog;
     private readonly object _sync = new();
     private int _rowsLeft = 0;
-    private List<EndpointId> _failures = new();
+    private readonly List<string> _failures = new();
 
     public FailureCollector(ConnectionManagerDialog cmDialog, int rowsLeft) {
       _cmDialog = cmDialog;
@@ -108,7 +108,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
     public void OnFailure(EndpointId id, string reason) {
       lock (_sync) {
-        _failures.Add(id);
+        _failures.Add(reason);
       }
 
       FinalSteps();
@@ -126,7 +126,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
           return;
         }
 
-        text = $"Ids still in use: {string.Join(", ", _failures.Select(f => f.ToString()))}";
+        text = string.Join(Environment.NewLine, _failures);
       }
 
       const string caption = "Couldn't delete some selections";

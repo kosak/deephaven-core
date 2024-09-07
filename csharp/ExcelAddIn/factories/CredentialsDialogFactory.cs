@@ -71,7 +71,9 @@ internal class CredentialsDialogState(
   }
 
   private void ShowMessageBox(string error) {
-    var dhm = new DeephavenMessageBox("Please provide missing fields", error);
-    dhm.ShowDialog(credentialsDialog);
+    credentialsDialog.Invoke(() => {
+      var dhm = new DeephavenMessageBox("Please provide missing fields", error);
+      dhm.ShowDialog(credentialsDialog);
+    });
   }
 }
