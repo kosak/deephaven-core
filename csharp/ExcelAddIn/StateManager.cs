@@ -12,7 +12,7 @@ public class StateManager {
   private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableTriple, TableHandleProvider> _tableHandleProviders = new();
+  private readonly Dictionary<TableTriple, TableProvider> _tableHandleProviders = new();
   private readonly Dictionary<FilteredTableProviderKey, FilteredTableProvider> _filteredTableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
@@ -150,7 +150,7 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_tableHandleProviders.TryGetValue(descriptor, out var tp)) {
-        tp = new TableHandleProvider(this, descriptor, () => _tableHandleProviders.Remove(descriptor));
+        tp = new TableProvider(this, descriptor, () => _tableHandleProviders.Remove(descriptor));
         _tableHandleProviders.Add(descriptor, tp);
         tp.Init();
       }

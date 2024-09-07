@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class TableHandleProvider :
+internal class TableProvider :
   IObserver<StatusOr<Client>>,
   IObserver<EndpointId?>,
   IObservable<StatusOr<TableHandle>> {
@@ -20,7 +20,7 @@ internal class TableHandleProvider :
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
 
-  public TableHandleProvider(StateManager stateManager, TableTriple descriptor,
+  public TableProvider(StateManager stateManager, TableTriple descriptor,
     Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
