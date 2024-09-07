@@ -29,7 +29,7 @@ public class StateManager {
       }
     });
 
-    return WorkerThread.InvokeWhenDisposed(
+    return WorkerThread.EnqueueOrRunWhenDisposed(
       () => _credentialsPopulationObservers.Remove(observer, out _));
   }
 
@@ -39,7 +39,7 @@ public class StateManager {
       observer.OnNext(_defaultEndpointId);
     });
 
-    return WorkerThread.InvokeWhenDisposed(
+    return WorkerThread.EnqueueOrRunWhenDisposed(
       () => _defaultEndpointSelectionObservers.Remove(observer, out _));
   }
 
@@ -55,7 +55,7 @@ public class StateManager {
     LookupOrCreateCredentialsProvider(endpointId,
       cp => disposer = cp.Subscribe(observer));
 
-    return WorkerThread.InvokeWhenDisposed(() =>
+    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
@@ -120,7 +120,7 @@ public class StateManager {
       disposer = sp.Subscribe(observer);
     });
 
-    return WorkerThread.InvokeWhenDisposed(() =>
+    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
@@ -139,7 +139,7 @@ public class StateManager {
       disposer = pqp.Subscribe(observer);
     });
 
-    return WorkerThread.InvokeWhenDisposed(
+    return WorkerThread.EnqueueOrRunWhenDisposed(
       () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
@@ -163,7 +163,7 @@ public class StateManager {
       disposer = tp.Subscribe(observer);
     });
 
-    return WorkerThread.InvokeWhenDisposed(
+    return WorkerThread.EnqueueOrRunWhenDisposed(
       () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
   

@@ -33,7 +33,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       }
     });
 
-    return _workerThread.InvokeWhenDisposed(() => {
+    return _workerThread.EnqueueOrRunWhenDisposed(() => {
       _observers.Remove(wrappedObserver, out var wasLast);
       if (!wasLast) {
         return;

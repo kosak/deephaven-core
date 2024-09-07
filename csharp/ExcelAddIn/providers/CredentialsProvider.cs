@@ -22,7 +22,7 @@ internal class CredentialsProvider : IObservable<StatusOr<CredentialsBase>> {
       observer.OnNext(_credentials);
     });
 
-    return _workerThread.InvokeWhenDisposed(() => _observers.Remove(observer, out _));
+    return _workerThread.EnqueueOrRunWhenDisposed(() => _observers.Remove(observer, out _));
   }
 
   public void SetCredentials(CredentialsBase newCredentials) {

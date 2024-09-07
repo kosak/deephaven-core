@@ -46,7 +46,7 @@ public class WorkerThread {
     return true;
   }
 
-  public IDisposable InvokeWhenDisposed(Action action) {
+  public IDisposable EnqueueOrRunWhenDisposed(Action action) {
     return ActionAsDisposable.Create(() => EnqueueOrRun(action));
   }
 

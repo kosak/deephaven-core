@@ -41,7 +41,7 @@ internal class TableProvider :
       observer.OnNext(_tableHandle);
     });
 
-    return _workerThread.InvokeWhenDisposed(() => {
+    return _workerThread.EnqueueOrRunWhenDisposed(() => {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;

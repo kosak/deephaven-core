@@ -36,7 +36,7 @@ internal class PersistentQueryProvider :
       observer.OnNext(_client);
     });
 
-    return _workerThread.InvokeWhenDisposed(() => {
+    return _workerThread.EnqueueOrRunWhenDisposed(() => {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
