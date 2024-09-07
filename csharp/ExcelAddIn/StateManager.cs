@@ -147,9 +147,12 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.Invoke(() => {
       if (!_tableProviders.TryGetValue(key, out var tp)) {
-        var remover = () => _tableProviders.Remove(key);
+        var onDispose = () => {
+          _tableProviders.Remove(key);
+        };
         if (key.EndpointId == null) {
-          tp = new DefaultEndpointTableProvider();
+          tp = new DefaultEndpointTableProvider(this, key.PersistentQueryId, key.TableName, key.Condition,
+            onDispose);
         } else if (key.Condition.Length != 0) {
           tp = new FilteredTableProvider();
         } else {
