@@ -12,7 +12,7 @@ public class StateManager {
   private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
   private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableTriple, SuperNubbin> _tableProviders = new();
+  private readonly Dictionary<TableQuad, SuperNubbin> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -148,14 +148,14 @@ public class StateManager {
     WorkerThread.Invoke(() => {
       if (!_tableProviders.TryGetValue(key, out var tp)) {
         var remover = () => _tableProviders.Remove(key);
-        if (key.Endpoint == null) {
+        if (key.EndpointId == null) {
           tp = new DefaultEndpointTableProvider();
         } else if (key.Condition.Length != 0) {
           tp = new FilteredTableProvider();
         } else {
           tp = new TableProvider();
         }
-        _tableProviders.Add(descriptor, tp);
+        _tableProviders.Add(key, tp);
         tp.Init();
       }
       disposer = tp.Subscribe(observer);
