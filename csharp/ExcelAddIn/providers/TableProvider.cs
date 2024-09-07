@@ -1,13 +1,13 @@
 ﻿using Deephaven.DeephavenClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
-  IObservable<StatusOr<TableHandle>> {
+  // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
+  ITableProvider {
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;

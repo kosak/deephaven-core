@@ -7,7 +7,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>,
-  IObservable<StatusOr<TableHandle>> {
+  // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
+  ITableProvider {
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
