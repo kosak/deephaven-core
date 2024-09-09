@@ -1,17 +1,20 @@
-﻿using Deephaven.ExcelAddIn.Factories;
+﻿using Deephaven.DheClient.Session;
+using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class CorePlusSessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
+internal class CorePlusSessionProvider :
+  IObserver<StatusOr<CredentialsBase>>,
+  IObservable<StatusOr<SessionManager>> {
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
-  private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
+  private StatusOr<SessionManager> _session = StatusOr<SessionManager>.OfStatus("[Not connected]");
+  private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
 
   public CorePlusSessionProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
@@ -28,7 +31,7 @@ internal class CorePlusSessionProvider : IObserver<StatusOr<CredentialsBase>>, I
   /// <summary>
   /// Subscribe to session changes
   /// </summary>
-  public IDisposable Subscribe(IObserver<StatusOr<SessionBase>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<SessionManager>> observer) {
     _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_session);
@@ -58,27 +61,37 @@ internal class CorePlusSessionProvider : IObserver<StatusOr<CredentialsBase>>, I
       return;
     }
 
-    _observers.SetAndSendStatus(ref _session, "Trying to connect");
+    _ = cbase.AcceptVisitor(
+      _ => {
+        // We are a CorePlus entity but we are getting credentials for core.
+        _observers.SetAndSendStatus(ref _session, "Persistent Queries are not supported in Community Core");
+        return Unit.Instance;
+      },
+      corePlus => {
+        _observers.SetAndSendStatus(ref _session, "Trying to connect");
 
-    var cookie = _versionTracker.SetNewVersion();
-    Utility.RunInBackground(() => CreateSessionBaseInSeparateThread(cbase, cookie));
+        var cookie = _versionTracker.SetNewVersion();
+        Utility.RunInBackground(() => CreateSessionManagerInSeparateThread(corePlus, cookie));
+        return Unit.Instance;
+      });
   }
 
-  private void CreateSessionBaseInSeparateThread(CredentialsBase credentials, VersionTrackerCookie versionCookie) {
-    SessionBase? sb = null;
-    StatusOr<SessionBase> result;
+  private void CreateSessionManagerInSeparateThread(CorePlusCredentials credentials,
+    VersionTrackerCookie versionCookie) {
+    SessionManager? sm = null;
+    StatusOr<SessionManager> result;
     try {
       // This operation might take some time.
-      sb = SessionBaseFactory.Create(credentials, _workerThread);
-      result = StatusOr<SessionBase>.OfValue(sb);
+      sm = ConnectionFactory.ConnectToCorePlus(credentials, _workerThread);
+      result = StatusOr<SessionManager>.OfValue(sm);
     } catch (Exception ex) {
-      result = StatusOr<SessionBase>.OfStatus(ex.Message);
+      result = StatusOr<SessionManager>.OfStatus(ex.Message);
     }
 
     // Some time has passed. It's possible that the VersionTracker has been reset
     // with a newer version. If so, we should throw away our work and leave.
     if (!versionCookie.IsCurrent) {
-      sb?.Dispose();
+      sm?.Dispose();
       return;
     }
 

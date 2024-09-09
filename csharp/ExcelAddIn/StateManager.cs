@@ -10,7 +10,7 @@ namespace Deephaven.ExcelAddIn;
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
-  private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
+  private readonly Dictionary<EndpointId, CorePlusSessionProvider> _sessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
@@ -113,7 +113,7 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.EnqueueOrRun(() => {
       if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = new SessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
+        sp = new CorePlusSessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
         _sessionProviders.Add(endpointId, sp);
         sp.Init();
       }
