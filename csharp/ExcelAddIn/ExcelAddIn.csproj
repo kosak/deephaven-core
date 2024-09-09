@@ -5,7 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<AllowUnsafeBlocks>False</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -19,12 +19,21 @@
 		<PackageReference Include="ExcelDna.Addin" Version="*-*" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\client\DeephavenClient\DeephavenClient.csproj" />
+	  <ProjectReference Include="..\client\ManagedClient\ManagedClient.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup>
 		<ExcelDnaCreate32BitAddIn>false</ExcelDnaCreate32BitAddIn>
 		<ExcelDnaPack64BitXllName>DeephavenExcelAddIn64</ExcelDnaPack64BitXllName>
+		<!-- There are certain function signatures we use, like 
+		 public static bool TryParse(string text, out TableTriple result, out string errorText) 
+		 that for some reason (some combination of the existence of an out parameter and
+		 returning the very type being referenced) causes the ExcelAddIn to produce
+		 a warning at startup:
+		 ExcelDna.Integration Warning: 1 : Type Deephaven.ExcelAddIn.Models.TableTriple could not be processed. Error: System.NotSupportedException: A non-collectible assembly may not reference a collectible assembly.
+		 Not sure what's going on here but setting this flag fixes that warning.
+		 -->
+		<ExcelAddInDisableAssemblyContextUnload>true</ExcelAddInDisableAssemblyContextUnload>
 	</PropertyGroup>
 
 </Project>

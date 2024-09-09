@@ -1,27 +1,27 @@
 ﻿namespace Deephaven.ExcelAddIn.Util;
 
-internal class VersionTracker {
+public class VersionTracker {
   private readonly object _sync = new();
-  private VersionTrackerCookie _cookie;
+  private Cookie _cookie;
 
   public VersionTracker() {
-    _cookie = new VersionTrackerCookie(this);
+    _cookie = new Cookie(this);
   }
 
-  public VersionTrackerCookie SetNewVersion() {
+  public Cookie New() {
     lock (_sync) {
-      _cookie = new VersionTrackerCookie(this);
+      _cookie = new Cookie(this);
       return _cookie;
     }
   }
 
-  public bool HasCookie(VersionTrackerCookie cookie) {
-    lock (_sync) {
-      return ReferenceEquals(_cookie, cookie);
+  public class Cookie(VersionTracker owner) {
+    public bool IsCurrent {
+      get {
+        lock (owner._sync) {
+          return ReferenceEquals(owner._cookie, this);
+        }
+      }
     }
   }
-}
-
-internal class VersionTrackerCookie(VersionTracker owner) {
-  public bool IsCurrent => owner.HasCookie(this);
 }

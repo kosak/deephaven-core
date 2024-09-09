@@ -1,92 +1,126 @@
-﻿using Deephaven.DeephavenClient;
+﻿using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * This class has two functions, depending on whether the persistentQueryId is set.
+ * If it is set, the class assumes that this is an Enterprise Core Plus table, and
+ * follows that workflow.
+ *
+ * Otherwise, if it is not set, the class assumes that this is a Community Core table,
+ * and follows that workflow.
+ *
+ * The job of this class is to subscribe to a PersistentQueryMapper with the key
+ * (endpoint, pqName). Then, as that PQ mapper provider provides me with PqIds
+ * with TableHandles (or status messages), process them.
+ *
+ * If the message received was a status message, then forward it to my observers.
+ * If it was a PqId, then 
+ *
+ * If it was a TableHandle, then filter it by "condition" in the background, and provide
+ * the resulting filtered TableHandle (or error) to my observers.
+ */
+
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
-  // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
-  ITableProvider {
+  IObserver<StatusOr<DndClient>>,
+  IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
-  private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly PersistentQueryName? _pqName;
   private readonly string _tableName;
-  private Action? _onDispose;
-  private IDisposable? _pqSubscriptionDisposer = null;
+  private readonly object _sync = new();
+  private bool _isDisposed = false;
+  private IDisposable? _upstreamDisposer = null;
+  private readonly VersionTracker _versionTracker = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
+  private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
-    PersistentQueryId? persistentQueryId, string tableName, Action onDispose) {
+    PersistentQueryName? pqName, string tableName) {
     _stateManager = stateManager;
-    _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
-    _persistentQueryId = persistentQueryId;
+    _pqName = pqName;
     _tableName = tableName;
-    _onDispose = onDispose;
-  }
-
-  public void Init() {
-    _pqSubscriptionDisposer = _stateManager.SubscribeToPersistentQuery(
-      _endpointId, _persistentQueryId, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(observer, out _);
-      observer.OnNext(_tableHandle);
-    });
+    lock (_sync) {
+      _observers.AddAndNotify(observer, _tableHandle, out var isFirst);
+      if (isFirst) {
+        // Subscribe to parents at the time of the first subscription.
+        _upstreamDisposer = _pqName != null
+          ? _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, this)
+          : _stateManager.SubscribeToCoreClient(_endpointId, this);
+      }
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
+    lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
-
-      Utility.Exchange(ref _pqSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Invoke();
-      DisposeTableHandleState();
-    });
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
+    }
   }
 
   public void OnNext(StatusOr<Client> client) {
-    if (_workerThread.EnqueueOrNop(() => OnNext(client))) {
-      return;
-    }
+    OnNextHelper(client);
+  }
 
-    DisposeTableHandleState();
+  public void OnNext(StatusOr<DndClient> client) {
+    OnNextHelper(client);
+  }
 
-    // If the new state is just a status message, make that our state and transmit to our observers
-    if (!client.GetValueOrStatus(out var cli, out var status)) {
-      _observers.SetAndSendStatus(ref _tableHandle, status);
-      return;
-    }
+  private void OnNextHelper<T>(StatusOr<T> client) where T : Client {
+    lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
+      // Suppress responses from stale background workers.
+      var cookie = _versionTracker.New();
+      if (!client.GetValueOrStatus(out _, out var status)) {
+        ProviderUtil.SetStateAndNotify(ref _tableHandle, status, _observers);
+        return;
+      }
 
-    // It's a real client so start fetching the table. First notify our observers.
-    _observers.SetAndSendStatus(ref _tableHandle, $"Fetching \"{_tableName}\"");
-
-    try {
-      var th = cli.Manager.FetchTable(_tableName);
-      _observers.SetAndSendValue(ref _tableHandle, th);
-    } catch (Exception ex) {
-      _observers.SetAndSendStatus(ref _tableHandle, ex.Message);
+      ProviderUtil.SetStateAndNotify(ref _tableHandle, "Fetching Table", _observers);
+      var clientCopy = client.Share();
+      Background666.Run(() => OnNextBackground(clientCopy, cookie));
     }
   }
 
-  private void DisposeTableHandleState() {
-    if (_workerThread.EnqueueOrNop(DisposeTableHandleState)) {
-      return;
+  private void OnNextBackground<T>(StatusOr<T> clientCopy, VersionTracker.Cookie cookie)
+    where T : Client {
+    using var cleanup1 = clientCopy;
+
+    StatusOr<TableHandle> newState;
+    try {
+      var (cli, _) = clientCopy;
+      var th = cli.Manager.FetchTable(_tableName);
+      // Keep a dependency on client
+      newState = StatusOr<TableHandle>.OfValue(th, clientCopy);
+    } catch (Exception ex) {
+      newState = ex.Message;
     }
+    using var cleanup2 = newState;
 
-    _ = _tableHandle.GetValueOrStatus(out var oldTh, out _);
-    _observers.SetAndSendStatus(ref _tableHandle, UnsetTableHandleText);
-
-    if (oldTh != null) {
-      Utility.RunInBackground(oldTh.Dispose);
+    lock (_sync) {
+      if (cookie.IsCurrent) {
+        ProviderUtil.SetStateAndNotify(ref _tableHandle, newState, _observers);
+      }
     }
   }
 

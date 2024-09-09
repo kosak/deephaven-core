@@ -1,13 +1,15 @@
-﻿namespace Deephaven.ExcelAddIn.Models;
+﻿using System.Xml.Linq;
+
+namespace Deephaven.ExcelAddIn.Models;
 
 public record PersistentQueryKey(
-  EndpointId EndpointId,
-  PersistentQueryId? PersistentQueryId) {
+EndpointId EndpointId,
+PersistentQueryName? PqName) {
 }
 
 public record TableTriple(
   EndpointId? EndpointId,
-  PersistentQueryId? PersistentQueryId,
+  PersistentQueryName? PqName,
   string TableName) {
 
   public static bool TryParse(string text, out TableTriple result, out string errorText) {
@@ -17,7 +19,7 @@ public record TableTriple(
     // 3. "pq/table" (becomes null, pq, table)
     // 4. "endpoint:pq/table" (becomes endpoint, pq, table)
     EndpointId? epId = null;
-    PersistentQueryId? pqid = null;
+    PersistentQueryName? pqid = null;
     var tableName = "";
     var colonIndex = text.IndexOf(':');
     if (colonIndex > 0) {
@@ -29,7 +31,7 @@ public record TableTriple(
     var slashIndex = text.IndexOf('/');
     if (slashIndex > 0) {
       // case 3: pull out the slash, and reduce to case 1
-      pqid = new PersistentQueryId(text[..slashIndex]);
+      pqid = new PersistentQueryName(text[..slashIndex]);
       text = text[(slashIndex + 1)..];
     }
 
@@ -43,7 +45,7 @@ public record TableTriple(
 
 public record TableQuad(
   EndpointId? EndpointId,
-  PersistentQueryId? PersistentQueryId,
+  PersistentQueryName? PqName,
   string TableName,
   string Condition) {
 }

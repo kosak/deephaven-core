@@ -1,76 +1,105 @@
-﻿using Deephaven.DeephavenClient;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
-using System.Diagnostics;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * The job of this class is to observe notifications for the currently specified default EndpointId,
+ * if any, and then upon receiving such a notification, subscribe to the table provider for the key
+ * (endpoint, pqName, tableName, condition). Then, as that table provider provides me with
+ * TableHandles or status messages, forward those to my observers.
+ */
 internal class DefaultEndpointTableProvider :
-  IObserver<StatusOr<TableHandle>>,
   IObserver<EndpointId?>,
-  // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
-  ITableProvider {
+  IObserverWithCookie<StatusOr<TableHandle>>,
+  IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Default Connection]";
 
   private readonly StateManager _stateManager;
-  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly PersistentQueryName? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
-  private readonly WorkerThread _workerThread;
-  private Action? _onDispose;
+  private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
+  private readonly VersionTracker _versionTracker = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
+  private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
-    PersistentQueryId? persistentQueryId, string tableName, string condition,
-    Action onDispose) {
+    PersistentQueryName? pqName, string tableName, string condition) {
     _stateManager = stateManager;
-    _workerThread = stateManager.WorkerThread;
-    _persistentQueryId = persistentQueryId;
+    _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
-    _onDispose = onDispose;
-  }
-
-  public void Init() {
-    _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(observer, out _);
-      observer.OnNext(_tableHandle);
-    });
+    lock (_sync) {
+      _observers.AddAndNotify(observer, _tableHandle, out var isFirst);
+      if (isFirst) {
+        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
+      }
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
+    lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
 
-      Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Invoke();
-    });
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
+      Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
+      ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
+    }
   }
 
   public void OnNext(EndpointId? endpointId) {
-    // Unsubscribe from old upstream
-    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+    lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
+      // Unsubscribe from old upstream
+      Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
+      // Suppress any notifications from the old subscription, which will now be stale
+      var cookie = _versionTracker.New();
 
-    // If endpoint is null, then don't subscribe to anything.
-    if (endpointId == null) {
-      _observers.SetAndSendStatus(ref _tableHandle, UnsetTableHandleText);
-      return;
+      // If endpoint is null, then don't resubscribe to anything.
+      if (endpointId == null) {
+        ProviderUtil.SetStateAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
+        return;
+      }
+
+      // Subscribe to a new upstream
+      var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
+      var observer = new ObserverWithCookie<StatusOr<TableHandle>>(this, cookie);
+      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, observer);
     }
-
-    var tq = new TableQuad(endpointId, _persistentQueryId, _tableName, _condition);
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public void OnNext(StatusOr<TableHandle> value) {
-    _observers.SetAndSend(ref _tableHandle, value);
+  public void OnNextWithCookie(StatusOr<TableHandle> value, VersionTracker.Cookie cookie) {
+    lock (_sync) {
+      if (_isDisposed || !cookie.IsCurrent) {
+        return;
+      }
+      ProviderUtil.SetStateAndNotify(ref _tableHandle, value, _observers);
+    }
+  }
+
+  public void OnCompletedWithCookie(VersionTracker.Cookie cookie) {
+    throw new NotImplementedException();
+  }
+
+  public void OnErrorWithCookie(Exception ex, VersionTracker.Cookie cookie) {
+    throw new NotImplementedException();
   }
 
   public void OnCompleted() {
