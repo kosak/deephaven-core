@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using Deephaven.DeephavenClient;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
@@ -9,28 +10,30 @@ namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
-  private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
-  private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
+  private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
+  private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
+  private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
+  private readonly Dictionary<EndpointId, CorePlusSessionProvider> _corePlusSessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
-  private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
+  private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
   private EndpointId? _defaultEndpointId = null;
 
-  public IDisposable SubscribeToCredentialsPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
+  public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
-      _credentialsPopulationObservers.Add(observer, out _);
+      _endpointConfigPopulationObservers.Add(observer, out _);
 
       // Give this observer the current set of endpoint ids.
-      var keys = _credentialsProviders.Keys.ToArray();
+      var keys = _endpointConfigProviders.Keys.ToArray();
       foreach (var endpointId in keys) {
         observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
       }
     });
 
     return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => _credentialsPopulationObservers.Remove(observer, out _));
+      () => _endpointConfigPopulationObservers.Remove(observer, out _));
   }
 
   public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
@@ -43,78 +46,112 @@ public class StateManager {
       () => _defaultEndpointSelectionObservers.Remove(observer, out _));
   }
 
-  /// <summary>
-  /// The major difference between the credentials providers and the other providers
-  /// is that the credential providers don't remove themselves from the map
-  /// upon the last dispose of the subscriber. That is, they hang around until we
-  /// manually remove them.
-  /// </summary>
-  public IDisposable SubscribeToCredentials(EndpointId endpointId,
-    IObserver<StatusOr<CredentialsBase>> observer) {
+  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
+    IObserver<StatusOr<EndpointHealth>> observer) {
     IDisposable? disposer = null;
-    LookupOrCreateCredentialsProvider(endpointId,
+    WorkerThread.EnqueueOrRun(() => {
+      if (!_endpointHealthProviders.TryGetValue(endpointId, out var ehp)) {
+        ehp = new EndpointHealthProvider(this, endpointId, () => _endpointHealthProviders.Remove(endpointId));
+        _endpointHealthProviders.Add(endpointId, ehp);
+        ehp.Init();
+      }
+      disposer = ehp.Subscribe(observer);
+    });
+
+    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
+      Utility.Exchange(ref disposer, null)?.Dispose());
+  }
+
+  /// <summary>
+  /// Note that, unlike the other providers, the connection configs don't remove themselves
+  /// from the map upon the last unsubscribe. Rather, they hang around until manually
+  /// removed with a TryDeleteCredentials call.
+  /// </summary>
+  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
+    IObserver<StatusOr<EndpointConfigBase>> observer) {
+    IDisposable? disposer = null;
+    LookupOrCreateEndpointConfigProvider(endpointId,
       cp => disposer = cp.Subscribe(observer));
 
     return WorkerThread.EnqueueOrRunWhenDisposed(() =>
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public void SetCredentials(CredentialsBase credentials) {
-    LookupOrCreateCredentialsProvider(credentials.Id,
-      cp => cp.SetCredentials(credentials));
+  public void SetCredentials(EndpointConfigBase config) {
+    LookupOrCreateEndpointConfigProvider(config.Id,
+      cp => cp.SetCredentials(config));
   }
 
   public void Reconnect(EndpointId id) {
     // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
-    LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
+    LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
   }
 
-  public void TryDeleteCredentials(EndpointId id, Action onSuccess, Action<string> onFailure) {
-    if (WorkerThread.EnqueueOrNop(() => TryDeleteCredentials(id, onSuccess, onFailure))) {
+  public void TryDeleteEndpointConfig(EndpointId id, Action<bool> successOrFailure) {
+    if (WorkerThread.EnqueueOrNop(() => TryDeleteEndpointConfig(id, successOrFailure))) {
       return;
     }
 
-    if (!_credentialsProviders.TryGetValue(id, out var cp)) {
-      onFailure($"{id} unknown");
+    if (!_endpointConfigProviders.TryGetValue(id, out var cp)) {
+      successOrFailure(false);
       return;
     }
 
     if (cp.ObserverCountUnsafe != 0) {
-      onFailure($"{id} is still active");
+      successOrFailure(false);
       return;
     }
 
+    // success!
+    successOrFailure(true);
+
+    // If we are about to delete the config for the default endpoint
     if (id.Equals(_defaultEndpointId)) {
       SetDefaultEndpointId(null);
     }
 
-    _credentialsProviders.Remove(id);
-    _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
-    onSuccess();
+    _endpointConfigProviders.Remove(id);
+    _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
   }
 
-  private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
-    Action<CredentialsProvider> action) {
-    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
+  private void LookupOrCreateEndpointConfigProvider(EndpointId endpointId,
+    Action<EndpointConfigProvider> action) {
+    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateEndpointConfigProvider(endpointId, action))) {
       return;
     }
-    if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
-      cp = new CredentialsProvider(this);
-      _credentialsProviders.Add(endpointId, cp);
+    if (!_endpointConfigProviders.TryGetValue(endpointId, out var cp)) {
+      cp = new EndpointConfigProvider(this);
+      _endpointConfigProviders.Add(endpointId, cp);
       cp.Init();
-      _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
+      _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
     }
 
     action(cp);
   }
 
-  public IDisposable SubscribeToSession(EndpointId endpointId,
-    IObserver<StatusOr<SessionBase>> observer) {
+  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
+    IObserver<StatusOr<Client>> observer) {
     IDisposable? disposer = null;
     WorkerThread.EnqueueOrRun(() => {
-      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = new SessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
-        _sessionProviders.Add(endpointId, sp);
+      if (!_coreClientProviders.TryGetValue(endpointId, out var ccp)) {
+        ccp = new CoreClientProvider(this, endpointId, () => _coreClientProviders.Remove(endpointId));
+        _coreClientProviders.Add(endpointId, ccp);
+        ccp.Init();
+      }
+      disposer = ccp.Subscribe(observer);
+    });
+
+    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
+      Utility.Exchange(ref disposer, null)?.Dispose());
+  }
+
+  public IDisposable SubscribeToCorePlusSession(EndpointId endpointId,
+    IObserver<StatusOr<SessionManager>> observer) {
+    IDisposable? disposer = null;
+    WorkerThread.EnqueueOrRun(() => {
+      if (!_corePlusSessionProviders.TryGetValue(endpointId, out var sp)) {
+        sp = new CorePlusSessionProvider(this, endpointId, () => _corePlusSessionProviders.Remove(endpointId));
+        _corePlusSessionProviders.Add(endpointId, sp);
         sp.Init();
       }
       disposer = sp.Subscribe(observer);
@@ -124,7 +161,7 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryId? pqId,
+  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryId pqId,
     IObserver<StatusOr<Client>> observer) {
 
     IDisposable? disposer = null;

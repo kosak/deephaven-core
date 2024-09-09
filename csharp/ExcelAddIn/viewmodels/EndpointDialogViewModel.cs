@@ -6,20 +6,20 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
-public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
-  public static CredentialsDialogViewModel OfEmpty() {
-    return new CredentialsDialogViewModel();
+public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
+  public static EndpointDialogViewModel OfEmpty() {
+    return new EndpointDialogViewModel();
   }
 
-  public static CredentialsDialogViewModel OfIdButOtherwiseEmpty(string id) {
-    return new CredentialsDialogViewModel { Id = id };
+  public static EndpointDialogViewModel OfIdButOtherwiseEmpty(string id) {
+    return new EndpointDialogViewModel { Id = id };
   }
 
-  public static CredentialsDialogViewModel OfIdAndCredentials(string id, CredentialsBase credentials) {
-    var result = new CredentialsDialogViewModel {
-      Id = credentials.Id.Id
+  public static EndpointDialogViewModel OfIdAndCredentials(string id, EndpointConfigBase config) {
+    var result = new EndpointDialogViewModel {
+      Id = config.Id.Id
     };
-    _ = credentials.AcceptVisitor(
+    _ = config.AcceptVisitor(
       core => {
         result._isCorePlus = false;
         result.ConnectionString = core.ConnectionString;
@@ -56,7 +56,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  public bool TryMakeCredentials([NotNullWhen(true)] out CredentialsBase? result,
+  public bool TryMakeCredentials([NotNullWhen(true)] out EndpointConfigBase? result,
     [NotNullWhen(false)] out string? errorText) {
     result = null;
     errorText = null;
@@ -85,8 +85,8 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
     var epId = new EndpointId(_id);
     result = _isCorePlus
-      ? CredentialsBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
-      : CredentialsBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
+      ? EndpointConfigBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
+      : EndpointConfigBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
     return true;
   }
 

@@ -1,5 +1,5 @@
 ﻿namespace Deephaven.ExcelAddIn.Views {
-  partial class ConnectionManagerDialog {
+  partial class EndpointManagerDialog {
     /// <summary>
     /// Required designer variable.
     /// </summary>
@@ -126,7 +126,7 @@
       Controls.Add(connectionsLabel);
       Controls.Add(newButton);
       Controls.Add(dataGridView1);
-      Name = "ConnectionManagerDialog";
+      Name = "EndpointManagerDialog";
       Text = "Connection Manager";
       ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
       ResumeLayout(false);

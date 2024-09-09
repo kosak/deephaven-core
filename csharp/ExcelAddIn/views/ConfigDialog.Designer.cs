@@ -1,5 +1,5 @@
 ﻿namespace ExcelAddIn.views {
-  partial class CredentialsDialog {
+  partial class ConfigDialog {
     /// <summary>
     /// Required designer variable.
     /// </summary>
@@ -350,7 +350,7 @@
       Controls.Add(corePanel);
       Controls.Add(corePlusPanel);
       Controls.Add(connectionIdPanel);
-      Name = "CredentialsDialog";
+      Name = "ConfigDialog";
       Text = "Credentials Editor";
       corePlusPanel.ResumeLayout(false);
       corePlusPanel.PerformLayout();

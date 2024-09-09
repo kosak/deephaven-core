@@ -1,41 +1,41 @@
-﻿using System.Collections.Concurrent;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
-internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+internal class EndpointManagerDialogManager : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   //
   // ConnectionManagerDialog cmDialog,
   // ConcurrentDictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> rowToManager,
   // StateManager stateManager) 
-  public static ConnectionManagerDialogManager Create(StateManager stateManager,
-    ConnectionManagerDialog cmDialog) {
-    var result = new ConnectionManagerDialogManager(stateManager, cmDialog);
+  public static EndpointManagerDialogManager Create(StateManager stateManager,
+    EndpointManagerDialog cmDialog) {
+    var result = new EndpointManagerDialogManager(stateManager, cmDialog);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
     cmDialog.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
     cmDialog.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
     cmDialog.OnMakeDefaultButtonClicked += result.OnMakeDefaultButtonClicked;
     cmDialog.OnEditButtonClicked += result.OnEditButtonClicked;
 
-    var disp = stateManager.SubscribeToCredentialsPopulation(result);
+    var disp = stateManager.SubscribeToEndpointConfigPopulation(result);
     result._disposables.Add(disp);
     return result;
   }
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
-  private readonly ConnectionManagerDialog _cmDialog;
-  private readonly Dictionary<EndpointId, ConnectionManagerDialogRow> _idToRow = new();
-  private readonly Dictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> _rowToManager = new();
+  private readonly EndpointManagerDialog _cmDialog;
+  private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
+  private readonly Dictionary<EndpointManagerDialogRow, EndpointManagerDialogRowManager> _rowToManager = new();
   private readonly List<IDisposable> _disposables = new();
 
-  public ConnectionManagerDialogManager(StateManager stateManager, ConnectionManagerDialog cmDialog) {
+  public EndpointManagerDialogManager(StateManager stateManager, EndpointManagerDialog cmDialog) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _cmDialog = cmDialog;
@@ -48,8 +48,8 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
     if (aor.IsAdd) {
       var endpointId = aor.Value;
-      var row = new ConnectionManagerDialogRow(endpointId.Id);
-      var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, _stateManager);
+      var row = new EndpointManagerDialogRow(endpointId.Id);
+      var statusRowManager = EndpointManagerDialogRowManager.Create(row, endpointId, _stateManager);
       _rowToManager.Add(row, statusRowManager);
       _idToRow.Add(endpointId, row);
       _disposables.Add(statusRowManager);
@@ -91,67 +91,38 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   void OnNewButtonClicked() {
-    var cvm = CredentialsDialogViewModel.OfEmpty();
-    CredentialsDialogFactory.CreateAndShow(_stateManager, cvm, null);
+    var cvm = EndpointDialogViewModel.OfEmpty();
+    ConfigDialogFactory.CreateAndShow(_stateManager, cvm, null);
   }
 
-  private class FailureCollector {
-    private readonly ConnectionManagerDialog _cmDialog;
-    private readonly object _sync = new();
-    private int _rowsLeft = 0;
-    private readonly List<string> _failures = new();
-
-    public FailureCollector(ConnectionManagerDialog cmDialog, int rowsLeft) {
-      _cmDialog = cmDialog;
-      _rowsLeft = rowsLeft;
-    }
-
-    public void OnFailure(EndpointId id, string reason) {
-      lock (_sync) {
-        _failures.Add(reason);
-      }
-
-      FinalSteps();
-    }
-
-    public void OnSuccess(EndpointId id) {
-      FinalSteps();
-    }
-
-    private void FinalSteps() {
-      string text;
-      lock (_sync) {
-        --_rowsLeft;
-        if (_rowsLeft > 0 || _failures.Count == 0) {
-          return;
-        }
-
-        text = string.Join(Environment.NewLine, _failures);
-      }
-
-      const string caption = "Couldn't delete some selections";
-      _cmDialog.Invoke(() => {
-        var mbox = new DeephavenMessageBox(caption, text, false);
-        mbox.ShowDialog(_cmDialog);
-      });
-    }
-  }
-
-  void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnDeleteButtonClicked(rows))) {
       return;
     }
 
-    var fc = new FailureCollector(_cmDialog, rows.Length);
-    foreach (var row in rows) {
-      if (!_rowToManager.TryGetValue(row, out var manager)) {
-        continue;
+    void ShowFailuresIfAny(Dictionary<EndpointId, bool> results) {
+      var failureMessages = results.Where(kvp => !kvp.Value)
+        .Select(kvp => $"{kvp.Key} still in use")
+        .ToArray();
+      if (failureMessages.Length == 0) {
+        return;
       }
-      manager.DoDelete(fc.OnSuccess, fc.OnFailure);
+      var failureText = string.Join(Environment.NewLine, failureMessages);
+      const string caption = "Couldn't delete some selections";
+      _cmDialog.BeginInvoke(() => {
+        var mbox = new DeephavenMessageBox(caption, failureText, false);
+        _ = mbox.ShowDialog(_cmDialog);
+      });
     }
+
+    var managers = rows.Where(_rowToManager.ContainsKey)
+      .Select(row => _rowToManager[row])
+      .ToArray();
+
+    EndpointManagerDialogRowManager.TryDeleteBatch(managers, ShowFailuresIfAny);
   }
 
-  void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnReconnectButtonClicked(rows))) {
       return;
     }
@@ -164,7 +135,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     }
   }
 
-  void OnMakeDefaultButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnMakeDefaultButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnMakeDefaultButtonClicked(rows))) {
       return;
     }
@@ -182,7 +153,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     manager.DoSetAsDefault();
   }
 
-  void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnEditButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnEditButtonClicked(rows))) {
       return;
     }

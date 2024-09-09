@@ -2,9 +2,9 @@
 
 namespace Deephaven.ExcelAddIn.Views;
 
-using SelectedRowsAction = Action<ConnectionManagerDialogRow[]>;
+using SelectedRowsAction = Action<EndpointManagerDialogRow[]>;
 
-public partial class ConnectionManagerDialog : Form {
+public partial class EndpointManagerDialog : Form {
   public event Action? OnNewButtonClicked;
   public event SelectedRowsAction? OnDeleteButtonClicked;
   public event SelectedRowsAction? OnReconnectButtonClicked;
@@ -13,14 +13,14 @@ public partial class ConnectionManagerDialog : Form {
 
   private readonly BindingSource _bindingSource = new();
 
-  public ConnectionManagerDialog() {
+  public EndpointManagerDialog() {
     InitializeComponent();
 
-    _bindingSource.DataSource = typeof(ConnectionManagerDialogRow);
+    _bindingSource.DataSource = typeof(EndpointManagerDialogRow);
     dataGridView1.DataSource = _bindingSource;
   }
 
-  public void AddRow(ConnectionManagerDialogRow row) {
+  public void AddRow(EndpointManagerDialogRow row) {
     if (InvokeRequired) {
       Invoke(() => AddRow(row));
       return;
@@ -29,7 +29,7 @@ public partial class ConnectionManagerDialog : Form {
     dataGridView1.ClearSelection();
   }
 
-  public void RemoveRow(ConnectionManagerDialogRow row) {
+  public void RemoveRow(EndpointManagerDialogRow row) {
     if (InvokeRequired) {
       Invoke(() => RemoveRow(row));
       return;
@@ -61,12 +61,12 @@ public partial class ConnectionManagerDialog : Form {
     OnMakeDefaultButtonClicked?.Invoke(selections);
   }
 
-  private ConnectionManagerDialogRow[] GetSelectedRows() {
-    var result = new List<ConnectionManagerDialogRow>();
+  private EndpointManagerDialogRow[] GetSelectedRows() {
+    var result = new List<EndpointManagerDialogRow>();
     var sr = dataGridView1.SelectedRows;
     var count = sr.Count;
     for (var i = 0; i != count; ++i) {
-      result.Add((ConnectionManagerDialogRow)sr[i].DataBoundItem);
+      result.Add((EndpointManagerDialogRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
   }

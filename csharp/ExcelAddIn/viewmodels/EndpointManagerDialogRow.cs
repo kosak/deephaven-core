@@ -4,13 +4,13 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChanged {
+public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
-  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
-  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
+  private StatusOr<EndpointConfigBase> _endpointConfig = StatusOr<EndpointConfigBase>.OfStatus("[Not set]");
+  private StatusOr<EndpointHealth> _endpointHealth = StatusOr<EndpointHealth>.OfStatus("[Not connected]");
   private EndpointId? _defaultEndpointId = null;
 
   [DisplayName("Name")]
@@ -18,9 +18,9 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
 
   public string Status {
     get {
-      var session = GetSessionSynced();
+      var health = GetEndpointHealthSynced();
       // If we have a valid session, return "[Connected]", otherwise pass through the status text we have.
-      return session.AcceptVisitor(
+      return health.AcceptVisitor(
         _ => "[Connected]",
         status => status);
     }
@@ -29,11 +29,11 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
   [DisplayName("Server Type")]
   public string ServerType {
     get {
-      var creds = GetCredentialsSynced();
+      var config = GetEndpointConfigSynced();
       // Nested AcceptVisitor!!
       // If we have valid credentials, determine whether they are for Core or Core+ and return the appropriate string.
       // Otherwise (if we have invalid credentials), ignore their status text and just say "[Unknown]".
-      return creds.AcceptVisitor(
+      return config.AcceptVisitor(
         crs => crs.AcceptVisitor(_ => "Core", _ => "Core+"),
         _ => "[Unknown]");
 
@@ -49,19 +49,18 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
   }
 
-  public StatusOr<CredentialsBase> GetCredentialsSynced() {
+  public StatusOr<EndpointConfigBase> GetEndpointConfigSynced() {
     lock (_sync) {
-      return _credentials;
+      return _endpointConfig;
     }
   }
 
-  public void SetCredentialsSynced(StatusOr<CredentialsBase> value) {
+  public void SetCredentialsSynced(StatusOr<EndpointConfigBase> value) {
     lock (_sync) {
-      _credentials = value;
+      _endpointConfig = value;
     }
 
     OnPropertyChanged(nameof(ServerType));
-    OnPropertyChanged(nameof(IsDefault));
   }
 
   public EndpointId? GetDefaultEndpointIdSynced() {
@@ -77,15 +76,15 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  public StatusOr<SessionBase> GetSessionSynced() {
+  public StatusOr<EndpointHealth> GetEndpointHealthSynced() {
     lock (_sync) {
-      return _session;
+      return _endpointHealth;
     }
   }
 
-  public void SetSessionSynced(StatusOr<SessionBase> value) {
+  public void SetEndpointHealthSynced(StatusOr<EndpointHealth> value) {
     lock (_sync) {
-      _session = value;
+      _endpointHealth = value;
     }
     OnPropertyChanged(nameof(Status));
   }
