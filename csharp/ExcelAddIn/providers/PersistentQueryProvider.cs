@@ -1,16 +1,17 @@
-﻿using Deephaven.DeephavenClient;
+﻿using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryProvider :
-  IObserver<StatusOr<SessionBase>>, IObservable<StatusOr<Client>> {
+  IObserver<StatusOr<SessionManager>>, IObservable<StatusOr<Client>> {
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryId? _pqId;
+  private readonly PersistentQueryId _pqId;
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
@@ -18,7 +19,7 @@ internal class PersistentQueryProvider :
   private Client? _ownedDndClient = null;
 
   public PersistentQueryProvider(StateManager stateManager,
-    EndpointId endpointId, PersistentQueryId? pqId, Action onDispose) {
+    EndpointId endpointId, PersistentQueryId pqId, Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
@@ -27,7 +28,7 @@ internal class PersistentQueryProvider :
   }
 
   public void Init() {
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToSession(_endpointId, this);
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToCorePlusSession(_endpointId, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
@@ -48,44 +49,36 @@ internal class PersistentQueryProvider :
     });
   }
 
-  public void OnNext(StatusOr<SessionBase> sessionBase) {
-    if (_workerThread.EnqueueOrNop(() => OnNext(sessionBase))) {
+  //        : StatusOr<Client>.OfStatus("PQ specified, but Community Core cannot connect to a PQ");
+  //   _observers.SetAndSend(ref _client, result);
+  //   return Unit.Instance;
+  // },
+  // corePlus => {
+  //   if (_pqId == null) {
+  //     _observers.SetAndSendStatus(ref _client, "Enterprise Core+ requires a PQ to be specified");
+
+  public void OnNext(StatusOr<SessionManager> sessionManager) {
+    if (_workerThread.EnqueueOrNop(() => OnNext(sessionManager))) {
       return;
     }
 
     DisposeClientState();
 
     // If the new state is just a status message, make that our state and transmit to our observers
-    if (!sessionBase.GetValueOrStatus(out var sb, out var status)) {
+    if (!sessionManager.GetValueOrStatus(out var sm, out var status)) {
       _observers.SetAndSendStatus(ref _client, status);
       return;
     }
 
     // It's a real Session so start fetching it. Also do some validity checking on the PQ id.
-    _ = sb.Visit(
-      core => {
-        var result = _pqId == null
-          ? StatusOr<Client>.OfValue(core.Client)
-          : StatusOr<Client>.OfStatus("PQ specified, but Community Core cannot connect to a PQ");
-        _observers.SetAndSend(ref _client, result);
-        return Unit.Instance;
-      },
-      corePlus => {
-        if (_pqId == null) {
-          _observers.SetAndSendStatus(ref _client, "Enterprise Core+ requires a PQ to be specified");
-          return Unit.Instance;
-        }
+    _observers.SetAndSendStatus(ref _client, $"Attaching to \"{_pqId}\"");
 
-        _observers.SetAndSendStatus(ref _client, $"Attaching to \"{_pqId}\"");
-
-        try {
-          _ownedDndClient = corePlus.SessionManager.ConnectToPqByName(_pqId.Id, false);
-          _observers.SetAndSendValue(ref _client, _ownedDndClient);
-        } catch (Exception ex) {
-          _observers.SetAndSendStatus(ref _client, ex.Message);
-        }
-        return Unit.Instance;
-      });
+    try {
+      _ownedDndClient = sm.ConnectToPqByName(_pqId.Id, false);
+      _observers.SetAndSendValue(ref _client, _ownedDndClient);
+    } catch (Exception ex) {
+      _observers.SetAndSendStatus(ref _client, ex.Message);
+    }
   }
 
   private void DisposeClientState() {

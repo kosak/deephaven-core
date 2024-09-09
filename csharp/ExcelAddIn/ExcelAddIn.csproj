@@ -19,7 +19,7 @@
 		<PackageReference Include="ExcelDna.Addin" Version="*-*" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\client\DeephavenClient\DeephavenClient.csproj" />
+	  <ProjectReference Include="..\client\ManagedClient\ManagedClient.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup>

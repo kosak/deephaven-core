@@ -1,8 +1,7 @@
-﻿using Deephaven.DeephavenClient;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.ExcelDna;
+﻿using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.Operations;
@@ -15,7 +14,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
   private readonly WorkerThread _workerThread;
   private IDisposable? _tableDisposer = null;
   private TableHandle? _currentTableHandle = null;
-  private SubscriptionHandle? _currentSubHandle = null;
+  private IDisposable? _currentSubDisposer = null;
 
   public SubscribeOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
@@ -53,15 +52,8 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     }
 
     // First tear down old state
-    if (_currentTableHandle != null) {
-      if (_currentSubHandle != null) {
-        _currentTableHandle.Unsubscribe(_currentSubHandle!);
-        _currentSubHandle!.Dispose();
-        _currentSubHandle = null;
-      }
-
-      _currentTableHandle = null;
-    }
+    Utility.MaybeDispose(ref _currentSubDisposer);
+    Utility.MaybeDispose(ref _currentTableHandle);
 
     if (!soth.GetValueOrStatus(out var tableHandle, out var status)) {
       _observers.SendStatus(status);
@@ -71,7 +63,7 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     _observers.SendStatus($"Subscribing to \"{_tableQuad.TableName}\"");
 
     _currentTableHandle = tableHandle;
-    _currentSubHandle = _currentTableHandle.Subscribe(new MyTickingCallback(_observers, _wantHeaders));
+    _currentSubDisposer = _currentTableHandle.Subscribe(new MyTickingObserver(_observers, _wantHeaders));
 
     try {
       using var ct = tableHandle.ToClientTable();
@@ -92,17 +84,17 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     throw new NotImplementedException();
   }
 
-  private class MyTickingCallback : ITickingCallback {
+  private class MyTickingObserver : IObserver<TickingUpdate> {
     private readonly ObserverContainer<StatusOr<object?[,]>> _observers;
     private readonly bool _wantHeaders;
 
-    public MyTickingCallback(ObserverContainer<StatusOr<object?[,]>> observers,
+    public MyTickingObserver(ObserverContainer<StatusOr<object?[,]>> observers,
       bool wantHeaders) {
       _observers = observers;
       _wantHeaders = wantHeaders;
     }
 
-    public void OnTick(TickingUpdate update) {
+    public void OnNext(TickingUpdate update) {
       try {
         var results = Renderer.Render(update.Current, _wantHeaders);
         _observers.SendValue(results);
@@ -111,8 +103,12 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
       }
     }
 
-    public void OnFailure(string errorText) {
-      _observers.SendStatus(errorText);
+    public void OnError(Exception ex) {
+      _observers.SendStatus(ex.Message);
+    }
+
+    public void OnCompleted() {
+      throw new NotImplementedException();
     }
   }
 }
