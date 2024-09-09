@@ -10,7 +10,7 @@ internal class PersistentQueryProvider :
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryId? _pqId;
+  private readonly PersistentQueryId _pqId;
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
@@ -18,7 +18,7 @@ internal class PersistentQueryProvider :
   private Client? _ownedDndClient = null;
 
   public PersistentQueryProvider(StateManager stateManager,
-    EndpointId endpointId, PersistentQueryId? pqId, Action onDispose) {
+    EndpointId endpointId, PersistentQueryId pqId, Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;

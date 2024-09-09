@@ -4,7 +4,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
+internal class CorePlusSessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservable<StatusOr<SessionBase>> {
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
@@ -14,7 +14,7 @@ internal class SessionProvider : IObserver<StatusOr<CredentialsBase>>, IObservab
   private readonly ObserverContainer<StatusOr<SessionBase>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
 
-  public SessionProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
+  public CorePlusSessionProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
