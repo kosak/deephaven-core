@@ -15,3 +15,5 @@ public record EndpointId(string Id) {
 }
 
 public record PersistentQueryId(string Id);
+
+public record EndpointHealth;

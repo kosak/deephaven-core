@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Deephaven.DeephavenClient.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Util;
 
