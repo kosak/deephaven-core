@@ -1,17 +1,16 @@
-﻿namespace Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Util;
 
-public record AddOrRemove<T>(bool IsAdd, T Value) {
-  public static AddOrRemove<T> OfAdd(T value) {
-    return new AddOrRemove<T>(true, value);
-  }
+namespace Deephaven.ExcelAddIn.Models;
 
-  public static AddOrRemove<T> OfRemove(T value) {
-    return new AddOrRemove<T>(false, value);
-  }
-}
+public record EndpointHealth;
 
 public record EndpointId(string Id) {
   public override string ToString() => Id;
 }
 
-public record PersistentQueryId(string Id);
+public record PqName(string Name) {
+  public override string ToString() => Name;
+}
+
+public record OpStatus(string HumanReadableFunction, StatusOr<Unit> Status,
+  Action RetryAction);
