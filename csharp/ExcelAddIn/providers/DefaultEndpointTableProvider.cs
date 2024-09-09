@@ -1,7 +1,7 @@
-﻿using Deephaven.DeephavenClient;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using System.Diagnostics;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
