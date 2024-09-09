@@ -1,4 +1,4 @@
-﻿namespace Deephaven.DeephavenClient.ExcelAddIn.Util;
+﻿namespace Deephaven.ExcelAddIn.Util;
 
 internal class ActionAsDisposable : IDisposable {
   public static IDisposable Create(Action action) {
