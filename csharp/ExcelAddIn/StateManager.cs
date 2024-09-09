@@ -1,178 +1,180 @@
-﻿using System.Diagnostics;
-using System.Net;
-using Deephaven.DeephavenClient;
+﻿using Deephaven.DheClient.Controller;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
-  public readonly WorkerThread WorkerThread = WorkerThread.Create();
-  private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
-  private readonly Dictionary<EndpointId, SessionProvider> _sessionProviders = new();
-  private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
-  private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
-  private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
+  private readonly object _sync = new();
+  private readonly ReferenceCountingDict<EndpointId, CoreClientProvider> _coreClientProviders = new();
+  private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
+  private readonly ReferenceCountingDict<TableQuad, ITableProviderBase> _tableProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, PersistentQueryDictProvider> _persistentQueryDictProviders = new();
+  private readonly ReferenceCountingDict<(EndpointId, PqName), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, SubscriptionProvider> _subscriptionProviders = new();
 
-  private EndpointId? _defaultEndpointId = null;
+  private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
+  private readonly EndpointDictProvider _endpointDictProvider = new();
 
-  public IDisposable SubscribeToCredentialsPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
-    WorkerThread.EnqueueOrRun(() => {
-      _credentialsPopulationObservers.Add(observer, out _);
+  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
+    IValueObserver<StatusOr<RefCounted<Client>>> observer) {
+    var candidate = new CoreClientProvider(this, endpointId);
+    return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
+  }
 
-      // Give this observer the current set of endpoint ids.
-      var keys = _credentialsProviders.Keys.ToArray();
-      foreach (var endpointId in keys) {
-        observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
+  public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
+    IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
+    var key = (endpointId, pqName);
+    var candidate = new CorePlusClientProvider(this, endpointId, pqName);
+    return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
+  }
+
+  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
+    IValueObserver<StatusOr<EndpointConfigBase>> observer) {
+    var candidate = new EndpointConfigProvider(this, endpointId);
+    return SubscribeHelper(_endpointConfigProviders, endpointId, candidate, observer);
+  }
+
+  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
+    IValueObserver<StatusOr<EndpointHealth>> observer) {
+    var candidate = new EndpointHealthProvider(this, endpointId);
+    return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
+  }
+
+  public IDisposable SubscribeToTable(TableQuad key,
+    IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+    ITableProviderBase candidate;
+    if (key.EndpointId == null) {
+      candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
+    } else if (key.Condition.Length != 0) {
+      candidate = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+        key.Condition);
+    } else {
+      candidate = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
+    };
+    return SubscribeHelper(_tableProviders, key, candidate, observer);
+  }
+
+  public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
+    IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
+    var candidate = new PersistentQueryDictProvider(this, endpointId);
+    return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
+  }
+
+  public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
+    IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+    var key = (endpointId, pqName);
+    var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
+    return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
+  }
+
+  public IDisposable SubscribeToSessionManager(EndpointId endpointId,
+    IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
+    var candidate = new SessionManagerProvider(this, endpointId);
+    return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
+  }
+
+  public IDisposable SubscribeToSubscription(EndpointId endpointId,
+    IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
+    var candidate = new SubscriptionProvider(this, endpointId);
+    return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
+  }
+
+  public IDisposable SubscribeToDefaultEndpoint(IValueObserver<StatusOr<EndpointId>> observer) {
+    return _defaultEndpointProvider.Subscribe(observer);
+  }
+
+  public void SetDefaultEndpoint(EndpointId? defaultEndpointId) {
+    _defaultEndpointProvider.Set(defaultEndpointId);
+  }
+
+  public IDisposable SubscribeToEndpointDict(
+    IValueObserver<SharableDict<EndpointConfigBase>> observer) {
+    return _endpointDictProvider.Subscribe(observer);
+  }
+
+  public void SetConfig(EndpointConfigBase config) {
+    lock (_sync) {
+      _endpointDictProvider.AddOrReplace(config);
+    }
+  }
+
+  public void EnsureConfig(EndpointId id) {
+    lock (_sync) {
+      var empty = EndpointConfigBase.OfEmpty(id);
+      _ = _endpointDictProvider.TryAdd(empty);
+    }
+  }
+
+  public bool TryDeleteConfig(EndpointId id) {
+    lock (_sync) {
+      if (_endpointConfigProviders.ContainsKey(id)) {
+        // Someone is still referencing it, so it's unsafe to delete
+        return false;
       }
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => _credentialsPopulationObservers.Remove(observer, out _));
-  }
-
-  public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
-    WorkerThread.EnqueueOrRun(() => {
-      _defaultEndpointSelectionObservers.Add(observer, out _);
-      observer.OnNext(_defaultEndpointId);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => _defaultEndpointSelectionObservers.Remove(observer, out _));
-  }
-
-  /// <summary>
-  /// The major difference between the credentials providers and the other providers
-  /// is that the credential providers don't remove themselves from the map
-  /// upon the last dispose of the subscriber. That is, they hang around until we
-  /// manually remove them.
-  /// </summary>
-  public IDisposable SubscribeToCredentials(EndpointId endpointId,
-    IObserver<StatusOr<CredentialsBase>> observer) {
-    IDisposable? disposer = null;
-    LookupOrCreateCredentialsProvider(endpointId,
-      cp => disposer = cp.Subscribe(observer));
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
-      Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  public void SetCredentials(CredentialsBase credentials) {
-    LookupOrCreateCredentialsProvider(credentials.Id,
-      cp => cp.SetCredentials(credentials));
+      return _endpointDictProvider.TryRemove(id);
+    }
   }
 
   public void Reconnect(EndpointId id) {
     // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
-    LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
-  }
-
-  public void TryDeleteCredentials(EndpointId id, Action onSuccess, Action<string> onFailure) {
-    if (WorkerThread.EnqueueOrNop(() => TryDeleteCredentials(id, onSuccess, onFailure))) {
-      return;
-    }
-
-    if (!_credentialsProviders.TryGetValue(id, out var cp)) {
-      onFailure($"{id} unknown");
-      return;
-    }
-
-    if (cp.ObserverCountUnsafe != 0) {
-      onFailure($"{id} is still active");
-      return;
-    }
-
-    if (id.Equals(_defaultEndpointId)) {
-      SetDefaultEndpointId(null);
-    }
-
-    _credentialsProviders.Remove(id);
-    _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
-    onSuccess();
-  }
-
-  private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
-    Action<CredentialsProvider> action) {
-    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
-      return;
-    }
-    if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
-      cp = new CredentialsProvider(this);
-      _credentialsProviders.Add(endpointId, cp);
-      cp.Init();
-      _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
-    }
-
-    action(cp);
-  }
-
-  public IDisposable SubscribeToSession(EndpointId endpointId,
-    IObserver<StatusOr<SessionBase>> observer) {
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = new SessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
-        _sessionProviders.Add(endpointId, sp);
-        sp.Init();
+    lock (_sync) {
+      if (_endpointConfigProviders.TryGetValue(id, out var cp)) {
+        cp.Resend();
       }
-      disposer = sp.Subscribe(observer);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
-      Utility.Exchange(ref disposer, null)?.Dispose());
+    }
   }
 
-  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryId? pqId,
-    IObserver<StatusOr<Client>> observer) {
-
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      var key = new PersistentQueryKey(endpointId, pqId);
-      if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
-        pqp = new PersistentQueryProvider(this, endpointId, pqId,
-          () => _persistentQueryProviders.Remove(key));
-        _persistentQueryProviders.Add(key, pqp);
-        pqp.Init();
-      }
-      disposer = pqp.Subscribe(observer);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      if (!_tableProviders.TryGetValue(key, out var tp)) {
-        Action onDispose = () => _tableProviders.Remove(key);
-        if (key.EndpointId == null) {
-          tp = new DefaultEndpointTableProvider(this, key.PersistentQueryId, key.TableName, key.Condition,
-            onDispose);
-        } else if (key.Condition.Length != 0) {
-          tp = new FilteredTableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName,
-            key.Condition, onDispose);
-        } else {
-          tp = new TableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName, onDispose);
-        }
-        _tableProviders.Add(key, tp);
-        tp.Init();
-      }
-      disposer = tp.Subscribe(observer);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-  
-  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
-    if (WorkerThread.EnqueueOrNop(() => SetDefaultEndpointId(defaultEndpointId))) {
-      return;
+  private IDisposable SubscribeHelper<TKey, TObservable, T>(
+    ReferenceCountingDict<TKey, TObservable> dict,
+    TKey key, TObservable candidateObservable, IValueObserver<T> observer)
+    where TKey : notnull
+    where TObservable : IValueObservable<T>, IDisposable {
+    TObservable actualObservable;
+    bool candidateAdded;
+    lock (_sync) {
+      candidateAdded = dict.AddOrIncrement(key, candidateObservable, out actualObservable);
     }
 
-    _defaultEndpointId = defaultEndpointId;
-    _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
+    if (!candidateAdded) {
+      // If we didn't use 'candidateObservable', dispose it
+      candidateObservable.Dispose();
+    }
+
+    // Subscribe the observer to the (new or existing) observable
+    var disposer = actualObservable.Subscribe(observer);
+
+    // Now make a dispose action, which needs to
+    // 1. If called more than once, do nothing on subsequent calls
+    // 2. Otherwise, call "disposer" to unsubscribe the observable
+    // 3. If the reference count hits zero, remove from the dictionary and dispse the observable
+
+    var isDisposed = new Latch();
+    return ActionAsDisposable.Create(() => {
+      if (!isDisposed.TrySet()) {
+        return;
+      }
+
+      // Decrement or remove entry from dictionary
+      bool observableRemoved;
+      lock (_sync) {
+        observableRemoved = dict.DecrementOrRemove(key);
+      }
+
+      // Unsubscribe the observer from the observable
+      disposer.Dispose();
+      if (observableRemoved) {
+        // If this was the last Observer to be removed, dispose the Observable
+        actualObservable.Dispose();
+      }
+    });
   }
 }

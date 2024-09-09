@@ -12,7 +12,33 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ShowConnectionsDialog() {
-    ConnectionManagerDialogFactory.CreateAndShow(StateManager);
+    EndpointManagerDialogFactory.CreateAndShow(StateManager);
+  }
+
+  [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]
+  public static void AddKosakConnection() {
+    var id = new EndpointId("con1");
+    var config = EndpointConfigBase.OfCore(id, "10.0.4.109:10000");
+    StateManager.SetConfig(config);
+  }
+
+  // See if this works to set note or comment
+  // ExcelReference? refCaller = XlCall.Excel(XlCall.xlfCaller) as ExcelReference;
+  // and then
+
+  // [ExcelFunction(IsThreadSafe = false)]
+  // public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
+  //   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
+  //   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
+  //   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
+  //
+  //   // Add the comment
+  //   cell.AddComment(commentText);
+  // }
+
+  [ExcelFunction(Description = "Test function", IsThreadSafe = true)]
+  public static object DEEPHAVEN_TEST() {
+    return ExcelError.ExcelErrorNull;
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
@@ -59,7 +85,7 @@ public static class DeephavenExcelFunctions {
       return false;
     }
 
-    tableQuadResult = new TableQuad(tt.EndpointId, tt.PersistentQueryId, tt.TableName, condition);
+    tableQuadResult = new TableQuad(tt.EndpointId, tt.PqName, tt.TableName, condition);
     return true;
   }
 }

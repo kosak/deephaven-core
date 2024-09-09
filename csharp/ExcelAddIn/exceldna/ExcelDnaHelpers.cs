@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Util;
+﻿using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Status;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.ExcelDna;
@@ -17,26 +18,17 @@ internal class ExcelDnaHelpers {
 
     return false;
   }
+}
 
-  public static IObserver<StatusOr<object?[,]>> WrapExcelObserver(IExcelObserver inner) {
-    return new ExcelObserverWrapper(inner);
-  }
-
-  private class ExcelObserverWrapper(IExcelObserver inner) : IObserver<StatusOr<object?[,]>> {
-    public void OnNext(StatusOr<object?[,]> sov) {
-      if (!sov.GetValueOrStatus(out var value, out var status)) {
-        // Reformat the status text as an object[,] 2D array so Excel renders it as 1x1 "table".
-        value = new object[,] { { status } };
-      }
-      inner.OnNext(value);
+internal class ExcelObserverWrapper(IExcelObserver inner) : IValueObserver<StatusOr<object?[,]>> {
+  public void OnNext(StatusOr<object?[,]> sov) {
+    if (!sov.GetValueOrStatus(out var value, out var status)) {
+      // Reformat the status text as an object[,] 2D array so Excel renders it as 1x1 "table".
+      var text = status.Text;
+      // TODO(kosak): return Excel st atuses here and optionally decorate the
+      // calling cell with the state.
+      value = new object[,] { { text } };
     }
-
-    public void OnCompleted() {
-      inner.OnCompleted();
-    }
-
-    public void OnError(Exception error) {
-      inner.OnError(error);
-    }
+    inner.OnNext(value);
   }
 }
