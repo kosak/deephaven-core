@@ -6,17 +6,17 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
-public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
-  public static CredentialsDialogViewModel OfEmpty() {
-    return new CredentialsDialogViewModel();
+public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
+  public static EndpointDialogViewModel OfEmpty() {
+    return new EndpointDialogViewModel();
   }
 
-  public static CredentialsDialogViewModel OfIdButOtherwiseEmpty(string id) {
-    return new CredentialsDialogViewModel { Id = id };
+  public static EndpointDialogViewModel OfIdButOtherwiseEmpty(string id) {
+    return new EndpointDialogViewModel { Id = id };
   }
 
-  public static CredentialsDialogViewModel OfIdAndCredentials(string id, EndpointConfigBase config) {
-    var result = new CredentialsDialogViewModel {
+  public static EndpointDialogViewModel OfIdAndCredentials(string id, EndpointConfigBase config) {
+    var result = new EndpointDialogViewModel {
       Id = config.Id.Id
     };
     _ = config.AcceptVisitor(

@@ -79,7 +79,7 @@ internal class CoreClientProvider :
     Client? client = null;
     StatusOr<Client> result;
     try {
-      client = ConnectionFactory.ConnectToCore(config);
+      client = EndpointFactory.ConnectToCore(config);
       result = StatusOr<Client>.OfValue(client);
     } catch (Exception ex) {
       result = StatusOr<Client>.OfStatus(ex.Message);

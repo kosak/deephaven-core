@@ -5,7 +5,7 @@ namespace ExcelAddIn.views {
     public event Action? OnSetCredentialsButtonClicked = null;
     public event Action? OnTestCredentialsButtonClicked = null;
 
-    public ConfigDialog(CredentialsDialogViewModel vm) {
+    public ConfigDialog(EndpointDialogViewModel vm) {
       InitializeComponent();
       // Need to fire these bindings on property changed rather than simply on validation,
       // because on validation is not responsive enough. Also, painful technical note:

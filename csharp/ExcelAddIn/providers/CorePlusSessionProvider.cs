@@ -82,7 +82,7 @@ internal class CorePlusSessionProvider :
     StatusOr<SessionManager> result;
     try {
       // This operation might take some time.
-      sm = ConnectionFactory.ConnectToCorePlus(config, _workerThread);
+      sm = EndpointFactory.ConnectToCorePlus(config, _workerThread);
       result = StatusOr<SessionManager>.OfValue(sm);
     } catch (Exception ex) {
       result = StatusOr<SessionManager>.OfStatus(ex.Message);

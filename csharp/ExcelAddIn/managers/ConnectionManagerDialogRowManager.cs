@@ -81,8 +81,8 @@ public sealed class ConnectionManagerDialogRowManager :
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
     var cvm = creds.AcceptVisitor(
-      crs => CredentialsDialogViewModel.OfIdAndCredentials(_endpointId.Id, crs),
-      _ => CredentialsDialogViewModel.OfIdButOtherwiseEmpty(_endpointId.Id));
+      crs => EndpointDialogViewModel.OfIdAndCredentials(_endpointId.Id, crs),
+      _ => EndpointDialogViewModel.OfIdButOtherwiseEmpty(_endpointId.Id));
     CredentialsDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
   }
 

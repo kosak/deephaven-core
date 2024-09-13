@@ -2,12 +2,11 @@
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
-using static System.Windows.Forms.AxHost;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class CredentialsDialogFactory {
-  public static void CreateAndShow(StateManager stateManager, CredentialsDialogViewModel cvm,
+  public static void CreateAndShow(StateManager stateManager, EndpointDialogViewModel cvm,
     EndpointId? whitelistId) {
     Utility.RunInBackground(() => {
       var cd = new ConfigDialog(cvm);
@@ -27,7 +26,7 @@ internal static class CredentialsDialogFactory {
 internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   private readonly StateManager _stateManager;
   private readonly ConfigDialog _configDialog;
-  private readonly CredentialsDialogViewModel _cvm;
+  private readonly EndpointDialogViewModel _cvm;
   private readonly EndpointId? _whitelistId;
   private IDisposable? _disposer;
   private readonly object _sync = new();
@@ -37,7 +36,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
   public CredentialsDialogState(
     StateManager stateManager,
     ConfigDialog configDialog,
-    CredentialsDialogViewModel cvm,
+    EndpointDialogViewModel cvm,
     EndpointId? whitelistId) {
     _stateManager = stateManager;
     _configDialog = configDialog;
@@ -115,8 +114,8 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
     try {
       // This operation might take some time.
       var temp = config.AcceptVisitor(
-        core => (IDisposable)ConnectionFactory.ConnectToCore(core),
-        corePlus => ConnectionFactory.ConnectToCorePlus(corePlus, _stateManager.WorkerThread));
+        core => (IDisposable)EndpointFactory.ConnectToCore(core),
+        corePlus => EndpointFactory.ConnectToCorePlus(corePlus, _stateManager.WorkerThread));
       temp.Dispose();
     } catch (Exception ex) {
       state = ex.Message;

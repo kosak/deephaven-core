@@ -5,7 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
-internal static class ConnectionFactory {
+internal static class EndpointFactory {
   public static Client ConnectToCore(CoreEndpointConfig config) {
     var options = new ClientOptions();
     options.SetSessionType(config.SessionTypeIsPython ? "python" : "groovy");
