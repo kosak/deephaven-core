@@ -108,13 +108,15 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
     Utility.RunInBackground(() => TestCredentialsThreadFunc(newCreds));
   }
 
-  private void TestCredentialsThreadFunc(ConnectionConfigBase creds) {
+  private void TestCredentialsThreadFunc(ConnectionConfigBase config) {
     var latestCookie = _versionTracker.SetNewVersion();
 
     var state = "OK";
     try {
       // This operation might take some time.
-      var temp = SessionBaseFactory.Create(creds, _stateManager.WorkerThread);
+      var temp = config.AcceptVisitor(
+        core => (IDisposable)ConnectionFactory.ConnectToCore(core),
+        corePlus => ConnectionFactory.ConnectToCorePlus(corePlus, _stateManager.WorkerThread));
       temp.Dispose();
     } catch (Exception ex) {
       state = ex.Message;
