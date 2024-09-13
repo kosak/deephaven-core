@@ -78,7 +78,7 @@ internal class ConnectionHealthProvider :
     }
 
     var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
-    _observers.SetAndSendStatus(ref _connectionHealth, message);
+    _observers.SetAndSendStatus(ref _connectionHealth, message);s
   }
 
   public void OnNext(StatusOr<SessionManager> sm) {

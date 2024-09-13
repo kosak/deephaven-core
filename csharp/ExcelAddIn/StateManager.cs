@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using Deephaven.DeephavenClient;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
@@ -10,7 +11,8 @@ namespace Deephaven.ExcelAddIn;
 public class StateManager {
   public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly Dictionary<EndpointId, CredentialsProvider> _credentialsProviders = new();
-  private readonly Dictionary<EndpointId, CorePlusSessionProvider> _sessionProviders = new();
+  private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
+  private readonly Dictionary<EndpointId, CorePlusSessionProvider> _corePlusSessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _credentialsPopulationObservers = new();
@@ -69,28 +71,35 @@ public class StateManager {
     LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
   }
 
-  public void TryDeleteCredentials(EndpointId id, Action onSuccess, Action<string> onFailure) {
-    if (WorkerThread.EnqueueOrNop(() => TryDeleteCredentials(id, onSuccess, onFailure))) {
+  public void TryDeleteCredentials(EndpointId[] ids, Action<string?[]> failureReasonsAction) {
+    if (WorkerThread.EnqueueOrNop(() => TryDeleteCredentials(ids, failureReasonsAction))) {
       return;
     }
 
-    if (!_credentialsProviders.TryGetValue(id, out var cp)) {
-      onFailure($"{id} unknown");
-      return;
+    var failureReasons = new List<string?>();
+    foreach (var id in ids) {
+      if (!_credentialsProviders.TryGetValue(id, out var cp)) {
+        failureReasons.Add($"{id} unknown");
+        continue;
+      }
+
+      if (cp.ObserverCountUnsafe != 0) {
+        failureReasons.Add($"{id} is still active");
+        continue;
+      }
+
+      // success!
+      failureReasons.Add(null);
+
+      if (id.Equals(_defaultEndpointId)) {
+        SetDefaultEndpointId(null);
+      }
+
+      _credentialsProviders.Remove(id);
+      _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
     }
 
-    if (cp.ObserverCountUnsafe != 0) {
-      onFailure($"{id} is still active");
-      return;
-    }
-
-    if (id.Equals(_defaultEndpointId)) {
-      SetDefaultEndpointId(null);
-    }
-
-    _credentialsProviders.Remove(id);
-    _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
-    onSuccess();
+    failureReasonsAction(failureReasons.ToArray());
   }
 
   private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
@@ -108,13 +117,29 @@ public class StateManager {
     action(cp);
   }
 
-  public IDisposable SubscribeToSession(EndpointId endpointId,
-    IObserver<StatusOr<SessionBase>> observer) {
+  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
+    IObserver<StatusOr<Client>> observer) {
     IDisposable? disposer = null;
     WorkerThread.EnqueueOrRun(() => {
-      if (!_sessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = new CorePlusSessionProvider(this, endpointId, () => _sessionProviders.Remove(endpointId));
-        _sessionProviders.Add(endpointId, sp);
+      if (!_coreClientProviders.TryGetValue(endpointId, out var ccp)) {
+        ccp = new CoreClientProvider(this, endpointId, () => _coreClientProviders.Remove(endpointId));
+        _coreClientProviders.Add(endpointId, ccp);
+        ccp.Init();
+      }
+      disposer = ccp.Subscribe(observer);
+    });
+
+    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
+      Utility.Exchange(ref disposer, null)?.Dispose());
+  }
+
+  public IDisposable SubscribeToCorePlusSession(EndpointId endpointId,
+    IObserver<StatusOr<SessionManager>> observer) {
+    IDisposable? disposer = null;
+    WorkerThread.EnqueueOrRun(() => {
+      if (!_corePlusSessionProviders.TryGetValue(endpointId, out var sp)) {
+        sp = new CorePlusSessionProvider(this, endpointId, () => _corePlusSessionProviders.Remove(endpointId));
+        _corePlusSessionProviders.Add(endpointId, sp);
         sp.Init();
       }
       disposer = sp.Subscribe(observer);
