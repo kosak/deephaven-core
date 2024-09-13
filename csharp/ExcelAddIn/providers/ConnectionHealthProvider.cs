@@ -7,6 +7,9 @@ using System.Windows.Forms;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * Observes the 
+ */
 internal class ConnectionHealthProvider :
   IObserver<StatusOr<CredentialsBase>>,
   IObserver<StatusOr<Client>>,

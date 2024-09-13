@@ -6,24 +6,24 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class ConnectionFactory {
-  public static Client ConnectToCore(CoreCredentials credentials) {
+  public static Client ConnectToCore(CoreConnectionConfig config) {
     var options = new ClientOptions();
-    options.SetSessionType(credentials.SessionTypeIsPython ? "python" : "groovy");
-    var client = Client.Connect(credentials.ConnectionString, options);
+    options.SetSessionType(config.SessionTypeIsPython ? "python" : "groovy");
+    var client = Client.Connect(config.ConnectionString, options);
     return client;
   }
 
-  public static SessionManager ConnectToCorePlus(CorePlusCredentials credentials, WorkerThread workerThread) {
+  public static SessionManager ConnectToCorePlus(CorePlusConnectionConfig config, WorkerThread workerThread) {
     var handler = new HttpClientHandler();
-    if (!credentials.ValidateCertificate) {
+    if (!config.ValidateCertificate) {
       handler.ClientCertificateOptions = ClientCertificateOption.Manual;
       handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
     }
 
     var hc = new HttpClient(handler);
-    var json = hc.GetStringAsync(credentials.JsonUrl).Result;
+    var json = hc.GetStringAsync(config.JsonUrl).Result;
     var session = SessionManager.FromJson("Deephaven Excel", json);
-    if (!session.PasswordAuthentication(credentials.User, credentials.Password, credentials.OperateAs)) {
+    if (!session.PasswordAuthentication(config.User, config.Password, config.OperateAs)) {
       session.Dispose();
       throw new Exception("Authentication failed");
     }

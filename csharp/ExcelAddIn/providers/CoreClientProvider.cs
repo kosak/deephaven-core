@@ -6,7 +6,7 @@ using Deephaven.DeephavenClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CoreClientProvider :
-  IObserver<StatusOr<CredentialsBase>>,
+  IObserver<StatusOr<ConnectionConfigBase>>,
   IObservable<StatusOr<Client>> {
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
@@ -49,7 +49,7 @@ internal class CoreClientProvider :
     });
   }
 
-  public void OnNext(StatusOr<CredentialsBase> credentials) {
+  public void OnNext(StatusOr<ConnectionConfigBase> credentials) {
     if (_workerThread.EnqueueOrNop(() => OnNext(credentials))) {
       return;
     }
@@ -75,11 +75,11 @@ internal class CoreClientProvider :
       });
   }
 
-  private void CreateClientInSeparateThread(CoreCredentials credentials, VersionTrackerCookie versionCookie) {
+  private void CreateClientInSeparateThread(CoreConnectionConfig config, VersionTrackerCookie versionCookie) {
     Client? client = null;
     StatusOr<Client> result;
     try {
-      client = ConnectionFactory.ConnectToCore(credentials);
+      client = ConnectionFactory.ConnectToCore(config);
       result = StatusOr<Client>.OfValue(client);
     } catch (Exception ex) {
       result = StatusOr<Client>.OfStatus(ex.Message);

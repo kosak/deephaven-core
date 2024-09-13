@@ -15,11 +15,11 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
     return new CredentialsDialogViewModel { Id = id };
   }
 
-  public static CredentialsDialogViewModel OfIdAndCredentials(string id, CredentialsBase credentials) {
+  public static CredentialsDialogViewModel OfIdAndCredentials(string id, ConnectionConfigBase config) {
     var result = new CredentialsDialogViewModel {
-      Id = credentials.Id.Id
+      Id = config.Id.Id
     };
-    _ = credentials.AcceptVisitor(
+    _ = config.AcceptVisitor(
       core => {
         result._isCorePlus = false;
         result.ConnectionString = core.ConnectionString;
@@ -56,7 +56,7 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  public bool TryMakeCredentials([NotNullWhen(true)] out CredentialsBase? result,
+  public bool TryMakeCredentials([NotNullWhen(true)] out ConnectionConfigBase? result,
     [NotNullWhen(false)] out string? errorText) {
     result = null;
     errorText = null;
@@ -85,8 +85,8 @@ public sealed class CredentialsDialogViewModel : INotifyPropertyChanged {
 
     var epId = new EndpointId(_id);
     result = _isCorePlus
-      ? CredentialsBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
-      : CredentialsBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
+      ? ConnectionConfigBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
+      : ConnectionConfigBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
     return true;
   }
 

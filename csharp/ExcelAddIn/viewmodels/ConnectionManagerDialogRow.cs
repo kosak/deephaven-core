@@ -9,7 +9,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
-  private StatusOr<CredentialsBase> _credentials = StatusOr<CredentialsBase>.OfStatus("[Not set]");
+  private StatusOr<ConnectionConfigBase> _credentials = StatusOr<ConnectionConfigBase>.OfStatus("[Not set]");
   private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
   private EndpointId? _defaultEndpointId = null;
 
@@ -49,13 +49,13 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
   }
 
-  public StatusOr<CredentialsBase> GetCredentialsSynced() {
+  public StatusOr<ConnectionConfigBase> GetCredentialsSynced() {
     lock (_sync) {
       return _credentials;
     }
   }
 
-  public void SetCredentialsSynced(StatusOr<CredentialsBase> value) {
+  public void SetCredentialsSynced(StatusOr<ConnectionConfigBase> value) {
     lock (_sync) {
       _credentials = value;
     }
