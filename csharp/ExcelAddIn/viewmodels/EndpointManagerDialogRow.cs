@@ -4,7 +4,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChanged {
+public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 

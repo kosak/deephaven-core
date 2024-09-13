@@ -12,20 +12,20 @@ public sealed class ConnectionManagerDialogRowManager :
   IObserver<EndpointId?>,
   IDisposable {
 
-  public static ConnectionManagerDialogRowManager Create(ConnectionManagerDialogRow row,
+  public static ConnectionManagerDialogRowManager Create(EndpointManagerDialogRow row,
     EndpointId endpointId, StateManager stateManager) {
     var result = new ConnectionManagerDialogRowManager(row, endpointId, stateManager);
     result.Resubscribe();
     return result;
   }
 
-  private readonly ConnectionManagerDialogRow _row;
+  private readonly EndpointManagerDialogRow _row;
   private readonly EndpointId _endpointId;
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private readonly List<IDisposable> _disposables = new();
 
-  private ConnectionManagerDialogRowManager(ConnectionManagerDialogRow row, EndpointId endpointId,
+  private ConnectionManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
     StateManager stateManager) {
     _row = row;
     _endpointId = endpointId;

@@ -15,7 +15,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   // ConcurrentDictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> rowToManager,
   // StateManager stateManager) 
   public static ConnectionManagerDialogManager Create(StateManager stateManager,
-    ConnectionManagerDialog cmDialog) {
+    EndpointManagerDialog cmDialog) {
     var result = new ConnectionManagerDialogManager(stateManager, cmDialog);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
     cmDialog.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
@@ -30,12 +30,12 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
-  private readonly ConnectionManagerDialog _cmDialog;
-  private readonly Dictionary<EndpointId, ConnectionManagerDialogRow> _idToRow = new();
-  private readonly Dictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> _rowToManager = new();
+  private readonly EndpointManagerDialog _cmDialog;
+  private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
+  private readonly Dictionary<EndpointManagerDialogRow, ConnectionManagerDialogRowManager> _rowToManager = new();
   private readonly List<IDisposable> _disposables = new();
 
-  public ConnectionManagerDialogManager(StateManager stateManager, ConnectionManagerDialog cmDialog) {
+  public ConnectionManagerDialogManager(StateManager stateManager, EndpointManagerDialog cmDialog) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _cmDialog = cmDialog;
@@ -48,7 +48,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
     if (aor.IsAdd) {
       var endpointId = aor.Value;
-      var row = new ConnectionManagerDialogRow(endpointId.Id);
+      var row = new EndpointManagerDialogRow(endpointId.Id);
       var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, _stateManager);
       _rowToManager.Add(row, statusRowManager);
       _idToRow.Add(endpointId, row);
@@ -96,12 +96,12 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   }
 
   private class FailureCollector {
-    private readonly ConnectionManagerDialog _cmDialog;
+    private readonly EndpointManagerDialog _cmDialog;
     private readonly object _sync = new();
     private int _rowsLeft = 0;
     private readonly List<string> _failures = new();
 
-    public FailureCollector(ConnectionManagerDialog cmDialog, int rowsLeft) {
+    public FailureCollector(EndpointManagerDialog cmDialog, int rowsLeft) {
       _cmDialog = cmDialog;
       _rowsLeft = rowsLeft;
     }
@@ -137,7 +137,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     }
   }
 
-  void OnDeleteButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnDeleteButtonClicked(rows))) {
       return;
     }
@@ -151,7 +151,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     }
   }
 
-  void OnReconnectButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnReconnectButtonClicked(rows))) {
       return;
     }
@@ -164,7 +164,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     }
   }
 
-  void OnMakeDefaultButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnMakeDefaultButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnMakeDefaultButtonClicked(rows))) {
       return;
     }
@@ -182,7 +182,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     manager.DoSetAsDefault();
   }
 
-  void OnEditButtonClicked(ConnectionManagerDialogRow[] rows) {
+  void OnEditButtonClicked(EndpointManagerDialogRow[] rows) {
     if (_workerThread.EnqueueOrNop(() => OnEditButtonClicked(rows))) {
       return;
     }
