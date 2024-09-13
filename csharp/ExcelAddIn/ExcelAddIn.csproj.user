@@ -5,7 +5,7 @@
     <Compile Update="views\ConnectionManagerDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="views\CredentialsDialog.cs">
+    <Compile Update="views\ConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="views\DeephavenMessageBox.cs">

@@ -10,7 +10,7 @@ internal static class CredentialsDialogFactory {
   public static void CreateAndShow(StateManager stateManager, CredentialsDialogViewModel cvm,
     EndpointId? whitelistId) {
     Utility.RunInBackground(() => {
-      var cd = new CredentialsDialog(cvm);
+      var cd = new ConfigDialog(cvm);
       var state = new CredentialsDialogState(stateManager, cd, cvm, whitelistId);
 
 
@@ -26,7 +26,7 @@ internal static class CredentialsDialogFactory {
 
 internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   private readonly StateManager _stateManager;
-  private readonly CredentialsDialog _credentialsDialog;
+  private readonly ConfigDialog _configDialog;
   private readonly CredentialsDialogViewModel _cvm;
   private readonly EndpointId? _whitelistId;
   private IDisposable? _disposer;
@@ -36,11 +36,11 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
 
   public CredentialsDialogState(
     StateManager stateManager,
-    CredentialsDialog credentialsDialog,
+    ConfigDialog configDialog,
     CredentialsDialogViewModel cvm,
     EndpointId? whitelistId) {
     _stateManager = stateManager;
-    _credentialsDialog = credentialsDialog;
+    _configDialog = configDialog;
     _cvm = cvm;
     _whitelistId = whitelistId;
     _disposer = stateManager.SubscribeToCredentialsPopulation(this);
@@ -83,7 +83,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
       const string caption = "Modify existing connection?";
       var text = $"Are you sure you want to modify connection \"{newCreds.Id}\"";
       var dhm = new DeephavenMessageBox(caption, text, true);
-      var dialogResult = dhm.ShowDialog(_credentialsDialog);
+      var dialogResult = dhm.ShowDialog(_configDialog);
       if (dialogResult != DialogResult.OK) {
         return;
       }
@@ -94,7 +94,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
       _stateManager.SetDefaultEndpointId(newCreds.Id);
     }
 
-    _credentialsDialog!.Close();
+    _configDialog!.Close();
   }
 
   public void OnTestCredentials() {
@@ -103,7 +103,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
       return;
     }
 
-    _credentialsDialog!.SetTestResultsBox("Checking credentials");
+    _configDialog!.SetTestResultsBox("Checking credentials");
     // Check credentials on its own thread
     Utility.RunInBackground(() => TestCredentialsThreadFunc(newCreds));
   }
@@ -128,13 +128,13 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
     }
 
     // Our results are valid. Keep them and tell everyone about it.
-    _credentialsDialog!.SetTestResultsBox(state);
+    _configDialog!.SetTestResultsBox(state);
   }
 
   private void ShowMessageBox(string error) {
-    _credentialsDialog.Invoke(() => {
+    _configDialog.Invoke(() => {
       var dhm = new DeephavenMessageBox("Please provide missing fields", error, false);
-      dhm.ShowDialog(_credentialsDialog);
+      dhm.ShowDialog(_configDialog);
     });
   }
 }
