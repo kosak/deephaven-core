@@ -1,17 +1,21 @@
 ﻿using Deephaven.DeephavenClient;
-using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.DheClient.Session;
-using System.Windows.Forms;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 /**
- * Observes the 
+ * Observes the ConnectionConfig. When a valid ConnectionConfig is received, observes
+ * the appropriate CoreClientProvider or CorePlusSessionProvider.
+ * When those things provide responses, translate them to ConnectionHealth messages.
+ * We use StatusOr&lt;ConnectionHealth&gt; .  A healthy connection sends a StatusOr
+ * with value set to ConnectionHealth (this is an object without any members). On the
+ * other hand, an unhealthy connection sends a StatusOr with the status text sent to
+ * whatever status text was received from upstream.
  */
 internal class ConnectionHealthProvider :
-  IObserver<StatusOr<CredentialsBase>>,
+  IObserver<StatusOr<ConnectionConfigBase>>,
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<SessionManager>>,
   IObservable<StatusOr<ConnectionHealth>> {
@@ -58,7 +62,7 @@ internal class ConnectionHealthProvider :
     });
   }
 
-  public void OnNext(StatusOr<CredentialsBase> credentials) {
+  public void OnNext(StatusOr<ConnectionConfigBase> credentials) {
     if (_workerThread.EnqueueOrNop(() => OnNext(credentials))) {
       return;
     }
@@ -66,13 +70,16 @@ internal class ConnectionHealthProvider :
     UnsubscribeClientOrSession();
 
     if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
+      // Upstream has status text.
       _observers.SetAndSendStatus(ref _connectionHealth, status);
       return;
     }
 
+    // Upstream has core or corePlus value. Use the visitor to figure 
+    // out which one and subscribe to it.
     _upstreamClientOrSessionSubDisposer = cbase.AcceptVisitor(
-      core => _stateManager.SubscribeToCoreClient(core),
-      corePlus => _stateManager.SubscribeToCorePlusSession(corePlus));
+      (CoreConnectionConfig _) => _stateManager.SubscribeToCoreClient(_endpointId, this),
+      (CorePlusConnectionConfig _) => _stateManager.SubscribeToCorePlusSession(_endpointId, this));
   }
 
   public void OnNext(StatusOr<Client> client) {
@@ -80,8 +87,10 @@ internal class ConnectionHealthProvider :
       return;
     }
 
+    // If valid value, then we use the ConnectionOKString (something like "OK").
+    // Otherwise, we pass through the status.
     var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
-    _observers.SetAndSendStatus(ref _connectionHealth, message);s
+    _observers.SetAndSendStatus(ref _connectionHealth, message);
   }
 
   public void OnNext(StatusOr<SessionManager> sm) {
@@ -89,6 +98,8 @@ internal class ConnectionHealthProvider :
       return;
     }
 
+    // If valid value, then we use the ConnectionOKString (something like "OK").
+    // Otherwise, we pass through the status.
     var message = sm.AcceptVisitor(_ => ConnectionOkString, s => s);
     _observers.SetAndSendStatus(ref _connectionHealth, message);
   }

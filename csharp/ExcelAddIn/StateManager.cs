@@ -52,7 +52,7 @@ public class StateManager {
   /// manually remove them.
   /// </summary>
   public IDisposable SubscribeToCredentials(EndpointId endpointId,
-    IObserver<StatusOr<CredentialsBase>> observer) {
+    IObserver<StatusOr<ConnectionConfigBase>> observer) {
     IDisposable? disposer = null;
     LookupOrCreateCredentialsProvider(endpointId,
       cp => disposer = cp.Subscribe(observer));
@@ -61,9 +61,9 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public void SetCredentials(CredentialsBase credentials) {
-    LookupOrCreateCredentialsProvider(credentials.Id,
-      cp => cp.SetCredentials(credentials));
+  public void SetCredentials(ConnectionConfigBase config) {
+    LookupOrCreateCredentialsProvider(config.Id,
+      cp => cp.SetCredentials(config));
   }
 
   public void Reconnect(EndpointId id) {
