@@ -4,7 +4,7 @@ using Deephaven.ExcelAddIn.Views;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
-internal static class ConnectionManagerDialogFactory {
+internal static class EndpointManagerDialogFactory {
   public static void CreateAndShow(StateManager stateManager) {
     Utility.RunInBackground(() => {
       var cmDialog = new EndpointManagerDialog();

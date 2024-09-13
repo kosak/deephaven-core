@@ -92,7 +92,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
 
   void OnNewButtonClicked() {
     var cvm = EndpointDialogViewModel.OfEmpty();
-    CredentialsDialogFactory.CreateAndShow(_stateManager, cvm, null);
+    ConfigDialogFactory.CreateAndShow(_stateManager, cvm, null);
   }
 
   private class FailureCollector {

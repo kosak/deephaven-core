@@ -5,7 +5,7 @@ using ExcelAddIn.views;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
-internal static class CredentialsDialogFactory {
+internal static class ConfigDialogFactory {
   public static void CreateAndShow(StateManager stateManager, EndpointDialogViewModel cvm,
     EndpointId? whitelistId) {
     Utility.RunInBackground(() => {

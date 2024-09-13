@@ -83,7 +83,7 @@ public sealed class ConnectionManagerDialogRowManager :
     var cvm = creds.AcceptVisitor(
       crs => EndpointDialogViewModel.OfIdAndCredentials(_endpointId.Id, crs),
       _ => EndpointDialogViewModel.OfIdButOtherwiseEmpty(_endpointId.Id));
-    CredentialsDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
+    ConfigDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
   }
 
   public void DoDelete(Action<EndpointId> onSuccess, Action<EndpointId, string> onFailure) {

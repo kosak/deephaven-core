@@ -12,7 +12,7 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ShowConnectionsDialog() {
-    ConnectionManagerDialogFactory.CreateAndShow(StateManager);
+    EndpointManagerDialogFactory.CreateAndShow(StateManager);
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
