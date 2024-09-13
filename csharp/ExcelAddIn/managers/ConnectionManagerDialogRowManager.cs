@@ -7,7 +7,7 @@ using Deephaven.ExcelAddIn.ViewModels;
 namespace Deephaven.ExcelAddIn.Managers;
 
 public sealed class ConnectionManagerDialogRowManager :
-  IObserver<StatusOr<ConnectionConfigBase>>,
+  IObserver<StatusOr<EndpointConfigBase>>,
   IObserver<StatusOr<ConnectionHealth>>,
   IObserver<EndpointId?>,
   IDisposable {
@@ -64,7 +64,7 @@ public sealed class ConnectionManagerDialogRowManager :
     }
   }
 
-  public void OnNext(StatusOr<ConnectionConfigBase> sor) {
+  public void OnNext(StatusOr<EndpointConfigBase> sor) {
     _row.SetCredentialsSynced(sor);
   }
 

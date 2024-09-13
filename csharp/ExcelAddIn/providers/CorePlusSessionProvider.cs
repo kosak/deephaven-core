@@ -6,7 +6,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CorePlusSessionProvider :
-  IObserver<StatusOr<ConnectionConfigBase>>,
+  IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<SessionManager>> {
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
@@ -49,7 +49,7 @@ internal class CorePlusSessionProvider :
     });
   }
 
-  public void OnNext(StatusOr<ConnectionConfigBase> credentials) {
+  public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     if (_workerThread.EnqueueOrNop(() => OnNext(credentials))) {
       return;
     }
@@ -76,7 +76,7 @@ internal class CorePlusSessionProvider :
       });
   }
 
-  private void CreateSessionManagerInSeparateThread(CorePlusConnectionConfig config,
+  private void CreateSessionManagerInSeparateThread(CorePlusEndpointConfig config,
     VersionTrackerCookie versionCookie) {
     SessionManager? sm = null;
     StatusOr<SessionManager> result;

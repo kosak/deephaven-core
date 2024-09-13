@@ -68,7 +68,7 @@ public class StateManager {
   /// removed with a TryDeleteCredentials call.
   /// </summary>
   public IDisposable SubscribeToConnectionConfig(EndpointId endpointId,
-    IObserver<StatusOr<ConnectionConfigBase>> observer) {
+    IObserver<StatusOr<EndpointConfigBase>> observer) {
     IDisposable? disposer = null;
     LookupOrCreateCredentialsProvider(endpointId,
       cp => disposer = cp.Subscribe(observer));
@@ -77,7 +77,7 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public void SetCredentials(ConnectionConfigBase config) {
+  public void SetCredentials(EndpointConfigBase config) {
     LookupOrCreateCredentialsProvider(config.Id,
       cp => cp.SetCredentials(config));
   }

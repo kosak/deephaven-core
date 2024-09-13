@@ -6,14 +6,14 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class ConnectionFactory {
-  public static Client ConnectToCore(CoreConnectionConfig config) {
+  public static Client ConnectToCore(CoreEndpointConfig config) {
     var options = new ClientOptions();
     options.SetSessionType(config.SessionTypeIsPython ? "python" : "groovy");
     var client = Client.Connect(config.ConnectionString, options);
     return client;
   }
 
-  public static SessionManager ConnectToCorePlus(CorePlusConnectionConfig config, WorkerThread workerThread) {
+  public static SessionManager ConnectToCorePlus(CorePlusEndpointConfig config, WorkerThread workerThread) {
     var handler = new HttpClientHandler();
     if (!config.ValidateCertificate) {
       handler.ClientCertificateOptions = ClientCertificateOption.Manual;

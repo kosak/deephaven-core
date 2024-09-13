@@ -15,7 +15,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  * whatever status text was received from upstream.
  */
 internal class ConnectionHealthProvider :
-  IObserver<StatusOr<ConnectionConfigBase>>,
+  IObserver<StatusOr<EndpointConfigBase>>,
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<SessionManager>>,
   IObservable<StatusOr<ConnectionHealth>> {
@@ -62,7 +62,7 @@ internal class ConnectionHealthProvider :
     });
   }
 
-  public void OnNext(StatusOr<ConnectionConfigBase> credentials) {
+  public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     if (_workerThread.EnqueueOrNop(() => OnNext(credentials))) {
       return;
     }
@@ -78,8 +78,8 @@ internal class ConnectionHealthProvider :
     // Upstream has core or corePlus value. Use the visitor to figure 
     // out which one and subscribe to it.
     _upstreamClientOrSessionSubDisposer = cbase.AcceptVisitor(
-      (CoreConnectionConfig _) => _stateManager.SubscribeToCoreClient(_endpointId, this),
-      (CorePlusConnectionConfig _) => _stateManager.SubscribeToCorePlusSession(_endpointId, this));
+      (CoreEndpointConfig _) => _stateManager.SubscribeToCoreClient(_endpointId, this),
+      (CorePlusEndpointConfig _) => _stateManager.SubscribeToCorePlusSession(_endpointId, this));
   }
 
   public void OnNext(StatusOr<Client> client) {

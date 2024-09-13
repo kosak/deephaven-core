@@ -3,10 +3,10 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class ConnectionConfigProvider : IObservable<StatusOr<ConnectionConfigBase>> {
+internal class ConnectionConfigProvider : IObservable<StatusOr<EndpointConfigBase>> {
   private readonly WorkerThread _workerThread;
-  private readonly ObserverContainer<StatusOr<ConnectionConfigBase>> _observers = new();
-  private StatusOr<ConnectionConfigBase> _credentials = StatusOr<ConnectionConfigBase>.OfStatus("[No Credentials]");
+  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
+  private StatusOr<EndpointConfigBase> _credentials = StatusOr<EndpointConfigBase>.OfStatus("[No Credentials]");
 
   public ConnectionConfigProvider(StateManager stateManager) {
     _workerThread = stateManager.WorkerThread;
@@ -16,7 +16,7 @@ internal class ConnectionConfigProvider : IObservable<StatusOr<ConnectionConfigB
     // Do nothing
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<ConnectionConfigBase>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
     _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
       observer.OnNext(_credentials);
@@ -25,7 +25,7 @@ internal class ConnectionConfigProvider : IObservable<StatusOr<ConnectionConfigB
     return _workerThread.EnqueueOrRunWhenDisposed(() => _observers.Remove(observer, out _));
   }
 
-  public void SetCredentials(ConnectionConfigBase newConfig) {
+  public void SetCredentials(EndpointConfigBase newConfig) {
     _observers.SetAndSendValue(ref _credentials, newConfig);
   }
 

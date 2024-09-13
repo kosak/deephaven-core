@@ -108,7 +108,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
     Utility.RunInBackground(() => TestCredentialsThreadFunc(newCreds));
   }
 
-  private void TestCredentialsThreadFunc(ConnectionConfigBase config) {
+  private void TestCredentialsThreadFunc(EndpointConfigBase config) {
     var latestCookie = _versionTracker.SetNewVersion();
 
     var state = "OK";
