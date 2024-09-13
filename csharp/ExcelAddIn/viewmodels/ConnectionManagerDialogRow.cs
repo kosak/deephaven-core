@@ -10,7 +10,7 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
 
   private readonly object _sync = new();
   private StatusOr<ConnectionConfigBase> _credentials = StatusOr<ConnectionConfigBase>.OfStatus("[Not set]");
-  private StatusOr<SessionBase> _session = StatusOr<SessionBase>.OfStatus("[Not connected]");
+  private StatusOr<ConnectionHealth> _session = StatusOr<ConnectionHealth>.OfStatus("[Not connected]");
   private EndpointId? _defaultEndpointId = null;
 
   [DisplayName("Name")]
@@ -18,9 +18,9 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
 
   public string Status {
     get {
-      var session = GetSessionSynced();
+      var health = GetConnectionHealthSynced();
       // If we have a valid session, return "[Connected]", otherwise pass through the status text we have.
-      return session.AcceptVisitor(
+      return health.AcceptVisitor(
         _ => "[Connected]",
         status => status);
     }
@@ -61,7 +61,6 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     }
 
     OnPropertyChanged(nameof(ServerType));
-    OnPropertyChanged(nameof(IsDefault));
   }
 
   public EndpointId? GetDefaultEndpointIdSynced() {
@@ -77,13 +76,13 @@ public sealed class ConnectionManagerDialogRow(string id) : INotifyPropertyChang
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  public StatusOr<SessionBase> GetSessionSynced() {
+  public StatusOr<ConnectionHealth> GetConnectionHealthSynced() {
     lock (_sync) {
       return _session;
     }
   }
 
-  public void SetSessionSynced(StatusOr<SessionBase> value) {
+  public void SetConnectionHealthSynced(StatusOr<ConnectionHealth> value) {
     lock (_sync) {
       _session = value;
     }

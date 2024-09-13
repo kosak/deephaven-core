@@ -3,12 +3,12 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class CredentialsProvider : IObservable<StatusOr<ConnectionConfigBase>> {
+internal class ConnectionConfigProvider : IObservable<StatusOr<ConnectionConfigBase>> {
   private readonly WorkerThread _workerThread;
   private readonly ObserverContainer<StatusOr<ConnectionConfigBase>> _observers = new();
   private StatusOr<ConnectionConfigBase> _credentials = StatusOr<ConnectionConfigBase>.OfStatus("[No Credentials]");
 
-  public CredentialsProvider(StateManager stateManager) {
+  public ConnectionConfigProvider(StateManager stateManager) {
     _workerThread = stateManager.WorkerThread;
   }
 

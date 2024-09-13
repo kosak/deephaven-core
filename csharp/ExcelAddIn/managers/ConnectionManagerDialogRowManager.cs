@@ -8,7 +8,7 @@ namespace Deephaven.ExcelAddIn.Managers;
 
 public sealed class ConnectionManagerDialogRowManager :
   IObserver<StatusOr<ConnectionConfigBase>>,
-  IObserver<StatusOr<SessionBase>>,
+  IObserver<StatusOr<ConnectionHealth>>,
   IObserver<EndpointId?>,
   IDisposable {
 
@@ -46,7 +46,7 @@ public sealed class ConnectionManagerDialogRowManager :
       throw new Exception("State error: already subscribed");
     }
     // We watch for session and credential state changes in our ID
-    var d1 = _stateManager.SubscribeToSession(_endpointId, this);
+    var d1 = _stateManager.SubscribeToConnectionHealth(_endpointId, this);
     var d2 = _stateManager.SubscribeToCredentials(_endpointId, this);
     var d3 = _stateManager.SubscribeToDefaultEndpointSelection(this);
     _disposables.AddRange(new[] { d1, d2, d3 });
@@ -64,12 +64,12 @@ public sealed class ConnectionManagerDialogRowManager :
     }
   }
 
-  public void OnNext(StatusOr<ConnectionConfigBase> value) {
-    _row.SetCredentialsSynced(value);
+  public void OnNext(StatusOr<ConnectionConfigBase> sor) {
+    _row.SetCredentialsSynced(sor);
   }
 
-  public void OnNext(StatusOr<SessionBase> value) {
-    _row.SetSessionSynced(value);
+  public void OnNext(StatusOr<ConnectionHealth> sor) {
+    _row.SetConnectionHealthSynced(sor);
   }
 
   public void OnNext(EndpointId? value) {
