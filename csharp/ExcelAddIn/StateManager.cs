@@ -120,12 +120,12 @@ public class StateManager {
   }
 
   private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
-    Action<ConnectionConfigProvider> action) {
+    Action<EndpointConfigProvider> action) {
     if (WorkerThread.EnqueueOrNop(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
       return;
     }
     if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
-      cp = new ConnectionConfigProvider(this);
+      cp = new EndpointConfigProvider(this);
       _credentialsProviders.Add(endpointId, cp);
       cp.Init();
       _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));

@@ -6,15 +6,15 @@ using Deephaven.ExcelAddIn.ViewModels;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
-public sealed class ConnectionManagerDialogRowManager :
+public sealed class EndpointManagerDialogRowManager :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObserver<StatusOr<ConnectionHealth>>,
   IObserver<EndpointId?>,
   IDisposable {
 
-  public static ConnectionManagerDialogRowManager Create(EndpointManagerDialogRow row,
+  public static EndpointManagerDialogRowManager Create(EndpointManagerDialogRow row,
     EndpointId endpointId, StateManager stateManager) {
-    var result = new ConnectionManagerDialogRowManager(row, endpointId, stateManager);
+    var result = new EndpointManagerDialogRowManager(row, endpointId, stateManager);
     result.Resubscribe();
     return result;
   }
@@ -25,7 +25,7 @@ public sealed class ConnectionManagerDialogRowManager :
   private readonly WorkerThread _workerThread;
   private readonly List<IDisposable> _disposables = new();
 
-  private ConnectionManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
+  private EndpointManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
     StateManager stateManager) {
     _row = row;
     _endpointId = endpointId;

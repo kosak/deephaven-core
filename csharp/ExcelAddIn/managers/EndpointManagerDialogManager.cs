@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Util;
@@ -9,14 +8,14 @@ using ExcelAddIn.views;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
-internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+internal class EndpointManagerDialogManager : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   //
   // ConnectionManagerDialog cmDialog,
   // ConcurrentDictionary<ConnectionManagerDialogRow, ConnectionManagerDialogRowManager> rowToManager,
   // StateManager stateManager) 
-  public static ConnectionManagerDialogManager Create(StateManager stateManager,
+  public static EndpointManagerDialogManager Create(StateManager stateManager,
     EndpointManagerDialog cmDialog) {
-    var result = new ConnectionManagerDialogManager(stateManager, cmDialog);
+    var result = new EndpointManagerDialogManager(stateManager, cmDialog);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
     cmDialog.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
     cmDialog.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
@@ -32,10 +31,10 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
   private readonly WorkerThread _workerThread;
   private readonly EndpointManagerDialog _cmDialog;
   private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
-  private readonly Dictionary<EndpointManagerDialogRow, ConnectionManagerDialogRowManager> _rowToManager = new();
+  private readonly Dictionary<EndpointManagerDialogRow, EndpointManagerDialogRowManager> _rowToManager = new();
   private readonly List<IDisposable> _disposables = new();
 
-  public ConnectionManagerDialogManager(StateManager stateManager, EndpointManagerDialog cmDialog) {
+  public EndpointManagerDialogManager(StateManager stateManager, EndpointManagerDialog cmDialog) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _cmDialog = cmDialog;
@@ -49,7 +48,7 @@ internal class ConnectionManagerDialogManager : IObserver<AddOrRemove<EndpointId
     if (aor.IsAdd) {
       var endpointId = aor.Value;
       var row = new EndpointManagerDialogRow(endpointId.Id);
-      var statusRowManager = ConnectionManagerDialogRowManager.Create(row, endpointId, _stateManager);
+      var statusRowManager = EndpointManagerDialogRowManager.Create(row, endpointId, _stateManager);
       _rowToManager.Add(row, statusRowManager);
       _idToRow.Add(endpointId, row);
       _disposables.Add(statusRowManager);

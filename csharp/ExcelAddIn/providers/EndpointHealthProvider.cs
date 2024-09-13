@@ -14,7 +14,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  * other hand, an unhealthy connection sends a StatusOr with the status text sent to
  * whatever status text was received from upstream.
  */
-internal class ConnectionHealthProvider :
+internal class EndpointHealthProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<SessionManager>>,
@@ -30,7 +30,7 @@ internal class ConnectionHealthProvider :
   private StatusOr<ConnectionHealth> _connectionHealth = StatusOr<ConnectionHealth>.OfStatus("[No credentials]");
   private readonly ObserverContainer<StatusOr<ConnectionHealth>> _observers = new();
 
-  public ConnectionHealthProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
+  public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
     _stateManager = stateManager;
     _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
