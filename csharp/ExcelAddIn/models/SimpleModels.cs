@@ -16,4 +16,4 @@ public record EndpointId(string Id) {
 
 public record PersistentQueryId(string Id);
 
-public record ConnectionHealth;
+public record EndpointHealth;

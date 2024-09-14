@@ -42,7 +42,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
     _configDialog = configDialog;
     _cvm = cvm;
     _whitelistId = whitelistId;
-    _disposer = stateManager.SubscribeToCredentialsPopulation(this);
+    _disposer = stateManager.SubscribeToConfigPopulation(this);
   }
 
   public void Dispose() {

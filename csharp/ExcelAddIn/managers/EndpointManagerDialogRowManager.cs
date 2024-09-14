@@ -8,7 +8,7 @@ namespace Deephaven.ExcelAddIn.Managers;
 
 public sealed class EndpointManagerDialogRowManager :
   IObserver<StatusOr<EndpointConfigBase>>,
-  IObserver<StatusOr<ConnectionHealth>>,
+  IObserver<StatusOr<EndpointHealth>>,
   IObserver<EndpointId?>,
   IDisposable {
 
@@ -46,8 +46,8 @@ public sealed class EndpointManagerDialogRowManager :
       throw new Exception("State error: already subscribed");
     }
     // We watch for session and credential state changes in our ID
-    var d1 = _stateManager.SubscribeToConnectionHealth(_endpointId, this);
-    var d2 = _stateManager.SubscribeToCredentials(_endpointId, this);
+    var d1 = _stateManager.SubscribeToEndpointHealth(_endpointId, this);
+    var d2 = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
     var d3 = _stateManager.SubscribeToDefaultEndpointSelection(this);
     _disposables.AddRange(new[] { d1, d2, d3 });
   }
@@ -64,12 +64,12 @@ public sealed class EndpointManagerDialogRowManager :
     }
   }
 
-  public void OnNext(StatusOr<EndpointConfigBase> sor) {
-    _row.SetCredentialsSynced(sor);
+  public void OnNext(StatusOr<EndpointConfigBase> ecb) {
+    _row.SetCredentialsSynced(ecb);
   }
 
-  public void OnNext(StatusOr<ConnectionHealth> sor) {
-    _row.SetConnectionHealthSynced(sor);
+  public void OnNext(StatusOr<EndpointHealth> eh) {
+    _row.SetEndpointHealthSynced(eh);
   }
 
   public void OnNext(EndpointId? value) {
@@ -77,10 +77,10 @@ public sealed class EndpointManagerDialogRowManager :
   }
 
   public void DoEdit() {
-    var creds = _row.GetCredentialsSynced();
+    var config = _row.GetEndpointConfigSynced();
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
-    var cvm = creds.AcceptVisitor(
+    var cvm = config.AcceptVisitor(
       crs => EndpointDialogViewModel.OfIdAndCredentials(_endpointId.Id, crs),
       _ => EndpointDialogViewModel.OfIdButOtherwiseEmpty(_endpointId.Id));
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
@@ -99,7 +99,7 @@ public sealed class EndpointManagerDialogRowManager :
     // 4. Otherwise (there is some other subscriber to the credentials), then the delete operation
     //    should be denied. In that case we restore our state by resubscribing to everything.
     Unsubscribe();
-    _stateManager.TryDeleteCredentials(_endpointId,
+    _stateManager.TryDeleteConfigs(_endpointId,
       () => onSuccess(_endpointId),
       reason => {
         Resubscribe();

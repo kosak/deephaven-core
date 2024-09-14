@@ -25,11 +25,11 @@ internal class CoreClientProvider :
   }
 
   public void Init() {
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToCredentials(_endpointId, this);
+    _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
   }
 
   /// <summary>
-  /// Subscribe to session changes
+  /// Subscribe to Core client changes
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     _workerThread.EnqueueOrRun(() => {

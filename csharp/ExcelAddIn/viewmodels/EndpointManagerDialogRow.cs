@@ -9,8 +9,8 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
-  private StatusOr<EndpointConfigBase> _credentials = StatusOr<EndpointConfigBase>.OfStatus("[Not set]");
-  private StatusOr<ConnectionHealth> _session = StatusOr<ConnectionHealth>.OfStatus("[Not connected]");
+  private StatusOr<EndpointConfigBase> _endpointConfig = StatusOr<EndpointConfigBase>.OfStatus("[Not set]");
+  private StatusOr<EndpointHealth> _endpointHealth = StatusOr<EndpointHealth>.OfStatus("[Not connected]");
   private EndpointId? _defaultEndpointId = null;
 
   [DisplayName("Name")]
@@ -18,7 +18,7 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
 
   public string Status {
     get {
-      var health = GetConnectionHealthSynced();
+      var health = GetEndpointHealthSynced();
       // If we have a valid session, return "[Connected]", otherwise pass through the status text we have.
       return health.AcceptVisitor(
         _ => "[Connected]",
@@ -49,15 +49,15 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
     }
   }
 
-  public StatusOr<EndpointConfigBase> GetCredentialsSynced() {
+  public StatusOr<EndpointConfigBase> GetEndpointConfigSynced() {
     lock (_sync) {
-      return _credentials;
+      return _endpointConfig;
     }
   }
 
   public void SetCredentialsSynced(StatusOr<EndpointConfigBase> value) {
     lock (_sync) {
-      _credentials = value;
+      _endpointConfig = value;
     }
 
     OnPropertyChanged(nameof(ServerType));
@@ -76,15 +76,15 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  public StatusOr<ConnectionHealth> GetConnectionHealthSynced() {
+  public StatusOr<EndpointHealth> GetEndpointHealthSynced() {
     lock (_sync) {
-      return _session;
+      return _endpointHealth;
     }
   }
 
-  public void SetConnectionHealthSynced(StatusOr<ConnectionHealth> value) {
+  public void SetEndpointHealthSynced(StatusOr<EndpointHealth> value) {
     lock (_sync) {
-      _session = value;
+      _endpointHealth = value;
     }
     OnPropertyChanged(nameof(Status));
   }

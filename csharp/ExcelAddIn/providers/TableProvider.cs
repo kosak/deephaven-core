@@ -33,7 +33,7 @@ internal class TableProvider :
   public void Init() {
     _upstreamDisposer = _persistentQueryId != null
       ? _stateManager.SubscribeToPersistentQuery(_endpointId, _persistentQueryId, this)
-      : _stateManager.SubscribeToCore(_endpointId, this);
+      : _stateManager.SubscribeToCoreClient(_endpointId, this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {

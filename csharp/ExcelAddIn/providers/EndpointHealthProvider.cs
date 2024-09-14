@@ -18,17 +18,17 @@ internal class EndpointHealthProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<SessionManager>>,
-  IObservable<StatusOr<ConnectionHealth>> {
+  IObservable<StatusOr<EndpointHealth>> {
   private const string ConnectionOkString = "OK";
 
   private readonly StateManager _stateManager;
   private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
   private Action? _onDispose;
-  private IDisposable? _upstreamCredentialsSubDisposer = null;
+  private IDisposable? _upstreamConfigSubDisposer = null;
   private IDisposable? _upstreamClientOrSessionSubDisposer = null;
-  private StatusOr<ConnectionHealth> _connectionHealth = StatusOr<ConnectionHealth>.OfStatus("[No credentials]");
-  private readonly ObserverContainer<StatusOr<ConnectionHealth>> _observers = new();
+  private StatusOr<EndpointHealth> _endpointHealth = StatusOr<EndpointHealth>.OfStatus("[No config]");
+  private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
 
   public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
     _stateManager = stateManager;
@@ -38,16 +38,16 @@ internal class EndpointHealthProvider :
   }
 
   public void Init() {
-    _upstreamCredentialsSubDisposer = _stateManager.SubscribeToCredentials(_endpointId, this);
+    _upstreamConfigSubDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
   }
 
   /// <summary>
   /// Subscribe to connection health changes
   /// </summary>
-  public IDisposable Subscribe(IObserver<StatusOr<ConnectionHealth>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<EndpointHealth>> observer) {
     _workerThread.EnqueueOrRun(() => {
       _observers.Add(observer, out _);
-      observer.OnNext(_connectionHealth);
+      observer.OnNext(_endpointHealth);
     });
 
     return _workerThread.EnqueueOrRunWhenDisposed(() => {
@@ -56,7 +56,7 @@ internal class EndpointHealthProvider :
         return;
       }
 
-      Utility.Exchange(ref _upstreamCredentialsSubDisposer, null)?.Dispose();
+      Utility.Exchange(ref _upstreamConfigSubDisposer, null)?.Dispose();
       UnsubscribeClientOrSession();
       Utility.Exchange(ref _onDispose, null)?.Invoke();
     });
@@ -71,7 +71,7 @@ internal class EndpointHealthProvider :
 
     if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
       // Upstream has status text.
-      _observers.SetAndSendStatus(ref _connectionHealth, status);
+      _observers.SetAndSendStatus(ref _endpointHealth, status);
       return;
     }
 
@@ -90,7 +90,7 @@ internal class EndpointHealthProvider :
     // If valid value, then we use the ConnectionOKString (something like "OK").
     // Otherwise, we pass through the status.
     var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
-    _observers.SetAndSendStatus(ref _connectionHealth, message);
+    _observers.SetAndSendStatus(ref _endpointHealth, message);
   }
 
   public void OnNext(StatusOr<SessionManager> sm) {
@@ -101,7 +101,7 @@ internal class EndpointHealthProvider :
     // If valid value, then we use the ConnectionOKString (something like "OK").
     // Otherwise, we pass through the status.
     var message = sm.AcceptVisitor(_ => ConnectionOkString, s => s);
-    _observers.SetAndSendStatus(ref _connectionHealth, message);
+    _observers.SetAndSendStatus(ref _endpointHealth, message);
   }
 
   private void UnsubscribeClientOrSession() {
@@ -110,7 +110,7 @@ internal class EndpointHealthProvider :
     }
 
     Utility.Exchange(ref _upstreamClientOrSessionSubDisposer, null)?.Dispose();
-    _observers.SetAndSendStatus(ref _connectionHealth, "[Unknown]");
+    _observers.SetAndSendStatus(ref _endpointHealth, "[Unknown]");
   }
 
   public void OnCompleted() {

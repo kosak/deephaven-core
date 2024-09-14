@@ -26,7 +26,7 @@ public class StateManager {
       _configPopulationObservers.Add(observer, out _);
 
       // Give this observer the current set of endpoint ids.
-      var keys = _connectionConfigProviders.Keys.ToArray();
+      var keys = _endpointConfigProviders.Keys.ToArray();
       foreach (var endpointId in keys) {
         observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
       }
@@ -46,16 +46,16 @@ public class StateManager {
       () => _defaultEndpointSelectionObservers.Remove(observer, out _));
   }
 
-  public IDisposable SubscribeToConnectionHealth(EndpointId endpointId,
-    IObserver<StatusOr<ConnectionHealth>> observer) {
+  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
+    IObserver<StatusOr<EndpointHealth>> observer) {
     IDisposable? disposer = null;
     WorkerThread.EnqueueOrRun(() => {
-      if (!_connectionHealthProviders.TryGetValue(endpointId, out var chp)) {
-        chp = new ConnectionHealthProvider(this, endpointId, () => _connectionHealthProviders.Remove(endpointId));
-        _connectionHealthProviders.Add(endpointId, chp);
-        chp.Init();
+      if (!_endpointHealthProviders.TryGetValue(endpointId, out var ehp)) {
+        ehp = new EndpointHealthProvider(this, endpointId, () => _endpointHealthProviders.Remove(endpointId));
+        _endpointHealthProviders.Add(endpointId, ehp);
+        ehp.Init();
       }
-      disposer = chp.Subscribe(observer);
+      disposer = ehp.Subscribe(observer);
     });
 
     return WorkerThread.EnqueueOrRunWhenDisposed(() =>
@@ -67,7 +67,7 @@ public class StateManager {
   /// from the map upon the last unsubscribe. Rather, they hang around until manually
   /// removed with a TryDeleteCredentials call.
   /// </summary>
-  public IDisposable SubscribeToConnectionConfig(EndpointId endpointId,
+  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
     IDisposable? disposer = null;
     LookupOrCreateCredentialsProvider(endpointId,
