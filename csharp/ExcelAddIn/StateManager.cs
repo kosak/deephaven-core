@@ -16,14 +16,14 @@ public class StateManager {
   private readonly Dictionary<EndpointId, CorePlusSessionProvider> _corePlusSessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
-  private readonly ObserverContainer<AddOrRemove<EndpointId>> _configPopulationObservers = new();
+  private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
   private EndpointId? _defaultEndpointId = null;
 
-  public IDisposable SubscribeToConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
+  public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
-      _configPopulationObservers.Add(observer, out _);
+      _endpointConfigPopulationObservers.Add(observer, out _);
 
       // Give this observer the current set of endpoint ids.
       var keys = _endpointConfigProviders.Keys.ToArray();
@@ -33,7 +33,7 @@ public class StateManager {
     });
 
     return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => _configPopulationObservers.Remove(observer, out _));
+      () => _endpointConfigPopulationObservers.Remove(observer, out _));
   }
 
   public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
@@ -70,7 +70,7 @@ public class StateManager {
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
     IDisposable? disposer = null;
-    LookupOrCreateCredentialsProvider(endpointId,
+    LookupOrCreateEndpointConfigProvider(endpointId,
       cp => disposer = cp.Subscribe(observer));
 
     return WorkerThread.EnqueueOrRunWhenDisposed(() =>
@@ -78,13 +78,13 @@ public class StateManager {
   }
 
   public void SetCredentials(EndpointConfigBase config) {
-    LookupOrCreateCredentialsProvider(config.Id,
+    LookupOrCreateEndpointConfigProvider(config.Id,
       cp => cp.SetCredentials(config));
   }
 
   public void Reconnect(EndpointId id) {
     // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
-    LookupOrCreateCredentialsProvider(id, cp => cp.Resend());
+    LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
   }
 
   public void TryDeleteConfigs(EndpointId[] ids, Action<string?[]> failureReasonsAction) {
@@ -94,7 +94,7 @@ public class StateManager {
 
     var failureReasons = new List<string?>();
     foreach (var id in ids) {
-      if (!_connectionConfigProviders.TryGetValue(id, out var cp)) {
+      if (!_endpointConfigProviders.TryGetValue(id, out var cp)) {
         failureReasons.Add($"{id} unknown");
         continue;
       }
@@ -112,23 +112,23 @@ public class StateManager {
         SetDefaultEndpointId(null);
       }
 
-      _credentialsProviders.Remove(id);
-      _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
+      _endpointConfigProviders.Remove(id);
+      _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
     }
 
     failureReasonsAction(failureReasons.ToArray());
   }
 
-  private void LookupOrCreateCredentialsProvider(EndpointId endpointId,
+  private void LookupOrCreateEndpointConfigProvider(EndpointId endpointId,
     Action<EndpointConfigProvider> action) {
-    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateCredentialsProvider(endpointId, action))) {
+    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateEndpointConfigProvider(endpointId, action))) {
       return;
     }
-    if (!_credentialsProviders.TryGetValue(endpointId, out var cp)) {
+    if (!_endpointConfigProviders.TryGetValue(endpointId, out var cp)) {
       cp = new EndpointConfigProvider(this);
-      _credentialsProviders.Add(endpointId, cp);
+      _endpointConfigProviders.Add(endpointId, cp);
       cp.Init();
-      _credentialsPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
+      _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
     }
 
     action(cp);

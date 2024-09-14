@@ -29,11 +29,11 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   [DisplayName("Server Type")]
   public string ServerType {
     get {
-      var creds = GetCredentialsSynced();
+      var config = GetEndpointConfigSynced();
       // Nested AcceptVisitor!!
       // If we have valid credentials, determine whether they are for Core or Core+ and return the appropriate string.
       // Otherwise (if we have invalid credentials), ignore their status text and just say "[Unknown]".
-      return creds.AcceptVisitor(
+      return config.AcceptVisitor(
         crs => crs.AcceptVisitor(_ => "Core", _ => "Core+"),
         _ => "[Unknown]");
 
