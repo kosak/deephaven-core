@@ -22,7 +22,7 @@ internal class EndpointManagerDialogManager : IObserver<AddOrRemove<EndpointId>>
     cmDialog.OnMakeDefaultButtonClicked += result.OnMakeDefaultButtonClicked;
     cmDialog.OnEditButtonClicked += result.OnEditButtonClicked;
 
-    var disp = stateManager.SubscribeToConfigPopulation(result);
+    var disp = stateManager.SubscribeToEndpointConfigPopulation(result);
     result._disposables.Add(disp);
     return result;
   }

@@ -10,7 +10,7 @@ internal static class ConfigDialogFactory {
     EndpointId? whitelistId) {
     Utility.RunInBackground(() => {
       var cd = new ConfigDialog(cvm);
-      var state = new CredentialsDialogState(stateManager, cd, cvm, whitelistId);
+      var state = new EndpointConfigDialogState(stateManager, cd, cvm, whitelistId);
 
 
       cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
@@ -23,7 +23,7 @@ internal static class ConfigDialogFactory {
   }
 }
 
-internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, IDisposable {
   private readonly StateManager _stateManager;
   private readonly ConfigDialog _configDialog;
   private readonly EndpointDialogViewModel _cvm;
@@ -33,7 +33,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
   private readonly HashSet<EndpointId> _knownIds = new();
   private readonly VersionTracker _versionTracker = new();
 
-  public CredentialsDialogState(
+  public EndpointConfigDialogState(
     StateManager stateManager,
     ConfigDialog configDialog,
     EndpointDialogViewModel cvm,
@@ -42,7 +42,7 @@ internal class CredentialsDialogState : IObserver<AddOrRemove<EndpointId>>, IDis
     _configDialog = configDialog;
     _cvm = cvm;
     _whitelistId = whitelistId;
-    _disposer = stateManager.SubscribeToConfigPopulation(this);
+    _disposer = stateManager.SubscribeToEndpointConfigPopulation(this);
   }
 
   public void Dispose() {
