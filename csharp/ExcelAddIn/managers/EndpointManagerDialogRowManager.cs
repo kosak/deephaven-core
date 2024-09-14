@@ -86,8 +86,8 @@ public sealed class EndpointManagerDialogRowManager :
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
   }
 
-  public void DoDelete(Action<EndpointId> onSuccess, Action<EndpointId, string> onFailure) {
-    if (_workerThread.EnqueueOrNop(() => DoDelete(onSuccess, onFailure))) {
+  public void DoDelete(Action<string?> failureReasonAction) {
+    if (_workerThread.EnqueueOrNop(() => DoDelete(failureReasonAction))) {
       return;
     }
 
@@ -99,11 +99,13 @@ public sealed class EndpointManagerDialogRowManager :
     // 4. Otherwise (there is some other subscriber to the credentials), then the delete operation
     //    should be denied. In that case we restore our state by resubscribing to everything.
     Unsubscribe();
-    _stateManager.TryDeleteConfigs(_endpointId,
-      () => onSuccess(_endpointId),
-      reason => {
-        Resubscribe();
-        onFailure(_endpointId, reason);
+    _stateManager.TryDeleteConfig(_endpointId,
+      failureReason => {
+        if (failureReason != null) {
+          Resubscribe();
+        }
+
+        failureReasonAction(failureReason);
       });
   }
 

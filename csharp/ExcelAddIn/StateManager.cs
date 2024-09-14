@@ -87,36 +87,31 @@ public class StateManager {
     LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
   }
 
-  public void TryDeleteConfigs(EndpointId[] ids, Action<string?[]> failureReasonsAction) {
-    if (WorkerThread.EnqueueOrNop(() => TryDeleteConfigs(ids, failureReasonsAction))) {
+  public void TryDeleteConfig(EndpointId id, Action<string?> failureReasonAction) {
+    if (WorkerThread.EnqueueOrNop(() => TryDeleteConfig(id, failureReasonAction))) {
       return;
     }
 
-    var failureReasons = new List<string?>();
-    foreach (var id in ids) {
-      if (!_endpointConfigProviders.TryGetValue(id, out var cp)) {
-        failureReasons.Add($"{id} unknown");
-        continue;
-      }
-
-      if (cp.ObserverCountUnsafe != 0) {
-        failureReasons.Add($"{id} is still active");
-        continue;
-      }
-
-      // success!
-      failureReasons.Add(null);
-
-      // If we are about to delete the config for the default endpoint
-      if (id.Equals(_defaultEndpointId)) {
-        SetDefaultEndpointId(null);
-      }
-
-      _endpointConfigProviders.Remove(id);
-      _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
+    if (!_endpointConfigProviders.TryGetValue(id, out var cp)) {
+      failureReasonAction($"{id} unknown");
+      return;
     }
 
-    failureReasonsAction(failureReasons.ToArray());
+    if (cp.ObserverCountUnsafe != 0) {
+      failureReasonAction($"{id} is still active");
+      return;
+    }
+
+    // success!
+    failureReasonAction(null);
+
+    // If we are about to delete the config for the default endpoint
+    if (id.Equals(_defaultEndpointId)) {
+      SetDefaultEndpointId(null);
+    }
+
+    _endpointConfigProviders.Remove(id);
+    _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
   }
 
   private void LookupOrCreateEndpointConfigProvider(EndpointId endpointId,

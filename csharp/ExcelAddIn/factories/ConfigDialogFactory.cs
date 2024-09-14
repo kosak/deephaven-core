@@ -131,7 +131,7 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
   }
 
   private void ShowMessageBox(string error) {
-    _configDialog.Invoke(() => {
+    _configDialog.BeginInvoke(() => {
       var dhm = new DeephavenMessageBox("Please provide missing fields", error, false);
       dhm.ShowDialog(_configDialog);
     });

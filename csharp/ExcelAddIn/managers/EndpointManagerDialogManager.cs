@@ -105,31 +105,27 @@ internal class EndpointManagerDialogManager : IObserver<AddOrRemove<EndpointId>>
       _rowsLeft = rowsLeft;
     }
 
-    public void OnFailure(EndpointId id, string reason) {
-      lock (_sync) {
-        _failures.Add(reason);
-      }
-
-      FinalSteps();
-    }
-
-    public void OnSuccess(EndpointId id) {
-      FinalSteps();
-    }
-
-    private void FinalSteps() {
+    public void OnSuccessOrFailure(string? reason) {
       string text;
       lock (_sync) {
+        if (reason != null) {
+          _failures.Add(reason);
+        }
         --_rowsLeft;
-        if (_rowsLeft > 0 || _failures.Count == 0) {
+        if (_rowsLeft > 0) {
+          // Wait for more results
           return;
         }
 
+        if (_failures.Count == 0) {
+          // No failures, so no dialog box
+        }
+
+        // Prepare the text of the dialog box
         text = string.Join(Environment.NewLine, _failures);
       }
-
       const string caption = "Couldn't delete some selections";
-      _cmDialog.Invoke(() => {
+      _cmDialog.BeginInvoke(() => {
         var mbox = new DeephavenMessageBox(caption, text, false);
         mbox.ShowDialog(_cmDialog);
       });
@@ -141,12 +137,17 @@ internal class EndpointManagerDialogManager : IObserver<AddOrRemove<EndpointId>>
       return;
     }
 
-    var fc = new FailureCollector(_cmDialog, rows.Length);
+    var managers = new List<EndpointManagerDialogRowManager>();
     foreach (var row in rows) {
       if (!_rowToManager.TryGetValue(row, out var manager)) {
         continue;
       }
-      manager.DoDelete(fc.OnSuccess, fc.OnFailure);
+      managers.Add(manager);
+    }
+
+    var fc = new FailureCollector(_cmDialog, managers.Count);
+    foreach (var manager in managers) {
+      manager.DoDelete(fc.OnSuccessOrFailure);
     }
   }
 
