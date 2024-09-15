@@ -137,18 +137,12 @@ internal class EndpointManagerDialogManager : IObserver<AddOrRemove<EndpointId>>
       return;
     }
 
-    var managers = new List<EndpointManagerDialogRowManager>();
-    foreach (var row in rows) {
-      if (!_rowToManager.TryGetValue(row, out var manager)) {
-        continue;
-      }
-      managers.Add(manager);
-    }
+    var managers = rows.Where(_rowToManager.ContainsKey)
+      .Select(row => _rowToManager[row])
+      .ToArray();
 
-    var fc = new FailureCollector(_cmDialog, managers.Count);
-    foreach (var manager in managers) {
-      manager.DoDelete(fc.OnSuccessOrFailure);
-    }
+    EndpointManagerDialogRowManager.TryDeleteBatch(managers,
+      zablonkatime);
   }
 
   void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {

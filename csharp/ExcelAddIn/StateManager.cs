@@ -87,23 +87,23 @@ public class StateManager {
     LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
   }
 
-  public void TryDeleteConfig(EndpointId id, Action<string?> failureReasonAction) {
-    if (WorkerThread.EnqueueOrNop(() => TryDeleteConfig(id, failureReasonAction))) {
+  public void TryDeleteEndpointConfig(EndpointId id, Action<bool> successOrFailure) {
+    if (WorkerThread.EnqueueOrNop(() => TryDeleteEndpointConfig(id, successOrFailure))) {
       return;
     }
 
     if (!_endpointConfigProviders.TryGetValue(id, out var cp)) {
-      failureReasonAction($"{id} unknown");
+      successOrFailure(false);
       return;
     }
 
     if (cp.ObserverCountUnsafe != 0) {
-      failureReasonAction($"{id} is still active");
+      successOrFailure(false);
       return;
     }
 
     // success!
-    failureReasonAction(null);
+    successOrFailure(true);
 
     // If we are about to delete the config for the default endpoint
     if (id.Equals(_defaultEndpointId)) {

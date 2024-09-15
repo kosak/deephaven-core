@@ -93,7 +93,7 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
       _stateManager.SetDefaultEndpointId(newCreds.Id);
     }
 
-    _configDialog!.Close();
+    _configDialog.Close();
   }
 
   public void OnTestCredentials() {
@@ -102,7 +102,7 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
       return;
     }
 
-    _configDialog!.SetTestResultsBox("Checking credentials");
+    _configDialog.SetTestResultsBox("Checking credentials");
     // Check credentials on its own thread
     Utility.RunInBackground(() => TestCredentialsThreadFunc(newCreds));
   }
@@ -127,7 +127,7 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
     }
 
     // Our results are valid. Keep them and tell everyone about it.
-    _configDialog!.SetTestResultsBox(state);
+    _configDialog.SetTestResultsBox(state);
   }
 
   private void ShowMessageBox(string error) {

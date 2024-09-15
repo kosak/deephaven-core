@@ -19,6 +19,34 @@ public sealed class EndpointManagerDialogRowManager :
     return result;
   }
 
+  public static void TryDeleteBatch(EndpointManagerDialogRowManager[] managers,
+    Action<Dictionary<EndpointId, bool>> resultsAction) {
+    var sync = new object();
+    var results = new Dictionary<EndpointId, bool>();
+    var remaining = managers.Length;
+
+    void ProcessResult(EndpointId endpointId, bool success) {
+      bool transmitResults;
+      lock (sync) {
+        // Use TryAdd in case our caller is being annoying and passes the same manager twice
+        _ = results.TryAdd(endpointId, success);
+        --remaining;
+        transmitResults = remaining == 0;
+      }
+
+      if (!transmitResults) {
+        return;
+      }
+
+      resultsAction(results);
+    }
+
+    foreach (var manager in managers) {
+      manager.DoDelete(ProcessResult);
+    }
+  }
+
+
   private readonly EndpointManagerDialogRow _row;
   private readonly EndpointId _endpointId;
   private readonly StateManager _stateManager;
@@ -86,26 +114,25 @@ public sealed class EndpointManagerDialogRowManager :
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
   }
 
-  public void DoDelete(Action<string?> failureReasonAction) {
-    if (_workerThread.EnqueueOrNop(() => DoDelete(failureReasonAction))) {
+  public void DoDelete(Action<EndpointId, bool> successOrFailure) {
+    if (_workerThread.EnqueueOrNop(() => DoDelete(successOrFailure))) {
       return;
     }
 
     // Strategy:
     // 1. Unsubscribe to everything
-    // 2. If it turns out that we were the last subscriber to the credentials, then great, the
-    //    delete can proceed.
-    // 3. If the credentials we are deleting are the default credentials, then unset default credentials
-    // 4. Otherwise (there is some other subscriber to the credentials), then the delete operation
-    //    should be denied. In that case we restore our state by resubscribing to everything.
+    // 2. Ask the StateManager to delete the endpoint config.
+    // 3. If this succeeds, great.
+    // 4. If it fails, then there are other users of the endpoint, so resubscribe and
+    //    signal that the delete failed.
     Unsubscribe();
-    _stateManager.TryDeleteConfig(_endpointId,
-      failureReason => {
-        if (failureReason != null) {
+    _stateManager.TryDeleteEndpointConfig(_endpointId,
+      success => {
+        if (!success) {
           Resubscribe();
         }
 
-        failureReasonAction(failureReason);
+        successOrFailure(_endpointId, success);
       });
   }
 
