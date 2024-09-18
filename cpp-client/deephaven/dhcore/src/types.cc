@@ -105,4 +105,18 @@ std::ostream &operator<<(std::ostream &s, const DateTime &o) {
   fmt::print(s, "{:%FT%TZ}", tp);
   return s;
 }
+
+std::ostream &operator<<(std::ostream &s, const LocalDate &o) {
+  std::chrono::nanoseconds ns(o.nanos_);
+  // Make a time point with nanosecond precision so we can print 9 digits of fractional second
+  // precision.
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> tp(ns);
+  fmt::print(s, "{:%FT%TZ}", tp);
+  return s;
+}
+
+std::ostream &operator<<(std::ostream &s, const LocalTime &o) {
+  return s << o.nanos_;
+}
+
 }  // namespace deephaven::client
