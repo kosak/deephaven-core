@@ -352,7 +352,7 @@ GenericChunk<T> GenericChunk<T>::Create(size_t size) {
 template<typename T>
 GenericChunk<T> GenericChunk<T>::CreateView(T *data, size_t size) {
   // GenericChunks allocated by create() point to an underlying heap-allocated buffer. On the other
-  // hand, GenericChunks created by createView() point to the caller's buffer. In the former case
+  // hand, GenericChunks created by CreateView() point to the caller's buffer. In the former case
   // we own the buffer and need to delete it when there are no more shared_ptrs pointing to it. In
   // the latter case the caller owns the buffer, and we should not try to deallocate it.
   // One might think we have to use two different data structures to handle these two different

@@ -20,7 +20,8 @@ struct ElementTypeId {
     kChar,
     kInt8, kInt16, kInt32, kInt64,
     kFloat, kDouble,
-    kBool, kString, kTimestamp,
+    kBool, kString,
+    kTimestamp, kLocalDate, kLocalTime,
     kList
   };
 };
@@ -401,6 +402,105 @@ private:
     return !(lhs == rhs);
   }
 };
+
+/**
+ * The Deephaven LocalDate type which corresponds to java.time.LocalDate. Records
+ * milliseconds since the Unix epoch.
+ */
+class LocalDate {
+public:
+  /**
+   * Converts nanoseconds-since-UTC-epoch to DateTime. The Deephaven null value sentinel is
+   * turned into LocalDate(0).
+   * TODO(kosak): find out null convention
+   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
+   * @return The corresponding DateTime.
+   */
+  static LocalDate FromNanos(int64_t nanos) {
+    if (nanos == DeephavenConstants::kNullLong) {
+      return LocalDate(0);
+    }
+    return LocalDate(nanos);
+  }
+
+  /**
+   * Default constructor. Sets the DateTime equal to the epoch.
+   */
+  LocalDate() = default;
+
+  /**
+   * Sets the DateTime to the specified number of nanoseconds relative to the epoch.
+   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
+   */
+  explicit LocalDate(int64_t nanos) : nanos_(nanos) {}
+
+  /**
+   * The DateTime as expressed in nanoseconds since the epoch. Can be negative.
+   */
+  [[nodiscard]]
+  int64_t Nanos() const { return nanos_; }
+
+private:
+  int64_t nanos_ = 0;
+
+  friend std::ostream &operator<<(std::ostream &s, const LocalDate &o);
+
+  friend bool operator==(const LocalDate &lhs, const LocalDate &rhs) {
+    return lhs.nanos_ == rhs.nanos_;
+  }
+
+  friend bool operator!=(const LocalDate &lhs, const LocalDate &rhs) {
+    return !(lhs == rhs);
+  }
+};
+
+/**
+ * The Deephaven LocalTime type which corresponds to java.time.LocalTime. Records
+ * nanoseconds since midnight (of some unspecified reference day).
+ */
+class LocalTime {
+public:
+  /**
+   * Converts nanoseconds-since-UTC-epoch to DateTime. The Deephaven null value sentinel is
+   * turned into LocalTime(0).
+   * TODO(kosak): find out null convention
+   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
+   * @return The corresponding DateTime.
+   */
+  static LocalTime FromNanos(int64_t nanos) {
+    return LocalTime(nanos);
+  }
+
+  /**
+   * Default constructor. Sets the DateTime equal to the epoch.
+   */
+  LocalTime() = default;
+
+  /**
+   * Sets the DateTime to the specified number of nanoseconds relative to the epoch.
+   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
+   */
+  explicit LocalTime(int64_t nanos) : nanos_(nanos) {}
+
+  [[nodiscard]]
+  int64_t Nanos() const { return nanos_; }
+
+private:
+  int64_t nanos_ = 0;
+
+  friend std::ostream &operator<<(std::ostream &s, const LocalTime &o);
+
+  friend bool operator==(const LocalTime &lhs, const LocalTime &rhs) {
+    return lhs.nanos_ == rhs.nanos_;
+  }
+
+  friend bool operator!=(const LocalTime &lhs, const LocalTime &rhs) {
+    return !(lhs == rhs);
+  }
+};
+
 }  // namespace deephaven::dhcore
 
 template<> struct fmt::formatter<deephaven::dhcore::DateTime> : ostream_formatter {};
+template<> struct fmt::formatter<deephaven::dhcore::LocalDate> : ostream_formatter {};
+template<> struct fmt::formatter<deephaven::dhcore::LocalTime> : ostream_formatter {};
