@@ -21,12 +21,15 @@ struct ElementTypeId {
     kInt8, kInt16, kInt32, kInt64,
     kFloat, kDouble,
     kBool, kString,
-    kTimestamp, kLocalDate, kLocalTime,
-    kList
+    kTimestamp,
+    kList,
+    kLocalDate, kLocalTime
   };
 };
 
 class DateTime;
+class LocalDate;
+class LocalTime;
 
 template<typename T>
 void VisitElementTypeId(ElementTypeId::Enum type_id, T *visitor) {
@@ -69,6 +72,14 @@ void VisitElementTypeId(ElementTypeId::Enum type_id, T *visitor) {
     }
     case ElementTypeId::kTimestamp: {
       visitor->template operator()<deephaven::dhcore::DateTime>();
+      break;
+    }
+    case ElementTypeId::kLocalDate: {
+      visitor->template operator()<deephaven::dhcore::LocalDate>();
+      break;
+    }
+    case ElementTypeId::kLocalTime: {
+      visitor->template operator()<deephaven::dhcore::LocalTime>();
       break;
     }
     default: {
@@ -313,6 +324,16 @@ struct DeephavenTraits<std::string> {
 
 template<>
 struct DeephavenTraits<DateTime> {
+  static constexpr bool kIsNumeric = false;
+};
+
+template<>
+struct DeephavenTraits<LocalDate> {
+  static constexpr bool kIsNumeric = false;
+};
+
+template<>
+struct DeephavenTraits<LocalTime> {
   static constexpr bool kIsNumeric = false;
 };
 
