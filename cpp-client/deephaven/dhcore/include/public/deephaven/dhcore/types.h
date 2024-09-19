@@ -433,11 +433,15 @@ private:
 class LocalDate {
 public:
   /**
-   * Converts milliseconds-since-UTC-epoch to LocalDate. The Deephaven null value sentinel is
-   * turned into LocalDate(0).
-   * TODO(kosak): find out null convention
+   * Creates an instance of LocalDate from the specified year, month, and day.
+   */
+  static LocalDate Of(int32_t year, int32_t month, int32_t day_of_month);
+
+  /**
+   * Creates an instance of LocalDate from milliseconds-since-UTC-epoch.
+   * The Deephaven null value sentinel is turned into LocalDate(0).
    * @param millis Milliseconds since the epoch (January 1, 1970 UTC).
-   * Currently we will throw an exception if millis is not an even number of days.
+   * An exception is thrown if millis is not an even number of days.
    * @return The corresponding LocalDate
    */
   static LocalDate FromMillis(int64_t millis) {
@@ -485,6 +489,11 @@ private:
  */
 class LocalTime {
 public:
+  /**
+   * Creates an instance of LocalTime from the specified hour, minute, and second.
+   */
+  static LocalTime Of(int32_t hour, int32_t minute, int32_t second);
+
   /**
    * Converts nanoseconds-since-start-of-day to LocalTime. The Deephaven null value sentinel is
    * turned into LocalTime(0).

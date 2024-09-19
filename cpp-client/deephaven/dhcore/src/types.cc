@@ -106,6 +106,13 @@ std::ostream &operator<<(std::ostream &s, const DateTime &o) {
   return s;
 }
 
+LocalDate LocalDate::Of(int32_t year, int32_t month, int32_t day_of_month) {
+  auto ymd = date::year_month_day(date::year(year), date::month(month), date::day(day_of_month));
+  auto as_sys_days = static_cast<date::sys_days>(ymd);
+  auto as_milliseconds = std::chrono::milliseconds(as_sys_days.time_since_epoch());
+  return LocalDate(as_milliseconds.count());
+}
+
 LocalDate::LocalDate(int64_t millis) : millis_(millis) {
   std::chrono::milliseconds chrono_millis(millis);
   std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> tp(chrono_millis);
@@ -125,6 +132,14 @@ std::ostream &operator<<(std::ostream &s, const LocalDate &o) {
   std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> tp(millis);
   fmt::print(s, "{:%F}", tp);
   return s;
+}
+
+LocalTime LocalTime::Of(int32_t hour, int32_t minute, int32_t second) {
+  auto ns = std::chrono::nanoseconds(0);
+  ns += std::chrono::hours(hour);
+  ns += std::chrono::minutes(minute);
+  ns += std::chrono::seconds(second);
+  return LocalTime(ns.count());
 }
 
 LocalTime::LocalTime(int64_t nanos) : nanos_(nanos) {
