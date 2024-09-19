@@ -425,8 +425,10 @@ private:
 };
 
 /**
- * The Deephaven LocalDate type which corresponds to java.time.LocalDate. Records
- * milliseconds since the Unix epoch.
+ * The Deephaven LocalDate type which corresponds to java.time.LocalDate.
+ * For consistency with the Arrow type we use, stores its value in units of milliseconds.
+ * However we do not allow fractional days, so only millisecond values that are an even
+ * number of days are permitted.
  */
 class LocalDate {
 public:

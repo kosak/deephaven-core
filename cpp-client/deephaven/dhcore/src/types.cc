@@ -106,6 +106,20 @@ std::ostream &operator<<(std::ostream &s, const DateTime &o) {
   return s;
 }
 
+LocalDate::LocalDate(int64_t millis) : millis_(millis) {
+  std::chrono::milliseconds chrono_millis(millis);
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> tp(chrono_millis);
+
+  auto truncated = date::floor<date::days>(tp);
+  auto difference = tp - truncated;
+  if (difference.count() == 0) {
+    return;
+  }
+
+  auto message = fmt::format("{} milliseconds is not an integral number of days", millis);
+  throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+}
+
 std::ostream &operator<<(std::ostream &s, const LocalDate &o) {
   std::chrono::milliseconds millis(o.millis_);
   std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> tp(millis);

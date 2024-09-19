@@ -103,7 +103,7 @@ void MainMenu(const TableHandleManager &manager) {
 }
 
 void PrintStaticTable(const TableHandleManager &manager) {
-  auto table = manager.FetchTable("demo1");
+  auto table = manager.FetchTable("dh_table");
   std::cout << table.Stream(true) << '\n';
 }
 
