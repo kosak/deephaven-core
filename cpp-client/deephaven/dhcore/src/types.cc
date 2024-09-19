@@ -127,6 +127,15 @@ std::ostream &operator<<(std::ostream &s, const LocalDate &o) {
   return s;
 }
 
+LocalTime::LocalTime(int64_t nanos) : nanos_(nanos) {
+  if (nanos >= 0) {
+    return;
+  }
+
+  auto message = fmt::format("nanos argument ({}) cannot be negative", nanos);
+  throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+}
+
 std::ostream &operator<<(std::ostream &s, const LocalTime &o) {
   std::chrono::nanoseconds ns(o.nanos_);
   // Make a time point with nanosecond precision so we can print 9 digits of fractional second

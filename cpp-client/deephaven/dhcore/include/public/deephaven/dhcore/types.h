@@ -505,7 +505,7 @@ public:
    * Sets the LocalTime to the specified number of nanoseconds relative to the start of the day.
    * @param nanos Nanoseconds since the start of the day.
    */
-  explicit LocalTime(int64_t nanos) : nanos_(nanos) {}
+  explicit LocalTime(int64_t nanos);
 
   [[nodiscard]]
   int64_t Nanos() const { return nanos_; }
