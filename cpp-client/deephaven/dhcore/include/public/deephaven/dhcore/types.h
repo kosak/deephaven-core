@@ -493,6 +493,9 @@ public:
    * @return The corresponding LocalTime.
    */
   static LocalTime FromNanos(int64_t nanos) {
+    if (nanos == DeephavenConstants::kNullLong) {
+      return LocalTime(0);
+    }
     return LocalTime(nanos);
   }
 
