@@ -431,43 +431,45 @@ private:
 class LocalDate {
 public:
   /**
-   * Converts nanoseconds-since-UTC-epoch to DateTime. The Deephaven null value sentinel is
+   * Converts milliseconds-since-UTC-epoch to LocalDate. The Deephaven null value sentinel is
    * turned into LocalDate(0).
    * TODO(kosak): find out null convention
-   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
-   * @return The corresponding DateTime.
+   * @param millis Milliseconds since the epoch (January 1, 1970 UTC).
+   * Currently we will throw an exception if millis is not an even number of days.
+   * @return The corresponding LocalDate
    */
-  static LocalDate FromNanos(int64_t nanos) {
-    if (nanos == DeephavenConstants::kNullLong) {
+  static LocalDate FromMillis(int64_t millis) {
+    if (millis == DeephavenConstants::kNullLong) {
       return LocalDate(0);
     }
-    return LocalDate(nanos);
+    return LocalDate(millis);
   }
 
   /**
-   * Default constructor. Sets the DateTime equal to the epoch.
+   * Default constructor. Sets the LocalDate equal to the null value.
    */
   LocalDate() = default;
 
   /**
-   * Sets the DateTime to the specified number of nanoseconds relative to the epoch.
-   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
+   * Sets the DateTime to the specified number of milliseconds relative to the epoch.
+   * Currently we will throw an exception if millis is not an even number of days.
+   * @param millis Milliseconds since the epoch (January 1, 1970 UTC).
    */
-  explicit LocalDate(int64_t nanos) : nanos_(nanos) {}
+  explicit LocalDate(int64_t millis);
 
   /**
-   * The DateTime as expressed in nanoseconds since the epoch. Can be negative.
+   * The LocalDate as expressed in milliseconds since the epoch. Can be negative.
    */
   [[nodiscard]]
-  int64_t Nanos() const { return nanos_; }
+  int64_t Millis() const { return millis_; }
 
 private:
-  int64_t nanos_ = 0;
+  int64_t millis_ = 0;
 
   friend std::ostream &operator<<(std::ostream &s, const LocalDate &o);
 
   friend bool operator==(const LocalDate &lhs, const LocalDate &rhs) {
-    return lhs.nanos_ == rhs.nanos_;
+    return lhs.millis_ == rhs.millis_;
   }
 
   friend bool operator!=(const LocalDate &lhs, const LocalDate &rhs) {
@@ -482,11 +484,11 @@ private:
 class LocalTime {
 public:
   /**
-   * Converts nanoseconds-since-UTC-epoch to DateTime. The Deephaven null value sentinel is
+   * Converts nanoseconds-since-start-of-day to LocalTime. The Deephaven null value sentinel is
    * turned into LocalTime(0).
    * TODO(kosak): find out null convention
-   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
-   * @return The corresponding DateTime.
+   * @param nanos Nanoseconds since the start of the day.
+   * @return The corresponding LocalTime.
    */
   static LocalTime FromNanos(int64_t nanos) {
     return LocalTime(nanos);
@@ -498,8 +500,8 @@ public:
   LocalTime() = default;
 
   /**
-   * Sets the DateTime to the specified number of nanoseconds relative to the epoch.
-   * @param nanos Nanoseconds since the epoch (January 1, 1970 UTC).
+   * Sets the LocalTime to the specified number of nanoseconds relative to the start of the day.
+   * @param nanos Nanoseconds since the start of the day.
    */
   explicit LocalTime(int64_t nanos) : nanos_(nanos) {}
 
