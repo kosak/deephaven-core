@@ -223,4 +223,16 @@ using DateTimeArrowColumnSource = internal::GenericArrowColumnSource<
     deephaven::dhcore::column::DateTimeColumnSource,
     arrow::TimestampArray,
     deephaven::dhcore::chunk::DateTimeChunk>;
+
+using LocalDateArrowColumnSource = internal::GenericArrowColumnSource<
+    internal::ArrowProcessingStyle::kTimestamp,
+    deephaven::dhcore::column::LocalDateColumnSource,
+    arrow::Date64Array,
+    deephaven::dhcore::chunk::LocalDateChunk>;
+
+using LocalTimeArrowColumnSource = internal::GenericArrowColumnSource<
+    internal::ArrowProcessingStyle::kTimestamp,
+    deephaven::dhcore::column::LocalTimeColumnSource,
+    arrow::Time64Array,
+    deephaven::dhcore::chunk::LocalTimeChunk>;
 }  // namespace deephaven::client::arrowutil
