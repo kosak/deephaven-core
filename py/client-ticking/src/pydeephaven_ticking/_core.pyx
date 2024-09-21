@@ -291,6 +291,16 @@ cdef class ColumnSource:
             dest_data_as_int64 = dest_data.view(dtype=np.int64)
             self._fill_timestamp_chunk(rows, dest_data_as_int64, null_flags_ptr)
             arrow_type = pa.timestamp("ns", tz="UTC")
+        elif element_type_id == ElementTypeId.kLocalDate:
+            dest_data = np.zeros(size, dtype="date64[ms]")
+            dest_data_as_int64 = dest_data.view(dtype=np.int64)
+            self._fill_localdate_chunk(rows, dest_data_as_int64, null_flags_ptr)
+            arrow_type = pa.date64("ms")
+        elif element_type_id == ElementTypeId.kLocalTime:
+            dest_data = np.zeros(size, dtype="time64[ns]")
+            dest_data_as_int64 = dest_data.view(dtype=np.int64)
+            self._fill_localtime_chunk(rows, dest_data_as_int64, null_flags_ptr)
+            arrow_type = pa.time64("ns")
         else:
            raise RuntimeError(f"Unexpected ElementTypeId {<int>element_type_id}")
 
@@ -346,9 +356,9 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
     if isinstance(array, pa.lib.TimestampArray):
         return _convert_arrow_timestamp_array_to_column_source(cast(pa.lib.TimestampArray, array))
     if isinstance(array, pa.lib.Date64Array):
-        return _convert_arrow_localdate_array_to_column_source(cast(pa.lib.Date64Array, array))
+        return _convert_arrow_date64_array_to_column_source(cast(pa.lib.Date64Array, array))
     if isinstance(array, pa.lib.Time64Array):
-        return _convert_arrow_localtime_array_to_column_source(cast(pa.lib.Time64Array, array))
+        return _convert_arrow_time64_array_to_column_source(cast(pa.lib.Time64Array, array))
     buffers = array.buffers()
     if len(buffers) != 2:
         raise RuntimeError(f"Expected 2 simple type buffers, got {len(buffers)}")
@@ -440,7 +450,7 @@ cdef shared_ptr[CColumnSource] _convert_arrow_date64_array_to_column_source(arra
 
 # Converts an Arrow Time64Array to a C++ LocalTimeColumnSource. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
-cdef shared_ptr[CColumnSource] _convert_arrow_date64_array_to_column_source(array: pa.Time64Array) except *:
+cdef shared_ptr[CColumnSource] _convert_arrow_time64_array_to_column_source(array: pa.Time64Array) except *:
     return _convert_underlying_int64_to_column_source(array, CCythonSupport.CreateLocalTimeColumnSource)
 
 # Signature of one of the factory functions in CCythonSupport: CreateDateTimeColumnSource, CreateLocalDateColumnSource
