@@ -20,7 +20,7 @@ from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.string cimport string
 from libcpp.utility cimport move, pair
 from libcpp.vector cimport vector
-from typing import Dict, List, Sequence, Union, cast
+from typing import Sequence, cast
 
 # Simple wrapper of the corresponding C++ TickingUpdate class.
 cdef class TickingUpdate:
@@ -345,6 +345,10 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
         return _convert_arrow_boolean_array_to_column_source(cast(pa.lib.BooleanArray, array))
     if isinstance(array, pa.lib.TimestampArray):
         return _convert_arrow_timestamp_array_to_column_source(cast(pa.lib.TimestampArray, array))
+    if isinstance(array, pa.lib.Date64Array):
+        return _convert_arrow_localdate_array_to_column_source(cast(pa.lib.Date64Array, array))
+    if isinstance(array, pa.lib.Time64Array):
+        return _convert_arrow_localtime_array_to_column_source(cast(pa.lib.Time64Array, array))
     buffers = array.buffers()
     if len(buffers) != 2:
         raise RuntimeError(f"Expected 2 simple type buffers, got {len(buffers)}")
@@ -427,10 +431,32 @@ cdef shared_ptr[CColumnSource] _convert_arrow_string_array_to_column_source(arra
 # Converts an Arrow TimestampArray to a C++ DateTimeColumnSource. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_timestamp_array_to_column_source(array: pa.TimestampArray) except *:
+    return _convert_underlying_int64_to_column_source(array, CCythonSupport.CreateDateTimeColumnSource)
+
+# Converts an Arrow Date64Array to a C++ LocalDateColumnSource. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
+cdef shared_ptr[CColumnSource] _convert_arrow_date64_array_to_column_source(array: pa.Date64Array) except *:
+    return _convert_underlying_int64_to_column_source(array, CCythonSupport.CreateLocalDateColumnSource)
+
+# Converts an Arrow Time64Array to a C++ LocalTimeColumnSource. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
+cdef shared_ptr[CColumnSource] _convert_arrow_date64_array_to_column_source(array: pa.Time64Array) except *:
+    return _convert_underlying_int64_to_column_source(array, CCythonSupport.CreateLocalTimeColumnSource)
+
+# Signature of one of the factory functions in CCythonSupport: CreateDateTimeColumnSource, CreateLocalDateColumnSource
+# or CreateLocalTimeColumnSource.
+ctypedef shared_ptr[CColumnSource](*factory_t)(const int64_t *, const int64_t *, const uint8_t *, const uint8_t *, size_t)
+
+# Converts one of the numeric Arrow types with an underlying int64 representation to the
+# corresponding ColumnSource type. The created column source does not own the
+# memory used, so it is only valid as long as the original Arrow array is valid.
+cdef shared_ptr[CColumnSource] _convert_underlying_int64_to_column_source(
+        array: pa.NumericArray,
+        factory: factory_t) except *:
     num_elements = len(array)
     buffers = array.buffers()
     if len(buffers) != 2:
-        raise RuntimeError(f"Expected 2 timestamp buffers, got {len(buffers)}")
+        raise RuntimeError(f"Expected 2 buffers, got {len(buffers)}")
     validity = buffers[0]
     data = buffers[1]
 
@@ -442,9 +468,7 @@ cdef shared_ptr[CColumnSource] _convert_arrow_timestamp_array_to_column_source(a
 
     cdef const int64_t *data_begin = <const int64_t *> <intptr_t> data.address
     cdef const int64_t *data_end = <const int64_t *> <intptr_t> (data.address + data.size)
-
-    return CCythonSupport.CreateDateTimeColumnSource(data_begin, data_end, validity_begin, validity_end,
-                                                     num_elements)
+    return factory(data_begin, data_end, validity_begin, validity_end, num_elements)
 
 # This method converts a PyArrow Schema object to a C++ Schema object.
 cdef shared_ptr[CSchema] _pyarrow_schema_to_deephaven_schema(src: pa.Schema) except *:
