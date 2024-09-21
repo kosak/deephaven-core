@@ -102,7 +102,7 @@ Run python from the venv while in this directory, and try this sample Python pro
 import pydeephaven as dh
 import time
 session = dh.Session() # assuming Deephaven Community Core is running locally with the default configuration
-table = session.time_table(period=1000000000).update(formulas=["Col1 = i"])
+table = session.time_table(period=1000000000).update(formulas=["Col1 = parseLocalTime(`12:34:56`)"])
 listener_handle = dh.listen(table, lambda update : print(update.added()))
 listener_handle.start()
 # data starts printing asynchronously here
