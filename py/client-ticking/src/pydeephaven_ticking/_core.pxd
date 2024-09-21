@@ -144,6 +144,12 @@ cdef extern from "deephaven/dhcore/types.h" namespace "deephaven::dhcore":
     cdef cppclass CDateTime "deephaven::dhcore::DateTime":
         pass
 
+    cdef cppclass CLocalDate "deephaven::dhcore::LocalDate":
+        pass
+
+    cdef cppclass CLocalTime "deephaven::dhcore::LocalTime":
+        pass
+
 cdef extern from "deephaven/dhcore/utility/cython_support.h" namespace "deephaven::dhcore::utility":
     cdef cppclass CCythonSupport "deephaven::dhcore::utility::CythonSupport":
         @staticmethod

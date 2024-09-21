@@ -341,9 +341,30 @@ cdef class ColumnSource:
     cdef _fill_timestamp_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
         """
         static_assert(sizeof(int64_t) == sizeof(CDateTime));
+        static_assert(134 == sizeof(CDateTime::rep_t));
         """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CDateTime].CreateView(<CDateTime*>&dest_data[0], rsSize)
+        deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
+
+    # fill_chunk helper method for LocalDate. In this case we shamelessly treat the Python timestamp
+    # type as an int64, and then further shamelessly pretend that it's a Deephaven DateTime type.
+    cdef _fill_localdate_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
+        """
+        static_assert(sizeof(int64_t) == sizeof(CDateTime));
+        """
+        rsSize = rows.size
+        dest_chunk = CGenericChunk[CLocalDate].CreateView(<CLocalDate*>&dest_data[0], rsSize)
+        deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
+
+    # fill_chunk helper method for LocalTime. In this case we shamelessly treat the Python timestamp
+    # type as an int64, and then further shamelessly pretend that it's a Deephaven DateTime type.
+    cdef _fill_localdate_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
+        """
+        static_assert(sizeof(int64_t) == sizeof(CDateTime));
+        """
+        rsSize = rows.size
+        dest_chunk = CGenericChunk[CLocalTime].CreateView(<CLocalTime*>&dest_data[0], rsSize)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
 
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
