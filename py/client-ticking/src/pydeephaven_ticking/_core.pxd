@@ -138,6 +138,8 @@ cdef extern from "deephaven/dhcore/types.h" namespace "deephaven::dhcore":
         kBool "deephaven::dhcore::ElementTypeId::kBool"
         kString "deephaven::dhcore::ElementTypeId::kString"
         kTimestamp "deephaven::dhcore::ElementTypeId::kTimestamp"
+        kLocalDate "deephaven::dhcore::ElementTypeId::kLocalDate"
+        kLocalTime "deephaven::dhcore::ElementTypeId::kLocalTime"
 
     cdef cppclass CDateTime "deephaven::dhcore::DateTime":
         pass
