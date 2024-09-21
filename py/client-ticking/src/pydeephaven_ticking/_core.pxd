@@ -160,6 +160,14 @@ cdef extern from "deephaven/dhcore/utility/cython_support.h" namespace "deephave
             const uint8_t *validityBegin, const uint8_t *validityEnd, size_t numElements)
 
         @staticmethod
+        shared_ptr[CColumnSource] CreateLocalDateColumnSource(const int64_t *dataBegin, const int64_t *dataEnd,
+            const uint8_t *validityBegin, const uint8_t *validityEnd, size_t numElements)
+
+        @staticmethod
+        shared_ptr[CColumnSource] CreateLocalTimeColumnSource(const int64_t *dataBegin, const int64_t *dataEnd,
+            const uint8_t *validityBegin, const uint8_t *validityEnd, size_t numElements)
+
+        @staticmethod
         ElementTypeId GetElementTypeId(const CColumnSource &columnSource)
 
 cdef extern from "deephaven/dhcore/ticking/barrage_processor.h" namespace "deephaven::dhcore::ticking":
