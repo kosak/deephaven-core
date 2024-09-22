@@ -292,12 +292,12 @@ cdef class ColumnSource:
             self._fill_timestamp_chunk(rows, dest_data_as_int64, null_flags_ptr)
             arrow_type = pa.timestamp("ns", tz="UTC")
         elif element_type_id == ElementTypeId.kLocalDate:
-            dest_data = np.zeros(size, dtype="date64[ms]")
+            dest_data = np.zeros(size, dtype=np.int64)
             dest_data_as_int64 = dest_data.view(dtype=np.int64)
             self._fill_localdate_chunk(rows, dest_data_as_int64, null_flags_ptr)
-            arrow_type = pa.date64("ms")
+            arrow_type = pa.date64()
         elif element_type_id == ElementTypeId.kLocalTime:
-            dest_data = np.zeros(size, dtype="time64[ns]")
+            dest_data = np.zeros(size, dtype=np.int64)
             dest_data_as_int64 = dest_data.view(dtype=np.int64)
             self._fill_localtime_chunk(rows, dest_data_as_int64, null_flags_ptr)
             arrow_type = pa.time64("ns")
