@@ -604,7 +604,9 @@ cdef _equivalentTypes = [
     _EquivalentTypes.create(ElementTypeId.kDouble, pa.float64()),
     _EquivalentTypes.create(ElementTypeId.kBool, pa.bool_()),
     _EquivalentTypes.create(ElementTypeId.kString, pa.string()),
-    _EquivalentTypes.create(ElementTypeId.kTimestamp, pa.timestamp("ns", "UTC"))
+    _EquivalentTypes.create(ElementTypeId.kTimestamp, pa.timestamp("ns", "UTC")),
+    _EquivalentTypes.create(ElementTypeId.kLocalDate, pa.date64()),
+    _EquivalentTypes.create(ElementTypeId.kLocalTime, pa.time64("ns"))
 ]
 
 # Converts a Deephaven type (an enum) into the corresponding PyArrow type.
