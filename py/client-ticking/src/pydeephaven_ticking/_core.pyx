@@ -359,7 +359,7 @@ cdef class ColumnSource:
 
     # fill_chunk helper method for LocalTime. In this case we shamelessly treat the Python timestamp
     # type as an int64, and then further shamelessly pretend that it's a Deephaven DateTime type.
-    cdef _fill_localdate_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
+    cdef _fill_localtime_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
         """
         static_assert(sizeof(int64_t) == sizeof(CDateTime));
         """
