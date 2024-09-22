@@ -339,10 +339,10 @@ cdef class ColumnSource:
     # fill_chunk helper method for timestamp. In this case we shamelessly treat the Python timestamp
     # type as an int64, and then further shamelessly pretend that it's a Deephaven DateTime type.
     cdef _fill_timestamp_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
-        """
-        static_assert(sizeof(int64_t) == sizeof(CDateTime));
-        static_assert(134 == sizeof(CDateTime::rep_t));
-        """
+        cdef extern from "<type_traits>":
+            """
+            static_assert(std::is_same_v<std::int64_t, deephaven::dhcore::DateTime::rep_t>);
+            """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CDateTime].CreateView(<CDateTime*>&dest_data[0], rsSize)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
@@ -350,9 +350,10 @@ cdef class ColumnSource:
     # fill_chunk helper method for LocalDate. In this case we shamelessly treat the Python timestamp
     # type as an int64, and then further shamelessly pretend that it's a Deephaven DateTime type.
     cdef _fill_localdate_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
-        """
-        static_assert(sizeof(int64_t) == sizeof(CDateTime));
-        """
+        cdef extern from *:
+            """
+            static_assert(std::is_same_v<std::int64_t, deephaven::dhcore::LocalDate::rep_t>);
+            """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CLocalDate].CreateView(<CLocalDate*>&dest_data[0], rsSize)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
@@ -360,9 +361,10 @@ cdef class ColumnSource:
     # fill_chunk helper method for LocalTime. In this case we shamelessly treat the Python timestamp
     # type as an int64, and then further shamelessly pretend that it's a Deephaven DateTime type.
     cdef _fill_localtime_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
-        """
-        static_assert(sizeof(int64_t) == sizeof(CDateTime));
-        """
+        cdef extern from *:
+            """
+            static_assert(std::is_same_v<std::int64_t, deephaven::dhcore::LocalTime::rep_t>);
+            """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CLocalTime].CreateView(<CLocalTime*>&dest_data[0], rsSize)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
