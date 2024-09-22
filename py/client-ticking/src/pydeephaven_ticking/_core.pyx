@@ -341,7 +341,7 @@ cdef class ColumnSource:
     cdef _fill_timestamp_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
         cdef extern from "<type_traits>":
             """
-            static_assert(std::is_same_v<std::int64_t, deephaven::dhcore::DateTime::rep_t>);
+            static_assert(deephaven::dhcore::DateTime::IsBlittableToInt64());
             """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CDateTime].CreateView(<CDateTime*>&dest_data[0], rsSize)
@@ -352,7 +352,7 @@ cdef class ColumnSource:
     cdef _fill_localdate_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
         cdef extern from *:
             """
-            static_assert(std::is_same_v<std::int64_t, deephaven::dhcore::LocalDate::rep_t>);
+            static_assert(deephaven::dhcore::LocalDate::IsBlittableToInt64());
             """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CLocalDate].CreateView(<CLocalDate*>&dest_data[0], rsSize)
@@ -363,7 +363,7 @@ cdef class ColumnSource:
     cdef _fill_localtime_chunk(self, rows: RowSequence, int64_t[::1] dest_data, CGenericChunk[bool] *null_flags_ptr):
         cdef extern from *:
             """
-            static_assert(std::is_same_v<std::int64_t, deephaven::dhcore::LocalTime::rep_t>);
+            static_assert(deephaven::dhcore::LocalTime::IsBlittableToInt64());
             """
         rsSize = rows.size
         dest_chunk = CGenericChunk[CLocalTime].CreateView(<CLocalTime*>&dest_data[0], rsSize)
