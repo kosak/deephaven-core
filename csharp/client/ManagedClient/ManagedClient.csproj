@@ -15,4 +15,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Protobuf 
+	    Include="..\..\..\proto\proto-backplane-grpc\src\main\proto\deephaven\proto\*.proto"
+        ProtoRoot="..\..\..\proto\proto-backplane-grpc\src\main\proto"
+	    GrpcServices="Client" />
+  </ItemGroup>
 </Project>
