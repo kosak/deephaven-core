@@ -299,7 +299,7 @@ public:
    * Factory method to Connect to a Deephaven server using the specified options.
    * @param target A connection string in the format host:port. For example "localhost:10000".
    * @param options An options object for setting options like authentication and script language.
-   * @return A Client object conneted to the Deephaven server.
+   * @return A Client object connected to the Deephaven server.
    */
   [[nodiscard]]
   static Client Connect(const std::string &target, const ClientOptions &options = {});
