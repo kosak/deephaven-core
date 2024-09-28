@@ -1,9 +1,14 @@
-﻿namespace Deephaven.ManagedClient;
+﻿using Io.Deephaven.Proto.Backplane.Grpc;
+using Io.Deephaven.Proto.Backplane.Script.Grpc;
+
+namespace Deephaven.ManagedClient;
 /// <summary>
 /// The main class for interacting with Deephaven. Start here to Connect with
 /// the server and to get a TableHandleManager.
 /// </summary>
 public class Client : IDisposable {
+  private readonly TableHandleManager _tableHandleManager;
+
   /// <summary>
   /// Factory method to Connect to a Deephaven server using the specified options.
   /// </summary>
@@ -11,7 +16,29 @@ public class Client : IDisposable {
   /// <param name="options">An options object for setting options like authentication and script language.</param>
   /// <returns>A Client object connected to the Deephaven server.</returns>
   public static Client Connect(string target, ClientOptions? options = null) {
-    throw new NotImplementedException();
+    options ??= new ClientOptions();
+
+    var server = Server.CreateFromTarget(target, options);
+    var executor = Executor.Create("Client executor for " + server.Me);
+    var flightExecutor = Executor.Create("Flight executor for " + server.Me);
+
+    Ticket? consoleTicket = null;
+    if (options.SessionType.Length != 0) {
+      var req = new StartConsoleRequest {
+        ResultId = server.NewTicket(),
+        SessionType = options.SessionType
+      };
+      StartConsoleResponse? resp = null;
+      server.SendRpc(opts => resp = server.ConsoleStub.StartConsole(req, opts));
+      consoleTicket = resp!.ResultId;
+    }
+
+    var thm = TableHandleManager.Create(consoleTicket, server, executor, flightExecutor);
+    return new Client(thm);
+  }
+
+  private Client(TableHandleManager tableHandleManager) {
+    _tableHandleManager = tableHandleManager;
   }
 
   /// <summary>
