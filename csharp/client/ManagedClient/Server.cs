@@ -13,6 +13,8 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 using Exception = System.Exception;
+using System.Threading;
+using Google.Protobuf;
 
 namespace Deephaven.ManagedClient;
 
@@ -133,6 +135,14 @@ public class Server {
   private readonly TimeSpan _expirationInterval;
   private readonly DateTime _nextHandshakeTime;
 
+
+  private readonly object _sync = new();
+  /// <summary>
+  /// Protected by _sync
+  /// </summary>
+  private Int32 _nextFreeTicketId = 1;
+  private HashSet<Ticket> _outstandingTickets = new();
+
   private Server(ApplicationService.ApplicationServiceClient applicationStub,
     ConsoleService.ConsoleServiceClient consoleStub,
     SessionService.SessionServiceClient sessionStub,
@@ -161,8 +171,27 @@ public class Server {
     throw new NotImplementedException();
   }
 
+  public Ticket MakeNewTicket(Int32 ticketId) {
+    // 'e' + 4 bytes
+    var bytes = new byte[5];
+    bytes[0] = (byte)'e';
+    var span = new Span<byte>(bytes, 1, 4);
+    if (!BitConverter.TryWriteBytes(span, ticketId)) {
+      throw new Exception("Programming error: TryWriteBytes failed");
+    }
+    var result = new Ticket {
+      Ticket_ = ByteString.CopyFrom(bytes)
+    };
+    return result;
+  }
+
   public Ticket NewTicket() {
-    throw new NotImplementedException();
+    lock (_sync) {
+      var ticketId = _nextFreeTicketId++;
+      var ticket = MakeNewTicket(ticketId);
+      _outstandingTickets.Add(ticket);
+      return ticket;
+    }
   }
 
   public string Me {
