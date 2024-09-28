@@ -22,6 +22,7 @@ public static class Program {
       Console.WriteLine(t2.ToString(true));
       var at = t2.ToArrowTable();
       var ct = t2.ToClientTable();
+      Console.WriteLine("hello");
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
     }

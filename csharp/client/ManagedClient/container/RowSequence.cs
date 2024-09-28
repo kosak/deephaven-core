@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace Deephaven.ManagedClient;
 
-public class RowSequence {
+public abstract class RowSequence {
   public static RowSequence CreateSequential(Int64 begin, Int64 end) {
-    throw new NotImplementedException();
+    return new SequentialRowSequence(begin, end);
   }
+}
+
+public class SequentialRowSequence(Int64 begin, Int64 end) : RowSequence {
 }
