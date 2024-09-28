@@ -10,8 +10,6 @@ namespace Deephaven.ManagedClient;
 /// the server and to get a TableHandleManager.
 /// </summary>
 public class Client : IDisposable {
-  private readonly ClientImpl _impl;
-
   /// <summary>
   /// Factory method to Connect to a Deephaven server using the specified options.
   /// </summary>
@@ -19,7 +17,6 @@ public class Client : IDisposable {
   /// <param name="options">An options object for setting options like authentication and script language.</param>
   /// <returns>A Client object connected to the Deephaven server.</returns>
   public static extern Client Connect(string target, ClientOptions options = new ClientOptions());
-
 
   /// <summary>
   /// Shuts down the Client and all associated state(GRPC connections, subscriptions, etc).
