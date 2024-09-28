@@ -117,7 +117,7 @@ public:
    *
    * @example copt.setStringOption("grpc.target_name_override", "idonthaveadnsforthishost")
    * @param opt The option key.
-   * @param val The option valiue.
+   * @param val The option value.
    * @return *this, so that methods can be chained.
    */
   ClientOptions &AddStringOption(std::string opt, std::string val);
