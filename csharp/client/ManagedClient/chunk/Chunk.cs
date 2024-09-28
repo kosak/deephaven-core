@@ -21,6 +21,15 @@ public class BooleanChunk : GenericChunk<bool> {
   }
 }
 
+public class Int32Chunk : GenericChunk<Int32> {
+  public static Int32Chunk Create(int size) {
+    return new Int32Chunk(new Int32[size]);
+  }
+
+  protected Int32Chunk(Int32[] data) : base(data) {
+  }
+}
+
 public class Int64Chunk : GenericChunk<Int64> {
   public static Int64Chunk Create(int size) {
     return new Int64Chunk(new Int64[size]);

@@ -2,13 +2,30 @@
 
 namespace Deephaven.ManagedClient;
 
+public class Int32ArrowColumnSource : IInt32ColumnSource {
+  public static Int32ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<Int32Array>(chunkedArray);
+    return new Int32ArrowColumnSource(arrays);
+  }
+
+  private Int32Array[] _arrays;
+
+  private Int32ArrowColumnSource(Int32Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
 public class Int64ArrowColumnSource : IInt64ColumnSource {
   public static Int64ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = new Int64Array[chunkedArray.ArrayCount];
-    for (var i = 0; i < chunkedArray.ArrayCount; i++) {
-      arrays[i] = (Int64Array)chunkedArray.ArrowArray(i);
-    }
-
+    var arrays = ZamboniHelpers.CastChunkedArray<Int64Array>(chunkedArray);
     return new Int64ArrowColumnSource(arrays);
   }
 
@@ -19,16 +36,35 @@ public class Int64ArrowColumnSource : IInt64ColumnSource {
   }
 
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public static class ZamboniHelpers {
+  public static TArray[] CastChunkedArray<TArray>(ChunkedArray chunkedArray) {
+    var arrays = new TArray[chunkedArray.ArrayCount];
+    for (var i = 0; i < chunkedArray.ArrayCount; i++) {
+      arrays[i] = (TArray)chunkedArray.ArrowArray(i);
+    }
+    return arrays;
+  }
+
+  public static void FillChunk<T>(RowSequence rows, IReadOnlyList<PrimitiveArray<T>> srcArrays,
+    Chunk destData, BooleanChunk? nullFlags) where T : struct, IEquatable<T> {
     if (rows.Empty) {
       return;
     }
 
     // This algorithm is a little tricky because the source data and RowSequence are both
     // segmented, perhaps in different ways.
-    var typedDest = (Int64Chunk)destData;
-    var destSpan = new Span<Int64>(typedDest.Data);
+    var typedDest = (GenericChunk<T>)destData;
+    var destSpan = new Span<T>(typedDest.Data);
 
-    var srcIterator = new ZamboniIterator<Int64>(_arrays);
+    var srcIterator = new ZamboniIterator<T>(srcArrays);
     var nullSpan = nullFlags != null ? new Span<bool>(nullFlags.Data) : null;
 
     foreach (var (reqBeginConst, reqEnd) in rows.Intervals) {
@@ -50,10 +86,6 @@ public class Int64ArrowColumnSource : IInt64ColumnSource {
         reqBegin += actualLength;
       }
     }
-  }
-
-  public void AcceptVisitor(IColumnSourceVisitor visitor) {
-    visitor.Visit(this);
   }
 }
 
@@ -111,6 +143,4 @@ public class ZamboniIterator<T> where T : struct, IEquatable<T> {
 
     return amountToCopy;
   }
-
-  public ReadOnlySpan<T> Values => _arrays[_arrayIndex].Values.Slice((_segmentBegin - _segmentOffset).ToIntExact());
 }

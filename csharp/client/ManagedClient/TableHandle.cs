@@ -27,7 +27,7 @@ public class TableHandle : IDisposable {
   }
 
   public void Dispose() {
-    throw new NotImplementedException();
+    Console.Error.WriteLine("NIY");
   }
 
   /// <summary>

@@ -31,7 +31,7 @@ public class TableHandleManager : IDisposable {
   }
 
   public void Dispose() {
-    throw new NotImplementedException();
+    Console.Error.WriteLine("NIY");
   }
 
   /// <summary>

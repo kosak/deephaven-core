@@ -34,8 +34,14 @@ public sealed class ArrowClientTable : ClientTable {
   public override Int64 NumRows => _arrowTable.RowCount;
   public override Int64 NumCols => _arrowTable.ColumnCount;
 
-  private class MyVisitor(ChunkedArray chunkedArray) : IArrowTypeVisitor<Int64Type> {
+  private class MyVisitor(ChunkedArray chunkedArray) :
+    IArrowTypeVisitor<Int32Type>,
+    IArrowTypeVisitor<Int64Type> {
     public IColumnSource Result { get; private set; }
+
+    public void Visit(Int32Type type) {
+      Result = Int32ArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
 
     public void Visit(Int64Type type) {
       Result = Int64ArrowColumnSource.OfChunkedArray(chunkedArray);
