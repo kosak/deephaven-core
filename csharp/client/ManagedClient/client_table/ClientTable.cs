@@ -1,120 +1,78 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
+using Apache.Arrow;
 
 namespace Deephaven.ManagedClient;
 
-public class ClientTable {
-  public:
-  /**
-   * Alias.
-   */
-  using ColumnSource = deephaven::dhcore::column::ColumnSource;
-  /**
-   * Alias.
-   */
-  using RowSequence = deephaven::dhcore::container::RowSequence;
-  /**
-   * Constructor.
-   */
-  ClientTable() = default;
-  /**
-   * Destructor.
-   */
-  virtual ~ClientTable() = default;
+public abstract class ClientTable {
+  /// <summary>
+  /// Get the RowSequence (in position space) that underlies this Table.
+  /// </summary>
+  /// <returns>The RowSequence</returns>
+  public abstract RowSequence RowSequence { get; }
 
-  /**
-   * Get the RowSequence (in position space) that underlies this Table.
-   */
-  [[nodiscard]]
-  virtual std::shared_ptr<RowSequence> GetRowSequence() const = 0;
-  /**
-   * Gets a ColumnSource from the clienttable by index.
-   * @param column_index Must be in the half-open interval [0, NumColumns).
-   */
-  [[nodiscard]]
-  virtual std::shared_ptr<ColumnSource> GetColumn(size_t column_index) const = 0;
+  /// <summary>
+  /// Gets a ColumnSource from the ClientTable by index
+  /// </summary>
+  /// <param name="columnIndex"></param>
+  /// <returns>The ColumnSource</returns>
+  public abstract ColumnSource GetColumn(int columnIndex);
 
-  /**
-   * Gets a ColumnSource from the clienttable by name. 'strict' controls whether the method
-   * must succeed.
-   * @param name The name of the column.
-   * @param strict Whether the method must succeed.
-   * @return If 'name' was found, returns the ColumnSource. If 'name' was not found and 'strict'
-   * is true, throws an exception. If 'name' was not found and 'strict' is false, returns nullptr.
-   */
-  [[nodiscard]]
-  std::shared_ptr<ColumnSource> GetColumn(std::string_view name, bool strict) const;
-  /**
-   * Gets the index of a ColumnSource from the clienttable by name. 'strict' controls whether the method
-   * must succeed.
-   * @param name The name of the column.
-   * @param strict Whether the method must succeed.
-   * @return If 'name' was found, returns the index of the ColumnSource. If 'name' was not found and
-   * 'strict' is true, throws an exception. If 'name' was not found and 'strict' is false, returns
-   * an empty optional.
-   */
-  [[nodiscard]]
-  std::optional<size_t> GetColumnIndex(std::string_view name, bool strict) const;
+  /// <summary>
+  /// Gets a ColumnSource from the ClientTable by name.
+  /// </summary>
+  /// <param name="name">The name of the column</param>
+  /// <returns>The ColumnSource, if 'name' was found. Otherwise, throws an exception.</returns>
+  public ColumnSource GetColumn(string name) {
+    _ = TryGetColumnInternal(name, true, out var result);
+    return result!;
+  }
 
-  /**
-   * Number of rows in the clienttable.
-   */
-  [[nodiscard]]
-  virtual size_t NumRows() const = 0;
-  /**
-   * Number of columns in the clienttable.
-   */
-  [[nodiscard]]
-  virtual size_t NumColumns() const = 0;
-  /**
-   * The clienttable schema.
-   */
-  [[nodiscard]]
-  virtual std::shared_ptr<deephaven::dhcore::clienttable::Schema> Schema() const = 0;
+  /// <summary>
+  /// Gets a ColumnSource from the ClientTable by name.
+  /// </summary>
+  /// <param name="name">The name of the column</param>
+  /// <param name="result">The column, if found</param>
+  /// <returns>True if 'name' was found, false otherwise.</returns>
+  public bool TryGetColumn(string name, [NotNullWhen(true)] out ColumnSource? result) {
+    return TryGetColumnInternal(name, false, out result);
+  }
 
-  /**
-   * Creates an 'ostream adaptor' to use when printing the clienttable. Example usage:
-   * std::cout << myTable.Stream(true, false).
-   */
-  [[nodiscard]]
-  internal::TableStreamAdaptor Stream(bool want_headers, bool want_row_numbers) const;
+  private bool TryGetColumnInternal(string name, bool strict, [NotNullWhen(true)] out ColumnSource? result) {
+    if (TryGetColumnIndex(name, out var index)) {
+      result = GetColumn(index);
+      return true;
+    }
 
-  /**
-   * Creates an 'ostream adaptor' to use when printing the clienttable. Example usage:
-   * std::cout << myTable.Stream(true, false, rowSeq).
-   */
-  [[nodiscard]]
-  internal::TableStreamAdaptor Stream(bool want_headers, bool want_row_numbers,
-      std::shared_ptr<RowSequence> row_sequence) const;
+    if (strict) {
+      throw new Exception($"Column {name} was not found");
+    }
 
-  /**
-   * Creates an 'ostream adaptor' to use when printing the clienttable. Example usage:
-   * std::cout << myTable.Stream(true, false, rowSequences).
-   */
-  [[nodiscard]]
-  internal::TableStreamAdaptor Stream(bool want_headers, bool want_row_numbers,
-      std::vector<std::shared_ptr<RowSequence>> row_sequences) const;
+    result = null;
+    return false;
+  }
 
-  /**
-   * For debugging and demos.
-   */
-  [[nodiscard]]
-  std::string ToString(bool want_headers, bool want_row_numbers) const;
+  /// <summary>
+  /// Gets the index of a ColumnSource from the ClientTable by name.
+  /// </summary>
+  /// <param name="name">The name of the column</param>
+  /// <param name="result">The column index, if found</param>
+  /// <returns>True if 'name' was found, false otherwise.</returns>
+  public bool TryGetColumnIndex(string name, [NotNullWhen(true)] out int result) {
+    return Schema.TryGetColumnIndex(name, out result);
+  }
 
-  /**
-   * For debugging and demos.
-   */
-  [[nodiscard]]
-  std::string ToString(bool want_headers, bool want_row_numbers,
-      std::shared_ptr<RowSequence> row_sequence) const;
+  /// <summary>
+  /// Number of rows in the ClienTTable
+  /// </summary>
+  public abstract Int64 NumRows { get; }
 
-  /**
-   * For debugging and demos.
-   */
-  [[nodiscard]]
-  std::string ToString(bool want_headers, bool want_row_numbers,
-      std::vector<std::shared_ptr<RowSequence>> row_sequences) const;
+  /// <summary>
+  /// Number of columns in the ClienTTable
+  /// </summary>
+  public abstract Int64 NumCols { get; }
+
+  /// <summary>
+  /// The ClientTable Schema
+  /// </summary>
+  public abstract Schema Schema { get; }
 }
