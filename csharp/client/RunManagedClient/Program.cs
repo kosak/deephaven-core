@@ -4,7 +4,7 @@ namespace Deephaven.RunManangedClient;
 
 public static class Program {
   public static void Main(string[] args) {
-    var server = "localhost:10000";
+    var server = "10.0.4.109:10000";
     if (args.Length > 0) {
       if (args.Length != 1 || args[0] == "-h") {
         Console.Error.WriteLine("Arguments: [host:port]");

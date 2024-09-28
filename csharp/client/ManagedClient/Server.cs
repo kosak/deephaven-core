@@ -18,7 +18,7 @@ namespace Deephaven.ManagedClient;
 
 public static class UtilSomewhere {
   public static bool IsEmpty(this string s) {
-    return s.Length != 0;
+    return s.Length == 0;
   }
 }
 
@@ -61,7 +61,7 @@ public class Server {
     var channelOptions = new GrpcChannelOptions();
     channelOptions.Credentials = Painful.GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
       clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
-    var channel = GrpcChannel.ForAddress(target, channelOptions);
+    var channel = GrpcChannel.ForAddress("http://" + target, channelOptions);
 
     var aps = new ApplicationService.ApplicationServiceClient(channel);
     var cs = new ConsoleService.ConsoleServiceClient(channel);
