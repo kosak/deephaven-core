@@ -2,6 +2,9 @@
 using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
+using System.IO;
+using System.Reflection.PortableExecutable;
+using Apache.Arrow.Flight.Client;
 
 namespace Deephaven.ManagedClient;
 
@@ -53,14 +56,17 @@ public class TableHandle : IDisposable {
     return TableHandle.Create(_manager, resp);
   }
 
-  public string ToString(bool wantHeaders) {
+  public FlightRecordBatchStreamReader GetFlightStream() {
     var server = _manager.Server;
     var metadata = new Metadata();
     server.ForEachHeaderNameAndValue(metadata.Add);
     var ticket = new FlightTicket(_ticket.Ticket_);
-    using var stream = _manager.Server.FlightClient.GetStream(ticket, metadata);
-    var reader = stream.ResponseStream;
+    var call = _manager.Server.FlightClient.GetStream(ticket, metadata);
+    return call.ResponseStream;
+  }
 
+  public Table ToArrowTable() {
+    using var reader = GetFlightStream();
     // Gather record batches
     var recordBatches = new List<RecordBatch>();
     while (reader.MoveNext().Result) {
@@ -69,6 +75,16 @@ public class TableHandle : IDisposable {
 
     var schema = reader.Schema.Result;
     var table = Table.TableFromRecordBatches(schema, recordBatches);
-    return table.ToString();
+    return table;
+  }
+
+  public ClientTable ToClientTable() {
+    var at = ToArrowTable();
+    return ArrowClientTable::Create(at);
+  }
+
+  public string ToString(bool wantHeaders) {
+    var t = ToArrowTable();
+    return t.ToString();
   }
 }
