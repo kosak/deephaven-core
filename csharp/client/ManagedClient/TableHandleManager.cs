@@ -11,6 +11,10 @@ namespace Deephaven.ManagedClient;
 /// by this class, such as flags that control asynchronous behavior.
 /// </summary>
 public class TableHandleManager : IDisposable {
+  public static TableHandleManager Create(params object?[] ignored) {
+    throw new NotImplementedException();
+  }
+
   public void Dispose() {
     throw new NotImplementedException();
   }

@@ -2,6 +2,12 @@
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
 namespace Deephaven.ManagedClient;
+
+public class Executor {
+  public static Executor Create(string freak) {
+    throw new NotImplementedException("hi");
+  }
+}
 /// <summary>
 /// The main class for interacting with Deephaven. Start here to Connect with
 /// the server and to get a TableHandleManager.

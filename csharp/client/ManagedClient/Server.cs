@@ -89,6 +89,27 @@ public class Server {
     }
     throw new NotImplementedException("sad");
   }
+
+  public void SendRpc(Action<CallOptions> ignored) {
+    throw new NotImplementedException();
+
+  }
+
+  public Ticket NewTicket() {
+    throw new NotImplementedException();
+  }
+
+  public string Me {
+    get {
+      throw new NotImplementedException();
+    }
+  }
+
+  public ConsoleService.ConsoleServiceClient ConsoleStub {
+    get {
+      throw new NotImplementedException("hi");
+    }
+  }
 }
 
 //   if (!result.ok()) {
