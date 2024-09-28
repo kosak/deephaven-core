@@ -24,8 +24,13 @@ public static class Program {
       var at = t2.ToArrowTable();
       var ct = t2.ToClientTable();
       var cs = ct.GetColumn(0);
-      
-      ct.
+
+      var size = ct.NumRows;
+      var chunk = ChunkMaker.CreateChunkFor(cs, size);
+      var nulls = BooleanChunk.Create(size);
+      var rs = ct.RowSequence;
+
+      cs.FillChunk(rs, chunk, null);
       Console.WriteLine("hello");
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
