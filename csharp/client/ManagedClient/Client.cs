@@ -16,7 +16,7 @@ public class Client : IDisposable {
   /// <param name="target">A connection string in the format host:port.For example "localhost:10000"</param>
   /// <param name="options">An options object for setting options like authentication and script language.</param>
   /// <returns>A Client object connected to the Deephaven server.</returns>
-  public static extern Client Connect(string target, ClientOptions options = new ClientOptions());
+  public static extern Client Connect(string target, ClientOptions? options = null);
 
   /// <summary>
   /// Shuts down the Client and all associated state(GRPC connections, subscriptions, etc).
