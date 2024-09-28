@@ -25,12 +25,12 @@ public static class Program {
       var ct = t2.ToClientTable();
       var cs = ct.GetColumn(0);
 
-      var size = ct.NumRows;
+      var size = ct.NumRows.ToIntExact();
       var chunk = ChunkMaker.CreateChunkFor(cs, size);
       var nulls = BooleanChunk.Create(size);
       var rs = ct.RowSequence;
 
-      cs.FillChunk(rs, chunk, null);
+      cs.FillChunk(rs, chunk, nulls);
       Console.WriteLine("hello");
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
