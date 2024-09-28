@@ -56,6 +56,23 @@ public class TableHandle : IDisposable {
     return TableHandle.Create(_manager, resp);
   }
 
+  /// <summary>
+  /// Creates a new table from this table, filtered by condition. Consult the Deephaven
+  /// documentation for more information about valid conditions.
+  /// </summary>
+  /// <param name="condition">A Deephaven boolean expression such as "Price > 100" or "Col3 == Col1 * Col2"</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Where(string condition) {
+    var server = _manager.Server;
+    var req = new UnstructuredFilterTableRequest {
+      ResultId = server.NewTicket(),
+      SourceId = new TableReference { Ticket = _ticket }
+    };
+    req.Filters.Add(condition);
+    var resp = server.SendRpc(opts => server.TableStub.UnstructuredFilterAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
   public FlightRecordBatchStreamReader GetFlightStream() {
     var server = _manager.Server;
     var metadata = new Metadata();

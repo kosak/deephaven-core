@@ -20,9 +20,11 @@ public static class Program {
       using var table = manager.EmptyTable(10);
       using var t2 = table.Update("ABC = ii == 5 ? null : (int)(ii + 100)");
       // using var t2 = table.Update("ABC = ii + 100", "XYZ = '12:34:56.000'");
-      Console.WriteLine(t2.ToString(true));
-      var at = t2.ToArrowTable();
-      var ct = t2.ToClientTable();
+      using var tResult = t2.Where("ABC < 102");
+
+      Console.WriteLine(tResult.ToString(true));
+      // var at = tResult.ToArrowTable();
+      var ct = tResult.ToClientTable();
       var cs = ct.GetColumn(0);
 
       var size = ct.NumRows.ToIntExact();
