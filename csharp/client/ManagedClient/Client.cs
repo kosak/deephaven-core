@@ -5,7 +5,8 @@ namespace Deephaven.ManagedClient;
 
 public class Executor {
   public static Executor Create(string freak) {
-    throw new NotImplementedException("hi");
+    Console.Error.WriteLine("NOT IMPLEMENTED YET");
+    return new Executor();
   }
 }
 /// <summary>
@@ -29,7 +30,7 @@ public class Client : IDisposable {
     var flightExecutor = Executor.Create("Flight executor for " + server.Me);
 
     Ticket? consoleTicket = null;
-    if (options.SessionType.Length != 0) {
+    if (!options.SessionType.IsEmpty()) {
       var req = new StartConsoleRequest {
         ResultId = server.NewTicket(),
         SessionType = options.SessionType

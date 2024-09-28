@@ -121,9 +121,44 @@ public class Server {
     return result;
   }
 
+  private readonly ApplicationService.ApplicationServiceClient _applicationStub;
+  public ConsoleService.ConsoleServiceClient ConsoleStub { get; }
+  public SessionService.SessionServiceClient SessionStub { get; }
+  public TableService.TableServiceClient TableStub { get; }
+  public ConfigService.ConfigServiceClient ConfigStub { get; }
+  public InputTableService.InputTableServiceClient InputTableStub { get; }
+  public FlightClient FlightClient { get; }
+  private readonly IReadOnlyList<(string, string)> _extraHeaders;
+  private readonly string _sessionToken;
+  private readonly TimeSpan _expirationInterval;
+  private readonly DateTime _nextHandshakeTime;
+
+  private Server(ApplicationService.ApplicationServiceClient applicationStub,
+    ConsoleService.ConsoleServiceClient consoleStub,
+    SessionService.SessionServiceClient sessionStub,
+    TableService.TableServiceClient tableStub,
+    ConfigService.ConfigServiceClient configStub,
+    InputTableService.InputTableServiceClient inputTableStub,
+    FlightClient flightClient,
+    IReadOnlyList<(string, string)> extraHeaders,
+    string sessionToken,
+    TimeSpan expirationInterval,
+    DateTime nextHandshakeTime) {
+    _applicationStub = applicationStub;
+    ConsoleStub = consoleStub;
+    SessionStub = sessionStub;
+    TableStub = tableStub;
+    ConfigStub = configStub;
+    InputTableStub = inputTableStub;
+    FlightClient = flightClient;
+    _extraHeaders = extraHeaders.ToArray();
+    _sessionToken = sessionToken;
+    _expirationInterval = expirationInterval;
+    _nextHandshakeTime = nextHandshakeTime;
+  }
+
   public void SendRpc(Action<CallOptions> ignored) {
     throw new NotImplementedException();
-
   }
 
   public Ticket NewTicket() {
@@ -132,13 +167,8 @@ public class Server {
 
   public string Me {
     get {
-      throw new NotImplementedException();
-    }
-  }
-
-  public ConsoleService.ConsoleServiceClient ConsoleStub {
-    get {
-      throw new NotImplementedException("hi");
+      Console.Error.WriteLine("Also, implement Me");
+      return "It's Me";
     }
   }
 }
