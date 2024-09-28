@@ -15,14 +15,14 @@ public abstract class ClientTable {
   /// </summary>
   /// <param name="columnIndex"></param>
   /// <returns>The ColumnSource</returns>
-  public abstract ColumnSource GetColumn(int columnIndex);
+  public abstract IColumnSource GetColumn(int columnIndex);
 
   /// <summary>
   /// Gets a ColumnSource from the ClientTable by name.
   /// </summary>
   /// <param name="name">The name of the column</param>
   /// <returns>The ColumnSource, if 'name' was found. Otherwise, throws an exception.</returns>
-  public ColumnSource GetColumn(string name) {
+  public IColumnSource GetColumn(string name) {
     _ = TryGetColumnInternal(name, true, out var result);
     return result!;
   }
@@ -33,11 +33,11 @@ public abstract class ClientTable {
   /// <param name="name">The name of the column</param>
   /// <param name="result">The column, if found</param>
   /// <returns>True if 'name' was found, false otherwise.</returns>
-  public bool TryGetColumn(string name, [NotNullWhen(true)] out ColumnSource? result) {
+  public bool TryGetColumn(string name, [NotNullWhen(true)] out IColumnSource? result) {
     return TryGetColumnInternal(name, false, out result);
   }
 
-  private bool TryGetColumnInternal(string name, bool strict, [NotNullWhen(true)] out ColumnSource? result) {
+  private bool TryGetColumnInternal(string name, bool strict, [NotNullWhen(true)] out IColumnSource? result) {
     if (TryGetColumnIndex(name, out var index)) {
       result = GetColumn(index);
       return true;
@@ -57,7 +57,7 @@ public abstract class ClientTable {
   /// <param name="name">The name of the column</param>
   /// <param name="result">The column index, if found</param>
   /// <returns>True if 'name' was found, false otherwise.</returns>
-  public bool TryGetColumnIndex(string name, [NotNullWhen(true)] out int result) {
+  public bool TryGetColumnIndex(string name, out int result) {
     return Schema.TryGetColumnIndex(name, out result);
   }
 

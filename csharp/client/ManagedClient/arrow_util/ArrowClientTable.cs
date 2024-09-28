@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Apache.Arrow;
+﻿using Apache.Arrow;
+using Apache.Arrow.Types;
 
 namespace Deephaven.ManagedClient;
 
@@ -13,7 +8,7 @@ public sealed class ArrowClientTable : ClientTable {
     var schema = ArrowUtil.MakeDeephavenSchema(arrowTable.Schema);
     var rowSequence = RowSequence.CreateSequential(0, arrowTable.RowCount);
 
-    var columnSources = new List<ColumnSource>();
+    var columnSources = new List<IColumnSource>();
     for (var i = 0; i != arrowTable.ColumnCount; ++i) {
       var col = arrowTable.Column(i);
       columnSources.Add(MakeColumnSource(col));
@@ -25,18 +20,36 @@ public sealed class ArrowClientTable : ClientTable {
   private readonly Apache.Arrow.Table _arrowTable;
   public override Schema Schema { get; }
   public override RowSequence RowSequence { get; }
-  private readonly ColumnSource[] _columnSources;
+  private readonly IColumnSource[] _columnSources;
 
   private ArrowClientTable(Apache.Arrow.Table arrowTable, Schema schema, RowSequence rowSequence,
-    ColumnSource[] columnSources) {
+    IColumnSource[] columnSources) {
     _arrowTable = arrowTable;
     Schema = schema;
     RowSequence = rowSequence;
     _columnSources = columnSources;
   }
 
-  public override ColumnSource GetColumn(int columnIndex) => _columnSources[columnIndex];
+  public override IColumnSource GetColumn(int columnIndex) => _columnSources[columnIndex];
 
   public override Int64 NumRows => _arrowTable.RowCount;
   public override Int64 NumCols => _arrowTable.ColumnCount;
+
+  private class MyVisitor(ChunkedArray chunkedArray) : IArrowTypeVisitor<Int64Type> {
+    public IColumnSource Result { get; }
+
+    public void Visit(Int64Type type) {
+      Result = Int64ArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(IArrowType type) {
+      throw new Exception($"type {type.Name} is not supported");
+    }
+  }
+
+  private static IColumnSource MakeColumnSource(Column column) {
+    var visitor = new MyVisitor(column.Data);
+    column.Type.Accept(visitor);
+    return visitor.Result;
+  }
 }
