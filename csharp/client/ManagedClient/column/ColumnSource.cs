@@ -3,6 +3,8 @@
 namespace Deephaven.ManagedClient;
 
 public interface IColumnSource {
+  void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
+  void AcceptVisitor(IColumnSourceVisitor visitor);
 }
 
 public interface IMutableColumnSource : IColumnSource {
@@ -21,4 +23,8 @@ public interface IMutableNumericColumnSource<T> : INumericColumnSource<T>, IMuta
 }
 
 public interface IMutableGenericColumnSource<T> : IGenericColumnSource<T>, IMutableColumnSource {
+}
+
+public interface IColumnSourceVisitor {
+  void Visit(IInt64ColumnSource cs);
 }
