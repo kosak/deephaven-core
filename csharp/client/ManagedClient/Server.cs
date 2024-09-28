@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
+using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
@@ -24,7 +25,6 @@ public class Server {
   if (!client_options.UseTls && !client_options.TlsRootCerts.IsEmpty()) {
     throw new Exception("Server.CreateFromTarget: ClientOptions: UseTls is false but pem provided");
   }
-
 
 // grpc::ChannelArguments channel_args;
 // auto options = arrow::flight::FlightClientOptions::Defaults();
@@ -59,20 +59,21 @@ var flight_target = ((client_options.UseTls) ? "grpc+tls://" : "grpc://") + targ
 
 var location_res = arrow::flight::Location::Parse(flight_target);
 if (!location_res.ok()) {
-  auto message = fmt::format("Location::Parse({}) failed, error = {}",
+  var message = fmt::format("Location::Parse({}) failed, error = {}",
       flight_target, location_res.status().ToString());
   throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
 }
 
 if (!client_options.TlsRootCerts.IsEmpty()) {
-  options.tls_root_certs = client_options.TlsRootCerts();
+  options.tls_root_certs = client_options.TlsRootCerts;
 }
 if (!client_options.ClientCertChain.IsEmpty()) {
-  options.cert_chain = client_options.ClientCertChain();
+  options.cert_chain = client_options.ClientCertChain;
 }
 if (!client_options.ClientPrivateKey.IsEmpty()) {
-  options.private_key = client_options.ClientPrivateKey();
+  options.private_key = client_options.ClientPrivateKey;
 }
+
 
 var client_res = arrow::flight::FlightClient::Connect(*location_res, options);
 if (!client_res.ok()) {
