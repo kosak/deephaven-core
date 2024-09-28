@@ -1,5 +1,6 @@
 ﻿using System.Reflection.Metadata.Ecma335;
 using System;
+using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
 
@@ -11,8 +12,22 @@ namespace Deephaven.ManagedClient;
 /// by this class, such as flags that control asynchronous behavior.
 /// </summary>
 public class TableHandleManager : IDisposable {
-  public static TableHandleManager Create(params object?[] ignored) {
-    throw new NotImplementedException();
+  public static TableHandleManager Create(Ticket? consoleId, Server server, Executor executor,
+    Executor flightExecutor) {
+    return new TableHandleManager(consoleId, server, executor, flightExecutor);
+  }
+
+  private readonly Ticket? _consoleId;
+  private readonly Server _server;
+  private readonly Executor _executor;
+  private readonly Executor _flightExecutor;
+
+  private TableHandleManager(Ticket? consoleId, Server server, Executor executor,
+    Executor flightExecutor) {
+    _consoleId = consoleId;
+    _server = server;
+    _executor = executor;
+    _flightExecutor = flightExecutor;
   }
 
   public void Dispose() {
@@ -25,7 +40,12 @@ public class TableHandleManager : IDisposable {
   /// <param name="size">Number of rows in the empty table</param>
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle EmptyTable(Int64 size) {
-    throw new NotImplementedException();
+    var req = new EmptyTableRequest {
+      ResultId = _server.NewTicket(),
+      Size = size
+    };
+    var resp = _server.SendRpc(opts => _server.TableStub.EmptyTableAsync(req, opts));
+    return TableHandle.Create(this, resp);
   }
 
   /// <summary>

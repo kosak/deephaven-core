@@ -1,6 +1,26 @@
-﻿namespace Deephaven.ManagedClient;
+﻿using Apache.Arrow;
+using Io.Deephaven.Proto.Backplane.Grpc;
+
+namespace Deephaven.ManagedClient;
 
 public class TableHandle : IDisposable {
+  public static TableHandle Create(TableHandleManager manager,
+    ExportedTableCreationResponse resp) {
+    return new TableHandle(manager, resp.ResultId.Ticket, resp.Size, resp.IsStatic);
+  }
+
+  private readonly TableHandleManager _manager;
+  private readonly Ticket _ticket;
+  private readonly Int64 _numRows;
+  private readonly bool _isStatic;
+
+  private TableHandle(TableHandleManager manager, Ticket ticket, long numRows, bool isStatic) {
+    _manager = manager;
+    _ticket = ticket;
+    _numRows = numRows;
+    _isStatic = isStatic;
+  }
+
   public void Dispose() {
     throw new NotImplementedException();
   }

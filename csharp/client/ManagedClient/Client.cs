@@ -62,7 +62,8 @@ public class Client : IDisposable {
   /// </summary>
   /// <returns>The TableHandleManager</returns>
   public TableHandleManager GetManager() {
-    throw new NotImplementedException();
+    // TODO(kosak): need to make multiple of these so they can be individually disposed
+    return _tableHandleManager;
   }
 
   /// <summary>

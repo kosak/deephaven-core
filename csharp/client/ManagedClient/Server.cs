@@ -169,7 +169,7 @@ public class Server {
   }
 
   public TResponse SendRpc<TResponse>(Func<CallOptions, AsyncUnaryCall<TResponse>> callback,
-    bool disregardCancellationState) {
+    bool disregardCancellationState = false) {
     var now = DateTime.Now;
     var metadata = new Metadata();
     ForEachHeaderNameAndValue(metadata.Add);
