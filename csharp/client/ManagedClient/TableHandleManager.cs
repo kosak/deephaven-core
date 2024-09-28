@@ -11,21 +11,27 @@ namespace Deephaven.ManagedClient;
 /// by this class, such as flags that control asynchronous behavior.
 /// </summary>
 public class TableHandleManager : IDisposable {
-  public extern void Dispose();
+  public void Dispose() {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Creates a "zero-width" table on the server. Such a table knows its number of rows but has no columns.
   /// </summary>
   /// <param name="size">Number of rows in the empty table</param>
   /// <returns>The TableHandle of the new table</returns>
-  public extern TableHandle EmptyTable(Int64 size);
+  public TableHandle EmptyTable(Int64 size) {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Looks up an existing table by name.
   /// </summary>
   /// <param name="tableName">The name of the table</param>
   /// <returns>The TableHandle of the new table</returns>
-  public extern TableHandle FetchTable(string tableName);
+  public TableHandle FetchTable(string tableName) {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Creates a ticking table
@@ -36,8 +42,10 @@ public class TableHandleManager : IDisposable {
   /// Int64 nanoseconds since the epoch, or a string containing an ISO 8601 time point specifier</param>
   /// <param name="blinkTable">Whether the table is a blink table</param>
   /// <returns>The TableHandle of the new table</returns>
-  public extern TableHandle TimeTable(DurationSpecifier period, TimePointSpecifier? startTime = null,
-    bool blinkTable = false);
+  public TableHandle TimeTable(DurationSpecifier period, TimePointSpecifier? startTime = null,
+    bool blinkTable = false) {
+    throw new NotImplementedException();
+  }
 
 
   /// <summary>
@@ -47,12 +55,16 @@ public class TableHandleManager : IDisposable {
   /// <param name="initialTable">The initial table</param>
   /// <param name="keyColumns">The set of key columns</param>
   /// <returns>The TableHandle of the new table</returns>
-  public extern TableHandle InputTable(TableHandle initialTable, params string[] keyColumns);
+  public TableHandle InputTable(TableHandle initialTable, params string[] keyColumns) {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Execute a script on the server. This assumes that the Client was created with a sessionType corresponding to
   /// the language of the script(typically either "python" or "groovy") and that the code matches that language
   /// </summary>
   /// <param name="code">The script to be run on the server</param>
-  public extern void RunScript(string code);
+  public void RunScript(string code) {
+    throw new NotImplementedException();
+  }
 };

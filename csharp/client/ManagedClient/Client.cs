@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.ManagedClient;
 /// <summary>
 /// The main class for interacting with Deephaven. Start here to Connect with
 /// the server and to get a TableHandleManager.
@@ -16,21 +10,27 @@ public class Client : IDisposable {
   /// <param name="target">A connection string in the format host:port.For example "localhost:10000"</param>
   /// <param name="options">An options object for setting options like authentication and script language.</param>
   /// <returns>A Client object connected to the Deephaven server.</returns>
-  public static extern Client Connect(string target, ClientOptions? options = null);
+  public static Client Connect(string target, ClientOptions? options = null) {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Shuts down the Client and all associated state(GRPC connections, subscriptions, etc).
   /// The caller must not use any associated data structures(TableHandleManager, TableHandle, etc)
   /// after Dispose() is called. If the caller tries to do so, the behavior is unspecified.
   /// </summary>
-  public extern void Dispose();
+  public void Dispose() {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Gets a TableHandleManager which you can use to create empty tables, fetch tables, and so on.
   /// You can create more than one TableHandleManager.
   /// </summary>
   /// <returns>The TableHandleManager</returns>
-  public extern TableHandleManager GetManager();
+  public TableHandleManager GetManager() {
+    throw new NotImplementedException();
+  }
 
   /// <summary>
   /// Adds a callback to be invoked when this client is closed.

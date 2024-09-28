@@ -21,7 +21,7 @@ public static class Program {
       using var t2 = table.Update("ABC = ii + 100");
       Console.WriteLine(t2.ToString(true));
     } catch (Exception e) {
-      Console.Error.WriteLine($"Caught exception: {e.Message}");
+      Console.Error.WriteLine($"Caught exception: {e}");
     }
   }
 }

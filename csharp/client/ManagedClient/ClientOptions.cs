@@ -2,7 +2,59 @@
 
 namespace Deephaven.ManagedClient;
 
+public static class SessionTypes {
+  public const string Python = "python";
+  public const string Groovy = "groovy";
+}
+
 public class ClientOptions {
+  /// <summary>
+  /// Returns the value for the authorization header that will be sent to the server
+  /// on the first request; this value is a function of the authentication method selected.
+  /// </summary>
+  public string AuthorizationValue { get; private set; } = "";
+
+  /// <summary>
+  /// The Session Type (python or groovy).
+  /// </summary>
+  public string SessionType { get; private set; } = "";
+
+  /// <summary>
+  /// Returns true if server connections should be configured for TLS/SSL, false for insecure.
+  /// </summary>
+  public bool UseTls { get; private set; } = false;
+
+  /// <summary>
+  /// The PEM-encoded certificate root for server connections, or the empty string
+  /// if using system defaults.
+  /// </summary>
+  public string TlsRootCerts { get; private set; } = "";
+
+  /// <summary>
+  /// The PEM-encoded certificate chain to use for the client
+  /// when using mutual TLS, or the empty string for no mutual TLS.
+  /// </summary>
+  public string ClientCertChain { get; private set; } = "";
+
+  /// <summary>
+  /// The PEM-encoded client private key to use for mutual TLS.
+  /// </summary>
+  public string ClientPrivateKey { get; private set; } = "";
+
+  /// <summary>
+  /// Integer-valued channel options set for server connections.
+  /// </summary>
+  public IReadOnlyList<(string, int)> IntOptions => _intOptions;
+
+  /// <summary>
+  /// String-valued channel options set for server connections.
+  /// </summary>
+  public IReadOnlyList<(string, string)> StringOptions => _stringOptions;
+
+  /// <summary>
+  /// Extra headers that should be sent with each outgoing server request.
+  /// </summary>
+  public IReadOnlyList<(string, string)> ExtraHeaders => _extraHeaders;
   private readonly List<(string, int)> _intOptions = new();
   private readonly List<(string, string)> _stringOptions = new();
   private readonly List<(string, string)> _extraHeaders = new();
@@ -10,7 +62,10 @@ public class ClientOptions {
   /// <summary>
   /// Creates a default ClientOptions object with default authentication and Python scripting.
   /// </summary>
-  public extern ClientOptions();
+  public ClientOptions() {
+    SetDefaultAuthentication();
+    SetSessionType(SessionTypes.Python);
+  }
 
   /// <summary>
   /// Modifies the ClientOptions object to set the default authentication scheme.
@@ -134,51 +189,5 @@ public class ClientOptions {
     return this;
   }
 
-  /// <summary>
-  /// Returns the value for the authorization header that will be sent to the server
-  /// on the first request; this value is a function of the authentication method selected.
-  /// </summary>
-  public string AuthorizationValue { get; private set; }
 
-  /// <summary>
-  /// The Session Type (python or groovy).
-  /// </summary>
-  public string SessionType { get; private set; }
-
-  /// <summary>
-  /// Returns true if server connections should be configured for TLS/SSL, false for insecure.
-  /// </summary>
-  public bool UseTls { get; private set; }
-
-  /// <summary>
-  /// The PEM-encoded certificate root for server connections, or the empty string
-  /// if using system defaults.
-  /// </summary>
-  public string TlsRootCerts { get; private set; }
-
-  /// <summary>
-  /// The PEM-encoded certificate chain to use for the client
-  /// when using mutual TLS, or the empty string for no mutual TLS.
-  /// </summary>
-  public string ClientCertChain { get; private set; }
-
-  /// <summary>
-  /// The PEM-encoded client private key to use for mutual TLS.
-  /// </summary>
-  public string ClientPrivateKey { get; private set; }
-
-  /// <summary>
-  /// Integer-valued channel options set for server connections.
-  /// </summary>
-  public IReadOnlyList<(string, int)> IntOptions => _intOptions;
-
-  /// <summary>
-  /// String-valued channel options set for server connections.
-  /// </summary>
-  public IReadOnlyList<(string, string)> StringOptions => _stringOptions;
-
-  /// <summary>
-  /// Extra headers that should be sent with each outgoing server request.
-  /// </summary>
-  public IReadOnlyList<(string, string)> ExtraHeaders => _extraHeaders;
 }
