@@ -29,7 +29,7 @@ public class Int64ArrowColumnSource : IInt64ColumnSource {
     var destSpan = new Span<Int64>(typedDest.Data);
 
     var srcIterator = new ZamboniIterator<Int64>(_arrays);
-    var nullDestp = nullFlags != null ? new Span<bool>(nullFlags.Data) : null;
+    var nullSpan = nullFlags != null ? new Span<bool>(nullFlags.Data) : null;
 
     foreach (var (reqBeginConst, reqEnd) in rows.Intervals) {
       var reqBegin = reqBeginConst;
@@ -40,12 +40,14 @@ public class Int64ArrowColumnSource : IInt64ColumnSource {
         }
 
         srcIterator.Advance(reqBegin);
-        var amountToCopy = Math.Min(srcIterator.AvailableInCurrentSegment, reqLength);
-        srcIterator.Values.CopyTo(destSpan);
-        destSpan = destSpan.Slice(amountToCopy);
+        var actualLength = srcIterator.CopyTo(destSpan, nullSpan, reqLength);
+        destSpan = destSpan.Slice(actualLength);
 
-        reqBegin += amountToCopy;
-        // and then handle nulls
+        if (nullSpan != null) {
+          nullSpan = nullSpan.Slice(actualLength);
+        }
+
+        reqBegin += actualLength;
       }
     }
   }
@@ -91,7 +93,24 @@ public class ZamboniIterator<T> where T : struct, IEquatable<T> {
     }
   }
 
-  public int AvailableInCurrentSegment => (_segmentEnd - _segmentBegin).ToIntExact();
+  public int CopyTo(Span<T> dest, Span<bool> nulls, int requestedLength) {
+    var available = (_segmentEnd - _segmentBegin).ToIntExact();
+    var amountToCopy = Math.Min(requestedLength, available);
+
+    var array = _arrays[_arrayIndex];
+
+    var segBegin = (_segmentBegin - _segmentOffset).ToIntExact();
+    var arraySpan = array.Values.Slice(segBegin, amountToCopy);
+    arraySpan.CopyTo(dest);
+
+    if (nulls != null) {
+      for (var i = 0; i != amountToCopy; ++i) {
+        nulls[i] = array.IsNull(segBegin + i);
+      }
+    }
+
+    return amountToCopy;
+  }
 
   public ReadOnlySpan<T> Values => _arrays[_arrayIndex].Values.Slice((_segmentBegin - _segmentOffset).ToIntExact());
 }
