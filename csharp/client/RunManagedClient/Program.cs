@@ -18,7 +18,7 @@ public static class Program {
       using var client = Client.Connect(server);
       using var manager = client.GetManager();
       using var table = manager.EmptyTable(10);
-      using var t2 = table.Update("ABC = ii + 100");
+      using var t2 = table.Update("ABC = ii + 100", "XYZ = '12:34:56.000'");
       Console.WriteLine(t2.ToString(true));
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");

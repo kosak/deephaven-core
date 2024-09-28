@@ -1,4 +1,6 @@
-﻿using Grpc.Core;
+﻿using Apache.Arrow;
+using Apache.Arrow.Flight;
+using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
@@ -52,6 +54,21 @@ public class TableHandle : IDisposable {
   }
 
   public string ToString(bool wantHeaders) {
-    throw new NotImplementedException();
+    var server = _manager.Server;
+    var metadata = new Metadata();
+    server.ForEachHeaderNameAndValue(metadata.Add);
+    var ticket = new FlightTicket(_ticket.Ticket_);
+    using var stream = _manager.Server.FlightClient.GetStream(ticket, metadata);
+    var reader = stream.ResponseStream;
+
+    // Gather record batches
+    var recordBatches = new List<RecordBatch>();
+    while (reader.MoveNext().Result) {
+      recordBatches.Add(reader.Current);
+    }
+
+    var schema = reader.Schema.Result;
+    var table = Table.TableFromRecordBatches(schema, recordBatches);
+    return table.ToString();
   }
 }

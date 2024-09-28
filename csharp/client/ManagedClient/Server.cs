@@ -200,7 +200,7 @@ public class Server {
     return result;
   }
 
-  private void ForEachHeaderNameAndValue(Action<string, string> callback) {
+  public void ForEachHeaderNameAndValue(Action<string, string> callback) {
     string tokenCopy;
     lock (_sync) {
       tokenCopy = _sessionToken;
