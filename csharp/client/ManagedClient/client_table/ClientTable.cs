@@ -58,7 +58,8 @@ public abstract class ClientTable {
   /// <param name="result">The column index, if found</param>
   /// <returns>True if 'name' was found, false otherwise.</returns>
   public bool TryGetColumnIndex(string name, out int result) {
-    return Schema.TryGetColumnIndex(name, out result);
+    result = Schema.GetFieldIndex(name);
+    return result >= 0;
   }
 
   /// <summary>

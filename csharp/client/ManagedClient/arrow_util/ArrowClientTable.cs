@@ -4,8 +4,8 @@ using Apache.Arrow.Types;
 namespace Deephaven.ManagedClient;
 
 public sealed class ArrowClientTable : ClientTable {
-  static ClientTable Create(Apache.Arrow.Table arrowTable) {
-    var schema = ArrowUtil.MakeDeephavenSchema(arrowTable.Schema);
+  public static ClientTable Create(Apache.Arrow.Table arrowTable) {
+    // var schema = ArrowUtil.MakeDeephavenSchema(arrowTable.Schema);
     var rowSequence = RowSequence.CreateSequential(0, arrowTable.RowCount);
 
     var columnSources = new List<IColumnSource>();
@@ -14,18 +14,17 @@ public sealed class ArrowClientTable : ClientTable {
       columnSources.Add(MakeColumnSource(col));
     }
 
-    return new ArrowClientTable(arrowTable, schema, rowSequence, columnSources.ToArray());
+    return new ArrowClientTable(arrowTable, rowSequence, columnSources.ToArray());
   }
 
   private readonly Apache.Arrow.Table _arrowTable;
-  public override Schema Schema { get; }
+  public override Schema Schema => _arrowTable.Schema;
   public override RowSequence RowSequence { get; }
   private readonly IColumnSource[] _columnSources;
 
-  private ArrowClientTable(Apache.Arrow.Table arrowTable, Schema schema, RowSequence rowSequence,
+  private ArrowClientTable(Apache.Arrow.Table arrowTable, RowSequence rowSequence,
     IColumnSource[] columnSources) {
     _arrowTable = arrowTable;
-    Schema = schema;
     RowSequence = rowSequence;
     _columnSources = columnSources;
   }
@@ -36,7 +35,7 @@ public sealed class ArrowClientTable : ClientTable {
   public override Int64 NumCols => _arrowTable.ColumnCount;
 
   private class MyVisitor(ChunkedArray chunkedArray) : IArrowTypeVisitor<Int64Type> {
-    public IColumnSource Result { get; }
+    public IColumnSource Result { get; private set; }
 
     public void Visit(Int64Type type) {
       Result = Int64ArrowColumnSource.OfChunkedArray(chunkedArray);

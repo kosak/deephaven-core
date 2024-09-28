@@ -80,7 +80,7 @@ public class TableHandle : IDisposable {
 
   public ClientTable ToClientTable() {
     var at = ToArrowTable();
-    return ArrowClientTable::Create(at);
+    return ArrowClientTable.Create(at);
   }
 
   public string ToString(bool wantHeaders) {

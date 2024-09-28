@@ -1,10 +1,13 @@
-﻿using IInt64ColumnSource2 = Deephaven.ManagedClient.INumericColumnSource<System.Int64>;
-
-using Int64ArrowColumnSource = Deephaven.ManagedClient.GenericArrowColumnSource<
-  IInt64ColumnSource2,
-  Apache.Arrow.Int64Array>;
+﻿using Apache.Arrow;
 
 namespace Deephaven.ManagedClient;
 
-public class GenericArrowColumnSource<T,U> {
+public class GenericArrowColumnSource<TCRTP, U> {
+  public static TCRTP OfChunkedArray(ChunkedArray chunkedArray) {
+    throw new NotImplementedException("wow");
+  }
+}
+
+public class Int64ArrowColumnSource : GenericArrowColumnSource<Int64ArrowColumnSource, Int64Array>, IInt64ColumnSource {
+
 }
