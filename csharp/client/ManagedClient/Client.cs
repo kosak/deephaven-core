@@ -35,9 +35,8 @@ public class Client : IDisposable {
         ResultId = server.NewTicket(),
         SessionType = options.SessionType
       };
-      StartConsoleResponse? resp = null;
-      server.SendRpc(opts => resp = server.ConsoleStub.StartConsole(req, opts));
-      consoleTicket = resp!.ResultId;
+      var resp = server.SendRpc(opts => server.ConsoleStub.StartConsoleAsync(req, opts), false);
+      consoleTicket = resp.ResultId;
     }
 
     var thm = TableHandleManager.Create(consoleTicket, server, executor, flightExecutor);

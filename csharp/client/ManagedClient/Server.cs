@@ -131,9 +131,8 @@ public class Server {
   public InputTableService.InputTableServiceClient InputTableStub { get; }
   public FlightClient FlightClient { get; }
   private readonly IReadOnlyList<(string, string)> _extraHeaders;
-  private readonly string _sessionToken;
   private readonly TimeSpan _expirationInterval;
-  private readonly DateTime _nextHandshakeTime;
+  private DateTime _nextHandshakeTime;
 
 
   private readonly object _sync = new();
@@ -142,6 +141,8 @@ public class Server {
   /// </summary>
   private Int32 _nextFreeTicketId = 1;
   private HashSet<Ticket> _outstandingTickets = new();
+  private string _sessionToken;
+  private bool _cancelled = false;
 
   private Server(ApplicationService.ApplicationServiceClient applicationStub,
     ConsoleService.ConsoleServiceClient consoleStub,
@@ -167,8 +168,47 @@ public class Server {
     _nextHandshakeTime = nextHandshakeTime;
   }
 
-  public void SendRpc(Action<CallOptions> ignored) {
-    throw new NotImplementedException();
+  public TResponse SendRpc<TResponse>(Func<CallOptions, AsyncUnaryCall<TResponse>> callback,
+    bool disregardCancellationState) {
+    var now = DateTime.Now;
+    var metadata = new Metadata();
+    ForEachHeaderNameAndValue(metadata.Add);
+
+    if (!disregardCancellationState) {
+      lock (_sync) {
+        if (_cancelled) {
+          throw new Exception("Server cancelled. All further RPCs are being rejected");
+        }
+      }
+    }
+
+    var options = new CallOptions(headers: metadata);
+    var asyncResp = callback(options);
+
+    var serverMetadata = asyncResp.ResponseHeadersAsync.Result;
+    var result = asyncResp.ResponseAsync.Result;
+
+    var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
+    lock (_sync) {
+      if (maybeToken != null) {
+        _sessionToken = maybeToken;
+      }
+
+      _nextHandshakeTime = now + _expirationInterval;
+    }
+
+    return result;
+  }
+
+  private void ForEachHeaderNameAndValue(Action<string, string> callback) {
+    string tokenCopy;
+    lock (_sync) {
+      tokenCopy = _sessionToken;
+    }
+    callback(AuthorizationKey, tokenCopy);
+    foreach (var entry in _extraHeaders) {
+      callback(entry.Item1, entry.Item2);
+    }
   }
 
   public Ticket MakeNewTicket(Int32 ticketId) {
