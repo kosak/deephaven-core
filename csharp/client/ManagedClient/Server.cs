@@ -37,6 +37,25 @@ public static class Painful {
   }
 }
 
+public static class Stupid {
+  private const string TimeoutKey = "http.session.durationMs";
+
+  public static bool TryExtractExpirationInterval(ConfigurationConstantsResponse ccResp, out TimeSpan result) {
+    if (!ccResp.ConfigValues.TryGetValue(TimeoutKey, out var value) || !value.HasStringValue) {
+      result = TimeSpan.Zero;
+      return false;
+    }
+
+    if (!int.TryParse(value.StringValue, out var intResult)) {
+      throw new Exception($"Failed to parse {value.StringValue} as an integer");
+    }
+
+    // As a matter of policy we use half of whatever the server tells us is the expiration time.
+    result = TimeSpan.FromMilliseconds((double)intResult / 2);
+    return true;
+  }
+}
+
 public class Server {
   private const string AuthorizationKey = "authorization";
 
@@ -61,7 +80,9 @@ public class Server {
     var channelOptions = new GrpcChannelOptions();
     channelOptions.Credentials = Painful.GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
       clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
-    var channel = GrpcChannel.ForAddress("http://" + target, channelOptions);
+    var targetToUse = (clientOptions.UseTls ? "https://" : "http://") + target;
+
+    var channel = GrpcChannel.ForAddress(targetToUse, channelOptions);
 
     var aps = new ApplicationService.ApplicationServiceClient(channel);
     var cs = new ConsoleService.ConsoleServiceClient(channel);
@@ -69,15 +90,11 @@ public class Server {
     var ts = new TableService.TableServiceClient(channel);
     var cfs = new ConfigService.ConfigServiceClient(channel);
     var its = new InputTableService.InputTableServiceClient(channel);
-
-// TODO(kosak): Warn about this string conversion or do something more general.
-    var flight_target = ((clientOptions.UseTls) ? "grpc+tls://" : "grpc://") + target;
-
     var fc = new FlightClient(channel);
 
-// string session_token;
-// std::chrono::milliseconds expiration_interval;
-// var send_time = std::chrono::system_clock::now();
+    string sessionToken;
+    TimeSpan expirationInterval;
+    var sendTime = DateTime.Now;
     {
       var metadata = new Metadata { { AuthorizationKey, clientOptions.AuthorizationValue } };
       foreach (var (k, v) in clientOptions.ExtraHeaders) {
@@ -85,9 +102,23 @@ public class Server {
       }
 
       var ccReq = new ConfigurationConstantsRequest();
-      var ccResp = cfs.GetConfigurationConstants(ccReq, metadata);
+      var ccTask = cfs.GetConfigurationConstantsAsync(ccReq, metadata);
+      var serverMetadata = ccTask.ResponseHeadersAsync.Result;
+      var ccResp = ccTask.ResponseAsync.Result;
+      var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
+      sessionToken = maybeToken ?? throw new Exception("Configuration response didn't contain authorization token");
+      if (!Stupid.TryExtractExpirationInterval(ccResp, out expirationInterval)) {
+        // arbitrary
+        expirationInterval = TimeSpan.FromSeconds(10);
+      }
     }
-    throw new NotImplementedException("sad");
+
+    var nextHandshakeTime = sendTime + expirationInterval;
+
+    var result = new Server(aps, cs, ss, ts, cfs, its, fc, clientOptions.ExtraHeaders, sessionToken,
+      expirationInterval, nextHandshakeTime);
+    // set keepaliveThread here
+    return result;
   }
 
   public void SendRpc(Action<CallOptions> ignored) {
