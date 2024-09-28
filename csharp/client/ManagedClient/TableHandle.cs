@@ -1,4 +1,4 @@
-﻿using Apache.Arrow;
+﻿using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
@@ -31,7 +31,24 @@ public class TableHandle : IDisposable {
   /// <param name="columnSpecs">The columnSpecs to add. For example, "X = A + 5", "Y = X * 2"</param>
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle Update(params string[] columnSpecs) {
-    throw new NotImplementedException();
+    return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.UpdateAsync);
+  }
+
+  private TableHandle SelectOrUpdateHelper(string[] columnSpecs,
+    Func<SelectOrUpdateRequest, CallOptions, AsyncUnaryCall<ExportedTableCreationResponse>> func) {
+    var server = _manager.Server;
+    var req = new SelectOrUpdateRequest {
+      ResultId = server.NewTicket(),
+      SourceId = new TableReference {
+        Ticket = _ticket
+      }
+    };
+    foreach (var cs in columnSpecs) {
+      req.ColumnSpecs.Add(cs);
+    }
+
+    var resp = server.SendRpc(opts => func(req, opts));
+    return TableHandle.Create(_manager, resp);
   }
 
   public string ToString(bool wantHeaders) {

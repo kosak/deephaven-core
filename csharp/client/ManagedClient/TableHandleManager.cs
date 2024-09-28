@@ -18,14 +18,14 @@ public class TableHandleManager : IDisposable {
   }
 
   private readonly Ticket? _consoleId;
-  private readonly Server _server;
+  public readonly Server Server;
   private readonly Executor _executor;
   private readonly Executor _flightExecutor;
 
   private TableHandleManager(Ticket? consoleId, Server server, Executor executor,
     Executor flightExecutor) {
     _consoleId = consoleId;
-    _server = server;
+    Server = server;
     _executor = executor;
     _flightExecutor = flightExecutor;
   }
@@ -41,10 +41,10 @@ public class TableHandleManager : IDisposable {
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle EmptyTable(Int64 size) {
     var req = new EmptyTableRequest {
-      ResultId = _server.NewTicket(),
+      ResultId = Server.NewTicket(),
       Size = size
     };
-    var resp = _server.SendRpc(opts => _server.TableStub.EmptyTableAsync(req, opts));
+    var resp = Server.SendRpc(opts => Server.TableStub.EmptyTableAsync(req, opts));
     return TableHandle.Create(this, resp);
   }
 
