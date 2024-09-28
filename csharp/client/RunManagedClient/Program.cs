@@ -18,10 +18,14 @@ public static class Program {
       using var client = Client.Connect(server);
       using var manager = client.GetManager();
       using var table = manager.EmptyTable(10);
-      using var t2 = table.Update("ABC = ii + 100", "XYZ = '12:34:56.000'");
+      using var t2 = table.Update("ABC = ii + 100");
+      // using var t2 = table.Update("ABC = ii + 100", "XYZ = '12:34:56.000'");
       Console.WriteLine(t2.ToString(true));
       var at = t2.ToArrowTable();
       var ct = t2.ToClientTable();
+      var cs = ct.GetColumn(0);
+      
+      ct.
       Console.WriteLine("hello");
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");

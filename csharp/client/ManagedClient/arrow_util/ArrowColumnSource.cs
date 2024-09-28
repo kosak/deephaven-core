@@ -2,12 +2,19 @@
 
 namespace Deephaven.ManagedClient;
 
-public class GenericArrowColumnSource<TCRTP, U> {
-  public static TCRTP OfChunkedArray(ChunkedArray chunkedArray) {
-    throw new NotImplementedException("wow");
+public class Int64ArrowColumnSource : IInt64ColumnSource {
+  public static Int64ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = new Int64Array[chunkedArray.ArrayCount];
+    for (var i = 0; i < chunkedArray.ArrayCount; i++) {
+      arrays[i] = (Int64Array)chunkedArray.ArrowArray(i);
+    }
+
+    return new Int64ArrowColumnSource(arrays);
   }
-}
 
-public class Int64ArrowColumnSource : GenericArrowColumnSource<Int64ArrowColumnSource, Int64Array>, IInt64ColumnSource {
+  private Int64Array[] _arrays;
 
+  private Int64ArrowColumnSource(Int64Array[] arrays) {
+    _arrays = arrays;
+  }
 }
