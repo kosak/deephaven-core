@@ -8,8 +8,11 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using Apache.Arrow.Flight;
+using Apache.Arrow.Flight.Client;
 using Grpc.Core;
+using Grpc.Net.Client;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
+using Exception = System.Exception;
 
 namespace Deephaven.ManagedClient;
 
@@ -19,10 +22,25 @@ public static class UtilSomewhere {
   }
 }
 
+public static class Painful {
+  public static ChannelCredentials GetCredentials(
+    bool useTls,
+    string tlsRootCerts,
+    string clientRootChain,
+    string clientPrivateKey) {
+    if (!useTls) {
+      return ChannelCredentials.Insecure;
+    }
+
+    var certPair = new KeyCertificatePair(clientRootChain, clientPrivateKey);
+    return new SslCredentials(tlsRootCerts, certPair);
+  }
+}
+
 public class Server {
   // fix client_options
-  public static Server CreateFromTarget(string target, ClientOptions client_options) {
-  if (!client_options.UseTls && !client_options.TlsRootCerts.IsEmpty()) {
+  public static Server CreateFromTarget(string target, ClientOptions clientOptions) {
+  if (!clientOptions.UseTls && !clientOptions.TlsRootCerts.IsEmpty()) {
     throw new Exception("Server.CreateFromTarget: ClientOptions: UseTls is false but pem provided");
   }
 
@@ -37,15 +55,11 @@ public class Server {
 //   options.generic_options.emplace_back(opt.first, opt.second);
 // }
 //
-// auto credentials = GetCredentials(
-//     client_options.UseTls(),
-//     client_options.TlsRootCerts(),
-//     client_options.ClientCertChain(),
-//     client_options.ClientPrivateKey());
-// auto channel = grpc::CreateCustomChannel(
-//     target,
-//     credentials,
-//     channel_args);
+
+    var channelOptions = new GrpcChannelOptions();
+    channelOptions.Credentials = Painful.GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
+      clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
+    var channel = GrpcChannel.ForAddress(target, channelOptions);
 
     var aps = new ApplicationService.ApplicationServiceClient(channel);
     var cs = new ConsoleService.ConsoleServiceClient(channel);
@@ -55,31 +69,9 @@ public class Server {
     var its = new InputTableService.InputTableServiceClient(channel);
 
 // TODO(kosak): Warn about this string conversion or do something more general.
-var flight_target = ((client_options.UseTls) ? "grpc+tls://" : "grpc://") + target;
+var flight_target = ((clientOptions.UseTls) ? "grpc+tls://" : "grpc://") + target;
 
-var location_res = arrow::flight::Location::Parse(flight_target);
-if (!location_res.ok()) {
-  var message = fmt::format("Location::Parse({}) failed, error = {}",
-      flight_target, location_res.status().ToString());
-  throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-}
-
-if (!client_options.TlsRootCerts.IsEmpty()) {
-  options.tls_root_certs = client_options.TlsRootCerts;
-}
-if (!client_options.ClientCertChain.IsEmpty()) {
-  options.cert_chain = client_options.ClientCertChain;
-}
-if (!client_options.ClientPrivateKey.IsEmpty()) {
-  options.private_key = client_options.ClientPrivateKey;
-}
-
-
-var client_res = arrow::flight::FlightClient::Connect(*location_res, options);
-if (!client_res.ok()) {
-  var message = fmt::format("FlightClient::Connect() failed, error = {}", client_res.status().ToString());
-  throw std::runtime_error(message);
-}
+var fc = new FlightClient(channel);
 
 string session_token;
 std::chrono::milliseconds expiration_interval;
@@ -87,8 +79,8 @@ var send_time = std::chrono::system_clock::now(); {
   ConfigurationConstantsRequest cc_req;
   ConfigurationConstantsResponse cc_resp;
   grpc::ClientContext ctx;
-  ctx.AddMetadata(kAuthorizationKey, client_options.AuthorizationValue());
-  for (const auto &header : client_options.ExtraHeaders()) {
+  ctx.AddMetadata(kAuthorizationKey, clientOptions.AuthorizationValue());
+  for (const auto &header : clientOptions.ExtraHeaders()) {
     ctx.AddMetadata(header.first, header.second);
   }
 
@@ -121,7 +113,9 @@ auto next_handshake_time = send_time + expiration_interval;
 
 auto result = std::make_shared<Server>(Private(), std::move(as), std::move(cs),
     std::move(ss), std::move(ts), std::move(cfs), std::move(its), std::move(*client_res),
-    client_options.ExtraHeaders(), std::move(session_token), expiration_interval, next_handshake_time);
+    clientOptions.ExtraHeaders(), std::move(session_token), expiration_interval, next_handshake_time);
 result->keepAliveThread_ = std::thread(&SendKeepaliveMessages, result);
 return result;
 }
+
+
