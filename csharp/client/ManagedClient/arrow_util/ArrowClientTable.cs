@@ -75,6 +75,10 @@ public sealed class ArrowClientTable : ClientTable {
       Result = DoubleArrowColumnSource.OfChunkedArray(chunkedArray);
     }
 
+    public void Visit(BooleanType type) {
+      Result = BooleanArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
     public void Visit(TimestampType type) {
       Result = TimestampArrowColumnSource.OfChunkedArray(chunkedArray);
     }

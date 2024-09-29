@@ -150,6 +150,27 @@ public class DoubleArrowColumnSource : IDoubleColumnSource {
   }
 }
 
+public class BooleanArrowColumnSource : IBooleanColumnSource {
+  public static BooleanArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<BooleanArray>(chunkedArray);
+    return new BooleanArrowColumnSource(arrays);
+  }
+
+  private readonly BooleanArray[] _arrays;
+
+  private BooleanArrowColumnSource(BooleanArray[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
 public class TimestampArrowColumnSource : ITimestampColumnSource {
   public static TimestampArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
     var arrays = ZamboniHelpers.CastChunkedArray<TimestampArray>(chunkedArray);
