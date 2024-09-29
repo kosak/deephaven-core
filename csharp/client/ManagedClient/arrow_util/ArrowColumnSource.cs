@@ -14,7 +14,7 @@ public class CharArrowColumnSource : ICharColumnSource {
     _arrays = arrays;
   }
 
-  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+  public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
     ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => (char)v);
   }
 
@@ -128,6 +128,27 @@ public class DoubleArrowColumnSource : IDoubleColumnSource {
   }
 }
 
+public class TimestampArrowColumnSource : ITimestampColumnSource {
+  public static TimestampArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<TimestampArray>(chunkedArray);
+    return new TimestampArrowColumnSource(arrays);
+  }
+
+  private readonly TimestampArray[] _arrays;
+
+  private TimestampArrowColumnSource(TimestampArray[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, DhDateTime.FromNanos);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
 public static class ZamboniHelpers {
   public static TArray[] CastChunkedArray<TArray>(ChunkedArray chunkedArray) {
     var arrays = new TArray[chunkedArray.ArrayCount];
@@ -147,7 +168,7 @@ public static class ZamboniHelpers {
 
     // This algorithm is a little tricky because the source data and RowSequence are both
     // segmented, perhaps in different ways.
-    var typedDest = (GenericChunk<TChunkElement>)destData;
+    var typedDest = (Chunk<TChunkElement>)destData;
     var destSpan = new Span<TChunkElement>(typedDest.Data);
 
     var srcIterator = new ZamboniIterator<TArrowElement>(srcArrays);

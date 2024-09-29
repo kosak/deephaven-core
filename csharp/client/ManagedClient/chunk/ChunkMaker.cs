@@ -27,6 +27,10 @@ public static class ChunkMaker {
     public void Visit(IDoubleColumnSource cs) {
       Result = DoubleChunk.Create(chunkSize);
     }
+
+    public void Visit(ITimestampColumnSource cs) {
+      Result = DhDateTimeChunk.Create(chunkSize);
+    }
   }
 
   public static Chunk CreateChunkFor(IColumnSource columnSource, int chunkSize) {

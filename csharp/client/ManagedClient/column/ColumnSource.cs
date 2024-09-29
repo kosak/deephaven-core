@@ -41,6 +41,9 @@ public interface IFloatColumnSource : INumericColumnSource<float> {
 public interface IDoubleColumnSource : INumericColumnSource<double> {
 }
 
+public interface ITimestampColumnSource : IGenericColumnSource<DhDateTime> {
+}
+
 public interface IColumnSourceVisitor {
   void Visit(ICharColumnSource cs);
   void Visit(IInt16ColumnSource cs);
@@ -48,4 +51,5 @@ public interface IColumnSourceVisitor {
   void Visit(IInt64ColumnSource cs);
   void Visit(IFloatColumnSource cs);
   void Visit(IDoubleColumnSource cs);
+  void Visit(ITimestampColumnSource cs);
 }

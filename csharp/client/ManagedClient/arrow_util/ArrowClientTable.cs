@@ -40,8 +40,9 @@ public sealed class ArrowClientTable : ClientTable {
     IArrowTypeVisitor<Int32Type>,
     IArrowTypeVisitor<Int64Type>,
     IArrowTypeVisitor<FloatType>,
-    IArrowTypeVisitor<DoubleType> {
-    public IColumnSource Result { get; private set; }
+    IArrowTypeVisitor<DoubleType>,
+    IArrowTypeVisitor<TimestampType> {
+    public IColumnSource? Result { get; private set; }
 
     public void Visit(UInt16Type type) {
       Result = CharArrowColumnSource.OfChunkedArray(chunkedArray);
@@ -67,6 +68,10 @@ public sealed class ArrowClientTable : ClientTable {
       Result = DoubleArrowColumnSource.OfChunkedArray(chunkedArray);
     }
 
+    public void Visit(TimestampType type) {
+      Result = TimestampArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
     public void Visit(IArrowType type) {
       throw new Exception($"type {type.Name} is not supported");
     }
@@ -75,6 +80,9 @@ public sealed class ArrowClientTable : ClientTable {
   private static IColumnSource MakeColumnSource(Column column) {
     var visitor = new MyVisitor(column.Data);
     column.Type.Accept(visitor);
+    if (visitor.Result == null) {
+      throw new Exception($"No result set for {column.Data.DataType}");
+    }
     return visitor.Result;
   }
 }
