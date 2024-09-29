@@ -141,6 +141,7 @@ public class TableHandle : IDisposable {
         break;
       }
 
+      var md = result.ResponseStream.ApplicationMetadata;
       var stupid = result.ResponseStream.Current;
       Console.WriteLine("hi");
     }
