@@ -151,19 +151,31 @@ public class DoubleArrowColumnSource : IDoubleColumnSource {
 }
 
 public class BooleanArrowColumnSource : IBooleanColumnSource {
-  public static BooleanArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<BooleanArray>(chunkedArray);
-    return new BooleanArrowColumnSource(arrays);
-  }
+  private readonly ChunkedArray _chunkedArray;
 
-  private readonly BooleanArray[] _arrays;
-
-  private BooleanArrowColumnSource(BooleanArray[] arrays) {
-    _arrays = arrays;
+  public BooleanArrowColumnSource(ChunkedArray chunkedArray) {
+    _chunkedArray = chunkedArray;
   }
 
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (BooleanChunk)destData;
+    void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+      var typedSrc = (BooleanArray)src;
+      for (var i = 0; i < count; ++i) {
+        var value = typedSrc.GetValue(srcOffset);
+        var valueToUse = value ?? false;
+        var isNullToUse = !value.HasValue;
+
+        typedDest.Data[destOffset] = valueToUse;
+        if (nullFlags != null) {
+          nullFlags.Data[destOffset] = isNullToUse;
+        }
+
+        ++srcOffset;
+        ++destOffset;
+      }
+    }
+    Zamboni2Helpers.FillChunk(rows, _chunkedArray, DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -280,6 +292,79 @@ public static class ZamboniHelpers {
     }
   }
 }
+
+public static class Zamboni2Helpers {
+  public static void FillChunk(RowSequence rows, ChunkedArray srcArray,
+    Action<IArrowArray, int, int, int> doCopy) {
+    if (rows.Empty) {
+      return;
+    }
+
+    var srcIterator = new Zamboni2Iterator(srcArray);
+    var destIndex = 0;
+
+    foreach (var (reqBeginConst, reqEnd) in rows.Intervals) {
+      var reqBegin = reqBeginConst;
+      while (true) {
+        var reqLength = (reqEnd - reqBegin).ToIntExact();
+        if (reqLength == 0) {
+          return;
+        }
+
+        srcIterator.Advance(reqBegin);
+        var amountToCopy = Math.Min(reqLength, srcIterator.SegmentLength);
+        doCopy(srcIterator.CurrentSegment, srcIterator.RelativeBegin, destIndex, amountToCopy);
+
+        reqBegin += amountToCopy;
+        destIndex += amountToCopy;
+      }
+    }
+  }
+}
+
+public class Zamboni2Iterator {
+  private readonly ChunkedArray _chunkedArray;
+  private int _arrayIndex = -1;
+  private Int64 _segmentOffset = 0;
+  private Int64 _segmentBegin = 0;
+  private Int64 _segmentEnd = 0;
+
+
+  public Zamboni2Iterator(ChunkedArray chunkedArray) {
+    _chunkedArray = chunkedArray;
+  }
+
+  public void Advance(Int64 start) {
+    while (true) {
+      if (start < _segmentBegin) {
+        throw new Exception($"Programming error: Can't go backwards from {_segmentBegin} to {start}");
+      }
+
+      if (start < _segmentEnd) {
+        // satisfiable with current segment
+        _segmentBegin = start;
+        return;
+      }
+
+      // Go to next array slice (or the first one, if this is the first call to Advance)
+      ++_arrayIndex;
+      if (_arrayIndex >= _chunkedArray.ArrayCount) {
+        throw new Exception($"Ran out of src data before processing all of RowSequence");
+      }
+
+      _segmentBegin = _segmentEnd;
+      _segmentEnd = _segmentBegin + _chunkedArray.ArrowArray(_arrayIndex).Length;
+      _segmentOffset = _segmentBegin;
+    }
+  }
+
+  public IArrowArray CurrentSegment => _chunkedArray.ArrowArray(_arrayIndex);
+
+  public int SegmentLength => (_segmentEnd - _segmentBegin).ToIntExact();
+
+  public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
+}
+
 
 public class ZamboniIterator<TSrc> where TSrc : struct, IEquatable<TSrc> {
   private readonly IReadOnlyList<PrimitiveArray<TSrc>> _arrays;
