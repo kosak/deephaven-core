@@ -42,9 +42,6 @@ class AwaitingMetadata : IChunkProcessor {
       throw new Exception($"Expected Barrage Message Type {BarrageMessageType.BarrageUpdateMetadata}, got {bmw.MsgType}");
     }
 
-    // var payloadRawSbytes = bmw.GetMsgPayloadArray();
-    // var payloadRawBytes = new byte[payloadRawSbytes.Length];
-    // Array.Copy(payloadRawSbytes, payloadRawBytes, payloadRawSbytes.Length);
     var bytes = bmw.GetMsgPayloadBytes()!.ToArray<byte>();
     var bmd = BarrageUpdateMetadata.GetRootAsBarrageUpdateMetadata(new ByteBuffer(bytes));
 
@@ -98,18 +95,19 @@ class AwaitingMetadata : IChunkProcessor {
   }
 
   (ClientTable, RowSequence, ClientTable) ProcessRemoves(RowSequence removedRows) {
-    auto prev = table_state_.Snapshot();
+    var prev = tableState.Snapshot();
     // The reason we special-case "empty" is because when the tables are unchanged, we prefer
     // to indicate this via pointer equality (e.g. beforeRemoves == afterRemoves).
-    std::shared_ptr<RowSequence> removed_rows_index_space;
-    std::shared_ptr<ClientTable> after_removes;
-    if (removed_rows.Empty()) {
-      removed_rows_index_space = RowSequence::CreateEmpty();
-      after_removes = prev;
+    RowSequence removedRowsIndexSpace;
+    ClientTable afterRemoves;
+    if (removedRows.Empty) {
+      removedRowsIndexSpace = RowSequence.CreateEmpty();
+      afterRemoves = prev;
     } else {
-      removed_rows_index_space = table_state_.Erase(removed_rows);
-      after_removes = table_state_.Snapshot();
+      removedRowsIndexSpace = tableState.Erase(removedRows);
+      afterRemoves = tableState.Snapshot();
     }
-    return { std::move(prev), std::move(removed_rows_index_space), std::move(after_removes)};
+
+    return (prev, removedRowsIndexSpace, afterRemoves);
   }
 }
