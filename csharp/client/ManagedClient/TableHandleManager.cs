@@ -68,9 +68,23 @@ public class TableHandleManager : IDisposable {
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle TimeTable(DurationSpecifier period, TimePointSpecifier? startTime = null,
     bool blinkTable = false) {
-    throw new NotImplementedException();
-  }
+    var req = new TimeTableRequest {
+      ResultId = Server.NewTicket(),
+      BlinkTable = blinkTable
+    };
 
+    period.Visit(
+      nanos => req.PeriodNanos = nanos,
+      duration => req.PeriodString = duration);
+    if (startTime.HasValue) {
+      startTime.Value.Visit(
+        nanos => req.StartTimeNanos = nanos,
+        duration => req.StartTimeString = duration);
+    }
+
+    var resp = Server.SendRpc(opts => Server.TableStub.TimeTableAsync(req, opts));
+    return TableHandle.Create(this, resp);
+  }
 
   /// <summary>
   /// Creates an input table from an initial table. When key columns are provided, the InputTable
