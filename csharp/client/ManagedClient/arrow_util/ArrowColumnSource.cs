@@ -2,20 +2,11 @@
 
 namespace Deephaven.ManagedClient;
 
-public class CharArrowColumnSource : ICharColumnSource {
-  public static CharArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<UInt16Array>(chunkedArray);
-    return new CharArrowColumnSource(arrays);
-  }
-
-  private readonly UInt16Array[] _arrays;
-
-  private CharArrowColumnSource(UInt16Array[] arrays) {
-    _arrays = arrays;
-  }
-
+public class CharArrowColumnSource(ChunkedArray chunkedArray) : ICharColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => (char)v);
+    var typedDest = (CharChunk)destData;
+    var pac = new TransformingArrayCopier<char>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -23,20 +14,11 @@ public class CharArrowColumnSource : ICharColumnSource {
   }
 }
 
-public class ByteArrowColumnSource : IByteColumnSource {
-  public static ByteArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<Int8Array>(chunkedArray);
-    return new ByteArrowColumnSource(arrays);
-  }
-
-  private readonly Int8Array[] _arrays;
-
-  private ByteArrowColumnSource(Int8Array[] arrays) {
-    _arrays = arrays;
-  }
-
+public class ByteArrowColumnSource(ChunkedArray chunkedArray) : IByteColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (ByteChunk)destData;
+    var pac = new PrimitiveArrayCopier<sbyte>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -80,20 +62,11 @@ public class Int64ArrowColumnSource(ChunkedArray chunkedArray) : IInt64ColumnSou
   }
 }
 
-public class FloatArrowColumnSource : IFloatColumnSource {
-  public static FloatArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<FloatArray>(chunkedArray);
-    return new FloatArrowColumnSource(arrays);
-  }
-
-  private readonly FloatArray[] _arrays;
-
-  private FloatArrowColumnSource(FloatArray[] arrays) {
-    _arrays = arrays;
-  }
-
+public class FloatArrowColumnSource(ChunkedArray chunkedArray) : IFloatColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (FloatChunk)destData;
+    var pac = new PrimitiveArrayCopier<float>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -101,20 +74,11 @@ public class FloatArrowColumnSource : IFloatColumnSource {
   }
 }
 
-public class DoubleArrowColumnSource : IDoubleColumnSource {
-  public static DoubleArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<DoubleArray>(chunkedArray);
-    return new DoubleArrowColumnSource(arrays);
-  }
-
-  private readonly DoubleArray[] _arrays;
-
-  private DoubleArrowColumnSource(DoubleArray[] arrays) {
-    _arrays = arrays;
-  }
-
+public class DoubleArrowColumnSource(ChunkedArray chunkedArray) : IDoubleColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (DoubleChunk)destData;
+    var pac = new PrimitiveArrayCopier<double>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -257,53 +221,6 @@ class PrimitiveArrayCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) where
   }
 }
 
-public static class ZamboniHelpers {
-  public static TArray[] CastChunkedArray<TArray>(ChunkedArray chunkedArray) {
-    var arrays = new TArray[chunkedArray.ArrayCount];
-    for (var i = 0; i < chunkedArray.ArrayCount; i++) {
-      arrays[i] = (TArray)chunkedArray.ArrowArray(i);
-    }
-    return arrays;
-  }
-
-  public static void FillChunk<TArrowElement, TChunkElement>(RowSequence rows,
-    IReadOnlyList<PrimitiveArray<TArrowElement>> srcArrays,
-    Chunk destData, BooleanChunk? nullFlags,
-    Func<TArrowElement, TChunkElement> converter) where TArrowElement : struct, IEquatable<TArrowElement> {
-    if (rows.Empty) {
-      return;
-    }
-
-    // This algorithm is a little tricky because the source data and RowSequence are both
-    // segmented, perhaps in different ways.
-    var typedDest = (Chunk<TChunkElement>)destData;
-    var destSpan = new Span<TChunkElement>(typedDest.Data);
-
-    var srcIterator = new ZamboniIterator<TArrowElement>(srcArrays);
-    var nullSpan = nullFlags != null ? new Span<bool>(nullFlags.Data) : null;
-
-    foreach (var (reqBeginConst, reqEnd) in rows.Intervals) {
-      var reqBegin = reqBeginConst;
-      while (true) {
-        var reqLength = (reqEnd - reqBegin).ToIntExact();
-        if (reqLength == 0) {
-          return;
-        }
-
-        srcIterator.Advance(reqBegin);
-        var actualLength = srcIterator.CopyTo(destSpan, nullSpan, reqLength, converter);
-        destSpan = destSpan.Slice(actualLength);
-
-        if (nullSpan != null) {
-          nullSpan = nullSpan.Slice(actualLength);
-        }
-
-        reqBegin += actualLength;
-      }
-    }
-  }
-}
-
 public static class Zamboni2Helpers {
   public static void FillChunk(RowSequence rows, ChunkedArray srcArray,
     Action<IArrowArray, int, int, int> doCopy) {
@@ -374,64 +291,4 @@ public class Zamboni2Iterator {
   public int SegmentLength => (_segmentEnd - _segmentBegin).ToIntExact();
 
   public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
-}
-
-
-public class ZamboniIterator<TSrc> where TSrc : struct, IEquatable<TSrc> {
-  private readonly IReadOnlyList<PrimitiveArray<TSrc>> _arrays;
-  private int _arrayIndex = -1;
-  private Int64 _segmentOffset = 0;
-  private Int64 _segmentBegin = 0;
-  private Int64 _segmentEnd = 0;
-
-
-  public ZamboniIterator(IReadOnlyList<PrimitiveArray<TSrc>> arrays) {
-    _arrays = arrays;
-  }
-
-  public void Advance(Int64 start) {
-    while (true) {
-      if (start < _segmentBegin) {
-        throw new Exception($"Programming error: Can't go backwards from {_segmentBegin} to {start}");
-      }
-
-      if (start < _segmentEnd) {
-        // satisfiable with current segment
-        _segmentBegin = start;
-        return;
-      }
-
-      // Go to next array slice (or the first one, if this is the first call to Advance)
-      ++_arrayIndex;
-      if (_arrayIndex >= _arrays.Count) {
-        throw new Exception($"Ran out of src data before processing all of RowSequence");
-      }
-
-      _segmentBegin = _segmentEnd;
-      _segmentEnd = _segmentBegin + _arrays[_arrayIndex ].Length;
-      _segmentOffset = _segmentBegin;
-    }
-  }
-
-  public int CopyTo<TDest>(Span<TDest> dest, Span<bool> nulls, int requestedLength, Func<TSrc, TDest> converter) {
-    var available = (_segmentEnd - _segmentBegin).ToIntExact();
-    var amountToCopy = Math.Min(requestedLength, available);
-
-    var array = _arrays[_arrayIndex];
-
-    var segBegin = (_segmentBegin - _segmentOffset).ToIntExact();
-    var arraySpan = array.Values.Slice(segBegin, amountToCopy);
-
-    for (int i = 0; i != amountToCopy; ++i) {
-      dest[i] = converter(arraySpan[i]);
-    }
-
-    if (nulls != null) {
-      for (var i = 0; i != amountToCopy; ++i) {
-        nulls[i] = array.IsNull(segBegin + i);
-      }
-    }
-
-    return amountToCopy;
-  }
 }
