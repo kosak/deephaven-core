@@ -152,11 +152,11 @@ abstract class FillChunkHelper {
           return;
         }
 
-        srcIterator.Advance(reqBegin);
+        srcIterator.Advance(checked((Int64)reqBegin));
         var amountToCopy = Math.Min(reqLength, srcIterator.SegmentLength);
         DoCopy(srcIterator.CurrentSegment, srcIterator.RelativeBegin, destIndex, amountToCopy);
 
-        reqBegin += amountToCopy;
+        reqBegin += (UInt64)amountToCopy;
         destIndex += amountToCopy;
       }
     }

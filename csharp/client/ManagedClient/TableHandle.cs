@@ -151,18 +151,13 @@ public class TableHandle : IDisposable {
         var bytes = md[0].ToByteArray();
         var bb = new ByteBuffer(bytes);
         var bmw = BarrageMessageWrapper.GetRootAsBarrageMessageWrapper(bb);
-
         var rr = bmw.MsgType;
 
         Console.WriteLine("SHALL WE BEGIN");
+
+        var bp = new BarrageProcessor();
+        bp.ProcessNextChunk(null, null, bytes);
       }
-
-
-
-
-
-
-
 
       Console.WriteLine("hi");
     }

@@ -50,9 +50,9 @@ public static class Program {
       cs.FillChunk(rs, chunk, nulls);
       Console.WriteLine("hello");
 
-      using var tt = manager.TimeTable("PT2S");
-      using var tt2 = tt.Update("II = ii");
-      tt2.ZamboniTime();
+      // using var tt = manager.TimeTable("PT2S");
+      // using var tt2 = tt.Update("II = ii");
+      tResult.ZamboniTime();
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
     }
