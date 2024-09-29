@@ -183,6 +183,32 @@ public class BooleanArrowColumnSource : IBooleanColumnSource {
   }
 }
 
+public class StringArrowColumnSource(ChunkedArray chunkedArray) : IStringColumnSource {
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    var typedDest = (StringChunk)destData;
+    void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+      var typedSrc = (StringArray)src;
+      for (var i = 0; i < count; ++i) {
+        var value = typedSrc.GetString(srcOffset);
+
+        typedDest.Data[destOffset] = value;
+        if (nullFlags != null) {
+          nullFlags.Data[destOffset] = value == null;
+        }
+
+        ++srcOffset;
+        ++destOffset;
+      }
+    }
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, DoCopy);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+
 public class TimestampArrowColumnSource : ITimestampColumnSource {
   public static TimestampArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
     var arrays = ZamboniHelpers.CastChunkedArray<TimestampArray>(chunkedArray);

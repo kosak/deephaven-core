@@ -1,4 +1,5 @@
 ﻿global using BooleanChunk = Deephaven.ManagedClient.Chunk<bool>;
+global using StringChunk = Deephaven.ManagedClient.Chunk<string>;
 global using CharChunk = Deephaven.ManagedClient.Chunk<char>;
 global using ByteChunk = Deephaven.ManagedClient.Chunk<sbyte>;
 global using Int16Chunk = Deephaven.ManagedClient.Chunk<System.Int16>;
@@ -16,14 +17,14 @@ public abstract class Chunk(int size) {
   public int Size { get; } = size;
 }
 
-public class Chunk<T> : Chunk {
+public sealed class Chunk<T> : Chunk {
   public static Chunk<T> Create(int size) {
     return new Chunk<T>(new T[size]);
   }
 
   public T[] Data { get; private set; }
 
-  protected Chunk(T[] data) : base(data.Length) {
+  private Chunk(T[] data) : base(data.Length) {
     Data = data;
   }
 }

@@ -47,6 +47,9 @@ public interface IDoubleColumnSource : INumericColumnSource<double> {
 public interface IBooleanColumnSource : IGenericColumnSource<bool> {
 }
 
+public interface IStringColumnSource : IGenericColumnSource<string> {
+}
+
 public interface ITimestampColumnSource : IGenericColumnSource<DhDateTime> {
 }
 
@@ -65,6 +68,7 @@ public interface IColumnSourceVisitor {
   void Visit(IFloatColumnSource cs);
   void Visit(IDoubleColumnSource cs);
   void Visit(IBooleanColumnSource cs);
+  void Visit(IStringColumnSource cs);
   void Visit(ITimestampColumnSource cs);
   void Visit(ILocalDateColumnSource cs);
   void Visit(ILocalTimeColumnSource cs);

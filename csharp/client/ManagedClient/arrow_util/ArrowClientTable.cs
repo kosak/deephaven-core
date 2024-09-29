@@ -43,6 +43,7 @@ public sealed class ArrowClientTable : ClientTable {
     IArrowTypeVisitor<FloatType>,
     IArrowTypeVisitor<DoubleType>,
     IArrowTypeVisitor<BooleanType>,
+    IArrowTypeVisitor<StringType>,
     IArrowTypeVisitor<TimestampType>,
     IArrowTypeVisitor<Date64Type>,
     IArrowTypeVisitor<Time64Type> {
@@ -78,6 +79,10 @@ public sealed class ArrowClientTable : ClientTable {
 
     public void Visit(BooleanType type) {
       Result = new BooleanArrowColumnSource(chunkedArray);
+    }
+
+    public void Visit(StringType type) {
+      Result = new StringArrowColumnSource(chunkedArray);
     }
 
     public void Visit(TimestampType type) {

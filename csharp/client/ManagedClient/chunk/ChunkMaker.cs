@@ -4,10 +4,6 @@ public static class ChunkMaker {
   private class MyVisitor(int chunkSize) : IColumnSourceVisitor {
     public Chunk? Result { get; private set; }
 
-    public void Visit(IBooleanColumnSource cs) {
-      Result = BooleanChunk.Create(chunkSize);
-    }
-
     public void Visit(ICharColumnSource cs) {
       Result = CharChunk.Create(chunkSize);
     }
@@ -34,6 +30,14 @@ public static class ChunkMaker {
 
     public void Visit(IDoubleColumnSource cs) {
       Result = DoubleChunk.Create(chunkSize);
+    }
+
+    public void Visit(IBooleanColumnSource cs) {
+      Result = BooleanChunk.Create(chunkSize);
+    }
+
+    public void Visit(IStringColumnSource cs) {
+      Result = StringChunk.Create(chunkSize);
     }
 
     public void Visit(ITimestampColumnSource cs) {
