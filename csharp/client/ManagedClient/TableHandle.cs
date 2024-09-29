@@ -5,6 +5,8 @@ using Io.Deephaven.Proto.Backplane.Grpc;
 using System.IO;
 using System.Reflection.PortableExecutable;
 using Apache.Arrow.Flight.Client;
+using Google.Protobuf;
+using Array = System.Array;
 
 namespace Deephaven.ManagedClient;
 
@@ -98,6 +100,38 @@ public class TableHandle : IDisposable {
   public ClientTable ToClientTable() {
     var at = ToArrowTable();
     return ArrowClientTable.Create(at);
+  }
+
+  public void ZamboniTime() {
+    var server = _manager.Server;
+    var metadata = new Metadata();
+    server.ForEachHeaderNameAndValue(metadata.Add);
+    var fc = server.FlightClient;
+    // var command = "nhpd"u8.ToArray();
+    var command = "dphn"u8.ToArray();
+    var fd = FlightDescriptor.CreateCommandDescriptor(command);
+    var result = fc.DoExchange(fd, metadata);
+
+    var batchBuilder = new RecordBatch.Builder();
+    var arrayBuilder = new Int32Array.Builder();
+    batchBuilder.Append("test", true, arrayBuilder.Build());
+    var uselessMessage = batchBuilder.Build();
+
+    var magicBytes = new byte[] {
+      16, 0, 0, 0, 0, 0, 10, 0, 16, 0, 8, 0, 7, 0, 12, 0, 10, 0, 0, 0, 0, 0, 0, 5, 100, 112, 104, 110, 4, 0, 0, 0, 68,
+      0, 0, 0, 16, 0, 0, 0,
+      12, 0, 12, 0, 4, 0, 0, 0, 0, 0, 8, 0, 12, 0, 0, 0, 8, 0, 0, 0, 32, 0, 0, 0, 5, 0, 0, 0, 101, 4, 0, 0, 0, 0, 0, 0,
+      16, 0, 12, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 7, 0, 16, 0, 0, 0, 0, 0, 1, 1, 0, 16, 0, 0
+    };
+
+    var z = magicBytes.Select((v, i) => new { v, i }).FirstOrDefault(e => e.v == 101);
+
+    var q = _ticket.Ticket_.Length;
+
+    var applicationMetadata = ByteString.CopyFrom(magicBytes);
+    var temp = result.RequestStream.WriteAsync(uselessMessage, applicationMetadata);
+    temp.Wait();
+    Console.Error.WriteLine("sad");
   }
 
   public string ToString(bool wantHeaders) {

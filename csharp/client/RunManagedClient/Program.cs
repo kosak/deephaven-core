@@ -49,6 +49,8 @@ public static class Program {
 
       cs.FillChunk(rs, chunk, nulls);
       Console.WriteLine("hello");
+
+      tResult.ZamboniTime();
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
     }
