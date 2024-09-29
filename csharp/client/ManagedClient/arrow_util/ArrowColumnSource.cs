@@ -23,6 +23,28 @@ public class CharArrowColumnSource : ICharColumnSource {
   }
 }
 
+public class ByteArrowColumnSource : IByteColumnSource {
+  public static ByteArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<Int8Array>(chunkedArray);
+    return new ByteArrowColumnSource(arrays);
+  }
+
+  private readonly Int8Array[] _arrays;
+
+  private ByteArrowColumnSource(Int8Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+
 public class Int16ArrowColumnSource : IInt16ColumnSource {
   public static Int16ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
     var arrays = ZamboniHelpers.CastChunkedArray<Int16Array>(chunkedArray);

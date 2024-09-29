@@ -26,6 +26,9 @@ public interface IMutableGenericColumnSource<T> : IGenericColumnSource<T>, IMuta
 public interface ICharColumnSource : INumericColumnSource<char> {
 }
 
+public interface IByteColumnSource : INumericColumnSource<sbyte> {
+}
+
 public interface IInt16ColumnSource : INumericColumnSource<Int16> {
 }
 
@@ -52,6 +55,7 @@ public interface ILocalTimeColumnSource : IGenericColumnSource<LocalTime> {
 
 public interface IColumnSourceVisitor {
   void Visit(ICharColumnSource cs);
+  void Visit(IByteColumnSource cs);
   void Visit(IInt16ColumnSource cs);
   void Visit(IInt32ColumnSource cs);
   void Visit(IInt64ColumnSource cs);

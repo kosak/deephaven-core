@@ -8,6 +8,10 @@ public static class ChunkMaker {
       Result = CharChunk.Create(chunkSize);
     }
 
+    public void Visit(IByteColumnSource cs) {
+      Result = ByteChunk.Create(chunkSize);
+    }
+
     public void Visit(IInt16ColumnSource cs) {
       Result = Int16Chunk.Create(chunkSize);
     }

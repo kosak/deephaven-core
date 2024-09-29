@@ -36,6 +36,7 @@ public sealed class ArrowClientTable : ClientTable {
 
   private class MyVisitor(ChunkedArray chunkedArray) :
     IArrowTypeVisitor<UInt16Type>,
+    IArrowTypeVisitor<Int8Type>,
     IArrowTypeVisitor<Int16Type>,
     IArrowTypeVisitor<Int32Type>,
     IArrowTypeVisitor<Int64Type>,
@@ -48,6 +49,10 @@ public sealed class ArrowClientTable : ClientTable {
 
     public void Visit(UInt16Type type) {
       Result = CharArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(Int8Type type) {
+      Result = ByteArrowColumnSource.OfChunkedArray(chunkedArray);
     }
 
     public void Visit(Int16Type type) {

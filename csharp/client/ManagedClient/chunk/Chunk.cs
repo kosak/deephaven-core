@@ -1,5 +1,6 @@
 ﻿global using BooleanChunk = Deephaven.ManagedClient.Chunk<bool>;
 global using CharChunk = Deephaven.ManagedClient.Chunk<char>;
+global using ByteChunk = Deephaven.ManagedClient.Chunk<sbyte>;
 global using Int16Chunk = Deephaven.ManagedClient.Chunk<System.Int16>;
 global using Int32Chunk = Deephaven.ManagedClient.Chunk<System.Int32>;
 global using Int64Chunk = Deephaven.ManagedClient.Chunk<System.Int64>;
