@@ -124,14 +124,26 @@ public class TableHandle : IDisposable {
       16, 0, 12, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 7, 0, 16, 0, 0, 0, 0, 0, 1, 1, 0, 16, 0, 0
     };
 
-    var z = magicBytes.Select((v, i) => new { v, i }).FirstOrDefault(e => e.v == 101);
-
-    var q = _ticket.Ticket_.Length;
+    const int magicOffset = 68;
+    if (magicBytes[magicOffset] != 101) {
+      throw new Exception("Programming error in magicBytes");
+    }
+    _ticket.Ticket_.Span.CopyTo(magicBytes.AsSpan(magicOffset));
 
     var applicationMetadata = ByteString.CopyFrom(magicBytes);
     var temp = result.RequestStream.WriteAsync(uselessMessage, applicationMetadata);
     temp.Wait();
-    Console.Error.WriteLine("sad");
+
+    while (true) {
+      var mn = result.ResponseStream.MoveNext().Result;
+      if (!mn) {
+        Console.Error.WriteLine("all done");
+        break;
+      }
+
+      var stupid = result.ResponseStream.Current;
+      Console.WriteLine("hi");
+    }
   }
 
   public string ToString(bool wantHeaders) {
