@@ -44,21 +44,11 @@ public class ByteArrowColumnSource : IByteColumnSource {
   }
 }
 
-
-public class Int16ArrowColumnSource : IInt16ColumnSource {
-  public static Int16ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<Int16Array>(chunkedArray);
-    return new Int16ArrowColumnSource(arrays);
-  }
-
-  private readonly Int16Array[] _arrays;
-
-  private Int16ArrowColumnSource(Int16Array[] arrays) {
-    _arrays = arrays;
-  }
-
+public class Int16ArrowColumnSource(ChunkedArray chunkedArray) : IInt16ColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (Int16Chunk)destData;
+    var pac = new PrimitiveArrayCopier<Int16>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -66,20 +56,11 @@ public class Int16ArrowColumnSource : IInt16ColumnSource {
   }
 }
 
-public class Int32ArrowColumnSource : IInt32ColumnSource {
-  public static Int32ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<Int32Array>(chunkedArray);
-    return new Int32ArrowColumnSource(arrays);
-  }
-
-  private readonly Int32Array[] _arrays;
-
-  private Int32ArrowColumnSource(Int32Array[] arrays) {
-    _arrays = arrays;
-  }
-
+public class Int32ArrowColumnSource(ChunkedArray chunkedArray) : IInt32ColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (Int32Chunk)destData;
+    var pac = new PrimitiveArrayCopier<Int32>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -87,20 +68,11 @@ public class Int32ArrowColumnSource : IInt32ColumnSource {
   }
 }
 
-public class Int64ArrowColumnSource : IInt64ColumnSource {
-  public static Int64ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<Int64Array>(chunkedArray);
-    return new Int64ArrowColumnSource(arrays);
-  }
-
-  private readonly Int64Array[] _arrays;
-
-  private Int64ArrowColumnSource(Int64Array[] arrays) {
-    _arrays = arrays;
-  }
-
+public class Int64ArrowColumnSource(ChunkedArray chunkedArray) : IInt64ColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, v => v);
+    var typedDest = (Int64Chunk)destData;
+    var pac = new PrimitiveArrayCopier<Int64>(typedDest, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -150,13 +122,7 @@ public class DoubleArrowColumnSource : IDoubleColumnSource {
   }
 }
 
-public class BooleanArrowColumnSource : IBooleanColumnSource {
-  private readonly ChunkedArray _chunkedArray;
-
-  public BooleanArrowColumnSource(ChunkedArray chunkedArray) {
-    _chunkedArray = chunkedArray;
-  }
-
+public class BooleanArrowColumnSource(ChunkedArray chunkedArray) : IBooleanColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
     var typedDest = (BooleanChunk)destData;
     void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
@@ -175,7 +141,7 @@ public class BooleanArrowColumnSource : IBooleanColumnSource {
         ++destOffset;
       }
     }
-    Zamboni2Helpers.FillChunk(rows, _chunkedArray, DoCopy);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -269,6 +235,25 @@ public class LocalTimeArrowColumnSource : ILocalTimeColumnSource {
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
     visitor.Visit(this);
+  }
+}
+
+class PrimitiveArrayCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) where T : struct, IEquatable<T> {
+  public void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+    var typedSrc = (PrimitiveArray<T>)src;
+    for (var i = 0; i < count; ++i) {
+      var value = typedSrc.GetValue(srcOffset);
+      var valueToUse = value ?? default;
+      var isNullToUse = !value.HasValue;
+
+      typedDest.Data[destOffset] = valueToUse;
+      if (nullFlags != null) {
+        nullFlags.Data[destOffset] = isNullToUse;
+      }
+
+      ++srcOffset;
+      ++destOffset;
+    }
   }
 }
 
