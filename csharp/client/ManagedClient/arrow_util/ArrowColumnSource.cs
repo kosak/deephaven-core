@@ -4,9 +4,8 @@ namespace Deephaven.ManagedClient;
 
 public class CharArrowColumnSource(ChunkedArray chunkedArray) : ICharColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
-    // var typedDest = (CharChunk)destData;
-    // var pac = new TransformingArrayCopier<char>(typedDest, nullFlags);
-    // Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var tc = new TransformingCopier<UInt16, char>((CharChunk)destData, nullFlags, v => (char)v);
+    tc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -16,9 +15,8 @@ public class CharArrowColumnSource(ChunkedArray chunkedArray) : ICharColumnSourc
 
 public class ByteArrowColumnSource(ChunkedArray chunkedArray) : IByteColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
-    var typedDest = (ByteChunk)destData;
-    var pac = new PrimitiveArrayCopier<sbyte>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var vc = new ValueCopier<sbyte>((ByteChunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -28,9 +26,8 @@ public class ByteArrowColumnSource(ChunkedArray chunkedArray) : IByteColumnSourc
 
 public class Int16ArrowColumnSource(ChunkedArray chunkedArray) : IInt16ColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (Int16Chunk)destData;
-    var pac = new PrimitiveArrayCopier<Int16>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var vc = new ValueCopier<Int16>((Int16Chunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -40,9 +37,8 @@ public class Int16ArrowColumnSource(ChunkedArray chunkedArray) : IInt16ColumnSou
 
 public class Int32ArrowColumnSource(ChunkedArray chunkedArray) : IInt32ColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (Int32Chunk)destData;
-    var pac = new PrimitiveArrayCopier<Int32>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var vc = new ValueCopier<Int32>((Int32Chunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -52,9 +48,8 @@ public class Int32ArrowColumnSource(ChunkedArray chunkedArray) : IInt32ColumnSou
 
 public class Int64ArrowColumnSource(ChunkedArray chunkedArray) : IInt64ColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (Int64Chunk)destData;
-    var pac = new PrimitiveArrayCopier<Int64>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var vc = new ValueCopier<Int64>((Int64Chunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -64,9 +59,8 @@ public class Int64ArrowColumnSource(ChunkedArray chunkedArray) : IInt64ColumnSou
 
 public class FloatArrowColumnSource(ChunkedArray chunkedArray) : IFloatColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (FloatChunk)destData;
-    var pac = new PrimitiveArrayCopier<float>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var vc = new ValueCopier<float>((FloatChunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -76,8 +70,8 @@ public class FloatArrowColumnSource(ChunkedArray chunkedArray) : IFloatColumnSou
 
 public class DoubleArrowColumnSource(ChunkedArray chunkedArray) : IDoubleColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var hc = new ValueCopier<double>((DoubleChunk)destData, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, hc.DoCopy);
+    var vc = new ValueCopier<double>((DoubleChunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -87,24 +81,8 @@ public class DoubleArrowColumnSource(ChunkedArray chunkedArray) : IDoubleColumnS
 
 public class BooleanArrowColumnSource(ChunkedArray chunkedArray) : IBooleanColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (BooleanChunk)destData;
-    void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
-      var typedSrc = (BooleanArray)src;
-      for (var i = 0; i < count; ++i) {
-        var value = typedSrc.GetValue(srcOffset);
-        var valueToUse = value ?? false;
-        var isNullToUse = !value.HasValue;
-
-        typedDest.Data[destOffset] = valueToUse;
-        if (nullFlags != null) {
-          nullFlags.Data[destOffset] = isNullToUse;
-        }
-
-        ++srcOffset;
-        ++destOffset;
-      }
-    }
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, DoCopy);
+    var vc = new ValueCopier<bool>((BooleanChunk)destData, nullFlags);
+    vc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -114,8 +92,8 @@ public class BooleanArrowColumnSource(ChunkedArray chunkedArray) : IBooleanColum
 
 public class StringArrowColumnSource(ChunkedArray chunkedArray) : IStringColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var hc = new ReferenceCopier<string>((StringChunk)destData, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, hc.DoCopy);
+    var rc = new ReferenceCopier<string>((StringChunk)destData, nullFlags);
+    rc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -126,7 +104,8 @@ public class StringArrowColumnSource(ChunkedArray chunkedArray) : IStringColumnS
 
 public class TimestampArrowColumnSource(ChunkedArray chunkedArray) : ITimestampColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    // ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, DhDateTime.FromNanos);
+    var tc = new TransformingCopier<Int64, DhDateTime>((DhDateTimeChunk)destData, nullFlags, DhDateTime.FromNanos);
+    tc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -136,7 +115,8 @@ public class TimestampArrowColumnSource(ChunkedArray chunkedArray) : ITimestampC
 
 public class LocalDateArrowColumnSource(ChunkedArray chunkedArray) : ILocalDateColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    // ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalDate.FromMillis);
+    var tc = new TransformingCopier<Int64, LocalDate>((LocalDateChunk)destData, nullFlags, LocalDate.FromMillis);
+    tc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -146,7 +126,8 @@ public class LocalDateArrowColumnSource(ChunkedArray chunkedArray) : ILocalDateC
 
 public class LocalTimeArrowColumnSource(ChunkedArray chunkedArray) : ILocalTimeColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    // ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalTime.FromNanos);
+    var tc = new TransformingCopier<Int64, LocalTime>((LocalTimeChunk)destData, nullFlags, LocalTime.FromNanos);
+    tc.FillChunk(rows, chunkedArray);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -154,8 +135,38 @@ public class LocalTimeArrowColumnSource(ChunkedArray chunkedArray) : ILocalTimeC
   }
 }
 
-class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) where T : struct {
-  public void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+abstract class FillChunkHelper {
+  public void FillChunk(RowSequence rows, ChunkedArray srcArray) {
+    if (rows.Empty) {
+      return;
+    }
+
+    var srcIterator = new ChunkedArrayIterator(srcArray);
+    var destIndex = 0;
+
+    foreach (var (reqBeginConst, reqEnd) in rows.Intervals) {
+      var reqBegin = reqBeginConst;
+      while (true) {
+        var reqLength = (reqEnd - reqBegin).ToIntExact();
+        if (reqLength == 0) {
+          return;
+        }
+
+        srcIterator.Advance(reqBegin);
+        var amountToCopy = Math.Min(reqLength, srcIterator.SegmentLength);
+        DoCopy(srcIterator.CurrentSegment, srcIterator.RelativeBegin, destIndex, amountToCopy);
+
+        reqBegin += amountToCopy;
+        destIndex += amountToCopy;
+      }
+    }
+  }
+
+  protected abstract void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count);
+}
+
+sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : FillChunkHelper where T : struct {
+  protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<T?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];
@@ -170,8 +181,25 @@ class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) where T : stru
   }
 }
 
-class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) {
-  public void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+sealed class TransformingCopier<TSrc, TDest>(Chunk<TDest> typedDest, BooleanChunk? nullFlags, Func<TSrc, TDest> transformer)
+  : FillChunkHelper where TSrc : struct where TDest : struct {
+  protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+    var typedSrc = (IReadOnlyList<TSrc?>)src;
+    for (var i = 0; i < count; ++i) {
+      var value = typedSrc[srcOffset];
+      typedDest.Data[destOffset] = value.HasValue ? transformer(value.Value) : default;
+      if (nullFlags != null) {
+        nullFlags.Data[destOffset] = !value.HasValue;
+      }
+
+      ++srcOffset;
+      ++destOffset;
+    }
+  }
+}
+
+sealed class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : FillChunkHelper {
+  protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<T>)src;
     for (var i = 0; i < count; ++i) {
       typedDest.Data[destOffset] = typedSrc[srcOffset];
@@ -185,65 +213,11 @@ class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) {
   }
 }
 
-class PrimitiveArrayCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) where T : struct, IEquatable<T> {
-  public void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
-    var typedSrc = (PrimitiveArray<T>)src;
-    for (var i = 0; i < count; ++i) {
-      var value = typedSrc.GetValue(srcOffset);
-      var valueToUse = value ?? default;
-      var isNullToUse = !value.HasValue;
-
-      typedDest.Data[destOffset] = valueToUse;
-      if (nullFlags != null) {
-        nullFlags.Data[destOffset] = isNullToUse;
-      }
-
-      ++srcOffset;
-      ++destOffset;
-    }
-  }
-}
-
-public static class Zamboni2Helpers {
-  public static void FillChunk(RowSequence rows, ChunkedArray srcArray,
-    Action<IArrowArray, int, int, int> doCopy) {
-    if (rows.Empty) {
-      return;
-    }
-
-    var srcIterator = new Zamboni2Iterator(srcArray);
-    var destIndex = 0;
-
-    foreach (var (reqBeginConst, reqEnd) in rows.Intervals) {
-      var reqBegin = reqBeginConst;
-      while (true) {
-        var reqLength = (reqEnd - reqBegin).ToIntExact();
-        if (reqLength == 0) {
-          return;
-        }
-
-        srcIterator.Advance(reqBegin);
-        var amountToCopy = Math.Min(reqLength, srcIterator.SegmentLength);
-        doCopy(srcIterator.CurrentSegment, srcIterator.RelativeBegin, destIndex, amountToCopy);
-
-        reqBegin += amountToCopy;
-        destIndex += amountToCopy;
-      }
-    }
-  }
-}
-
-public class Zamboni2Iterator {
-  private readonly ChunkedArray _chunkedArray;
+public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
   private int _arrayIndex = -1;
   private Int64 _segmentOffset = 0;
   private Int64 _segmentBegin = 0;
   private Int64 _segmentEnd = 0;
-
-
-  public Zamboni2Iterator(ChunkedArray chunkedArray) {
-    _chunkedArray = chunkedArray;
-  }
 
   public void Advance(Int64 start) {
     while (true) {
@@ -259,17 +233,17 @@ public class Zamboni2Iterator {
 
       // Go to next array slice (or the first one, if this is the first call to Advance)
       ++_arrayIndex;
-      if (_arrayIndex >= _chunkedArray.ArrayCount) {
+      if (_arrayIndex >= chunkedArray.ArrayCount) {
         throw new Exception($"Ran out of src data before processing all of RowSequence");
       }
 
       _segmentBegin = _segmentEnd;
-      _segmentEnd = _segmentBegin + _chunkedArray.ArrowArray(_arrayIndex).Length;
+      _segmentEnd = _segmentBegin + chunkedArray.ArrowArray(_arrayIndex).Length;
       _segmentOffset = _segmentBegin;
     }
   }
 
-  public IArrowArray CurrentSegment => _chunkedArray.ArrowArray(_arrayIndex);
+  public IArrowArray CurrentSegment => chunkedArray.ArrowArray(_arrayIndex);
 
   public int SegmentLength => (_segmentEnd - _segmentBegin).ToIntExact();
 

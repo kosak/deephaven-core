@@ -21,17 +21,17 @@ public static class Program {
       using var manager = client.GetManager();
       using var t1 = manager.EmptyTable(10);
       using var t2 = t1.Update(
-        // "Chars = ii == 5 ? null : (char)('a' + ii)",
-        // "Bytes = ii == 5 ? null : (byte)(ii)",
-        // "Shorts = ii == 5 ? null : (short)(ii)",
-        // "Ints = ii == 5 ? null : (int)(ii)",
-        // "Longs = ii == 5 ? null : (long)(ii)",
-        // "Floats = ii == 5 ? null : (float)(ii)",
-        // "Doubles = ii == 5 ? null : (double)(ii)",
-        // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-        // "Strings = ii == 5 ? null : `hello ` + i",
-        // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
-        // "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))"
+        "Chars = ii == 5 ? null : (char)('a' + ii)",
+        "Bytes = ii == 5 ? null : (byte)(ii)",
+        "Shorts = ii == 5 ? null : (short)(ii)",
+        "Ints = ii == 5 ? null : (int)(ii)",
+        "Longs = ii == 5 ? null : (long)(ii)",
+        "Floats = ii == 5 ? null : (float)(ii)",
+        "Doubles = ii == 5 ? null : (double)(ii)",
+        "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+        "Strings = ii == 5 ? null : `hello ` + i",
+        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
+        "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))",
         "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
       );
 
