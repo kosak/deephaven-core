@@ -6,6 +6,8 @@ global using Int64Chunk = Deephaven.ManagedClient.Chunk<System.Int64>;
 global using FloatChunk = Deephaven.ManagedClient.Chunk<float>;
 global using DoubleChunk = Deephaven.ManagedClient.Chunk<double>;
 global using DhDateTimeChunk = Deephaven.ManagedClient.Chunk<Deephaven.ManagedClient.DhDateTime>;
+global using LocalDateChunk = Deephaven.ManagedClient.Chunk<Deephaven.ManagedClient.LocalDate>;
+global using LocalTimeChunk = Deephaven.ManagedClient.Chunk<Deephaven.ManagedClient.LocalTime>;
 
 namespace Deephaven.ManagedClient;
 

@@ -149,6 +149,48 @@ public class TimestampArrowColumnSource : ITimestampColumnSource {
   }
 }
 
+public class LocalDateArrowColumnSource : ILocalDateColumnSource {
+  public static LocalDateArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<Date64Array>(chunkedArray);
+    return new LocalDateArrowColumnSource(arrays);
+  }
+
+  private readonly Date64Array[] _arrays;
+
+  private LocalDateArrowColumnSource(Date64Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalDate.FromMillis);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public class LocalTimeArrowColumnSource : ILocalTimeColumnSource {
+  public static LocalTimeArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<Time64Array>(chunkedArray);
+    return new LocalTimeArrowColumnSource(arrays);
+  }
+
+  private readonly Time64Array[] _arrays;
+
+  private LocalTimeArrowColumnSource(Time64Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalTime.FromNanos);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
 public static class ZamboniHelpers {
   public static TArray[] CastChunkedArray<TArray>(ChunkedArray chunkedArray) {
     var arrays = new TArray[chunkedArray.ArrayCount];

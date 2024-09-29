@@ -31,6 +31,15 @@ public static class ChunkMaker {
     public void Visit(ITimestampColumnSource cs) {
       Result = DhDateTimeChunk.Create(chunkSize);
     }
+
+    public void Visit(ILocalDateColumnSource cs) {
+      Result = LocalDateChunk.Create(chunkSize);
+    }
+
+    public void Visit(ILocalTimeColumnSource cs) {
+      Result = LocalTimeChunk.Create(chunkSize);
+    }
+
   }
 
   public static Chunk CreateChunkFor(IColumnSource columnSource, int chunkSize) {

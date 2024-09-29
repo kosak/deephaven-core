@@ -41,7 +41,9 @@ public sealed class ArrowClientTable : ClientTable {
     IArrowTypeVisitor<Int64Type>,
     IArrowTypeVisitor<FloatType>,
     IArrowTypeVisitor<DoubleType>,
-    IArrowTypeVisitor<TimestampType> {
+    IArrowTypeVisitor<TimestampType>,
+    IArrowTypeVisitor<Date64Type>,
+    IArrowTypeVisitor<Time64Type> {
     public IColumnSource? Result { get; private set; }
 
     public void Visit(UInt16Type type) {
@@ -70,6 +72,14 @@ public sealed class ArrowClientTable : ClientTable {
 
     public void Visit(TimestampType type) {
       Result = TimestampArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(Date64Type type) {
+      Result = LocalDateArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(Time64Type type) {
+      Result = LocalTimeArrowColumnSource.OfChunkedArray(chunkedArray);
     }
 
     public void Visit(IArrowType type) {
