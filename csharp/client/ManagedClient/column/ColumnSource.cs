@@ -23,6 +23,11 @@ public interface IMutableNumericColumnSource<T> : INumericColumnSource<T>, IMuta
 public interface IMutableGenericColumnSource<T> : IGenericColumnSource<T>, IMutableColumnSource {
 }
 
+public interface ICharColumnSource : INumericColumnSource<char> {
+}
+
+public interface IInt16ColumnSource : INumericColumnSource<Int16> {
+}
 
 public interface IInt32ColumnSource : INumericColumnSource<Int32> {
 }
@@ -30,7 +35,17 @@ public interface IInt32ColumnSource : INumericColumnSource<Int32> {
 public interface IInt64ColumnSource : INumericColumnSource<Int64> {
 }
 
+public interface IFloatColumnSource : INumericColumnSource<float> {
+}
+
+public interface IDoubleColumnSource : INumericColumnSource<double> {
+}
+
 public interface IColumnSourceVisitor {
+  void Visit(ICharColumnSource cs);
+  void Visit(IInt16ColumnSource cs);
   void Visit(IInt32ColumnSource cs);
   void Visit(IInt64ColumnSource cs);
+  void Visit(IFloatColumnSource cs);
+  void Visit(IDoubleColumnSource cs);
 }

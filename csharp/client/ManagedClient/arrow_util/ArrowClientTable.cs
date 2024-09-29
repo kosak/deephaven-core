@@ -35,9 +35,21 @@ public sealed class ArrowClientTable : ClientTable {
   public override Int64 NumCols => _arrowTable.ColumnCount;
 
   private class MyVisitor(ChunkedArray chunkedArray) :
+    IArrowTypeVisitor<UInt16Type>,
+    IArrowTypeVisitor<Int16Type>,
     IArrowTypeVisitor<Int32Type>,
-    IArrowTypeVisitor<Int64Type> {
+    IArrowTypeVisitor<Int64Type>,
+    IArrowTypeVisitor<FloatType>,
+    IArrowTypeVisitor<DoubleType> {
     public IColumnSource Result { get; private set; }
+
+    public void Visit(UInt16Type type) {
+      Result = CharArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(Int16Type type) {
+      Result = Int16ArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
 
     public void Visit(Int32Type type) {
       Result = Int32ArrowColumnSource.OfChunkedArray(chunkedArray);
@@ -45,6 +57,14 @@ public sealed class ArrowClientTable : ClientTable {
 
     public void Visit(Int64Type type) {
       Result = Int64ArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(FloatType type) {
+      Result = FloatArrowColumnSource.OfChunkedArray(chunkedArray);
+    }
+
+    public void Visit(DoubleType type) {
+      Result = DoubleArrowColumnSource.OfChunkedArray(chunkedArray);
     }
 
     public void Visit(IArrowType type) {

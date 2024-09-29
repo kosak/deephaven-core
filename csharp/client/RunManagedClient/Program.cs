@@ -17,10 +17,23 @@ public static class Program {
     try {
       using var client = Client.Connect(server);
       using var manager = client.GetManager();
-      using var table = manager.EmptyTable(10);
-      using var t2 = table.Update("ABC = ii == 5 ? null : (int)(ii + 100)");
-      // using var t2 = table.Update("ABC = ii + 100", "XYZ = '12:34:56.000'");
-      using var tResult = t2.Where("ABC < 102");
+      using var t1 = manager.EmptyTable(10);
+      using var t2 = t1.Update(
+        // "Chars = ii == 5 ? null : (char)('a' + ii)",
+        // "Bytes = ii == 5 ? null : (byte)(ii)",
+        "Shorts = ii == 5 ? null : (short)(ii)",
+        "Ints = ii == 5 ? null : (int)(ii)",
+        "Longs = ii == 5 ? null : (long)(ii)",
+        "Floats = ii == 5 ? null : (float)(ii)",
+        "Doubles = ii == 5 ? null : (double)(ii)"
+        // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+        // "Strings = ii == 5 ? null : `hello ` + i",
+        // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
+        // "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))",
+        // "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
+      );
+
+      var tResult = t2;
 
       Console.WriteLine(tResult.ToString(true));
       // var at = tResult.ToArrowTable();

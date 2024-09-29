@@ -2,6 +2,48 @@
 
 namespace Deephaven.ManagedClient;
 
+public class CharArrowColumnSource : ICharColumnSource {
+  public static CharArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<UInt16Array>(chunkedArray);
+    return new CharArrowColumnSource(arrays);
+  }
+
+  private UInt16Array[] _arrays;
+
+  private CharArrowColumnSource(UInt16Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public class Int16ArrowColumnSource : IInt16ColumnSource {
+  public static Int16ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<Int16Array>(chunkedArray);
+    return new Int16ArrowColumnSource(arrays);
+  }
+
+  private Int16Array[] _arrays;
+
+  private Int16ArrowColumnSource(Int16Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
 public class Int32ArrowColumnSource : IInt32ColumnSource {
   public static Int32ArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
     var arrays = ZamboniHelpers.CastChunkedArray<Int32Array>(chunkedArray);
@@ -32,6 +74,48 @@ public class Int64ArrowColumnSource : IInt64ColumnSource {
   private Int64Array[] _arrays;
 
   private Int64ArrowColumnSource(Int64Array[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public class FloatArrowColumnSource : IFloatColumnSource {
+  public static FloatArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<FloatArray>(chunkedArray);
+    return new FloatArrowColumnSource(arrays);
+  }
+
+  private FloatArray[] _arrays;
+
+  private FloatArrowColumnSource(FloatArray[] arrays) {
+    _arrays = arrays;
+  }
+
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public class DoubleArrowColumnSource : IDoubleColumnSource {
+  public static DoubleArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
+    var arrays = ZamboniHelpers.CastChunkedArray<DoubleArray>(chunkedArray);
+    return new DoubleArrowColumnSource(arrays);
+  }
+
+  private DoubleArray[] _arrays;
+
+  private DoubleArrowColumnSource(DoubleArray[] arrays) {
     _arrays = arrays;
   }
 
