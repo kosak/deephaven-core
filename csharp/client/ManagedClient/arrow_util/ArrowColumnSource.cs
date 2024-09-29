@@ -4,9 +4,9 @@ namespace Deephaven.ManagedClient;
 
 public class CharArrowColumnSource(ChunkedArray chunkedArray) : ICharColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
-    var typedDest = (CharChunk)destData;
-    var pac = new TransformingArrayCopier<char>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    // var typedDest = (CharChunk)destData;
+    // var pac = new TransformingArrayCopier<char>(typedDest, nullFlags);
+    // Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -76,9 +76,8 @@ public class FloatArrowColumnSource(ChunkedArray chunkedArray) : IFloatColumnSou
 
 public class DoubleArrowColumnSource(ChunkedArray chunkedArray) : IDoubleColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (DoubleChunk)destData;
-    var pac = new PrimitiveArrayCopier<double>(typedDest, nullFlags);
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, pac.DoCopy);
+    var hc = new ValueCopier<double>((DoubleChunk)destData, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, hc.DoCopy);
   }
 
   public void AcceptVisitor(IColumnSourceVisitor visitor) {
@@ -115,90 +114,74 @@ public class BooleanArrowColumnSource(ChunkedArray chunkedArray) : IBooleanColum
 
 public class StringArrowColumnSource(ChunkedArray chunkedArray) : IStringColumnSource {
   public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    var typedDest = (StringChunk)destData;
-    void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
-      var typedSrc = (StringArray)src;
-      for (var i = 0; i < count; ++i) {
-        var value = typedSrc.GetString(srcOffset);
+    var hc = new ReferenceCopier<string>((StringChunk)destData, nullFlags);
+    Zamboni2Helpers.FillChunk(rows, chunkedArray, hc.DoCopy);
+  }
 
-        typedDest.Data[destOffset] = value;
-        if (nullFlags != null) {
-          nullFlags.Data[destOffset] = value == null;
-        }
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
 
-        ++srcOffset;
-        ++destOffset;
+
+public class TimestampArrowColumnSource(ChunkedArray chunkedArray) : ITimestampColumnSource {
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    // ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, DhDateTime.FromNanos);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public class LocalDateArrowColumnSource(ChunkedArray chunkedArray) : ILocalDateColumnSource {
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    // ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalDate.FromMillis);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+public class LocalTimeArrowColumnSource(ChunkedArray chunkedArray) : ILocalTimeColumnSource {
+  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
+    // ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalTime.FromNanos);
+  }
+
+  public void AcceptVisitor(IColumnSourceVisitor visitor) {
+    visitor.Visit(this);
+  }
+}
+
+class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) where T : struct {
+  public void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+    var typedSrc = (IReadOnlyList<T?>)src;
+    for (var i = 0; i < count; ++i) {
+      var value = typedSrc[srcOffset];
+      typedDest.Data[destOffset] = value ?? default;
+      if (nullFlags != null) {
+        nullFlags.Data[destOffset] = !value.HasValue;
       }
+
+      ++srcOffset;
+      ++destOffset;
     }
-    Zamboni2Helpers.FillChunk(rows, chunkedArray, DoCopy);
-  }
-
-  public void AcceptVisitor(IColumnSourceVisitor visitor) {
-    visitor.Visit(this);
   }
 }
 
+class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) {
+  public void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+    var typedSrc = (IReadOnlyList<T>)src;
+    for (var i = 0; i < count; ++i) {
+      typedDest.Data[destOffset] = typedSrc[srcOffset];
+      if (nullFlags != null) {
+        nullFlags.Data[destOffset] = src.IsNull(srcOffset);
+      }
 
-public class TimestampArrowColumnSource : ITimestampColumnSource {
-  public static TimestampArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<TimestampArray>(chunkedArray);
-    return new TimestampArrowColumnSource(arrays);
-  }
-
-  private readonly TimestampArray[] _arrays;
-
-  private TimestampArrowColumnSource(TimestampArray[] arrays) {
-    _arrays = arrays;
-  }
-
-  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, DhDateTime.FromNanos);
-  }
-
-  public void AcceptVisitor(IColumnSourceVisitor visitor) {
-    visitor.Visit(this);
-  }
-}
-
-public class LocalDateArrowColumnSource : ILocalDateColumnSource {
-  public static LocalDateArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<Date64Array>(chunkedArray);
-    return new LocalDateArrowColumnSource(arrays);
-  }
-
-  private readonly Date64Array[] _arrays;
-
-  private LocalDateArrowColumnSource(Date64Array[] arrays) {
-    _arrays = arrays;
-  }
-
-  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalDate.FromMillis);
-  }
-
-  public void AcceptVisitor(IColumnSourceVisitor visitor) {
-    visitor.Visit(this);
-  }
-}
-
-public class LocalTimeArrowColumnSource : ILocalTimeColumnSource {
-  public static LocalTimeArrowColumnSource OfChunkedArray(ChunkedArray chunkedArray) {
-    var arrays = ZamboniHelpers.CastChunkedArray<Time64Array>(chunkedArray);
-    return new LocalTimeArrowColumnSource(arrays);
-  }
-
-  private readonly Time64Array[] _arrays;
-
-  private LocalTimeArrowColumnSource(Time64Array[] arrays) {
-    _arrays = arrays;
-  }
-
-  public void FillChunk(RowSequence rows, Chunk destData, BooleanChunk? nullFlags) {
-    ZamboniHelpers.FillChunk(rows, _arrays, destData, nullFlags, LocalTime.FromNanos);
-  }
-
-  public void AcceptVisitor(IColumnSourceVisitor visitor) {
-    visitor.Visit(this);
+      ++srcOffset;
+      ++destOffset;
+    }
   }
 }
 

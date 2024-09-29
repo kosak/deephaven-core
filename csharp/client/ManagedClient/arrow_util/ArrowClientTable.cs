@@ -50,31 +50,31 @@ public sealed class ArrowClientTable : ClientTable {
     public IColumnSource? Result { get; private set; }
 
     public void Visit(UInt16Type type) {
-      Result = CharArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new CharArrowColumnSource(chunkedArray);
     }
 
     public void Visit(Int8Type type) {
-      Result = ByteArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new ByteArrowColumnSource(chunkedArray);
     }
 
     public void Visit(Int16Type type) {
-      Result = Int16ArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new Int16ArrowColumnSource(chunkedArray);
     }
 
     public void Visit(Int32Type type) {
-      Result = Int32ArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new Int32ArrowColumnSource(chunkedArray);
     }
 
     public void Visit(Int64Type type) {
-      Result = Int64ArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new Int64ArrowColumnSource(chunkedArray);
     }
 
     public void Visit(FloatType type) {
-      Result = FloatArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new FloatArrowColumnSource(chunkedArray);
     }
 
     public void Visit(DoubleType type) {
-      Result = DoubleArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new DoubleArrowColumnSource(chunkedArray);
     }
 
     public void Visit(BooleanType type) {
@@ -86,15 +86,15 @@ public sealed class ArrowClientTable : ClientTable {
     }
 
     public void Visit(TimestampType type) {
-      Result = TimestampArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new TimestampArrowColumnSource(chunkedArray);
     }
 
     public void Visit(Date64Type type) {
-      Result = LocalDateArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new LocalDateArrowColumnSource(chunkedArray);
     }
 
     public void Visit(Time64Type type) {
-      Result = LocalTimeArrowColumnSource.OfChunkedArray(chunkedArray);
+      Result = new LocalTimeArrowColumnSource(chunkedArray);
     }
 
     public void Visit(IArrowType type) {
