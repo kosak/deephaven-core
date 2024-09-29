@@ -5,8 +5,11 @@ using Io.Deephaven.Proto.Backplane.Grpc;
 using System.IO;
 using System.Reflection.PortableExecutable;
 using Apache.Arrow.Flight.Client;
+using Google.FlatBuffers;
 using Google.Protobuf;
+using io.deephaven.barrage.flatbuf;
 using Array = System.Array;
+using Table = Apache.Arrow.Table;
 
 namespace Deephaven.ManagedClient;
 
@@ -143,6 +146,24 @@ public class TableHandle : IDisposable {
 
       var md = result.ResponseStream.ApplicationMetadata;
       var stupid = result.ResponseStream.Current;
+
+      if (md.Count > 0) {
+        var bytes = md[0].ToByteArray();
+        var bb = new ByteBuffer(bytes);
+        var bmw = BarrageMessageWrapper.GetRootAsBarrageMessageWrapper(bb);
+
+        var rr = bmw.MsgType;
+
+        Console.WriteLine("SHALL WE BEGIN");
+      }
+
+
+
+
+
+
+
+
       Console.WriteLine("hi");
     }
   }
