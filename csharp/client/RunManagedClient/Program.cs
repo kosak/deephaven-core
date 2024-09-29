@@ -1,4 +1,5 @@
-﻿using Deephaven.ManagedClient;
+﻿using Apache.Arrow;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.RunManangedClient;
 
@@ -19,7 +20,7 @@ public static class Program {
       using var manager = client.GetManager();
       using var t1 = manager.EmptyTable(10);
       using var t2 = t1.Update(
-        // "Chars = ii == 5 ? null : (char)('a' + ii)",
+        "Chars = ii == 5 ? null : (char)('a' + ii)",
         // "Bytes = ii == 5 ? null : (byte)(ii)",
         "Shorts = ii == 5 ? null : (short)(ii)",
         "Ints = ii == 5 ? null : (int)(ii)",
