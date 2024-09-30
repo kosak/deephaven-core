@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Apache.Arrow" Version="17.0.0" />
     <PackageReference Include="Apache.Arrow.Flight" Version="17.0.0" />
+    <PackageReference Include="C5" Version="3.0.0" />
     <PackageReference Include="Google.FlatBuffers" Version="23.5.26" />
     <PackageReference Include="Google.Protobuf" Version="3.28.2" />
     <PackageReference Include="Grpc.Net.Client" Version="2.66.0" />
@@ -16,7 +17,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="RoaringBitmap" Version="0.0.9" />
   </ItemGroup>
 
   <ItemGroup>

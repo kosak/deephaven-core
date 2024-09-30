@@ -8,10 +8,11 @@ interface IChunkProcessor {
 }
 
 public class BarrageProcessor {
+  private readonly TableState _tableState = new();
   private IChunkProcessor _currentProcessor;
 
   public BarrageProcessor() {
-    _currentProcessor = new AwaitingMetadata();
+    _currentProcessor = new AwaitingMetadata(_tableState);
   }
 
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
@@ -26,7 +27,7 @@ public class BarrageProcessor {
   }
 }
 
-class AwaitingMetadata : IChunkProcessor {
+class AwaitingMetadata(TableState tableState) : IChunkProcessor {
   public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
     if (metadata == null) {
       throw new Exception("Metadata was required here, but none was received");
