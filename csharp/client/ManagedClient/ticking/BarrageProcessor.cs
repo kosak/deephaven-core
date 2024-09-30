@@ -133,7 +133,6 @@ class AwaitingAdds(
         _addedRowsRemaining = RowSequence.CreateEmpty();
 
         var afterAdds = afterRemoves;
-
         var nextState = new AwaitingModifies(afterAdds);
         return nextState.ProcessNextChunk(sources, begins, ends, metadata);
       }
@@ -147,8 +146,8 @@ class AwaitingAdds(
     }
 
     auto & begins = *beginsp;
-    AssertAllSame(sources.size(), begins.size(), ends.size());
-    var numSources = sources.size();
+    AssertAllSame(sources.Length, begins.Length, ends.Length);
+    var numSources = sources.Length;
 
     if (_addedRowsRemaining.Empty) {
       throw new Exception("Programming error: addedRowsRemaining is empty");
@@ -184,10 +183,11 @@ class AwaitingAdds(
     }
 
     // No more data remaining. Add phase is done.
-    var afterAdds = tableState.Snapshot();
-
-    var nextState = new AwaitingModifies(afterAdds);
-    return nextState.ProcessNextChunk(sources, begins, ends, metadata);
+    {
+      var afterAdds = tableState.Snapshot();
+      var nextState = new AwaitingModifies(afterAdds);
+      return nextState.ProcessNextChunk(sources, begins, ends, metadata);
+    }
   }
 }
 
