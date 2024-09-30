@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Specialized;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.ManagedClient;
 
@@ -11,7 +9,7 @@ public abstract class RowSequence {
     return new SequentialRowSequence(begin, end);
   }
 
-  public abstract bool Empty { get; }
+  public bool Empty => Size == 0;
   public abstract UInt64 Size { get; }
 
   public abstract IEnumerable<(UInt64, UInt64)> Intervals { get; }
@@ -22,8 +20,6 @@ public abstract class RowSequence {
 
 sealed class SequentialRowSequence(UInt64 begin, UInt64 end) : RowSequence {
   public static readonly SequentialRowSequence EmptyInstance = new(0, 0);
-
-  public override bool Empty => begin == end;
 
   public override UInt64 Size => end - begin;
 
@@ -44,10 +40,70 @@ sealed class SequentialRowSequence(UInt64 begin, UInt64 end) : RowSequence {
   }
 }
 
-sealed class BasicRowSequence((UInt64, UInt64)[] intervals) : RowSequence {
-  public override bool Empty => intervals.Length == 0;
+sealed class BasicRowSequence : RowSequence {
+  public static BasicRowSequence Create(IEnumerable<(ulong, ulong)> intervals) {
+    var intervalsArray = intervals.ToArray();
+    UInt64 size = 0;
+    foreach (var e in intervalsArray) {
+      size += e.Item2 - e.Item1;
+    }
 
-  public override IEnumerable<(UInt64, UInt64)> Intervals => intervals;
+    return new BasicRowSequence(intervalsArray, 0, 0, size);
+  }
+
+  private readonly (UInt64, UInt64)[] _intervals;
+  private readonly int _startIndex = 0;
+  private readonly UInt64 _startOffset = 0;
+  public override UInt64 Size { get; }
+
+  private BasicRowSequence((ulong, ulong)[] intervals, int startIndex, ulong startOffset, ulong size) {
+    _intervals = intervals;
+    _startIndex = startIndex;
+    _startOffset = startOffset;
+    Size = size;
+  }
+
+  public override RowSequence Take(UInt64 size) =>
+    new BasicRowSequence(_intervals, _startIndex, _startOffset, Size);
+
+  public override RowSequence Drop(UInt64 size) {
+    return DropHelper(size).Last().Item3!;
+  }
+
+  public override IEnumerable<(UInt64, UInt64)> Intervals =>
+      DropHelper(Size).Where(elt => elt.Item3 == null).Select(elt => (elt.Item1, elt.Item2));
+
+  private IEnumerable<(UInt64, UInt64, RowSequence?)> DropHelper(UInt64 size) {
+    if (size == 0) {
+      yield return (0, 0, this);
+      yield break;
+    }
+
+    var currentIndex = _startIndex;
+    var currentOffset = _startOffset;
+    var remainingSizeToDrop = Math.Min(size, Size);
+    var finalSize = Size - remainingSizeToDrop;
+    while (remainingSizeToDrop != 0) {
+      var current = _intervals[currentIndex];
+      var entrySize = current.Item2 - current.Item1;
+      if (currentOffset == entrySize) {
+        ++currentIndex;
+        currentOffset = 0;
+        continue;
+      }
+
+      var entryRemaining = entrySize - currentOffset;
+      var amountToConsume = Math.Min(entryRemaining, remainingSizeToDrop);
+      var begin = current.Item1 + currentOffset;
+      var end = begin + amountToConsume;
+      currentOffset += amountToConsume;
+      remainingSizeToDrop -= amountToConsume;
+      yield return (begin, end, null);
+    }
+
+    var result = new BasicRowSequence(_intervals, currentIndex, currentOffset, finalSize);
+    yield return (0, 0, result);
+  }
 }
 
 public class RowSequenceBuilder {
@@ -100,6 +156,6 @@ public class RowSequenceBuilder {
       consolidatedIntervals.Add(lastInterval);
     }
 
-    return new BasicRowSequence(consolidatedIntervals.ToArray());
+    return BasicRowSequence.Create(consolidatedIntervals);
   }
 }
