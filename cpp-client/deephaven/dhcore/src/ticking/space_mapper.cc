@@ -15,6 +15,18 @@ namespace deephaven::dhcore::ticking {
 SpaceMapper::SpaceMapper() = default;
 SpaceMapper::~SpaceMapper() = default;
 
+
+std::shared_ptr<RowSequence> SpaceMapper::AddKeys(const RowSequence &keys) {
+  RowSequenceBuilder builder;
+  auto add_interval = [this, &builder](uint64_t begin_key, uint64_t end_key) {
+    auto size = end_key - begin_key;
+    auto begin_index = AddRange(begin_key, end_key);
+    builder.AddInterval(begin_index, begin_index + size);
+  };
+  keys.ForEachInterval(add_interval);
+  return builder.Build();
+}
+
 uint64_t SpaceMapper::AddRange(uint64_t begin_key, uint64_t end_key) {
   roaring::Roaring64Map x;
   auto size = end_key - begin_key;
@@ -76,17 +88,6 @@ void SpaceMapper::ApplyShift(uint64_t begin_key, uint64_t end_key, uint64_t dest
         final_size);
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
-}
-
-std::shared_ptr<RowSequence> SpaceMapper::AddKeys(const RowSequence &keys) {
-  RowSequenceBuilder builder;
-  auto add_interval = [this, &builder](uint64_t begin_key, uint64_t end_key) {
-    auto size = end_key - begin_key;
-    auto begin_index = AddRange(begin_key, end_key);
-    builder.AddInterval(begin_index, begin_index + size);
-  };
-  keys.ForEachInterval(add_interval);
-  return builder.Build();
 }
 
 std::shared_ptr<RowSequence> SpaceMapper::ConvertKeysToIndices(const RowSequence &keys) const {

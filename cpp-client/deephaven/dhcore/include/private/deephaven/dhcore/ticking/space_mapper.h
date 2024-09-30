@@ -62,15 +62,17 @@ public:
    *   AddKeys called with [1, 2, 200, 201, 400, 401]
    *   SpaceMapper final state is [1, 2, 100, 200, 201, 300, 400, 401]
    *   The returned result is [0, 1, 3, 4, 6, 7]
+   * @param keys The keys to add (represented in key space)
+   * @return The added keys (represented in position space)
    */
   [[nodiscard]]
-  std::shared_ptr<RowSequence> AddKeys(const RowSequence &begin_key);
+  std::shared_ptr<RowSequence> AddKeys(const RowSequence &keys);
   /**
    * Looks up 'keys' (specified in key space) in the map, and returns the positions (in position
    * space) of those keys.
    */
   [[nodiscard]]
-  std::shared_ptr<RowSequence> ConvertKeysToIndices(const RowSequence &begin_key) const;
+  std::shared_ptr<RowSequence> ConvertKeysToIndices(const RowSequence &keys) const;
 
   /**
    * Note: this call iterates over the Roaring64Map and is not constant-time.
