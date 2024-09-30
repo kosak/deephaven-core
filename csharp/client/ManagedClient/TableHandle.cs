@@ -2,9 +2,6 @@
 using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
-using System.IO;
-using System.Reflection.PortableExecutable;
-using Apache.Arrow.Flight.Client;
 using Google.FlatBuffers;
 using Google.Protobuf;
 using io.deephaven.barrage.flatbuf;

@@ -13,8 +13,8 @@ public class BarrageProcessor {
   private readonly TableState _tableState = new();
   private IChunkProcessor _currentProcessor;
 
-  public BarrageProcessor() {
-    _currentProcessor = new AwaitingMetadata(_tableState);
+  public BarrageProcessor(int numCols) {
+    _currentProcessor = new AwaitingMetadata(numCols, _tableState);
   }
 
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
@@ -31,7 +31,7 @@ public class BarrageProcessor {
   }
 }
 
-class AwaitingMetadata(TableState tableState) : IChunkProcessor {
+class AwaitingMetadata(int numCols, TableState tableState) : IChunkProcessor {
   public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends,
     byte[] metadata) {
     if (metadata == null) {
@@ -101,7 +101,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
 
     var addedRowsIndexSpace = tableState.AddKeys(addedRows);
 
-    var nextState = new AwaitingAdds(tableState, perColumnModifies.ToArray(), prev, removedRowsIndexSpace, afterRemoves,
+    var nextState = new AwaitingAdds(numCols, tableState, perColumnModifies.ToArray(), prev, removedRowsIndexSpace, afterRemoves,
       addedRowsIndexSpace);
     return nextState.ProcessNextChunk(sources, begins, ends, Array.Empty<byte>());
   }
@@ -125,6 +125,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
 }
 
 class AwaitingAdds(
+  int numCols,
   TableState tableState,
   RowSequence[] perColumnModifies,
   ClientTable prev,
@@ -143,12 +144,12 @@ class AwaitingAdds(
         _addedRowsRemaining = RowSequence.CreateEmpty();
 
         var afterAdds = afterRemoves;
-        var nextState = new AwaitingModifies(tableState, prev, removedRowsIndexSpace, afterRemoves,
+        var nextState = new AwaitingModifies(numCols, tableState, prev, removedRowsIndexSpace, afterRemoves,
           addedRowsIndexSpace, afterAdds, perColumnModifies);
         return nextState.ProcessNextChunk(sources, begins, ends, metadata);
       }
 
-      if (NumCols == 0) {
+      if (numCols == 0) {
         throw new Exception("AddedRows is not empty but numCols == 0");
       }
 
@@ -195,7 +196,7 @@ class AwaitingAdds(
     // No more data remaining. Add phase is done.
     {
       var afterAdds = tableState.Snapshot();
-      var nextState = new AwaitingModifies(tableState, prev, removedRowsIndexSpace, afterRemoves,
+      var nextState = new AwaitingModifies(numCols, tableState, prev, removedRowsIndexSpace, afterRemoves,
         addedRowsIndexSpace, afterAdds, perColumnModifies);
       return nextState.ProcessNextChunk(sources, begins, ends, metadata);
     }
@@ -203,6 +204,7 @@ class AwaitingAdds(
 }
 
 class AwaitingModifies(
+  int numCols,
   TableState tableState,
   ClientTable prev,
   RowSequence removedRowsIndexSpace,
@@ -220,15 +222,14 @@ class AwaitingModifies(
 
       if (Checks.AllEmpty(perColumnModifies)) {
         var afterModifies = afterAdds;
-        var nextState = new BuildingResult(tableState, prev, removedRowsIndexSpace, afterRemoves,
+        var nextState = new BuildingResult(numCols, tableState, prev, removedRowsIndexSpace, afterRemoves,
           addedRowsIndexSpace, afterAdds, _modifiedRowsIndexSpace, afterModifies);
         return nextState.ProcessNextChunk(sources, begins, ends, metadata);
       }
 
-      var ncols = owner->awaitingMetadata_.num_cols_;
-      _modifiedRowsIndexSpace = new RowSequence[ncols];
-      _modifiedRowsRemaining = new RowSequence[ncols];
-      for (var i = 0; i < ncols; ++i) {
+      _modifiedRowsIndexSpace = new RowSequence[numCols];
+      _modifiedRowsRemaining = new RowSequence[numCols];
+      for (var i = 0; i < numCols; ++i) {
         var rs = tableState.ConvertKeysToIndices(perColumnModifies[i]);
         _modifiedRowsIndexSpace[i] = rs;
         _modifiedRowsRemaining[i] = rs;
@@ -279,7 +280,7 @@ class AwaitingModifies(
 
     {
       var afterModifies = tableState.Snapshot();
-      var nextState = new BuildingResult(tableState, prev, removedRowsIndexSpace, afterRemoves,
+      var nextState = new BuildingResult(numCols, tableState, prev, removedRowsIndexSpace, afterRemoves,
         addedRowsIndexSpace, afterAdds, _modifiedRowsIndexSpace, afterModifies);
       return nextState.ProcessNextChunk(sources, begins, ends, metadata);
     }
@@ -287,6 +288,7 @@ class AwaitingModifies(
 }
 
 class BuildingResult(
+  int numCols,
   TableState tableState,
   ClientTable prev,
   RowSequence removedRowsIndexSpace,
@@ -306,7 +308,7 @@ class BuildingResult(
       removedRowsIndexSpace, afterRemoves,
       addedRowsIndexSpace, afterAdds,
       modifiedRowsIndexSpace, afterModifies);
-    var nextState = new AwaitingMetadata(tableState);
+    var nextState = new AwaitingMetadata(numCols, tableState);
     return (result, nextState);
   }
 }
