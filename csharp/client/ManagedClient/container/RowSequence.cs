@@ -1,29 +1,50 @@
 ﻿using System;
 using System.Collections.Specialized;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Deephaven.ManagedClient;
 
 public abstract class RowSequence {
+  public static RowSequence CreateEmpty() => SequentialRowSequence.EmptyInstance;
+
   public static RowSequence CreateSequential(UInt64 begin, UInt64 end) {
     return new SequentialRowSequence(begin, end);
   }
 
   public abstract bool Empty { get; }
+  public abstract UInt64 Size { get; }
 
   public abstract IEnumerable<(UInt64, UInt64)> Intervals { get; }
+
+  public abstract RowSequence Take(UInt64 size);
+  public abstract RowSequence Drop(UInt64 size);
 }
 
-public sealed class SequentialRowSequence(UInt64 begin, UInt64 end) : RowSequence {
+sealed class SequentialRowSequence(UInt64 begin, UInt64 end) : RowSequence {
+  public static readonly SequentialRowSequence EmptyInstance = new(0, 0);
+
   public override bool Empty => begin == end;
+
+  public override UInt64 Size => end - begin;
 
   public override IEnumerable<(UInt64, UInt64)> Intervals {
     get {
       yield return (begin, end);
     }
   }
+
+  public override RowSequence Take(UInt64 size) {
+    var sizeToUse = Math.Min(size, Size);
+    return new SequentialRowSequence(begin, begin + sizeToUse);
+  }
+
+  public override RowSequence Drop(UInt64 size) {
+    var sizeToUse = Math.Min(size, Size);
+    return new SequentialRowSequence(begin + sizeToUse, end);
+  }
 }
 
-public sealed class BasicRowSequence((UInt64, UInt64)[] intervals) : RowSequence {
+sealed class BasicRowSequence((UInt64, UInt64)[] intervals) : RowSequence {
   public override bool Empty => intervals.Length == 0;
 
   public override IEnumerable<(UInt64, UInt64)> Intervals => intervals;
