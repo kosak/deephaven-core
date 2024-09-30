@@ -139,30 +139,54 @@ public class TableHandle : IDisposable {
     _ticket.Ticket_.Span.CopyTo(magicBytes.AsSpan(magicOffset));
 
     var applicationMetadata = ByteString.CopyFrom(magicBytes);
-    var temp = result.RequestStream.WriteAsync(uselessMessage, applicationMetadata);
-    temp.Wait();
+    result.RequestStream.WriteAsync(uselessMessage, applicationMetadata).Wait();
+
+    var responseStream = result.ResponseStream;
+
+    var numCols = _schema.FieldsList.Count;
 
     while (true) {
-      var mn = result.ResponseStream.MoveNext().Result;
+      var mn = responseStream.MoveNext().Result;
       if (!mn) {
         Console.Error.WriteLine("all done");
         break;
       }
 
-      var md = result.ResponseStream.ApplicationMetadata;
-      var stupid = result.ResponseStream.Current;
+      byte[]? metadateBytes = null;
 
-      if (md.Count > 0) {
-        var bytes = md[0].ToByteArray();
-        var bb = new ByteBuffer(bytes);
-        var bmw = BarrageMessageWrapper.GetRootAsBarrageMessageWrapper(bb);
-        var rr = bmw.MsgType;
+      var mds = responseStream.ApplicationMetadata;
+      if (mds.Count > 0) {
+        if (mds.Count > 1) {
+          throw new Exception($"Expected metadata count 1, got {mds.Count}");
+        }
 
-        Console.WriteLine("SHALL WE BEGIN");
-
-        var bp = new BarrageProcessor(_schema.FieldsList.Count);
-        bp.ProcessNextChunk(null, null, bytes);
+        metadateBytes = mds[0].ToByteArray();
       }
+
+      var recordBatch = responseStream.Current;
+      if (recordBatch.ColumnCount != numCols) {
+        throw new Exception($"Expected {numCols} columns in RecordBatch, got {recordBatch.ColumnCount}");
+      }
+
+      var columns = new IColumnSource[numCols];
+      var sizes = new int[numCols];
+      for (int i = 0; i != numCols; ++i) {
+        var rbCol = recordBatch.Column(i);
+        if (rbCol is not ListArray la) {
+          throw new Exception($"Expected ListArray type, got {rbCol.GetType().Name}");
+        }
+
+        var (cs, size) = ArrowUtil.MakeColumnSourceFromListArray(la);
+        columns[i] = cs;
+        sizes[i] = size;
+      }
+      
+      Console.WriteLine("SHALL WE BEGIN");
+
+
+
+      var bp = new BarrageProcessor(numCols);
+      bp.ProcessNextChunk(columns, sizes, metadateBytes);
 
       Console.WriteLine("hi");
     }

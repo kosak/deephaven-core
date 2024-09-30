@@ -23,7 +23,7 @@ public class BarrageProcessor {
     throw new NotImplementedException("NIY");
   }
 
-  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] sizes, byte[] metadata) {
+  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] sizes, byte[]? metadata) {
     var begins = new int[sizes.Length];
     var (update, next) = _currentProcessor.ProcessNextChunk(sources, begins, sizes, metadata);
     _currentProcessor = next;

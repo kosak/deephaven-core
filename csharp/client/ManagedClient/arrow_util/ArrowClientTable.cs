@@ -11,7 +11,7 @@ public sealed class ArrowClientTable : ClientTable {
     var columnSources = new List<IColumnSource>();
     for (var i = 0; i != arrowTable.ColumnCount; ++i) {
       var col = arrowTable.Column(i);
-      columnSources.Add(MakeColumnSource(col));
+      columnSources.Add(ArrowUtil.MakeColumnSource(col));
     }
 
     return new ArrowClientTable(arrowTable, rowSequence, columnSources.ToArray());
@@ -33,81 +33,4 @@ public sealed class ArrowClientTable : ClientTable {
 
   public override Int64 NumRows => _arrowTable.RowCount;
   public override Int64 NumCols => _arrowTable.ColumnCount;
-
-  private class MyVisitor(ChunkedArray chunkedArray) :
-    IArrowTypeVisitor<UInt16Type>,
-    IArrowTypeVisitor<Int8Type>,
-    IArrowTypeVisitor<Int16Type>,
-    IArrowTypeVisitor<Int32Type>,
-    IArrowTypeVisitor<Int64Type>,
-    IArrowTypeVisitor<FloatType>,
-    IArrowTypeVisitor<DoubleType>,
-    IArrowTypeVisitor<BooleanType>,
-    IArrowTypeVisitor<StringType>,
-    IArrowTypeVisitor<TimestampType>,
-    IArrowTypeVisitor<Date64Type>,
-    IArrowTypeVisitor<Time64Type> {
-    public IColumnSource? Result { get; private set; }
-
-    public void Visit(UInt16Type type) {
-      Result = new CharArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(Int8Type type) {
-      Result = new ByteArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(Int16Type type) {
-      Result = new Int16ArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(Int32Type type) {
-      Result = new Int32ArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(Int64Type type) {
-      Result = new Int64ArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(FloatType type) {
-      Result = new FloatArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(DoubleType type) {
-      Result = new DoubleArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(BooleanType type) {
-      Result = new BooleanArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(StringType type) {
-      Result = new StringArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(TimestampType type) {
-      Result = new TimestampArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(Date64Type type) {
-      Result = new LocalDateArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(Time64Type type) {
-      Result = new LocalTimeArrowColumnSource(chunkedArray);
-    }
-
-    public void Visit(IArrowType type) {
-      throw new Exception($"type {type.Name} is not supported");
-    }
-  }
-
-  private static IColumnSource MakeColumnSource(Column column) {
-    var visitor = new MyVisitor(column.Data);
-    column.Type.Accept(visitor);
-    if (visitor.Result == null) {
-      throw new Exception($"No result set for {column.Data.DataType}");
-    }
-    return visitor.Result;
-  }
 }
