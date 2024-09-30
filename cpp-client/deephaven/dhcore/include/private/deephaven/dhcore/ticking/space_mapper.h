@@ -35,6 +35,20 @@ public:
    */
   [[nodiscard]]
   uint64_t EraseRange(uint64_t begin_key, uint64_t end_key);
+
+  /**
+   * Delete all the keys that currently exist in the range [begin_key, end_key).
+   * Call that set of deleted keys K. The cardinality of K might be smaller than
+   * (end_key - begin_key) because not all keys in that range are expected to be present.
+   *
+   * Calculate a new set of keys KNew = {k ∈ K | (k - begin_key + dest_key)}
+   * and insert this new set of keys into the map.
+   *
+   * This has the effect of offsetting all the existing keys by (dest_key - begin_key)
+   * @param begin_key The start of the range of keys
+   * @param end_key One past the end of the range of keys
+   * @param dest_key The start of the target range to move keys to.
+   */
   void ApplyShift(uint64_t begin_key, uint64_t end_key, uint64_t dest_key);
 
   /**

@@ -82,6 +82,13 @@ public:
   void ModifyData(size_t col_num, const ColumnSource &src, size_t begin, size_t end,
       const RowSequence &rows_to_modify_index_space);
 
+  /**
+   * Applies shifts to the keys in key space. This does not affect the ordering of the keys,
+   * nor will it cause keys to overlap with other keys. Logically
+   * @param start_index
+   * @param end_index
+   * @param dest_index
+   */
   void ApplyShifts(const RowSequence &start_index, const RowSequence &end_index,
       const RowSequence &dest_index);
 
