@@ -5,7 +5,6 @@ using Io.Deephaven.Proto.Backplane.Grpc;
 using Google.FlatBuffers;
 using Google.Protobuf;
 using io.deephaven.barrage.flatbuf;
-using Array = System.Array;
 using Table = Apache.Arrow.Table;
 
 namespace Deephaven.ManagedClient;
@@ -13,17 +12,26 @@ namespace Deephaven.ManagedClient;
 public class TableHandle : IDisposable {
   public static TableHandle Create(TableHandleManager manager,
     ExportedTableCreationResponse resp) {
-    return new TableHandle(manager, resp.ResultId.Ticket, resp.Size, resp.IsStatic);
+
+    var server = manager.Server;
+    var metadata = new Metadata();
+    server.ForEachHeaderNameAndValue(metadata.Add);
+
+    var fd = ArrowUtil.ConvertTicketToFlightDescriptor(resp.ResultId.Ticket);
+    var schema = server.FlightClient.GetSchema(fd, metadata).ResponseAsync.Result;
+    return new TableHandle(manager, resp.ResultId.Ticket, schema, resp.Size, resp.IsStatic);
   }
 
   private readonly TableHandleManager _manager;
   private readonly Ticket _ticket;
+  private readonly Schema _schema;
   private readonly Int64 _numRows;
   private readonly bool _isStatic;
 
-  private TableHandle(TableHandleManager manager, Ticket ticket, long numRows, bool isStatic) {
+  private TableHandle(TableHandleManager manager, Ticket ticket, Schema schema, long numRows, bool isStatic) {
     _manager = manager;
     _ticket = ticket;
+    _schema = schema;
     _numRows = numRows;
     _isStatic = isStatic;
   }
@@ -152,7 +160,7 @@ public class TableHandle : IDisposable {
 
         Console.WriteLine("SHALL WE BEGIN");
 
-        var bp = new BarrageProcessor();
+        var bp = new BarrageProcessor(_schema.FieldsList.Count);
         bp.ProcessNextChunk(null, null, bytes);
       }
 
