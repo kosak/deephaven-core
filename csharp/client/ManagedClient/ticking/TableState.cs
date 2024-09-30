@@ -61,12 +61,27 @@ public class TableState {
     throw new NotImplementedException("hi");
   }
 
+  /// <summary>
+  /// Applies shifts to the keys in key space. This does not affect the ordering of the keys,
+  /// nor will it cause keys to overlap with other keys.Logically there is a set of tuples
+  /// (firstKey, lastKey, destKey) which is to be interpreted as take all the existing keys
+  /// in the *closed* range [firstKey, lastKey] and move them to the range starting at destKey.
+  /// These tuples have been "transposed" into three different RowSequence data structures
+  /// for possible better compression.
+  /// </summary>
+  /// <param name="firstIndex">The RowSequence containing the firstKeys</param>
+  /// <param name="lastIndex">The RowSequence containing the lastKeys</param>
+  /// <param name="destIndex">The RowSequence containing the destKeys</param>
+  void ApplyShifts(RowSequence firstIndex, RowSequence lastIndex, RowSequence destIndex) {
+    throw new NotImplementedException("hi");
+  }
 
-  void ApplyShifts(const RowSequence &start_index, const RowSequence &end_index,
-  const RowSequence &dest_index);
-
-  [[nodiscard]]
-  std::shared_ptr<ClientTable> Snapshot() const;
-
-
+  /// <summary>
+  /// Takes a snapshot of the current table state
+  /// </summary>
+  /// <returns>A ClientTable representing the current table state</returns>
+  /// <exception cref="NotImplementedException"></exception>
+  ClientTable Snapshot() {
+    throw new NotImplementedException("hi");
+  }
 }
