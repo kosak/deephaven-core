@@ -50,21 +50,37 @@ public:
   void AddData(const std::vector<std::shared_ptr<ColumnSource>> &sources, const std::vector<size_t> &begins,
                const std::vector<size_t> &ends, const RowSequence &rows_to_add_index_space);
 
+  /**
+   * Erases the data at the positions in 'rowsToEraseKeySpace'.
+   * @param rowsToEraseKeySpace The keys, represented in key space, to erase
+   * @return The keys, represented in index space, that were erased
+   */
   [[nodiscard]]
-  std::shared_ptr<RowSequence> Erase(const RowSequence &begin_key);
+  std::shared_ptr<RowSequence> Erase(const RowSequence &rows_to_erase_key_space);
 
   /**
-   * When the caller wants to modify data in the ImmerTableState, they do it in two steps:
-   * First, they call ConvertKeysToIndices, which gives them the
-   * (key space) -> (position space) mapping. Then, the caller calls ModifyData (perhaps all at
-   * once, perhaps in slices) to fill in the data. Note that ConvertKeysToIndices / ModifyData only support
-   * modifying rows. It is an error to try to use a key that is not already in the map.
+   * Converts a RowSequence of keys represented in key space to a RowSequence of keys represented in index space.
+   * It is an error to try to use a key that is not already in the map.
+   * @param keys_row_space Keys represented in key space
+   * @return Keys represented in index space
    */
   [[nodiscard]]
   std::shared_ptr<RowSequence> ConvertKeysToIndices(const RowSequence &keys_row_space) const;
 
-  void ModifyData(size_t begin_index, const ColumnSource &end_index, size_t begin, size_t end,
-                  const RowSequence &rows_to_modify);
+
+  /**
+   * Modifies column 'col_num' with the contiguous data sourced in 'src'
+   * at the half-open interval [begin, end), to be stored in the destination
+   * at the positions indicated by 'rows_to_modify_index_space'.
+   * @param col_num Index of the column to be modified
+   * @param src A ColumnSource containing the source data
+   * @param begin The start of the source range
+   * @param end One past the end of the source range
+   * @param rows_to_modify_index_space The positions to be modified in the destination,
+   * represented in index space.
+   */
+  void ModifyData(size_t col_num, const ColumnSource &src, size_t begin, size_t end,
+      const RowSequence &rows_to_modify_index_space);
 
   void ApplyShifts(const RowSequence &start_index, const RowSequence &end_index,
       const RowSequence &dest_index);
