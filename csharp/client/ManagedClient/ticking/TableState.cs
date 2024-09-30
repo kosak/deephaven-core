@@ -72,7 +72,7 @@ public class TableState {
   /// <param name="firstIndex">The RowSequence containing the firstKeys</param>
   /// <param name="lastIndex">The RowSequence containing the lastKeys</param>
   /// <param name="destIndex">The RowSequence containing the destKeys</param>
-  void ApplyShifts(RowSequence firstIndex, RowSequence lastIndex, RowSequence destIndex) {
+  public void ApplyShifts(RowSequence firstIndex, RowSequence lastIndex, RowSequence destIndex) {
     throw new NotImplementedException("hi");
   }
 
@@ -81,7 +81,7 @@ public class TableState {
   /// </summary>
   /// <returns>A ClientTable representing the current table state</returns>
   /// <exception cref="NotImplementedException"></exception>
-  ClientTable Snapshot() {
+  public ClientTable Snapshot() {
     throw new NotImplementedException("hi");
   }
 }
