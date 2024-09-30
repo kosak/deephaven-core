@@ -51,7 +51,10 @@ public class SpaceMapper {
     var finalCardinality = _set.Count;
     var cardinalityChange = finalCardinality - initialCardinality;
     if (cardinalityChange != rangeSize) {
-      throw new Exception($"Range [{beginKey},{endKey}) has size {rangeSize} but set only changed from cardinality {initialCardinality} to {finalCardinality}. This means duplicates were inserted");
+      throw new Exception(
+        $"Range [{beginKey},{endKey}) has size {rangeSize} but " +
+        $"set only changed from cardinality {initialCardinality} to {finalCardinality}. " +
+        $"This means duplicates were inserted");
     }
 
     var stupid = _set.IndexingSpeed;
