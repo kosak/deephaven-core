@@ -60,6 +60,8 @@ public class TableState {
   public void ModifyData(int colNum, IColumnSource src, int begin, int end, RowSequence rowsToModifyIndexSpace) {
     throw new NotImplementedException("hi");
   }
+
+
   void ApplyShifts(const RowSequence &start_index, const RowSequence &end_index,
   const RowSequence &dest_index);
 
