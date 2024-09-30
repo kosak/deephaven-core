@@ -1,4 +1,5 @@
 ﻿using C5;
+using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -6,13 +7,39 @@ public class SpaceMapper {
   private readonly TreeSet<UInt64> _set = new();
 
   /// <summary>
-  /// Adds the keys in the half-open interval [begin_key, end_key_) to the set.
+  /// Adds 'keys' (specified in key space) to the map, and returns the positions (in position
+  /// space) of those keys after insertion. 'keys' are required to not already been in the map.
+  /// The algorithm behaves as though all the keys are inserted in the map and then
+  /// 'ConvertKeysToIndices' is called.
+  /// <example>
+  /// <ul>
+  /// <li>SpaceMapper currently holds[100 300]</li>
+  /// <li>AddKeys called with [1, 2, 200, 201, 400, 401]</li>
+  /// <li>SpaceMapper final state is [1, 2, 100, 200, 201, 300, 400, 401]</li>
+  /// <li>The returned result is [0, 1, 3, 4, 6, 7]</li>
+  /// </ul>
+  /// </example>
+  /// </summary>
+  /// <param name="keys"></param>
+  /// <returns></returns>
+  /// <exception cref="NotImplementedException"></exception>
+  public RowSequence AddKeys(RowSequence keys) {
+    var builder = new RowSequenceBuilder();
+    foreach (var interval in keys.Intervals) {
+      var indexSpaceRange = AddRange(interval.Item1, interval.Item2);
+      builder.AddInterval(indexSpaceRange.Item1, indexSpaceRange.Item2);
+    }
+    return builder.Build();
+  }
+
+  /// <summary>
+  /// Adds the keys (represented in key space) in the half-open interval [begin_key, end_key_) to the set.
   /// The keys must not already exist in the set.If they do, an exception is thrown.
   /// </summary>
   /// <param name="beginKey">The first key to insert</param>
   /// <param name="endKey">One past the last key to insert</param>
-  /// <returns>The rank of beginKey</returns>
-  UInt64 AddRange(UInt64 beginKey, UInt64 endKey) {
+  /// <returns>The added keys, represented as a range in index space</returns>
+  (UInt64, UInt64) AddRange(UInt64 beginKey, UInt64 endKey) {
     var temp9 = _set.CountSpeed;
     var initialCardinality = _set.Count;
     var rangeSize = (endKey - beginKey).ToIntExact();
@@ -33,7 +60,7 @@ public class SpaceMapper {
       throw new Exception("Programming error: item not found?");
     }
 
-    return (UInt64)index;
+    return ((UInt64)index, (UInt64)index + (UInt64)rangeSize);
   }
 
   /// <summary>
@@ -43,7 +70,7 @@ public class SpaceMapper {
   /// <param name="beginKey">The first key to remove</param>
   /// <param name="endKey">One past the last key to remove</param>
   /// <returns>The rank of beginKey</returns>
-  UInt64 EraseRange(UInt64 beginKey, UInt64 endKey) {
+  public UInt64 EraseRange(UInt64 beginKey, UInt64 endKey) {
     var result = ZeroBasedRank(beginKey);
     _set.RemoveRangeFromTo(beginKey, endKey);
     return result;
@@ -64,23 +91,7 @@ public class SpaceMapper {
   /// <param name="endKey">One past the end of the range of keys</param>
   /// <param name="destKey">The start of the target range to move keys to</param>
   /// <exception cref="NotImplementedException"></exception>
-  void ApplyShift(UInt64 beginKey, UInt64 endKey, UInt64 destKey) {
-    throw new NotImplementedException("NIY");
-  }
-
-  /**
-   * Adds 'keys' (specified in key space) to the map, and returns the positions (in position
-   * space) of those keys after insertion. 'keys' are required to not already been in the map.
-   * The algorithm behaves as though all the keys are inserted in the map and then
-   * 'ConvertKeysToIndices' is called.
-   *
-   * Example:
-   *   SpaceMapper currently holds [100 300]
-   *   AddKeys called with [1, 2, 200, 201, 400, 401]
-   *   SpaceMapper final state is [1, 2, 100, 200, 201, 300, 400, 401]
-   *   The returned result is [0, 1, 3, 4, 6, 7]
-   */
-  RowSequence AddKeys(RowSequence begin_key) {
+  public void ApplyShift(UInt64 beginKey, UInt64 endKey, UInt64 destKey) {
     throw new NotImplementedException("NIY");
   }
 
@@ -88,15 +99,15 @@ public class SpaceMapper {
    * Looks up 'keys' (specified in key space) in the map, and returns the positions (in position
    * space) of those keys.
    */
-  RowSequence ConvertKeysToIndices(RowSequence begin_key) {
+  public RowSequence ConvertKeysToIndices(RowSequence begin_key) {
     throw new NotImplementedException("NIY");
   }
 
-  int Cardinality() {
+  public int Cardinality() {
     return _set.Count;
   }
 
-  UInt64 ZeroBasedRank(UInt64 value) {
+  public UInt64 ZeroBasedRank(UInt64 value) {
     var index = _set.LastIndexOf(value);
     if (index < 0) {
       var actualIndex = -(index + 1);

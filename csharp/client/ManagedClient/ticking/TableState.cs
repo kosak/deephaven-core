@@ -1,6 +1,8 @@
 ﻿namespace Deephaven.ManagedClient;
 
 public class TableState {
+  private readonly SpaceMapper _spaceMapper = new();
+
   /// <summary>
   /// When the caller wants to add data to the ImmerTableState, they do it in two steps:
   /// AddKeys and then AddData.First, they call AddKeys, which updates the (key space) ->
@@ -14,6 +16,7 @@ public class TableState {
   /// <returns>Added keys, represented in index space</returns>
   /// <exception cref="NotImplementedException"></exception>
   public RowSequence AddKeys(RowSequence rowsToAddKeySpace) {
+    return _spaceMapper.AddKeys(rowsToAddKeySpace);
     throw new NotImplementedException("hi");
   }
 
@@ -73,7 +76,7 @@ public class TableState {
   /// <param name="lastIndex">The RowSequence containing the lastKeys</param>
   /// <param name="destIndex">The RowSequence containing the destKeys</param>
   public void ApplyShifts(RowSequence firstIndex, RowSequence lastIndex, RowSequence destIndex) {
-    throw new NotImplementedException("hi");
+    Console.Error.WriteLine("TODO - Apply Shifts");
   }
 
   /// <summary>
@@ -82,6 +85,6 @@ public class TableState {
   /// <returns>A ClientTable representing the current table state</returns>
   /// <exception cref="NotImplementedException"></exception>
   public ClientTable Snapshot() {
-    throw new NotImplementedException("hi");
+    return null;
   }
 }
