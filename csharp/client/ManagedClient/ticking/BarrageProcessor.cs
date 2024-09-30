@@ -42,6 +42,9 @@ class AwaitingMetadata : IChunkProcessor {
       throw new Exception($"Expected Barrage Message Type {BarrageMessageType.BarrageUpdateMetadata}, got {bmw.MsgType}");
     }
 
+    // var payloadRawSbytes = bmw.GetMsgPayloadArray();
+    // var payloadRawBytes = new byte[payloadRawSbytes.Length];
+    // Array.Copy(payloadRawSbytes, payloadRawBytes, payloadRawSbytes.Length);
     var bytes = bmw.GetMsgPayloadBytes()!.ToArray<byte>();
     var bmd = BarrageUpdateMetadata.GetRootAsBarrageUpdateMetadata(new ByteBuffer(bytes));
 
@@ -90,7 +93,7 @@ class AwaitingMetadata : IChunkProcessor {
 
     var addedRowsIndexSpace = tableState.AddKeys(addedRows);
 
-    var nextState = new AwaitingAdds(perColumnModifies, prev, removedRowsIndexSpace, afterRemoves, addedRowsIndexSpace);
+    var nextState = new AwaitingAdds(perColumnModifies.ToArray(), prev, removedRowsIndexSpace, afterRemoves, addedRowsIndexSpace);
     return nextState.ProcessNextChunk(sources, begins, ends, Array.Empty<byte>());
   }
 
@@ -109,5 +112,82 @@ class AwaitingMetadata : IChunkProcessor {
     }
 
     return (prev, removedRowsIndexSpace, afterRemoves);
+  }
+}
+
+class AwaitingAdds(
+  RowSequence[] perColumnModifies,
+  ClientTable prev,
+  RowSequence removedRowsIndexSpace,
+  ClientTable afterRemoves,
+  RowSequence addedRowsIndexSpace) : IChunkProcessor {
+
+  bool _firstTime = true;
+  private RowSequence _addedRowsRemaining;
+
+  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+    if (_firstTime) {
+      _firstTime = false;
+
+      if (addedRowsIndexSpace.Empty) {
+        _addedRowsRemaining = RowSequence.CreateEmpty();
+
+        var afterAdds = afterRemoves;
+
+        var nextState = new AwaitingModifies(afterAdds);
+        return nextState.ProcessNextChunk(sources, begins, ends, metadata);
+      }
+
+      if (owner->awaitingMetadata_.num_cols_ == 0) {
+        throw new Exception("AddedRows is not empty but numCols == 0");
+      }
+
+      // Working copy that is consumed in the iterations of the loop.
+      _addedRowsRemaining = addedRowsIndexSpace;
+    }
+
+    auto & begins = *beginsp;
+    AssertAllSame(sources.size(), begins.size(), ends.size());
+    var numSources = sources.size();
+
+    if (_addedRowsRemaining.Empty) {
+      throw new Exception("Programming error: addedRowsRemaining is empty");
+    }
+
+    if (begins.Equals(ends)) {
+      // Need more data from caller.
+      return (null, this);
+    }
+
+    var chunkSize = ends[0] - begins[0];
+    for (var i = 1; i != numSources; ++i) {
+      var thisSize = ends[i] - begins[i];
+      if (thisSize != chunkSize) {
+        throw new Exception($"Chunks have inconsistent sizes: {thisSize} vs {chunkSize}");
+      }
+    }
+
+    if (_addedRowsRemaining.Size < chunkSize) {
+      throw new Exception($"There is excess data in the chunk. Expected {_addedRowsRemaining.Size}, have {chunkSize}");
+    }
+
+    var indexRowsThisTime = _addedRowsRemaining.Take(chunkSize);
+    _addedRowsRemaining = _addedRowsRemaining.Drop(chunkSize);
+    tableState.AddData(sources, begins, ends, indexRowsThisTime);
+
+    // To indicate to the caller that we've consumed the data here (so it can't e.g. be passed on to modify)
+    Array.Copy(ends, begins, ends.Length);
+
+    if (!_addedRowsRemaining.Empty) {
+      // Need more data from caller.
+      return (null, this);
+    }
+
+    // No more data remaining. Add phase is done.
+    var after_adds = tableState.Snapshot();
+
+    owner->state_ = State::kAwaitingModifies;
+    owner->awaitingModifies_.Init(std::move(after_adds));
+    return owner->awaitingModifies_.ProcessNextChunk(owner, sources, beginsp, ends, nullptr, 0);
   }
 }
