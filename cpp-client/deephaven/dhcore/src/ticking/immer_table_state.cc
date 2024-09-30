@@ -185,7 +185,7 @@ void ImmerTableState::ModifyData(size_t col_num, const ColumnSource &src, size_t
   rows_to_modify_index_space.ForEachInterval(modify_chunk);
 }
 
-void ImmerTableState::ApplyShifts(const RowSequence &start_index, const RowSequence &end_index,
+void ImmerTableState::ApplyShifts(const RowSequence &first_index, const RowSequence &last_index,
     const RowSequence &dest_index) {
   auto process_shift = [this](int64_t first, int64_t last, int64_t dest) {
     uint64_t begin = first;
@@ -193,7 +193,7 @@ void ImmerTableState::ApplyShifts(const RowSequence &start_index, const RowSeque
     uint64_t dest_begin = dest;
     spaceMapper_.ApplyShift(begin, end, dest_begin);
   };
-  ShiftProcessor::ApplyShiftData(start_index, end_index, dest_index, process_shift);
+  ShiftProcessor::ApplyShiftData(first_index, last_index, dest_index, process_shift);
 }
 
 std::shared_ptr<ClientTable> ImmerTableState::Snapshot() const {

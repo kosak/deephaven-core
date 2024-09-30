@@ -84,14 +84,22 @@ public:
 
   /**
    * Applies shifts to the keys in key space. This does not affect the ordering of the keys,
-   * nor will it cause keys to overlap with other keys. Logically
-   * @param start_index
-   * @param end_index
-   * @param dest_index
+   * nor will it cause keys to overlap with other keys. Logically there is a set of tuples
+   * (first_key, last_key, dest_key) which is to be interpreted as take all the existing keys
+   * in the *closed* range [first_key, last_key] and move them to the range starting at dest_key.
+   * These tuples have been "transposed" into three different RowSequence data structures
+   * for possible better compression.
+   * @param first_index The RowSequence containing the begin_keys
+   * @param last_index The RowSequence containing the end_keys
+   * @param dest_index The RowSequence containing the dest_indexes
    */
-  void ApplyShifts(const RowSequence &start_index, const RowSequence &end_index,
+  void ApplyShifts(const RowSequence &first_index, const RowSequence &last_index,
       const RowSequence &dest_index);
 
+  /**
+   * Takes a snapshot of the current table state
+   * @return A ClientTable representing the current table state
+   */
   [[nodiscard]]
   std::shared_ptr<ClientTable> Snapshot() const;
 
