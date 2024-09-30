@@ -268,3 +268,19 @@ class AwaitingModifies(ClientTable afterAdds) : IChunkProcessor {
     }
   }
 }
+
+class BuildingResult(ClientTable afterModifies) : IChunkProcessor {
+  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+    if (!begins.Equals(ends)) {
+      throw new Exception($"Barrage logic is done processing but there is leftover caller-provided data. begins = [{string.Join(",", begins)}]. ends=[{string.Join(",", ends)}]",
+    }
+
+    var result = new TickingUpdate(prev,
+      removedRowsIndexSpace, afterRemoves,
+      addedRowsIndexSpace, afterAdds,
+      modifiedRowsIndexSpace, afterModifies);
+    var nextState = new AwaitingMetadata();
+    return (result, nextState);
+  }
+}
+
