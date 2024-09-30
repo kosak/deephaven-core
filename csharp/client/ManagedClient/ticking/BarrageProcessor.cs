@@ -184,10 +184,87 @@ class AwaitingAdds(
     }
 
     // No more data remaining. Add phase is done.
-    var after_adds = tableState.Snapshot();
+    var afterAdds = tableState.Snapshot();
 
-    owner->state_ = State::kAwaitingModifies;
-    owner->awaitingModifies_.Init(std::move(after_adds));
-    return owner->awaitingModifies_.ProcessNextChunk(owner, sources, beginsp, ends, nullptr, 0);
+    var nextState = new AwaitingModifies(afterAdds);
+    return nextState.ProcessNextChunk(sources, begins, ends, metadata);
+  }
+}
+
+class AwaitingModifies(ClientTable afterAdds) : IChunkProcessor {
+  private bool _firstTime = true;
+  private RowSequence[] _modifiedRowsRemaining;
+  private RowSequence[] _modifiedRowsIndexSpace;
+
+  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+    if (_firstTime) {
+      _firstTime = false;
+
+      if (AllEmpty(owner->awaitingAdds_.per_column_modifies_)) {
+        _modifiedRowsIndexSpace = [];
+        _modifiedRowsIndexSpace = [];
+        var afterModifies = after_adds_;
+        var nextState = new BuildingResult(afterModifies);
+        return nextState.ProcessNextChunk(sources, begins, ends, metadata);
+      }
+
+      var ncols = owner->awaitingMetadata_.num_cols_;
+      _modifiedRowsIndexSpace = new RowSequence[ncols];
+      _modifiedRowsRemaining = new RowSequence[ncols];
+      for (var i = 0; i < ncols; ++i) {
+        var rs = tableState.ConvertKeysToIndices(
+          *owner->awaitingAdds_.per_column_modifies_[i]);
+        _modifiedRowsIndexSpace[i] = rs;
+        _modifiedRowsRemaining[i] = rs;
+      }
+    }
+
+    if (AllEmpty(_modifiedRowsRemaining)) {
+      throw new Exception("Impossible: modifiedRowsRemaining is empty");
+    }
+
+    if (begins.Equals(ends)) {
+      // Need more data from caller.
+      return (null, this);
+    }
+
+    var numSources = sources.Length;
+    if (numSources > _modifiedRowsRemaining.Length) {
+      throw new Exception($"Number of sources ({numSources}) greater than expected ({_modifiedRowsRemaining.Length})");
+    }
+
+    for (var i = 0; i < numSources; ++i) {
+      var numRowsRemaining = _modifiedRowsRemaining[i].Size;
+      var numRowsAvailable = ends[i] - begins[i];
+
+      if (numRowsAvailable > numRowsRemaining) {
+        throw new Exception($"col {i}: numRowsAvailable ({numRowsAvailable}) > numRowsRemaining ({numRowsRemaining})");
+      }
+
+      if (numRowsAvailable == 0) {
+        // Nothing available for this column. Advance to next column.
+        continue;
+      }
+
+      var mr = _modifiedRowsRemaining[i];
+      var rowsAvailable = mr.Take(numRowsAvailable);
+      _modifiedRowsRemaining[i] = mr.Drop(numRowsAvailable);
+
+      tableState.ModifyData(i, sources[i], begins[i], ends[i], rowsAvailable);
+      begins[i] = ends[i];
+    }
+
+    foreach (var mr in _modifiedRowsRemaining) {
+      if (!mr.Empty) {
+        // At least one of our colums is hungry for more data that we don't have.
+        return (null, this);
+      }
+    }
+
+    {
+      var afterModifies = tableState.Snapshot();
+      var nextState = new BuildingResult(afterModifies);
+      return nextState.ProcessNextChunk(sources, begins, ends, metadata);
+    }
   }
 }
