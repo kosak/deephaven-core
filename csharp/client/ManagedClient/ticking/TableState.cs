@@ -17,7 +17,6 @@ public class TableState {
   /// <exception cref="NotImplementedException"></exception>
   public RowSequence AddKeys(RowSequence rowsToAddKeySpace) {
     return _spaceMapper.AddKeys(rowsToAddKeySpace);
-    throw new NotImplementedException("hi");
   }
 
   /// <summary>

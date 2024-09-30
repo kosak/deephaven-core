@@ -1,4 +1,5 @@
 ﻿using C5;
+using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -130,8 +131,23 @@ public class SpaceMapper {
    * Looks up 'keys' (specified in key space) in the map, and returns the positions (in position
    * space) of those keys.
    */
-  public RowSequence ConvertKeysToIndices(RowSequence begin_key) {
-    throw new NotImplementedException("NIY");
+  public RowSequence ConvertKeysToIndices(RowSequence keys) {
+    if (keys.Size == 0) {
+      return RowSequence.CreateEmpty();
+    }
+
+    var builder = new RowSequenceBuilder();
+    foreach (var interval in keys.Intervals) {
+      var size = interval.Item2 - interval.Item1;
+      var subset = _set.RangeFromTo(interval.Item1, interval.Item2);
+      if ((UInt64)subset.Count != size) {
+        throw new Exception($"Of the {size} keys specified in [{interval.Item1},{interval.Item2}) the set only contains {subset.Count} keys");
+      }
+
+      var nextRank = ZeroBasedRank(interval.Item1);
+      builder.AddInterval(nextRank, nextRank + size);
+    }
+    return builder.Build();
   }
 
   public int Cardinality() {
