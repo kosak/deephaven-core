@@ -1,10 +1,12 @@
-﻿using Google.FlatBuffers;
+﻿using Apache.Arrow;
+using Google.FlatBuffers;
 using io.deephaven.barrage.flatbuf;
+using Array = System.Array;
 
 namespace Deephaven.ManagedClient;
 
 interface IChunkProcessor {
-  TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata);
+  (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata);
 }
 
 public class BarrageProcessor {
@@ -23,12 +25,15 @@ public class BarrageProcessor {
 
   public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] sizes, byte[] metadata) {
     var begins = new int[sizes.Length];
-    return _currentProcessor.ProcessNextChunk(sources, begins, sizes, metadata);
+    var (update, next) = _currentProcessor.ProcessNextChunk(sources, begins, sizes, metadata);
+    _currentProcessor = next;
+    return update;
   }
 }
 
 class AwaitingMetadata(TableState tableState) : IChunkProcessor {
-  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends,
+    byte[] metadata) {
     if (metadata == null) {
       throw new Exception("Metadata was required here, but none was received");
     }
@@ -40,7 +45,8 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     }
 
     if (bmw.MsgType != BarrageMessageType.BarrageUpdateMetadata) {
-      throw new Exception($"Expected Barrage Message Type {BarrageMessageType.BarrageUpdateMetadata}, got {bmw.MsgType}");
+      throw new Exception(
+        $"Expected Barrage Message Type {BarrageMessageType.BarrageUpdateMetadata}, got {bmw.MsgType}");
     }
 
     // var payloadRawSbytes = bmw.GetMsgPayloadArray();
@@ -77,6 +83,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
       if (modifiedRowsBytes == null) {
         throw new Exception($"Programming error: modifiedRowsBytes[{i}] should not be null");
       }
+
       var diModified = new DataInput(modifiedRowsBytes);
       var modRows = IndexDecoder.ReadExternalCompressedDelta(diModified);
       perColumnModifies.Add(modRows);
@@ -94,7 +101,8 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
 
     var addedRowsIndexSpace = tableState.AddKeys(addedRows);
 
-    var nextState = new AwaitingAdds(perColumnModifies.ToArray(), prev, removedRowsIndexSpace, afterRemoves, addedRowsIndexSpace);
+    var nextState = new AwaitingAdds(tableState, perColumnModifies.ToArray(), prev, removedRowsIndexSpace, afterRemoves,
+      addedRowsIndexSpace);
     return nextState.ProcessNextChunk(sources, begins, ends, Array.Empty<byte>());
   }
 
@@ -117,6 +125,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
 }
 
 class AwaitingAdds(
+  TableState tableState,
   RowSequence[] perColumnModifies,
   ClientTable prev,
   RowSequence removedRowsIndexSpace,
@@ -124,9 +133,9 @@ class AwaitingAdds(
   RowSequence addedRowsIndexSpace) : IChunkProcessor {
 
   bool _firstTime = true;
-  private RowSequence _addedRowsRemaining;
+  private RowSequence _addedRowsRemaining = RowSequence.CreateEmpty();
 
-  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
     if (_firstTime) {
       _firstTime = false;
 
@@ -134,11 +143,12 @@ class AwaitingAdds(
         _addedRowsRemaining = RowSequence.CreateEmpty();
 
         var afterAdds = afterRemoves;
-        var nextState = new AwaitingModifies(afterAdds);
+        var nextState = new AwaitingModifies(tableState, prev, removedRowsIndexSpace, afterRemoves,
+          addedRowsIndexSpace, afterAdds, perColumnModifies);
         return nextState.ProcessNextChunk(sources, begins, ends, metadata);
       }
 
-      if (owner->awaitingMetadata_.num_cols_ == 0) {
+      if (NumCols == 0) {
         throw new Exception("AddedRows is not empty but numCols == 0");
       }
 
@@ -146,8 +156,7 @@ class AwaitingAdds(
       _addedRowsRemaining = addedRowsIndexSpace;
     }
 
-    auto & begins = *beginsp;
-    AssertAllSame(sources.Length, begins.Length, ends.Length);
+    Checks.AssertAllSame(sources.Length, begins.Length, ends.Length);
     var numSources = sources.Length;
 
     if (_addedRowsRemaining.Empty) {
@@ -159,9 +168,9 @@ class AwaitingAdds(
       return (null, this);
     }
 
-    var chunkSize = ends[0] - begins[0];
+    var chunkSize = (UInt64)(ends[0] - begins[0]);
     for (var i = 1; i != numSources; ++i) {
-      var thisSize = ends[i] - begins[i];
+      var thisSize = (UInt64)(ends[i] - begins[i]);
       if (thisSize != chunkSize) {
         throw new Exception($"Chunks have inconsistent sizes: {thisSize} vs {chunkSize}");
       }
@@ -186,26 +195,33 @@ class AwaitingAdds(
     // No more data remaining. Add phase is done.
     {
       var afterAdds = tableState.Snapshot();
-      var nextState = new AwaitingModifies(afterAdds);
+      var nextState = new AwaitingModifies(tableState, prev, removedRowsIndexSpace, afterRemoves,
+        addedRowsIndexSpace, afterAdds, perColumnModifies);
       return nextState.ProcessNextChunk(sources, begins, ends, metadata);
     }
   }
 }
 
-class AwaitingModifies(ClientTable afterAdds) : IChunkProcessor {
+class AwaitingModifies(
+  TableState tableState,
+  ClientTable prev,
+  RowSequence removedRowsIndexSpace,
+  ClientTable afterRemoves,
+  RowSequence addedRowsIndexSpace,
+  ClientTable afterAdds,
+  RowSequence[] perColumnModifies) : IChunkProcessor {
   private bool _firstTime = true;
-  private RowSequence[] _modifiedRowsRemaining;
-  private RowSequence[] _modifiedRowsIndexSpace;
+  private RowSequence[] _modifiedRowsRemaining = [];
+  private RowSequence[] _modifiedRowsIndexSpace = [];
 
-  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
     if (_firstTime) {
       _firstTime = false;
 
-      if (AllEmpty(owner->awaitingAdds_.per_column_modifies_)) {
-        _modifiedRowsIndexSpace = [];
-        _modifiedRowsIndexSpace = [];
-        var afterModifies = after_adds_;
-        var nextState = new BuildingResult(afterModifies);
+      if (Checks.AllEmpty(perColumnModifies)) {
+        var afterModifies = afterAdds;
+        var nextState = new BuildingResult(tableState, prev, removedRowsIndexSpace, afterRemoves,
+          addedRowsIndexSpace, afterAdds, _modifiedRowsIndexSpace, afterModifies);
         return nextState.ProcessNextChunk(sources, begins, ends, metadata);
       }
 
@@ -213,14 +229,13 @@ class AwaitingModifies(ClientTable afterAdds) : IChunkProcessor {
       _modifiedRowsIndexSpace = new RowSequence[ncols];
       _modifiedRowsRemaining = new RowSequence[ncols];
       for (var i = 0; i < ncols; ++i) {
-        var rs = tableState.ConvertKeysToIndices(
-          *owner->awaitingAdds_.per_column_modifies_[i]);
+        var rs = tableState.ConvertKeysToIndices(perColumnModifies[i]);
         _modifiedRowsIndexSpace[i] = rs;
         _modifiedRowsRemaining[i] = rs;
       }
     }
 
-    if (AllEmpty(_modifiedRowsRemaining)) {
+    if (Checks.AllEmpty(_modifiedRowsRemaining)) {
       throw new Exception("Impossible: modifiedRowsRemaining is empty");
     }
 
@@ -236,7 +251,7 @@ class AwaitingModifies(ClientTable afterAdds) : IChunkProcessor {
 
     for (var i = 0; i < numSources; ++i) {
       var numRowsRemaining = _modifiedRowsRemaining[i].Size;
-      var numRowsAvailable = ends[i] - begins[i];
+      var numRowsAvailable = (UInt64)(ends[i] - begins[i]);
 
       if (numRowsAvailable > numRowsRemaining) {
         throw new Exception($"col {i}: numRowsAvailable ({numRowsAvailable}) > numRowsRemaining ({numRowsRemaining})");
@@ -264,24 +279,46 @@ class AwaitingModifies(ClientTable afterAdds) : IChunkProcessor {
 
     {
       var afterModifies = tableState.Snapshot();
-      var nextState = new BuildingResult(afterModifies);
+      var nextState = new BuildingResult(tableState, prev, removedRowsIndexSpace, afterRemoves,
+        addedRowsIndexSpace, afterAdds, _modifiedRowsIndexSpace, afterModifies);
       return nextState.ProcessNextChunk(sources, begins, ends, metadata);
     }
   }
 }
 
-class BuildingResult(ClientTable afterModifies) : IChunkProcessor {
-  public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+class BuildingResult(
+  TableState tableState,
+  ClientTable prev,
+  RowSequence removedRowsIndexSpace,
+  ClientTable afterRemoves,
+  RowSequence addedRowsIndexSpace,
+  ClientTable afterAdds,
+  RowSequence[] modifiedRowsIndexSpace,
+  ClientTable afterModifies) : IChunkProcessor {
+
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
     if (!begins.Equals(ends)) {
-      throw new Exception($"Barrage logic is done processing but there is leftover caller-provided data. begins = [{string.Join(",", begins)}]. ends=[{string.Join(",", ends)}]",
+      throw new Exception(
+        $"Barrage logic is done processing but there is leftover caller-provided data. begins = [{string.Join(",", begins)}]. ends=[{string.Join(",", ends)}]");
     }
 
     var result = new TickingUpdate(prev,
       removedRowsIndexSpace, afterRemoves,
       addedRowsIndexSpace, afterAdds,
       modifiedRowsIndexSpace, afterModifies);
-    var nextState = new AwaitingMetadata();
+    var nextState = new AwaitingMetadata(tableState);
     return (result, nextState);
   }
 }
 
+static class Checks {
+  public static bool AllEmpty(RowSequence[] rowSequences) {
+    return rowSequences.All(rs => rs.Empty);
+  }
+
+  public static void AssertAllSame(int val0, int val1, int val2) {
+    if (val0 != val1 || val0 != val2) {
+      throw new Exception($"Sizes differ: {val0} vs {val1} vs {val2}");
+    }
+  }
+}
