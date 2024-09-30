@@ -1,5 +1,4 @@
 ﻿using C5;
-using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -81,7 +80,7 @@ public class SpaceMapper {
   /// Call that set of deleted keys K.The cardinality of K might be smaller than
   /// (end_key - begin_key) because not all keys in that range are expected to be present.
   ///
-  /// Calculate a new set of keys KNew = { k ∈ K | (k - begin_key + dest_key) }
+  /// Then calculate a new set of keys KNew = { k ∈ K | (k - begin_key + dest_key) }
   /// and insert this new set of keys into the map.
   ///
   /// This has the effect of offsetting all the existing keys by (dest_key - begin_key)
@@ -92,7 +91,39 @@ public class SpaceMapper {
   /// <param name="destKey">The start of the target range to move keys to</param>
   /// <exception cref="NotImplementedException"></exception>
   public void ApplyShift(UInt64 beginKey, UInt64 endKey, UInt64 destKey) {
-    throw new NotImplementedException("NIY");
+    // Note that [begin_key, end_key) is potentially a superset of the keys we have.
+    // We need to remove all our keys in the range [begin_key, end_key),
+    // and then, for each key k that we removed, add a new key (k - begin_key + dest_key).
+
+    // We start by building the new ranges
+    // As we scan the keys in our set, we build this vector which contains contiguous ranges.
+    var newRanges = new List<(UInt64, UInt64)>();
+    var subset = _set.RangeFromTo(beginKey, endKey);
+    foreach (var item in subset) {
+      var itemOffset = item - beginKey;
+      var newKey = destKey + itemOffset;
+      if (newRanges.Count > 0 && newRanges[^1].Item2 == newKey) {
+        // This key is contiguous with the last range, so extend it by one.
+        var back = newRanges[^1];
+        newRanges[^1] = (back.Item1, back.Item2 + 1);  // aka newKey + 1
+      } else {
+        // This key is not contiguous with the last range (or there is no last range), so
+        // start a new range here having size 1.
+        newRanges.Add((newKey, newKey + 1));
+      }
+    }
+
+    // Shifts do not change the size of the set. So, note the original size as a sanity check.
+    var originalSize = _set.Count;
+    _set.RemoveRangeFromTo(beginKey, endKey);
+    foreach (var entry in newRanges) {
+      _ = AddRange(entry.Item1, entry.Item2);
+    }
+    var finalSize = _set.Count;
+
+    if (originalSize != finalSize) {
+      throw new Exception($"Unexpected SpaceMapper size change: from {originalSize} to {finalSize}");
+    }
   }
 
   /**
