@@ -97,19 +97,19 @@ std::shared_ptr<RowSequence> ImmerTableState::AddKeys(const RowSequence &rows_to
   return spaceMapper_.AddKeys(rows_to_add_key_space);
 }
 
-void ImmerTableState::AddData(const std::vector<std::shared_ptr<ColumnSource>> &src,
+void ImmerTableState::AddData(const std::vector<std::shared_ptr<ColumnSource>> &sources,
     const std::vector<size_t> &begins, const std::vector<size_t> &ends,
     const RowSequence &rows_to_add_index_space) {
-  auto ncols = src.size();
+  auto ncols = sources.size();
   auto nrows = rows_to_add_index_space.Size();
-    AssertAllSame(src.size(), begins.size(), ends.size());
+    AssertAllSame(sources.size(), begins.size(), ends.size());
     AssertLeq(ncols, flexVectors_.size(), "More columns provided than was expected ({} vs {})");
   for (size_t i = 0; i != ncols; ++i) {
       AssertLeq(nrows, ends[i] - begins[i], "Sources contain insufficient data ({} vs {})");
   }
   auto added_data = MakeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
   for (size_t i = 0; i != ncols; ++i) {
-    added_data.push_back(MakeFlexVectorFromColumnSource(*src[i], begins[i], begins[i] + nrows));
+    added_data.push_back(MakeFlexVectorFromColumnSource(*sources[i], begins[i], begins[i] + nrows));
   }
 
   auto add_chunk = [this, &added_data](uint64_t begin_index, uint64_t end_index) {

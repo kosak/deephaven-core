@@ -15,8 +15,24 @@ public:
   SpaceMapper();
   ~SpaceMapper();
 
+  /**
+   * Adds the keys in the half-open interval [begin_key, end_key_) to the set.
+   * The keys must not already exist in the set. If they do, an exception is thrown.
+   * @param begin_key The first key to insert
+   * @param end_key One past the last key to insert
+   * @return The rank of begin_key
+   */
   [[nodiscard]]
   uint64_t AddRange(uint64_t begin_key, uint64_t end_key);
+
+
+  /**
+   * Removes the keys in the half-open interval [begin_key, end_key_) from the set.
+   * It is ok if some or all of the keys do not exist in the set.
+   * @param begin_key The first key to insert
+   * @param end_key One past the last key to insert
+   * @return The rank of begin_key, prior to the deletion
+   */
   [[nodiscard]]
   uint64_t EraseRange(uint64_t begin_key, uint64_t end_key);
   void ApplyShift(uint64_t begin_key, uint64_t end_key, uint64_t dest_key);

@@ -511,7 +511,7 @@ std::optional<TickingUpdate> AwaitingModifies::ProcessNextChunk(BarrageProcessor
 
   for (const auto &mr : modified_rows_remaining_) {
     if (!mr->Empty()) {
-      // Need more data from caller.
+      // At least one of our colums is hungry for more data that we don't have.
       return {};
     }
   }

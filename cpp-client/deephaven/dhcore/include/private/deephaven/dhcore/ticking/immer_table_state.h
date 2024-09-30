@@ -32,11 +32,22 @@ public:
    * all at once, or perhaps in slices) to fill in the data. Once the caller is done, the keys
    * and data will be consistent once again. Note that AddKeys/AddData only support adding new keys.
    * It is an error to try to re-add any existing key.
+   * @param rows_to_add_key_space Keys to add, represented in key space
+   * @return Added keys, represented in index space
    */
   [[nodiscard]]
   std::shared_ptr<RowSequence> AddKeys(const RowSequence &rows_to_add_key_space);
 
-  void AddData(const std::vector<std::shared_ptr<ColumnSource>> &begin_index, const std::vector<size_t> &end_index,
+  /**
+   * For each column i, insert the interval of data [begins[i], ends[i]) taken from the column source
+   * sources[i], into the table at the index space positions indicated by 'rowsToAddIndexSpace'.
+   * </summary>
+   * @param sources The ColumnSources
+   * @param begins The array of start indices (inclusive) for each column
+   * @param ends The array of end indices (exclusive) for each column
+   * @param rows_to_add_index_space Index space positions where the data should be inserted
+   */
+  void AddData(const std::vector<std::shared_ptr<ColumnSource>> &sources, const std::vector<size_t> &begins,
                const std::vector<size_t> &ends, const RowSequence &rows_to_add_index_space);
 
   [[nodiscard]]
