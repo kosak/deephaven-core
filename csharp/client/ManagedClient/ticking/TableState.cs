@@ -6,12 +6,13 @@ namespace Deephaven.ManagedClient;
 
 public class TableState {
   private readonly SpaceMapper _spaceMapper = new();
-  private readonly IColumnSource[] _sourceData;
+  private readonly ArrayColumnSource[] _sourceData;
   private readonly int[] _sourceSizes;
 
 
   public TableState(Schema schema) {
-    _dataSources = schema.FieldsList.Select(f => MakeEmptyArrayOfCorrespondingType(f.DataType)).ToArray();
+    _sourceData = schema.FieldsList.Select(f => ArrayColumnSource.CreateFromArrowType(f.DataType, 0)).ToArray();
+    _sourceSizes = new int[_sourceData.Length];
   }
 
   /// <summary>

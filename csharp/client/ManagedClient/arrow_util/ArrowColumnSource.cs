@@ -12,16 +12,43 @@ global using LocalDateArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSou
 global using LocalTimeArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.LocalTime>;
 
 using Apache.Arrow;
+using Apache.Arrow.Types;
 
 namespace Deephaven.ManagedClient;
 
-public class ArrowColumnSource<T>(ChunkedArray chunkedArray) : IColumnSource<T> {
-  public void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
+public abstract class ArrowColumnSource : IColumnSource {
+  public static ArrowColumnSource CreateFromColumn(Column column) {
+    var visitor = new ArrowColumnSourceMaker(column.Data);
+    column.Type.Accept(visitor);
+    if (visitor.Result == null) {
+      throw new Exception($"No result set for {column.Data.DataType}");
+    }
+    return visitor.Result;
+  }
+
+  public static (ArrowColumnSource, int) CreateFromListArray(ListArray la) {
+    if (la.Length != 1) {
+      throw new Exception($"Expected ListArray of length 1, got {la.Length}");
+    }
+    var array = la.GetSlicedValues(0);
+    var chunkedArray = new ChunkedArray(new[] { array });
+
+    var visitor = new ArrowColumnSourceMaker(chunkedArray);
+    array.Data.DataType.Accept(visitor);
+    return (visitor.Result!, array.Length);
+  }
+
+  public abstract void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
+  public abstract void Accept(IColumnSourceVisitor visitor);
+}
+
+public sealed class ArrowColumnSource<T>(ChunkedArray chunkedArray) : ArrowColumnSource, IColumnSource<T> {
+  public override void FillChunk(RowSequence rows, Chunk destData, Chunk<bool>? nullFlags) {
     var visitor = new FillChunkVisitor(chunkedArray, rows, destData, nullFlags);
     Accept(visitor);
   }
 
-  public void Accept(IColumnSourceVisitor visitor) {
+  public override void Accept(IColumnSourceVisitor visitor) {
     IColumnSource.Accept(this, visitor);
   }
 }
@@ -217,4 +244,72 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
   public int SegmentLength => (_segmentEnd - _segmentBegin).ToIntExact();
 
   public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
+}
+
+class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
+  IArrowTypeVisitor<UInt16Type>,
+  IArrowTypeVisitor<Int8Type>,
+  IArrowTypeVisitor<Int16Type>,
+  IArrowTypeVisitor<Int32Type>,
+  IArrowTypeVisitor<Int64Type>,
+  IArrowTypeVisitor<FloatType>,
+  IArrowTypeVisitor<DoubleType>,
+  IArrowTypeVisitor<BooleanType>,
+  IArrowTypeVisitor<StringType>,
+  IArrowTypeVisitor<TimestampType>,
+  IArrowTypeVisitor<Date64Type>,
+  IArrowTypeVisitor<Time64Type> {
+  public ArrowColumnSource? Result { get; private set; }
+
+  public void Visit(UInt16Type type) {
+    Result = new CharArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(Int8Type type) {
+    Result = new ByteArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(Int16Type type) {
+    Result = new Int16ArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(Int32Type type) {
+    Result = new Int32ArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(Int64Type type) {
+    Result = new Int64ArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(FloatType type) {
+    Result = new FloatArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(DoubleType type) {
+    Result = new DoubleArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(BooleanType type) {
+    Result = new BooleanArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(StringType type) {
+    Result = new StringArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(TimestampType type) {
+    Result = new TimestampArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(Date64Type type) {
+    Result = new LocalDateArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(Time64Type type) {
+    Result = new LocalTimeArrowColumnSource(chunkedArray);
+  }
+
+  public void Visit(IArrowType type) {
+    throw new Exception($"type {type.Name} is not supported");
+  }
 }

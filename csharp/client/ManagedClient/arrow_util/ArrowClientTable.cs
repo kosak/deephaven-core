@@ -11,7 +11,7 @@ public sealed class ArrowClientTable : ClientTable {
     var columnSources = new List<IColumnSource>();
     for (var i = 0; i != arrowTable.ColumnCount; ++i) {
       var col = arrowTable.Column(i);
-      columnSources.Add(ArrowUtil.MakeColumnSource(col));
+      columnSources.Add(ArrowColumnSource.CreateFromColumn(col));
     }
 
     return new ArrowClientTable(arrowTable, rowSequence, columnSources.ToArray());

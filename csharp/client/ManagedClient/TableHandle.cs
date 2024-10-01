@@ -176,7 +176,7 @@ public class TableHandle : IDisposable {
           throw new Exception($"Expected ListArray type, got {rbCol.GetType().Name}");
         }
 
-        var (cs, size) = ArrowUtil.MakeColumnSourceFromListArray(la);
+        var (cs, size) = ArrowColumnSource.CreateFromListArray(la);
         columns[i] = cs;
         sizes[i] = size;
       }
