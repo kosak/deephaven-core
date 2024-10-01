@@ -1,4 +1,17 @@
-﻿using Apache.Arrow;
+﻿global using BooleanArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<bool>;
+global using StringArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<string>;
+global using CharArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<char>;
+global using ByteArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<sbyte>;
+global using Int16ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int16>;
+global using Int32ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int32>;
+global using Int64ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int64>;
+global using FloatArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<float>;
+global using DoubleArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<double>;
+global using TimestampArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.DhDateTime>;
+global using LocalDateArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.LocalDate>;
+global using LocalTimeArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.LocalTime>;
+
+using Apache.Arrow;
 
 namespace Deephaven.ManagedClient;
 

@@ -1,7 +1,25 @@
 ﻿namespace Deephaven.ManagedClient;
 
 public static class ChunkMaker {
-  private class MyVisitor(int chunkSize) : IColumnSourceVisitor {
+  public static Chunk CreateChunkFor(IColumnSource columnSource, int chunkSize) {
+    var visitor = new MyVisitor(chunkSize);
+    columnSource.Accept(visitor);
+    return visitor.Result!;
+  }
+
+  private class MyVisitor(int chunkSize) :
+    IColumnSourceVisitor<ICharColumnSource>,
+    IColumnSourceVisitor<IByteColumnSource>,
+    IColumnSourceVisitor<IInt16ColumnSource>,
+    IColumnSourceVisitor<IInt32ColumnSource>,
+    IColumnSourceVisitor<IInt64ColumnSource>,
+    IColumnSourceVisitor<IFloatColumnSource>,
+    IColumnSourceVisitor<IDoubleColumnSource>,
+    IColumnSourceVisitor<IBooleanColumnSource>,
+    IColumnSourceVisitor<IStringColumnSource>,
+    IColumnSourceVisitor<ITimestampColumnSource>,
+    IColumnSourceVisitor<ILocalDateColumnSource>,
+    IColumnSourceVisitor<ILocalTimeColumnSource> {
     public Chunk? Result { get; private set; }
 
     public void Visit(ICharColumnSource cs) {
@@ -52,15 +70,8 @@ public static class ChunkMaker {
       Result = LocalTimeChunk.Create(chunkSize);
     }
 
-  }
-
-  public static Chunk CreateChunkFor(IColumnSource columnSource, int chunkSize) {
-    var visitor = new MyVisitor(chunkSize);
-    columnSource.AcceptVisitor(visitor);
-    if (visitor.Result == null) {
-      throw new Exception($"Programming error: Result not set for type {columnSource.GetType().Name}");
+    public void Visit(IColumnSource cs) {
+      throw new Exception($"Programming error: No visitor for type {cs.GetType().Name}");
     }
-
-    return visitor.Result;
   }
 }
