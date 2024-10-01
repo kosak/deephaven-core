@@ -1,6 +1,5 @@
-﻿using System;
-using Apache.Arrow;
-using Array = System.Array;
+﻿using Apache.Arrow;
+using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -32,11 +31,11 @@ public class TableState {
   /// For each i, insert the interval of data srcRanges[i] taken from the column source
   /// sources[i], into the table at the index space positions indicated by 'rowsToAddIndexSpace'.
   /// Note that the values in 'rowsToAddIndexSpace' assume that the values are being inserted as the
-  /// RowSequence is processed left to right. That is, a given index key is meant to be interpreted
-  /// as though all the index keys to its left have already been added.
+  /// RowSequence is processed left to right. That is, a given index key in 'rowsToAddIndexSpace'
+  /// is meant to be interpreted as though all the index keys to its left have already been added.
   ///
   /// <example>
-  /// Assuming the original data has values [C,D,G,H]. As always this is densely packed into the ColumnSource at positions [0,1,2,3].
+  /// Assuming the original data has values [C,D,G,H]. This is densely packed (as always) into the ColumnSource at positions [0,1,2,3].
   /// And assume that the sources has [A,B,E,F] at requested positions [0, 1, 4, 5].
   /// The algorithm would run as follows:
   /// Next position is 0, and dest length is 0, so pull in new data A, so dest column is now [A]
@@ -49,16 +48,12 @@ public class TableState {
   /// </example>
   /// </summary>
   /// <param name="sources">The ColumnSources</param>
-  /// <param name="ranges">The array of start indices (inclusive) for each column</param>
-  /// <param name="ends">The array of end indices (exclusive) for each columns</param>
+  /// <param name="srcRanges">The data range to use for each column</param>
   /// <param name="rowsToAddIndexSpace">Index space positions where the data should be inserted</param>
-  public void AddData(IColumnSource[] sources, (int, int) srcRanges, RowSequence rowsToAddIndexSpace) {
+  public void AddData(IColumnSource[] sources, Interval<int>[] srcRanges, RowSequence rowsToAddIndexSpace) {
     var ncols = sources.Length;
     var nrows = rowsToAddIndexSpace.Size.ToIntExact();
-    Checks.AssertAllSame(sources.Length, begins.Length, ends.Length);
-    if (ncols != _sourceData.Length) {
-      throw new Exception($"Expected {_sourceData.Length} columns provided, got {ncols}");
-    }
+    Checks.AssertAllSame(_sourceData.Length, sources.Length, srcRanges.Length);
 
     for (var i = 0; i != ncols; ++i) {
       var numElementsProvided = ends[i] - begins[i];
@@ -97,6 +92,7 @@ public class TableState {
       CopyChunk(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
 
       _sourceData[i] = destData;
+      _sourceSizes[i] = destSize;
     }
   }
 
@@ -115,8 +111,36 @@ public class TableState {
   /// <param name="rowsToEraseKeySpace">The keys, represented in key space, to erase</param>
   /// <returns>The keys, represented in index space, that were erased</returns>
   public RowSequence Erase(RowSequence rowsToEraseKeySpace) {
+    var result = _spaceMapper.ConvertKeysToIndices(rowsToEraseKeySpace);
+    var ncols = _sourceData.Length;
+    var nrows = rowsToEraseKeySpace.Size;
+    for (var i = 0; i != ncols; ++i) {
+      var srcData = _sourceData[i];
+      var srcIndex = 0;
 
-    throw new NotImplementedException("hi");
+      var destSize = _sourceSizes[i] - nrows;
+      var destData = origData.CreateOfSameType(destSize);
+      var destDataIndex = 0;
+
+      foreach (var (beginKey, endKey) in rowsToEraseKeySpace.Intervals) {
+        var size = endKey - beginKey;
+        var beginIndex = _spaceMapper.EraseRange(beginKey, endKey);
+        var endIndex = beginIndex + size;
+
+        var numItemsToCopy = beginIndex - srcIndex;
+
+        CopyChunk(origData, origDataIndex, destData, destDataIndex, numItemsToCopy);
+
+        srcIndex = endKey;
+      }
+
+      var numFinalItemsToCopy = _sourceSizes[i] - origDataIndex;
+      CopyChunk(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
+
+      _sourceData[i] = destData;
+      _sourceSizes[i] = destSize;
+    }
+    return result;
   }
 
   /// <summary>
