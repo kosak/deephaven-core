@@ -1,25 +1,11 @@
-﻿using Deephaven.ManagedClient;
-using Google.Protobuf.WellKnownTypes;
-using Io.Deephaven.Proto.Backplane.Grpc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
-using Apache.Arrow.Flight;
+﻿using Io.Deephaven.Proto.Backplane.Grpc;
 using Apache.Arrow.Flight.Client;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
-using Exception = System.Exception;
-using System.Threading;
 using Google.Protobuf;
 
 namespace Deephaven.ManagedClient;
-public static class Stupid {
-}
-
 public class Server {
   private const string AuthorizationKey = "authorization";
   private const string TimeoutKey = "http.session.durationMs";
@@ -96,7 +82,6 @@ public class Server {
   private readonly IReadOnlyList<(string, string)> _extraHeaders;
   private readonly TimeSpan _expirationInterval;
   private DateTime _nextHandshakeTime;
-
 
   private readonly object _sync = new();
   /// <summary>
