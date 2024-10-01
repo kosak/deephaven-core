@@ -17,49 +17,12 @@ using System.Threading;
 using Google.Protobuf;
 
 namespace Deephaven.ManagedClient;
-
-public static class UtilSomewhere {
-  public static bool IsEmpty(this string s) {
-    return s.Length == 0;
-  }
-}
-
-public static class Painful {
-  public static ChannelCredentials GetCredentials(
-    bool useTls,
-    string tlsRootCerts,
-    string clientRootChain,
-    string clientPrivateKey) {
-    if (!useTls) {
-      return ChannelCredentials.Insecure;
-    }
-
-    var certPair = new KeyCertificatePair(clientRootChain, clientPrivateKey);
-    return new SslCredentials(tlsRootCerts, certPair);
-  }
-}
-
 public static class Stupid {
-  private const string TimeoutKey = "http.session.durationMs";
-
-  public static bool TryExtractExpirationInterval(ConfigurationConstantsResponse ccResp, out TimeSpan result) {
-    if (!ccResp.ConfigValues.TryGetValue(TimeoutKey, out var value) || !value.HasStringValue) {
-      result = TimeSpan.Zero;
-      return false;
-    }
-
-    if (!int.TryParse(value.StringValue, out var intResult)) {
-      throw new Exception($"Failed to parse {value.StringValue} as an integer");
-    }
-
-    // As a matter of policy we use half of whatever the server tells us is the expiration time.
-    result = TimeSpan.FromMilliseconds((double)intResult / 2);
-    return true;
-  }
 }
 
 public class Server {
   private const string AuthorizationKey = "authorization";
+  private const string TimeoutKey = "http.session.durationMs";
 
   // fix client_options
   public static Server CreateFromTarget(string target, ClientOptions clientOptions) {
@@ -80,7 +43,7 @@ public class Server {
 //
 
     var channelOptions = new GrpcChannelOptions();
-    channelOptions.Credentials = Painful.GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
+    channelOptions.Credentials = GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
       clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
     var targetToUse = (clientOptions.UseTls ? "https://" : "http://") + target;
 
@@ -109,7 +72,7 @@ public class Server {
       var ccResp = ccTask.ResponseAsync.Result;
       var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
       sessionToken = maybeToken ?? throw new Exception("Configuration response didn't contain authorization token");
-      if (!Stupid.TryExtractExpirationInterval(ccResp, out expirationInterval)) {
+      if (!TryExtractExpirationInterval(ccResp, out expirationInterval)) {
         // arbitrary
         expirationInterval = TimeSpan.FromSeconds(10);
       }
@@ -239,6 +202,34 @@ public class Server {
       Console.Error.WriteLine("Also, implement Me");
       return "It's Me";
     }
+  }
+
+  private static ChannelCredentials GetCredentials(
+    bool useTls,
+    string tlsRootCerts,
+    string clientRootChain,
+    string clientPrivateKey) {
+    if (!useTls) {
+      return ChannelCredentials.Insecure;
+    }
+
+    var certPair = new KeyCertificatePair(clientRootChain, clientPrivateKey);
+    return new SslCredentials(tlsRootCerts, certPair);
+  }
+
+  private static bool TryExtractExpirationInterval(ConfigurationConstantsResponse ccResp, out TimeSpan result) {
+    if (!ccResp.ConfigValues.TryGetValue(TimeoutKey, out var value) || !value.HasStringValue) {
+      result = TimeSpan.Zero;
+      return false;
+    }
+
+    if (!int.TryParse(value.StringValue, out var intResult)) {
+      throw new Exception($"Failed to parse {value.StringValue} as an integer");
+    }
+
+    // As a matter of policy we use half of whatever the server tells us is the expiration time.
+    result = TimeSpan.FromMilliseconds((double)intResult / 2);
+    return true;
   }
 }
 

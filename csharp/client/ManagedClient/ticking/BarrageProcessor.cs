@@ -7,7 +7,7 @@ using Array = System.Array;
 namespace Deephaven.ManagedClient;
 
 interface IChunkProcessor {
-  (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata);
+  (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[]? metadata);
 }
 
 public class BarrageProcessor {
@@ -35,7 +35,7 @@ public class BarrageProcessor {
 
 class AwaitingMetadata(int numCols, TableState tableState) : IChunkProcessor {
   public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends,
-    byte[] metadata) {
+    byte[]? metadata) {
     if (metadata == null) {
       throw new Exception("Metadata was required here, but none was received");
     }
@@ -126,12 +126,6 @@ class AwaitingMetadata(int numCols, TableState tableState) : IChunkProcessor {
   }
 }
 
-public static class Stupid2 {
-  public static bool StructurallyEquals(this IStructuralEquatable s1, object s2) {
-    return s1.Equals(s2, StructuralComparisons.StructuralEqualityComparer);
-  }
-}
-
 class AwaitingAdds(
   int numCols,
   TableState tableState,
@@ -144,7 +138,8 @@ class AwaitingAdds(
   bool _firstTime = true;
   private RowSequence _addedRowsRemaining = RowSequence.CreateEmpty();
 
-  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins,
+    int[] ends, byte[]? metadata) {
     if (_firstTime) {
       _firstTime = false;
 
@@ -224,7 +219,8 @@ class AwaitingModifies(
   private RowSequence[] _modifiedRowsRemaining = [];
   private RowSequence[] _modifiedRowsIndexSpace = [];
 
-  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends,
+    byte[]? metadata) {
     if (_firstTime) {
       _firstTime = false;
 
@@ -306,10 +302,11 @@ class BuildingResult(
   RowSequence[] modifiedRowsIndexSpace,
   ClientTable afterModifies) : IChunkProcessor {
 
-  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
+  public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[]? metadata) {
     if (!begins.StructurallyEquals(ends)) {
       throw new Exception(
-        $"Barrage logic is done processing but there is leftover caller-provided data. begins = [{string.Join(",", begins)}]. ends=[{string.Join(",", ends)}]");
+        $"Barrage logic is done processing but there is leftover caller-provided data. " +
+        $"begins = [{string.Join(",", begins)}]. ends=[{string.Join(",", ends)}]");
     }
 
     var result = new TickingUpdate(prev,
