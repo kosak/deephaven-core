@@ -27,7 +27,16 @@ public interface IColumnSource {
   }
 }
 
+
 public interface IColumnSource<T> : IColumnSource {
+
+}
+
+public interface IMutableColumnSource : IColumnSource {
+  void FillFromChunk(RowSequence rows, Chunk src, BooleanChunk? nullFlags);
+}
+
+public interface IMutableColumnSource<T> : IMutableColumnSource, IColumnSource<T> {
 
 }
 

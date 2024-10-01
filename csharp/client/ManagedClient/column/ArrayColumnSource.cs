@@ -15,7 +15,7 @@ using Apache.Arrow.Types;
 
 namespace Deephaven.ManagedClient;
 
-public abstract class ArrayColumnSource(int size) : IColumnSource {
+public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
   public static ArrayColumnSource CreateFromArrowType(IArrowType type, int size) {
     var visitor = new ArrayColumnSourceMaker(size);
     type.Accept(visitor);
@@ -25,26 +25,50 @@ public abstract class ArrayColumnSource(int size) : IColumnSource {
   protected readonly bool[] Nulls = new bool[size];
 
   public abstract void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
+  public abstract void FillFromChunk(RowSequence rows, Chunk src, BooleanChunk? nullFlags);
+
   public abstract void Accept(IColumnSourceVisitor visitor);
+
+  public abstract ArrayColumnSource CreateOfSameType(int size);
 }
 
-public sealed class ArrayColumnSource<T>(int size) : ArrayColumnSource(size), IColumnSource<T> {
+public sealed class ArrayColumnSource<T>(int size) : ArrayColumnSource(size), IMutableColumnSource<T> {
   private readonly T[] _data = new T[size];
 
   public override void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags) {
     var typedChunk = (Chunk<T>)dest;
+    var nextIndex = 0;
     foreach (var (begin, end) in rows.Intervals) {
       for (var i = begin; i < end; ++i) {
-        typedChunk.Data[i] = _data[i];
+        typedChunk.Data[nextIndex] = _data[i];
         if (nullFlags != null) {
-          nullFlags.Data[i] = Nulls[i];
+          nullFlags.Data[nextIndex] = Nulls[i];
         }
+        ++nextIndex;
+      }
+    }
+  }
+
+  public override void FillFromChunk(RowSequence rows, Chunk src, BooleanChunk? nullFlags) {
+    var typedChunk = (Chunk<T>)src;
+    var nextIndex = 0;
+    foreach (var (begin, end) in rows.Intervals) {
+      for (var i = begin; i < end; ++i) {
+        _data[i] = typedChunk.Data[nextIndex];
+        if (nullFlags != null) {
+          Nulls[i] = nullFlags.Data[nextIndex];
+        }
+        ++nextIndex;
       }
     }
   }
 
   public override void Accept(IColumnSourceVisitor visitor) {
     IColumnSource.Accept(this, visitor);
+  }
+
+  public override ArrayColumnSource CreateOfSameType(int size) {
+    return new ArrayColumnSource<T>(size);
   }
 }
 

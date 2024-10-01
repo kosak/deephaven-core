@@ -43,7 +43,7 @@ public static class Program {
       var cs = ct.GetColumn(0);
 
       var size = ct.NumRows.ToIntExact();
-      var chunk = ChunkMaker.CreateChunkFor(cs, size);
+      var chunk = Chunk.CreateChunkFor(cs, size);
       var nulls = BooleanChunk.Create(size);
       var rs = ct.RowSequence;
 

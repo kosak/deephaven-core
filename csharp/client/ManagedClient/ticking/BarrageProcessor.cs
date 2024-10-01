@@ -1,4 +1,5 @@
-﻿using Apache.Arrow;
+﻿using System.Collections;
+using Apache.Arrow;
 using Google.FlatBuffers;
 using io.deephaven.barrage.flatbuf;
 using Array = System.Array;
@@ -125,6 +126,12 @@ class AwaitingMetadata(int numCols, TableState tableState) : IChunkProcessor {
   }
 }
 
+public static class Stupid2 {
+  public static bool StructurallyEquals(this IStructuralEquatable s1, object s2) {
+    return s1.Equals(s2, StructuralComparisons.StructuralEqualityComparer);
+  }
+}
+
 class AwaitingAdds(
   int numCols,
   TableState tableState,
@@ -165,7 +172,7 @@ class AwaitingAdds(
       throw new Exception("Programming error: addedRowsRemaining is empty");
     }
 
-    if (begins.Equals(ends)) {
+    if (begins.StructurallyEquals(ends)) {
       // Need more data from caller.
       return (null, this);
     }
@@ -241,7 +248,7 @@ class AwaitingModifies(
       throw new Exception("Impossible: modifiedRowsRemaining is empty");
     }
 
-    if (begins.Equals(ends)) {
+    if (begins.StructurallyEquals(ends)) {
       // Need more data from caller.
       return (null, this);
     }
@@ -300,7 +307,7 @@ class BuildingResult(
   ClientTable afterModifies) : IChunkProcessor {
 
   public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(IColumnSource[] sources, int[] begins, int[] ends, byte[] metadata) {
-    if (!begins.Equals(ends)) {
+    if (!begins.StructurallyEquals(ends)) {
       throw new Exception(
         $"Barrage logic is done processing but there is leftover caller-provided data. begins = [{string.Join(",", begins)}]. ends=[{string.Join(",", ends)}]");
     }

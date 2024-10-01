@@ -75,8 +75,8 @@ public class TableState {
       var newDataIndex = 0;
 
       var destSize = _sourceSizes[i] + nrows;
-      var destData = Array.CreateInstance(origData.GetType().GetElementType()!, destSize);
-      int destDataIndex = 0;
+      var destData = origData.CreateOfSameType(destSize);
+      var destDataIndex = 0;
       
       foreach (var interval in rowsToAddIndexSpace.Intervals) {
         var beginKey = interval.Item1.ToIntExact();
@@ -99,6 +99,15 @@ public class TableState {
 
       _sourceData[i] = destData;
     }
+  }
+
+  private static void CopyChunk(IColumnSource src, int srcIndex, IMutableColumnSource dest, int destIndex, int numItems) {
+    var chunk = Chunk.CreateChunkFor(src, numItems);
+    var nulls = BooleanChunk.Create(numItems);
+    var srcRs = RowSequence.CreateSequential((UInt64)srcIndex, (UInt64)srcIndex + (UInt64)numItems);
+    src.FillChunk(srcRs, chunk, nulls);
+    var destRs = RowSequence.CreateSequential((UInt64)destIndex, (UInt64)destIndex + (UInt64)numItems);
+    dest.FillFromChunk(destRs, chunk, nulls);
   }
 
   /// <summary>
