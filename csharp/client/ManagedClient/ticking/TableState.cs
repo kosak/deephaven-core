@@ -16,44 +16,43 @@ public class TableState {
   }
 
   /// <summary>
-  /// When the caller wants to add data to the ImmerTableState, they do it in two steps:
-  /// AddKeys and then AddData.First, they call AddKeys, which updates the (key space) ->
-  /// (position space) mapping. Immediately after this call (but before AddData), the key mapping
-  /// will be inconsistent with respect to the data.But then, the caller calls AddData(perhaps
-  /// all at once, or perhaps in slices) to fill in the data. Once the caller is done, the keys
-  /// and data will be consistent once again. Note that AddKeys/AddData only support adding new keys.
+  /// Adds the keys (represented in key space) to the SpaceMapper. Note that this method
+  /// temporarily breaks the consistency between the key mapping and the data.
+  /// To restore the consistency, the caller is expected to next call AddData.
+  /// Note that AddKeys/AddData only support adding new keys.
   /// It is an error to try to re-add any existing key.
   /// </summary>
-  /// <param name="rowsToAddKeySpace">Keys to add, represented in key space</param>
+  /// <param name="keysToAddKeySpace">Keys to add, represented in key space</param>
   /// <returns>Added keys, represented in index space</returns>
-  /// <exception cref="NotImplementedException"></exception>
-  public RowSequence AddKeys(RowSequence rowsToAddKeySpace) {
-    return _spaceMapper.AddKeys(rowsToAddKeySpace);
+  public RowSequence AddKeys(RowSequence keysToAddKeySpace) {
+    return _spaceMapper.AddKeys(keysToAddKeySpace);
   }
 
   /// <summary>
-  /// For each column i, insert the interval of data [begins[i], ends[i]) taken from the column source
+  /// For each i, insert the interval of data srcRanges[i] taken from the column source
   /// sources[i], into the table at the index space positions indicated by 'rowsToAddIndexSpace'.
-  /// Note that the values 'rowsToAddIndexSpace' assume that the values are being inserted as the
-  /// RowSequence is process. That is, assuming the original data has values [C,D,G,H] at positions [0,1,2,3].
-  /// And assume that the sources has [A,B,E,F] at requested positions [0, 1, 4, 5].
+  /// Note that the values in 'rowsToAddIndexSpace' assume that the values are being inserted as the
+  /// RowSequence is processed left to right. That is, a given index key is meant to be interpreted
+  /// as though all the index keys to its left have already been added.
   ///
   /// <example>
-  /// This would effectively be interpreted as:
-  /// Next position is 0, and dest length is 0, so pull in new data A, so column is now [A]
-  /// Next position is 1, and dest length is 1, so pull in new data B, so column is now [A,B]
-  /// Next position is 4, and dest length is 2, so pull in old data C, so column is now [A,B,C] (and don't advance)
-  /// Next position is still 4, and dest length is 3, so pull in old data D, so column is now [A,B,C,D]
-  /// Next position is still 4, and dest length is 4, so pull in new data E, so column is now [A,B,C,D,E]
-  /// Next position is 5, and dest length is 5, so pull in new data F, so column is now [A,B,C,D,E,F]
-  /// Leftover values are [G,H] so column is now [A,B,C,D,E,F,G,H]
+  /// Assuming the original data has values [C,D,G,H]. As always this is densely packed into the ColumnSource at positions [0,1,2,3].
+  /// And assume that the sources has [A,B,E,F] at requested positions [0, 1, 4, 5].
+  /// The algorithm would run as follows:
+  /// Next position is 0, and dest length is 0, so pull in new data A, so dest column is now [A]
+  /// Next position is 1, and dest length is 1, so pull in new data B, so dest column is now [A,B]
+  /// Next position is 4, and dest length is 2, so pull in *old* data C, so dest column is now [A,B,C] (and don't advance)
+  /// Next position is still 4, and dest length is 3, so pull in *old* data D, so dest column is now [A,B,C,D] (and don't advance)
+  /// Next position is still 4, and dest length is 4, so pull in new data E, so dest column is now [A,B,C,D,E]
+  /// Next position is 5, and dest length is 5, so pull in new data F, so dest column is now [A,B,C,D,E,F]
+  /// Leftover values are [G,H] so pull them in, and dest column is now [A,B,C,D,E,F,G,H]
   /// </example>
   /// </summary>
   /// <param name="sources">The ColumnSources</param>
-  /// <param name="begins">The array of start indices (inclusive) for each column</param>
+  /// <param name="ranges">The array of start indices (inclusive) for each column</param>
   /// <param name="ends">The array of end indices (exclusive) for each columns</param>
   /// <param name="rowsToAddIndexSpace">Index space positions where the data should be inserted</param>
-  public void AddData(IColumnSource[] sources, int[] begins, int[] ends, RowSequence rowsToAddIndexSpace) {
+  public void AddData(IColumnSource[] sources, (int, int) srcRanges, RowSequence rowsToAddIndexSpace) {
     var ncols = sources.Length;
     var nrows = rowsToAddIndexSpace.Size.ToIntExact();
     Checks.AssertAllSame(sources.Length, begins.Length, ends.Length);
@@ -116,6 +115,7 @@ public class TableState {
   /// <param name="rowsToEraseKeySpace">The keys, represented in key space, to erase</param>
   /// <returns>The keys, represented in index space, that were erased</returns>
   public RowSequence Erase(RowSequence rowsToEraseKeySpace) {
+
     throw new NotImplementedException("hi");
   }
 
