@@ -102,8 +102,8 @@ void ImmerTableState::AddData(const std::vector<std::shared_ptr<ColumnSource>> &
     const RowSequence &rows_to_add_index_space) {
   auto ncols = sources.size();
   auto nrows = rows_to_add_index_space.Size();
-    AssertAllSame(sources.size(), begins.size(), ends.size());
-    AssertLeq(ncols, flexVectors_.size(), "More columns provided than was expected ({} vs {})");
+  AssertAllSame(sources.size(), begins.size(), ends.size());
+  AssertLeq(ncols, flexVectors_.size(), "More columns provided than was expected ({} vs {})");
   for (size_t i = 0; i != ncols; ++i) {
       AssertLeq(nrows, ends[i] - begins[i], "Sources contain insufficient data ({} vs {})");
   }
