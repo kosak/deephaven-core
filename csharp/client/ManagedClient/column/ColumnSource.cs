@@ -16,6 +16,15 @@ namespace Deephaven.ManagedClient;
 public interface IColumnSource {
   void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
   void Accept(IColumnSourceVisitor visitor);
+
+  public static void Accept<T>(T columnSource, IColumnSourceVisitor visitor)
+    where T : class, IColumnSource {
+    if (visitor is IColumnSourceVisitor<T> typedVisitor) {
+      typedVisitor.Visit(columnSource);
+    } else {
+      visitor.Visit(columnSource);
+    }
+  }
 }
 
 public interface IColumnSource<T> : IColumnSource {
@@ -26,6 +35,6 @@ public interface IColumnSourceVisitor {
   void Visit(IColumnSource cs);
 }
 
-public interface IColumnSourceVisitor<in T> where T : IColumnSourceVisitor {
+public interface IColumnSourceVisitor<in T> : IColumnSourceVisitor where T : IColumnSource {
   void Visit(T cs);
 }
