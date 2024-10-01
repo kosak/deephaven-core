@@ -6,7 +6,9 @@ namespace Deephaven.ManagedClient;
 
 public class TableState {
   private readonly SpaceMapper _spaceMapper = new();
-  private readonly Array[] _dataSources;
+  private readonly IColumnSource[] _sourceData;
+  private readonly int[] _sourceSizes;
+
 
   public TableState(Schema schema) {
     _dataSources = schema.FieldsList.Select(f => MakeEmptyArrayOfCorrespondingType(f.DataType)).ToArray();
@@ -54,8 +56,8 @@ public class TableState {
     var ncols = sources.Length;
     var nrows = rowsToAddIndexSpace.Size.ToIntExact();
     Checks.AssertAllSame(sources.Length, begins.Length, ends.Length);
-    if (ncols != _dataSources.Length) {
-      throw new Exception($"Expected {_dataSources.Length} columns provided, got {ncols}");
+    if (ncols != _sourceData.Length) {
+      throw new Exception($"Expected {_sourceData.Length} columns provided, got {ncols}");
     }
 
     for (var i = 0; i != ncols; ++i) {
@@ -65,14 +67,14 @@ public class TableState {
           $"RowSequence demands {nrows} elements but column {i} has only been provided {numElementsProvided} elements");
       }
 
-      var origData = _dataSources[i];
+      var origData = _sourceData[i];
       var origDataIndex = 0;
 
       var newData = sources[i];
       var newDataIndex = 0;
 
-      var destLength = origData.Length + nrows;
-      var destData = Array.CreateInstance(origData.GetType().GetElementType()!, destLength);
+      var destSize = _sourceSizes[i] + nrows;
+      var destData = Array.CreateInstance(origData.GetType().GetElementType()!, destSize);
       int destDataIndex = 0;
       
       foreach (var interval in rowsToAddIndexSpace.Intervals) {
@@ -80,22 +82,21 @@ public class TableState {
         var endKey = interval.Item2.ToIntExact();
         if (destDataIndex < beginKey) {
           var numItemsToTakeFromOrig = beginKey - destDataIndex;
-          Array.Copy(origData, origDataIndex, destData, destDataIndex, numItemsToTakeFromOrig);
+          CopyChunk(origData, origDataIndex, destData, destDataIndex, numItemsToTakeFromOrig);
           origDataIndex += numItemsToTakeFromOrig;
           destDataIndex += numItemsToTakeFromOrig;  // aka destDataIndex = beginKey
         }
 
         var numItemsToTakeFromNew = endKey - beginKey;
-        newData.FillChunk();
-        Array.Copy(newData, newDataIndex, destData, destDataIndex, numItemsToTakeFromNew);
+        CopyChunk(newData, newDataIndex, destData, destDataIndex, numItemsToTakeFromNew);
         newDataIndex += numItemsToTakeFromNew;
         destDataIndex += numItemsToTakeFromNew;
       }
 
-      var numFinalItemsToCopy = origData.Length - origDataIndex;
-      Array.Copy(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
+      var numFinalItemsToCopy = _sourceSizes[i] - origDataIndex;
+      CopyChunk(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
 
-      _dataSources[i] = destData;
+      _sourceData[i] = destData;
     }
   }
 
