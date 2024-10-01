@@ -1,62 +1,25 @@
-﻿namespace Deephaven.ManagedClient;
+﻿global using ICharColumnSource = Deephaven.ManagedClient.IGenericColumnSource<char>;
+global using IByteColumnSource = Deephaven.ManagedClient.IGenericColumnSource<sbyte>;
+global using IInt16ColumnSource = Deephaven.ManagedClient.IGenericColumnSource<System.Int16>;
+global using IInt32ColumnSource = Deephaven.ManagedClient.IGenericColumnSource<System.Int32>;
+global using IInt64ColumnSource = Deephaven.ManagedClient.IGenericColumnSource<System.Int64>;
+global using IFloatColumnSource = Deephaven.ManagedClient.IGenericColumnSource<float>;
+global using IDoubleColumnSource = Deephaven.ManagedClient.IGenericColumnSource<double>;
+global using IBooleanColumnSource = Deephaven.ManagedClient.IGenericColumnSource<bool>;
+global using IStringColumnSource = Deephaven.ManagedClient.IGenericColumnSource<string>;
+global using ITimestampColumnSource = Deephaven.ManagedClient.IGenericColumnSource<Deephaven.ManagedClient.DhDateTime>;
+global using ILocalDateColumnSource = Deephaven.ManagedClient.IGenericColumnSource<Deephaven.ManagedClient.LocalDate>;
+global using ILocalTimeColumnSource = Deephaven.ManagedClient.IGenericColumnSource<Deephaven.ManagedClient.LocalTime>;
+
+namespace Deephaven.ManagedClient;
 
 public interface IColumnSource {
   void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
   void AcceptVisitor(IColumnSourceVisitor visitor);
 }
 
-public interface IMutableColumnSource : IColumnSource {
-
-}
-
-public interface INumericColumnSource<T> : IColumnSource where T : struct {
-
-}
-
 public interface IGenericColumnSource<T> : IColumnSource {
 
-}
-
-public interface IMutableNumericColumnSource<T> : INumericColumnSource<T>, IMutableColumnSource where T : struct {
-}
-
-public interface IMutableGenericColumnSource<T> : IGenericColumnSource<T>, IMutableColumnSource {
-}
-
-public interface ICharColumnSource : INumericColumnSource<char> {
-}
-
-public interface IByteColumnSource : INumericColumnSource<sbyte> {
-}
-
-public interface IInt16ColumnSource : INumericColumnSource<Int16> {
-}
-
-public interface IInt32ColumnSource : INumericColumnSource<Int32> {
-}
-
-public interface IInt64ColumnSource : INumericColumnSource<Int64> {
-}
-
-public interface IFloatColumnSource : INumericColumnSource<float> {
-}
-
-public interface IDoubleColumnSource : INumericColumnSource<double> {
-}
-
-public interface IBooleanColumnSource : IGenericColumnSource<bool> {
-}
-
-public interface IStringColumnSource : IGenericColumnSource<string> {
-}
-
-public interface ITimestampColumnSource : IGenericColumnSource<DhDateTime> {
-}
-
-public interface ILocalDateColumnSource : IGenericColumnSource<LocalDate> {
-}
-
-public interface ILocalTimeColumnSource : IGenericColumnSource<LocalTime> {
 }
 
 public interface IColumnSourceVisitor {
