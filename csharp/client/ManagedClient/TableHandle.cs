@@ -183,9 +183,7 @@ public class TableHandle : IDisposable {
       
       Console.WriteLine("SHALL WE BEGIN");
 
-
-
-      var bp = new BarrageProcessor(numCols);
+      var bp = new BarrageProcessor(_schema);
       bp.ProcessNextChunk(columns, sizes, metadateBytes);
 
       Console.WriteLine("hi");

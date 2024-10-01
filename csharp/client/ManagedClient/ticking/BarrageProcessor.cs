@@ -10,11 +10,12 @@ interface IChunkProcessor {
 }
 
 public class BarrageProcessor {
-  private readonly TableState _tableState = new();
   private IChunkProcessor _currentProcessor;
 
-  public BarrageProcessor(int numCols) {
-    _currentProcessor = new AwaitingMetadata(numCols, _tableState);
+  public BarrageProcessor(Schema schema) {
+    var tableState = new TableState(schema);
+    var numCols = schema.FieldsList.Count;
+    _currentProcessor = new AwaitingMetadata(numCols, tableState);
   }
 
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
