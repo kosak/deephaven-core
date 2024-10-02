@@ -118,24 +118,24 @@ public class TableState {
       var srcData = _sourceData[i];
       var srcIndex = 0;
 
-      var destSize = _sourceSizes[i] - nrows;
-      var destData = origData.CreateOfSameType(destSize);
+      var destSize = ((UInt64)_sourceSizes[i] - (UInt64)nrows).ToIntExact();
+      var destData = srcData.CreateOfSameType(destSize);
       var destDataIndex = 0;
 
       foreach (var (beginKey, endKey) in rowsToEraseKeySpace.Intervals) {
-        var size = endKey - beginKey;
-        var beginIndex = _spaceMapper.EraseRange(beginKey, endKey);
+        var size = (endKey - beginKey).ToIntExact();
+        var beginIndex = _spaceMapper.EraseRange(beginKey, endKey).ToIntExact();
         var endIndex = beginIndex + size;
 
         var numItemsToCopy = beginIndex - srcIndex;
 
-        CopyChunk(origData, origDataIndex, destData, destDataIndex, numItemsToCopy);
+        CopyChunk(srcData, srcIndex, destData, destDataIndex, numItemsToCopy);
 
-        srcIndex = endKey;
+        srcIndex = endIndex;
       }
 
-      var numFinalItemsToCopy = _sourceSizes[i] - origDataIndex;
-      CopyChunk(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
+      var numFinalItemsToCopy = _sourceSizes[i] - srcIndex;
+      CopyChunk(srcData, srcIndex, destData, destDataIndex, numFinalItemsToCopy);
 
       _sourceData[i] = destData;
       _sourceSizes[i] = destSize;
@@ -149,7 +149,7 @@ public class TableState {
   /// <param name="keysRowSpace">Keys represented in key space</param>
   /// <returns>Keys represented in index space</returns>
   public RowSequence ConvertKeysToIndices(RowSequence keysRowSpace) {
-    throw new NotImplementedException("hi");
+    return _spaceMapper.ConvertKeysToIndices(keysRowSpace);
   }
 
   /// <summary>
