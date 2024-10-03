@@ -25,8 +25,25 @@ public interface IColumnSource {
       visitor.Visit(columnSource);
     }
   }
-}
 
+  public static void Copy(IColumnSource src, int srcIndex, IMutableColumnSource dest, int destIndex, int numItems) {
+    var chunkSize = Math.Min(8192, numItems);
+    var chunk = Chunk.CreateChunkFor(src, chunkSize);
+    var nulls = BooleanChunk.Create(chunkSize);
+    var itemsRemaining = numItems;
+    while (itemsRemaining != 0) {
+      var amountToCopyThisTime = Math.Min(itemsRemaining, chunkSize);
+      var srcRs = RowSequence.CreateSequential(Interval.OfStartAndSize((UInt64)srcIndex, (UInt64)amountToCopyThisTime));
+      src.FillChunk(srcRs, chunk, nulls);
+      var destRs = RowSequence.CreateSequential(Interval.OfStartAndSize((UInt64)destIndex, (UInt64)amountToCopyThisTime));
+      dest.FillFromChunk(destRs, chunk, nulls);
+
+      srcIndex += amountToCopyThisTime;
+      destIndex += amountToCopyThisTime;
+      itemsRemaining -= amountToCopyThisTime;
+    }
+  }
+}
 
 public interface IColumnSource<T> : IColumnSource {
 

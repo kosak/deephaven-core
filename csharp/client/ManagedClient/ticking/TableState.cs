@@ -8,14 +8,16 @@ public record struct SourceAndRange(IColumnSource Source, Interval Range) {
 }
 
 public class TableState {
-  private readonly SpaceMapper _spaceMapper = new();
+  private readonly Schema _schema;
   private readonly ArrayColumnSource[] _colData;
-  private readonly int[] _colSizes;
+  private int _numRows;
+  private readonly SpaceMapper _spaceMapper = new();
 
 
   public TableState(Schema schema) {
+    _schema = schema;
     _colData = schema.FieldsList.Select(f => ArrayColumnSource.CreateFromArrowType(f.DataType, 0)).ToArray();
-    _colSizes = new int[_colData.Length];
+    _numRows = 0;
   }
 
   /// <summary>
@@ -56,6 +58,8 @@ public class TableState {
   public void AddData(SourceAndRange[] sourcesAndRanges, RowSequence rowsToAddIndexSpace) {
     var ncols = sourcesAndRanges.Length;
     var nrows = rowsToAddIndexSpace.Count.ToIntExact();
+    var newNumRows = _numRows + nrows;
+
 
     for (var i = 0; i != ncols; ++i) {
       var sourceAndRange = sourcesAndRanges[i];
@@ -71,8 +75,7 @@ public class TableState {
       var newData = sourceAndRange.Source;
       var newDataIndex = 0;
 
-      var destSize = _colSizes[i] + nrows;
-      var destData = origData.CreateOfSameType(destSize);
+      var destData = origData.CreateOfSameType(newNumRows);
       var destDataIndex = 0;
       
       foreach (var interval in rowsToAddIndexSpace.Intervals) {
@@ -80,33 +83,25 @@ public class TableState {
         var endKey = interval.End.ToIntExact();
         if (destDataIndex < beginKey) {
           var numItemsToTakeFromOrig = beginKey - destDataIndex;
-          CopyChunk(origData, origDataIndex, destData, destDataIndex, numItemsToTakeFromOrig);
+          IColumnSource.Copy(origData, origDataIndex, destData, destDataIndex, numItemsToTakeFromOrig);
           origDataIndex += numItemsToTakeFromOrig;
           destDataIndex += numItemsToTakeFromOrig;  // aka destDataIndex = beginKey
         }
 
         var numItemsToTakeFromNew = endKey - beginKey;
-        CopyChunk(newData, newDataIndex, destData, destDataIndex, numItemsToTakeFromNew);
+        IColumnSource.Copy(newData, newDataIndex, destData, destDataIndex, numItemsToTakeFromNew);
         newDataIndex += numItemsToTakeFromNew;
         destDataIndex += numItemsToTakeFromNew;
       }
 
-      var numFinalItemsToCopy = _colSizes[i] - origDataIndex;
-      CopyChunk(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
+      var numFinalItemsToCopy = _numRows - origDataIndex;
+      IColumnSource.Copy(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
 
       _colData[i] = destData;
-      _colSizes[i] = destSize;
     }
+    _numRows = newNumRows;
   }
 
-  private static void CopyChunk(IColumnSource src, int srcIndex, IMutableColumnSource dest, int destIndex, int numItems) {
-    var chunk = Chunk.CreateChunkFor(src, numItems);
-    var nulls = BooleanChunk.Create(numItems);
-    var srcRs = RowSequence.CreateSequential(Interval.Of((UInt64)srcIndex, (UInt64)srcIndex + (UInt64)numItems));
-    src.FillChunk(srcRs, chunk, nulls);
-    var destRs = RowSequence.CreateSequential(Interval.Of((UInt64)destIndex, (UInt64)destIndex + (UInt64)numItems));
-    dest.FillFromChunk(destRs, chunk, nulls);
-  }
 
   /// <summary>
   /// Erases the data at the positions in 'rowsToEraseKeySpace'.
@@ -117,12 +112,13 @@ public class TableState {
     var result = _spaceMapper.ConvertKeysToIndices(rowsToEraseKeySpace);
     var ncols = _colData.Length;
     var nrows = rowsToEraseKeySpace.Count;
+    var newNumRows = ((UInt64)_numRows - (UInt64)nrows).ToIntExact();
+
     for (var i = 0; i != ncols; ++i) {
       var srcData = _colData[i];
       var srcIndex = 0;
 
-      var destSize = ((UInt64)_colSizes[i] - (UInt64)nrows).ToIntExact();
-      var destData = srcData.CreateOfSameType(destSize);
+      var destData = srcData.CreateOfSameType(newNumRows);
       var destDataIndex = 0;
 
       foreach (var interval in rowsToEraseKeySpace.Intervals) {
@@ -132,17 +128,17 @@ public class TableState {
 
         var numItemsToCopy = beginIndex - srcIndex;
 
-        CopyChunk(srcData, srcIndex, destData, destDataIndex, numItemsToCopy);
+        IColumnSource.Copy(srcData, srcIndex, destData, destDataIndex, numItemsToCopy);
 
         srcIndex = endIndex;
       }
 
-      var numFinalItemsToCopy = _colSizes[i] - srcIndex;
-      CopyChunk(srcData, srcIndex, destData, destDataIndex, numFinalItemsToCopy);
+      var numFinalItemsToCopy = _numRows - srcIndex;
+      IColumnSource.Copy(srcData, srcIndex, destData, destDataIndex, numFinalItemsToCopy);
 
       _colData[i] = destData;
-      _colSizes[i] = destSize;
     }
+    _numRows = newNumRows;
     return result;
   }
 
@@ -209,6 +205,31 @@ public class TableState {
   /// <returns>A ClientTable representing the current table state</returns>
   /// <exception cref="NotImplementedException"></exception>
   public ClientTable Snapshot() {
-    return null;
+    // Clone all my data
+    var clonedData = _colData.Select(src => {
+      var dest = src.CreateOfSameType(_numRows);
+      IColumnSource.Copy(src, 0, dest, 0, _numRows);
+      return dest;
+    }).ToArray();
+    return new TableStateClientTable(_schema, clonedData, _numRows);
   }
+}
+
+sealed class TableStateClientTable : ClientTable {
+  public override Schema Schema { get; }
+  private readonly ArrayColumnSource[] _colData;
+  private readonly int _numRows;
+  public override RowSequence RowSequence { get; }
+
+  public TableStateClientTable(Schema schema, ArrayColumnSource[] colData, int numRows) {
+    Schema = schema;
+    _colData = colData;
+    _numRows = numRows;
+    RowSequence = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)numRows));
+  }
+
+  public override IColumnSource GetColumn(int columnIndex) => _colData[columnIndex];
+
+  public override long NumRows => _numRows;
+  public override long NumCols => _colData.Length;
 }

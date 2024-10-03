@@ -38,7 +38,6 @@ public class SpaceMapper {
   /// <param name="interval">The first key to insert</param>
   /// <returns>The added keys, represented as a range in index space</returns>
   Interval AddRange(Interval interval) {
-    var temp9 = _set.CountSpeed;
     var initialCardinality = _set.Count;
     var rangeSize = interval.Count.ToIntExact();
     var temp = new UInt64[rangeSize];
@@ -55,8 +54,6 @@ public class SpaceMapper {
         $"This probably means duplicates were inserted");
     }
 
-    var stupid = _set.IndexingSpeed;
-    throw new Exception("look at these variable s so I can get on with life");
     var index = _set.LastIndexOf(interval.Begin);
     if (index < 0) {
       throw new Exception("Programming error: item not found?");
