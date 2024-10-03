@@ -122,8 +122,8 @@ public class TableState {
       var destData = srcData.CreateOfSameType(destSize);
       var destDataIndex = 0;
 
-      foreach (var (beginKey, endKey) in rowsToEraseKeySpace.Intervals) {
-        var size = (endKey - beginKey).ToIntExact();
+      foreach (var interval in rowsToEraseKeySpace.Intervals) {
+        var size = interval.Count.ToIntExact();
         var beginIndex = _spaceMapper.EraseRange(beginKey, endKey).ToIntExact();
         var endIndex = beginIndex + size;
 

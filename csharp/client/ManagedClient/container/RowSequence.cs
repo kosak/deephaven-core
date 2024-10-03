@@ -19,7 +19,7 @@ public abstract class RowSequence {
 }
 
 sealed class SequentialRowSequence(Interval interval) : RowSequence {
-  public static readonly SequentialRowSequence EmptyInstance = new(Interval.Empty);
+  public static readonly SequentialRowSequence EmptyInstance = new(Interval.OfEmpty);
 
   public override UInt64 Count => interval.Count;
 
@@ -41,85 +41,84 @@ sealed class SequentialRowSequence(Interval interval) : RowSequence {
 }
 
 sealed class BasicRowSequence : RowSequence {
-  public static BasicRowSequence Create(IEnumerable<(ulong, ulong)> intervals) {
+  public static BasicRowSequence Create(IEnumerable<Interval> intervals) {
     var intervalsArray = intervals.ToArray();
-    UInt64 size = 0;
+    UInt64 count = 0;
     foreach (var e in intervalsArray) {
-      size += e.Item2 - e.Item1;
+      count += e.Count;
     }
 
-    return new BasicRowSequence(intervalsArray, 0, 0, size);
+    return new BasicRowSequence(intervalsArray, 0, 0, count);
   }
 
-  private readonly (UInt64, UInt64)[] _intervals;
+  private readonly Interval[] _intervals;
   private readonly int _startIndex = 0;
   private readonly UInt64 _startOffset = 0;
-  public override UInt64 Size { get; }
+  public override UInt64 Count { get; }
 
-  private BasicRowSequence((ulong, ulong)[] intervals, int startIndex, ulong startOffset, ulong size) {
+  private BasicRowSequence(Interval[] intervals, int startIndex, UInt64 startOffset, UInt64 count) {
     _intervals = intervals;
     _startIndex = startIndex;
     _startOffset = startOffset;
-    Size = size;
+    Count = count;
   }
 
-  public override RowSequence Take(UInt64 size) =>
-    new BasicRowSequence(_intervals, _startIndex, _startOffset, Size);
+  public override RowSequence Take(UInt64 count) =>
+    new BasicRowSequence(_intervals, _startIndex, _startOffset, count);
 
-  public override RowSequence Drop(UInt64 size) {
-    return DropHelper(size).Last().Item3!;
+  public override RowSequence Drop(UInt64 count) {
+    return DropHelper(count).Last().Item2!;
   }
 
-  public override IEnumerable<(UInt64, UInt64)> Intervals =>
-      DropHelper(Size).Where(elt => elt.Item3 == null).Select(elt => (elt.Item1, elt.Item2));
+  public override IEnumerable<Interval> Intervals =>
+      DropHelper(Count).Where(elt => elt.Item2 == null).Select(elt => elt.Item1);
 
-  private IEnumerable<(UInt64, UInt64, RowSequence?)> DropHelper(UInt64 size) {
-    if (size == 0) {
-      yield return (0, 0, this);
+  private IEnumerable<(Interval, RowSequence?)> DropHelper(UInt64 requestedCount) {
+    if (requestedCount == 0) {
+      yield return (Interval.OfEmpty, this);
       yield break;
     }
 
     var currentIndex = _startIndex;
     var currentOffset = _startOffset;
-    var remainingSizeToDrop = Math.Min(size, Size);
-    var finalSize = Size - remainingSizeToDrop;
-    while (remainingSizeToDrop != 0) {
+    var remainingCountToDrop = Math.Min(requestedCount, Count);
+    var finalSize = Count - remainingCountToDrop;
+    while (remainingCountToDrop != 0) {
       var current = _intervals[currentIndex];
-      var entrySize = current.Item2 - current.Item1;
-      if (currentOffset == entrySize) {
+      var entryCount = current.Count;
+      if (currentOffset == entryCount) {
         ++currentIndex;
         currentOffset = 0;
         continue;
       }
 
-      var entryRemaining = entrySize - currentOffset;
-      var amountToConsume = Math.Min(entryRemaining, remainingSizeToDrop);
-      var begin = current.Item1 + currentOffset;
+      var entryRemaining = entryCount - currentOffset;
+      var amountToConsume = Math.Min(entryRemaining, remainingCountToDrop);
+      var begin = current.Begin + currentOffset;
       var end = begin + amountToConsume;
       currentOffset += amountToConsume;
-      remainingSizeToDrop -= amountToConsume;
-      yield return (begin, end, null);
+      remainingCountToDrop -= amountToConsume;
+      yield return (new Interval(begin, end), null);
     }
 
     var result = new BasicRowSequence(_intervals, currentIndex, currentOffset, finalSize);
-    yield return (0, 0, result);
+    yield return (Interval.OfEmpty, result);
   }
 }
 
 public class RowSequenceBuilder {
-  private readonly List<(UInt64, UInt64)> _intervals = new();
+  private readonly List<Interval> _intervals = new();
 
   /// <summary>
-  /// Adds the half-open interval [begin, end) to the RowSequence. The added interval need not be
+  /// Adds the interval to the RowSequence. The added interval need not be
   /// disjoint with the other intervals.
   /// </summary>
-  /// <param name="begin">The closed start of the interval</param>
-  /// <param name="end">The open end of the interval</param>
-  public void AddInterval(UInt64 begin, UInt64 end) {
-    if (begin == end) {
+  /// <param name="interval">The interval to add</param>
+  public void AddInterval(Interval interval) {
+    if (interval.IsEmpty) {
       return;
     }
-    _intervals.Add((begin, end));
+    _intervals.Add(interval);
   }
 
   /// <summary>
@@ -127,7 +126,7 @@ public class RowSequenceBuilder {
   /// </summary>
   /// <param name="key">The key</param>
   public void Add(UInt64 key) {
-    AddInterval(key, checked(key + 1));
+    AddInterval(Interval.OfSingleton(key));
   }
 
   /// <summary>
@@ -135,17 +134,18 @@ public class RowSequenceBuilder {
   /// </summary>
   /// <returns>The built RowSequence</returns>
   public RowSequence Build() {
-    _intervals.Sort((lhs, rhs) => lhs.Item1.CompareTo(rhs.Item1));
+    _intervals.Sort((lhs, rhs) => lhs.Begin.CompareTo(rhs.Begin));
 
-    var consolidatedIntervals = new List<(UInt64, UInt64)>();
+    var consolidatedIntervals = new List<Interval>();
 
     using var it = _intervals.GetEnumerator();
     if (it.MoveNext()) {
       var lastInterval = it.Current;
       while (it.MoveNext()) {
         var thisInterval = it.Current;
-        if (lastInterval.Item2 >= thisInterval.Item1) {
-          lastInterval.Item2 = Math.Max(lastInterval.Item2, thisInterval.Item2);
+        if (lastInterval.End >= thisInterval.Begin) {
+          // Intervals abut or overlap
+          lastInterval = lastInterval with { End = Math.Max(lastInterval.End, thisInterval.End) };
           continue;
         }
 
