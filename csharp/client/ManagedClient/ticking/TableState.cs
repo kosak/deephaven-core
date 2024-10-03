@@ -1,7 +1,9 @@
 ﻿using Apache.Arrow;
-using System;
 
 namespace Deephaven.ManagedClient;
+
+public record struct SourceAndRange(IColumnSource Source, Interval Range) {
+}
 
 public class TableState {
   private readonly SpaceMapper _spaceMapper = new();
@@ -47,16 +49,15 @@ public class TableState {
   /// Leftover values are [G,H] so pull them in, and dest column is now [A,B,C,D,E,F,G,H]
   /// </example>
   /// </summary>
-  /// <param name="sources">The ColumnSources</param>
-  /// <param name="srcRanges">The data range to use for each column</param>
+  /// <param name="sourcesAndRanges">The ColumnSources, with the data range to use for each column</param>
   /// <param name="rowsToAddIndexSpace">Index space positions where the data should be inserted</param>
-  public void AddData(IColumnSource[] sources, Interval[] srcRanges, RowSequence rowsToAddIndexSpace) {
-    var ncols = sources.Length;
-    var nrows = rowsToAddIndexSpace.Size.ToIntExact();
-    Checks.AssertAllSame(_sourceData.Length, sources.Length, srcRanges.Length);
+  public void AddData(SourceAndRange[] sourcesAndRanges, RowSequence rowsToAddIndexSpace) {
+    var ncols = sourcesAndRanges.Length;
+    var nrows = rowsToAddIndexSpace.Count.ToIntExact();
 
     for (var i = 0; i != ncols; ++i) {
-      var numElementsProvided = srcRanges[i].Count.ToIntExact();
+      var sourceAndRange = sourcesAndRanges[i];
+      var numElementsProvided = sourceAndRange.Range.Count.ToIntExact();
       if (nrows > numElementsProvided) {
         throw new Exception(
           $"RowSequence demands {nrows} elements but column {i} has only been provided {numElementsProvided} elements");
@@ -65,7 +66,7 @@ public class TableState {
       var origData = _sourceData[i];
       var origDataIndex = 0;
 
-      var newData = sources[i];
+      var newData = sourceAndRange.Source;
       var newDataIndex = 0;
 
       var destSize = _sourceSizes[i] + nrows;
@@ -73,8 +74,8 @@ public class TableState {
       var destDataIndex = 0;
       
       foreach (var interval in rowsToAddIndexSpace.Intervals) {
-        var beginKey = interval.Item1.ToIntExact();
-        var endKey = interval.Item2.ToIntExact();
+        var beginKey = interval.Begin.ToIntExact();
+        var endKey = interval.End.ToIntExact();
         if (destDataIndex < beginKey) {
           var numItemsToTakeFromOrig = beginKey - destDataIndex;
           CopyChunk(origData, origDataIndex, destData, destDataIndex, numItemsToTakeFromOrig);
@@ -99,9 +100,9 @@ public class TableState {
   private static void CopyChunk(IColumnSource src, int srcIndex, IMutableColumnSource dest, int destIndex, int numItems) {
     var chunk = Chunk.CreateChunkFor(src, numItems);
     var nulls = BooleanChunk.Create(numItems);
-    var srcRs = RowSequence.CreateSequential((UInt64)srcIndex, (UInt64)srcIndex + (UInt64)numItems);
+    var srcRs = RowSequence.CreateSequential(Interval.Of((UInt64)srcIndex, (UInt64)srcIndex + (UInt64)numItems));
     src.FillChunk(srcRs, chunk, nulls);
-    var destRs = RowSequence.CreateSequential((UInt64)destIndex, (UInt64)destIndex + (UInt64)numItems);
+    var destRs = RowSequence.CreateSequential(Interval.Of((UInt64)destIndex, (UInt64)destIndex + (UInt64)numItems));
     dest.FillFromChunk(destRs, chunk, nulls);
   }
 
@@ -113,7 +114,7 @@ public class TableState {
   public RowSequence Erase(RowSequence rowsToEraseKeySpace) {
     var result = _spaceMapper.ConvertKeysToIndices(rowsToEraseKeySpace);
     var ncols = _sourceData.Length;
-    var nrows = rowsToEraseKeySpace.Size;
+    var nrows = rowsToEraseKeySpace.Count;
     for (var i = 0; i != ncols; ++i) {
       var srcData = _sourceData[i];
       var srcIndex = 0;
@@ -124,7 +125,7 @@ public class TableState {
 
       foreach (var interval in rowsToEraseKeySpace.Intervals) {
         var size = interval.Count.ToIntExact();
-        var beginIndex = _spaceMapper.EraseRange(beginKey, endKey).ToIntExact();
+        var beginIndex = _spaceMapper.EraseRange(interval).ToIntExact();
         var endIndex = beginIndex + size;
 
         var numItemsToCopy = beginIndex - srcIndex;
@@ -158,11 +159,9 @@ public class TableState {
   /// at the positions indicated by 'rows_to_modify_index_space'.
   /// </summary>
   /// <param name="colNum">Index of the column to be modified</param>
-  /// <param name="src">A ColumnSource containing the source data</param>
-  /// <param name="begin">The start of the source range</param>
-  /// <param name="end">One past the end of the source range</param>
+  /// <param name="sourceAndRange">The ColumnSource containing the source data, and the source range within it to modify</param>
   /// <param name="rowsToModifyIndexSpace">The positions to be modified in the destination, represented in index space</param>
-  public void ModifyData(int colNum, IColumnSource src, int begin, int end, RowSequence rowsToModifyIndexSpace) {
+  public void ModifyData(int colNum, SourceAndRange sourceAndRange, RowSequence rowsToModifyIndexSpace) {
     throw new NotImplementedException("hi");
   }
 

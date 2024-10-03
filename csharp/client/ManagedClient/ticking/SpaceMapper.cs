@@ -67,13 +67,12 @@ public class SpaceMapper {
   }
 
   /// <summary>
-  /// Removes the keys in the half-open interval[begin_key, end_key_) from the set.
+  /// Removes the keys in the interval from the set.
   /// It is ok if some or all of the keys do not exist in the set.
   /// </summary>
-  /// <param name="beginKey">The first key to remove</param>
-  /// <param name="endKey">One past the last key to remove</param>
+  /// <param name="interval">The interval to remove</param>
   /// <returns>The rank of beginKey</returns>
-  public UInt64 EraseRange(UInt64 beginKey, UInt64 endKey) {
+  public UInt64 EraseRange(Interval interval) {
     var result = ZeroBasedRank(beginKey);
     _set.RemoveRangeFromTo(beginKey, endKey);
     return result;

@@ -5,9 +5,6 @@ using Array = System.Array;
 
 namespace Deephaven.ManagedClient;
 
-record struct SourceAndRange(IColumnSource Source, Interval Range) {
-}
-
 interface IChunkProcessor {
   (TickingUpdate?, IChunkProcessor) ProcessNextChunk(SourceAndRange[] sourcesAndRanges, byte[]? metadata);
 }
@@ -18,12 +15,12 @@ public class BarrageProcessor {
   public BarrageProcessor(Schema schema) {
     var tableState = new TableState(schema);
     var numCols = schema.FieldsList.Count;
-    _currentProcessor = new AwaitingMetadata(numCols, tableState);
+    _currentProcessor = new AwaitingMetadata(tableState);
   }
 
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
 
-  public static byte[] CreateSubscriptionRequest(byte[] ticketBytes, int size) {
+  public static byte[] CreateSubscriptionRequest(byte[]ticketBytes, int size) {
     throw new NotImplementedException("NIY");
   }
 
@@ -120,7 +117,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     // to indicate this via pointer equality (e.g. beforeRemoves == afterRemoves).
     RowSequence removedRowsIndexSpace;
     ClientTable afterRemoves;
-    if (removedRows.Empty) {
+    if (removedRows.IsEmpty) {
       removedRowsIndexSpace = RowSequence.CreateEmpty();
       afterRemoves = prev;
     } else {
@@ -148,7 +145,7 @@ class AwaitingAdds(
     if (_firstTime) {
       _firstTime = false;
 
-      if (addedRowsIndexSpace.Empty) {
+      if (addedRowsIndexSpace.IsEmpty) {
         _addedRowsRemaining = RowSequence.CreateEmpty();
 
         var afterAdds = afterRemoves;
@@ -165,7 +162,7 @@ class AwaitingAdds(
       _addedRowsRemaining = addedRowsIndexSpace;
     }
 
-    if (_addedRowsRemaining.Empty) {
+    if (_addedRowsRemaining.IsEmpty) {
       throw new Exception("Programming error: addedRowsRemaining is empty");
     }
 
@@ -192,7 +189,7 @@ class AwaitingAdds(
       sourcesAndRanges[i] = sourcesAndRanges[i] with { Range = Interval.OfEmpty };
     }
 
-    if (!_addedRowsRemaining.Empty) {
+    if (!_addedRowsRemaining.IsEmpty) {
       // Need more data from caller.
       return (null, this);
     }

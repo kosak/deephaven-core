@@ -9,7 +9,7 @@ public abstract class RowSequence {
     return new SequentialRowSequence(interval);
   }
 
-  public bool Empty => Count == 0;
+  public bool IsEmpty => Count == 0;
   public abstract UInt64 Count { get; }
 
   public abstract IEnumerable<Interval> Intervals { get; }
