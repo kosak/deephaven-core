@@ -5,38 +5,38 @@ namespace Deephaven.ManagedClient;
 public abstract class RowSequence {
   public static RowSequence CreateEmpty() => SequentialRowSequence.EmptyInstance;
 
-  public static RowSequence CreateSequential(UInt64 begin, UInt64 end) {
-    return new SequentialRowSequence(begin, end);
+  public static RowSequence CreateSequential(Interval interval) {
+    return new SequentialRowSequence(interval);
   }
 
-  public bool Empty => Size == 0;
-  public abstract UInt64 Size { get; }
+  public bool Empty => Count == 0;
+  public abstract UInt64 Count { get; }
 
-  public abstract IEnumerable<(UInt64, UInt64)> Intervals { get; }
+  public abstract IEnumerable<Interval> Intervals { get; }
 
   public abstract RowSequence Take(UInt64 size);
   public abstract RowSequence Drop(UInt64 size);
 }
 
-sealed class SequentialRowSequence(UInt64 begin, UInt64 end) : RowSequence {
-  public static readonly SequentialRowSequence EmptyInstance = new(0, 0);
+sealed class SequentialRowSequence(Interval interval) : RowSequence {
+  public static readonly SequentialRowSequence EmptyInstance = new(Interval.Empty);
 
-  public override UInt64 Size => end - begin;
+  public override UInt64 Count => interval.Count;
 
-  public override IEnumerable<(UInt64, UInt64)> Intervals {
+  public override IEnumerable<Interval> Intervals {
     get {
-      yield return (begin, end);
+      yield return interval;
     }
   }
 
   public override RowSequence Take(UInt64 size) {
-    var sizeToUse = Math.Min(size, Size);
-    return new SequentialRowSequence(begin, begin + sizeToUse);
+    var sizeToUse = Math.Min(size, Count);
+    return new SequentialRowSequence(interval with { End = interval.Begin + sizeToUse });
   }
 
   public override RowSequence Drop(UInt64 size) {
-    var sizeToUse = Math.Min(size, Size);
-    return new SequentialRowSequence(begin + sizeToUse, end);
+    var sizeToUse = Math.Min(size, Count);
+    return new SequentialRowSequence(interval with { Begin = interval.Begin + sizeToUse });
   }
 }
 

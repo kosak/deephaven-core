@@ -50,13 +50,13 @@ public class TableState {
   /// <param name="sources">The ColumnSources</param>
   /// <param name="srcRanges">The data range to use for each column</param>
   /// <param name="rowsToAddIndexSpace">Index space positions where the data should be inserted</param>
-  public void AddData(IColumnSource[] sources, Interval<int>[] srcRanges, RowSequence rowsToAddIndexSpace) {
+  public void AddData(IColumnSource[] sources, Interval[] srcRanges, RowSequence rowsToAddIndexSpace) {
     var ncols = sources.Length;
     var nrows = rowsToAddIndexSpace.Size.ToIntExact();
     Checks.AssertAllSame(_sourceData.Length, sources.Length, srcRanges.Length);
 
     for (var i = 0; i != ncols; ++i) {
-      var numElementsProvided = ends[i] - begins[i];
+      var numElementsProvided = srcRanges[i].Count.ToIntExact();
       if (nrows > numElementsProvided) {
         throw new Exception(
           $"RowSequence demands {nrows} elements but column {i} has only been provided {numElementsProvided} elements");
