@@ -2,14 +2,6 @@
 public static class ShiftProcessor {
   public static IEnumerable<(Interval, UInt64 destKey)> AnalyzeShiftData(RowSequence firstIndex,
     RowSequence lastIndex, RowSequence destIndex) {
-    if (firstIndex.IsEmpty) {
-      if (!lastIndex.IsEmpty || !destIndex.IsEmpty) {
-        throw new ArgumentException($"Expected all indices to be empty but first={firstIndex.IsEmpty}, " +
-                                    $"last={lastIndex.IsEmpty}, dest={destIndex.IsEmpty}");
-        yield break;
-      }
-    }
-
     // Loop twice: once in the forward direction (applying negative shifts), and once in the reverse
     // direction (applying positive shifts). Because we don't have a reverse iterator,
     // we save up the reverse tuples for processing in a separate step.
@@ -20,7 +12,7 @@ public static class ShiftProcessor {
       using var destIter = destIndex.Elements.GetEnumerator();
       while (firstIter.MoveNext()) {
         if (!lastIter.MoveNext() || !destIter.MoveNext()) {
-          throw new ArgumentException("Sequences not of same Size");
+          throw new ArgumentException("Sequences not of same size: first has more");
         }
 
         var first = firstIter.Current;
@@ -35,6 +27,10 @@ public static class ShiftProcessor {
         }
 
         yield return (interval, dest);
+      }
+
+      if (lastIter.MoveNext() || destIter.MoveNext()) {
+        throw new ArgumentException("Sequences not of same size: first has less");
       }
     }
 
