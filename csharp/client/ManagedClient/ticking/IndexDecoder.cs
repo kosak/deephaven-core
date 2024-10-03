@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices.Marshalling;
-
-namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.ManagedClient;
 
 
 public class IndexDecoder {
@@ -18,7 +15,7 @@ public class IndexDecoder {
       } else if (v < 0) {
         var begin = (UInt64)s;
         var end = (UInt64)(-v) + 1;
-        builder.AddInterval(begin, end);
+        builder.AddInterval(Interval.Of(begin, end));
         pending = -1;
       } else {
         builder.Add((UInt64)s);
