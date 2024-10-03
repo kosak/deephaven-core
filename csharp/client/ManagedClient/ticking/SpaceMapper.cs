@@ -26,44 +26,43 @@ public class SpaceMapper {
   public RowSequence AddKeys(RowSequence keys) {
     var builder = new RowSequenceBuilder();
     foreach (var interval in keys.Intervals) {
-      var indexSpaceRange = AddRange(interval.Item1, interval.Item2);
-      builder.AddInterval(indexSpaceRange.Item1, indexSpaceRange.Item2);
+      var indexSpaceRange = AddRange(interval);
+      builder.AddInterval(indexSpaceRange);
     }
     return builder.Build();
   }
 
   /// <summary>
-  /// Adds the keys (represented in key space) in the half-open interval [begin_key, end_key_) to the set.
-  /// The keys must not already exist in the set.If they do, an exception is thrown.
+  /// Adds the keys (represented in key space) in the specified interval to the set.
+  /// The keys must not already exist in the set. If they do, an exception is thrown.
   /// </summary>
-  /// <param name="beginKey">The first key to insert</param>
-  /// <param name="endKey">One past the last key to insert</param>
+  /// <param name="interval">The first key to insert</param>
   /// <returns>The added keys, represented as a range in index space</returns>
-  (UInt64, UInt64) AddRange(UInt64 beginKey, UInt64 endKey) {
+  Interval AddRange(Interval interval) {
     var temp9 = _set.CountSpeed;
     var initialCardinality = _set.Count;
-    var rangeSize = (endKey - beginKey).ToIntExact();
+    var rangeSize = interval.Count.ToIntExact();
     var temp = new UInt64[rangeSize];
     for (var i = 0; i != rangeSize; ++i) {
-      temp[i] = beginKey + (UInt64)i;
+      temp[i] = interval.Begin + (UInt64)i;
     }
     _set.AddSorted(temp);
     var finalCardinality = _set.Count;
     var cardinalityChange = finalCardinality - initialCardinality;
     if (cardinalityChange != rangeSize) {
       throw new Exception(
-        $"Range [{beginKey},{endKey}) has size {rangeSize} but " +
-        $"set only changed from cardinality {initialCardinality} to {finalCardinality}. " +
-        $"This means duplicates were inserted");
+        $"Range {interval} has size {rangeSize} but " +
+        $"set changed from cardinality {initialCardinality} to {finalCardinality}. " +
+        $"This probably means duplicates were inserted");
     }
 
     var stupid = _set.IndexingSpeed;
-    var index = _set.LastIndexOf(beginKey);
+    var index = _set.LastIndexOf(interval.Begin);
     if (index < 0) {
       throw new Exception("Programming error: item not found?");
     }
 
-    return ((UInt64)index, (UInt64)index + (UInt64)rangeSize);
+    return Interval.OfStartAndSize((UInt64)index, (UInt64)rangeSize);
   }
 
   /// <summary>
@@ -73,8 +72,8 @@ public class SpaceMapper {
   /// <param name="interval">The interval to remove</param>
   /// <returns>The rank of beginKey</returns>
   public UInt64 EraseRange(Interval interval) {
-    var result = ZeroBasedRank(beginKey);
-    _set.RemoveRangeFromTo(beginKey, endKey);
+    var result = ZeroBasedRank(interval.Begin);
+    _set.RemoveRangeFromTo(interval.Begin, interval.End);
     return result;
   }
 
@@ -100,27 +99,27 @@ public class SpaceMapper {
 
     // We start by building the new ranges
     // As we scan the keys in our set, we build this vector which contains contiguous ranges.
-    var newRanges = new List<(UInt64, UInt64)>();
+    var newRanges = new List<Interval>();
     var subset = _set.RangeFromTo(beginKey, endKey);
     foreach (var item in subset) {
       var itemOffset = item - beginKey;
       var newKey = destKey + itemOffset;
-      if (newRanges.Count > 0 && newRanges[^1].Item2 == newKey) {
+      if (newRanges.Count > 0 && newRanges[^1].End == newKey) {
         // This key is contiguous with the last range, so extend it by one.
         var back = newRanges[^1];
-        newRanges[^1] = (back.Item1, back.Item2 + 1);  // aka newKey + 1
+        newRanges[^1] = back with { End = back.End + 1}; // aka newKey + 1
       } else {
         // This key is not contiguous with the last range (or there is no last range), so
         // start a new range here having size 1.
-        newRanges.Add((newKey, newKey + 1));
+        newRanges.Add(Interval.OfSingleton(newKey));
       }
     }
 
     // Shifts do not change the size of the set. So, note the original size as a sanity check.
     var originalSize = _set.Count;
     _set.RemoveRangeFromTo(beginKey, endKey);
-    foreach (var entry in newRanges) {
-      _ = AddRange(entry.Item1, entry.Item2);
+    foreach (var range in newRanges) {
+      _ = AddRange(range);
     }
     var finalSize = _set.Count;
 
@@ -134,20 +133,20 @@ public class SpaceMapper {
    * space) of those keys.
    */
   public RowSequence ConvertKeysToIndices(RowSequence keys) {
-    if (keys.Size == 0) {
+    if (keys.IsEmpty) {
       return RowSequence.CreateEmpty();
     }
 
     var builder = new RowSequenceBuilder();
     foreach (var interval in keys.Intervals) {
-      var size = interval.Item2 - interval.Item1;
-      var subset = _set.RangeFromTo(interval.Item1, interval.Item2);
+      var size = interval.Count;
+      var subset = _set.RangeFromTo(interval.Begin, interval.End);
       if ((UInt64)subset.Count != size) {
-        throw new Exception($"Of the {size} keys specified in [{interval.Item1},{interval.Item2}) the set only contains {subset.Count} keys");
+        throw new Exception($"Of the {size} keys specified in {interval}, the set only contains {subset.Count} keys");
       }
 
-      var nextRank = ZeroBasedRank(interval.Item1);
-      builder.AddInterval(nextRank, nextRank + size);
+      var nextRank = ZeroBasedRank(interval.Begin);
+      builder.AddInterval(Interval.OfStartAndSize(nextRank, size));
     }
     return builder.Build();
   }

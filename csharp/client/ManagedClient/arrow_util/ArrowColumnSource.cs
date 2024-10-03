@@ -133,7 +133,7 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
 
 abstract class FillChunkHelper {
   public void FillChunk(RowSequence rows, ChunkedArray srcArray) {
-    if (rows.Empty) {
+    if (rows.IsEmpty) {
       return;
     }
 
