@@ -1,5 +1,4 @@
 ﻿using C5;
-using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -57,6 +56,7 @@ public class SpaceMapper {
     }
 
     var stupid = _set.IndexingSpeed;
+    throw new Exception("look at these variable s so I can get on with life");
     var index = _set.LastIndexOf(interval.Begin);
     if (index < 0) {
       throw new Exception("Programming error: item not found?");
@@ -78,31 +78,35 @@ public class SpaceMapper {
   }
 
   /// <summary>
-  /// Delete all the keys that currently exist in the range [begin_key, end_key).
-  /// Call that set of deleted keys K.The cardinality of K might be smaller than
-  /// (end_key - begin_key) because not all keys in that range are expected to be present.
+  /// Delete all the keys that currently exist in the range.
+  /// Call that set of deleted keys K. The cardinality of K might be smaller than
+  /// range.Count because it is not required that all keys be present.
   ///
-  /// Then calculate a new set of keys KNew = { k ∈ K | (k - begin_key + dest_key) }
+  /// Then calculate a new set of keys KNew = { k ∈ K | (k - range.Begin + destKkey) }
   /// and insert this new set of keys into the map.
   ///
-  /// This has the effect of offsetting all the existing keys by (dest_key - begin_key)
+  /// This has the effect of offsetting all the existing keys by (destkey - range.Begin).
+  /// That effective offset might be positive or negative.
+  ///
+  /// However the caller guarantees that it will only shift around keys in an empty region.
+  /// That is it will never ask to shift keys in a way that overlaps or moves past other
+  /// existing keys.
   /// </summary>
   ///
-  /// <param name="beginKey">The start of the range of keys</param>
-  /// <param name="endKey">One past the end of the range of keys</param>
+  /// <param name="range">The range of keys</param>
   /// <param name="destKey">The start of the target range to move keys to</param>
   /// <exception cref="NotImplementedException"></exception>
-  public void ApplyShift(UInt64 beginKey, UInt64 endKey, UInt64 destKey) {
-    // Note that [begin_key, end_key) is potentially a superset of the keys we have.
-    // We need to remove all our keys in the range [begin_key, end_key),
-    // and then, for each key k that we removed, add a new key (k - begin_key + dest_key).
+  public void ApplyShift(Interval range, UInt64 destKey) {
+    // Note that range is potentially a superset of the keys we have.
+    // We need to remove all our keys in the range
+    // and then, for each key k that we removed, add a new key (k - range.Begin + destKey).
 
     // We start by building the new ranges
     // As we scan the keys in our set, we build this vector which contains contiguous ranges.
     var newRanges = new List<Interval>();
-    var subset = _set.RangeFromTo(beginKey, endKey);
+    var subset = _set.RangeFromTo(range.Begin, range.End);
     foreach (var item in subset) {
-      var itemOffset = item - beginKey;
+      var itemOffset = item - range.Begin;
       var newKey = destKey + itemOffset;
       if (newRanges.Count > 0 && newRanges[^1].End == newKey) {
         // This key is contiguous with the last range, so extend it by one.
@@ -117,9 +121,9 @@ public class SpaceMapper {
 
     // Shifts do not change the size of the set. So, note the original size as a sanity check.
     var originalSize = _set.Count;
-    _set.RemoveRangeFromTo(beginKey, endKey);
-    foreach (var range in newRanges) {
-      _ = AddRange(range);
+    _set.RemoveRangeFromTo(range.Begin, range.End);
+    foreach (var newRange in newRanges) {
+      _ = AddRange(newRange);
     }
     var finalSize = _set.Count;
 

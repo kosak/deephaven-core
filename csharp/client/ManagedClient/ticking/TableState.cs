@@ -1,4 +1,6 @@
 ﻿using Apache.Arrow;
+using System.Collections.Generic;
+using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -7,13 +9,13 @@ public record struct SourceAndRange(IColumnSource Source, Interval Range) {
 
 public class TableState {
   private readonly SpaceMapper _spaceMapper = new();
-  private readonly ArrayColumnSource[] _sourceData;
-  private readonly int[] _sourceSizes;
+  private readonly ArrayColumnSource[] _colData;
+  private readonly int[] _colSizes;
 
 
   public TableState(Schema schema) {
-    _sourceData = schema.FieldsList.Select(f => ArrayColumnSource.CreateFromArrowType(f.DataType, 0)).ToArray();
-    _sourceSizes = new int[_sourceData.Length];
+    _colData = schema.FieldsList.Select(f => ArrayColumnSource.CreateFromArrowType(f.DataType, 0)).ToArray();
+    _colSizes = new int[_colData.Length];
   }
 
   /// <summary>
@@ -63,13 +65,13 @@ public class TableState {
           $"RowSequence demands {nrows} elements but column {i} has only been provided {numElementsProvided} elements");
       }
 
-      var origData = _sourceData[i];
+      var origData = _colData[i];
       var origDataIndex = 0;
 
       var newData = sourceAndRange.Source;
       var newDataIndex = 0;
 
-      var destSize = _sourceSizes[i] + nrows;
+      var destSize = _colSizes[i] + nrows;
       var destData = origData.CreateOfSameType(destSize);
       var destDataIndex = 0;
       
@@ -89,11 +91,11 @@ public class TableState {
         destDataIndex += numItemsToTakeFromNew;
       }
 
-      var numFinalItemsToCopy = _sourceSizes[i] - origDataIndex;
+      var numFinalItemsToCopy = _colSizes[i] - origDataIndex;
       CopyChunk(origData, origDataIndex, destData, destDataIndex, numFinalItemsToCopy);
 
-      _sourceData[i] = destData;
-      _sourceSizes[i] = destSize;
+      _colData[i] = destData;
+      _colSizes[i] = destSize;
     }
   }
 
@@ -113,13 +115,13 @@ public class TableState {
   /// <returns>The keys, represented in index space, that were erased</returns>
   public RowSequence Erase(RowSequence rowsToEraseKeySpace) {
     var result = _spaceMapper.ConvertKeysToIndices(rowsToEraseKeySpace);
-    var ncols = _sourceData.Length;
+    var ncols = _colData.Length;
     var nrows = rowsToEraseKeySpace.Count;
     for (var i = 0; i != ncols; ++i) {
-      var srcData = _sourceData[i];
+      var srcData = _colData[i];
       var srcIndex = 0;
 
-      var destSize = ((UInt64)_sourceSizes[i] - (UInt64)nrows).ToIntExact();
+      var destSize = ((UInt64)_colSizes[i] - (UInt64)nrows).ToIntExact();
       var destData = srcData.CreateOfSameType(destSize);
       var destDataIndex = 0;
 
@@ -135,11 +137,11 @@ public class TableState {
         srcIndex = endIndex;
       }
 
-      var numFinalItemsToCopy = _sourceSizes[i] - srcIndex;
+      var numFinalItemsToCopy = _colSizes[i] - srcIndex;
       CopyChunk(srcData, srcIndex, destData, destDataIndex, numFinalItemsToCopy);
 
-      _sourceData[i] = destData;
-      _sourceSizes[i] = destSize;
+      _colData[i] = destData;
+      _colSizes[i] = destSize;
     }
     return result;
   }
@@ -162,22 +164,43 @@ public class TableState {
   /// <param name="sourceAndRange">The ColumnSource containing the source data, and the source range within it to modify</param>
   /// <param name="rowsToModifyIndexSpace">The positions to be modified in the destination, represented in index space</param>
   public void ModifyData(int colNum, SourceAndRange sourceAndRange, RowSequence rowsToModifyIndexSpace) {
-    throw new NotImplementedException("hi");
+    var nrows = rowsToModifyIndexSpace.Count;
+    var sourceCount = sourceAndRange.Range.Count;
+    if (nrows > sourceCount) {
+      throw new Exception($"Insufficient data in source: have {sourceCount}, need {nrows}");
+    }
+
+    var srcCol = sourceAndRange.Source;
+    var srcRemaining = sourceAndRange.Range;
+    var destCol = _colData[colNum];
+    foreach (var destInterval in rowsToModifyIndexSpace.Intervals) {
+      var destCount = destInterval.Count.ToIntExact();
+      var chunk = Chunk.CreateChunkFor(srcCol, destCount);
+      var nulls = BooleanChunk.Create(destCount);
+      var (thisRange, residual) = srcRemaining.Split((UInt64)destCount);
+      var srcRowSeq = RowSequence.CreateSequential(thisRange);
+      var destRowSeq = RowSequence.CreateSequential(destInterval);
+      srcCol.FillChunk(srcRowSeq, chunk, nulls);
+      destCol.FillFromChunk(destRowSeq, chunk, nulls);
+      srcRemaining = residual;
+    }
   }
 
   /// <summary>
   /// Applies shifts to the keys in key space. This does not affect the ordering of the keys,
-  /// nor will it cause keys to overlap with other keys.Logically there is a set of tuples
+  /// nor will it cause keys to overlap with other keys. Logically there is a set of tuples
   /// (firstKey, lastKey, destKey) which is to be interpreted as take all the existing keys
   /// in the *closed* range [firstKey, lastKey] and move them to the range starting at destKey.
   /// These tuples have been "transposed" into three different RowSequence data structures
   /// for possible better compression.
   /// </summary>
   /// <param name="firstIndex">The RowSequence containing the firstKeys</param>
-  /// <param name="lastIndex">The RowSequence containing the lastKeys</param>
+  /// <param name="lastIndex">The RowSequence containing the lastKeys. Note that these are in *closed* interval representation</param>
   /// <param name="destIndex">The RowSequence containing the destKeys</param>
   public void ApplyShifts(RowSequence firstIndex, RowSequence lastIndex, RowSequence destIndex) {
-    Console.Error.WriteLine("TODO - Apply Shifts");
+    foreach (var (range, destKey) in ShiftProcessor.AnalyzeShiftData(firstIndex, lastIndex, destIndex)) {
+      _spaceMapper.ApplyShift(range, destKey);
+    }
   }
 
   /// <summary>

@@ -14,6 +14,16 @@ public abstract class RowSequence {
 
   public abstract IEnumerable<Interval> Intervals { get; }
 
+  public IEnumerable<UInt64> Elements {
+    get {
+      foreach (var interval in Intervals) {
+        for (UInt64 i = interval.Begin; i != interval.End; ++i) {
+          yield return i;
+        }
+      }
+    }
+  }
+
   public abstract RowSequence Take(UInt64 size);
   public abstract RowSequence Drop(UInt64 size);
 }
