@@ -3,8 +3,15 @@
 namespace Deephaven.DndClient;
 
 static class ZamboniUtility {
-  public static string GetUrl(string x) {
-    return "sad";
+  public static string GetUrl(string url) {
+    var handler = new HttpClientHandler();
+    // if (!corePlus.ValidateCertificate) {
+    //   handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+    //   handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+    // }
+    var hc = new HttpClient(handler);
+    var result = hc.GetStringAsync(url).Result;
+    return result;
   }
 }
 
