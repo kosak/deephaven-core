@@ -1,9 +1,25 @@
 ﻿using Deephaven.ManagedClient;
+using Google.Protobuf;
 using Grpc.Net.Client;
+using Io.Deephaven.Proto.Auth;
+using Dns = System.Net.Dns;
 
 namespace DeephavenEnterprise.DndClient;
 
-public static class Utility {
+public static class ClientUtil {
+  public static string GetName(string descriptiveName) {
+    return $"{Dns.GetHostName()}/{descriptiveName}";
+  }
+
+  public static ClientId MakeClientId(string descriptiveName, string uuid) {
+    var name = GetName(descriptiveName);
+    var clientId = new ClientId {
+      Name = name,
+      Uuid = ByteString.CopyFromUtf8(uuid)
+    };
+    return clientId;
+  }
+
   public static GrpcChannel CreateChannel(string who, string target, ClientOptions? options) {
     options ??= new ClientOptions();
     var channelOptions = GrpcUtil.MakeChannelOptions(options);

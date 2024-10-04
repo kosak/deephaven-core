@@ -5,7 +5,7 @@ namespace DeephavenEnterprise.DndClient;
 
 public class ControllerClient : IDisposable {
   public static ControllerClient Connect(string descriptiveName, string target, ClientOptions? options = null) {
-    var channel = Utility.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
+    var channel = ClientUtil.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
     return new ControllerClient(descriptiveName, channel);
   }
 
