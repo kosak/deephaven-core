@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Grpc.Net.Client;
+using System.Text;
 
 namespace Deephaven.ManagedClient;
 

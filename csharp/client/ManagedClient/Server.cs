@@ -12,9 +12,6 @@ public class Server {
 
   // fix client_options
   public static Server CreateFromTarget(string target, ClientOptions clientOptions) {
-    if (!clientOptions.UseTls && !clientOptions.TlsRootCerts.IsEmpty()) {
-      throw new Exception("Server.CreateFromTarget: ClientOptions: UseTls is false but pem provided");
-    }
 
 // grpc::ChannelArguments channel_args;
 // auto options = arrow::flight::FlightClientOptions::Defaults();
@@ -28,12 +25,10 @@ public class Server {
 // }
 //
 
-    var channelOptions = new GrpcChannelOptions();
-    channelOptions.Credentials = GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
-      clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
-    var targetToUse = (clientOptions.UseTls ? "https://" : "http://") + target;
+    var channelOptions = GrpcUtil.MakeChannelOptions(clientOptions);
+    var address = GrpcUtil.MakeAddress(clientOptions, target);
 
-    var channel = GrpcChannel.ForAddress(targetToUse, channelOptions);
+    var channel = GrpcChannel.ForAddress(address, channelOptions);
 
     var aps = new ApplicationService.ApplicationServiceClient(channel);
     var cs = new ConsoleService.ConsoleServiceClient(channel);
@@ -187,19 +182,6 @@ public class Server {
       Console.Error.WriteLine("Also, implement Me");
       return "It's Me";
     }
-  }
-
-  private static ChannelCredentials GetCredentials(
-    bool useTls,
-    string tlsRootCerts,
-    string clientRootChain,
-    string clientPrivateKey) {
-    if (!useTls) {
-      return ChannelCredentials.Insecure;
-    }
-
-    var certPair = new KeyCertificatePair(clientRootChain, clientPrivateKey);
-    return new SslCredentials(tlsRootCerts, certPair);
   }
 
   private static bool TryExtractExpirationInterval(ConfigurationConstantsResponse ccResp, out TimeSpan result) {

@@ -3,6 +3,7 @@
  */
 
 using Deephaven.ManagedClient;
+using Grpc.Net.Client;
 
 namespace DeephavenEnterprise.DndClient;
 
@@ -23,6 +24,14 @@ public class AuthClient : IDisposable {
   public static AuthClient Connect(string descriptiveName, string target, ClientOptions? options = null) {
     var channel = Utility.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
     return new AuthClient(descriptiveName, channel);
+  }
+
+  private readonly string _descriptiveName;
+  private readonly GrpcChannel _channel;
+
+  public AuthClient(string descriptiveName, GrpcChannel channel) {
+    _descriptiveName = descriptiveName;
+    _channel = channel;
   }
 
   bool IsClosed() {
@@ -60,6 +69,7 @@ public class AuthClient : IDisposable {
   }
 
   AuthToken CreateToken(string forService) {
+    CLientCon
     throw new NotImplementedException("NIY");
   }
 
