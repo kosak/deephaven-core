@@ -21,6 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="..\..\..\..\iris\proto\**\*.proto" ProtoRoot="..\..\..\..\iris\proto\proto-auth-grpc\src\main\proto" GrpcServices="Client" />
+    <Protobuf Include="proto\auth.proto" ProtoRoot="proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>
