@@ -2,6 +2,8 @@
  * Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
  */
 
+using Deephaven.ManagedClient;
+
 namespace DeephavenEnterprise.Auth;
 
 /**
@@ -19,66 +21,55 @@ public class AuthClient : IDisposable {
   /// <param name="options">An options object for setting options</param>
   /// <returns>An AuthClient object connected to the Authentication Server</returns>
   public static AuthClient Connect(string descriptiveName, string target, ClientOptions? options = null) {
-    throw new NotImplementedException("NIY")
+    throw new NotImplementedException("NIY");
   }
 
   bool IsClosed() {
-    throw new NotImplementedException("NIY")
+    throw new NotImplementedException("NIY");
   }
 
-  /**
-   * Close and invalidate the client.
-   * If a valid authentication with the server exists, this client will attempt
-   * to contact the server to invalidate it.
-   * If a gRPC channel associated with this client is connected, it will be closed.
-   * After this method is called no other method on the client should be called.
-   * This method is also called by the destructor if not already called.
-   */
-  void Close() noexcept;
+  /// <summary>
+  /// Close and invalidate the client.
+  /// If a valid authentication with the server exists, this client will attempt
+  /// to contact the server to invalidate it.
+  /// If a gRPC channel associated with this client is connected, it will be closed.
+  /// After this method is called no other method on the client should be called.
+  /// This method is also called by the destructor if not already called.
+  /// </summary>
+  void Close() {
+    throw new NotImplementedException("NIY");
+  }
 
-  /**
-   * Ping a server; return and log roundtrip time.
-   *
-   * @param timeout how long of a timeout, in milliseconds, to use in the Ping request to the server.
-   * @return roundtrip time in milliseconds.
-   */
-  std::chrono::milliseconds Ping(std::chrono::milliseconds timeout);
+  /// <summary>
+  /// Ping a server; return and log roundtrip time.
+  /// </summary>
+  /// <param name="timeout">How long of a timeout to use in the Ping request to the server</param>
+  /// <returns>roundtrip time</returns>
+  TimeSpan Ping(TimeSpan timeout) {
+    throw new NotImplementedException("NIY");
+  }
 
-  [[nodiscard]] bool PasswordAuthentication(
-      const std::string &user,
-      const std::string &password,
-      const std::string &operate_as);
-  [[nodiscard]] bool PrivateKeyAuthentication(
-      const std::string &private_key_filename);
+  bool PasswordAuthentication(string user, string password, string operateAs) {
+    throw new NotImplementedException("NIY");
+  }
 
-  [[nodiscard]] AuthToken CreateToken(std::string for_service);
-  [[nodiscard]] AuthToken CreateTokenForUser(
-      std::string for_service, std::string operate_as);
-  [[nodiscard]] bool VerifyToken(
-      const AuthToken &token,
-      const std::string &for_service);
 
-  //
-  // Useful for the R client wrapper code; not exposed in the regular API.
-  //
-  template<typename A1, typename A2, typename A3, typename A4>
-  friend class Rcpp::Constructor_3;
-  AuthClient(
-      const std::string &descriptive_name,
-      const std::string &target,
-      const utility::ClientOptions &options = { });
+  bool PrivateKeyAuthentication(string privateKeyFilename) {
+    throw new NotImplementedException("NIY");
+  }
 
-private:
-  [[nodiscard]] impl::AuthClientImpl* CheckImpl() const;
+  AuthToken CreateToken(string forService) {
+    throw new NotImplementedException("NIY");
+  }
 
-  using ImplPtr = std::shared_ptr<impl::AuthClientImpl>;
-  explicit AuthClient(ImplPtr impl);
-  // We follow the PImpl pattern for the implementation of this object.
-  ImplPtr impl_;
-};
 
-}  // namespace deephaven_enterprise::auth
+  AuthToken CreateTokenForUser(string forService, string operateAs) {
+    throw new NotImplementedException("NIY");
+  }
 
+
+  bool VerifyToken(AuthToken token, string forService) {
+  }
 }
 
 
