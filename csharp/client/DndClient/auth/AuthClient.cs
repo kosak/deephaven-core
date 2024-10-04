@@ -83,6 +83,7 @@ public class AuthClient : IDisposable {
 
 
   bool VerifyToken(AuthToken token, string forService) {
+    throw new NotImplementedException("NIY");
   }
 }
 
