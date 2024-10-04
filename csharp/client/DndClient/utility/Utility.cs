@@ -17,6 +17,12 @@ public static class Utility {
     // }
     //
 
+    var handler = new HttpClientHandler();
+    handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+    handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+    var hc = new HttpClient(handler);
+    channelOptions.HttpClient = hc;
+
     var address = GrpcUtil.MakeAddress(options, target);
     var channel = GrpcChannel.ForAddress(address, channelOptions);
     return channel;

@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using DeephavenEnterprise.DndClient;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.DndClient;
 
@@ -45,16 +47,34 @@ public class SessionManager {
       rootCerts);
   }
 
+
+
   public static SessionManager Create(string descriptiveName,
     string authHost, Int16 authPort, string authAuthority,
     string controllerHost, Int16 controllerPort, string controllerAuthority,
     string rootCerts) {
+    var (target, options) = SetupClientOptions(authHost, authPort, authAuthority, rootCerts);
+    AuthClient.Connect(descriptiveName, target, options);
     throw new NotImplementedException("hi");
+  }
 
+  private static (string, ClientOptions) SetupClientOptions(string host, Int16 port, string overrideAuthority,
+    string rootCerts) {
+    var target = $"{host}:{port}";
+    var clientOptions = new ClientOptions();
+    clientOptions.SetUseTls(true);
+    clientOptions.SetTlsRootCerts(rootCerts);
+    if (!overrideAuthority.IsEmpty()) {
+      // uh oh
+      // client_options.AddStringOption(
+      //   GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, override_authority);
+    }
+
+    return (target, clientOptions);
   }
 }
 
-    //   std::string auth_authority;
+//   std::string auth_authority;
     //   std::string controller_authority;
     //   if (json.contains(kJsonOverrideAuthority)) {
     //     if (json.find(kJsonOverrideAuthority)->get<bool>()) {

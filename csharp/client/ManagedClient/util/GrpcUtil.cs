@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using System.Security.Cryptography.X509Certificates;
+using Grpc.Core;
 using Grpc.Net.Client;
 
 namespace Deephaven.ManagedClient;
@@ -11,8 +12,18 @@ public static class GrpcUtil {
       throw new Exception("Server.CreateFromTarget: ClientOptions: UseTls is false but pem provided");
     }
 
-    channelOptions.Credentials = GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
-      clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
+  // var httpClientHandler = new HttpClientHandler();
+  // httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) => {
+  //   chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+  //   chain.ChainPolicy.CustomTrustStore.Add(mycert);
+  //   etc etc get this to work
+  // https://github.com/grpc/grpc-dotnet/blob/dd72d6a38ab2984fd224aa8ed53686dc0153b9da/testassets/InteropTestsClient/InteropClient.cs#L170
+    //
+    //
+    // };
+    //
+    // channelOptions.Credentials = GetCredentials(clientOptions.UseTls, clientOptions.TlsRootCerts,
+    //   clientOptions.ClientCertChain, clientOptions.ClientPrivateKey);
     return channelOptions;
   }
 
