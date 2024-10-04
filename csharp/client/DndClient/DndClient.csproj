@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.28.2" />
     <PackageReference Include="Grpc.Net.Client" Version="2.66.0" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.66.0" />
   </ItemGroup>
@@ -15,4 +16,7 @@
     <ProjectReference Include="..\ManagedClient\ManagedClient.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Protobuf Include="..\..\..\..\iris\proto\proto-auth-grpc\src\main\proto\deephaven_enterprise\proto\auth_service.proto" ProtoRoot="..\..\..\..\iris\proto\proto-auth-grpc\src\main\proto" GrpcServices="Client" />
+  </ItemGroup>
 </Project>
