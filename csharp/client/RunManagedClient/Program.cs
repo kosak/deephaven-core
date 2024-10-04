@@ -29,6 +29,7 @@ public static class Program {
                       "authentication_service_config":"{  \"methodConfig\": [\n    {\n      \"name\": [\n          {\n              \"service\": \"io.deephaven.proto.auth.grpc.AuthApi\"\n          }\n      ],\n\n      \"retryPolicy\": {\n        \"maxAttempts\": 60,\n        \"initialBackoff\": \"0.1s\",\n        \"maxBackoff\": \"2s\",\n        \"backoffMultiplier\": 2,\n        \"retryableStatusCodes\": [\n          \"UNAVAILABLE\"\n        ]\n      },\n\n      \"waitForReady\": true,\n      \"timeout\": \"60s\"\n    }\n  ]\n}\n","controller_service_config":"{\n  \"methodConfig\": [\n    {\n      \"name\": [\n          {\n              \"service\": \"io.deephaven.proto.controoler.grpc.ControllerApi\"\n          }\n      ],\n\n      \"retryPolicy\": {\n        \"maxAttempts\": 60,\n        \"initialBackoff\": \"0.1s\",\n        \"maxBackoff\": \"10s\",\n        \"backoffMultiplier\": 2,\n        \"retryableStatusCodes\": [\n          \"UNAVAILABLE\"\n        ]\n      },\n\n      \"waitForReady\": true,\n      \"timeout\": \"60s\"\n    }\n  ]\n}\n"}
                       """;
     var session = SessionManager.FromJson("hello", grizzleJson);
+    var temp = session.PasswordAuthentication("iris", "iris", "iris");
 
     try {
       using var client = Client.Connect(server);

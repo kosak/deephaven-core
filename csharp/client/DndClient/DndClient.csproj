@@ -21,6 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="proto\auth.proto" ProtoRoot="proto" GrpcServices="Client" />
+    <Protobuf Include="proto\deephaven_enterprise\proto\*.proto" ProtoRoot="proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>

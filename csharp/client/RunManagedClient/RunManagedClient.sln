@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManagedClient", "..\Managed
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DndClient", "..\DndClient\DndClient.csproj", "{E1540ACB-6979-4AC9-9AB8-1C1DC0C1A913}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "proto", "proto", "{839C784B-549F-417B-A72A-3140F4DA2DFE}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

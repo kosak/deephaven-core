@@ -3,7 +3,10 @@
  */
 
 using Deephaven.ManagedClient;
+using Google.Protobuf;
 using Grpc.Net.Client;
+using Io.Deephaven.Proto.Auth;
+using Io.Deephaven.Proto.Auth.Grpc;
 
 namespace DeephavenEnterprise.DndClient;
 
@@ -23,18 +26,18 @@ public class AuthClient : IDisposable {
   /// <returns>An AuthClient object connected to the Authentication Server</returns>
   public static AuthClient Connect(string descriptiveName, string target, ClientOptions? options = null) {
     var channel = Utility.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
-    // var authApiStub = AuthApi.NewStub(channel);
-
-    return new AuthClient(descriptiveName, channel);
+    var authApiStub = new AuthApi.AuthApiClient(channel);
+    return new AuthClient(descriptiveName, channel, authApiStub);
   }
 
   private readonly string _descriptiveName;
   private readonly GrpcChannel _channel;
-  // private readonly AuthAPiWhatever _authApiStub;
+  private readonly AuthApi.AuthApiClient _authApiStub;
 
-  public AuthClient(string descriptiveName, GrpcChannel channel) {
+  public AuthClient(string descriptiveName, GrpcChannel channel, AuthApi.AuthApiClient authApiStub) {
     _descriptiveName = descriptiveName;
     _channel = channel;
+    _authApiStub = authApiStub;
   }
 
   public void Dispose() {
@@ -66,7 +69,21 @@ public class AuthClient : IDisposable {
     throw new NotImplementedException("NIY");
   }
 
-  bool PasswordAuthentication(string user, string password, string operateAs) {
+  public bool PasswordAuthentication(string user, string password, string operateAs) {
+    var guid = System.Guid.NewGuid().ToByteArray();
+    var bs = ByteString.CopyFrom(guid);
+    var req = new AuthenticateByPasswordRequest();
+    req.ClientId = new ClientId {
+      Name = "client666",
+      Uuid = bs
+    };
+    req.UserContext = new UserContext {
+      AuthenticatedUser = user,
+      EffectiveUser = operateAs
+    };
+    req.Password = password;
+    var resp = _authApiStub.authenticateByPasswordAsync(req).ResponseAsync.Result;
+
     throw new NotImplementedException("NIY");
   }
 
