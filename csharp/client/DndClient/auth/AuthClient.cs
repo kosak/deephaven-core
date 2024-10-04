@@ -25,7 +25,6 @@ public class AuthClient : IDisposable {
     var channel = Utility.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
     // var authApiStub = AuthApi.NewStub(channel);
 
-
     return new AuthClient(descriptiveName, channel);
   }
 
