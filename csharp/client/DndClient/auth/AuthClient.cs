@@ -34,6 +34,10 @@ public class AuthClient : IDisposable {
     _channel = channel;
   }
 
+  public void Dispose() {
+    throw new NotImplementedException();
+  }
+
   bool IsClosed() {
     throw new NotImplementedException("NIY");
   }
@@ -69,7 +73,6 @@ public class AuthClient : IDisposable {
   }
 
   AuthToken CreateToken(string forService) {
-    CLientCon
     throw new NotImplementedException("NIY");
   }
 

@@ -1,5 +1,5 @@
 ﻿global using BooleanChunk = Deephaven.ManagedClient.Chunk<bool>;
-
+using Deephaven.DndClient;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.RunManangedClient;
@@ -15,6 +15,20 @@ public static class Program {
 
       server = args[0];
     }
+
+    var grizzleJson = """
+                      { "auth_host":["kosak-grizzle-1.int.illumon.com"],
+                      "auth_port":9031,
+                      "controller_port":20126,
+                      "controller_host":"10.128.5.38",
+                      "truststore_url":"https://kosak-grizzle-1.int.illumon.com:8443/iris//resources/truststore-iris.pem",
+                      "override_authorities":true,
+                      "controller_authority":"controller",
+                      "auth_authority":"authserver",
+                      "acl_write_server":"https://kosak-grizzle-1.int.illumon.com:9044/acl/",
+                      "authentication_service_config":"{  \"methodConfig\": [\n    {\n      \"name\": [\n          {\n              \"service\": \"io.deephaven.proto.auth.grpc.AuthApi\"\n          }\n      ],\n\n      \"retryPolicy\": {\n        \"maxAttempts\": 60,\n        \"initialBackoff\": \"0.1s\",\n        \"maxBackoff\": \"2s\",\n        \"backoffMultiplier\": 2,\n        \"retryableStatusCodes\": [\n          \"UNAVAILABLE\"\n        ]\n      },\n\n      \"waitForReady\": true,\n      \"timeout\": \"60s\"\n    }\n  ]\n}\n","controller_service_config":"{\n  \"methodConfig\": [\n    {\n      \"name\": [\n          {\n              \"service\": \"io.deephaven.proto.controoler.grpc.ControllerApi\"\n          }\n      ],\n\n      \"retryPolicy\": {\n        \"maxAttempts\": 60,\n        \"initialBackoff\": \"0.1s\",\n        \"maxBackoff\": \"10s\",\n        \"backoffMultiplier\": 2,\n        \"retryableStatusCodes\": [\n          \"UNAVAILABLE\"\n        ]\n      },\n\n      \"waitForReady\": true,\n      \"timeout\": \"60s\"\n    }\n  ]\n}\n"}
+                      """;
+    var session = SessionManager.FromJson("hello", grizzleJson);
 
     try {
       using var client = Client.Connect(server);

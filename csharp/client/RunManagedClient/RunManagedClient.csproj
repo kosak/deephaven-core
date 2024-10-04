@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DndClient\DndClient.csproj" />
     <ProjectReference Include="..\ManagedClient\ManagedClient.csproj" />
   </ItemGroup>
 
