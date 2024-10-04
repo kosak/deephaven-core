@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
-using DeephavenEnterprise.DndClient;
 using Deephaven.ManagedClient;
 
-namespace Deephaven.DndClient;
+namespace DeephavenEnterprise.DndClient;
 
 static class ZamboniUtility {
   public static string GetUrl(string url) {
@@ -53,9 +52,32 @@ public class SessionManager {
     string authHost, Int16 authPort, string authAuthority,
     string controllerHost, Int16 controllerPort, string controllerAuthority,
     string rootCerts) {
-    var (target, options) = SetupClientOptions(authHost, authPort, authAuthority, rootCerts);
-    AuthClient.Connect(descriptiveName, target, options);
-    throw new NotImplementedException("hi");
+    var (authTarget, authOptions) = SetupClientOptions(authHost, authPort, authAuthority, rootCerts);
+    var authClient = AuthClient.Connect(descriptiveName, authTarget, authOptions);
+    var (controllerTarget, controllerOptions) = SetupClientOptions(controllerHost,
+      controllerPort, controllerAuthority, rootCerts);
+    var controllerClient = ControllerClient.Connect(descriptiveName, controllerTarget,
+      controllerOptions);
+    return new SessionManager(descriptiveName, authClient, controllerClient,
+      authAuthority, controllerAuthority, rootCerts);
+  }
+
+  private readonly string _descriptiveName;
+  private readonly AuthClient _authClient;
+  private readonly ControllerClient _controllerClient;
+  private readonly string _authAuthority;
+  private readonly string _controllerAuthority;
+  private readonly string _rootCerts;
+
+  private SessionManager(string descriptiveName, AuthClient authClient,
+    ControllerClient controllerClient, string authAuthority, string controllerAuthority,
+    string rootCerts) {
+    _descriptiveName = descriptiveName;
+    _authClient = authClient;
+    _controllerClient = controllerClient;
+    _authAuthority = authAuthority;
+    _controllerAuthority = controllerAuthority;
+    _rootCerts = rootCerts;
   }
 
   private static (string, ClientOptions) SetupClientOptions(string host, Int16 port, string overrideAuthority,

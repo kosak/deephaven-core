@@ -1,6 +1,6 @@
 ﻿global using BooleanChunk = Deephaven.ManagedClient.Chunk<bool>;
-using Deephaven.DndClient;
 using Deephaven.ManagedClient;
+using DeephavenEnterprise.DndClient;
 
 namespace Deephaven.RunManangedClient;
 
