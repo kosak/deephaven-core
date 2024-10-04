@@ -23,14 +23,15 @@ public class AuthClient : IDisposable {
   /// <returns>An AuthClient object connected to the Authentication Server</returns>
   public static AuthClient Connect(string descriptiveName, string target, ClientOptions? options = null) {
     var channel = Utility.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
-    var authApiStub = AuthApi.NewStub(channel);
+    // var authApiStub = AuthApi.NewStub(channel);
+
 
     return new AuthClient(descriptiveName, channel);
   }
 
   private readonly string _descriptiveName;
   private readonly GrpcChannel _channel;
-  private readonly AuthAPiWhatever _authApiStub;
+  // private readonly AuthAPiWhatever _authApiStub;
 
   public AuthClient(string descriptiveName, GrpcChannel channel) {
     _descriptiveName = descriptiveName;
