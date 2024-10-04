@@ -4,7 +4,7 @@
 
 using Deephaven.ManagedClient;
 
-namespace DeephavenEnterprise.Auth;
+namespace DeephavenEnterprise.DndClient;
 
 /**
  * An authentication Client maintains provides the means to authenticate to
@@ -21,7 +21,8 @@ public class AuthClient : IDisposable {
   /// <param name="options">An options object for setting options</param>
   /// <returns>An AuthClient object connected to the Authentication Server</returns>
   public static AuthClient Connect(string descriptiveName, string target, ClientOptions? options = null) {
-    throw new NotImplementedException("NIY");
+    var channel = Utility.CreateChannel("AuthClient::Connect: ClientOptions", target, options);
+    return new AuthClient(descriptiveName, channel);
   }
 
   bool IsClosed() {
