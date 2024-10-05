@@ -4,6 +4,7 @@
 
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using Deephaven.ManagedClient;
 using Google.Protobuf;
 using Grpc.Net.Client;
@@ -39,6 +40,8 @@ public class AuthClient : IDisposable {
   }
 
   private readonly ClientId _clientId;
+  private readonly object _authSync = new();
+  private readonly ClientState _clientState = new();
   private readonly GrpcChannel _channel;
   private readonly AuthApi.AuthApiClient _authApiStub;
   private readonly string _logId;
@@ -77,7 +80,7 @@ public class AuthClient : IDisposable {
 
   public bool PasswordAuthentication(string user, string password, string operateAs) {
     CheckNotClosedOrThrow();
-    var sendTime = DateTimeOffset.Now;
+    var sendTime = TimeNow();
     var deadline = sendTime + AuthGrpcRpcDeadlineMillis;
     return AuthenticateMethodWrapper(
       "PasswordAuthentication",
@@ -129,74 +132,70 @@ public class AuthClient : IDisposable {
       who, authenticateMethod, deadline, postAction);
   }
 
-  bool AuthClientImpl::
-AuthenticateMethodSecondHalf(
-    const std::string &who,
-    const AuthenticateMethod &authenticate_method,
-    const time_point deadline,
-    const PostAction &post_action
-) {
-  AuthResultPtr auth_result;
-try {
-  auth_result = authenticate_method(deadline);
-} catch (const std::exception &ex) {
-  {
-    lock_t lock (auth_mux_) ;
-    client_state_.Reset();
+  bool AuthenticateMethodSecondHalf(
+    string who,
+    Func<DateTimeOffset, AuthenticationResult> authenticateMethod,
+    DateTimeOffset deadline, Action postAction) {
+    AuthenticationResult authResult;
+    try {
+      authResult = authenticateMethod(deadline);
+    } catch (Exception ex) {
+      lock (_authSync) {
+        _clientState.Reset();
+      }
+      throw;
+    }
+    var authenticated = authResult.Authenticated;
+    UInt64 cookieGenerationSnapshot = 0;
+    var cookieDeadlineSnapshot = new DateTimeOffset();
+    lock (_authSync) {
+      try {
+        postAction();
+      } catch {
+        _clientState.Reset();
+        throw;
+      }
+      _clientState.authenticated = authenticated;
+      if (authenticated) {
+        cookieGenerationSnapshot = Interlocked.Increment(ref _clientState.atomicCookieGeneration);
+        _clientState.cookie = authResult.Cookie;
+        _clientState.userContext = new UserContext(
+          authResult.UserContext.AuthenticatedUser,
+          authResult.UserContext.EffectiveUser);
+        cookieDeadlineSnapshot = _clientState.cookieDeadline =
+          DateTimeOffset.FromUnixTimeMilliseconds(authResult.CookieDeadlineTimeMillis);
+      }
+
+      _clientState.authTid = null;
+      Monitor.PulseAll(_authSync);
+    }
+
+    if (authenticated) {
+      var now = TimeNow();
+      var millisToCookieDeadline = cookieDeadlineSnapshot - now;
+      // gpr_log(GPR_INFO,
+      //   WITH_ID_WHO("finished authenticating in thread %s, "
+      // "authenticated=true, "
+      // "Cookie deadline in %s."),
+      // TidToString(std::this_thread::get_id()).c_str(),
+      // MillisToStr(millisToCookieDeadline).c_str());
+      ScheduleCookieRefresh(
+        authResult.Cookie,
+        cookieGenerationSnapshot,
+        cookieDeadlineSnapshot);
+    } else {
+      // gpr_log(GPR_ERROR,
+      //   WITH_ID_WHO("finished authenticating in thread %s, "
+      // "authenticated=false"),
+      // TidToString(std::this_thread::get_id()).c_str());
+    }
+
+    return authenticated;
   }
-  throw;
-}
-const bool authenticated = auth_result->authenticated();
-std::size_t cookie_generation_snapshot = 0U;
-time_point cookie_deadline_snapshot;
-{
-  lock_t lock (auth_mux_) ;
-  try {
-    post_action();
-  } catch (...) {
-    client_state_.Reset();
-    throw;
-  }
-  client_state_.authenticated = authenticated;
-  if (authenticated) {
-    cookie_generation_snapshot = ++client_state_.cookie_generation;
-    client_state_.cookie = auth_result->cookie();
-    client_state_.user_context = {
-      auth_result->usercontext().authenticateduser(),
-          auth_result->usercontext().effectiveuser()
-      };
-    cookie_deadline_snapshot = client_state_.cookie_deadline =
-        EpochMillisToTimePoint(auth_result->cookie_deadline_time_millis());
-  }
-  client_state_.auth_tid.reset();
-  }
-  auth_cond_.notify_all();
-  if (authenticated) {
-    const time_point now = TimeNow();
-    const milliseconds millis_to_cookie_deadline =
-        duration_cast<milliseconds>(cookie_deadline_snapshot - now);
-    gpr_log(GPR_INFO,
-            WITH_ID_WHO("finished authenticating in thread %s, "
-                   "authenticated=true, "
-                   "Cookie deadline in %s."),
-            TidToString(std::this_thread::get_id()).c_str(),
-            MillisToStr(millis_to_cookie_deadline).c_str());
-    ScheduleCookieRefresh(
-        auth_result->cookie(),
-        cookie_generation_snapshot,
-        cookie_deadline_snapshot);
-  } else {
-    gpr_log(GPR_ERROR,
-            WITH_ID_WHO("finished authenticating in thread %s, "
-                   "authenticated=false"),
-            TidToString(std::this_thread::get_id()).c_str());
-  }
-  return authenticated;
-}
 
 
 
-/// <summary>
+  /// <summary>
 /// Ping a server; return and log roundtrip time.
 /// </summary>
 /// <param name="timeout">How long of a timeout to use in the Ping request to the server</param>
@@ -258,6 +257,28 @@ TimeSpan Ping(TimeSpan timeout) {
     ThrowIfAlreadyAuthenticated,
     ReturnTrueIfAlreadyAuthenticated
   }
+
+  class ClientState {
+    // id of the thread trying authentication; a default constructed tid if none
+    public int? authTid;
+    // if false, none of the fields below are valid.
+    public bool authenticated = false;
+    public string cookie;
+    public UInt64 atomicCookieGeneration;
+    public DateTimeOffset cookieDeadline;
+    public UserContext userContext;
+
+    public void Reset() {
+      authTid = null;
+      authenticated = false;
+      cookie = "";
+      Interlocked.Increment(ref atomicCookieGeneration);
+      cookieDeadline = new DateTimeOffset();
+      userContext = new UserContext();
+    }
+  };
+
+  private static DateTimeOffset TimeNow() {
+    return DateTimeOffset.UtcNow;
+  }
 }
-
-
