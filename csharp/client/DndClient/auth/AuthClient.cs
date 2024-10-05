@@ -90,49 +90,46 @@ public class AuthClient : IDisposable {
     Func<DateTimeOffset, AuthenticationResult> authenticateMethod,
     DateTimeOffset deadline,
     Action preAction, Action postAction) {
-  var state = PrepareAuthenticateMethod(
+    var state = PrepareAuthenticateMethod(
       who,
       strategy != AlreadyAuthenticatedStrategy.ThrowIfAlreadyAuthenticated,
       true,
       preAction);
-  switch (state) {
-    case AuthenticationState.Authenticated:
-      {
+    switch (state) {
+      case AuthenticationState.Authenticated: {
         const string msg = "already authenticated.";
         switch (strategy) {
           case AlreadyAuthenticatedStrategy.ThrowIfAlreadyAuthenticated:
             // gpr_log(GPR_ERROR, WITH_ID_WHO("%s"), msg);
-            throw AlreadyAuthenticatedException();
+            throw new AlreadyAuthenticatedException();
           case AlreadyAuthenticatedStrategy.ReturnTrueIfAlreadyAuthenticated:
             // gpr_log(GPR_INFO, WITH_ID_WHO("%s"), msg);
             return true;
         }
       }
-      break;
-    case AuthenticationState::kAlreadyAuthenticating: {
-    // we can only receive this return value in the case
-    // where strategy == THROW_IF_ALREADY_AUTHENTICATED.
-    const char*const msg = "already trying to authenticate";
-    gpr_log(GPR_ERROR, WITH_ID_WHO("%s"), msg);
-    throw AuthException(who + ": " + msg, AuthException::Tag::kNonRetryable);
-  }
-  break;
-case AuthenticationState::kNotAuthenticated:
-  throw std::logic_error(DEEPHAVEN_LOCATION_STR(
-        "PrepareAuthenticateMethod returned NOT_AUTHENTICATED"));
-case AuthenticationState::kNowAuthenticating:
-  // fallthrough to rest of the code.
-  break;
-default:
-  throw std::logic_error(DEEPHAVEN_LOCATION_STR(
-      "PrepareAuthenticateMethod returned unknown AuthenticationState"));
-}
-return AuthenticateMethodSecondHalf(
-    who, std::move(authenticate_method),
-    deadline, std::move(post_action));
-}
+        break;
+      case AuthenticationState.AlreadyAuthenticating: {
+        // we can only receive this return value in the case
+        // where strategy == THROW_IF_ALREADY_AUTHENTICATED.
+        const string msg = "already trying to authenticate";
+        // gpr_log(GPR_ERROR, WITH_ID_WHO("%s"), msg);
+        throw new AuthException(who + ": " + msg, Tag.NonRetryable);
+      }
+        break;
+      case AuthenticationState.NotAuthenticated:
+        throw new Exception("PrepareAuthenticateMethod returned NOT_AUTHENTICATED");
+      case AuthenticationState.NowAuthenticating:
+        // fallthrough to rest of the code.
+        break;
+      default:
+        throw new Exception("PrepareAuthenticateMethod returned unknown AuthenticationState");
+    }
 
-bool AuthClientImpl::
+    return AuthenticateMethodSecondHalf(
+      who, authenticateMethod, deadline, postAction);
+  }
+
+  bool AuthClientImpl::
 AuthenticateMethodSecondHalf(
     const std::string &who,
     const AuthenticateMethod &authenticate_method,

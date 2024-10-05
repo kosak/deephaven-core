@@ -5,16 +5,24 @@ public enum Tag {
   NonRetryable
 }
 
-public class AuthException : Exception {
+public class AuthException(string msg, Tag tag) : Exception(msg) {
+  public readonly Tag Tag = tag;
 
-  public readonly Tag Tag;
-
-  public AuthException(string msg, Tag tag) : base(msg) {
-    Tag = tag;
-  }
-
-  bool IsRetryable => Tag == Tag.Retryable;
+  bool IsRetryable => tag == Tag.Retryable;
 }
 
-public class AlreadyAuthenticationException : AuthException {
-}
+public class AlreadyAuthenticatedException() : AuthException("already authenticated", Tag.NonRetryable);
+
+public class AuthenticationFailure(string msg) : AuthException(msg, Tag.NonRetryable);
+
+public class AuthenticationRejected(string msg) : AuthenticationFailure(msg);
+
+public class NotAuthenticatedException(string msg) : AuthException(msg, Tag.Retryable);
+
+public class PubPrivKeyException(string msg) : AuthException(msg, Tag.NonRetryable);
+
+public class TokenCreationException(string msg) : AuthException(msg, Tag.NonRetryable);
+
+public class TokenVerificationException(string msg) : AuthException(msg, Tag.Retryable);
+
+public class UnavailableException(string msg) : AuthException(msg, Tag.Retryable);
