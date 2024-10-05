@@ -210,13 +210,14 @@ TimeSpan Ping(TimeSpan timeout) {
   }
 
   public AuthenticationResult AuthenticateByPassword(string user, string password, string operateAs, DateTimeOffset deadline) {
-    var req = new AuthenticateByPasswordRequest();
-    req.ClientId = _clientId;
-    req.UserContext = new UserContext {
-      AuthenticatedUser = user,
-      EffectiveUser = operateAs
+    var req = new AuthenticateByPasswordRequest {
+      ClientId = _clientId,
+      UserContext = new Io.Deephaven.Proto.Auth.UserContext {
+        AuthenticatedUser = user,
+        EffectiveUser = operateAs
+      },
+      Password = password
     };
-    req.Password = password;
     var result = _authApiStub.authenticateByPassword(req);
     return result.Result;
   }
