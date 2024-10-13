@@ -1,4 +1,4 @@
-<Project Sdk="WixToolset.Sdk/5.0.2">
+﻿<Project Sdk="WixToolset.Sdk/5.0.2">
   <PropertyGroup>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
@@ -14,6 +14,7 @@
     <DefineConstants>MSIProductVersion=$(MSIProductVersion)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ExcelAddIn\ExcelAddIn.csproj" />
     <ProjectReference Include="..\InstallerCA\InstallerCA.csproj">
       <Name>InstallerCA</Name>
       <Project>{f135d7b8-747c-4c4f-a9fc-1f3a25fbd403}</Project>
