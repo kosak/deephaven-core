@@ -1,0 +1,11 @@
+﻿<WixLocalization Culture="en-us" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+  <String Id="LANG" Value="1033" />
+  <String Id="ProductName" Value="Deephaven Excel Add-In" />
+  <String Id="ProductNameNoSpace" Value="DHExcelAddIn" />
+  <String Id="ProductDescription" Value="Installer for Deephaven Excel Add-In" />
+  <String Id="ProductManufacturer" Value="Procrustean Solutions LLC" />
+  <String Id="ProductVersion" Value="1" />
+  <String Id="ProductCopyright" Value="(c) 2024 Procrustean Solutions LLC" />
+  <String Id="ProductUninstallDescription" Value="Uninstall !(loc.ProductName)" />
+  <String Id="AppName" Value="!(loc.ProductName)" />
+</WixLocalization>

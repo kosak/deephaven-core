@@ -1,0 +1,254 @@
+﻿
+<!-- TODO 1/5: Set these two values (make a new Guid for the ProductUpgradeCode)  -->
+<?define ProductVersion = "1.0.0"?>
+<?define ProductUpgradeCode = "{E0419471-8163-4F34-A38C-76D5582AFA64}"?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="!(loc.ProductName)" Language="!(loc.LANG)" Version="$(var.ProductVersion)" Manufacturer="!(loc.ProductManufacturer)" UpgradeCode="$(var.ProductUpgradeCode)" InstallerVersion="200" Scope="perUser"><SummaryInformation Manufacturer="!(loc.ProductManufacturer)" Description="!(loc.ProductDescription)" />
+    
+    <MediaTemplate EmbedCab="yes" />
+    <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A newer version of [ProductName] is already installed." AllowSameVersionUpgrades="yes" />
+
+    <WixVariable Id="WixUIBannerBmp" Value="Resources\Banner.jpg" />
+    <WixVariable Id="WixUIDialogBmp" Value="Resources\Dialog.jpg" />
+    <WixVariable Id="WixUILicenseRtf" Value="Resources\EULA.rtf" />
+
+
+    <!-- ICONS -->
+    <Icon Id="ProductIcon" SourceFile="Resources\Icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+
+    <!-- Windows Installer set TARGETDIR to the local hard drive with the most free space.  The top-level Directory must be Id="TARGETDIR" Name="SourceDir" -->
+    
+
+    <!-- There must be a feature in the project and all components must be installed into the feature to be installed. -->
+    <Feature Id="ExcelAddIn" Title="!(loc.ProductName)" Description="!(loc.ProductDescription)" Level="1" AllowAdvertise="no">
+      <ComponentGroupRef Id="XLLDistributables" />
+    </Feature>
+
+    <PropertyRef Id="NETFRAMEWORK40CLIENT" />
+    <Launch Condition="Installed OR NETFRAMEWORK40CLIENT" Message="[ProductName] requires .NET Framework 4.0." />
+    <UI Id="UI">
+       <!--See http://wix.sourceforge.net/manual-wix3/WixUI_index.htm for more information
+       The following line adds the minimal WiX Dialog set to the install--> 
+      <ui:WixUI Id="WixUI_Minimal" />
+      <!-- This TextStyle is used in the CustonMessages.wxl file -->
+      <TextStyle Id="Black10" FaceName="Tahoma" Size="10" Red="0" Green="0" Blue="0" Bold="yes" />
+    </UI>
+    <!--IMPORTANT ALL MS OFFICE SUPPORTED VERSIONS ARE HERE: Office 2003, 2007, 2010, 2013, 2016 Keep it uptodate-->
+    <!-- these numbers will be parsed individually in the custom actions with InvariantCulture and NumberStyles.Any -->
+    <Property Id="OFFICEREGKEYS" Value="11.0,12.0,14.0,15.0,16.0" />
+    <Property Id="XLL32" Value="!(loc.ProductNameNoSpace)32.xll" />
+    <Property Id="XLL64" Value="!(loc.ProductNameNoSpace)64.xll" />
+    
+    <!-- The property below will disable the repair button. -->
+    <!--<Property Id="ARPNOREPAIR" Value="yes" />-->
+    <Property Id="PromptToCloseProcesses" Value="EXCEL" />
+    <Property Id="PromptToCloseDisplayNames" Value="Microsoft Excel" />
+    
+    <!--
+    To handle registering the XLL, a custom action project must be created and a project reference must be created. 
+    This project will create a DLL that WiX can understand.
+    The binary refers to the dll created by the custom action project.
+    If values are to be passed to the custom action project, the set property actions must precede the action specifying the DLL entry point.
+    The InstallExecuteSequence specifies the sequence to run the actions and the AdminExecuteSequence provide rights to non-admin users (to the registry).
+    For more information on custom actions, read
+    http://www.codeproject.com/Articles/132918/Creating-Custom-Action-for-WIX-Written-in-Managed?fid=1599130&df=90&mpp=25&noise=3&prof=False&sort=Position&view=Quick&spc=Relaxed&select=4131367&fr=1#xx0xx
+    -->
+    
+    <Binary Id="InstallerCA.CA.dll" SourceFile="$(var.InstallerCA.TargetDir)$(var.InstallerCA.TargetName).CA.dll" />
+    <CustomAction Id="Action_RegisterAddIn.SetProperty" Return="check" Property="Action_RegisterAddIn" Value="OFFICEREGKEYS=[OFFICEREGKEYS];XLL32=[XLL32];XLL64=[XLL64]" />
+    <CustomAction Id="Action_RegisterAddIn" DllEntry="CaRegisterAddIn" Return="check" Execute="immediate" BinaryRef="InstallerCA.CA.dll"/>
+    <CustomAction Id="Action_UnRegisterAddIn.SetProperty" Return="check" Property="Action_UnRegisterAddIn" Value="OFFICEREGKEYS=[OFFICEREGKEYS];XLL32=[XLL32];XLL64=[XLL64]" />
+    <CustomAction Id="Action_UnRegisterAddIn" DllEntry="CaUnRegisterAddIn" Return="check" Execute="immediate" BinaryRef="InstallerCA.CA.dll" />
+    <CustomAction Id="Action_CloseAppsPrompt" DllEntry="ClosePrompt" Return="check" BinaryRef="InstallerCA.CA.dll" />
+    <InstallExecuteSequence>
+      <Custom Action="Action_CloseAppsPrompt" After="Action_RegisterAddIn.SetProperty" />
+      <Custom Action="Action_RegisterAddIn.SetProperty" Before="Action_RegisterAddIn" Condition="NOT Installed" />
+      <Custom Action="Action_RegisterAddIn" Before="InstallFinalize" Condition="NOT Installed" />
+      <Custom Action="Action_UnRegisterAddIn.SetProperty" Before="Action_UnRegisterAddIn" Condition="Installed AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="Action_UnRegisterAddIn" Before="InstallFinalize" Condition="Installed AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+    <AdminExecuteSequence>
+      <Custom Action="Action_CloseAppsPrompt" After="Action_RegisterAddIn.SetProperty" />
+      <Custom Action="Action_RegisterAddIn.SetProperty" Before="InstallFinalize" Condition="NOT Installed" />
+      <Custom Action="Action_RegisterAddIn" After="Action_RegisterAddIn.SetProperty" Condition="NOT Installed" />
+      <Custom Action="Action_UnRegisterAddIn.SetProperty" Before="InstallFinalize" Condition="Installed AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="Action_UnRegisterAddIn" After="Action_UnRegisterAddIn.SetProperty" Condition="Installed AND NOT UPGRADINGPRODUCTCODE" />
+    </AdminExecuteSequence>
+
+  
+      <StandardDirectory Id="ProgramFilesFolder">
+        <Directory Id="COMPANYDIR" Name="!(loc.ProductManufacturer)" />
+      </StandardDirectory>
+      <StandardDirectory Id="LocalAppDataFolder">
+        <Directory Id="COMPANYAPPDATADIR" Name="!(loc.ProductManufacturer)">
+          <!-- !! THIS ID IS USED IN THE CUSTOM ACTION SO DO NOT CHANGE IT -->
+          <Directory Id="AddinFolder" Name="!(loc.ProductName)">
+          </Directory>
+        </Directory>
+      </StandardDirectory>
+    </Package>
+
+  <Fragment>
+    <!-- 
+    Components always have unique GUIDs so that Windows can track every file installed. This information is stored in the registry.
+    Components should only contain a single file. KeyPath files will be replaced if missing by the repair button on the installer.
+    -->
+    <ComponentGroup Id="XLLDistributables">
+	    <Component Id="abseil_dll.dll" Guid="{81A51873-6651-4338-B2E7-BCD2529DF87B}" Directory="AddinFolder">
+		    <RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="abseil_dll.dll" Value="AddIns" KeyPath="yes" Type="string" />
+		    <File Id="abseil_dll.dll" Source="c:\users\kosak\dhinstall\bin\abseil_dll.dll">
+		    </File>
+	    </Component>
+
+	    <Component Id="arrow.dll" Guid="{2E9960F0-E1A5-4C20-9359-5D6DAC5FDF1D}" Directory="AddinFolder">
+		    <RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="arrow.dll" Value="AddIns" KeyPath="yes" Type="string" />
+		    <File Id="arrow.dll" Source="c:\users\kosak\dhinstall\bin\arrow.dll">
+		    </File>
+	    </Component>
+
+		<Component Id="arrow_flight.dll" Guid="{FD1CF162-A10A-4406-9697-20BC21DB11B3}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="arrow_flight.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="arrow_flight.dll" Source="c:\users\kosak\dhinstall\bin\arrow_flight.dll">
+			</File>
+		</Component>
+
+		<Component Id="brotlicommon.dll" Guid="{0D0CE494-270B-4CA1-B0BF-2637894F601A}" Directory="AddinFolder">
+		    <RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="brotlicommon.dll" Value="AddIns" KeyPath="yes" Type="string" />
+		    <File Id="brotlicommon.dll" Source="c:\users\kosak\dhinstall\bin\brotlicommon.dll">
+		    </File>
+	    </Component>
+
+	    <Component Id="brotlidec.dll" Guid="{FB3209BA-C52E-4D8B-AA77-3EA4BD2A5E41}" Directory="AddinFolder">
+		    <RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="brotlidec.dll" Value="AddIns" KeyPath="yes" Type="string" />
+		    <File Id="brotlidec.dll" Source="c:\users\kosak\dhinstall\bin\brotlidec.dll">
+		    </File>
+	    </Component>
+
+		<Component Id="brotlienc.dll" Guid="{05991DD6-518F-4637-A6D6-C5E5815371D4}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="brotlienc.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="brotlienc.dll" Source="c:\users\kosak\dhinstall\bin\brotlienc.dll">
+			</File>
+		</Component>
+
+		<Component Id="bz2.dll" Guid="{2E743D51-07C4-4EAD-A428-A8FE9B57C7D9}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="bz2.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="bz2.dll" Source="c:\users\kosak\dhinstall\bin\bz2.dll">
+			</File>
+		</Component>
+
+		<Component Id="cares.dll" Guid="{295F49A7-9FA7-4B18-AEC0-4DD5AA3EBEC8}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="cares.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="cares.dll" Source="c:\users\kosak\dhinstall\bin\cares.dll">
+			</File>
+		</Component>
+
+		<Component Id="dhclient.dll" Guid="{6859D9A4-EA92-4E4E-B15E-129F6E3892E3}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="dhclient.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="dhclient.dll" Source="c:\users\kosak\dhinstall\bin\dhclient.dll">
+			</File>
+		</Component>
+
+		<Component Id="dhcore.dll" Guid="{21FBC59D-2506-4013-A454-7D7065B5BEF2}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="dhcore.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="dhcore.dll" Source="c:\users\kosak\dhinstall\bin\dhcore.dll">
+			</File>
+		</Component>
+
+		<Component Id="dhe_client.dll" Guid="{3F937912-A7ED-49BF-919E-6EF91B5759F2}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="dhe_client.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="dhe_client.dll" Source="c:\users\kosak\dhinstall\bin\dhe_client.dll">
+			</File>
+		</Component>
+
+		<Component Id="libcrypto_3_x64.dll" Guid="{5E15046A-EE27-4465-9A24-49AF640B5ADD}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="libcrypto-3-x64.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="libcrypto_3_x64.dll" Source="c:\users\kosak\dhinstall\bin\libcrypto-3-x64.dll">
+			</File>
+		</Component>
+
+		<Component Id="libcurl.dll" Guid="{24ABA90D-5C30-413D-9CA6-84B883598E5A}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="libcurl.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="libcurl.dll" Source="c:\users\kosak\dhinstall\bin\libcurl.dll">
+			</File>
+		</Component>
+
+		<Component Id="libprotobuf.dll" Guid="{510EE0D1-8728-4949-87D6-94666384B352}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="libprotobuf.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="libprotobuf.dll" Source="c:\users\kosak\dhinstall\bin\libprotobuf.dll">
+			</File>
+		</Component>
+
+		<Component Id="libssl_3_x64.dll" Guid="{4F188447-8004-4DA3-85A6-A11E3318ADAC}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="libssl-3-x64.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="libssl_3_x64.dll" Source="c:\users\kosak\dhinstall\bin\libssl-3-x64.dll">
+			</File>
+		</Component>
+
+		<Component Id="lz4.dll" Guid="{141B61A6-E028-451B-8207-A1945F3EEBCE}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="lz4.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="lz4.dll" Source="c:\users\kosak\dhinstall\bin\lz4.dll">
+			</File>
+		</Component>
+
+		<Component Id="re2.dll" Guid="{1672CEC7-1356-47D3-8072-51B82532EF29}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="re2.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="re2.dll" Source="c:\users\kosak\dhinstall\bin\re2.dll">
+			</File>
+		</Component>
+
+		<Component Id="snappy.dll" Guid="{BB40FB10-F3EB-42D9-92B2-D75F2E4E8CAA}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="snappy.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="snappy.dll" Source="c:\users\kosak\dhinstall\bin\snappy.dll">
+			</File>
+		</Component>
+
+		<Component Id="zlib1.dll" Guid="{C91615F7-B730-439F-96F7-36238FCED473}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="zlib1.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="zlib1.dll" Source="c:\users\kosak\dhinstall\bin\zlib1.dll">
+			</File>
+		</Component>
+
+		<Component Id="zstd.dll" Guid="{DDD6F132-9C39-4D63-8AAA-870B9A8143AD}" Directory="AddinFolder">
+			<RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="zstd.dll" Value="AddIns" KeyPath="yes" Type="string" />
+			<File Id="zstd.dll" Source="c:\users\kosak\dhinstall\bin\zstd.dll">
+			</File>
+		</Component>
+
+      <!-- TODO 4/5: Make a new Guid for the Component  -->
+      <Component Id="XLL64" Guid="{798EE69F-C12C-4A0B-81B0-42CF9347521D}" Directory="AddinFolder">
+        <RegistryValue Root="HKCU" Key="Software\!(loc.ProductManufacturer)\!(loc.ProductNameNoSpace)" Name="Xll64Bit" Value="AddIns" KeyPath="yes" Type="string" />
+        
+        <!-- TODO 5/5: Set the Source path to the 32-bit xll location -->
+		  <File Id="EXCELXLL64PACKED.XLL" Name="!(loc.ProductNameNoSpace)64.xll" Source="C:\Users\kosak\git\deephaven-core\csharp\ExcelAddIn\bin\Release\net8.0-windows\publish\ExcelAddIn-AddIn64-packed.xll">
+			  <netfx:NativeImage Id="ngen_64Xll" Platform="64bit" Priority="0" />
+		  </File>
+
+        <RemoveFile On="uninstall" Id="abseil_dll.dll" Directory="AddinFolder" Name="abseil_dll.dll" />
+        <RemoveFile On="uninstall" Id="arrow.dll" Directory="AddinFolder" Name="arrow.dll" />
+        <RemoveFile On="uninstall" Id="arrow_flight.dll" Directory="AddinFolder" Name="arrow_flight.dll" />
+        <RemoveFile On="uninstall" Id="brotlicommon.dll" Directory="AddinFolder" Name="brotlicommon.dll" />
+        <RemoveFile On="uninstall" Id="brotlidec.dll" Directory="AddinFolder" Name="brotlidec.dll" />
+        <RemoveFile On="uninstall" Id="brotlienc.dll" Directory="AddinFolder" Name="brotlienc.dll" />
+        <RemoveFile On="uninstall" Id="bz2.dll" Directory="AddinFolder" Name="bz2.dll" />
+        <RemoveFile On="uninstall" Id="cares.dll" Directory="AddinFolder" Name="cares.dll" />
+        <RemoveFile On="uninstall" Id="dhclient.dll" Directory="AddinFolder" Name="dhclient.dll" />
+        <RemoveFile On="uninstall" Id="dhcore.dll" Directory="AddinFolder" Name="dhcore.dll" />
+        <RemoveFile On="uninstall" Id="dhe_client.dll" Directory="AddinFolder" Name="dhe_client.dll" />
+        <RemoveFile On="uninstall" Id="libcrypto_3_x64.dll" Directory="AddinFolder" Name="libcrypto-3-x64.dll" />
+        <RemoveFile On="uninstall" Id="libcurl.dll" Directory="AddinFolder" Name="libcurl.dll" />
+        <RemoveFile On="uninstall" Id="libprotobuf.dll" Directory="AddinFolder" Name="libprotobuf.dll" />
+        <RemoveFile On="uninstall" Id="libssl_3_x64.dll" Directory="AddinFolder" Name="libssl-3-x64.dll" />
+        <RemoveFile On="uninstall" Id="lz4.dll" Directory="AddinFolder" Name="lz4.dll" />
+        <RemoveFile On="uninstall" Id="re2.dll" Directory="AddinFolder" Name="re2.dll" />
+        <RemoveFile On="uninstall" Id="snappy.dll" Directory="AddinFolder" Name="snappy.dll" />
+        <RemoveFile On="uninstall" Id="zlib1.dll" Directory="AddinFolder" Name="zlib1.dll" />
+        <RemoveFile On="uninstall" Id="zstd.dll" Directory="AddinFolder" Name="zstd.dll" />
+        <RemoveFile On="uninstall" Id="XLL64" Directory="AddinFolder" Name="!(loc.ProductNameNoSpace)64.xll" />
+        <RemoveFolder Id="AddinFolderRemove" Directory="AddinFolder" On="uninstall" />
+        <RemoveFolder Id="COMPANYAPPDATADIRRemove" Directory="COMPANYAPPDATADIR" On="uninstall" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
