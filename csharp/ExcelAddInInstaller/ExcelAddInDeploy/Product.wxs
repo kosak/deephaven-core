@@ -9,7 +9,7 @@
     <MediaTemplate EmbedCab="yes" />
     <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A newer version of [ProductName] is already installed." AllowSameVersionUpgrades="yes" />
 
-    <WixVariable Id="WixUIBannerBmp" Value="Resources\Banner.jpg" />
+    <WixVariable Id="WixUIBannerBmp" Value="Resources\Banner.bmp" />
     <WixVariable Id="WixUIDialogBmp" Value="Resources\Dialog.jpg" />
     <WixVariable Id="WixUILicenseRtf" Value="Resources\EULA.rtf" />
 

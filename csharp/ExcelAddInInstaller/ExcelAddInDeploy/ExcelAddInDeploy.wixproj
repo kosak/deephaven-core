@@ -25,10 +25,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Resources" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\Banner.jpg" />
+    <Content Include="Resources\Banner.bmp" />
     <Content Include="Resources\Dialog.jpg" />
     <Content Include="Resources\EULA.rtf" />
     <Content Include="Resources\Icon.ico" />
