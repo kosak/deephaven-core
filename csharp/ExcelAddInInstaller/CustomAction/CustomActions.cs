@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace CustomAction {
   public class CustomActions {
@@ -8,7 +9,9 @@ namespace CustomAction {
       // This will be used to show the message box or any dialog modal to installer window
       Win32Window msiWindow = new Win32Window(session.GetMsiWindowHandle());
 
-      System.Windows.Forms.MessageBox.Show(msiWindow, "Attach your debugger now!", "Advanced Installer custom action");
+      var megaId = Process.GetCurrentProcess().Id;
+
+      System.Windows.Forms.MessageBox.Show(msiWindow, $"(Don't) attach your debugger now! ({megaId})", "Advanced Installer custom action");
 
       // Log data passed as action data
       string infoMessage = string.Format("User data: \"{0}\"", session.CustomActionData);
