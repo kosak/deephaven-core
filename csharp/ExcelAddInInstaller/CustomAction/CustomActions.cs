@@ -18,10 +18,13 @@ namespace CustomAction {
       session.Log(infoMessage, MsiSession.InstallMessage.INFO);
 
       // Get property value
-      string myProperty = "MY_PROPERTY";
+      string myProperty = "APPDIR";
       string myPropertyValue = session.GetProperty(myProperty);
 
       // Log property MY_PROPERTY value
+
+      System.Windows.Forms.MessageBox.Show(msiWindow, myPropertyValue, "This is what I found");
+
       infoMessage = string.Format("Property \"{0}\" has value: \"{1}\"", myProperty, myPropertyValue);
       session.Log(infoMessage, MsiSession.InstallMessage.INFO);
 
