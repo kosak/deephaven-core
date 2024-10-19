@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -31,6 +32,9 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
   }
 
   public class OpenEntryManager {
+    public static bool TryCreate(out OpenEntryManager result) {
+
+    }
     public static bool TryAddOpenKey(string openValue, out string failureReason) {
     }
 
@@ -40,17 +44,46 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         return false;
       }
 
-      var desiredEntries = new List<OpenEntry>();
+      foreach (var entry in currentEntries) {
+        map[entry.Key].Before = entry.Value;
+      }
+
       foreach (var entry in currentEntries) {
         if (entry.Value.Equals(openValue)) {
           continue;
         }
 
-        var newEntry = OpenEntry.CreateFromIndex(desiredEntries.Count, entry.Value);
+        var key = OpenKey.CreateFromIndex(whatever);
+        map[desiredKey].After = entry.Value;
       }
 
-      using (var curp = currentEntries.GetEnumerator()) {
-        using (var desiredp = desiredEntries.GetEnumerator()) {
+      foreach (var stupid in map) {
+        // if After si null, delete before
+        // continue
+
+        // if Before is null, create after
+        // continue
+
+        // if values are the same, continue
+        // replace
+      }
+            }
+
+            if (!currentHasValue || curIt.Current.Index > desiredIt.Current.Index) {
+
+              // write desired
+              // advance desired
+              continue;
+            }
+
+            // keys same
+            if (entries different)
+            {
+              // write desired
+            }
+            // advance both
+          }
+
 
         }
       }
