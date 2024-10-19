@@ -3,7 +3,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace CustomAction
+namespace CustomActions
 {
 	public class MsiSession
 	{
