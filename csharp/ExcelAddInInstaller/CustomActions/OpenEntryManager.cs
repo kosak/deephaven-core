@@ -1,37 +1,133 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
-  public class OpenEntry {
-    public static bool TryParse(string key, string value, out OpenEntry result) {
+  public class OpenEntryManager {
+    public static bool TryCreate(out OpenEntryManager result, out string failureReason) {
       result = null;
-      var regex = new Regex(@"^OPEN(\d*)$", RegexOptions.Singleline);
-      var match = regex.Match(key);
-      if (!match.Success) {
+      failureReason = "";
+      var subKey = Registry.CurrentUser.OpenSubKey(RegistryKeys.OpenEntries.Key, false);
+      if (subKey == null) {
+        failureReason = $"Couldn't find registry key {RegistryKeys.OpenEntries.Key}";
         return false;
       }
-      var digits = match.Groups[1].Value;
-      var index = digits.Length > 0 ? int.Parse(digits) : 0;
-      result = new OpenEntry(index, key, value);
+
+      result = new OpenEntryManager(subKey);
       return true;
     }
 
-    public OpenEntry(int index, string key, string value) {
-      Index = index;
-      Key = key;
-      Value = value;
+    private readonly RegistryKey _subKey;
+
+    public OpenEntryManager(RegistryKey subKey) {
+      _subKey = subKey;
     }
 
-    public int Index { get; }
-    public String Key { get; }
-    public String Value { get; }
+    private bool TryCanonicalize(string openValue, bool resultContainsOpenValue, out string failureReason) {
+      if (!TryGetOpenEntries(out var currentEntries, out failureReason)) {
+        return false;
+      }
+
+      var resultMap = new Dictionary<OpenKey, BeforeAfter>();
+      foreach (var kvp in currentEntries) {
+        resultMap[kvp.Key].Before = kvp.Value;
+      }
+
+      // The canonicalization step
+      foreach (var entry in currentEntries) {
+        if (entry.Value.Equals(openValue)) {
+          if (!allowOneOpenValue) {
+            continue;
+          }
+          allowOneOpenValue = false;
+        }
+
+        var desiredKey = OpenKey.CreateFromIndex(whatever);
+        resultMap[desiredKey].After = entry.Value;
+      }
+
+      // Do we still need to add an open value somewhere?
+      if (allowOneOpenValue) {
+        var desiredKey = OpenKey.CreateFromIndex(whatever);
+        resultMap[desiredKey].After = openValue;
+      }
+
+      // The commit step
+      foreach (var entry in resultMap) {
+        var key = entry.Key;
+        var ba = entry.Value;
+        if (ba.After == null) {
+          // delete key
+          continue;
+        }
+
+        if (ba.Before == null) {
+          // create key
+          continue;
+        }
+
+        if (!ba.Before.Equals(ba.After)) {
+          // rewrite key
+        }
+      }
+    }
+
+    private bool TryGetOpenEntries(out SortedDictionary<OpenKey, string> entries, out string failureReason) {
+      entries = new SortedDictionary<OpenKey, string>();
+      failureReason = "";
+
+      var entryKeys = _subKey.GetValueNames();
+      foreach (var entryKey in entryKeys) {
+        var value = _subKey.GetValue(entryKey);
+        if (value == null) {
+          failureReason = $"Entry is null for value {entryKey}";
+        }
+
+        if (!OpenKey.TryParse(entryKey, out var key)) {
+          continue;
+        }
+
+        var svalue = value as string;
+        if (svalue == null) {
+          failureReason = $"Entry is not a string for value {entryKey}";
+        }
+
+        entries.Add(key, svalue);
+      }
+      return true;
+    }
+
+    private class BeforeAfter {
+      public string Before;
+      public string After;
+    }
+
+    private class OpenKey : UWQQWEJKLQHASHCODE {
+      public static bool TryParse(string key, out OpenKey result) {
+        result = null;
+        var regex = new Regex(@"^OPEN(\d*)$", RegexOptions.Singleline);
+        var match = regex.Match(key);
+        if (!match.Success) {
+          return false;
+        }
+        var digits = match.Groups[1].Value;
+        var index = digits.Length > 0 ? int.Parse(digits) : 0;
+        result = new OpenKey(index, key);
+        return true;
+      }
+
+      public int Index { get; }
+      public String Key { get; }
+
+      public OpenKey(int index, string key) {
+        Index = index;
+        Key = key;
+      }
+    }
   }
 
-  public class OpenEntryManager {
+  public class OpenEntryManager_old {
     public static bool TryCreate(out OpenEntryManager result) {
 
     }
@@ -151,5 +247,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       entries.Sort((l, r) => l.Index.CompareTo(r.Index));
       return true;
     }
+  }
+  }
   }
 }
