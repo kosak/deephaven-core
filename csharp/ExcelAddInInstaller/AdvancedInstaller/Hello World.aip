@@ -160,7 +160,10 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH_ORIGINAL" Target="[AI_SETUPEXEPATH]"/>
     <ROW Action="AI_DATA_SETTER" Type="51" Source="AI_RemoveAllTempFiles" Target="[AI_TEMP_FILE_ROLLBACK_INFO]"/>
+    <ROW Action="AI_DATA_SETTER_1" Type="51" Source="CustomActionData" Target="excel.exe"/>
     <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="zamboni|[&amp;customaction.dll]|CustomAction.CustomActions.CustomAction1"/>
+    <ROW Action="AI_DATA_SETTER_3" Type="51" Source="CustomActionData" Target="A Running Instance of Excel has been detected.&#13;\n&#13;\nPlease save your work and close Excel. |A Running Instance of Excel has been detected. |MB_OK,MB_ICONINFORMATION,MB_DEFBUTTON1|BTN_PRESSED|[CLIENTPROCESSID]"/>
+    <ROW Action="AI_DATA_SETTER_5" Type="51" Source="CustomActionData" Target="excel.exe"/>
     <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
     <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale"/>
     <ROW Action="AI_EnableDebugLog" Type="321" Source="aicustact.dll" Target="EnableDebugLog"/>
@@ -176,6 +179,10 @@
     <ROW Action="AI_SHOW_LOG" Type="65" Source="aicustact.dll" Target="LaunchLogFile" WithoutSeq="true"/>
     <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
     <ROW Action="CallDotNetMethod" Type="1" Source="DotNetMethodCaller.dll_1" Target="CallDotNetMethod" AdditionalSeq="AI_DATA_SETTER_2"/>
+    <ROW Action="DetectProcess" Type="1" Source="aicustact.dll" Target="DetectProcess" Options="3" AdditionalSeq="AI_DATA_SETTER_1"/>
+    <ROW Action="DetectProcess_again" Type="1" Source="aicustact.dll" Target="DetectProcess" Options="3" AdditionalSeq="AI_DATA_SETTER_5"/>
+    <ROW Action="ErrorMessage" Type="19" Target="Excel is still open. The installer will now exit. Please close Excel before running the installer again."/>
+    <ROW Action="MessageBox" Type="1" Source="aicustact.dll" Target="MsgBox" Options="1" AdditionalSeq="AI_DATA_SETTER_3"/>
     <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[LocalAppDataFolder][Manufacturer]\[ProductName]"/>
     <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
     <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
@@ -220,6 +227,15 @@
     <ROW Action="AI_DATA_SETTER" Sequence="1501"/>
     <ROW Action="CallDotNetMethod" Sequence="6402"/>
     <ROW Action="AI_DATA_SETTER_2" Sequence="6401"/>
+    <ROW Action="AI_DETECT_MODERNWIN" Condition="(VersionNT &gt;= 603)" Sequence="53" MsiKey="AI_DETECT_MODERNWIN"/>
+    <ROW Action="AI_DETECT_WINTHEME" Condition="(VersionNT &gt;= 603)" Sequence="54" MsiKey="AI_DETECT_WINTHEME"/>
+    <ROW Action="DetectProcess" Sequence="202"/>
+    <ROW Action="AI_DATA_SETTER_1" Sequence="201"/>
+    <ROW Action="MessageBox" Condition="AI_PROCESS_STATE=&quot;Running&quot;" Sequence="204"/>
+    <ROW Action="AI_DATA_SETTER_3" Condition="AI_PROCESS_STATE=&quot;Running&quot;" Sequence="203"/>
+    <ROW Action="DetectProcess_again" Sequence="206"/>
+    <ROW Action="AI_DATA_SETTER_5" Sequence="205"/>
+    <ROW Action="ErrorMessage" Condition="AI_PROCESS_STATE=&quot;Running&quot;" Sequence="207"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
     <ROW Action="AI_PRESERVE_INSTALL_TYPE" Sequence="199"/>

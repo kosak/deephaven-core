@@ -37,6 +37,8 @@ namespace CustomAction {
       infoMessage = string.Format("Property \"{0}\" was set as \"{1}\"", mySecondProperty, mySecondPropertyValue);
       session.Log(infoMessage, MsiSession.InstallMessage.INFO);
 
+      // Failure
+      // return 1603;
       return 0;
     }
   }
