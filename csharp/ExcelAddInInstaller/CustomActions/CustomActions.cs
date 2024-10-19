@@ -1,37 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
-  public class OpenEntry {
-    public String Key { get; }
-    public String Value { get; }
-  }
-
-
+  public static class CustomActions {
     public static bool TryDetermineBitness(out bool is64Bit, out string failureReason) {
       is64Bit = false;
       failureReason = "";
       var regView = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32;
       var regBase = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, regView);
-      var subKey = regBase.OpenSubKey(Bitness.Key, false);
+      var subKey = regBase.OpenSubKey(RegistryKeys.Bitness.Key, false);
       if (subKey == null) {
-        failureReason = $"Couldn't find registry key {Bitness.Key}";
+        failureReason = $"Couldn't find registry key {RegistryKeys.Bitness.Key}";
         return false;
       }
 
-      var bitnessValue = subKey.GetValue(Bitness.Name);
+      var bitnessValue = subKey.GetValue(RegistryKeys.Bitness.Name);
       if (bitnessValue == null) {
-        failureReason = $"Couldn't find entry for {Bitness.Name}";
+        failureReason = $"Couldn't find entry for {RegistryKeys.Bitness.Name}";
         return false;
       }
 
-      if (bitnessValue.Equals(Bitness.Value64)) {
+      if (bitnessValue.Equals(RegistryKeys.Bitness.Value64)) {
         is64Bit = true;
         return true;
       }
 
-      if (bitnessValue.Equals(Bitness.Value32)) {
+      if (bitnessValue.Equals(RegistryKeys.Bitness.Value32)) {
         is64Bit = false;
         return true;
       }
@@ -39,8 +35,6 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       failureReason = $"Unexpected bitness value {bitnessValue}";
       return false;
     }
-
-
 
     public static int CustomAction1(string aMsiHandle) {
       MsiSession session = new MsiSession(aMsiHandle);
