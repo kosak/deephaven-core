@@ -24,33 +24,35 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       _subKey = subKey;
     }
 
-    private bool TryCanonicalize(string openValue, bool resultContainsOpenValue, out string failureReason) {
+    public bool TryCanonicalize(string openValue, bool resultMustContainOpenValue, out string failureReason) {
       if (!TryGetOpenEntries(out var currentEntries, out failureReason)) {
         return false;
       }
 
-      var resultMap = new Dictionary<OpenKey, BeforeAfter>();
+      var resultMap = new SortedDictionary<OpenKey, BeforeAfter>();
       foreach (var kvp in currentEntries) {
-        resultMap[kvp.Key].Before = kvp.Value;
+        resultMap.LookupOrCreate(kvp.Key).Before = kvp.Value;
       }
 
       // The canonicalization step
+      var allowOneOpenValue = resultMustContainOpenValue;
+      var desiredKey = OpenKey.CreateFromIndex(0);
       foreach (var entry in currentEntries) {
         if (entry.Value.Equals(openValue)) {
           if (!allowOneOpenValue) {
             continue;
           }
+
           allowOneOpenValue = false;
         }
 
-        var desiredKey = OpenKey.CreateFromIndex(whatever);
-        resultMap[desiredKey].After = entry.Value;
+        resultMap.LookupOrCreate(desiredKey).After = entry.Value;
+        desiredKey = OpenKey.CreateFromIndex(desiredKey.Index + 1);
       }
 
       // Do we still need to add an open value somewhere?
       if (allowOneOpenValue) {
-        var desiredKey = OpenKey.CreateFromIndex(whatever);
-        resultMap[desiredKey].After = openValue;
+        resultMap.LookupOrCreate(desiredKey).After = openValue;
       }
 
       // The commit step
@@ -58,19 +60,27 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         var key = entry.Key;
         var ba = entry.Value;
         if (ba.After == null) {
+          Console.WriteLine($"Delete {key}");
           // delete key
           continue;
         }
 
         if (ba.Before == null) {
+          Console.WriteLine($"Create {key},{ba.After}");
           // create key
           continue;
         }
 
-        if (!ba.Before.Equals(ba.After)) {
-          // rewrite key
+        if (ba.Before.Equals(ba.After)) {
+          Console.WriteLine($"Leave {key} alone with value {ba.Before}");
+          continue;
         }
+
+        Console.WriteLine($"Rewrite {key} from {ba.Before} to {ba.After}");
+        // rewrite key
       }
+
+      return true;
     }
 
     private bool TryGetOpenEntries(out SortedDictionary<OpenKey, string> entries, out string failureReason) {
@@ -95,6 +105,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
 
         entries.Add(key, svalue);
       }
+
       return true;
     }
 
@@ -103,7 +114,11 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       public string After;
     }
 
-    private class OpenKey : UWQQWEJKLQHASHCODE {
+    private class OpenKey : IComparable<OpenKey>, IEquatable<OpenKey> {
+      public static OpenKey CreateFromIndex(int index) {
+        return index == 0 ? new OpenKey(0, "OPEN") : new OpenKey(index, "OPEN" + index);
+      }
+
       public static bool TryParse(string key, out OpenKey result) {
         result = null;
         var regex = new Regex(@"^OPEN(\d*)$", RegexOptions.Singleline);
@@ -111,6 +126,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         if (!match.Success) {
           return false;
         }
+
         var digits = match.Groups[1].Value;
         var index = digits.Length > 0 ? int.Parse(digits) : 0;
         result = new OpenKey(index, key);
@@ -124,130 +140,42 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         Index = index;
         Key = key;
       }
+
+      public bool Equals(OpenKey other) {
+        return CompareTo(other) == 0;
+      }
+
+      public override bool Equals(object obj) {
+        return CompareTo(obj as OpenKey) == 0;
+      }
+
+      public override int GetHashCode() {
+        unchecked {
+          return (Index * 397) ^ (Key != null ? Key.GetHashCode() : 0);
+        }
+      }
+
+      public int CompareTo(OpenKey other) {
+        if (other == null) {
+          return 1;
+        }
+
+        return Index.CompareTo(other.Index);
+      }
+
+      public override string ToString() {
+        return Key;
+      }
     }
   }
+}
 
-  public class OpenEntryManager_old {
-    public static bool TryCreate(out OpenEntryManager result) {
-
+static class ExtensionMethods {
+  public static V LookupOrCreate<K, V>(this IDictionary<K, V> dict, K key) where V : new() {
+    if (!dict.TryGetValue(key, out var value)) {
+      value = new V();
+      dict[key] = value;
     }
-    public static bool TryAddOpenKey(string openValue, out string failureReason) {
-    }
-
-    public static bool TryRemoveEntryMatching(string openValue, out int numRemainingKeys, out string failureReason) {
-      numRemainingKeys = 0;
-      if (!TryGetOpenEntries(out var currentEntries, out failureReason)) {
-        return false;
-      }
-
-      foreach (var entry in currentEntries) {
-        map[entry.Key].Before = entry.Value;
-      }
-
-      foreach (var entry in currentEntries) {
-        if (entry.Value.Equals(openValue)) {
-          continue;
-        }
-
-        var key = OpenKey.CreateFromIndex(whatever);
-        map[desiredKey].After = entry.Value;
-      }
-
-      foreach (var stupid in map) {
-        // if After si null, delete before
-        // continue
-
-        // if Before is null, create after
-        // continue
-
-        // if values are the same, continue
-        // replace
-      }
-            }
-
-            if (!currentHasValue || curIt.Current.Index > desiredIt.Current.Index) {
-
-              // write desired
-              // advance desired
-              continue;
-            }
-
-            // keys same
-            if (entries different)
-            {
-              // write desired
-            }
-            // advance both
-          }
-
-
-        }
-      }
-
-
-        var destKey = OpenKey.OfValue(0);
-      foreach (var entry in entries) {
-        if (entry.Value.Equals(openValue)) {
-          // DELETE IT
-        }
-
-      }
-      for (var i = 0; i != entries.Count; ++i) {
-
-      }
-
-
-      var differingEntries = entries.Where(e => e.Value.Equals(openValue)).ToArray();
-      numRemainingKeys = entries.Count - matchingEntries.Length;
-
-      if (matchingEntries.Length == 0) {
-        return true;
-      }
-
-      numRemainingKeys = entries.Count;
-      foreach (var entry in entries) {
-        if (!entry.Value.Equals(openValue)) {
-          continue;
-        }
-
-      }
-
-
-    }
-
-    private static bool TryGetOpenEntries(out List<OpenEntry> entries, out string failureReason) {
-      entries = null;
-      failureReason = "";
-      var subKey = Registry.CurrentUser.OpenSubKey(RegistryKeys.OpenEntries.Key, false);
-      if (subKey == null) {
-        failureReason = $"Couldn't find registry key {RegistryKeys.OpenEntries.Key}";
-        return false;
-      }
-
-      var entryKeys = subKey.GetValueNames();
-      entries = new List<OpenEntry>();
-      foreach (var entryKey in entryKeys) {
-        var value = subKey.GetValue(entryKey);
-        if (value == null) {
-          failureReason = $"Entry is null for value {entryKey}";
-        }
-
-        var svalue = value as string;
-        if (svalue == null) {
-          failureReason = $"Entry is not a string for value {entryKey}";
-        }
-
-        if (!OpenEntry.TryParse(entryKey, svalue, out var openEntry)) {
-          continue;
-        }
-
-        entries.Add(openEntry);
-      }
-
-      entries.Sort((l, r) => l.Index.CompareTo(r.Index));
-      return true;
-    }
-  }
-  }
+    return value;
   }
 }
