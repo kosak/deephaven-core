@@ -25,6 +25,7 @@ The process for adding the extension is documented here:
 https://www.advancedinstaller.com/user-guide/create-dot-net-ca.html
 
 Basically the steps are:
+
 * Open Visual Studio and navigate to Extensions → Manage Extensions.
 * In the Online section, search for Advanced Installer for Visual Studio
 * In Visual Studio navigate to File → New Project
@@ -34,43 +35,87 @@ Basically the steps are:
 Because of the above compatibility requirements I have decided that
 the right version is "C# Custom Action (.NET Framework)".
 
+# Windows Registry
 
-1. HKEY_LOCAL_MACHINE\Software\Microsoft\Office\${VERSION}\Outlook
+These are the reasons we need to access the Windows Registry
 
-(yes Outlook, not Excel)
+## Determining Office bitness
+
+To determine the "bitness" (32 or 64) of the version of Office that is
+installed, we look at this registry key:
+
+```
+HKEY_LOCAL_MACHINE\Software\Microsoft\Office\${VERSION}\Outlook
+```
+
+And yes, this information is stored at the "Outlook" part of the path,
+not Excel. This key contains an entry with the name
 which contains the name "Bitness" and the values "x86" or "x64".
-
-This helps us determine whether the user has installed the 32-bit vs
-64-bit version of Office.
 
 When I say ${VERSION} I mean one of the known versions of Office, one of
 the strings in the set 11.0, 12.0, 14.0, 15.0, 16.0
 
-It appears that 16.0 covers Office 2016, 2019, and 2021 and Office 365, so
-for Deephaven purposes we probably only care about finding 16.0 and ignoring
-any older version we might come across on the target machine.
+Version 16.0 covers Office 2016, 2019, and 2021 and Office 365, so
+for Deephaven purposes we can hardcode this to 16.0 and ignore previous
+versions we might find.
 
-2. HKEY_CURRENT_USER\Software\Microsoft\Office\$VERSION\Excel\Options
+Note that for reasons when we look up this key programmatically, we need
+to look it up in the "Registry Hive" that corresponds to the machine's
+operating system bitness. This is why we have code like
 
-which contains zero or more entries indicating which addins Excel should load
-when it starts. These entries have the following keys, which follow the
-almost-regular pattern:
+```
+var regView = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32;
+var regBase = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, regView);
+...
+var bitnessValue = subKey.GetValue(RegistryKeys.Bitness.Name);
+```
+
+Apparently, the Bitness key for a 32 bit installation of Office will still
+be in the 64 bit registry "hive" on a 64 bit machine. We may need to look
+into this further if it turns out to matter.
+
+## Modifying the set of installed Excel Add-Ins
+
+The relevant registry key here is:
+
+```
+HKEY_CURRENT_USER\Software\Microsoft\Office\${VERSION}\Excel\Options
+```
+
+Again, VERSION is hardcoded to 16.0. Also, unlike the bitness step, we
+don't have to write special code to pick a specific registry hive. This
+is why we have code like
+
+```
+var subKey = Registry.CurrentUser.OpenSubKey(RegistryKeys.OpenEntries.Key, true);
+```
+
+This key contains zero or more entries indicating which addins Excel
+should load when it starts. These entries have the following names, which follow the almost-regular pattern:
 
 OPEN, OPEN1, OPEN2, OPEN3, ...
 
-I say "almost-regular" because key that you might expect to be named OPEN0 is
-instead named simply OPEN.
+I say "almost-regular" because the first name is OPEN when you might
+expect to to be named OPEN0.
 
-These keys must be kept dense. That is, if you delete some key that is not
-at the end of the sequence, you will need to move the later entries down
-to fill in the gap. (e.g. the entry keyed by OPEN2 becomes OPEN1 etc).
+These names must be kept dense. That is, if you delete some name that is
+not at the end of the sequence, you will need to move the later entries
+down to fill in the gap. (e.g. the entry keyed by OPEN2 becomes OPEN1 etc).
 
-The value of these entries is the string /R "$FULLPATHTOXLL"
+The value of these entries is a string that looks like the pattern
 
-including the space and the quotation marks. On my computer the value of OPEN
-is currently
+```
+/R "${FULLPATHTOXLL}"
+```
 
+including the space and the quotation marks. On my computer the value of OPEN is currently
+
+```
 /R "C:\Users\kosak\Desktop\exceladdin-v7\ExcelAddIn-AddIn64-packed.xll"
+```
 
-The fact that I have installed my addin on the Desktop is not a best practice.
-The point here is to show the syntax.
+The fact that I have installed my addin on the Desktop is not a best practice. The point here is to show the syntax.
+
+We take care to make our entry follow the above format. Of course when we are moving
+the entries installed by other people, we treat them as opaque strings and don't look
+at the values.
