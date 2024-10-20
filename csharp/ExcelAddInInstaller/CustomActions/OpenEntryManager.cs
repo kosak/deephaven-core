@@ -29,14 +29,14 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         return false;
       }
 
-      var resultMap = new SortedDictionary<OpenKey, BeforeAfter>();
+      var resultMap = new SortedDictionary<int, BeforeAndAfter>();
       foreach (var kvp in currentEntries) {
         resultMap.LookupOrCreate(kvp.Key).Before = kvp.Value;
       }
 
       // The canonicalization step
       var allowOneOpenValue = resultMustContainOpenValue;
-      var desiredKey = OpenKey.CreateFromIndex(0);
+      var destKey = 0;
       foreach (var entry in currentEntries) {
         if (entry.Value.Equals(openValue)) {
           if (!allowOneOpenValue) {
@@ -46,13 +46,12 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
           allowOneOpenValue = false;
         }
 
-        resultMap.LookupOrCreate(desiredKey).After = entry.Value;
-        desiredKey = OpenKey.CreateFromIndex(desiredKey.Index + 1);
+        resultMap.LookupOrCreate(destKey++).After = entry.Value;
       }
 
       // Do we still need to add an open value somewhere?
       if (allowOneOpenValue) {
-        resultMap.LookupOrCreate(desiredKey).After = openValue;
+        resultMap.LookupOrCreate(destKey++).After = openValue;
       }
 
       // The commit step
@@ -83,8 +82,8 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       return true;
     }
 
-    private bool TryGetOpenEntries(out SortedDictionary<OpenKey, string> entries, out string failureReason) {
-      entries = new SortedDictionary<OpenKey, string>();
+    private bool TryGetOpenEntries(out SortedDictionary<int, string> entries, out string failureReason) {
+      entries = new SortedDictionary<int, string>();
       failureReason = "";
 
       var entryKeys = _subKey.GetValueNames();
@@ -94,7 +93,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
           failureReason = $"Entry is null for value {entryKey}";
         }
 
-        if (!OpenKey.TryParse(entryKey, out var key)) {
+        if (!OpenKey2.TryParse(entryKey, out var key)) {
           continue;
         }
 
@@ -109,18 +108,14 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       return true;
     }
 
-    private class BeforeAfter {
+    private class BeforeAndAfter {
       public string Before;
       public string After;
     }
 
-    private class OpenKey : IComparable<OpenKey>, IEquatable<OpenKey> {
-      public static OpenKey CreateFromIndex(int index) {
-        return index == 0 ? new OpenKey(0, "OPEN") : new OpenKey(index, "OPEN" + index);
-      }
-
-      public static bool TryParse(string key, out OpenKey result) {
-        result = null;
+    private static class OpenKey2 {
+      public static bool TryParse(string key, out int index) {
+        index = 0;
         var regex = new Regex(@"^OPEN(\d*)$", RegexOptions.Singleline);
         var match = regex.Match(key);
         if (!match.Success) {
@@ -128,43 +123,12 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         }
 
         var digits = match.Groups[1].Value;
-        var index = digits.Length > 0 ? int.Parse(digits) : 0;
-        result = new OpenKey(index, key);
+        index = digits.Length > 0 ? int.Parse(digits) : 0;
         return true;
       }
 
-      public int Index { get; }
-      public String Key { get; }
-
-      public OpenKey(int index, string key) {
-        Index = index;
-        Key = key;
-      }
-
-      public bool Equals(OpenKey other) {
-        return CompareTo(other) == 0;
-      }
-
-      public override bool Equals(object obj) {
-        return CompareTo(obj as OpenKey) == 0;
-      }
-
-      public override int GetHashCode() {
-        unchecked {
-          return (Index * 397) ^ (Key != null ? Key.GetHashCode() : 0);
-        }
-      }
-
-      public int CompareTo(OpenKey other) {
-        if (other == null) {
-          return 1;
-        }
-
-        return Index.CompareTo(other.Index);
-      }
-
-      public override string ToString() {
-        return Key;
+      public static string AsKey(int index) {
+        return index == 0 ? "OPEN" : "OPEN" + index;
       }
     }
   }
