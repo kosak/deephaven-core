@@ -1,8 +1,26 @@
-# The Custom Actions LIbrary
+# Background
 
-This library was created by adding a Visual Studio Extension
-from Advanced Installer to Visual Studio. The process for adding
-the extension is documented here:
+The purpose of this library is to add a "Custom Action" to our
+Advanced Installer package. This custom action does the actions
+needed to manipulate the Windows Registry in order to do things like
+
+1. detect whether the version of Office installed is 32 or 64 bit
+2. Add the special keys that tell Excel to open an Excel Add-In at startup
+
+# Information about this library
+
+This library is a .NET 4.8.0 Class Library with some special boilerplate
+code provided by Advanced Installer.
+
+.NET 4.8.0 is pretty old at this point, but I chose it because (I believe)
+it is guaranteed to be present on Windows 10/11 installations. Note that
+this is *not* the runtime used by the Excel Add-In itself; that add-in uses
+a much more modern runtime (.NET 8). This is just the runtime used to
+support the custom actions (registry manipulations) in the installer.
+
+This library and its boilerplate code were created by adding a
+Visual Studio Extension provided by Advanced Installer to Visual Studio.
+The process for adding the extension is documented here:
 
 https://www.advancedinstaller.com/user-guide/create-dot-net-ca.html
 
@@ -13,12 +31,8 @@ Basically the steps are:
 * From the list of templates, select the C# Custom Action template or the
   C# Custom Action (.NET Framework) template, depending on your needs
 
-For now, I have chosen to create C# Custom Action (.NET Framework) because
-that gives me .NET 4.8.0, which, although it is old, is guaranteeed to be
-installed on Windows 10/11. (I believe).
-
-The purpose of having a Custom Action is so we can manipulate the registry
-settings for Excel. Specifically we care about the following keys:
+Because of the above compatibility requirements I have decided that
+the right version is "C# Custom Action (.NET Framework)".
 
 
 1. HKEY_LOCAL_MACHINE\Software\Microsoft\Office\${VERSION}\Outlook
