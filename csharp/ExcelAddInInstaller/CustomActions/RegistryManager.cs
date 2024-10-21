@@ -5,8 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
   public class RegistryManager {
-    public static bool TryCreate(out RegistryManager result, out string failureReason) {
-
+    public static bool TryCreate(Action<string> logger, out RegistryManager result, out string failureReason) {
       result = null;
       failureReason = "";
 
@@ -20,7 +19,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         return false;
       }
 
-      result = new RegistryManager(bitnessKey, openKey);
+      result = new RegistryManager(bitnessKey, openKey, logger);
       return true;
     }
 
@@ -35,12 +34,27 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       return true;
     }
 
+
+    public static bool TryMakeAddInEntryFromPath(string path, out string result, out string failureReason) {
+      result = "";
+      failureReason = "";
+      if (path.Contains("\"")) {
+        failureReason = "Path contains illegal characters";
+        return false;
+      }
+      result = $"/R \"{path}\"";
+      return true;
+    }
+
     private readonly RegistryKey _registryKeyForBitness;
     private readonly RegistryKey _registryKeyForOpen;
+    private readonly Action<string> _logger;
 
-    public RegistryManager(RegistryKey registryKeyForBitness, RegistryKey registryKeyForOpen) {
+    public RegistryManager(RegistryKey registryKeyForBitness, RegistryKey registryKeyForOpen,
+      Action<string> logger) {
       _registryKeyForBitness = registryKeyForBitness;
       _registryKeyForOpen = registryKeyForOpen;
+      _logger = logger;
     }
 
     /// <summary>
@@ -91,12 +105,12 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
     /// Briefly if you want to install the addin, you can pass true for 'valuePresentInResult'. If you want
     /// to remove it, you can pass false.
     /// </summary>
-    /// <param name="addInRegistryValue">The registry value for the OPEN\d+ key. This is normally something like /R "C:\path\to\addin.xll"
+    /// <param name="addInEntry">The registry value for the OPEN\d+ key. This is normally something like /R "C:\path\to\addin.xll"
     /// with the space and quotation marks</param>
-    /// <param name="valuePresentInResult">true if you want the value present in the result.  </param>
+    /// <param name="resultContainsAddInEntry">true if you want the addInEntry present in the final result. False if you want it absent from the final result</param>
     /// <param name="failureReason">The human-readable reason the operation failed, if the method returns false</param>
     /// <returns>True if the operation succeeded. Otherwise, false</returns>
-    public bool TryCanonicalize(string addInRegistryValue, bool valuePresentInResult, out string failureReason) {
+    public bool TryUpdateAddInKeys(string addInEntry, bool resultContainsAddInEntry, out string failureReason) {
       if (!TryGetOpenEntries(out var currentEntries, out failureReason)) {
         return false;
       }
@@ -107,10 +121,10 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       }
 
       // The canonicalization step
-      var allowOneEntry = valuePresentInResult;
+      var allowOneEntry = resultContainsAddInEntry;
       var destKey = 0;
       foreach (var entry in currentEntries) {
-        if (entry.Item2.Equals(addInRegistryValue)) {
+        if (entry.Item2.Equals(addInEntry)) {
           if (!allowOneEntry) {
             continue;
           }
@@ -124,7 +138,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       // If there was no existing entry matching addInRegistryValue, and the
       // caller asked for it, then we still need to add it.
       if (allowOneEntry) {
-        resultMap.LookupOrCreate(destKey).After = addInRegistryValue;
+        resultMap.LookupOrCreate(destKey).After = addInEntry;
       }
 
       // The commit step
@@ -133,23 +147,23 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         var ba = entry.Value;
         var valueName = IndexToKey(index);
         if (ba.After == null) {
-          Console.WriteLine($"Delete {valueName}");
+          _logger($"Delete {valueName}");
           _registryKeyForOpen.DeleteValue(valueName);
           continue;
         }
 
         if (ba.Before == null) {
-          Console.WriteLine($"Set {valueName}={ba.After}");
+          _logger($"Set {valueName}={ba.After}");
           _registryKeyForOpen.SetValue(valueName, ba.After);
           continue;
         }
 
         if (ba.Before.Equals(ba.After)) {
-          Console.WriteLine($"Leave {valueName} alone: already set to {ba.Before}");
+          _logger($"Leave {valueName} alone: already set to {ba.Before}");
           continue;
         }
 
-        Console.WriteLine($"Rewrite {valueName} from {ba.Before} to {ba.After}");
+        _logger($"Rewrite {valueName} from {ba.Before} to {ba.After}");
         _registryKeyForOpen.SetValue(valueName, ba.After);
       }
 
