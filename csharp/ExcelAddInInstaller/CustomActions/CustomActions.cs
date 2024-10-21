@@ -5,36 +5,6 @@ using Microsoft.Win32;
 
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
   public static class CustomActions {
-    public static bool TryDetermineBitness(out bool is64Bit, out string failureReason) {
-      is64Bit = false;
-      failureReason = "";
-      var regView = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32;
-      var regBase = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, regView);
-      var subKey = regBase.OpenSubKey(RegistryKeys.Bitness.Key, false);
-      if (subKey == null) {
-        failureReason = $"Couldn't find registry key {RegistryKeys.Bitness.Key}";
-        return false;
-      }
-
-      var bitnessValue = subKey.GetValue(RegistryKeys.Bitness.Name);
-      if (bitnessValue == null) {
-        failureReason = $"Couldn't find entry for {RegistryKeys.Bitness.Name}";
-        return false;
-      }
-
-      if (bitnessValue.Equals(RegistryKeys.Bitness.Value64)) {
-        is64Bit = true;
-        return true;
-      }
-
-      if (bitnessValue.Equals(RegistryKeys.Bitness.Value32)) {
-        is64Bit = false;
-        return true;
-      }
-
-      failureReason = $"Unexpected bitness value {bitnessValue}";
-      return false;
-    }
 
     public static int CustomAction1(string aMsiHandle) {
       MsiSession session = new MsiSession(aMsiHandle);

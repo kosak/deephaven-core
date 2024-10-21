@@ -6,22 +6,73 @@ using System.Text.RegularExpressions;
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
   public class RegistryManager {
     public static bool TryCreate(out RegistryManager result, out string failureReason) {
+
       result = null;
       failureReason = "";
-      var subKey = Registry.CurrentUser.OpenSubKey(RegistryKeys.OpenEntries.Key, true);
-      if (subKey == null) {
-        failureReason = $"Couldn't find registry key {RegistryKeys.OpenEntries.Key}";
+
+      var regView = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32;
+      var regBase = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, regView);
+
+      if (!TryOpenSubKey(regBase, RegistryKeys.Bitness.Key, false,
+            out var bitnessKey, out failureReason) ||
+          !TryOpenSubKey(Registry.CurrentUser, RegistryKeys.OpenEntries.Key, true,
+            out var openKey, out failureReason)) {
         return false;
       }
 
-      result = new RegistryManager(subKey);
+      result = new RegistryManager(bitnessKey, openKey);
       return true;
     }
 
-    private readonly RegistryKey _subKey;
+    private static bool TryOpenSubKey(RegistryKey baseKey, string key, bool writable, out RegistryKey result, out string failureReason) {
+      failureReason = "";
+      result = baseKey.OpenSubKey(key, writable);
+      if (result == null) {
+        failureReason = $"Couldn't find registry key {RegistryKeys.Bitness.Key}";
+        return false;
+      }
 
-    public RegistryManager(RegistryKey subKey) {
-      _subKey = subKey;
+      return true;
+    }
+
+    private readonly RegistryKey _registryKeyForBitness;
+    private readonly RegistryKey _registryKeyForOpen;
+
+    public RegistryManager(RegistryKey registryKeyForBitness, RegistryKey registryKeyForOpen) {
+      _registryKeyForBitness = registryKeyForBitness;
+      _registryKeyForOpen = registryKeyForOpen;
+    }
+
+    /// <summary>
+    /// Determine whether the installed version of Office is the 32-bit version or the 64-bit version.
+    /// It's possible for example that the 32-bit version of Office can be installed on a 64-bit OS.
+    /// </summary>
+    /// <param name="is64Bit"></param>
+    /// <param name="failureReason"></param>
+    /// <returns></returns>
+
+    public bool TryDetermineBitness(out bool is64Bit, out string failureReason) {
+      is64Bit = false;
+      failureReason = "";
+
+      var bitnessValue = _registryKeyForBitness.GetValue(RegistryKeys.Bitness.Name);
+      if (bitnessValue == null) {
+        failureReason = $"Couldn't find entry for {RegistryKeys.Bitness.Name}";
+        return false;
+      }
+
+      if (bitnessValue.Equals(RegistryKeys.Bitness.Value64)) {
+        is64Bit = true;
+        return true;
+      }
+
+      if (bitnessValue.Equals(RegistryKeys.Bitness.Value32)) {
+        is64Bit = false;
+        return true;
+      }
+
+      failureReason = $"Unexpected bitness value {bitnessValue}";
+      return false;
     }
 
     /// <summary>
@@ -83,13 +134,13 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         var valueName = IndexToKey(index);
         if (ba.After == null) {
           Console.WriteLine($"Delete {valueName}");
-          _subKey.DeleteValue(valueName);
+          _registryKeyForOpen.DeleteValue(valueName);
           continue;
         }
 
         if (ba.Before == null) {
           Console.WriteLine($"Set {valueName}={ba.After}");
-          _subKey.SetValue(valueName, ba.After);
+          _registryKeyForOpen.SetValue(valueName, ba.After);
           continue;
         }
 
@@ -99,7 +150,7 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         }
 
         Console.WriteLine($"Rewrite {valueName} from {ba.Before} to {ba.After}");
-        _subKey.SetValue(valueName, ba.After);
+        _registryKeyForOpen.SetValue(valueName, ba.After);
       }
 
       return true;
@@ -109,9 +160,9 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
       failureReason = "";
       entries = new List<Tuple<int, string>>();
 
-      var entryKeys = _subKey.GetValueNames();
+      var entryKeys = _registryKeyForOpen.GetValueNames();
       foreach (var entryKey in entryKeys) {
-        var value = _subKey.GetValue(entryKey);
+        var value = _registryKeyForOpen.GetValue(entryKey);
         if (value == null) {
           failureReason = $"Entry is null for value {entryKey}";
         }
