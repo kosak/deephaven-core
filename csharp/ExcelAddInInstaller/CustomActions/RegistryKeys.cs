@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Deephaven.ExcelAddInInstaller.CustomActions {
+﻿namespace Deephaven.ExcelAddInInstaller.CustomActions {
   public static class RegistryKeys {
     public static class Bitness {
       // Key is in HKEY_LOCAL_MACHINE

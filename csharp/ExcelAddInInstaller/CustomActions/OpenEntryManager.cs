@@ -25,12 +25,17 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
     }
 
     /// <summary>
-    /// This method does a couple of things at the same time:
-    /// 1. Makes a pass through the OPEN\d+ entries making sure they are compact (montonically increasing).
-    ///    The correct sequence is OPEN,OPEN1,OPEN2,... and yes, the first one is OPEN not OPEN0.
-    /// 2. Depending on valuePresentInResult, that there are either 0 or 1 OPEN\d+ entries matching
-    ///    addInRegistryValue. This has a nice side effect of cleaning out duplicates, if the state
-    ///    managed to end up with duplicates.
+    /// The job of this method is to make whatever changes are needed so that the registry ends up in
+    /// the desired state. The caller can express one of two desired states:
+    /// 1. The caller wants the registry to end up with 0 instances of "addInRegistryValue"
+    /// 2. The caller wants the registry to end up with 1 instance of "addInRegistryValue".
+    ///
+    /// Basically #1 means "delete the key if it's there, otherwise do nothing", and
+    /// #2 means "add the key if it's not there, otherwise do nothing". This is true
+    /// except for the fact that we also do some clean-up logic... For example if there's
+    /// a gap between OPEN\d+ entries, we will close the gap, and if there are multiple
+    /// entries for "addInRegistryValue" we will reduce the final state to whatever the caller asked
+    /// for (either 0 or 1 entries).
     ///
     /// Briefly if you want to install the addin, you can pass true for 'valuePresentInResult'. If you want
     /// to remove it, you can pass false.
