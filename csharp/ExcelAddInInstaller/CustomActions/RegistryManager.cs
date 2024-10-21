@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
-  public class OpenEntryManager {
-    public static bool TryCreate(out OpenEntryManager result, out string failureReason) {
+  public class RegistryManager {
+    public static bool TryCreate(out RegistryManager result, out string failureReason) {
       result = null;
       failureReason = "";
       var subKey = Registry.CurrentUser.OpenSubKey(RegistryKeys.OpenEntries.Key, true);
@@ -14,13 +14,13 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
         return false;
       }
 
-      result = new OpenEntryManager(subKey);
+      result = new RegistryManager(subKey);
       return true;
     }
 
     private readonly RegistryKey _subKey;
 
-    public OpenEntryManager(RegistryKey subKey) {
+    public RegistryManager(RegistryKey subKey) {
       _subKey = subKey;
     }
 

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Deephaven.ExcelAddInInstaller.CustomActions {
   public class Program {
     static void Main(string[] args) {
-      var temp = OpenEntryManager.TryCreate(out var oem, out var failureReason);
+      var temp = RegistryManager.TryCreate(out var oem, out var failureReason);
       var stupid = oem.TryCanonicalize("hello", true, out failureReason);
     }
   }
