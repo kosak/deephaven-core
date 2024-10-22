@@ -6,12 +6,12 @@
     <ROW Property="ALLUSERS" Value="1" MultiBuildValue="DefaultBuild:"/>
     <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
     <ROW Property="Manufacturer" Value="Deephaven Data Labs LLC"/>
-    <ROW Property="ProductCode" Value="1033:{A62EED20-4507-41A2-B0D0-C83130DB0C5A} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{5C1E1B63-CC23-4F4D-8564-A843AA5D7413} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="Deephaven Excel Add-In"/>
     <ROW Property="ProductVersion" Value="1.0.0" Options="32"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
-    <ROW Property="UpgradeCode" Value="{7BEE4EAE-7DA4-4526-A5EF-E4791C1B9E49}"/>
+    <ROW Property="UpgradeCode" Value="{98EB9359-8BA3-44BA-A411-AED290E6EBD9}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-"/>
     <ROW Property="WindowsType9XDisplay" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-"/>
     <ROW Property="WindowsTypeNT40" MultiBuildValue="DefaultBuild:Windows NT 4.0" ValueLocId="-"/>
