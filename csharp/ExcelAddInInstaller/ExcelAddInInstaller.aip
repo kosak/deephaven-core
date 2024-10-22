@@ -154,7 +154,7 @@
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH_ORIGINAL" Target="[AI_SETUPEXEPATH]"/>
     <ROW Action="AI_DATA_SETTER" Type="51" Source="AI_RemoveAllTempFiles" Target="[AI_TEMP_FILE_ROLLBACK_INFO]"/>
     <ROW Action="AI_DATA_SETTER_1" Type="51" Source="CustomActionData" Target="excel.exe"/>
-    <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="zambonitime|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.CustomActions.RegisterAddIn"/>
+    <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.CustomActions.RegisterAddIn"/>
     <ROW Action="AI_DATA_SETTER_3" Type="51" Source="CustomActionData" Target="A Running Instance of Excel has been detected.&#13;\n&#13;\nPlease save your work and close Excel. |A Running Instance of Excel has been detected. |MB_OK,MB_ICONINFORMATION,MB_DEFBUTTON1|BTN_PRESSED|[CLIENTPROCESSID]"/>
     <ROW Action="AI_DATA_SETTER_5" Type="51" Source="CustomActionData" Target="excel.exe"/>
     <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
