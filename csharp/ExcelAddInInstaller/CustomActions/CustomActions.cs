@@ -6,7 +6,8 @@ namespace Deephaven.ExcelAddInInstaller.CustomActions {
     public const int Success = 0;
     public const int Failure = 1603;
   }
-  public static class CustomActions {
+
+  public static class Functions {
     public static int RegisterAddIn(string msiHandle) {
       return RunHelper(msiHandle, "RegisterAddIn", sess => DoRegisterAddIn(sess, true));
     }

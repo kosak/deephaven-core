@@ -36,6 +36,7 @@
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
     <ROW Component="APPDIR" ComponentId="{8E979EB8-436A-46EE-9EAA-85B439FF9FB1}" Directory_="APPDIR" Attributes="0"/>
+    <ROW Component="ExcelAddInAddIn64packed.xll" ComponentId="{A1567B26-6B7A-4740-9D29-568BF18480C4}" Directory_="APPDIR" Attributes="256" KeyPath="ExcelAddInAddIn64packed.xll" Type="0"/>
     <ROW Component="ProductInformation" ComponentId="{29C82426-B735-49FE-ACCB-50C954DEAF1C}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
     <ROW Component="abseil_dll.dll" ComponentId="{0F1B25B4-96DE-4BF7-A606-3D2D64CC5DF8}" Directory_="APPDIR" Attributes="256" KeyPath="abseil_dll.dll"/>
     <ROW Component="arrow.dll" ComponentId="{D844F7D6-104D-46B5-9043-13774C85008F}" Directory_="APPDIR" Attributes="256" KeyPath="arrow.dll"/>
@@ -83,6 +84,7 @@
     <ROW File="snappy.dll" Component_="snappy.dll" FileName="snappy.dll" Attributes="0" SourcePath="dhinstall\snappy.dll" SelfReg="false"/>
     <ROW File="zlib1.dll" Component_="zlib1.dll" FileName="zlib1.dll" Attributes="0" SourcePath="dhinstall\zlib1.dll" SelfReg="false"/>
     <ROW File="zstd.dll" Component_="zstd.dll" FileName="zstd.dll" Attributes="0" SourcePath="dhinstall\zstd.dll" SelfReg="false"/>
+    <ROW File="ExcelAddInAddIn64packed.xll" Component_="ExcelAddInAddIn64packed.xll" FileName="EXCELA~1.XLL|ExcelAddIn-AddIn64-packed.xll" Attributes="0" SourcePath="..\ExcelAddIn\bin\Debug\net8.0-windows\publish\ExcelAddIn-AddIn64-packed.xll" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -117,6 +119,7 @@
     <ROW Fragment="WelcomeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\WelcomeDlg.aip"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
+    <ROW Name="DotNetMethodCaller.dll" SourcePath="&lt;AI_CUSTACTS&gt;DotNetMethodCaller.dll"/>
     <ROW Name="DotNetMethodCaller.dll_1" SourcePath="&lt;AI_CUSTACTS64&gt;DotNetMethodCaller.dll"/>
     <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
     <ROW Name="tempFiles.dll" SourcePath="&lt;AI_CUSTACTS&gt;tempFiles.dll"/>
@@ -154,8 +157,9 @@
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH_ORIGINAL" Target="[AI_SETUPEXEPATH]"/>
     <ROW Action="AI_DATA_SETTER" Type="51" Source="AI_RemoveAllTempFiles" Target="[AI_TEMP_FILE_ROLLBACK_INFO]"/>
     <ROW Action="AI_DATA_SETTER_1" Type="51" Source="CustomActionData" Target="excel.exe"/>
-    <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.CustomActions.RegisterAddIn"/>
+    <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.Functions.RegisterAddIn"/>
     <ROW Action="AI_DATA_SETTER_3" Type="51" Source="CustomActionData" Target="A Running Instance of Excel has been detected.&#13;\n&#13;\nPlease save your work and close Excel. |A Running Instance of Excel has been detected. |MB_OK,MB_ICONINFORMATION,MB_DEFBUTTON1|BTN_PRESSED|[CLIENTPROCESSID]"/>
+    <ROW Action="AI_DATA_SETTER_4" Type="51" Source="CustomActionData" Target="|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.Functions.UnregisterAddIn"/>
     <ROW Action="AI_DATA_SETTER_5" Type="51" Source="CustomActionData" Target="excel.exe"/>
     <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
     <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale"/>
@@ -171,14 +175,15 @@
     <ROW Action="AI_ResolveKnownFolders" Type="1" Source="aicustact.dll" Target="AI_ResolveKnownFolders"/>
     <ROW Action="AI_SHOW_LOG" Type="65" Source="aicustact.dll" Target="LaunchLogFile" WithoutSeq="true"/>
     <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
-    <ROW Action="CallDotNetMethod" Type="1" Source="DotNetMethodCaller.dll_1" Target="CallDotNetMethod" AdditionalSeq="AI_DATA_SETTER_2"/>
     <ROW Action="DetectProcess" Type="1" Source="aicustact.dll" Target="DetectProcess" Options="3" AdditionalSeq="AI_DATA_SETTER_1"/>
     <ROW Action="DetectProcess_again" Type="1" Source="aicustact.dll" Target="DetectProcess" Options="3" AdditionalSeq="AI_DATA_SETTER_5"/>
     <ROW Action="ErrorMessage" Type="19" Target="Excel is still open. The installer will now exit. Please close Excel before running the installer again."/>
+    <ROW Action="InstallRegKeysWithDotnet" Type="1" Source="DotNetMethodCaller.dll_1" Target="CallDotNetMethod" AdditionalSeq="AI_DATA_SETTER_2"/>
     <ROW Action="MessageBox" Type="1" Source="aicustact.dll" Target="MsgBox" Options="1" AdditionalSeq="AI_DATA_SETTER_3"/>
     <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[LocalAppDataFolder][Manufacturer]\[ProductName]"/>
     <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
     <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
+    <ROW Action="UninstallRegKeysWithDotnet" Type="1" Source="DotNetMethodCaller.dll" Target="CallDotNetMethod" AdditionalSeq="AI_DATA_SETTER_4"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatCompsComponent">
     <ROW Feature_="MainFeature" Component_="APPDIR"/>
@@ -203,6 +208,7 @@
     <ROW Feature_="MainFeature" Component_="snappy.dll"/>
     <ROW Feature_="MainFeature" Component_="zlib1.dll"/>
     <ROW Feature_="MainFeature" Component_="zstd.dll"/>
+    <ROW Feature_="MainFeature" Component_="ExcelAddInAddIn64packed.xll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
     <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
@@ -211,8 +217,8 @@
     <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1397"/>
     <ROW Action="AI_ResolveKnownFolders" Sequence="52"/>
     <ROW Action="AI_EnableDebugLog" Sequence="51"/>
-    <ROW Action="CallDotNetMethod" Sequence="6402"/>
-    <ROW Action="AI_DATA_SETTER_2" Sequence="6401"/>
+    <ROW Action="InstallRegKeysWithDotnet" Condition="( ( NOT Installed ) OR ( Installed AND REMOVE &lt;&gt; &quot;ALL&quot; AND AI_INSTALL_MODE &lt;&gt; &quot;Remove&quot; ) )" Sequence="6402"/>
+    <ROW Action="AI_DATA_SETTER_2" Condition="( ( NOT Installed ) OR ( Installed AND REMOVE &lt;&gt; &quot;ALL&quot; AND AI_INSTALL_MODE &lt;&gt; &quot;Remove&quot; ) )" Sequence="6401"/>
     <ROW Action="AI_DETECT_MODERNWIN" Condition="(VersionNT &gt;= 603)" Sequence="53" MsiKey="AI_DETECT_MODERNWIN"/>
     <ROW Action="AI_DETECT_WINTHEME" Condition="(VersionNT &gt;= 603)" Sequence="54" MsiKey="AI_DETECT_WINTHEME"/>
     <ROW Action="DetectProcess" Sequence="202"/>
@@ -226,6 +232,8 @@
     <ROW Action="AI_RemoveTempFiles" Sequence="6601"/>
     <ROW Action="AI_RemoveAllTempFiles" Sequence="1502"/>
     <ROW Action="AI_DATA_SETTER" Sequence="1501"/>
+    <ROW Action="UninstallRegKeysWithDotnet" Condition="( Installed AND ( REMOVE = &quot;ALL&quot; OR AI_INSTALL_MODE = &quot;Remove&quot; ) )" Sequence="6404"/>
+    <ROW Action="AI_DATA_SETTER_4" Condition="( Installed AND ( REMOVE = &quot;ALL&quot; OR AI_INSTALL_MODE = &quot;Remove&quot; ) )" Sequence="6403"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
     <ROW Action="AI_PRESERVE_INSTALL_TYPE" Sequence="199"/>
