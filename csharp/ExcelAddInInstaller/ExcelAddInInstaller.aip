@@ -35,8 +35,9 @@
     <ROW Component="ProductInformation" Value="{29C82426-B735-49FE-ACCB-50C954DEAF1C}"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
+    <ROW Component="A0BFC224E0E9125ADE0B2DBF343" ComponentId="{E1ADD312-FEAA-4B64-B0E8-083F28287442}" Directory_="APPDIR" Attributes="260" KeyPath="A0BFC224E0E9125ADE0B2DBF343" Options="2"/>
     <ROW Component="APPDIR" ComponentId="{8E979EB8-436A-46EE-9EAA-85B439FF9FB1}" Directory_="APPDIR" Attributes="0"/>
-    <ROW Component="ExcelAddInAddIn64packed.xll" ComponentId="{A1567B26-6B7A-4740-9D29-568BF18480C4}" Directory_="APPDIR" Attributes="256" KeyPath="ExcelAddInAddIn64packed.xll" Type="0"/>
+    <ROW Component="DeephavenExcelAddIn64.xll" ComponentId="{CF574125-3DCE-4858-BBCC-ECD6E32B781E}" Directory_="APPDIR" Attributes="256" KeyPath="DeephavenExcelAddIn64.xll" Type="0"/>
     <ROW Component="ProductInformation" ComponentId="{29C82426-B735-49FE-ACCB-50C954DEAF1C}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
     <ROW Component="abseil_dll.dll" ComponentId="{0F1B25B4-96DE-4BF7-A606-3D2D64CC5DF8}" Directory_="APPDIR" Attributes="256" KeyPath="abseil_dll.dll"/>
     <ROW Component="arrow.dll" ComponentId="{D844F7D6-104D-46B5-9043-13774C85008F}" Directory_="APPDIR" Attributes="256" KeyPath="arrow.dll"/>
@@ -60,38 +61,45 @@
     <ROW Component="zstd.dll" ComponentId="{F4FEF688-45B1-4C60-824B-6038B23E5770}" Directory_="APPDIR" Attributes="256" KeyPath="zstd.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
+    <ROW Feature="A0BFC224E0E9125ADE0B2DBF343" Title=".NET Desktop Runtime 8.0.8 x64" Description=".NET Desktop Runtime 8.0.8 x64" Display="3" Level="1" Attributes="0"/>
     <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="abseil_dll.dll" Component_="abseil_dll.dll" FileName="ABSEIL~1.DLL|abseil_dll.dll" Attributes="0" SourcePath="dhinstall\abseil_dll.dll" SelfReg="false"/>
-    <ROW File="arrow.dll" Component_="arrow.dll" FileName="arrow.dll" Attributes="0" SourcePath="dhinstall\arrow.dll" SelfReg="false"/>
-    <ROW File="arrow_flight.dll" Component_="arrow_flight.dll" FileName="ARROW_~1.DLL|arrow_flight.dll" Attributes="0" SourcePath="dhinstall\arrow_flight.dll" SelfReg="false"/>
-    <ROW File="brotlicommon.dll" Component_="brotlicommon.dll" FileName="BROTLI~1.DLL|brotlicommon.dll" Attributes="0" SourcePath="dhinstall\brotlicommon.dll" SelfReg="false"/>
-    <ROW File="brotlidec.dll" Component_="brotlidec.dll" FileName="BROTLI~2.DLL|brotlidec.dll" Attributes="0" SourcePath="dhinstall\brotlidec.dll" SelfReg="false"/>
-    <ROW File="brotlienc.dll" Component_="brotlienc.dll" FileName="BROTLI~3.DLL|brotlienc.dll" Attributes="0" SourcePath="dhinstall\brotlienc.dll" SelfReg="false"/>
-    <ROW File="bz2.dll" Component_="bz2.dll" FileName="bz2.dll" Attributes="0" SourcePath="dhinstall\bz2.dll" SelfReg="false"/>
-    <ROW File="cares.dll" Component_="cares.dll" FileName="cares.dll" Attributes="0" SourcePath="dhinstall\cares.dll" SelfReg="false"/>
-    <ROW File="dhclient.dll" Component_="dhclient.dll" FileName="dhclient.dll" Attributes="0" SourcePath="dhinstall\dhclient.dll" SelfReg="false"/>
-    <ROW File="dhcore.dll" Component_="dhcore.dll" FileName="dhcore.dll" Attributes="0" SourcePath="dhinstall\dhcore.dll" SelfReg="false"/>
-    <ROW File="dhe_client.dll" Component_="dhe_client.dll" FileName="DHE_CL~1.DLL|dhe_client.dll" Attributes="0" SourcePath="dhinstall\dhe_client.dll" SelfReg="false"/>
-    <ROW File="libcrypto3x64.dll" Component_="libcrypto3x64.dll" FileName="LIBCRY~1.DLL|libcrypto-3-x64.dll" Attributes="0" SourcePath="dhinstall\libcrypto-3-x64.dll" SelfReg="false"/>
-    <ROW File="libcurl.dll" Component_="libcurl.dll" FileName="libcurl.dll" Attributes="0" SourcePath="dhinstall\libcurl.dll" SelfReg="false"/>
-    <ROW File="libprotobuf.dll" Component_="libprotobuf.dll" FileName="LIBPRO~1.DLL|libprotobuf.dll" Attributes="0" SourcePath="dhinstall\libprotobuf.dll" SelfReg="false"/>
-    <ROW File="libssl3x64.dll" Component_="libssl3x64.dll" FileName="LIBSSL~1.DLL|libssl-3-x64.dll" Attributes="0" SourcePath="dhinstall\libssl-3-x64.dll" SelfReg="false"/>
-    <ROW File="lz4.dll" Component_="lz4.dll" FileName="lz4.dll" Attributes="0" SourcePath="dhinstall\lz4.dll" SelfReg="false"/>
-    <ROW File="re2.dll" Component_="re2.dll" FileName="re2.dll" Attributes="0" SourcePath="dhinstall\re2.dll" SelfReg="false"/>
-    <ROW File="snappy.dll" Component_="snappy.dll" FileName="snappy.dll" Attributes="0" SourcePath="dhinstall\snappy.dll" SelfReg="false"/>
-    <ROW File="zlib1.dll" Component_="zlib1.dll" FileName="zlib1.dll" Attributes="0" SourcePath="dhinstall\zlib1.dll" SelfReg="false"/>
-    <ROW File="zstd.dll" Component_="zstd.dll" FileName="zstd.dll" Attributes="0" SourcePath="dhinstall\zstd.dll" SelfReg="false"/>
-    <ROW File="ExcelAddInAddIn64packed.xll" Component_="ExcelAddInAddIn64packed.xll" FileName="EXCELA~1.XLL|ExcelAddIn-AddIn64-packed.xll" Attributes="0" SourcePath="..\ExcelAddIn\bin\Debug\net8.0-windows\publish\ExcelAddIn-AddIn64-packed.xll" SelfReg="false"/>
+    <ROW File="abseil_dll.dll" Component_="abseil_dll.dll" FileName="ABSEIL~1.DLL|abseil_dll.dll" Attributes="0" SourcePath="dhinstall\abseil_dll.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="arrow.dll" Component_="arrow.dll" FileName="arrow.dll" Attributes="0" SourcePath="dhinstall\arrow.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="arrow_flight.dll" Component_="arrow_flight.dll" FileName="ARROW_~1.DLL|arrow_flight.dll" Attributes="0" SourcePath="dhinstall\arrow_flight.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="brotlicommon.dll" Component_="brotlicommon.dll" FileName="BROTLI~1.DLL|brotlicommon.dll" Attributes="0" SourcePath="dhinstall\brotlicommon.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="brotlidec.dll" Component_="brotlidec.dll" FileName="BROTLI~2.DLL|brotlidec.dll" Attributes="0" SourcePath="dhinstall\brotlidec.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="brotlienc.dll" Component_="brotlienc.dll" FileName="BROTLI~3.DLL|brotlienc.dll" Attributes="0" SourcePath="dhinstall\brotlienc.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="bz2.dll" Component_="bz2.dll" FileName="bz2.dll" Attributes="0" SourcePath="dhinstall\bz2.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="cares.dll" Component_="cares.dll" FileName="cares.dll" Attributes="0" SourcePath="dhinstall\cares.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="dhclient.dll" Component_="dhclient.dll" FileName="dhclient.dll" Attributes="0" SourcePath="dhinstall\dhclient.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="dhcore.dll" Component_="dhcore.dll" FileName="dhcore.dll" Attributes="0" SourcePath="dhinstall\dhcore.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="dhe_client.dll" Component_="dhe_client.dll" FileName="DHE_CL~1.DLL|dhe_client.dll" Attributes="0" SourcePath="dhinstall\dhe_client.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libcrypto3x64.dll" Component_="libcrypto3x64.dll" FileName="LIBCRY~1.DLL|libcrypto-3-x64.dll" Attributes="0" SourcePath="dhinstall\libcrypto-3-x64.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libcurl.dll" Component_="libcurl.dll" FileName="libcurl.dll" Attributes="0" SourcePath="dhinstall\libcurl.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libprotobuf.dll" Component_="libprotobuf.dll" FileName="LIBPRO~1.DLL|libprotobuf.dll" Attributes="0" SourcePath="dhinstall\libprotobuf.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libssl3x64.dll" Component_="libssl3x64.dll" FileName="LIBSSL~1.DLL|libssl-3-x64.dll" Attributes="0" SourcePath="dhinstall\libssl-3-x64.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="lz4.dll" Component_="lz4.dll" FileName="lz4.dll" Attributes="0" SourcePath="dhinstall\lz4.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="re2.dll" Component_="re2.dll" FileName="re2.dll" Attributes="0" SourcePath="dhinstall\re2.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="snappy.dll" Component_="snappy.dll" FileName="snappy.dll" Attributes="0" SourcePath="dhinstall\snappy.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="zlib1.dll" Component_="zlib1.dll" FileName="zlib1.dll" Attributes="0" SourcePath="dhinstall\zlib1.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="zstd.dll" Component_="zstd.dll" FileName="zstd.dll" Attributes="0" SourcePath="dhinstall\zstd.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="DeephavenExcelAddIn64.xll" Component_="DeephavenExcelAddIn64.xll" FileName="DEEPHA~1.XLL|DeephavenExcelAddIn64.xll" Attributes="0" SourcePath="..\ExcelAddIn\bin\Debug\net8.0-windows\publish\DeephavenExcelAddIn64.xll" SelfReg="false" DigSign="true"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrapperUISequenceComponent">
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Sequence="249"/>
-    <ROW Action="AI_RESTORE_AI_SETUPEXEPATH" Condition="AI_SETUPEXEPATH_ORIGINAL" Sequence="251"/>
+    <ROW Action="AI_RESTORE_AI_SETUPEXEPATH" Condition="AI_SETUPEXEPATH_ORIGINAL" Sequence="252"/>
+    <ROW Action="AI_DownloadPrereq" Condition="AI_BOOTSTRAPPER AND (NOT AI_PrereqsFulfilled)" Sequence="695"/>
+    <ROW Action="AI_ExtractPrereq" Condition="AI_BOOTSTRAPPER AND (NOT AI_PrereqsFulfilled)" Sequence="696"/>
+    <ROW Action="AI_InstallPrePrerequisite" Condition="AI_BOOTSTRAPPER AND (NOT AI_PrereqsFulfilled)" Sequence="697"/>
+    <ROW Action="AI_VerifyPrePrereq" Condition="AI_BOOTSTRAPPER AND (NOT AI_PrereqsFulfilled)" Sequence="698"/>
+    <ROW Action="AI_CleanPrePrereq" Condition="AI_BOOTSTRAPPER AND (NOT AI_PrereqsFulfilled)" Sequence="699"/>
+    <ROW Action="AI_AppSearchEx" Condition="AI_BOOTSTRAPPER" Sequence="251"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
     <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" Languages="en" InstallationType="4" SummInfoMetadata="Page Count:450" ExtUI="true" UseLargeSchema="true" MsiPackageType="x64"/>
@@ -101,7 +109,7 @@
     <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DigCertStoreComponent">
-    <ROW TimeStampUrl="http://timestamp.digicert.com" SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" UseSha256="1" Subject="CN=kosak@demo5.com" Store="User\MY"/>
+    <ROW TimeStampUrl="http://timestamp.digicert.com" SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" UseSha256="1" Subject="CN=kosak@demo5.com"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
     <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip"/>
@@ -118,9 +126,19 @@
     <ROW Fragment="VerifyRepairDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\VerifyRepairDlg.aip"/>
     <ROW Fragment="WelcomeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\WelcomeDlg.aip"/>
   </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiActionTextComponent">
+    <ROW Action="AI_DownloadPrereq" Description="Downloading prerequisite software" DescriptionLocId="ActionText.Description.AI_DownloadPrereq" Template="[1]" TemplateLocId="ActionText.Template.AI_DownloadPrereq"/>
+    <ROW Action="AI_ExtractPrereq" Description="Extracting prerequisite software" DescriptionLocId="ActionText.Description.AI_ExtractPrereq" Template="[1]" TemplateLocId="ActionText.Template.AI_ExtractPrereq"/>
+    <ROW Action="AI_InstallPostPrerequisite" Description="Configuring prerequisite software" DescriptionLocId="ActionText.Description.AI_InstallPrerequisite" Template="[1]" TemplateLocId="ActionText.Template.AI_InstallPrerequisite"/>
+    <ROW Action="AI_InstallPrePrerequisite" Description="Configuring prerequisite software" DescriptionLocId="ActionText.Description.AI_InstallPrerequisite" Template="[1]" TemplateLocId="ActionText.Template.AI_InstallPrerequisite"/>
+    <ROW Action="AI_InstallPrerequisite" Description="Configuring prerequisite software" DescriptionLocId="ActionText.Description.AI_InstallPrerequisite" Template="[1]" TemplateLocId="ActionText.Template.AI_InstallPrerequisite"/>
+    <ROW Action="AI_VerifyPrePrereq" Description="Verifying prerequisites" DescriptionLocId="ActionText.Description.AI_VerifyPrereq" Template="[1] was not installed correctly." TemplateLocId="ActionText.Template.AI_VerifyPrereq"/>
+    <ROW Action="AI_VerifyPrereq" Description="Verifying prerequisites" DescriptionLocId="ActionText.Description.AI_VerifyPrereq" Template="[1] was not installed correctly." TemplateLocId="ActionText.Template.AI_VerifyPrereq"/>
+  </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
     <ROW Name="DotNetMethodCaller.dll" SourcePath="&lt;AI_CUSTACTS&gt;DotNetMethodCaller.dll"/>
     <ROW Name="DotNetMethodCaller.dll_1" SourcePath="&lt;AI_CUSTACTS64&gt;DotNetMethodCaller.dll"/>
+    <ROW Name="Prereq.dll" SourcePath="&lt;AI_CUSTACTS&gt;Prereq.dll"/>
     <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
     <ROW Name="tempFiles.dll" SourcePath="&lt;AI_CUSTACTS&gt;tempFiles.dll"/>
   </COMPONENT>
@@ -149,23 +167,40 @@
     <ROW Dialog_="ResumeDlg" Control_="Install" Event="EndDialog" Argument="Return" Condition="AI_RESUME" Ordering="299"/>
     <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_RemoveTempFiles" Condition="1" Ordering="102"/>
     <ROW Dialog_="UserExit" Control_="Finish" Event="DoAction" Argument="AI_RemoveTempFiles" Condition="1" Ordering="101"/>
+    <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_RollbackPrereq" Condition="1" Ordering="103"/>
+    <ROW Dialog_="ExitDialog" Control_="Finish" Event="DoAction" Argument="AI_CleanPrereq" Condition="1" Ordering="301"/>
+    <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_CleanPrereq" Condition="1" Ordering="104"/>
+    <ROW Dialog_="UserExit" Control_="Finish" Event="DoAction" Argument="AI_CleanPrereq" Condition="1" Ordering="102"/>
+    <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_RollbackPrePrereq" Condition="1" Ordering="105"/>
+    <ROW Dialog_="ExitDialog" Control_="Finish" Event="DoAction" Argument="AI_CleanPrePrereq" Condition="1" Ordering="302"/>
+    <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_CleanPrePrereq" Condition="1" Ordering="106"/>
+    <ROW Dialog_="UserExit" Control_="Finish" Event="DoAction" Argument="AI_CleanPrePrereq" Condition="1" Ordering="103"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
     <ROW Directory_="APPDIR" Component_="APPDIR" ManualDelete="true"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_AppSearchEx" Type="1" Source="Prereq.dll" Target="DoAppSearchEx"/>
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH_ORIGINAL" Target="[AI_SETUPEXEPATH]"/>
+    <ROW Action="AI_CleanPrePrereq" Type="65" Source="Prereq.dll" Target="CleanPrereq" WithoutSeq="true"/>
+    <ROW Action="AI_CleanPrereq" Type="65" Source="Prereq.dll" Target="CleanPrereq" WithoutSeq="true"/>
     <ROW Action="AI_DATA_SETTER" Type="51" Source="AI_RemoveAllTempFiles" Target="[AI_TEMP_FILE_ROLLBACK_INFO]"/>
     <ROW Action="AI_DATA_SETTER_1" Type="51" Source="CustomActionData" Target="excel.exe"/>
-    <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.Functions.RegisterAddIn"/>
+    <ROW Action="AI_DATA_SETTER_2" Type="51" Source="CustomActionData" Target="[#DeephavenExcelAddIn64.xll]|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.Functions.RegisterAddIn"/>
     <ROW Action="AI_DATA_SETTER_3" Type="51" Source="CustomActionData" Target="A Running Instance of Excel has been detected.&#13;\n&#13;\nPlease save your work and close Excel. |A Running Instance of Excel has been detected. |MB_OK,MB_ICONINFORMATION,MB_DEFBUTTON1|BTN_PRESSED|[CLIENTPROCESSID]"/>
-    <ROW Action="AI_DATA_SETTER_4" Type="51" Source="CustomActionData" Target="|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.Functions.UnregisterAddIn"/>
+    <ROW Action="AI_DATA_SETTER_4" Type="51" Source="CustomActionData" Target="[#DeephavenExcelAddIn64.xll]|[&amp;customactions.dll]|Deephaven.ExcelAddInInstaller.CustomActions.Functions.UnregisterAddIn"/>
     <ROW Action="AI_DATA_SETTER_5" Type="51" Source="CustomActionData" Target="excel.exe"/>
     <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
+    <ROW Action="AI_DownloadPrereq" Type="1" Source="Prereq.dll" Target="DownloadPrereq"/>
     <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale"/>
     <ROW Action="AI_EnableDebugLog" Type="321" Source="aicustact.dll" Target="EnableDebugLog"/>
+    <ROW Action="AI_ExtractPrereq" Type="65" Source="Prereq.dll" Target="ExtractPrereq"/>
     <ROW Action="AI_ExtractTempFiles" Type="1" Source="tempFiles.dll" Target="ExtractTempFiles"/>
     <ROW Action="AI_InstallModeCheck" Type="1" Source="aicustact.dll" Target="UpdateInstallMode" WithoutSeq="true"/>
+    <ROW Action="AI_InstallPostPrerequisite" Type="1" Source="Prereq.dll" Target="InstallPostPrereq"/>
+    <ROW Action="AI_InstallPrePrerequisite" Type="65" Source="Prereq.dll" Target="InstallPrePrereq"/>
+    <ROW Action="AI_InstallPrerequisite" Type="1" Source="Prereq.dll" Target="InstallPrereq"/>
+    <ROW Action="AI_MigrateInstallerProps" Type="1" Source="aicustact.dll" Target="MigrateInstallerProps"/>
     <ROW Action="AI_PREPARE_UPGRADE" Type="65" Source="aicustact.dll" Target="PrepareUpgrade"/>
     <ROW Action="AI_PRESERVE_INSTALL_TYPE" Type="65" Source="aicustact.dll" Target="PreserveInstallType"/>
     <ROW Action="AI_RESTORE_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH" Target="[AI_SETUPEXEPATH_ORIGINAL]"/>
@@ -173,8 +208,13 @@
     <ROW Action="AI_RemoveAllTempFiles" Type="1281" Source="tempFiles.dll" Target="RemoveAllTempFiles" AdditionalSeq="AI_DATA_SETTER"/>
     <ROW Action="AI_RemoveTempFiles" Type="1" Source="tempFiles.dll" Target="RemoveTempFiles" WithoutSeq="true"/>
     <ROW Action="AI_ResolveKnownFolders" Type="1" Source="aicustact.dll" Target="AI_ResolveKnownFolders"/>
+    <ROW Action="AI_RestoreInstallerProps" Type="1" Source="aicustact.dll" Target="RestoreInstallerProps" WithoutSeq="true"/>
+    <ROW Action="AI_RollbackPrePrereq" Type="65" Source="Prereq.dll" Target="RollbackPrePrereq" WithoutSeq="true"/>
+    <ROW Action="AI_RollbackPrereq" Type="65" Source="Prereq.dll" Target="RollbackPrereq" WithoutSeq="true"/>
     <ROW Action="AI_SHOW_LOG" Type="65" Source="aicustact.dll" Target="LaunchLogFile" WithoutSeq="true"/>
     <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
+    <ROW Action="AI_VerifyPrePrereq" Type="1" Source="Prereq.dll" Target="VerifyPrePrereq"/>
+    <ROW Action="AI_VerifyPrereq" Type="1" Source="Prereq.dll" Target="VerifyPrereq"/>
     <ROW Action="DetectProcess" Type="1" Source="aicustact.dll" Target="DetectProcess" Options="3" AdditionalSeq="AI_DATA_SETTER_1"/>
     <ROW Action="DetectProcess_again" Type="1" Source="aicustact.dll" Target="DetectProcess" Options="3" AdditionalSeq="AI_DATA_SETTER_5"/>
     <ROW Action="ErrorMessage" Type="19" Target="Excel is still open. The installer will now exit. Please close Excel before running the installer again."/>
@@ -208,7 +248,8 @@
     <ROW Feature_="MainFeature" Component_="snappy.dll"/>
     <ROW Feature_="MainFeature" Component_="zlib1.dll"/>
     <ROW Feature_="MainFeature" Component_="zstd.dll"/>
-    <ROW Feature_="MainFeature" Component_="ExcelAddInAddIn64packed.xll"/>
+    <ROW Feature_="MainFeature" Component_="DeephavenExcelAddIn64.xll"/>
+    <ROW Feature_="A0BFC224E0E9125ADE0B2DBF343" Component_="A0BFC224E0E9125ADE0B2DBF343"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
     <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
@@ -234,6 +275,9 @@
     <ROW Action="AI_DATA_SETTER" Sequence="1501"/>
     <ROW Action="UninstallRegKeysWithDotnet" Condition="( Installed AND ( REMOVE = &quot;ALL&quot; OR AI_INSTALL_MODE = &quot;Remove&quot; ) )" Sequence="6404"/>
     <ROW Action="AI_DATA_SETTER_4" Condition="( Installed AND ( REMOVE = &quot;ALL&quot; OR AI_INSTALL_MODE = &quot;Remove&quot; ) )" Sequence="6403"/>
+    <ROW Action="AI_MigrateInstallerProps" Condition="SETUPEXEDIR AND ((UILevel = 2) OR (UILevel = 3))" Sequence="6599"/>
+    <ROW Action="AI_VerifyPrereq" Sequence="1101"/>
+    <ROW Action="AI_AppSearchEx" Sequence="101"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
     <ROW Action="AI_PRESERVE_INSTALL_TYPE" Sequence="199"/>
@@ -242,8 +286,15 @@
     <ROW Action="AI_DpiContentScale" Sequence="52"/>
     <ROW Action="AI_EnableDebugLog" Sequence="51"/>
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Sequence="99"/>
-    <ROW Action="AI_RESTORE_AI_SETUPEXEPATH" Condition="AI_SETUPEXEPATH_ORIGINAL" Sequence="101"/>
+    <ROW Action="AI_RESTORE_AI_SETUPEXEPATH" Condition="AI_SETUPEXEPATH_ORIGINAL" Sequence="102"/>
     <ROW Action="AI_ExtractTempFiles" Sequence="1001"/>
+    <ROW Action="AI_DownloadPrereq" Sequence="1296"/>
+    <ROW Action="AI_ExtractPrereq" Sequence="1297"/>
+    <ROW Action="AI_InstallPrerequisite" Sequence="1298"/>
+    <ROW Action="AI_InstallPostPrerequisite" Sequence="1301"/>
+    <ROW Action="AI_CleanPrereq" Sequence="1302"/>
+    <ROW Action="AI_InstallPrePrerequisite" Condition="Installed" Sequence="1299"/>
+    <ROW Action="AI_AppSearchEx" Sequence="101"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiLaunchConditionsComponent">
     <ROW Condition="((VersionNT &lt;&gt; 501) AND (VersionNT &lt;&gt; 502))" Description="[ProductName] cannot be installed on [WindowsTypeNT5XDisplay]." DescriptionLocId="AI.LaunchCondition.NoNT5X" IsPredefined="true" Builds="DefaultBuild"/>
@@ -253,9 +304,15 @@
     <ROW Condition="VersionNT" Description="[ProductName] cannot be installed on [WindowsType9XDisplay]." DescriptionLocId="AI.LaunchCondition.No9X" IsPredefined="true" Builds="DefaultBuild"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiRegsComponent">
+    <ROW Registry="A0BFC224E0E9125ADE0B2DBF343" Root="-1" Key="Software\Caphyon\Advanced Installer\Prereqs\[ProductCode]\[ProductVersion]" Name="A0BFC224E0E9125ADE0B2DBF343" Value="1" Component_="A0BFC224E0E9125ADE0B2DBF343"/>
+    <ROW Registry="AdvancedInstaller" Root="-1" Key="Software\Caphyon\Advanced Installer" Name="\"/>
+    <ROW Registry="Caphyon" Root="-1" Key="Software\Caphyon" Name="\"/>
     <ROW Registry="Manufacturer" Root="-1" Key="Software\[Manufacturer]" Name="\"/>
     <ROW Registry="Path" Root="-1" Key="Software\[Manufacturer]\[ProductName]" Name="Path" Value="[APPDIR]" Component_="ProductInformation"/>
+    <ROW Registry="Prereqs" Root="-1" Key="Software\Caphyon\Advanced Installer\Prereqs" Name="\"/>
+    <ROW Registry="ProductCode" Root="-1" Key="Software\Caphyon\Advanced Installer\Prereqs\[ProductCode]" Name="\"/>
     <ROW Registry="ProductName" Root="-1" Key="Software\[Manufacturer]\[ProductName]" Name="\"/>
+    <ROW Registry="ProductVersion" Root="-1" Key="Software\Caphyon\Advanced Installer\Prereqs\[ProductCode]\[ProductVersion]" Name="\"/>
     <ROW Registry="Software" Root="-1" Key="Software" Name="\"/>
     <ROW Registry="Version" Root="-1" Key="Software\[Manufacturer]\[ProductName]" Name="Version" Value="[ProductVersion]" Component_="ProductInformation"/>
   </COMPONENT>
@@ -265,6 +322,13 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="0.0.1" VersionMax="[|ProductVersion]" Attributes="257" ActionProperty="OLDPRODUCTS"/>
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.PreReqComponent">
+    <ROW PrereqKey="A0BFC224E0E9125ADE0B2DBF343" DisplayName=".NET Desktop Runtime 8.0.8 x64" VersionMin="8.0" SetupFileUrl="Prerequisites\.NET 8.0\windowsdesktop-runtime-8.0.8-win-x64.exe" Location="0" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows 7 RTM x64, Windows 8 x64, Windows Server 2012 x64, Windows 10 version 1507 x64, Windows 10 version 1511 x64" Operator="1" NoUiComLine="/q /norestart" Options="fx" TargetName=".NET 8.0\windowsdesktop-runtime-8.0.8-win-x64.exe" Feature="A0BFC224E0E9125ADE0B2DBF343"/>
+    <ATTRIBUTE name="PrereqsOrder" value="A0BFC224E0E9125ADE0B2DBF343"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.PreReqSearchComponent">
+    <ROW SearchKey="A0BFC224E0E9125ADE0B2DBF343SystemFo" Prereq="A0BFC224E0E9125ADE0B2DBF343" SearchType="14" SearchString="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" VerMin="8.0.8" Order="1" Property="PreReqSearch_A0BFC224E0E9125ADE0B2D"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.TempFileComponent">
     <ROW FileId="customactions.dll" Name="CUSTOM~1.DLL|CustomActions.dll" Directory_="ProductCode_Dir" Property="AI_CUSTOMACTIONS.DLL" Options="0" Data="CustomActions\bin\Debug\CustomActions.dll"/>
