@@ -39,26 +39,26 @@
     <ROW Component="APPDIR" ComponentId="{8E979EB8-436A-46EE-9EAA-85B439FF9FB1}" Directory_="APPDIR" Attributes="0"/>
     <ROW Component="DeephavenExcelAddIn64.xll" ComponentId="{CF574125-3DCE-4858-BBCC-ECD6E32B781E}" Directory_="APPDIR" Attributes="256" KeyPath="DeephavenExcelAddIn64.xll" Type="0"/>
     <ROW Component="ProductInformation" ComponentId="{29C82426-B735-49FE-ACCB-50C954DEAF1C}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
-    <ROW Component="abseil_dll.dll" ComponentId="{0F1B25B4-96DE-4BF7-A606-3D2D64CC5DF8}" Directory_="APPDIR" Attributes="256" KeyPath="abseil_dll.dll"/>
-    <ROW Component="arrow.dll" ComponentId="{D844F7D6-104D-46B5-9043-13774C85008F}" Directory_="APPDIR" Attributes="256" KeyPath="arrow.dll"/>
-    <ROW Component="arrow_flight.dll" ComponentId="{B6ED8F6F-A578-4731-A28F-A61FE4F41CBE}" Directory_="APPDIR" Attributes="256" KeyPath="arrow_flight.dll"/>
-    <ROW Component="brotlicommon.dll" ComponentId="{6B5D5789-4E3F-438F-8466-FC557F9950B0}" Directory_="APPDIR" Attributes="256" KeyPath="brotlicommon.dll"/>
-    <ROW Component="brotlidec.dll" ComponentId="{898A970F-CD89-498D-99F5-19E5BA71E1CC}" Directory_="APPDIR" Attributes="256" KeyPath="brotlidec.dll"/>
-    <ROW Component="brotlienc.dll" ComponentId="{DB0470DD-793E-41FC-9B23-44C50EFEBA7D}" Directory_="APPDIR" Attributes="256" KeyPath="brotlienc.dll"/>
-    <ROW Component="bz2.dll" ComponentId="{0322F84D-C513-4252-8AB4-EF7AB936A892}" Directory_="APPDIR" Attributes="256" KeyPath="bz2.dll"/>
-    <ROW Component="cares.dll" ComponentId="{10EB24E5-5834-40B0-9FEC-E6CB77AC0A8A}" Directory_="APPDIR" Attributes="256" KeyPath="cares.dll"/>
-    <ROW Component="dhclient.dll" ComponentId="{5C287178-467F-4635-AC80-79FA33A66057}" Directory_="APPDIR" Attributes="256" KeyPath="dhclient.dll"/>
-    <ROW Component="dhcore.dll" ComponentId="{701A5EFE-C3E3-4D16-8CE8-725E5E280D34}" Directory_="APPDIR" Attributes="256" KeyPath="dhcore.dll"/>
-    <ROW Component="dhe_client.dll" ComponentId="{5268BB9C-BA26-4029-96B8-E52A80CABBA5}" Directory_="APPDIR" Attributes="256" KeyPath="dhe_client.dll"/>
-    <ROW Component="libcrypto3x64.dll" ComponentId="{B31AF6AE-522F-4030-96CD-713B0B6D6EC2}" Directory_="APPDIR" Attributes="256" KeyPath="libcrypto3x64.dll"/>
-    <ROW Component="libcurl.dll" ComponentId="{AD7D3BB3-4B4F-449C-A47E-A4D607A93EBF}" Directory_="APPDIR" Attributes="256" KeyPath="libcurl.dll"/>
-    <ROW Component="libprotobuf.dll" ComponentId="{6A2E6876-DCF8-4E29-A2CD-3A191880A1BB}" Directory_="APPDIR" Attributes="256" KeyPath="libprotobuf.dll"/>
-    <ROW Component="libssl3x64.dll" ComponentId="{4DF1E8E5-DB19-4E3F-8C91-588C67DE9904}" Directory_="APPDIR" Attributes="256" KeyPath="libssl3x64.dll"/>
-    <ROW Component="lz4.dll" ComponentId="{7C4F2081-B1FD-4C7B-90C1-BD9EFDCCE5B2}" Directory_="APPDIR" Attributes="256" KeyPath="lz4.dll"/>
-    <ROW Component="re2.dll" ComponentId="{FC97458A-6986-4EA9-85A4-2FE6A002993E}" Directory_="APPDIR" Attributes="256" KeyPath="re2.dll"/>
-    <ROW Component="snappy.dll" ComponentId="{E5D336BC-C1E6-47A4-9F1F-B8B0C243D17F}" Directory_="APPDIR" Attributes="256" KeyPath="snappy.dll"/>
-    <ROW Component="zlib1.dll" ComponentId="{5C8F6D9D-7F89-4242-A024-865CEAF41AB0}" Directory_="APPDIR" Attributes="256" KeyPath="zlib1.dll"/>
-    <ROW Component="zstd.dll" ComponentId="{F4FEF688-45B1-4C60-824B-6038B23E5770}" Directory_="APPDIR" Attributes="256" KeyPath="zstd.dll"/>
+    <ROW Component="abseil_dll.dll" ComponentId="{7E56EC3A-BA00-43E6-8659-C10B6D58E53E}" Directory_="APPDIR" Attributes="256" KeyPath="abseil_dll.dll"/>
+    <ROW Component="arrow.dll" ComponentId="{6895D083-4D73-4654-B9F1-59715644668E}" Directory_="APPDIR" Attributes="256" KeyPath="arrow.dll"/>
+    <ROW Component="arrow_flight.dll" ComponentId="{F79A2509-CEDD-46E1-8B5E-8C9E735A3C6C}" Directory_="APPDIR" Attributes="256" KeyPath="arrow_flight.dll"/>
+    <ROW Component="brotlicommon.dll" ComponentId="{5D982FB9-8F2E-49BC-AF60-30D04AF57FA2}" Directory_="APPDIR" Attributes="256" KeyPath="brotlicommon.dll"/>
+    <ROW Component="brotlidec.dll" ComponentId="{6F74A593-2EC2-4E16-9458-966382689218}" Directory_="APPDIR" Attributes="256" KeyPath="brotlidec.dll"/>
+    <ROW Component="brotlienc.dll" ComponentId="{67FDEB0E-056B-41BF-BCA8-FB83A527C735}" Directory_="APPDIR" Attributes="256" KeyPath="brotlienc.dll"/>
+    <ROW Component="bz2.dll" ComponentId="{FBABD05F-C799-47AE-96DF-4C23FDFCF38C}" Directory_="APPDIR" Attributes="256" KeyPath="bz2.dll"/>
+    <ROW Component="cares.dll" ComponentId="{97888E6E-37B4-456F-BEAA-B0603839A0FA}" Directory_="APPDIR" Attributes="256" KeyPath="cares.dll"/>
+    <ROW Component="dhclient.dll" ComponentId="{9510FF7B-CB72-4C8A-B66F-05739F2CBEE2}" Directory_="APPDIR" Attributes="256" KeyPath="dhclient.dll"/>
+    <ROW Component="dhcore.dll" ComponentId="{1DF10FDE-2406-4DD0-AAA7-67A0DF94783B}" Directory_="APPDIR" Attributes="256" KeyPath="dhcore.dll"/>
+    <ROW Component="dhe_client.dll" ComponentId="{F613A5EE-73C5-4102-8B28-0AE2F823584E}" Directory_="APPDIR" Attributes="256" KeyPath="dhe_client.dll"/>
+    <ROW Component="libcrypto3x64.dll" ComponentId="{0FEE5E19-60A0-48CC-A4CD-6CB904C82B4E}" Directory_="APPDIR" Attributes="256" KeyPath="libcrypto3x64.dll"/>
+    <ROW Component="libcurl.dll" ComponentId="{CD92844F-BFFB-456F-80F8-2389EC8F3787}" Directory_="APPDIR" Attributes="256" KeyPath="libcurl.dll"/>
+    <ROW Component="libprotobuf.dll" ComponentId="{C9B88CBB-301E-4847-8D16-EF616BE157F8}" Directory_="APPDIR" Attributes="256" KeyPath="libprotobuf.dll"/>
+    <ROW Component="libssl3x64.dll" ComponentId="{F1CD4DBD-FE5E-4BA8-ADC1-941F87570DD0}" Directory_="APPDIR" Attributes="256" KeyPath="libssl3x64.dll"/>
+    <ROW Component="lz4.dll" ComponentId="{653A6DC4-609B-485A-A238-D65038505E63}" Directory_="APPDIR" Attributes="256" KeyPath="lz4.dll"/>
+    <ROW Component="re2.dll" ComponentId="{0BFC02DF-B472-471C-9C12-0A88F2DC04BC}" Directory_="APPDIR" Attributes="256" KeyPath="re2.dll"/>
+    <ROW Component="snappy.dll" ComponentId="{14E4CD7A-5C94-4F47-9EEF-1B03D93D02ED}" Directory_="APPDIR" Attributes="256" KeyPath="snappy.dll"/>
+    <ROW Component="zlib1.dll" ComponentId="{FD4F9A70-997B-4806-8650-35094065E98B}" Directory_="APPDIR" Attributes="256" KeyPath="zlib1.dll"/>
+    <ROW Component="zstd.dll" ComponentId="{4DE80229-9EDC-40D0-9B91-4E6BCECAC0C9}" Directory_="APPDIR" Attributes="256" KeyPath="zstd.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
     <ROW Feature="A0BFC224E0E9125ADE0B2DBF343" Title=".NET Desktop Runtime 8.0.8 x64" Description=".NET Desktop Runtime 8.0.8 x64" Display="3" Level="1" Attributes="0"/>
@@ -66,27 +66,27 @@
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="abseil_dll.dll" Component_="abseil_dll.dll" FileName="ABSEIL~1.DLL|abseil_dll.dll" Attributes="0" SourcePath="dhinstall\abseil_dll.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="arrow.dll" Component_="arrow.dll" FileName="arrow.dll" Attributes="0" SourcePath="dhinstall\arrow.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="arrow_flight.dll" Component_="arrow_flight.dll" FileName="ARROW_~1.DLL|arrow_flight.dll" Attributes="0" SourcePath="dhinstall\arrow_flight.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="brotlicommon.dll" Component_="brotlicommon.dll" FileName="BROTLI~1.DLL|brotlicommon.dll" Attributes="0" SourcePath="dhinstall\brotlicommon.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="brotlidec.dll" Component_="brotlidec.dll" FileName="BROTLI~2.DLL|brotlidec.dll" Attributes="0" SourcePath="dhinstall\brotlidec.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="brotlienc.dll" Component_="brotlienc.dll" FileName="BROTLI~3.DLL|brotlienc.dll" Attributes="0" SourcePath="dhinstall\brotlienc.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="bz2.dll" Component_="bz2.dll" FileName="bz2.dll" Attributes="0" SourcePath="dhinstall\bz2.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="cares.dll" Component_="cares.dll" FileName="cares.dll" Attributes="0" SourcePath="dhinstall\cares.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="dhclient.dll" Component_="dhclient.dll" FileName="dhclient.dll" Attributes="0" SourcePath="dhinstall\dhclient.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="dhcore.dll" Component_="dhcore.dll" FileName="dhcore.dll" Attributes="0" SourcePath="dhinstall\dhcore.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="dhe_client.dll" Component_="dhe_client.dll" FileName="DHE_CL~1.DLL|dhe_client.dll" Attributes="0" SourcePath="dhinstall\dhe_client.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="libcrypto3x64.dll" Component_="libcrypto3x64.dll" FileName="LIBCRY~1.DLL|libcrypto-3-x64.dll" Attributes="0" SourcePath="dhinstall\libcrypto-3-x64.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="libcurl.dll" Component_="libcurl.dll" FileName="libcurl.dll" Attributes="0" SourcePath="dhinstall\libcurl.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="libprotobuf.dll" Component_="libprotobuf.dll" FileName="LIBPRO~1.DLL|libprotobuf.dll" Attributes="0" SourcePath="dhinstall\libprotobuf.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="libssl3x64.dll" Component_="libssl3x64.dll" FileName="LIBSSL~1.DLL|libssl-3-x64.dll" Attributes="0" SourcePath="dhinstall\libssl-3-x64.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="lz4.dll" Component_="lz4.dll" FileName="lz4.dll" Attributes="0" SourcePath="dhinstall\lz4.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="re2.dll" Component_="re2.dll" FileName="re2.dll" Attributes="0" SourcePath="dhinstall\re2.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="snappy.dll" Component_="snappy.dll" FileName="snappy.dll" Attributes="0" SourcePath="dhinstall\snappy.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="zlib1.dll" Component_="zlib1.dll" FileName="zlib1.dll" Attributes="0" SourcePath="dhinstall\zlib1.dll" SelfReg="false" DigSign="true"/>
-    <ROW File="zstd.dll" Component_="zstd.dll" FileName="zstd.dll" Attributes="0" SourcePath="dhinstall\zstd.dll" SelfReg="false" DigSign="true"/>
     <ROW File="DeephavenExcelAddIn64.xll" Component_="DeephavenExcelAddIn64.xll" FileName="DEEPHA~1.XLL|DeephavenExcelAddIn64.xll" Attributes="0" SourcePath="..\ExcelAddIn\bin\Debug\net8.0-windows\publish\DeephavenExcelAddIn64.xll" SelfReg="false" DigSign="true"/>
+    <ROW File="abseil_dll.dll" Component_="abseil_dll.dll" FileName="ABSEIL~1.DLL|abseil_dll.dll" Attributes="0" SourcePath="dhinstall\bin\abseil_dll.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="arrow.dll" Component_="arrow.dll" FileName="arrow.dll" Attributes="0" SourcePath="dhinstall\bin\arrow.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="arrow_flight.dll" Component_="arrow_flight.dll" FileName="ARROW_~1.DLL|arrow_flight.dll" Attributes="0" SourcePath="dhinstall\bin\arrow_flight.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="brotlicommon.dll" Component_="brotlicommon.dll" FileName="BROTLI~1.DLL|brotlicommon.dll" Attributes="0" SourcePath="dhinstall\bin\brotlicommon.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="brotlidec.dll" Component_="brotlidec.dll" FileName="BROTLI~2.DLL|brotlidec.dll" Attributes="0" SourcePath="dhinstall\bin\brotlidec.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="brotlienc.dll" Component_="brotlienc.dll" FileName="BROTLI~3.DLL|brotlienc.dll" Attributes="0" SourcePath="dhinstall\bin\brotlienc.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="bz2.dll" Component_="bz2.dll" FileName="bz2.dll" Attributes="0" SourcePath="dhinstall\bin\bz2.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="cares.dll" Component_="cares.dll" FileName="cares.dll" Attributes="0" SourcePath="dhinstall\bin\cares.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="dhclient.dll" Component_="dhclient.dll" FileName="dhclient.dll" Attributes="0" SourcePath="dhinstall\bin\dhclient.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="dhcore.dll" Component_="dhcore.dll" FileName="dhcore.dll" Attributes="0" SourcePath="dhinstall\bin\dhcore.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="dhe_client.dll" Component_="dhe_client.dll" FileName="DHE_CL~1.DLL|dhe_client.dll" Attributes="0" SourcePath="dhinstall\bin\dhe_client.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libcrypto3x64.dll" Component_="libcrypto3x64.dll" FileName="LIBCRY~1.DLL|libcrypto-3-x64.dll" Attributes="0" SourcePath="dhinstall\bin\libcrypto-3-x64.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libcurl.dll" Component_="libcurl.dll" FileName="libcurl.dll" Attributes="0" SourcePath="dhinstall\bin\libcurl.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libprotobuf.dll" Component_="libprotobuf.dll" FileName="LIBPRO~1.DLL|libprotobuf.dll" Attributes="0" SourcePath="dhinstall\bin\libprotobuf.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="libssl3x64.dll" Component_="libssl3x64.dll" FileName="LIBSSL~1.DLL|libssl-3-x64.dll" Attributes="0" SourcePath="dhinstall\bin\libssl-3-x64.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="lz4.dll" Component_="lz4.dll" FileName="lz4.dll" Attributes="0" SourcePath="dhinstall\bin\lz4.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="re2.dll" Component_="re2.dll" FileName="re2.dll" Attributes="0" SourcePath="dhinstall\bin\re2.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="snappy.dll" Component_="snappy.dll" FileName="snappy.dll" Attributes="0" SourcePath="dhinstall\bin\snappy.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="zlib1.dll" Component_="zlib1.dll" FileName="zlib1.dll" Attributes="0" SourcePath="dhinstall\bin\zlib1.dll" SelfReg="false" DigSign="true"/>
+    <ROW File="zstd.dll" Component_="zstd.dll" FileName="zstd.dll" Attributes="0" SourcePath="dhinstall\bin\zstd.dll" SelfReg="false" DigSign="true"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -247,10 +247,10 @@
     <ROW Feature_="MainFeature" Component_="lz4.dll"/>
     <ROW Feature_="MainFeature" Component_="re2.dll"/>
     <ROW Feature_="MainFeature" Component_="snappy.dll"/>
-    <ROW Feature_="MainFeature" Component_="zlib1.dll"/>
-    <ROW Feature_="MainFeature" Component_="zstd.dll"/>
     <ROW Feature_="MainFeature" Component_="DeephavenExcelAddIn64.xll"/>
     <ROW Feature_="A0BFC224E0E9125ADE0B2DBF343" Component_="A0BFC224E0E9125ADE0B2DBF343"/>
+    <ROW Feature_="MainFeature" Component_="zlib1.dll"/>
+    <ROW Feature_="MainFeature" Component_="zstd.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
     <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
