@@ -9,7 +9,7 @@ using System.Net.Sockets;
 namespace Deephaven.ManagedClient;
 
 internal class SubscriptionThread {
-  public static IDisposable Start(Server server, Schema schema, Ticket ticket, ITickingCallback callback) {
+  public static IDisposable Start(Server server, Schema schema, Ticket ticket, IObserver<TickingUpdate> observer) {
     // std::promise<std::shared_ptr<SubscriptionHandle>> promise;
     // auto future = promise.get_future();
     // std::vector<int8_t> ticket_bytes(ticket.ticket().begin(), ticket.ticket().end());
@@ -28,18 +28,42 @@ internal class SubscriptionThread {
     return result;
   }
 
-  public class UpdateProcessor : IDisposable {
-    public UpdateProcessor Start() {
+  private class UpdateProcessor : IDisposable {
+    public static UpdateProcessor Start() {
 
     }
 
     private readonly FlightRecordBatchExchangeCall _exchange;
     private readonly Schema _schema;
     private readonly Ticket _ticket;
-    private readonly ITickingCallback _callback;
+    private readonly IObserver<TickingUpdate> _observer;
+    private InterlockedLong _cancelled = new();
 
     public void RunForever() {
+      Exception? savedException = null;
+      try {
+        RunForeverHelper();
+      } catch (Exception ex) {
+        savedException = ex;
+      }
 
+      // We can "complete" the observer if there was no exception, or if there was
+      // an exception, but it was due to cancellation.
+      if (savedException == null || _cancelled.Read() != 0) {
+        Dispose();
+      } else {
+        DisposeHelper();
+        _observer.OnError(savedException);
+      }
+    }
+
+    public void Dispose() {
+      DisposeHelper();
+      _observer.OnCompleted();
+    }
+
+    private void DisposeHelper() {
+      _exchange.Dispose();
     }
 
     private void RunForeverHelper() {
@@ -58,10 +82,10 @@ internal class SubscriptionThread {
       var bp = new BarrageProcessor(_schema);
 
       while (true) {
-        var mn = responseStream.MoveNext().Result;
-        if (!mn) {
+        var moveNextSucceeded = responseStream.MoveNext().Result;
+        if (!moveNextSucceeded) {
           Console.Error.WriteLine("all done");
-          break;
+          return;
         }
 
         byte[]? metadateBytes = null;
