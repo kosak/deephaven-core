@@ -111,8 +111,7 @@ public class TableHandle : IDisposable {
   }
 
   public IDisposable Subscribe(ITickingCallback callback) {
-    var disposer = SubscriptionThread.Start(_manager.Server, _manager.FlightExecutor,
-      _schema, _ticket, callback);
+    var disposer = SubscriptionThread.Start(_manager.Server, _schema, _ticket, callback);
     _manager.AddSubscriptionDisposer(disposer);
     return disposer;
   }
