@@ -67,6 +67,12 @@ public class Server {
     return result;
   }
 
+  /**
+   * Accessed via Interlocked methods
+   */
+  private static int _nextFreeServerId;
+
+  public string Me { get; }
   private readonly ApplicationService.ApplicationServiceClient _applicationStub;
   public ConsoleService.ConsoleServiceClient ConsoleStub { get; }
   public SessionService.SessionServiceClient SessionStub { get; }
@@ -83,7 +89,7 @@ public class Server {
   /// Protected by _sync
   /// </summary>
   private Int32 _nextFreeTicketId = 1;
-  private HashSet<Ticket> _outstandingTickets = new();
+  private readonly HashSet<Ticket> _outstandingTickets = new();
   private string _sessionToken;
   private bool _cancelled = false;
 
@@ -98,6 +104,7 @@ public class Server {
     string sessionToken,
     TimeSpan expirationInterval,
     DateTime nextHandshakeTime) {
+    Me = $"{nameof(Server)}-{Interlocked.Increment(ref _nextFreeServerId)}";
     _applicationStub = applicationStub;
     ConsoleStub = consoleStub;
     SessionStub = sessionStub;
@@ -174,13 +181,6 @@ public class Server {
       var ticket = MakeNewTicket(ticketId);
       _outstandingTickets.Add(ticket);
       return ticket;
-    }
-  }
-
-  public string Me {
-    get {
-      Console.Error.WriteLine("Also, implement Me");
-      return "It's Me";
     }
   }
 

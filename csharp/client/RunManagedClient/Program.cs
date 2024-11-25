@@ -18,7 +18,7 @@ public static class Program {
     try {
       using var client = Client.Connect(server);
       using var manager = client.GetManager();
-      using var t1 = manager.TimeTable("PT1S");
+      using var t1 = manager.EmptyTable(10);
       using var t2 = t1.Update(
         "Chars = ii == 5 ? null : (char)('a' + ii)",
         "Bytes = ii == 5 ? null : (byte)(ii)",
