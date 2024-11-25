@@ -115,37 +115,18 @@ public class TableHandle : IDisposable {
     var metadata = new Metadata();
     server.ForEachHeaderNameAndValue(metadata.Add);
     var fc = server.FlightClient;
-    // var command = "nhpd"u8.ToArray();
     var command = "dphn"u8.ToArray();
     var fd = FlightDescriptor.CreateCommandDescriptor(command);
     var result = fc.DoExchange(fd, metadata);
 
     var batchBuilder = new RecordBatch.Builder();
     var arrayBuilder = new Int32Array.Builder();
-    batchBuilder.Append("test", true, arrayBuilder.Build());
+    batchBuilder.Append("Dummy", true, arrayBuilder.Build());
     var uselessMessage = batchBuilder.Build();
 
-    var magicBytes = new byte[] {
-      16, 0, 0, 0, 0, 0, 10, 0, 16, 0, 8, 0, 7, 0, 12, 0, 10, 0, 0, 0, 0, 0, 0, 5, 100, 112, 104, 110, 4, 0, 0, 0, 68,
-      0, 0, 0, 16, 0, 0, 0,
-      12, 0, 12, 0, 4, 0, 0, 0, 0, 0, 8, 0, 12, 0, 0, 0, 8, 0, 0, 0, 32, 0, 0, 0, 5, 0, 0, 0, 101, 4, 0, 0, 0, 0, 0, 0,
-      16, 0, 12, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 7, 0, 16, 0, 0, 0, 0, 0, 1, 1, 0, 16, 0, 0
-    };
-
-    const int magicOffset = 68;
-    if (magicBytes[magicOffset] != 101) {
-      throw new Exception("Programming error in magicBytes");
-    }
-    _ticket.Ticket_.Span.CopyTo(magicBytes.AsSpan(magicOffset));
-
-    var applicationMetadata = ByteString.CopyFrom(magicBytes);
-
-    var zamboni12 = _ticket.Ticket_.ToByteArray();
-    var magic2 = BarrageProcessor.CreateSubscriptionRequest(zamboni12, zamboni12.Length);
-
-    var jerky = magicBytes.StructurallyEquals(magic2);
-
-    result.RequestStream.WriteAsync(uselessMessage, applicationMetadata).Wait();
+    var subReq = BarrageProcessor.CreateSubscriptionRequest(_ticket.Ticket_.ToByteArray());
+    var subReqAsByteString = ByteString.CopyFrom(subReq);
+    result.RequestStream.WriteAsync(uselessMessage, subReqAsByteString).Wait();
 
     var responseStream = result.ResponseStream;
 

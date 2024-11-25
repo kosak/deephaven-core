@@ -21,7 +21,7 @@ public class BarrageProcessor {
   // "dphn"u8.ToArray();
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
 
-  public static byte[] CreateSubscriptionRequest(byte[] ticketBytes, int size) {
+  public static byte[] CreateSubscriptionRequest(byte[] ticketBytes) {
     var payloadBuilder = new FlatBufferBuilder(4096);
 
     var subOptions = BarrageSubscriptionOptions.CreateBarrageSubscriptionOptions(
