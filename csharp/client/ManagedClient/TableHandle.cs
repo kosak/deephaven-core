@@ -139,6 +139,12 @@ public class TableHandle : IDisposable {
     _ticket.Ticket_.Span.CopyTo(magicBytes.AsSpan(magicOffset));
 
     var applicationMetadata = ByteString.CopyFrom(magicBytes);
+
+    var zamboni12 = _ticket.Ticket_.ToByteArray();
+    var magic2 = BarrageProcessor.CreateSubscriptionRequest(zamboni12, zamboni12.Length);
+
+    var jerky = magicBytes.StructurallyEquals(magic2);
+
     result.RequestStream.WriteAsync(uselessMessage, applicationMetadata).Wait();
 
     var responseStream = result.ResponseStream;

@@ -47,7 +47,7 @@ public static class Program {
       var rs = ct.RowSequence;
 
       cs.FillChunk(rs, chunk, nulls);
-      Console.WriteLine("hello");
+      Console.WriteLine("hello I did a FillChunk");
 
       // using var tt = manager.TimeTable("PT2S");
       // using var tt2 = tt.Update("II = ii");

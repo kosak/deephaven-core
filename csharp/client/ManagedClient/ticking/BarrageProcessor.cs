@@ -18,10 +18,39 @@ public class BarrageProcessor {
     _currentProcessor = new AwaitingMetadata(tableState);
   }
 
+  // "dphn"u8.ToArray();
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
 
-  public static byte[] CreateSubscriptionRequest(byte[]ticketBytes, int size) {
-    throw new NotImplementedException("NIY");
+  public static byte[] CreateSubscriptionRequest(byte[] ticketBytes, int size) {
+    var payloadBuilder = new FlatBufferBuilder(4096);
+
+    var subOptions = BarrageSubscriptionOptions.CreateBarrageSubscriptionOptions(
+      payloadBuilder, ColumnConversionMode.Stringify, true, 0, 4096, 0, true);
+
+    // add ticket
+    payloadBuilder.StartVector(1, ticketBytes.Length, 1);
+    payloadBuilder.Add(ticketBytes);
+    var ticket = payloadBuilder.EndVector();
+
+    var subReq = BarrageSubscriptionRequest.CreateBarrageSubscriptionRequest(payloadBuilder, ticket, default,
+      default, subOptions);
+    // Is .Value correct?
+    payloadBuilder.Finish(subReq.Value);
+
+    var payloadBuilderBytes = payloadBuilder.SizedByteArray();
+
+    // TODO: I'd really like to just point this buffer backwards to the thing I just created, rather
+    // then copying it. But, eh, version 2.
+    var wrapperBuilder = new FlatBufferBuilder(4096);
+    wrapperBuilder.StartVector(1, payloadBuilderBytes.Length, 1);
+    wrapperBuilder.Add(payloadBuilderBytes);
+    var payload = wrapperBuilder.EndVector();
+    var messageWrapper = BarrageMessageWrapper.CreateBarrageMessageWrapper(wrapperBuilder,
+      DeephavenMagicNumber, BarrageMessageType.BarrageSubscriptionRequest, payload);
+    // Is .Value correct?
+    wrapperBuilder.Finish(messageWrapper.Value);
+
+    return wrapperBuilder.SizedByteArray();
   }
 
   public TickingUpdate? ProcessNextChunk(IColumnSource[] sources, int[] sizes, byte[]? metadata) {
