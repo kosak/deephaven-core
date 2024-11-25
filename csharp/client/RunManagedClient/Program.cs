@@ -51,9 +51,20 @@ public static class Program {
 
       // using var tt = manager.TimeTable("PT2S");
       // using var tt2 = tt.Update("II = ii");
-      tResult.ZamboniTime();
+
+      var cookie = tResult.Subscribe(new MyCallback());
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
     }
+  }
+}
+
+public class MyCallback : ITickingCallback {
+  public void OnTick(TickingUpdate update) {
+    Console.WriteLine("Hi, got a tick");
+  }
+
+  public void OnFailure(Exception e) {
+    Console.WriteLine("Hi, got an exception");
   }
 }

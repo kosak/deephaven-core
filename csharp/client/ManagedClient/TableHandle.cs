@@ -110,6 +110,13 @@ public class TableHandle : IDisposable {
     return ArrowClientTable.Create(at);
   }
 
+  public IDisposable Subscribe(ITickingCallback callback) {
+    var disposer = SubscriptionThread.Start(_manager.Server, _manager.FlightExecutor,
+      _schema, _ticket, callback);
+    _manager.AddSubscriptionDisposer(disposer);
+    return disposer;
+  }
+
   public void ZamboniTime() {
     var server = _manager.Server;
     var metadata = new Metadata();
