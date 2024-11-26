@@ -127,8 +127,6 @@ internal class SubscriptionThread {
           sizes[i] = size;
         }
 
-        Console.WriteLine("SHALL WE BEGIN");
-
         var tup = bp.ProcessNextChunk(columns, sizes, metadateBytes);
         if (tup != null) {
           _observer.OnNext(tup);

@@ -37,7 +37,7 @@ public class TableHandle : IDisposable {
   }
 
   public void Dispose() {
-    Console.Error.WriteLine("NIY");
+    Console.Error.WriteLine("TableHandle.Dispose: NIY");
   }
 
   /// <summary>
@@ -110,9 +110,9 @@ public class TableHandle : IDisposable {
     return ArrowClientTable.Create(at);
   }
 
-  public IDisposable Subscribe(ITickingCallback callback) {
-    var disposer = SubscriptionThread.Start(_manager.Server, _schema, _ticket, callback);
-    _manager.AddSubscriptionDisposer(disposer);
+  public IDisposable Subscribe(IObserver<TickingUpdate> observer) {
+    var disposer = SubscriptionThread.Start(_manager.Server, _schema, _ticket, observer);
+    // _manager.AddSubscriptionDisposer(disposer);
     return disposer;
   }
 

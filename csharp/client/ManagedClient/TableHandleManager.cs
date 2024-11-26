@@ -31,7 +31,7 @@ public class TableHandleManager : IDisposable {
   }
 
   public void Dispose() {
-    Console.Error.WriteLine("NIY");
+    Console.Error.WriteLine("TableHandleManager.Dispose: NIY");
   }
 
   /// <summary>

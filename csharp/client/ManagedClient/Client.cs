@@ -53,7 +53,7 @@ public class Client : IDisposable {
   /// after Dispose() is called. If the caller tries to do so, the behavior is unspecified.
   /// </summary>
   public void Dispose() {
-    Console.Error.WriteLine("NIY");
+    Console.Error.WriteLine("Client.Dispose: NIY");
   }
 
   /// <summary>

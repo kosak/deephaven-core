@@ -18,7 +18,7 @@ public static class Program {
     try {
       using var client = Client.Connect(server);
       using var manager = client.GetManager();
-      using var t1 = manager.EmptyTable(10);
+      using var t1 = manager.TimeTable("PT1S");
       using var t2 = t1.Update(
         "Chars = ii == 5 ? null : (char)('a' + ii)",
         "Bytes = ii == 5 ? null : (byte)(ii)",
@@ -53,18 +53,24 @@ public static class Program {
       // using var tt2 = tt.Update("II = ii");
 
       var cookie = tResult.Subscribe(new MyCallback());
+      Console.WriteLine("Wait for something to happen??!!");
+      Thread.Sleep(TimeSpan.FromSeconds(5));
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
     }
   }
 }
 
-public class MyCallback : ITickingCallback {
-  public void OnTick(TickingUpdate update) {
+public class MyCallback : IObserver<TickingUpdate> {
+  public void OnNext(TickingUpdate update) {
     Console.WriteLine("Hi, got a tick");
   }
 
-  public void OnFailure(Exception e) {
+  public void OnError(Exception e) {
     Console.WriteLine("Hi, got an exception");
+  }
+
+  public void OnCompleted() {
+    Console.WriteLine("Hi, got completed");
   }
 }
