@@ -4,7 +4,6 @@ using Apache.Arrow.Flight.Client;
 using Google.Protobuf;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
-using System.Net.Sockets;
 
 namespace Deephaven.ManagedClient;
 
@@ -24,22 +23,33 @@ internal class SubscriptionThread {
     var command = "dphn"u8.ToArray();
     var fd = FlightDescriptor.CreateCommandDescriptor(command);
     var exchange = fcw.DoExchange(fd, metadata);
-    var result = UpdateProcessor.Start(exchange);
+    var result = UpdateProcessor.Start(exchange, schema, ticket, observer);
     return result;
   }
 
   private class UpdateProcessor : IDisposable {
-    public static UpdateProcessor Start() {
-
+    public static UpdateProcessor Start(FlightRecordBatchExchangeCall exchange, Schema schema,
+      Ticket ticket, IObserver<TickingUpdate> observer) {
+      var result = new UpdateProcessor(exchange, schema, ticket, observer);
+      new Thread(result.RunForever) { IsBackground = true }.Start();
+      return result;
     }
 
     private readonly FlightRecordBatchExchangeCall _exchange;
     private readonly Schema _schema;
     private readonly Ticket _ticket;
     private readonly IObserver<TickingUpdate> _observer;
-    private InterlockedLong _cancelled = new();
+    private InterlockedLong _cancelled;
 
-    public void RunForever() {
+    private UpdateProcessor(FlightRecordBatchExchangeCall exchange, Schema schema, Ticket ticket,
+      IObserver<TickingUpdate> observer) {
+      _exchange = exchange;
+      _schema = schema;
+      _ticket = ticket;
+      _observer = observer;
+    }
+
+    private void RunForever() {
       Exception? savedException = null;
       try {
         RunForeverHelper();
@@ -121,7 +131,7 @@ internal class SubscriptionThread {
 
         var tup = bp.ProcessNextChunk(columns, sizes, metadateBytes);
         if (tup != null) {
-          _callback.OnTick(tup);
+          _observer.OnNext(tup);
         }
       }
     }
