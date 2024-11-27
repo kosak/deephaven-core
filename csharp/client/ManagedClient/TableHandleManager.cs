@@ -1,5 +1,7 @@
 ﻿using System.Reflection.Metadata.Ecma335;
 using System;
+using System.Text;
+using Google.Protobuf;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
@@ -54,7 +56,15 @@ public class TableHandleManager : IDisposable {
   /// <param name="tableName">The name of the table</param>
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle FetchTable(string tableName) {
-    throw new NotImplementedException();
+    var req = new FetchTableRequest {
+      ResultId = Server.NewTicket(),
+      SourceId = new TableReference {
+        Ticket = MakeScopeReference(tableName)
+      }
+    };
+
+    var resp = Server.SendRpc(opts => Server.TableStub.FetchTableAsync(req, opts));
+    return TableHandle.Create(this, resp);
   }
 
   /// <summary>
@@ -104,5 +114,17 @@ public class TableHandleManager : IDisposable {
   /// <param name="code">The script to be run on the server</param>
   public void RunScript(string code) {
     throw new NotImplementedException();
+  }
+
+  /// <summary>
+  /// Transforms 'tableName' into a Deephaven "scope reference".
+  /// </summary>
+  /// <param name="tableName"></param>
+  /// <returns>The Deephaven scope reference</returns>
+  private static Ticket MakeScopeReference(string tableName) {
+    var reference = "s/" + tableName;
+    return new Ticket {
+      Ticket_ = ByteString.CopyFromUtf8(reference)
+    };
   }
 };
