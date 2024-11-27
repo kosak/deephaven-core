@@ -2,6 +2,7 @@
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Factories;
 

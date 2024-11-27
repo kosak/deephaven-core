@@ -14,8 +14,6 @@ public class Executor {
 /// the server and to get a TableHandleManager.
 /// </summary>
 public class Client : IDisposable {
-  private readonly TableHandleManager _tableHandleManager;
-
   /// <summary>
   /// Factory method to Connect to a Deephaven server using the specified options.
   /// </summary>
@@ -43,8 +41,13 @@ public class Client : IDisposable {
     return new Client(thm);
   }
 
+  /// <summary>
+  /// Gets the TableHandleManager which you can use to create empty tables, fetch tables, and so on.
+  /// </summary>
+  public TableHandleManager Manager { get; }
+
   private Client(TableHandleManager tableHandleManager) {
-    _tableHandleManager = tableHandleManager;
+    Manager = tableHandleManager;
   }
 
   /// <summary>
@@ -54,16 +57,6 @@ public class Client : IDisposable {
   /// </summary>
   public void Dispose() {
     Console.Error.WriteLine("Client.Dispose: NIY");
-  }
-
-  /// <summary>
-  /// Gets a TableHandleManager which you can use to create empty tables, fetch tables, and so on.
-  /// You can create more than one TableHandleManager.
-  /// </summary>
-  /// <returns>The TableHandleManager</returns>
-  public TableHandleManager GetManager() {
-    // TODO(kosak): need to make multiple of these so they can be individually disposed
-    return _tableHandleManager;
   }
 
   /// <summary>
