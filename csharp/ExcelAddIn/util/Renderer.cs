@@ -33,24 +33,26 @@ internal static class Renderer {
       var chunk = ChunkMaker.CreateChunkFor(col, chunkSize);
       var dateTimeChunk = chunk as Chunk<DhDateTime>;
 
-      var sizeToCopy = Math.Min(endIndex - currentIndex, (UInt64)chunkSize);
-      var rows = RowSequence.CreateSequential(Interval.OfStartAndSize(currentIndex, sizeToCopy));
-      col.FillChunk(rows, chunk, nulls);
-      currentIndex += sizeToCopy;
+      while (currentIndex < endIndex) {
+        var sizeToCopy = Math.Min(endIndex - currentIndex, (UInt64)chunkSize);
+        var rows = RowSequence.CreateSequential(Interval.OfStartAndSize(currentIndex, sizeToCopy));
+        col.FillChunk(rows, chunk, nulls);
+        currentIndex += sizeToCopy;
 
-      for (UInt64 i = 0; i != sizeToCopy; ++i) {
-        // Assume null
-        object? value = null;
-        if (!nulls.Data[i]) {
-          if (dateTimeChunk != null) {
-            // Special case for DhDateTimes: format them as readable strings
-            value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
-          } else {
-            value = chunk.GetBoxedElement((int)i);
+        for (UInt64 i = 0; i != sizeToCopy; ++i) {
+          // Assume null
+          object? value = null;
+          if (!nulls.Data[i]) {
+            if (dateTimeChunk != null) {
+              // Special case for DhDateTimes: format them as readable strings
+              value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+            } else {
+              value = chunk.GetBoxedElement((int)i);
+            }
           }
-        }
 
-        result[destIndex++, colIndex] = value;
+          result[destIndex++, colIndex] = value;
+        }
       }
     }
 
