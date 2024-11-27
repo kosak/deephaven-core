@@ -17,6 +17,9 @@ public interface IColumnSource {
   void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
   void Accept(IColumnSourceVisitor visitor);
 
+  /// <summary>
+  /// Part of acyclic visitor pattern
+  /// </summary>
   public static void Accept<T>(T columnSource, IColumnSourceVisitor visitor)
     where T : class, IColumnSource {
     if (visitor is IColumnSourceVisitor<T> typedVisitor) {
@@ -28,7 +31,7 @@ public interface IColumnSource {
 
   public static void Copy(IColumnSource src, int srcIndex, IMutableColumnSource dest, int destIndex, int numItems) {
     var chunkSize = Math.Min(8192, numItems);
-    var chunk = Chunk.CreateChunkFor(src, chunkSize);
+    var chunk = ChunkMaker.CreateChunkFor(src, chunkSize);
     var nulls = BooleanChunk.Create(chunkSize);
     var itemsRemaining = numItems;
     while (itemsRemaining != 0) {
@@ -57,10 +60,16 @@ public interface IMutableColumnSource<T> : IMutableColumnSource, IColumnSource<T
 
 }
 
+/// <summary>
+/// Part of acyclic visitor pattern
+/// </summary>
 public interface IColumnSourceVisitor {
   void Visit(IColumnSource cs);
 }
 
+/// <summary>
+/// Part of acyclic visitor pattern
+/// </summary>
 public interface IColumnSourceVisitor<in T> : IColumnSourceVisitor where T : IColumnSource {
   void Visit(T cs);
 }

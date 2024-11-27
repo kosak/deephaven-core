@@ -171,7 +171,7 @@ public class TableState {
     var destCol = _colData[colNum];
     foreach (var destInterval in rowsToModifyIndexSpace.Intervals) {
       var destCount = destInterval.Count.ToIntExact();
-      var chunk = Chunk.CreateChunkFor(srcCol, destCount);
+      var chunk = ChunkMaker.CreateChunkFor(srcCol, destCount);
       var nulls = BooleanChunk.Create(destCount);
       var (thisRange, residual) = srcRemaining.Split((UInt64)destCount);
       var srcRowSeq = RowSequence.CreateSequential(thisRange);
