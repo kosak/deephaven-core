@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Windows.Forms;
 
 namespace Deephaven.ExcelAddIn.Util;
 

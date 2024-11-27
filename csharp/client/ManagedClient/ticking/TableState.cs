@@ -204,7 +204,7 @@ public class TableState {
   /// </summary>
   /// <returns>A ClientTable representing the current table state</returns>
   /// <exception cref="NotImplementedException"></exception>
-  public ClientTable Snapshot() {
+  public IClientTable Snapshot() {
     // Clone all my data
     var clonedData = _colData.Select(src => {
       var dest = src.CreateOfSameType(_numRows);
@@ -215,11 +215,11 @@ public class TableState {
   }
 }
 
-sealed class TableStateClientTable : ClientTable {
-  public override Schema Schema { get; }
+sealed class TableStateClientTable : IClientTable {
+  public Schema Schema { get; }
   private readonly ArrayColumnSource[] _colData;
   private readonly int _numRows;
-  public override RowSequence RowSequence { get; }
+  public RowSequence RowSequence { get; }
 
   public TableStateClientTable(Schema schema, ArrayColumnSource[] colData, int numRows) {
     Schema = schema;
@@ -228,8 +228,12 @@ sealed class TableStateClientTable : ClientTable {
     RowSequence = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)numRows));
   }
 
-  public override IColumnSource GetColumn(int columnIndex) => _colData[columnIndex];
+  public void Dispose() {
+    // Nothing to do.
+  }
 
-  public override long NumRows => _numRows;
-  public override long NumCols => _colData.Length;
+  public IColumnSource GetColumn(int columnIndex) => _colData[columnIndex];
+
+  public long NumRows => _numRows;
+  public long NumCols => _colData.Length;
 }

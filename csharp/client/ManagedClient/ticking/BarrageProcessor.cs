@@ -140,12 +140,12 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     return nextState.ProcessNextChunk(sourcesAndRanges, Array.Empty<byte>());
   }
 
-  (ClientTable, RowSequence, ClientTable) ProcessRemoves(RowSequence removedRows) {
+  (IClientTable, RowSequence, IClientTable) ProcessRemoves(RowSequence removedRows) {
     var prev = tableState.Snapshot();
     // The reason we special-case "empty" is because when the tables are unchanged, we prefer
     // to indicate this via pointer equality (e.g. beforeRemoves == afterRemoves).
     RowSequence removedRowsIndexSpace;
-    ClientTable afterRemoves;
+    IClientTable afterRemoves;
     if (removedRows.IsEmpty) {
       removedRowsIndexSpace = RowSequence.CreateEmpty();
       afterRemoves = prev;
@@ -161,9 +161,9 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
 class AwaitingAdds(
   TableState tableState,
   RowSequence[] perColumnModifies,
-  ClientTable prev,
+  IClientTable prev,
   RowSequence removedRowsIndexSpace,
-  ClientTable afterRemoves,
+  IClientTable afterRemoves,
   RowSequence addedRowsIndexSpace) : IChunkProcessor {
 
   bool _firstTime = true;
@@ -235,11 +235,11 @@ class AwaitingAdds(
 
 class AwaitingModifies(
   TableState tableState,
-  ClientTable prev,
+  IClientTable prev,
   RowSequence removedRowsIndexSpace,
-  ClientTable afterRemoves,
+  IClientTable afterRemoves,
   RowSequence addedRowsIndexSpace,
-  ClientTable afterAdds,
+  IClientTable afterAdds,
   RowSequence[] perColumnModifies) : IChunkProcessor {
   private bool _firstTime = true;
   private RowSequence[] _modifiedRowsRemaining = [];
@@ -312,13 +312,13 @@ class AwaitingModifies(
 
 class BuildingResult(
   TableState tableState,
-  ClientTable prev,
+  IClientTable prev,
   RowSequence removedRowsIndexSpace,
-  ClientTable afterRemoves,
+  IClientTable afterRemoves,
   RowSequence addedRowsIndexSpace,
-  ClientTable afterAdds,
+  IClientTable afterAdds,
   RowSequence[] modifiedRowsIndexSpace,
-  ClientTable afterModifies) : IChunkProcessor {
+  IClientTable afterModifies) : IChunkProcessor {
 
   public (TickingUpdate?, IChunkProcessor) ProcessNextChunk(SourceAndRange[] sourcesAndRanges, byte[]? metadata) {
     if (sourcesAndRanges.Any(sar => !sar.Range.IsEmpty)) {

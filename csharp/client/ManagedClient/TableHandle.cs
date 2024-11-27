@@ -105,7 +105,7 @@ public class TableHandle : IDisposable {
     return table;
   }
 
-  public ClientTable ToClientTable() {
+  public IClientTable ToClientTable() {
     var at = ToArrowTable();
     return ArrowClientTable.Create(at);
   }
