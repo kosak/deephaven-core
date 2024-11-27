@@ -46,7 +46,7 @@ public class Client : IDisposable {
   /// </summary>
   public TableHandleManager Manager { get; }
 
-  private Client(TableHandleManager tableHandleManager) {
+  protected Client(TableHandleManager tableHandleManager) {
     Manager = tableHandleManager;
   }
 

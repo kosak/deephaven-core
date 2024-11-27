@@ -12,4 +12,8 @@ public class SessionManager : IDisposable {
   public bool PasswordAuthentication(string user, string password, string operateAs) {
     throw new NotImplementedException();
   }
+
+  public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
+    throw new NotImplementedException();
+  }
 }

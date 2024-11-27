@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Deephaven.DheClient.Session;
 
-namespace ManagedClient.dhe_client.session {
-  internal class DndTableHandleManager {
-  }
+public class DndTableHandleManager {
 }
