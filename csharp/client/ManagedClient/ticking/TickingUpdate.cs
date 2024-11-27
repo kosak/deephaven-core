@@ -1,18 +1,20 @@
 ﻿namespace Deephaven.ManagedClient;
 
 public class TickingUpdate(
-  ClientTable prev,
+  IClientTable prev,
   RowSequence removedRowsIndexSpace,
-  ClientTable afterRemoves,
+  IClientTable afterRemoves,
   RowSequence addedRowsIndexSpace,
-  ClientTable afterAdds,
+  IClientTable afterAdds,
   RowSequence[] modifiedRowsIndexSpace,
-  ClientTable afterModifies) {
-  public ClientTable Prev => prev;
+  IClientTable afterModifies) {
+  public IClientTable Prev => prev;
   public RowSequence RemovedRowsIndexSpace => removedRowsIndexSpace;
-  public ClientTable AfterRemoves => afterRemoves;
+  public IClientTable AfterRemoves => afterRemoves;
   public RowSequence AddedRowsIndexSpace => addedRowsIndexSpace;
-  public ClientTable AfterAdds => afterAdds;
+  public IClientTable AfterAdds => afterAdds;
   public RowSequence[] ModifiedRowsIndexSpace => modifiedRowsIndexSpace;
-  public ClientTable AfterModifies => afterModifies;
+  public IClientTable AfterModifies => afterModifies;
+
+  public IClientTable Current => afterModifies;
 }

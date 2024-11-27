@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Net;
-using Deephaven.DeephavenClient;
-using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn;
 
