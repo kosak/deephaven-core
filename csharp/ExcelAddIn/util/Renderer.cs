@@ -30,32 +30,57 @@ internal static class Renderer {
       var destIndex = destStartIndex;
 
       var col = table.GetColumn(colIndex);
-      var chunk = ChunkMaker.CreateChunkFor(col, chunkSize);
-      var dateTimeChunk = chunk as Chunk<DhDateTime>;
+      var adaptorMaker = new AdaptorMaker();
+      col.Accept(adaptorMaker);
+      var adaptor = adaptorMaker.Adaptor;
 
       while (currentIndex < endIndex) {
         var sizeToCopy = Math.Min(endIndex - currentIndex, (UInt64)chunkSize);
         var rows = RowSequence.CreateSequential(Interval.OfStartAndSize(currentIndex, sizeToCopy));
-        col.FillChunk(rows, chunk, nulls);
+        col.FillChunk(rows, adaptor.SrcChunk, nulls);
+        adaptor.AdaptData();
         currentIndex += sizeToCopy;
 
+        var destData = adaptor.DestData;
         for (UInt64 i = 0; i != sizeToCopy; ++i) {
-          // Assume null, which we render as empty string.
-          object? value = "";
-          if (!nulls.Data[i]) {
-            if (dateTimeChunk != null) {
-              // Special case for DhDateTimes: format them as readable strings
-              value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
-            } else {
-              value = chunk.GetBoxedElement((int)i);
-            }
-          }
-
-          result[destIndex++, colIndex] = value;
+          result[destIndex++, colIndex] = destData[i];
         }
       }
     }
 
     return result;
+  }
+
+  private class AdaptorMaker : IColumnSourceVisitor {
+  }
+
+  private class Adaptor {
+    protected readonly object[] _destData;
+
+  }
+
+  private class Adaptor<T> : Adaptor {
+    private readonly Chunk<T> _srcChunk;
+    private readonly Func<T, object> _converter;
+
+    // Assume null, which we render as empty string.
+    object? value = "";
+      if (!nulls.Data[i]) {
+      if (dateTimeChunk != null) {
+        // Special case for DhDateTimes: format them as readable strings
+        value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+      } else {
+        value = chunk.GetBoxedElement((int) i);
+      }
+    }
+
+
+
+
+
+
+
+
+
   }
 }
