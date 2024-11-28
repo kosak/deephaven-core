@@ -72,37 +72,38 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
   }
 
   public void Visit(IByteColumnSource src) {
-    var vc = new ValueCopier<sbyte>((ByteChunk)destData, nullFlags);
+    var vc = new ValueCopier<sbyte>((ByteChunk)destData, nullFlags, DeephavenConstants.NullByte);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IInt16ColumnSource src) {
-    var vc = new ValueCopier<Int16>((Int16Chunk)destData, nullFlags);
+    var vc = new ValueCopier<Int16>((Int16Chunk)destData, nullFlags, DeephavenConstants.NullShort);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IInt32ColumnSource src) {
-    var vc = new ValueCopier<Int32>((Int32Chunk)destData, nullFlags);
+    var vc = new ValueCopier<Int32>((Int32Chunk)destData, nullFlags, DeephavenConstants.NullInt);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IInt64ColumnSource src) {
-    var vc = new ValueCopier<Int64>((Int64Chunk)destData, nullFlags);
+    var vc = new ValueCopier<Int64>((Int64Chunk)destData, nullFlags, DeephavenConstants.NullLong);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IFloatColumnSource src) {
-    var vc = new ValueCopier<float>((FloatChunk)destData, nullFlags);
+    var vc = new ValueCopier<float>((FloatChunk)destData, nullFlags, DeephavenConstants.NullFloat);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IDoubleColumnSource src) {
-    var vc = new ValueCopier<double>((DoubleChunk)destData, nullFlags);
+    var vc = new ValueCopier<double>((DoubleChunk)destData, nullFlags, DeephavenConstants.NullDouble);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IBooleanColumnSource src) {
-    var vc = new ValueCopier<bool>((BooleanChunk)destData, nullFlags);
+    // TODO: figure out what to do here
+    var vc = new ValueCopier<bool>((BooleanChunk)destData, nullFlags, false);
     vc.FillChunk(rows, chunkedArray);
   }
 
@@ -161,14 +162,18 @@ abstract class FillChunkHelper {
   protected abstract void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count);
 }
 
-sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : FillChunkHelper where T : struct {
+sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T deephavenNullValue)
+      : FillChunkHelper where T : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<T?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];
       typedDest.Data[destOffset] = value ?? default;
       if (nullFlags != null) {
-        nullFlags.Data[destOffset] = !value.HasValue;
+        // It looks like even though Deephaven is correctly setting the null bitmap when
+        // it comes through DoGet, we're not getting null values when it comes through Barrage.
+        var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
+        nullFlags.Data[destOffset] = isNull;
       }
 
       ++srcOffset;

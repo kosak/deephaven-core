@@ -40,8 +40,8 @@ internal static class Renderer {
         currentIndex += sizeToCopy;
 
         for (UInt64 i = 0; i != sizeToCopy; ++i) {
-          // Assume null
-          object? value = null;
+          // Assume null, which we render as empty string.
+          object? value = "";
           if (!nulls.Data[i]) {
             if (dateTimeChunk != null) {
               // Special case for DhDateTimes: format them as readable strings
