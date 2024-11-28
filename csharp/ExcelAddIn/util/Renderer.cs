@@ -20,7 +20,7 @@ internal static class Renderer {
       destStartIndex = 1;
     }
 
-    var chunkSize = checked((int)Math.Min(numRows, 1024));
+    var chunkSize = checked((int)Math.Min(numRows, 16384));
     var nulls = Chunk<bool>.Create(chunkSize);
 
     var endIndex = (UInt64)numRows;
