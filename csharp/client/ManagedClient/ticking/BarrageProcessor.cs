@@ -14,7 +14,6 @@ public class BarrageProcessor {
 
   public BarrageProcessor(Schema schema) {
     var tableState = new TableState(schema);
-    var numCols = schema.FieldsList.Count;
     _currentProcessor = new AwaitingMetadata(tableState);
   }
 

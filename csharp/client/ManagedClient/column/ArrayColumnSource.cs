@@ -30,6 +30,74 @@ public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
   public abstract void Accept(IColumnSourceVisitor visitor);
 
   public abstract ArrayColumnSource CreateOfSameType(int size);
+
+  private class ArrayColumnSourceMaker(int size) :
+    IArrowTypeVisitor<UInt16Type>,
+    IArrowTypeVisitor<Int8Type>,
+    IArrowTypeVisitor<Int16Type>,
+    IArrowTypeVisitor<Int32Type>,
+    IArrowTypeVisitor<Int64Type>,
+    IArrowTypeVisitor<FloatType>,
+    IArrowTypeVisitor<DoubleType>,
+    IArrowTypeVisitor<BooleanType>,
+    IArrowTypeVisitor<StringType>,
+    IArrowTypeVisitor<TimestampType>,
+    IArrowTypeVisitor<Date64Type>,
+    IArrowTypeVisitor<Time64Type> {
+    public ArrayColumnSource? Result { get; private set; }
+
+    public void Visit(UInt16Type type) {
+      Result = new CharArrayColumnSource(size);
+    }
+
+    public void Visit(Int8Type type) {
+      Result = new ByteArrayColumnSource(size);
+    }
+
+    public void Visit(Int16Type type) {
+      Result = new Int16ArrayColumnSource(size);
+    }
+
+    public void Visit(Int32Type type) {
+      Result = new Int32ArrayColumnSource(size);
+    }
+
+    public void Visit(Int64Type type) {
+      Result = new Int64ArrayColumnSource(size);
+    }
+
+    public void Visit(FloatType type) {
+      Result = new FloatArrayColumnSource(size);
+    }
+
+    public void Visit(DoubleType type) {
+      Result = new DoubleArrayColumnSource(size);
+    }
+
+    public void Visit(BooleanType type) {
+      Result = new BooleanArrayColumnSource(size);
+    }
+
+    public void Visit(StringType type) {
+      Result = new StringArrayColumnSource(size);
+    }
+
+    public void Visit(TimestampType type) {
+      Result = new TimestampArrayColumnSource(size);
+    }
+
+    public void Visit(Date64Type type) {
+      Result = new LocalDateArrayColumnSource(size);
+    }
+
+    public void Visit(Time64Type type) {
+      Result = new LocalTimeArrayColumnSource(size);
+    }
+
+    public void Visit(IArrowType type) {
+      throw new Exception($"type {type.Name} is not supported");
+    }
+  }
 }
 
 public sealed class ArrayColumnSource<T>(int size) : ArrayColumnSource(size), IMutableColumnSource<T> {
@@ -69,73 +137,5 @@ public sealed class ArrayColumnSource<T>(int size) : ArrayColumnSource(size), IM
 
   public override ArrayColumnSource CreateOfSameType(int size) {
     return new ArrayColumnSource<T>(size);
-  }
-}
-
-class ArrayColumnSourceMaker(int size) :
-  IArrowTypeVisitor<UInt16Type>,
-  IArrowTypeVisitor<Int8Type>,
-  IArrowTypeVisitor<Int16Type>,
-  IArrowTypeVisitor<Int32Type>,
-  IArrowTypeVisitor<Int64Type>,
-  IArrowTypeVisitor<FloatType>,
-  IArrowTypeVisitor<DoubleType>,
-  IArrowTypeVisitor<BooleanType>,
-  IArrowTypeVisitor<StringType>,
-  IArrowTypeVisitor<TimestampType>,
-  IArrowTypeVisitor<Date64Type>,
-  IArrowTypeVisitor<Time64Type> {
-  public ArrayColumnSource? Result { get; private set; }
-
-  public void Visit(UInt16Type type) {
-    Result = new CharArrayColumnSource(size);
-  }
-
-  public void Visit(Int8Type type) {
-    Result = new ByteArrayColumnSource(size);
-  }
-
-  public void Visit(Int16Type type) {
-    Result = new Int16ArrayColumnSource(size);
-  }
-
-  public void Visit(Int32Type type) {
-    Result = new Int32ArrayColumnSource(size);
-  }
-
-  public void Visit(Int64Type type) {
-    Result = new Int64ArrayColumnSource(size);
-  }
-
-  public void Visit(FloatType type) {
-    Result = new FloatArrayColumnSource(size);
-  }
-
-  public void Visit(DoubleType type) {
-    Result = new DoubleArrayColumnSource(size);
-  }
-
-  public void Visit(BooleanType type) {
-    Result = new BooleanArrayColumnSource(size);
-  }
-
-  public void Visit(StringType type) {
-    Result = new StringArrayColumnSource(size);
-  }
-
-  public void Visit(TimestampType type) {
-    Result = new TimestampArrayColumnSource(size);
-  }
-
-  public void Visit(Date64Type type) {
-    Result = new LocalDateArrayColumnSource(size);
-  }
-
-  public void Visit(Time64Type type) {
-    Result = new LocalTimeArrayColumnSource(size);
-  }
-
-  public void Visit(IArrowType type) {
-    throw new Exception($"type {type.Name} is not supported");
   }
 }
