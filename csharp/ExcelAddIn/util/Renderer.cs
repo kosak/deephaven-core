@@ -21,7 +21,6 @@ internal static class Renderer {
     }
 
     var chunkSize = checked((int)Math.Min(numRows, 16384));
-    var nulls = Chunk<bool>.Create(chunkSize);
 
     var endIndex = (UInt64)numRows;
 
@@ -30,18 +29,16 @@ internal static class Renderer {
       var destIndex = destStartIndex;
 
       var col = table.GetColumn(colIndex);
-      var adaptorMaker = new AdaptorMaker();
+      var adaptorMaker = new AdaptorMaker(chunkSize);
       col.Accept(adaptorMaker);
-      var adaptor = adaptorMaker.Adaptor;
+      var adaptor = adaptorMaker.Result!;
 
       while (currentIndex < endIndex) {
         var sizeToCopy = Math.Min(endIndex - currentIndex, (UInt64)chunkSize);
         var rows = RowSequence.CreateSequential(Interval.OfStartAndSize(currentIndex, sizeToCopy));
-        col.FillChunk(rows, adaptor.SrcChunk, nulls);
-        adaptor.AdaptData();
+        var destData = adaptor.FillChunk(col, rows);
         currentIndex += sizeToCopy;
 
-        var destData = adaptor.DestData;
         for (UInt64 i = 0; i != sizeToCopy; ++i) {
           result[destIndex++, colIndex] = destData[i];
         }
@@ -51,36 +48,55 @@ internal static class Renderer {
     return result;
   }
 
-  private class AdaptorMaker : IColumnSourceVisitor {
+  private class AdaptorMaker(int size) : IColumnSourceVisitor {
+    public IAdaptor? Result { get; private set; }
+
+    public void Visit(IColumnSource cs) {
+      throw new NotImplementedException($"Don't have an adaptor for type {cs.GetType()} {size}");
+    }
   }
 
-  private class Adaptor {
-    protected readonly object[] _destData;
-
+  private interface IAdaptor {
+    public object[] FillChunk(IColumnSource cols, RowSequence rows);
   }
 
-  private class Adaptor<T> : Adaptor {
-    private readonly Chunk<T> _srcChunk;
+  private sealed class Adaptor<T> : IAdaptor {
     private readonly Func<T, object> _converter;
+    private readonly Chunk<T> _intermediateChunk;
+    private readonly Chunk<bool> _nulls;
+    private readonly object[] _destData;
 
-    // Assume null, which we render as empty string.
-    object? value = "";
-      if (!nulls.Data[i]) {
-      if (dateTimeChunk != null) {
-        // Special case for DhDateTimes: format them as readable strings
-        value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
-      } else {
-        value = chunk.GetBoxedElement((int) i);
-      }
+    public Adaptor(int size, Func<T, object> converter) {
+      _converter = converter;
+      _intermediateChunk = Chunk<T>.Create(size);
+      _nulls = Chunk<bool>.Create(size);
+      _destData = new object[size];
     }
 
+    public object[] FillChunk(IColumnSource col, RowSequence rows) {
+      col.FillChunk(rows, _intermediateChunk, _nulls);
+      for (var i = 0; i != _intermediateChunk.Size; ++i) {
+        // Assume null, which we render as empty string.
+        object destValue = "";
+        if (!_nulls.Data[i]) {
+          var srcValue = _intermediateChunk.Data[i];
+          destValue = _converter(srcValue);
+        }
 
-
-
-
-
-
-
-
+        _destData[i] = destValue;
+      }
+      return _destData;
+    }
+    //
+    //
+    // object? value = "";
+    //   if (!nulls.Data[i]) {
+    //   if (dateTimeChunk != null) {
+    //     // Special case for DhDateTimes: format them as readable strings
+    //     value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+    //   } else {
+    //     value = chunk.GetBoxedElement((int) i);
+    //   }
+    // }
   }
 }
