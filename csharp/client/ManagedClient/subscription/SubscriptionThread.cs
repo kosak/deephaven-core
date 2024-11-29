@@ -1,4 +1,5 @@
-﻿using Apache.Arrow.Flight;
+﻿using System.Diagnostics;
+using Apache.Arrow.Flight;
 using Apache.Arrow;
 using Apache.Arrow.Flight.Client;
 using Google.Protobuf;
@@ -92,9 +93,10 @@ internal class SubscriptionThread {
       var bp = new BarrageProcessor(_schema);
 
       while (true) {
+        Debug.WriteLine("hi");
         var moveNextSucceeded = responseStream.MoveNext().Result;
         if (!moveNextSucceeded) {
-          Console.Error.WriteLine("all done");
+          Debug.WriteLine("SubscriptionThread: all done");
           return;
         }
 

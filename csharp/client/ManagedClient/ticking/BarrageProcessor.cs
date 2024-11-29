@@ -1,4 +1,5 @@
-﻿using Apache.Arrow;
+﻿using System.Diagnostics;
+using Apache.Arrow;
 using Google.FlatBuffers;
 using io.deephaven.barrage.flatbuf;
 using Array = System.Array;
@@ -295,8 +296,8 @@ class AwaitingModifies(
       sourcesAndRanges[i] = sourcesAndRanges[i] with { Range = Interval.OfEmpty };
     }
 
-    if (_modifiedRowsRemaining.Any(mr => mr.IsEmpty)) {
-      // At least one of our colums is hungry for more data that we don't have.
+    if (_modifiedRowsRemaining.Any(mr => !mr.IsEmpty)) {
+      // At least one of our columns is hungry for more data that we don't have.
       return (null, this);
     }
 
