@@ -7,9 +7,9 @@ global using Int32ArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<
 global using Int64ArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.Int64>;
 global using FloatArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<float>;
 global using DoubleArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<double>;
-global using TimestampArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<Deephaven.ManagedClient.DhDateTime>;
-global using LocalDateArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<Deephaven.ManagedClient.LocalDate>;
-global using LocalTimeArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<Deephaven.ManagedClient.LocalTime>;
+global using DateTimeArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.DateTime>;
+global using DateOnlyArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.DateOnly>;
+global using TimeOnlyArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.TimeOnly>;
 
 using Apache.Arrow.Types;
 
@@ -83,15 +83,15 @@ public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
     }
 
     public void Visit(TimestampType type) {
-      Result = new TimestampArrayColumnSource(size);
+      Result = new DateTimeArrayColumnSource(size);
     }
 
     public void Visit(Date64Type type) {
-      Result = new LocalDateArrayColumnSource(size);
+      Result = new DateOnlyArrayColumnSource(size);
     }
 
     public void Visit(Time64Type type) {
-      Result = new LocalTimeArrayColumnSource(size);
+      Result = new TimeOnlyArrayColumnSource(size);
     }
 
     public void Visit(IArrowType type) {

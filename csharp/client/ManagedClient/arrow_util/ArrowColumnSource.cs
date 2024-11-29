@@ -7,9 +7,9 @@ global using Int32ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<
 global using Int64ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int64>;
 global using FloatArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<float>;
 global using DoubleArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<double>;
-global using TimestampArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.DhDateTime>;
-global using LocalDateArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.LocalDate>;
-global using LocalTimeArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<Deephaven.ManagedClient.LocalTime>;
+global using TimestampArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.DateTime>;
+global using LocalDateArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.DateOnly>;
+global using LocalTimeArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.TimeOnly>;
 
 using Apache.Arrow;
 using Apache.Arrow.Types;
@@ -63,76 +63,79 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
     IColumnSourceVisitor<IDoubleColumnSource>,
     IColumnSourceVisitor<IBooleanColumnSource>,
     IColumnSourceVisitor<IStringColumnSource>,
-    IColumnSourceVisitor<ITimestampColumnSource>,
-    IColumnSourceVisitor<ILocalDateColumnSource>,
-    IColumnSourceVisitor<ILocalTimeColumnSource> {
+    IColumnSourceVisitor<IDateTimeColumnSource>,
+    IColumnSourceVisitor<IDateOnlyColumnSource>,
+    IColumnSourceVisitor<ITimeOnlyColumnSource> {
   public void Visit(ICharColumnSource src) {
     var tc = new TransformingCopier<UInt16, char>((CharChunk)destData, nullFlags,
-      (UInt16)DeephavenConstants.NullChar, v => (char)v);
+      (UInt16)DeephavenConstants.NullChar, DeephavenConstants.NullChar, v => (char)v);
     tc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IByteColumnSource src) {
+  public void Visit(IByteColumnSource _) {
     var vc = new ValueCopier<sbyte>((ByteChunk)destData, nullFlags,
       DeephavenConstants.NullByte);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IInt16ColumnSource src) {
+  public void Visit(IInt16ColumnSource _) {
     var vc = new ValueCopier<Int16>((Int16Chunk)destData, nullFlags,
       DeephavenConstants.NullShort);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IInt32ColumnSource src) {
+  public void Visit(IInt32ColumnSource _) {
     var vc = new ValueCopier<Int32>((Int32Chunk)destData, nullFlags,
       DeephavenConstants.NullInt);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IInt64ColumnSource src) {
+  public void Visit(IInt64ColumnSource _) {
     var vc = new ValueCopier<Int64>((Int64Chunk)destData, nullFlags,
       DeephavenConstants.NullLong);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IFloatColumnSource src) {
+  public void Visit(IFloatColumnSource _) {
     var vc = new ValueCopier<float>((FloatChunk)destData, nullFlags,
       DeephavenConstants.NullFloat);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IDoubleColumnSource src) {
+  public void Visit(IDoubleColumnSource _) {
     var vc = new ValueCopier<double>((DoubleChunk)destData, nullFlags,
       DeephavenConstants.NullDouble);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IBooleanColumnSource src) {
+  public void Visit(IBooleanColumnSource _) {
     var vc = new ValueCopier<bool>((BooleanChunk)destData, nullFlags, null);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IStringColumnSource src) {
+  public void Visit(IStringColumnSource _) {
     var vc = new ReferenceCopier<string>((StringChunk)destData, nullFlags);
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(ITimestampColumnSource src) {
-    var tc = new TransformingCopier<Int64, DhDateTime>((DhDateTimeChunk)destData,
-      nullFlags, DeephavenConstants.NullLong, DhDateTime.FromNanos);
+  public void Visit(IDateTimeColumnSource _) {
+    var tc = new TransformingCopier<Int64, DateTime>((DateTimeChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, new DateTime(),
+      nanos => new DateTime(nanos / TimeSpan.NanosecondsPerTick));
     tc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(ILocalDateColumnSource src) {
-    var tc = new TransformingCopier<Int64, LocalDate>((LocalDateChunk)destData,
-      nullFlags, DeephavenConstants.NullLong, LocalDate.FromMillis);
+  public void Visit(IDateOnlyColumnSource _) {
+    var tc = new TransformingCopier<Int64, DateOnly>((DateOnlyChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, new DateOnly(),
+      millis => DateOnly.FromDateTime(new DateTime(millis * TimeSpan.TicksPerMillisecond)));
     tc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(ILocalTimeColumnSource src) {
-    var tc = new TransformingCopier<Int64, LocalTime>((LocalTimeChunk)destData,
-      nullFlags, DeephavenConstants.NullLong, LocalTime.FromNanos);
+  public void Visit(ITimeOnlyColumnSource _) {
+    var tc = new TransformingCopier<Int64, TimeOnly>((TimeOnlyChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, new TimeOnly(),
+      nanos => TimeOnly.FromTimeSpan(TimeSpan.FromTicks(nanos / TimeSpan.NanosecondsPerTick)));
     tc.FillChunk(rows, chunkedArray);
   }
 
@@ -192,14 +195,19 @@ sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T? deep
 }
 
 sealed class TransformingCopier<TSrc, TDest>(Chunk<TDest> typedDest, BooleanChunk? nullFlags,
-  TSrc deephavenNullValue, Func<TSrc, TDest> transformer)
+  TSrc deephavenNullValue, TDest transformedNullValue, Func<TSrc, TDest> transformer)
   : FillChunkHelper where TSrc : struct where TDest : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<TSrc?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];
-      typedDest.Data[destOffset] = value.HasValue ? transformer(value.Value) : default;
       var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
+      try {
+        typedDest.Data[destOffset] = isNull ? transformedNullValue : transformer(value.Value);
+      } catch (Exception e) {
+        typedDest.Data[destOffset] = isNull ? transformedNullValue : transformer(value.Value);
+      }
+
       if (nullFlags != null) {
         nullFlags.Data[destOffset] = isNull;
       }

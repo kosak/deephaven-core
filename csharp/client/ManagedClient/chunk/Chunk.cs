@@ -7,15 +7,13 @@ global using Int32Chunk = Deephaven.ManagedClient.Chunk<System.Int32>;
 global using Int64Chunk = Deephaven.ManagedClient.Chunk<System.Int64>;
 global using FloatChunk = Deephaven.ManagedClient.Chunk<float>;
 global using DoubleChunk = Deephaven.ManagedClient.Chunk<double>;
-global using DhDateTimeChunk = Deephaven.ManagedClient.Chunk<Deephaven.ManagedClient.DhDateTime>;
-global using LocalDateChunk = Deephaven.ManagedClient.Chunk<Deephaven.ManagedClient.LocalDate>;
-global using LocalTimeChunk = Deephaven.ManagedClient.Chunk<Deephaven.ManagedClient.LocalTime>;
+global using DateTimeChunk = Deephaven.ManagedClient.Chunk<System.DateTime>;
+global using DateOnlyChunk = Deephaven.ManagedClient.Chunk<System.DateOnly>;
+global using TimeOnlyChunk = Deephaven.ManagedClient.Chunk<System.TimeOnly>;
 
 namespace Deephaven.ManagedClient;
 
 public abstract class Chunk(int size) {
-  public abstract object? GetBoxedElement(int index);
-
   public int Size { get; } = size;
 }
 
@@ -28,9 +26,5 @@ public sealed class Chunk<T> : Chunk {
 
   private Chunk(T[] data) : base(data.Length) {
     Data = data;
-  }
-
-  public override object? GetBoxedElement(int index) {
-    return Data[index];
   }
 }

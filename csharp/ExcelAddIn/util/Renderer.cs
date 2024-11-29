@@ -58,65 +58,30 @@ internal static class Renderer {
     IColumnSourceVisitor<IDoubleColumnSource>,
     IColumnSourceVisitor<IBooleanColumnSource>,
     IColumnSourceVisitor<IStringColumnSource>,
-    IColumnSourceVisitor<ITimestampColumnSource>,
-    IColumnSourceVisitor<ILocalDateColumnSource>,
-    IColumnSourceVisitor<ILocalTimeColumnSource> {
+    IColumnSourceVisitor<IDateTimeColumnSource>,
+    IColumnSourceVisitor<IDateOnlyColumnSource>,
+    IColumnSourceVisitor<ITimeOnlyColumnSource> {
     public IAdaptor? Result { get; private set; }
 
     public void Visit(IColumnSource cs) {
       throw new NotImplementedException($"Don't have an adaptor for type {cs.GetType()}");
     }
 
-    public void Visit(ICharColumnSource _) {
-      Result = new Adaptor<char>(size, ch => ch.ToString());
-    }
-
-    public void Visit(IByteColumnSource _) {
-      Result = new Adaptor<sbyte>(size, x => x);
-    }
-
-    public void Visit(IInt16ColumnSource _) {
-      Result = new Adaptor<Int16>(size, x => x);
-    }
-
-    public void Visit(IInt32ColumnSource _) {
-      Result = new Adaptor<Int32>(size, x => x);
-    }
-
-    public void Visit(IInt64ColumnSource _) {
-      Result = new Adaptor<Int64>(size, x => x);
-    }
-
-    public void Visit(IFloatColumnSource _) {
-      Result = new Adaptor<float>(size, x => x);
-    }
-
-    public void Visit(IDoubleColumnSource _) {
-      Result = new Adaptor<double>(size, x => x);
-    }
-
-    public void Visit(IBooleanColumnSource _) {
-      Result = new Adaptor<bool>(size, x => x);
-    }
-
-    public void Visit(IStringColumnSource _) {
-      Result = new Adaptor<string>(size, x => x);
-    }
-
-    public void Visit(ITimestampColumnSource _) {
-      Result = new Adaptor<DhDateTime>(size,
-        dt => dt.DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
-    }
-
-    public void Visit(ILocalDateColumnSource _) {
-      Result = new Adaptor<LocalDate>(size,
-        dt => "TODO LocalDate");
-    }
-
-    public void Visit(ILocalTimeColumnSource _) {
-      Result = new Adaptor<LocalTime>(size,
-        dt => "TODO LocalTime");
-    }
+    public void Visit(ICharColumnSource _) => Result = new Adaptor<char>(size, ch => ch.ToString());
+    public void Visit(IByteColumnSource _) => Result = new Adaptor<sbyte>(size, x => x);
+    public void Visit(IInt16ColumnSource _) => Result = new Adaptor<Int16>(size, x => x);
+    public void Visit(IInt32ColumnSource _) => Result = new Adaptor<Int32>(size, x => x);
+    public void Visit(IInt64ColumnSource _) => Result = new Adaptor<Int64>(size, x => x);
+    public void Visit(IFloatColumnSource _) => Result = new Adaptor<float>(size, x => x);
+    public void Visit(IDoubleColumnSource _) => Result = new Adaptor<double>(size, x => x);
+    public void Visit(IBooleanColumnSource _) => Result = new Adaptor<bool>(size, x => x);
+    public void Visit(IStringColumnSource _) => Result = new Adaptor<string>(size, x => x);
+    public void Visit(IDateTimeColumnSource _) => Result = new Adaptor<DateTime>(size,
+        dt => dt.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
+    public void Visit(IDateOnlyColumnSource _) => Result = new Adaptor<DateOnly>(size,
+        dt => dt.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
+    public void Visit(ITimeOnlyColumnSource _) => Result = new Adaptor<TimeOnly>(size,
+      dt => dt.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
   }
 
   private interface IAdaptor {
