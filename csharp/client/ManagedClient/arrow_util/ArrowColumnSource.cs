@@ -73,32 +73,38 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
   }
 
   public void Visit(IByteColumnSource src) {
-    var vc = new ValueCopier<sbyte>((ByteChunk)destData, nullFlags, DeephavenConstants.NullByte);
+    var vc = new ValueCopier<sbyte>((ByteChunk)destData, nullFlags,
+      DeephavenConstants.NullByte);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IInt16ColumnSource src) {
-    var vc = new ValueCopier<Int16>((Int16Chunk)destData, nullFlags, DeephavenConstants.NullShort);
+    var vc = new ValueCopier<Int16>((Int16Chunk)destData, nullFlags,
+      DeephavenConstants.NullShort);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IInt32ColumnSource src) {
-    var vc = new ValueCopier<Int32>((Int32Chunk)destData, nullFlags, DeephavenConstants.NullInt);
+    var vc = new ValueCopier<Int32>((Int32Chunk)destData, nullFlags,
+      DeephavenConstants.NullInt);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IInt64ColumnSource src) {
-    var vc = new ValueCopier<Int64>((Int64Chunk)destData, nullFlags, DeephavenConstants.NullLong);
+    var vc = new ValueCopier<Int64>((Int64Chunk)destData, nullFlags,
+      DeephavenConstants.NullLong);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IFloatColumnSource src) {
-    var vc = new ValueCopier<float>((FloatChunk)destData, nullFlags, DeephavenConstants.NullFloat);
+    var vc = new ValueCopier<float>((FloatChunk)destData, nullFlags,
+      DeephavenConstants.NullFloat);
     vc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IDoubleColumnSource src) {
-    var vc = new ValueCopier<double>((DoubleChunk)destData, nullFlags, DeephavenConstants.NullDouble);
+    var vc = new ValueCopier<double>((DoubleChunk)destData, nullFlags,
+      DeephavenConstants.NullDouble);
     vc.FillChunk(rows, chunkedArray);
   }
 
@@ -113,20 +119,20 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
   }
 
   public void Visit(ITimestampColumnSource src) {
-    var tc = new TransformingCopier<Int64, DhDateTime>((DhDateTimeChunk)destData, nullFlags,
-      DeephavenConstants.NullLong, DhDateTime.FromNanos);
+    var tc = new TransformingCopier<Int64, DhDateTime>((DhDateTimeChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, DhDateTime.FromNanos);
     tc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(ILocalDateColumnSource src) {
-    var tc = new TransformingCopier<Int64, LocalDate>((LocalDateChunk)destData, nullFlags,
-      DeephavenConstants.NullLong, LocalDate.FromMillis);
+    var tc = new TransformingCopier<Int64, LocalDate>((LocalDateChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, LocalDate.FromMillis);
     tc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(ILocalTimeColumnSource src) {
-    var tc = new TransformingCopier<Int64, LocalTime>((LocalTimeChunk)destData, nullFlags,
-      DeephavenConstants.NullLong, LocalTime.FromNanos);
+    var tc = new TransformingCopier<Int64, LocalTime>((LocalTimeChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, LocalTime.FromNanos);
     tc.FillChunk(rows, chunkedArray);
   }
 

@@ -15,6 +15,13 @@ public static class DeephavenExcelFunctions {
     EndpointManagerDialogFactory.CreateAndShow(StateManager);
   }
 
+  [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]
+  public static void AddKosakConnection() {
+    var id = new EndpointId("con1");
+    var config = EndpointConfigBase.OfCore(id, "10.0.4.109:10000", true);
+    StateManager.SetCredentials(config);
+  }
+
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out var errorText)) {
