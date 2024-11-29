@@ -103,8 +103,7 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
   }
 
   public void Visit(IBooleanColumnSource src) {
-    // TODO: figure out what to do here
-    var vc = new ValueCopier<bool>((BooleanChunk)destData, nullFlags, false);
+    var vc = new ValueCopier<bool>((BooleanChunk)destData, nullFlags, null);
     vc.FillChunk(rows, chunkedArray);
   }
 
@@ -166,7 +165,7 @@ abstract class FillChunkHelper {
   protected abstract void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count);
 }
 
-sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T deephavenNullValue)
+sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T? deephavenNullValue)
       : FillChunkHelper where T : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<T?>)src;
@@ -176,8 +175,7 @@ sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T deeph
       if (nullFlags != null) {
         // It looks like even though Deephaven is correctly setting the null bitmap when
         // it comes through DoGet, we're not getting null values when it comes through Barrage.
-        //var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
-        var isNull = !value.HasValue;
+        var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
         nullFlags.Data[destOffset] = isNull;
       }
 

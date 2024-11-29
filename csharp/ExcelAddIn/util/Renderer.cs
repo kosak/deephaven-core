@@ -150,16 +150,5 @@ internal static class Renderer {
       }
       return _destData;
     }
-    //
-    //
-    // object? value = "";
-    //   if (!nulls.Data[i]) {
-    //   if (dateTimeChunk != null) {
-    //     // Special case for DhDateTimes: format them as readable strings
-    //     value = dateTimeChunk.Data[i].DateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
-    //   } else {
-    //     value = chunk.GetBoxedElement((int) i);
-    //   }
-    // }
   }
 }
