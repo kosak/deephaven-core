@@ -67,7 +67,8 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
     IColumnSourceVisitor<ILocalDateColumnSource>,
     IColumnSourceVisitor<ILocalTimeColumnSource> {
   public void Visit(ICharColumnSource src) {
-    var tc = new TransformingCopier<UInt16, char>((CharChunk)destData, nullFlags, v => (char)v);
+    var tc = new TransformingCopier<UInt16, char>((CharChunk)destData, nullFlags,
+      (UInt16)DeephavenConstants.NullChar, v => (char)v);
     tc.FillChunk(rows, chunkedArray);
   }
 
@@ -113,17 +114,20 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
   }
 
   public void Visit(ITimestampColumnSource src) {
-    var tc = new TransformingCopier<Int64, DhDateTime>((DhDateTimeChunk)destData, nullFlags, DhDateTime.FromNanos);
+    var tc = new TransformingCopier<Int64, DhDateTime>((DhDateTimeChunk)destData, nullFlags,
+      DeephavenConstants.NullLong, DhDateTime.FromNanos);
     tc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(ILocalDateColumnSource src) {
-    var tc = new TransformingCopier<Int64, LocalDate>((LocalDateChunk)destData, nullFlags, LocalDate.FromMillis);
+    var tc = new TransformingCopier<Int64, LocalDate>((LocalDateChunk)destData, nullFlags,
+      DeephavenConstants.NullLong, LocalDate.FromMillis);
     tc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(ILocalTimeColumnSource src) {
-    var tc = new TransformingCopier<Int64, LocalTime>((LocalTimeChunk)destData, nullFlags, LocalTime.FromNanos);
+    var tc = new TransformingCopier<Int64, LocalTime>((LocalTimeChunk)destData, nullFlags,
+      DeephavenConstants.NullLong, LocalTime.FromNanos);
     tc.FillChunk(rows, chunkedArray);
   }
 
@@ -172,7 +176,8 @@ sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T deeph
       if (nullFlags != null) {
         // It looks like even though Deephaven is correctly setting the null bitmap when
         // it comes through DoGet, we're not getting null values when it comes through Barrage.
-        var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
+        //var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
+        var isNull = !value.HasValue;
         nullFlags.Data[destOffset] = isNull;
       }
 
@@ -182,15 +187,17 @@ sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T deeph
   }
 }
 
-sealed class TransformingCopier<TSrc, TDest>(Chunk<TDest> typedDest, BooleanChunk? nullFlags, Func<TSrc, TDest> transformer)
+sealed class TransformingCopier<TSrc, TDest>(Chunk<TDest> typedDest, BooleanChunk? nullFlags,
+  TSrc deephavenNullValue, Func<TSrc, TDest> transformer)
   : FillChunkHelper where TSrc : struct where TDest : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<TSrc?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];
       typedDest.Data[destOffset] = value.HasValue ? transformer(value.Value) : default;
+      var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
       if (nullFlags != null) {
-        nullFlags.Data[destOffset] = !value.HasValue;
+        nullFlags.Data[destOffset] = isNull;
       }
 
       ++srcOffset;

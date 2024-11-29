@@ -93,7 +93,7 @@ internal class SubscriptionThread {
       var bp = new BarrageProcessor(_schema);
 
       while (true) {
-        Debug.WriteLine("hi");
+        Debug.WriteLine("hi");  ++deleetye me 666
         var moveNextSucceeded = responseStream.MoveNext().Result;
         if (!moveNextSucceeded) {
           Debug.WriteLine("SubscriptionThread: all done");

@@ -1,4 +1,5 @@
-﻿using Io.Deephaven.Proto.Backplane.Grpc;
+﻿using System.Diagnostics;
+using Io.Deephaven.Proto.Backplane.Grpc;
 using Apache.Arrow.Flight.Client;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -59,18 +60,12 @@ public class Server {
       }
     }
 
-    var nextHandshakeTime = sendTime + expirationInterval;
-
     var result = new Server(aps, cs, ss, ts, cfs, its, fc, clientOptions.ExtraHeaders, sessionToken,
-      expirationInterval, nextHandshakeTime);
-    // set keepaliveThread here
+      expirationInterval);
     return result;
   }
 
-  /**
-   * Accessed via Interlocked methods
-   */
-  private static int _nextFreeServerId;
+  private static InterlockedLong _nextFreeServerId;
 
   public string Me { get; }
   private readonly ApplicationService.ApplicationServiceClient _applicationStub;
@@ -82,7 +77,7 @@ public class Server {
   public FlightClient FlightClient { get; }
   private readonly IReadOnlyList<(string, string)> _extraHeaders;
   private readonly TimeSpan _expirationInterval;
-  private DateTime _nextHandshakeTime;
+  private readonly Timer _keepalive;
 
   private readonly object _sync = new();
   /// <summary>
@@ -102,9 +97,8 @@ public class Server {
     FlightClient flightClient,
     IReadOnlyList<(string, string)> extraHeaders,
     string sessionToken,
-    TimeSpan expirationInterval,
-    DateTime nextHandshakeTime) {
-    Me = $"{nameof(Server)}-{Interlocked.Increment(ref _nextFreeServerId)}";
+    TimeSpan expirationInterval) {
+    Me = $"{nameof(Server)}-{_nextFreeServerId.Increment()}";
     _applicationStub = applicationStub;
     ConsoleStub = consoleStub;
     SessionStub = sessionStub;
@@ -115,12 +109,12 @@ public class Server {
     _extraHeaders = extraHeaders.ToArray();
     _sessionToken = sessionToken;
     _expirationInterval = expirationInterval;
-    _nextHandshakeTime = nextHandshakeTime;
+    _keepalive = new Timer(SendKeepaliveMessage, null, _expirationInterval,
+      Timeout.InfiniteTimeSpan);
   }
 
   public TResponse SendRpc<TResponse>(Func<CallOptions, AsyncUnaryCall<TResponse>> callback,
     bool disregardCancellationState = false) {
-    var now = DateTime.Now;
     var metadata = new Metadata();
     ForEachHeaderNameAndValue(metadata.Add);
 
@@ -144,7 +138,7 @@ public class Server {
         _sessionToken = maybeToken;
       }
 
-      _nextHandshakeTime = now + _expirationInterval;
+      _keepalive.Change(_expirationInterval, Timeout.InfiniteTimeSpan);
     }
 
     return result;
@@ -181,6 +175,20 @@ public class Server {
       var ticket = MakeNewTicket(ticketId);
       _outstandingTickets.Add(ticket);
       return ticket;
+    }
+  }
+
+  private void SendKeepaliveMessage(object? _) {
+    try {
+      Debug.WriteLine("Hi sending keepalive");
+      var req = new ConfigurationConstantsRequest();
+      SendRpc(opts => ConfigStub.GetConfigurationConstantsAsync(req, opts));
+      Debug.WriteLine("Hi that looks like that (that = sending keepalive) worked");
+    } catch (Exception e) {
+      Debug.WriteLine($"Keepalive timer: ignoring {e}");
+      // Successful SendRpc will reset the timer for us. For a failed SendRpc,
+      // we retry relatively frequently.
+      _keepalive.Change(TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
     }
   }
 

@@ -7,4 +7,5 @@ public static class DeephavenConstants {
   public const Int64 NullLong = Int64.MinValue;
   public const float NullFloat = -float.MaxValue;
   public const double NullDouble = -double.MaxValue;
+  public const char NullChar = Char.MaxValue;
 }
