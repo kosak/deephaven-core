@@ -13,6 +13,7 @@ global using LocalTimeArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSou
 
 using Apache.Arrow;
 using Apache.Arrow.Types;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Deephaven.ManagedClient;
 
@@ -121,14 +122,20 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
   public void Visit(IDateTimeColumnSource _) {
     var tc = new TransformingCopier<Int64, DateTime>((DateTimeChunk)destData,
       nullFlags, DeephavenConstants.NullLong, new DateTime(),
-      nanos => new DateTime(nanos / TimeSpan.NanosecondsPerTick));
+      nanos => {
+        var dto = DateTimeOffset.UnixEpoch + TimeSpan.FromTicks(nanos / TimeSpan.NanosecondsPerTick);
+        return dto.DateTime;
+      });
     tc.FillChunk(rows, chunkedArray);
   }
 
   public void Visit(IDateOnlyColumnSource _) {
     var tc = new TransformingCopier<Int64, DateOnly>((DateOnlyChunk)destData,
       nullFlags, DeephavenConstants.NullLong, new DateOnly(),
-      millis => DateOnly.FromDateTime(new DateTime(millis * TimeSpan.TicksPerMillisecond)));
+      millis => {
+        var dto = DateTimeOffset.UnixEpoch + TimeSpan.FromMilliseconds(millis);
+        return DateOnly.FromDateTime(dto.DateTime);
+      });
     tc.FillChunk(rows, chunkedArray);
   }
 

@@ -77,11 +77,11 @@ internal static class Renderer {
     public void Visit(IBooleanColumnSource _) => Result = new Adaptor<bool>(size, x => x);
     public void Visit(IStringColumnSource _) => Result = new Adaptor<string>(size, x => x);
     public void Visit(IDateTimeColumnSource _) => Result = new Adaptor<DateTime>(size,
-        dt => dt.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
+      dt => dt.ToString("o", null));
     public void Visit(IDateOnlyColumnSource _) => Result = new Adaptor<DateOnly>(size,
-        dt => dt.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
+        dt => dt.ToString("o", null));
     public void Visit(ITimeOnlyColumnSource _) => Result = new Adaptor<TimeOnly>(size,
-      dt => dt.ToString("s", System.Globalization.CultureInfo.InvariantCulture));
+      dt => dt.ToString("o", null));
   }
 
   private interface IAdaptor {
