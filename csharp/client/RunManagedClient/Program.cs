@@ -1,4 +1,4 @@
-﻿global using BooleanChunk = Deephaven.ManagedClient.Chunk<bool>;
+﻿using Apache.Arrow;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.RunManangedClient;
@@ -17,61 +17,72 @@ public static class Program {
 
     try {
       using var client = Client.Connect(server);
-      using var manager = client.GetManager();
-      using var t1 = manager.TimeTable("PT1S");
+      using var manager = client.Manager;
+      using var t1 = manager.EmptyTable(10);
       using var t2 = t1.Update(
-        "Chars = ii == 5 ? null : (char)('a' + ii)",
-        "Bytes = ii == 5 ? null : (byte)(ii)",
+        // "Chars = ii == 5 ? null : (char)('a' + ii)",
+        // "Bytes = ii == 5 ? null : (byte)(ii)",
         "Shorts = ii == 5 ? null : (short)(ii)",
         "Ints = ii == 5 ? null : (int)(ii)",
         "Longs = ii == 5 ? null : (long)(ii)",
         "Floats = ii == 5 ? null : (float)(ii)",
-        "Doubles = ii == 5 ? null : (double)(ii)",
-        "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-        "Strings = ii == 5 ? null : `hello ` + i",
-        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
-        "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))",
-        "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
+        "Doubles = ii == 5 ? null : (double)(ii)"
+        // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+        // "Strings = ii == 5 ? null : `hello ` + i",
+        // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
+        // "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))",
+        // "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
       );
 
-      using var t3 = t2.Where("ii > 3");
-      var tResult = t3;
+      var at = t2.ToArrowTable();
 
-      Console.WriteLine(tResult.ToString(true));
-      // var at = tResult.ToArrowTable();
-      var ct = tResult.ToClientTable();
-      var cs = ct.GetColumn(0);
+      Console.WriteLine("printing table manually");
 
-      var size = ct.NumRows.ToIntExact();
-      var chunk = Chunk.CreateChunkFor(cs, size);
-      var nulls = BooleanChunk.Create(size);
-      var rs = ct.RowSequence;
+      var myPrintingVisitor = new MyPrintingVisitor();
 
-      cs.FillChunk(rs, chunk, nulls);
-      Console.WriteLine("hello I did a FillChunk");
+      var ncols = at.ColumnCount;
+      for (var colIndex = 0; colIndex != ncols; ++colIndex) {
+        Console.WriteLine($"=== column {colIndex} ===");
+        var col = at.Column(colIndex);
 
-      // using var tt = manager.TimeTable("PT2S");
-      // using var tt2 = tt.Update("II = ii");
+        var chunkedArray = col.Data;
 
-      var cookie = tResult.Subscribe(new MyCallback());
-      Console.WriteLine("Wait for something to happen??!!");
-      Thread.Sleep(TimeSpan.FromSeconds(5));
+        for (var arrayIndex = 0; arrayIndex != chunkedArray.ArrayCount; ++arrayIndex) {
+          var array = chunkedArray.ArrowArray(arrayIndex);
+
+          array.Accept(myPrintingVisitor);
+        }
+      }
     } catch (Exception e) {
       Console.Error.WriteLine($"Caught exception: {e}");
     }
   }
-}
 
-public class MyCallback : IObserver<TickingUpdate> {
-  public void OnNext(TickingUpdate update) {
-    Console.WriteLine("Hi, got a tick");
-  }
+  private class MyPrintingVisitor : IArrowArrayVisitor,
+     IArrowArrayVisitor<Int16Array>,
+     IArrowArrayVisitor<Int32Array>,
+     IArrowArrayVisitor<Int64Array>,
+     IArrowArrayVisitor<FloatArray>,
+     IArrowArrayVisitor<DoubleArray> {
 
-  public void OnError(Exception e) {
-    Console.WriteLine("Hi, got an exception");
-  }
+    public void Visit(IArrowArray array) {
+      throw new NotImplementedException($"I don't have a handler for {array.GetType().Name}");
+    }
 
-  public void OnCompleted() {
-    Console.WriteLine("Hi, got completed");
+    public void Visit(Int16Array array) => DumpData(array, array.Values);
+    public void Visit(Int32Array array) => DumpData(array, array.Values);
+    public void Visit(Int64Array array) => DumpData(array, array.Values);
+    public void Visit(FloatArray array) => DumpData(array, array.Values);
+    public void Visit(DoubleArray array) => DumpData(array, array.Values);
+
+    private void DumpData<T>(IArrowArray a, ReadOnlySpan<T> values) {
+      for (var i = 0; i != a.Length; ++i) {
+        if (a.IsNull(i)) {
+          Console.WriteLine("?NULL?");
+        } else {
+          Console.WriteLine(values[i]);
+        }
+      }
+    }
   }
 }
