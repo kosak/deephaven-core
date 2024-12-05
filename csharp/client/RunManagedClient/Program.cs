@@ -22,13 +22,13 @@ public static class Program {
       using var t2 = t1.Update(
         // "Chars = ii == 5 ? null : (char)('a' + ii)",
         // "Bytes = ii == 5 ? null : (byte)(ii)",
-        "Shorts = ii == 5 ? null : (short)(ii)",
-        "Ints = ii == 5 ? null : (int)(ii)",
-        "Longs = ii == 5 ? null : (long)(ii)",
-        "Floats = ii == 5 ? null : (float)(ii)",
-        "Doubles = ii == 5 ? null : (double)(ii)"
+        // "Shorts = ii == 5 ? null : (short)(ii)",
+        // "Ints = ii == 5 ? null : (int)(ii)",
+        // "Longs = ii == 5 ? null : (long)(ii)",
+        // "Floats = ii == 5 ? null : (float)(ii)",
+        // "Doubles = ii == 5 ? null : (double)(ii)",
         // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-        // "Strings = ii == 5 ? null : `hello ` + i",
+        "Strings = ii == 5 ? null : `hello ` + i"
         // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
         // "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))",
         // "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
@@ -58,31 +58,44 @@ public static class Program {
     }
   }
 
-  private class MyPrintingVisitor : IArrowArrayVisitor,
+  private class MyPrintingVisitor :
      IArrowArrayVisitor<Int16Array>,
      IArrowArrayVisitor<Int32Array>,
      IArrowArrayVisitor<Int64Array>,
      IArrowArrayVisitor<FloatArray>,
-     IArrowArrayVisitor<DoubleArray> {
+     IArrowArrayVisitor<DoubleArray>,
+     IArrowArrayVisitor<StringArray> {
 
     public void Visit(IArrowArray array) {
       throw new NotImplementedException($"I don't have a handler for {array.GetType().Name}");
     }
 
-    public void Visit(Int16Array array) => DumpData(array, array.Values);
-    public void Visit(Int32Array array) => DumpData(array, array.Values);
-    public void Visit(Int64Array array) => DumpData(array, array.Values);
-    public void Visit(FloatArray array) => DumpData(array, array.Values);
-    public void Visit(DoubleArray array) => DumpData(array, array.Values);
+    public void Visit(Int16Array array) => DumpData(array);
+    public void Visit(Int32Array array) => DumpData(array);
+    public void Visit(Int64Array array) => DumpData(array);
+    public void Visit(FloatArray array) => DumpData(array);
+    public void Visit(DoubleArray array) => DumpData(array);
+    public void Visit(StringArray array) => DumpRefData<string>(array);
 
-    private void DumpData<T>(IArrowArray a, ReadOnlySpan<T> values) {
-      for (var i = 0; i != a.Length; ++i) {
-        if (a.IsNull(i)) {
+    private void DumpData<T>(IReadOnlyList<T?> values) where T : struct {
+      foreach (var value in values) {
+        if (!value.HasValue) {
           Console.WriteLine("?NULL?");
         } else {
-          Console.WriteLine(values[i]);
+          Console.WriteLine(value);
         }
       }
     }
+
+    private void DumpRefData<T>(IReadOnlyList<T> values) {
+      foreach (var value in values) {
+        if (value == null) {
+          Console.WriteLine("?NULL?");
+        } else {
+          Console.WriteLine(value);
+        }
+      }
+    }
+
   }
 }
