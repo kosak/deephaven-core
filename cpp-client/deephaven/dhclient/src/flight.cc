@@ -26,7 +26,8 @@ std::unique_ptr<arrow::flight::FlightStreamReader> FlightWrapper::GetFlightStrea
 
   auto fsr_result = impl_->Server()->FlightClient()->DoGet(options, tkt);
   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(fsr_result));
-  return std::move(*fsr_result);
+  auto xyz = std::move(*fsr_result);
+  return xyz;
 }
 
 void FlightWrapper::AddHeaders(arrow::flight::FlightCallOptions *options) const {

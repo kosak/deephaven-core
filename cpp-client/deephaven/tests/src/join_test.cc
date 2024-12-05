@@ -59,7 +59,7 @@ TEST_CASE("Aj", "[join]") {
     table_maker.AddColumn("Price", price_data);
     table_maker.AddColumn("Size", size_data);
     trades = table_maker.MakeTable(tm.Client().GetManager());
-    // std::cout << trades.Stream(true) << '\n';
+    std::cout << trades.Stream(true) << '\n';
   }
 
   TableHandle quotes;
@@ -182,7 +182,7 @@ TEST_CASE("Raj", "[join]") {
   }
 
   auto result = trades.Raj(quotes, {"Ticker", "Timestamp"});
-  // std::cout << result.Stream(true) << '\n';
+  std::cout << result.Stream(true) << '\n';
 
   // Expected data
   {
@@ -194,10 +194,7 @@ TEST_CASE("Raj", "[join]") {
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:30:00-0500")
     };
-    for (const auto &ts : timestamp_data) {
-      fmt::print(std::cout, "{} - {}\n", ts, ts.Nanos());
 
-    }
     std::vector<double> price_data = {2.5, 3.7, 3.0, 100.50, 110};
     std::vector<int32_t> size_data = {52, 14, 73, 11, 6};
     std::vector<std::optional<double>> bid_data = {2.5, {}, {}, 97, 102};

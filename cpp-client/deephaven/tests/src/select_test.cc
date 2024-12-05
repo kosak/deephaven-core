@@ -237,6 +237,42 @@ TEST_CASE("Simple 'Where' with syntax error", "[select]") {
   throw std::runtime_error("Expected a failure, but didn't experience one");
 }
 
+TEST_CASE("Nate", "[select]") {
+  auto tm = TableMakerForTests::Create();
+  auto thm = tm.Client().GetManager();
+
+  auto th = thm.EmptyTable(3)
+      .Update({
+          "Ints = ii == 1 ? null : (int)(ii)",
+          "Doubles = ii == 2 ? null : (double)(ii)"
+      });
+
+  std::cout << "printing table with library\n" << th.Stream(true) << '\n';
+
+  auto temp = th.GetFlightStreamReader()->ToTable();
+  const auto &table = temp.ValueOrDie();
+
+  std::cout << "printing table manually\n";
+
+  auto ncols = table->num_columns();
+  auto nrows = table->num_rows();
+  for (auto col_index = 0; col_index != ncols; ++col_index) {
+    fmt::println(std::cout, "=== column {} ===", col_index);
+    auto col = table->columns()[col_index];
+
+    for (auto row_index = 0; row_index != nrows; ++row_index) {
+      auto wrapped_value = col->GetScalar(row_index);
+      const auto &value = wrapped_value.ValueOrDie();
+      if (value->is_valid) {
+        fmt::println(std::cout, value->ToString());
+      } else {
+        fmt::println(std::cout, "(((!!null!!)))");
+      }
+    }
+  }
+  std::cout << "BYE\n";
+}
+
 TEST_CASE("WhereIn", "[select]") {
   auto tm = TableMakerForTests::Create();
 
@@ -250,6 +286,7 @@ TEST_CASE("WhereIn", "[select]") {
   source_maker.AddColumn("Color", color_data);
   source_maker.AddColumn("Code", code_data);
   auto source = source_maker.MakeTable(tm.Client().GetManager());
+  source.BindToVariable("this_is_source");
 
   std::vector<std::string> filter_color_data = {"blue", "red", "purple", "white"};
   TableMaker filter_maker;
@@ -257,6 +294,9 @@ TEST_CASE("WhereIn", "[select]") {
   auto filter = filter_maker.MakeTable(tm.Client().GetManager());
 
   auto result = source.WhereIn(filter, {"Color = Colors"});
+  result.BindToVariable("this_is_result");
+
+  std::cout << result.Stream(true) << '\n';
 
   std::vector<std::string> letter_expected = {"A", "C", "B", "A"};
   std::vector<std::optional<int32_t>> number_expected = { {}, 2, {}, 3};
