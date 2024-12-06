@@ -35,6 +35,7 @@ add_executable(dhclient_tests
 
         include/private/deephaven/tests/test_util.h
         include/private/deephaven/third_party/catch.hpp
+        src/time_unit_test.cc
 )
 
 if (LINUX)

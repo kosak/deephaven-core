@@ -579,7 +579,6 @@ private:
     return !(lhs == rhs);
   }
 };
-
 }  // namespace deephaven::dhcore
 
 template<> struct fmt::formatter<deephaven::dhcore::DateTime> : ostream_formatter {};
