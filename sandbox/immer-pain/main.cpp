@@ -22,11 +22,18 @@ private:
 
 class SubscriptionContainer::ConstIterator {
 public:
-  const std::pair<int, const char*> &operator*();
-  const std::pair<int, const char*> *operator->();
+  ConstIterator(std::unique_ptr<ConstIteratorImpl> impl);
+  ConstIterator(const ConstIterator &other);
+  ConstIterator &operator=(const ConstIterator &other);
+  ConstIterator(ConstIterator &&other) noexcept = default;
+  ConstIterator &operator=(ConstIterator &&other) noexcept = default;
+  ~ConstIterator() = default;
+
+  const std::pair<int, const char*> &operator*() const;
+  const std::pair<int, const char*> *operator->() const;
 
   ConstIterator &operator++();
-  const ConstIterator operator++(int);
+  ConstIterator operator++(int);
 
 private:
   std::unique_ptr<ConstIteratorImpl> impl_;
@@ -38,16 +45,25 @@ private:
 };
 
 class ConstIteratorImpl {
+public:
+  const std::pair<int, const char*> &operator*() const;
 
+  void Increment();
+  const std::pair<int, const char *> &Dereference() const;
+
+private:
+  bool synthetic_ = false;
+  immer::map<int, const char *>::const_iterator iter_;
+  std::pair<int, const char *> cached_value_;
 };
 
 class SubscriptionContainerImpl {
 public:
   explicit SubscriptionContainerImpl(immer::map<int, const char*> m) : m_(std::move(m)) {}
 
-  ConstIteratorImpl begin() const;
-  ConstIteratorImpl end() const;
-  ConstIteratorImpl find(int key) const;
+  std::unique_ptr<ConstIteratorImpl> begin() const;
+  std::unique_ptr<ConstIteratorImpl> end() const;
+  std::unique_ptr<ConstIteratorImpl> find(int key) const;
 
 private:
   immer::map<int, const char*> m_;
@@ -77,25 +93,24 @@ SubscriptionContainer::ConstIterator SubscriptionContainer::find(int key) const 
   return ConstIterator(impl_->find(key));
 }
 
-const std::pair<int, const char*> &SubscriptionContainer::ConstIterator::operator*() {
-  return *impl_->operator*();
+const std::pair<int, const char*> &SubscriptionContainer::ConstIterator::operator*() const {
+  return impl_->Dereference();
 }
 
-const std::pair<int, const char*> *SubscriptionContainer::ConstIterator::operator->() {
-  return impl_->operator*();
+const std::pair<int, const char*> *SubscriptionContainer::ConstIterator::operator->() const {
+  return &impl_->Dereference();
 }
 
 SubscriptionContainer::ConstIterator &SubscriptionContainer::ConstIterator::operator++() {
-  ++(*impl_);
+  impl_->Increment();
   return *this;
 }
 
 SubscriptionContainer::ConstIterator SubscriptionContainer::ConstIterator::operator++(int) {
-  auto result = *this;
-
-  return result;
+  auto old_value = *this;
+  impl_->Increment();
+  return old_value;
 }
-
 
 SubscriptionContainer WrapperMaker() {
   immer::map<int, const char *> m;
