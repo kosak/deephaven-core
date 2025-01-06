@@ -82,10 +82,10 @@ SubscriptionContainer::ConstIterator::ConstIterator(
 
 SubscriptionContainer::ConstIterator &
 SubscriptionContainer::ConstIterator::operator=(const SubscriptionContainer::ConstIterator &other) {
-  if (this == &other) {
-    return *this;
+  if (this != &other) {
+    impl_ = std::make_unique<ConstIteratorImpl>(*other.impl_);
   }
-  impl_ = std::make_unique<ConstIteratorImpl>(*other.impl_);
+  return *this;
 }
 
 std::map<int, const char*> MapMaker() {
