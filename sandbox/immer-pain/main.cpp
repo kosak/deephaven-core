@@ -22,12 +22,12 @@ private:
 
 class SubscriptionContainer::ConstIterator {
 public:
-  explicit ConstIterator(std::unique_ptr<ConstIteratorImpl> impl);
+  explicit ConstIterator(ConstIteratorImpl impl);
   ConstIterator(const ConstIterator &other);
   ConstIterator &operator=(const ConstIterator &other);
-  ConstIterator(ConstIterator &&other) noexcept = default;
-  ConstIterator &operator=(ConstIterator &&other) noexcept = default;
-  ~ConstIterator() = default;
+  ConstIterator(ConstIterator &&other) noexcept;
+  ConstIterator &operator=(ConstIterator &&other) noexcept;
+  ~ConstIterator();
 
   const std::pair<int, const char*> &operator*() const;
   const std::pair<int, const char*> *operator->() const;
@@ -36,13 +36,18 @@ public:
   ConstIterator operator++(int);
 
 private:
-  std::unique_ptr<ConstIteratorImpl> impl_;
+  alignas(16) char space_[384];
+
+  ConstIteratorImpl *Impl() { return reinterpret_cast<ConstIteratorImpl*>(space_); }
+  const ConstIteratorImpl *Impl() const { return reinterpret_cast<const ConstIteratorImpl*>(space_); }
 
   friend bool operator==(const ConstIterator &lhs, const ConstIterator &rhs);
   friend bool operator!=(const ConstIterator &lhs, const ConstIterator &rhs) {
     return !(lhs == rhs);
   }
 };
+
+int jerkyTown;
 
 class ConstIteratorImpl {
 public:
@@ -98,27 +103,34 @@ class SubscriptionContainerImpl {
 public:
   explicit SubscriptionContainerImpl(immer::map<int, const char*> m) : m_(std::move(m)) {}
 
-  std::unique_ptr<ConstIteratorImpl> begin() const;
-  std::unique_ptr<ConstIteratorImpl> end() const;
-  std::unique_ptr<ConstIteratorImpl> find(int key) const;
+  ConstIteratorImpl begin() const;
+  ConstIteratorImpl end() const;
+  ConstIteratorImpl find(int key) const;
 
 private:
   immer::map<int, const char*> m_;
 };
 
-SubscriptionContainer::ConstIterator::ConstIterator(std::unique_ptr<ConstIteratorImpl> impl) :
-  impl_(std::move(impl)) {}
+ConstIteratorImpl *temp;
+
+SubscriptionContainer::ConstIterator::ConstIterator(ConstIteratorImpl impl) {
+  static_assert(sizeof(ConstIteratorImpl) <= sizeof(space_));
+  new(Impl()) ConstIteratorImpl(std::move(impl));
+  temp = Impl();
+}
+
+SubscriptionContainer::ConstIterator::~ConstIterator() {
+  Impl()->~ConstIteratorImpl();
+}
 
 SubscriptionContainer::ConstIterator::ConstIterator(
-    const SubscriptionContainer::ConstIterator &other) :
-    impl_(std::make_unique<ConstIteratorImpl>(*other.impl_)) {
+    const SubscriptionContainer::ConstIterator &other) {
+  new(Impl()) ConstIteratorImpl(*other.Impl());
 }
 
 SubscriptionContainer::ConstIterator &
 SubscriptionContainer::ConstIterator::operator=(const SubscriptionContainer::ConstIterator &other) {
-  if (this != &other) {
-    impl_ = std::make_unique<ConstIteratorImpl>(*other.impl_);
-  }
+  *Impl() = *other.Impl();
   return *this;
 }
 
@@ -142,21 +154,21 @@ SubscriptionContainer::ConstIterator SubscriptionContainer::find(int key) const 
 }
 
 const std::pair<int, const char*> &SubscriptionContainer::ConstIterator::operator*() const {
-  return impl_->Dereference();
+  return Impl()->Dereference();
 }
 
 const std::pair<int, const char*> *SubscriptionContainer::ConstIterator::operator->() const {
-  return &impl_->Dereference();
+  return &Impl()->Dereference();
 }
 
 SubscriptionContainer::ConstIterator &SubscriptionContainer::ConstIterator::operator++() {
-  impl_->Increment();
+  Impl()->Increment();
   return *this;
 }
 
 SubscriptionContainer::ConstIterator SubscriptionContainer::ConstIterator::operator++(int) {
   auto old_value = *this;
-  impl_->Increment();
+  Impl()->Increment();
   return old_value;
 }
 
@@ -170,34 +182,33 @@ SubscriptionContainer WrapperMaker() {
   return sc;
 }
 
-std::unique_ptr<ConstIteratorImpl> SubscriptionContainerImpl::begin() const {
+ConstIteratorImpl SubscriptionContainerImpl::begin() const {
   auto iter = m_.begin();
   std::pair<int64_t, const char *> value = {};
   if (m_.begin() != m_.end()) {
     value = *iter;
   }
-  return std::make_unique<ConstIteratorImpl>(false, std::move(iter), m_.end(), std::move(value));
+  return {false, iter, m_.end(), std::move(value)};
 }
 
-std::unique_ptr<ConstIteratorImpl> SubscriptionContainerImpl::end() const {
+ConstIteratorImpl SubscriptionContainerImpl::end() const {
   std::pair<int64_t, const char *> value = {};
-  return std::make_unique<ConstIteratorImpl>(false, m_.end(), m_.end(), std::move(value));
+  return {false, m_.end(), m_.end(), std::move(value)};
 }
 
-std::unique_ptr<ConstIteratorImpl> SubscriptionContainerImpl::find(int key) const {
+ConstIteratorImpl SubscriptionContainerImpl::find(int key) const {
   const auto *p = m_.find(key);
   if (p == nullptr) {
     return end();
   }
   std::pair<int, const char *> value(key, *p);
-  return std::make_unique<ConstIteratorImpl>(true, m_.end(), m_.end(), std::move(value));
+  return {true, m_.end(), m_.end(), std::move(value)};
 }
 
 bool operator==(const SubscriptionContainer::ConstIterator &lhs,
     const SubscriptionContainer::ConstIterator &rhs) {
-  return lhs.impl_->Equals(*rhs.impl_);
+  return lhs.Impl()->Equals(*rhs.Impl());
 }
-
 
 int main() {
   auto submap = WrapperMaker();
