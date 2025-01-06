@@ -46,6 +46,9 @@ private:
 
 class ConstIteratorImpl {
 public:
+  ConstIteratorImpl(bool synthetic, immer::map<int, const char *>::const_iterator iter,
+    std::pair<int, const char *> cached_value);
+
   const std::pair<int, const char*> &operator*() const;
 
   void Increment();
@@ -120,6 +123,31 @@ SubscriptionContainer WrapperMaker() {
   auto impl = std::make_shared<SubscriptionContainerImpl>(std::move(m));
   SubscriptionContainer sc(std::move(impl));
   return sc;
+}
+
+std::unique_ptr<ConstIteratorImpl> SubscriptionContainerImpl::begin() const {
+  auto iter = m_.begin();
+  std::pair<int64_t, const char *> value = {};
+  if (m_.begin() != m_.end()) {
+    value = *iter;
+  }
+  return std::make_unique<ConstIteratorImpl>(false, std::move(iter), std::move(value));
+}
+
+std::unique_ptr<ConstIteratorImpl> SubscriptionContainerImpl::end() const {
+  auto iter = m_.end();
+  std::pair<int64_t, const char *> value = {};
+  return std::make_unique<ConstIteratorImpl>(false, std::move(iter), std::move(value));
+}
+
+std::unique_ptr<ConstIteratorImpl> SubscriptionContainerImpl::find(int key) const {
+  const auto *p = m_.find(key);
+  if (p == nullptr) {
+    return end();
+  }
+  auto iter = m_.end();
+  std::pair<int, const char *> value(key, *p);
+  return std::make_unique<ConstIteratorImpl>(false, std::move(iter), std::move(value));
 }
 
 int main() {
