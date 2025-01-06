@@ -22,7 +22,7 @@ private:
 
 class SubscriptionContainer::ConstIterator {
 public:
-  ConstIterator(std::unique_ptr<ConstIteratorImpl> impl);
+  explicit ConstIterator(std::unique_ptr<ConstIteratorImpl> impl);
   ConstIterator(const ConstIterator &other);
   ConstIterator &operator=(const ConstIterator &other);
   ConstIterator(ConstIterator &&other) noexcept = default;
@@ -71,6 +71,22 @@ public:
 private:
   immer::map<int, const char*> m_;
 };
+
+SubscriptionContainer::ConstIterator::ConstIterator(std::unique_ptr<ConstIteratorImpl> impl) :
+  impl_(std::move(impl)) {}
+
+SubscriptionContainer::ConstIterator::ConstIterator(
+    const SubscriptionContainer::ConstIterator &other) :
+    impl_(std::make_unique<ConstIteratorImpl>(*other.impl_)) {
+}
+
+SubscriptionContainer::ConstIterator &
+SubscriptionContainer::ConstIterator::operator=(const SubscriptionContainer::ConstIterator &other) {
+  if (this == &other) {
+    return *this;
+  }
+  impl_ = std::make_unique<ConstIteratorImpl>(*other.impl_);
+}
 
 std::map<int, const char*> MapMaker() {
   immer::map<int, const char *> m;
