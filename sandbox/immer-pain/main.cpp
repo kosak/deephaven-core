@@ -14,7 +14,7 @@ public:
 
   ConstIterator begin() const;
   ConstIterator end() const;
-  ConstIterator find(int key);
+  ConstIterator find(int key) const;
 
 private:
   std::shared_ptr<SubscriptionContainerImpl> impl_;
@@ -25,18 +25,30 @@ public:
   const std::pair<int, const char*> &operator*();
   const std::pair<int, const char*> *operator->();
 
+  ConstIterator &operator++();
+  const ConstIterator operator++(int);
+
 private:
-  std::shared_ptr<ConstIteratorImpl> impl_;
+  std::unique_ptr<ConstIteratorImpl> impl_;
 
   friend bool operator==(const ConstIterator &lhs, const ConstIterator &rhs);
-  friend bool operator!=(const ConstIterator &lhs, const ConstIterator &rhs);
-  friend ConstIterator &operator++(ConstIterator &);
-  friend ConstIterator operator++(ConstIterator&, int);
+  friend bool operator!=(const ConstIterator &lhs, const ConstIterator &rhs) {
+    return !(lhs == rhs);
+  }
+};
+
+class ConstIteratorImpl {
+
 };
 
 class SubscriptionContainerImpl {
 public:
   explicit SubscriptionContainerImpl(immer::map<int, const char*> m) : m_(std::move(m)) {}
+
+  ConstIteratorImpl begin() const;
+  ConstIteratorImpl end() const;
+  ConstIteratorImpl find(int key) const;
+
 private:
   immer::map<int, const char*> m_;
 };
@@ -51,6 +63,39 @@ std::map<int, const char*> MapMaker() {
   result[3] = "goodbye";
   return result;
 }
+
+
+SubscriptionContainer::ConstIterator SubscriptionContainer::begin() const {
+  return ConstIterator(impl_->begin());
+}
+
+SubscriptionContainer::ConstIterator SubscriptionContainer::end() const {
+  return ConstIterator(impl_->end());
+}
+
+SubscriptionContainer::ConstIterator SubscriptionContainer::find(int key) const {
+  return ConstIterator(impl_->find(key));
+}
+
+const std::pair<int, const char*> &SubscriptionContainer::ConstIterator::operator*() {
+  return *impl_->operator*();
+}
+
+const std::pair<int, const char*> *SubscriptionContainer::ConstIterator::operator->() {
+  return impl_->operator*();
+}
+
+SubscriptionContainer::ConstIterator &SubscriptionContainer::ConstIterator::operator++() {
+  ++(*impl_);
+  return *this;
+}
+
+SubscriptionContainer::ConstIterator SubscriptionContainer::ConstIterator::operator++(int) {
+  auto result = *this;
+
+  return result;
+}
+
 
 SubscriptionContainer WrapperMaker() {
   immer::map<int, const char *> m;
