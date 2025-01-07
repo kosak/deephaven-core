@@ -5,7 +5,6 @@
 #include <optional>
 
 class SubscriptionContainerImpl;
-struct ConstIteratorImpl;
 
 class SubscriptionContainer {
 public:
@@ -24,6 +23,7 @@ private:
   std::shared_ptr<SubscriptionContainerImpl> impl_;
 };
 
+struct ConstIteratorImpl;
 class SubscriptionContainer::ConstIterator {
 public:
   explicit ConstIterator(ConstIteratorImpl impl);
@@ -40,10 +40,12 @@ public:
   ConstIterator operator++(int);
 
 private:
-  alignas(8) char storage_[160];
+  struct alignas(8) Storage {
+    char bytes_[160];
+  } storage_;
 
-  ConstIteratorImpl *Impl() { return reinterpret_cast<ConstIteratorImpl*>(storage_); }
-  const ConstIteratorImpl *Impl() const { return reinterpret_cast<const ConstIteratorImpl*>(storage_); }
+  ConstIteratorImpl *Impl() { return reinterpret_cast<ConstIteratorImpl*>(storage_.bytes_); }
+  const ConstIteratorImpl *Impl() const { return reinterpret_cast<const ConstIteratorImpl*>(storage_.bytes_); }
 
   friend bool operator==(const ConstIterator &lhs, const ConstIterator &rhs);
   friend bool operator!=(const ConstIterator &lhs, const ConstIterator &rhs) {
@@ -74,13 +76,10 @@ private:
   immer::map<int, const char*> m_;
 };
 
-ConstIteratorImpl *temp;
-
 SubscriptionContainer::ConstIterator::ConstIterator(ConstIteratorImpl impl) {
-  static_assert(sizeof(ConstIteratorImpl) == sizeof(storage_));
-  static_assert(alignof(ConstIteratorImpl) == alignof(storage_));
+  static_assert(sizeof(ConstIteratorImpl) == sizeof(Storage));
+  static_assert(alignof(ConstIteratorImpl) == alignof(Storage));
   new(Impl()) ConstIteratorImpl(std::move(impl));
-  temp = Impl();
 }
 
 SubscriptionContainer::ConstIterator::~ConstIterator() {
@@ -97,6 +96,12 @@ SubscriptionContainer::ConstIterator::operator=(const SubscriptionContainer::Con
   if (this != &other) {
     *Impl() = *other.Impl();
   }
+  return *this;
+}
+
+SubscriptionContainer::ConstIterator &
+SubscriptionContainer::ConstIterator::operator=(SubscriptionContainer::ConstIterator &&other) noexcept {
+  *Impl() = std::move(*other.Impl());
   return *this;
 }
 
@@ -166,13 +171,6 @@ bool operator==(const SubscriptionContainer::ConstIterator &lhs,
   return itersEqual;
 }
 
-std::map<int, const char*> MapMaker() {
-  std::map<int, const char*> result;
-  result[0] = "hello";
-  result[3] = "goodbye";
-  return result;
-}
-
 SubscriptionContainer::ConstIterator SubscriptionContainer::begin() const {
   return ConstIterator(impl_->begin());
 }
@@ -183,19 +181,6 @@ SubscriptionContainer::ConstIterator SubscriptionContainer::end() const {
 
 SubscriptionContainer::ConstIterator SubscriptionContainer::find(int key) const {
   return ConstIterator(impl_->find(key));
-}
-
-
-
-
-SubscriptionContainer WrapperMaker() {
-  immer::map<int, const char *> m;
-  auto m2 = m.set(0, "hello");
-  auto m3 = m2.set(3, "goodbye");
-
-  auto impl = std::make_shared<SubscriptionContainerImpl>(std::move(m3));
-  SubscriptionContainer sc(std::move(impl));
-  return sc;
 }
 
 ConstIteratorImpl SubscriptionContainerImpl::begin() const {
@@ -215,25 +200,58 @@ ConstIteratorImpl SubscriptionContainerImpl::find(int key) const {
   return {m_.end(), std::move(stupid)};
 }
 
-int main() {
-  auto submap = WrapperMaker();
-  for (const auto &e : submap) {
+namespace {
+template<typename M>
+void TestMap(const M &map) {
+  for (const auto &e : map) {
     std::cout << e.first << ", " << e.second << "\n";
   }
 
-  auto j = submap.find(3);
-  auto k = submap.find(4);
+  auto i3 = map.find(3);
+  auto i4 = map.find(4);
 
-  auto jb = j != submap.end();
-  auto kb = k != submap.end();
+  auto i3found = i3 != map.end();
+  auto i4found = i4 != map.end();
 
-  std::cout << "jb is " << jb << ", " << "kb is " << kb << "\n";
+  std::cout << "i3found is " << i3found << ", " << "i4found is " << i4found << "\n";
 
-  if (jb) {
-    std::cout << j->first << ", " << j->second << "\n";
+  if (i3found) {
+    std::cout << i3->first << ", " << i3->second << "\n";
 
-    ++j;
-    auto jb2 = j != submap.end();
-    std::cout << "jb2 is " << jb2 << "\n";
+    ++i3;
+    auto i3_next_found = i3 != map.end();
+    std::cout << "jb2 is " << i3_next_found << "\n";
   }
+
+  i3 = map.find(3);
+  for (auto ip = map.begin(); ip != map.end(); ++ip) {
+    std::cout << (ip == i3 ? "yes\n" : "no\n");
+  }
+}
+
+std::map<int, const char*> WrapperMakerStdMap() {
+  std::map<int, const char*> result;
+  result[0] = "hello";
+  result[3] = "goodbye";
+  result[10] = "blah";
+  return result;
+}
+
+SubscriptionContainer WrapperMakerSC() {
+  immer::map<int, const char *> m;
+  m = std::move(m).set(0, "hello");
+  m = std::move(m).set(3, "goodbye");
+  m = std::move(m).set(10, "blah");
+  auto impl = std::make_shared<SubscriptionContainerImpl>(std::move(m));
+  SubscriptionContainer sc(std::move(impl));
+  return sc;
+}
+}
+
+int main() {
+  auto m_map = WrapperMakerStdMap();
+  TestMap(m_map);
+
+  auto sc_map = WrapperMakerSC();
+  TestMap(sc_map);
 }
