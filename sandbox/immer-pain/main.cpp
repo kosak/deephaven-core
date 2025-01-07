@@ -4,13 +4,16 @@
 #include <memory>
 #include <optional>
 
-class SubscriptionContainerImpl;
-
+struct SubscriptionContainerImpl;
 class SubscriptionContainer {
 public:
   class ConstIterator;
 
-  explicit SubscriptionContainer(std::shared_ptr<SubscriptionContainerImpl> impl) : impl_(std::move(impl)) {}
+  explicit SubscriptionContainer(SubscriptionContainerImpl impl);
+  SubscriptionContainer(SubscriptionContainer &other);
+  SubscriptionContainer &operator=(SubscriptionContainer &other);
+  SubscriptionContainer(SubscriptionContainer &&other) noexcept;
+  SubscriptionContainer &operator=(SubscriptionContainer &&other) noexcept;
 
   [[nodiscard]]
   ConstIterator begin() const;
@@ -20,7 +23,12 @@ public:
   ConstIterator find(int key) const;
 
 private:
-  std::shared_ptr<SubscriptionContainerImpl> impl_;
+  struct alignas(8) Storage {
+    char bytes_[16];
+  } storage_;
+
+  SubscriptionContainerImpl *Impl() { return reinterpret_cast<SubscriptionContainerImpl*>(storage_.bytes_); }
+  const SubscriptionContainerImpl *Impl() const { return reinterpret_cast<const SubscriptionContainerImpl*>(storage_.bytes_); }
 };
 
 struct ConstIteratorImpl;
@@ -64,15 +72,11 @@ struct ConstIteratorImpl {
   std::optional<std::pair<int, const char *>> cached_value_;
 };
 
-class SubscriptionContainerImpl {
+struct SubscriptionContainerImpl {
 public:
+  SubscriptionContainerImpl() = default;
   explicit SubscriptionContainerImpl(immer::map<int, const char*> m) : m_(std::move(m)) {}
 
-  ConstIteratorImpl begin() const;
-  ConstIteratorImpl end() const;
-  ConstIteratorImpl find(int key) const;
-
-private:
   immer::map<int, const char*> m_;
 };
 
@@ -172,32 +176,33 @@ bool operator==(const SubscriptionContainer::ConstIterator &lhs,
 }
 
 SubscriptionContainer::ConstIterator SubscriptionContainer::begin() const {
-  return ConstIterator(impl_->begin());
+  const auto *self = Impl();
+  ConstIteratorImpl ci_impl(self->m_.begin(), {});
+  return ConstIterator(std::move(ci_impl));
 }
 
 SubscriptionContainer::ConstIterator SubscriptionContainer::end() const {
-  return ConstIterator(impl_->end());
+  const auto *self = Impl();
+  ConstIteratorImpl ci_impl(self->m_.end(), {});
+  return ConstIterator(std::move(ci_impl));
 }
 
 SubscriptionContainer::ConstIterator SubscriptionContainer::find(int key) const {
-  return ConstIterator(impl_->find(key));
-}
-
-ConstIteratorImpl SubscriptionContainerImpl::begin() const {
-  return {m_.begin(), {}};
-}
-
-ConstIteratorImpl SubscriptionContainerImpl::end() const {
-  return {m_.end(), {}};
-}
-
-ConstIteratorImpl SubscriptionContainerImpl::find(int key) const {
-  const auto *p = m_.find(key);
+  const auto *self = Impl();
+  const auto *p = self->m_.find(key);
   if (p == nullptr) {
     return end();
   }
-  std::pair<int, const char*> stupid{key, *p};
-  return {m_.end(), std::move(stupid)};
+  std::pair<int, const char*> entry{key, *p};
+  ConstIteratorImpl ci_impl(self->m_.end(), std::move(entry));
+  return ConstIterator(std::move(ci_impl));
+}
+
+SubscriptionContainer::SubscriptionContainer(SubscriptionContainerImpl impl) {
+  static_assert(sizeof(SubscriptionContainerImpl) == sizeof(Storage));
+  static_assert(alignof(SubscriptionContainerImpl) == alignof(Storage));
+  auto *self = Impl();
+  new (self) SubscriptionContainerImpl(std::move(impl));
 }
 
 namespace {
@@ -242,7 +247,7 @@ SubscriptionContainer WrapperMakerSC() {
   m = std::move(m).set(0, "hello");
   m = std::move(m).set(3, "goodbye");
   m = std::move(m).set(10, "blah");
-  auto impl = std::make_shared<SubscriptionContainerImpl>(std::move(m));
+  SubscriptionContainerImpl impl(std::move(m));
   SubscriptionContainer sc(std::move(impl));
   return sc;
 }
