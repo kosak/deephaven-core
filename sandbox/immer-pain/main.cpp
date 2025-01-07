@@ -2,9 +2,10 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 
 class SubscriptionContainerImpl;
-class ConstIteratorImpl;
+struct ConstIteratorImpl;
 
 class SubscriptionContainer {
 public:
@@ -36,10 +37,10 @@ public:
   ConstIterator operator++(int);
 
 private:
-  alignas(16) char space_[384];
+  alignas(8) char storage_[296];
 
-  ConstIteratorImpl *Impl() { return reinterpret_cast<ConstIteratorImpl*>(space_); }
-  const ConstIteratorImpl *Impl() const { return reinterpret_cast<const ConstIteratorImpl*>(space_); }
+  ConstIteratorImpl *Impl() { return reinterpret_cast<ConstIteratorImpl*>(storage_); }
+  const ConstIteratorImpl *Impl() const { return reinterpret_cast<const ConstIteratorImpl*>(storage_); }
 
   friend bool operator==(const ConstIterator &lhs, const ConstIterator &rhs);
   friend bool operator!=(const ConstIterator &lhs, const ConstIterator &rhs) {
@@ -47,10 +48,9 @@ private:
   }
 };
 
-int jerkyTown;
+// the cc file starts here
 
-class ConstIteratorImpl {
-public:
+struct ConstIteratorImpl {
   ConstIteratorImpl(bool synthetic,
       immer::map<int, const char *>::const_iterator iter,
       immer::map<int, const char *>::const_iterator end,
@@ -60,43 +60,11 @@ public:
       end_(end),
       cached_value_(std::move(cached_value)) {}
 
-  void Increment() {
-    if (synthetic_) {
-      synthetic_ = false;
-      iter_ = end_;
-      return;
-    }
-    ++iter_;
-    if (iter_ != end_) {
-      cached_value_ = *iter_;
-    }
-  }
-  [[nodiscard]]
-  const std::pair<int, const char *> &Dereference() const {
-    return cached_value_;
+  bool Equals789(const ConstIteratorImpl &other) const {
   }
 
-  bool Equals(const ConstIteratorImpl &other) const {
-    if (synthetic_ && other.synthetic_) {
-      return cached_value_ == other.cached_value_;
-    }
-
-    if (synthetic_ && !other.synthetic_) {
-      return other.iter_ != other.end_ && cached_value_ == other.cached_value_;
-    }
-
-    if (!synthetic_ && other.synthetic_) {
-      return iter_ != end_ && cached_value_ == other.cached_value_;
-    }
-
-    return iter_ == other.iter_;
-  }
-
-private:
-  bool synthetic_ = false;
   immer::map<int, const char *>::const_iterator iter_;
-  immer::map<int, const char *>::const_iterator end_;
-  std::pair<int, const char *> cached_value_;
+  std::optional<std::pair<int, const char *>> cached_value_;
 };
 
 class SubscriptionContainerImpl {
@@ -114,7 +82,8 @@ private:
 ConstIteratorImpl *temp;
 
 SubscriptionContainer::ConstIterator::ConstIterator(ConstIteratorImpl impl) {
-  static_assert(sizeof(ConstIteratorImpl) <= sizeof(space_));
+  static_assert(sizeof(ConstIteratorImpl) == sizeof(storage_));
+  static_assert(alignof(ConstIteratorImpl) == alignof(storage_));
   new(Impl()) ConstIteratorImpl(std::move(impl));
   temp = Impl();
 }
@@ -130,8 +99,76 @@ SubscriptionContainer::ConstIterator::ConstIterator(
 
 SubscriptionContainer::ConstIterator &
 SubscriptionContainer::ConstIterator::operator=(const SubscriptionContainer::ConstIterator &other) {
-  *Impl() = *other.Impl();
+  if (this != &other) {
+    *Impl() = *other.Impl();
+  }
   return *this;
+}
+
+const std::pair<int, const char*> &SubscriptionContainer::ConstIterator::operator*() const {
+  const auto *self = Impl();
+  if (self->cached_value_.has_value()) {
+    return *self->cached_value_;
+  }
+  return *self->iter_;
+}
+
+const std::pair<int, const char*> *SubscriptionContainer::ConstIterator::operator->() const {
+  // aka return &this->operator*(), defined above.
+  return &**this;
+}
+
+SubscriptionContainer::ConstIterator &SubscriptionContainer::ConstIterator::operator++() {
+  auto *self = Impl();
+  if (self->cached_value_.has_value()) {
+    // If there is a cached value, it is the last (and only) element in the iteration.
+    // Clearing the optional will reveal the value of iter_ for next time, which is
+    // preinitialized to the map's end() value.
+    self->cached_value_.reset();
+  } else {
+    ++self->iter_;
+  }
+  return *this;
+}
+
+SubscriptionContainer::ConstIterator SubscriptionContainer::ConstIterator::operator++(int) {
+  auto old_value = *this;
+  // aka this->operator++()
+  ++*this;
+  return old_value;
+}
+
+bool operator==(const SubscriptionContainer::ConstIterator &lhs,
+    const SubscriptionContainer::ConstIterator &rhs) {
+  const auto *lp = lhs.Impl();
+  const auto *rp = rhs.Impl();
+
+  auto lSynth = lp->cached_value_.has_value();
+  auto rSynth = rp->cached_value_.has_value();
+
+  auto itersEqual = lp->iter_ == rp->iter_;
+
+  if (lSynth && rSynth) {
+    return lp->cached_value_->first == rp->cached_value_->first;
+  }
+
+  if (lSynth) {
+    // lSynth is true, rSynth is false.
+    // Because l is synthetic, lp->iter_ is constructed to have the map's end() value.
+    // Therefore "itersEqual", in this case, can be interpreted as rp->iter == map.end().
+    // Interpretation:
+    // lhs has a value (a synthetic value)
+    // rhs may or may not have a value (rp->iter_ may or may not point to end())
+    // If itersEqual is true, rp->iter_ points to end() (does not have a value).
+    return !itersEqual && lp->cached_value_->first == rp->iter_->first;
+  }
+
+  if (rSynth) {
+    // Same logic as above, but with l and r flipped.
+    return !itersEqual && lp->iter_->first == rp->cached_value_->first;
+  }
+
+  return itersEqual;
 }
 
 std::map<int, const char*> MapMaker() {
@@ -153,24 +190,8 @@ SubscriptionContainer::ConstIterator SubscriptionContainer::find(int key) const 
   return ConstIterator(impl_->find(key));
 }
 
-const std::pair<int, const char*> &SubscriptionContainer::ConstIterator::operator*() const {
-  return Impl()->Dereference();
-}
 
-const std::pair<int, const char*> *SubscriptionContainer::ConstIterator::operator->() const {
-  return &Impl()->Dereference();
-}
 
-SubscriptionContainer::ConstIterator &SubscriptionContainer::ConstIterator::operator++() {
-  Impl()->Increment();
-  return *this;
-}
-
-SubscriptionContainer::ConstIterator SubscriptionContainer::ConstIterator::operator++(int) {
-  auto old_value = *this;
-  Impl()->Increment();
-  return old_value;
-}
 
 SubscriptionContainer WrapperMaker() {
   immer::map<int, const char *> m;
@@ -203,11 +224,6 @@ ConstIteratorImpl SubscriptionContainerImpl::find(int key) const {
   }
   std::pair<int, const char *> value(key, *p);
   return {true, m_.end(), m_.end(), std::move(value)};
-}
-
-bool operator==(const SubscriptionContainer::ConstIterator &lhs,
-    const SubscriptionContainer::ConstIterator &rhs) {
-  return lhs.Impl()->Equals(*rhs.Impl());
 }
 
 int main() {
