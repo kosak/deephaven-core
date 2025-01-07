@@ -13,8 +13,11 @@ public:
 
   explicit SubscriptionContainer(std::shared_ptr<SubscriptionContainerImpl> impl) : impl_(std::move(impl)) {}
 
+  [[nodiscard]]
   ConstIterator begin() const;
+  [[nodiscard]]
   ConstIterator end() const;
+  [[nodiscard]]
   ConstIterator find(int key) const;
 
 private:
@@ -37,7 +40,7 @@ public:
   ConstIterator operator++(int);
 
 private:
-  alignas(8) char storage_[296];
+  alignas(8) char storage_[160];
 
   ConstIteratorImpl *Impl() { return reinterpret_cast<ConstIteratorImpl*>(storage_); }
   const ConstIteratorImpl *Impl() const { return reinterpret_cast<const ConstIteratorImpl*>(storage_); }
@@ -51,17 +54,9 @@ private:
 // the cc file starts here
 
 struct ConstIteratorImpl {
-  ConstIteratorImpl(bool synthetic,
-      immer::map<int, const char *>::const_iterator iter,
-      immer::map<int, const char *>::const_iterator end,
-      std::pair<int, const char *> cached_value) :
-      synthetic_(synthetic),
-      iter_(iter),
-      end_(end),
-      cached_value_(std::move(cached_value)) {}
-
-  bool Equals789(const ConstIteratorImpl &other) const {
-  }
+  ConstIteratorImpl(const immer::map<int, const char *>::const_iterator &iter,
+    std::optional<std::pair<int, const char *>> cached_value)
+      : iter_(iter), cached_value_(std::move(cached_value)) {}
 
   immer::map<int, const char *>::const_iterator iter_;
   std::optional<std::pair<int, const char *>> cached_value_;
@@ -204,17 +199,11 @@ SubscriptionContainer WrapperMaker() {
 }
 
 ConstIteratorImpl SubscriptionContainerImpl::begin() const {
-  auto iter = m_.begin();
-  std::pair<int64_t, const char *> value = {};
-  if (m_.begin() != m_.end()) {
-    value = *iter;
-  }
-  return {false, iter, m_.end(), std::move(value)};
+  return {m_.begin(), {}};
 }
 
 ConstIteratorImpl SubscriptionContainerImpl::end() const {
-  std::pair<int64_t, const char *> value = {};
-  return {false, m_.end(), m_.end(), std::move(value)};
+  return {m_.end(), {}};
 }
 
 ConstIteratorImpl SubscriptionContainerImpl::find(int key) const {
@@ -222,8 +211,8 @@ ConstIteratorImpl SubscriptionContainerImpl::find(int key) const {
   if (p == nullptr) {
     return end();
   }
-  std::pair<int, const char *> value(key, *p);
-  return {true, m_.end(), m_.end(), std::move(value)};
+  std::pair<int, const char*> stupid{key, *p};
+  return {m_.end(), std::move(stupid)};
 }
 
 int main() {
