@@ -59,18 +59,14 @@ public class SessionManager : IDisposable {
     string authHost, UInt16 authPort, string authAuthority,
     string controllerHost, UInt16 controllerPort, string controllerAuthority,
     string rootCerts) {
-    var authSetup = SetupClientOptions(authHost, authPort, authAuthority, rootCerts);
-    var authClient = AuthClient::Connect(
-      descriptiveName,
-      std::get < 0 > (authSetup),
-      std::get < 1 > (authSetup));
-    var controller_setup = SetupClientOptions(
+    var (authTarget, authOptions) = SetupClientOptions(authHost, authPort,
+      authAuthority, rootCerts);
+    var authClient = AuthClient.Connect(descriptiveName, authTarget, authOptions);
+    var (controllerTarget, controllerOptions) = SetupClientOptions(
       controllerHost, controllerPort,
       controllerAuthority, rootCerts);
-    var controllerClient = ControllerClient::Connect(
-      descriptiveName,
-      std::get < 0 > (controller_setup),
-      std::get < 1 > (controller_setup));
+    var controllerClient = ControllerClient.Connect(descriptiveName,
+      controllerTarget, controllerOptions);
     return new SessionManager(descriptiveName, authClient, controllerClient,
       authAuthority, controllerAuthority, rootCerts);
   }
