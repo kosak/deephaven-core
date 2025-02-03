@@ -22,4 +22,8 @@
   <ItemGroup>
     <Protobuf Include="..\..\..\proto\proto-backplane-grpc\src\main\proto\deephaven_core\proto\*.proto" ProtoRoot="..\..\..\proto\proto-backplane-grpc\src\main\proto" GrpcServices="Client" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="dhe_client\utility\" />
+  </ItemGroup>
 </Project>
