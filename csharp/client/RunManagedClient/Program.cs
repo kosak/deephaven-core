@@ -20,17 +20,22 @@ public static class Program {
       using var manager = client.Manager;
       using var t1 = manager.EmptyTable(10);
       using var t2 = t1.Update(
-        // "Chars = ii == 5 ? null : (char)('a' + ii)",
+        "Chars = ii == 5 ? null : (char)('a' + ii)",
+        // NEED BYTES
         // "Bytes = ii == 5 ? null : (byte)(ii)",
         // "Shorts = ii == 5 ? null : (short)(ii)",
         // "Ints = ii == 5 ? null : (int)(ii)",
         // "Longs = ii == 5 ? null : (long)(ii)",
-        // "Floats = ii == 5 ? null : (float)(ii)",
-        // "Doubles = ii == 5 ? null : (double)(ii)",
+        // "Floats = ii == 5 ? null : (float)((float)(ii) + 111.111)",
+        // "Doubles = ii == 5 ? null : (double)((double)(ii) + 222.222)",
+        // NEEDS BOOLS
         // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-        "Strings = ii == 5 ? null : `hello ` + i"
-        // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
-        // "LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))",
+        // "Strings = ii == 5 ? null : `hello ` + i"
+        // NEED PRINTING FOR TIMESTAMP
+        // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii"
+        // NEED PRINTING FOR THIS
+        //"LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))"
+        // NEED PRINTING FOR TIMES64ARRAY
         // "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
       );
 
