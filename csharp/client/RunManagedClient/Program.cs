@@ -21,22 +21,17 @@ public static class Program {
       using var t1 = manager.EmptyTable(10);
       using var t2 = t1.Update(
         "Chars = ii == 5 ? null : (char)('a' + ii)",
-        // NEED BYTES
-        // "Bytes = ii == 5 ? null : (byte)(ii)",
-        // "Shorts = ii == 5 ? null : (short)(ii)",
-        // "Ints = ii == 5 ? null : (int)(ii)",
-        // "Longs = ii == 5 ? null : (long)(ii)",
-        // "Floats = ii == 5 ? null : (float)((float)(ii) + 111.111)",
-        // "Doubles = ii == 5 ? null : (double)((double)(ii) + 222.222)",
-        // NEEDS BOOLS
-        // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-        // "Strings = ii == 5 ? null : `hello ` + i"
-        // NEED PRINTING FOR TIMESTAMP
-        // "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii"
-        // NEED PRINTING FOR THIS
-        //"LocalDates = ii == 5 ? null : parseLocalDate(`2001-3-` + (ii + 1))"
-        // NEED PRINTING FOR TIMES64ARRAY
-        // "LocalTimes = ii == 5 ? null : parseLocalTime(`12:34:` + (46 + ii))"
+        "Bytes = ii == 5 ? null : (byte)(ii)",
+        "Shorts = ii == 5 ? null : (short)(ii)",
+        "Ints = ii == 5 ? null : (int)(ii)",
+        "Longs = ii == 5 ? null : (long)(ii)",
+        "Floats = ii == 5 ? null : (float)((float)(ii) + 111.111)",
+        "Doubles = ii == 5 ? null : (double)((double)(ii) + 222.222)",
+        "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+        "Strings = ii == 5 ? null : `hello ` + i",
+        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii * 1000000000",
+        "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
+        "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
       );
 
       var at = t2.ToArrowTable();
@@ -64,30 +59,47 @@ public static class Program {
   }
 
   private class MyPrintingVisitor :
+     IArrowArrayVisitor<UInt16Array>, // char
+     IArrowArrayVisitor<Int8Array>, // Java byte
      IArrowArrayVisitor<Int16Array>,
      IArrowArrayVisitor<Int32Array>,
      IArrowArrayVisitor<Int64Array>,
      IArrowArrayVisitor<FloatArray>,
      IArrowArrayVisitor<DoubleArray>,
-     IArrowArrayVisitor<StringArray> {
+     IArrowArrayVisitor<BooleanArray>,
+     IArrowArrayVisitor<StringArray>,
+     IArrowArrayVisitor<TimestampArray>,
+     IArrowArrayVisitor<Date64Array>,
+     IArrowArrayVisitor<Time64Array> {
 
     public void Visit(IArrowArray array) {
       throw new NotImplementedException($"I don't have a handler for {array.GetType().Name}");
     }
 
+    public void Visit(UInt16Array array) => DumpData(array, elt => (char)elt);
+    public void Visit(Int8Array array) => DumpData(array, elt => (byte)elt);
     public void Visit(Int16Array array) => DumpData(array);
     public void Visit(Int32Array array) => DumpData(array);
     public void Visit(Int64Array array) => DumpData(array);
     public void Visit(FloatArray array) => DumpData(array);
     public void Visit(DoubleArray array) => DumpData(array);
+    public void Visit(BooleanArray array) => DumpData(array);
     public void Visit(StringArray array) => DumpRefData<string>(array);
+    public void Visit(TimestampArray array) => DumpData<DateTimeOffset, string>(array, elt => elt.ToString("o"));
+    public void Visit(Date64Array array) => DumpData<DateOnly, string>(array, elt => elt.ToString("o"));
+    public void Visit(Time64Array array) => DumpData<TimeOnly, string>(array, elt => elt.ToString("o"));
 
     private void DumpData<T>(IReadOnlyList<T?> values) where T : struct {
+      DumpData(values, elt => elt);
+    }
+
+    private void DumpData<T, TDest>(IReadOnlyList<T?> values, Func<T, TDest> converter) where T : struct {
+      TimeOnly temp;
       foreach (var value in values) {
         if (!value.HasValue) {
           Console.WriteLine("?NULL?");
         } else {
-          Console.WriteLine(value);
+          Console.WriteLine(converter(value.Value));
         }
       }
     }
