@@ -1,5 +1,6 @@
 ﻿using Apache.Arrow.Flight.Client;
 using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Auth.Grpc;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
@@ -25,7 +26,6 @@ public class AuthClient {
     // var its = new InputTableService.InputTableServiceClient(channel);
     // var fc = new FlightClient(channel);
 
-    var auths = new AuthApi.AuthsClient(channel);
-
+    var auths = new AuthApi.AuthApiClient(channel);
   }
 }
