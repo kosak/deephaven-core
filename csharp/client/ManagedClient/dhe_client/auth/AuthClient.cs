@@ -1,8 +1,10 @@
 ﻿using Apache.Arrow.Flight.Client;
 using Deephaven.ManagedClient;
+using Grpc.Core;
 using Io.Deephaven.Proto.Auth.Grpc;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
+using Io.Deephaven.Proto.Common;
 
 namespace Deephaven.DheClient.Auth;
 
@@ -19,13 +21,12 @@ public class AuthClient {
     //   channel_args.SetString(opt.first, opt.second);
     // }
 
-    // var cs = new ConsoleService.ConsoleServiceClient(channel);
-    // var ss = new SessionService.SessionServiceClient(channel);
-    // var ts = new TableService.TableServiceClient(channel);
-    // var cfs = new ConfigService.ConfigServiceClient(channel);
-    // var its = new InputTableService.InputTableServiceClient(channel);
-    // var fc = new FlightClient(channel);
-
-    var auths = new AuthApi.AuthApiClient(channel);
+    var authApi = new AuthApi.AuthApiClient(channel);
+    var co = new CallOptions();
+    var req = new PingRequest();
+    var z = authApi.pingAsync(req, co);
+    var smd = z.ResponseHeadersAsync.Result;
+    var smr = z.ResponseAsync.Result;
+    throw new Exception("I am sad");
   }
 }

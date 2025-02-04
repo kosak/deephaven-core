@@ -67,10 +67,11 @@ public class SessionManager : IDisposable {
     var (controllerTarget, controllerOptions) = SetupClientOptions(
       controllerHost, controllerPort,
       controllerAuthority, rootCerts);
-    var controllerClient = ControllerClient.Connect(descriptiveName,
-      controllerTarget, controllerOptions);
-    return new SessionManager(descriptiveName, authClient, controllerClient,
-      authAuthority, controllerAuthority, rootCerts);
+    throw new Exception("I am sad");
+    // var controllerClient = ControllerClient.Connect(descriptiveName,
+    //   controllerTarget, controllerOptions);
+    // return new SessionManager(descriptiveName, authClient, controllerClient,
+    //   authAuthority, controllerAuthority, rootCerts);
   }
 
   private static (string, ClientOptions) SetupClientOptions(string host, UInt16 port,
