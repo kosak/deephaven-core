@@ -27,6 +27,6 @@ public class AuthClient {
     var z = authApi.pingAsync(req, co);
     var smd = z.ResponseHeadersAsync.Result;
     var smr = z.ResponseAsync.Result;
-    throw new Exception("I am sad");
+    throw new Exception("I am NOT sad --- this actually worked");
   }
 }

@@ -33,8 +33,8 @@ public class SessionManager : IDisposable {
 
       string? rootCerts = null;
       if (info.truststore_url != null) {
-        // TODO(kosak): true, false, or passthrough?
-        rootCerts = GetUrl(info.truststore_url, true);
+        // TODO(kosak): true, false, or pass through some parameter?
+        rootCerts = GetUrl(info.truststore_url, false);
       }
 
       string? authAuthority = null;

@@ -20,12 +20,18 @@ public static class GrpcUtil {
       throw new Exception("Server.CreateFromTarget: ClientOptions: UseTls is false but pem provided");
     }
 
-  // var httpClientHandler = new HttpClientHandler();
-  // httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) => {
-  //   chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-  //   chain.ChainPolicy.CustomTrustStore.Add(mycert);
-  //   etc etc get this to work
-  // https://github.com/grpc/grpc-dotnet/blob/dd72d6a38ab2984fd224aa8ed53686dc0153b9da/testassets/InteropTestsClient/InteropClient.cs#L170
+    var handler = new HttpClientHandler();
+    handler.ServerCertificateCustomValidationCallback =
+      HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
+    channelOptions.HttpHandler = handler;
+
+    // var httpClientHandler = new HttpClientHandler();
+    // httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) => {
+    //   chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+    //   chain.ChainPolicy.CustomTrustStore.Add(mycert);
+    //   etc etc get this to work
+    // https://github.com/grpc/grpc-dotnet/blob/dd72d6a38ab2984fd224aa8ed53686dc0153b9da/testassets/InteropTestsClient/InteropClient.cs#L170
     //
     //
     // };
