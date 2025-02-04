@@ -26,10 +26,7 @@ public class Server {
 // }
 //
 
-    var channelOptions = GrpcUtil.MakeChannelOptions(clientOptions);
-    var address = GrpcUtil.MakeAddress(clientOptions, target);
-
-    var channel = GrpcChannel.ForAddress(address, channelOptions);
+    var channel = GrpcUtil.CreateChannel(target, clientOptions);
 
     var aps = new ApplicationService.ApplicationServiceClient(channel);
     var cs = new ConsoleService.ConsoleServiceClient(channel);

@@ -24,6 +24,14 @@
   </ItemGroup>
 
   <ItemGroup>
+	  <Protobuf Include="..\..\..\..\iris\proto\proto-auth-grpc\src\main\proto\deephaven_enterprise\proto\auth_service.proto"
+	            ProtoRoot="..\..\..\..\iris\proto\proto-auth-grpc\src\main\proto"
+	            AdditionalImportDirs="..\..\..\..\iris\proto\common\src\main\proto"
+	            GrpcServices="Client"
+	            />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="dhe_client\utility\" />
   </ItemGroup>
 </Project>

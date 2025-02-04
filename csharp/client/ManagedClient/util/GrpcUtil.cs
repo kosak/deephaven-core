@@ -5,6 +5,14 @@ using Grpc.Net.Client;
 namespace Deephaven.ManagedClient;
 
 public static class GrpcUtil {
+  public static GrpcChannel CreateChannel(string target, ClientOptions clientOptions) {
+    var channelOptions = GrpcUtil.MakeChannelOptions(clientOptions);
+    var address = GrpcUtil.MakeAddress(clientOptions, target);
+
+    var channel = GrpcChannel.ForAddress(address, channelOptions);
+    return channel;
+  }
+
   public static GrpcChannelOptions MakeChannelOptions(ClientOptions clientOptions) {
     var channelOptions = new GrpcChannelOptions();
 
