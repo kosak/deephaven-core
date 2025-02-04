@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.DheClient.Session;
 

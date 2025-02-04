@@ -18,29 +18,29 @@ public class ClientOptions {
   /// <summary>
   /// The Session Type (python or groovy).
   /// </summary>
-  public string SessionType { get; private set; } = "";
+  public string SessionType { get; set; } = "";
 
   /// <summary>
   /// Returns true if server connections should be configured for TLS/SSL, false for insecure.
   /// </summary>
-  public bool UseTls { get; private set; } = false;
+  public bool UseTls { get; set; } = false;
 
   /// <summary>
   /// The PEM-encoded certificate root for server connections, or the empty string
   /// if using system defaults.
   /// </summary>
-  public string TlsRootCerts { get; private set; } = "";
+  public string TlsRootCerts { get; set; } = "";
 
   /// <summary>
   /// The PEM-encoded certificate chain to use for the client
   /// when using mutual TLS, or the empty string for no mutual TLS.
   /// </summary>
-  public string ClientCertChain { get; private set; } = "";
+  public string ClientCertChain { get; set; } = "";
 
   /// <summary>
   /// The PEM-encoded client private key to use for mutual TLS.
   /// </summary>
-  public string ClientPrivateKey { get; private set; } = "";
+  public string ClientPrivateKey { get; set; } = "";
 
   /// <summary>
   /// Integer-valued channel options set for server connections.
