@@ -1,5 +1,6 @@
 ﻿using Deephaven.ManagedClient;
 using Grpc.Core;
+using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Auth.Grpc;
 using Io.Deephaven.Proto.Common;
 
@@ -23,12 +24,25 @@ public class AuthClient {
     var req = new PingRequest();
     _ = authApi.ping(req, co);
 
-    return new AuthClient(authApi);
+    var uuid = System.Guid.NewGuid().ToString();
+    var clientId = ClientUtil.MakeClientId(descriptiveName, uuid);
+
+    return new AuthClient(clientId, authApi);
   }
 
+  private readonly ClientId _clientId;
   private readonly AuthApi.AuthApiClient _authApi;
 
-  public AuthClient(AuthApi.AuthApiClient authApi) {
+  public AuthClient(ClientId clientId, AuthApi.AuthApiClient authApi) {
+    _clientId = clientId;
     _authApi = authApi;
+  }
+
+  public bool PasswordAuthentication(string user, string password, string operateAs) {
+    // TODO(kosak) stuff here
+    var req = new AuthenticateByPasswordRequest();
+    req.ClientId = _clientId;
+
+
   }
 }

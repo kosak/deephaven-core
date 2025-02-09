@@ -110,8 +110,7 @@ public class SessionManager : IDisposable {
   }
 
   public bool PasswordAuthentication(string user, string password, string operateAs) {
-    const bool authOk =
-      _authClient.PasswordAuthentication(user, password, operateAs);
+    var authOk = _authClient.PasswordAuthentication(user, password, operateAs);
     return authOk && AuthenticateToController();
   }
 
