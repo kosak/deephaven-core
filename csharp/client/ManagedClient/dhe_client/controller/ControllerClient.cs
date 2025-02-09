@@ -1,12 +1,12 @@
 ﻿using Deephaven.ManagedClient;
 using Grpc.Core;
-using Io.Deephaven.Proto.Auth.Grpc;
-using Io.Deephaven.Proto.Common;
+using Io.Deephaven.Proto.Controller;
+using Io.Deephaven.Proto.Controller.Grpc;
 
-namespace Deephaven.DheClient.Auth;
+namespace Deephaven.DheClient.Controller;
 
-public class AuthClient {
-  public static AuthClient Connect(string descriptiveName, string target,
+public class ControllerClient {
+  public static ControllerClient Connect(string descriptiveName, string target,
     ClientOptions options) {
     var channel = GrpcUtil.CreateChannel(target, options);
     // where does this go: arguments and also credentials
@@ -18,17 +18,17 @@ public class AuthClient {
     //   channel_args.SetString(opt.first, opt.second);
     // }
 
-    var authApi = new AuthApi.AuthApiClient(channel);
+    var controllerApi = new ControllerApi.ControllerApiClient(channel);
     var co = new CallOptions();
     var req = new PingRequest();
-    _ = authApi.ping(req, co);
+    _ = controllerApi.ping(req, co);
 
-    return new AuthClient(authApi);
+    return new ControllerClient(controllerApi);
   }
 
-  private readonly AuthApi.AuthApiClient _authApi;
+  private readonly ControllerApi.ControllerApiClient _controllerApi;
 
-  public AuthClient(AuthApi.AuthApiClient authApi) {
-    _authApi = authApi;
+  public ControllerClient(ControllerApi.ControllerApiClient controllerApi) {
+    _controllerApi = controllerApi;
   }
 }

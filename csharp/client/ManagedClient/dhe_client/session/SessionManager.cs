@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Deephaven.DheClient.Auth;
+using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.DheClient.Session;
@@ -67,11 +68,10 @@ public class SessionManager : IDisposable {
     var (controllerTarget, controllerOptions) = SetupClientOptions(
       controllerHost, controllerPort,
       controllerAuthority, rootCerts);
-    throw new Exception("I am sad");
-    // var controllerClient = ControllerClient.Connect(descriptiveName,
-    //   controllerTarget, controllerOptions);
-    // return new SessionManager(descriptiveName, authClient, controllerClient,
-    //   authAuthority, controllerAuthority, rootCerts);
+    var controllerClient = ControllerClient.Connect(descriptiveName,
+      controllerTarget, controllerOptions);
+    return new SessionManager(descriptiveName, authClient, controllerClient,
+      authAuthority, controllerAuthority, rootCerts);
   }
 
   private static (string, ClientOptions) SetupClientOptions(string host, UInt16 port,
@@ -88,13 +88,31 @@ public class SessionManager : IDisposable {
     return (target, clientOptions);
   }
 
+  private readonly string _logId;
+  private readonly AuthClient _authClient;
+  private readonly ControllerClient _controllerClient;
+  private readonly string _authAuthority;
+  private readonly string _controllerAuthority;
+  private readonly string _rootCerts;
+
+  public SessionManager(string logId, AuthClient authClient, ControllerClient controllerClient,
+    string authAuthority, string controllerAuthority, string rootCerts) {
+    _logId = logId;
+    _authClient = authClient;
+    _controllerClient = controllerClient;
+    _authAuthority = authAuthority;
+    _controllerAuthority = controllerAuthority;
+    _rootCerts = rootCerts;
+  }
 
   public void Dispose() {
     throw new NotImplementedException();
   }
 
   public bool PasswordAuthentication(string user, string password, string operateAs) {
-    throw new NotImplementedException();
+    const bool authOk =
+      _authClient.PasswordAuthentication(user, password, operateAs);
+    return authOk && AuthenticateToController();
   }
 
   public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
@@ -110,5 +128,11 @@ public class SessionManager : IDisposable {
     using var hc = new HttpClient(handler);
     var result = hc.GetStringAsync(url).Result;
     return result;
+  }
+
+  private bool AuthenticateToController() {
+    const AuthToken authToken = _authClient.CreateToken(
+      ControllerClient::kControllerServiceName);
+    return _controllerClient.Authenticate(authToken);
   }
 }
