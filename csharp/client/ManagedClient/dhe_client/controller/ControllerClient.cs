@@ -7,7 +7,7 @@ using Io.Deephaven.Proto.Controller.Grpc;
 
 namespace Deephaven.DheClient.Controller;
 
-public class ControllerClient {
+public class ControllerClient : IDisposable {
   public const string ControllerServiceName = "PersistentQueryController";
 
   public static ControllerClient Connect(string descriptiveName, string target,
@@ -22,22 +22,32 @@ public class ControllerClient {
     //   channel_args.SetString(opt.first, opt.second);
     // }
 
+
+    var clientId = ClientUtil.MakeClientId(descriptiveName, Guid.NewGuid().ToString());
+
     var controllerApi = new ControllerApi.ControllerApiClient(channel);
     var co = new CallOptions();
     var req = new PingRequest();
     _ = controllerApi.ping(req, co);
 
-    var clientId = ClientUtil.MakeClientId(descriptiveName, Guid.NewGuid().ToString());
+    var subscriptionContext = SubscriptionContext.Create(channel);
 
-    return new ControllerClient(clientId, controllerApi);
+    return new ControllerClient(clientId, controllerApi, subscriptionContext);
   }
 
   private readonly ClientId _clientId;
   private readonly ControllerApi.ControllerApiClient _controllerApi;
+  private readonly SubscriptionContext _subscriptionContext;
 
-  public ControllerClient(ClientId clientId, ControllerApi.ControllerApiClient controllerApi) {
+  private ControllerClient(ClientId clientId, ControllerApi.ControllerApiClient controllerApi,
+    SubscriptionContext subscriptionContext) {
     _clientId = clientId;
     _controllerApi = controllerApi;
+    _subscriptionContext = subscriptionContext;
+  }
+
+  public void Dispose() {
+    throw new NotImplementedException();
   }
 
   public bool Authenticate(AuthToken authToken) {
@@ -47,5 +57,9 @@ public class ControllerClient {
     req.GetConfiguration = true;
     var resp = _controllerApi.authenticate(req);
     return resp.Authenticated;
+  }
+
+  public void Superpain666() {
+    _subscriptionContext.DoSubscribe666();
   }
 }

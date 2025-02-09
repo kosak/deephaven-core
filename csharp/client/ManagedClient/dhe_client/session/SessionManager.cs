@@ -96,7 +96,7 @@ public class SessionManager : IDisposable {
   private readonly string _controllerAuthority;
   private readonly string _rootCerts;
 
-  public SessionManager(string logId, AuthClient authClient, ControllerClient controllerClient,
+  private SessionManager(string logId, AuthClient authClient, ControllerClient controllerClient,
     string authAuthority, string controllerAuthority, string rootCerts) {
     _logId = logId;
     _authClient = authClient;
@@ -135,6 +135,10 @@ public class SessionManager : IDisposable {
   private bool AuthenticateToController() {
     var authToken = _authClient.CreateToken(ControllerClient.ControllerServiceName);
     return _controllerClient.Authenticate(authToken);
+  }
+
+  public void SuperPain666() {
+    _controllerClient.Superpain666();
   }
 }
 

@@ -1,6 +1,7 @@
 ﻿using Apache.Arrow;
 using Deephaven.DheClient.Session;
 using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.RunManangedClient;
 
@@ -12,6 +13,14 @@ public static class Program {
     try {
       var sessionManager = SessionManager.FromUrl(descriptiveName, jsonUrl, false);
       var temp = sessionManager.PasswordAuthentication("iris", "iris", "iris");
+
+      sessionManager.SuperPain666();
+
+      const string pqName = "testfun666";
+      var client = sessionManager.ConnectToPqByName(pqName, false);
+      // var pqSerial = client.PqSerial();
+
+
     } catch (Exception ex) {
       Console.WriteLine(ex);
     }
