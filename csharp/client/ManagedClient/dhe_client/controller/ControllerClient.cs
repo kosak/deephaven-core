@@ -1,4 +1,5 @@
-﻿using Deephaven.DheClient.Auth;
+﻿using System.Diagnostics;
+using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Session;
 using Deephaven.ManagedClient;
 using Grpc.Core;
@@ -68,8 +69,46 @@ public class ControllerClient : IDisposable {
 
     var rs = reader.ResponseStream;
     var ct = new CancellationToken();
-    var q = rs.MoveNext(ct).Result;
-    var r = rs.Current;
+
+    Task.Run(() => SuperZamboniHate(rs, ct), ct).Forget();
+
+    // while (true) {
+    //   var t = rs.MoveNext(ct);
+    //   var res = t.Result;
+    //   if (!res) {
+    //     Debug.WriteLine("I am sad, continuing");
+    //     continue;
+    //   }
+    //   var r = rs.Current;
+    //   Debug.WriteLine(r.Event);
+    // }
+
     // _subscriptionContext.DoSubscribe666();
+  }
+
+  private static async void SuperZamboniHate(
+    IAsyncStreamReader<SubscribeResponse> rs,
+    CancellationToken ct) {
+    var vvv = await rs.MoveNext(ct);
+    if (!vvv) {
+      Debug.WriteLine("I am sad, continuing");
+    } else {
+      var r = rs.Current;
+      Debug.WriteLine(r.Event);
+    }
+
+    Task.Run(() => SuperZamboniHate(rs, ct), ct).Forget();
+  }
+}
+
+public static class TaskExtensions {
+  public static void Forget(this Task task) {
+    if (!task.IsCompleted || task.IsFaulted) {
+      _ = ForgetAwaited(task);
+    }
+
+    static async Task ForgetAwaited(Task task) {
+      await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+    }
   }
 }

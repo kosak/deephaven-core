@@ -1,7 +1,7 @@
-﻿using Apache.Arrow;
+﻿using System.Diagnostics;
+using Apache.Arrow;
 using Deephaven.DheClient.Session;
 using Deephaven.ManagedClient;
-using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.RunManangedClient;
 
@@ -10,11 +10,17 @@ public static class Program {
     const string descriptiveName = "mysession";
     const string jsonUrl = "https://kosak-grizzle-xp.int.illumon.com:8123/iris/connection.json";
 
+    Debug.WriteLine("HELLO");
+
     try {
       var sessionManager = SessionManager.FromUrl(descriptiveName, jsonUrl, false);
       var temp = sessionManager.PasswordAuthentication("iris", "iris", "iris");
 
       sessionManager.SuperPain666();
+
+      Console.WriteLine("Sleeping for 10 seconds");
+      Thread.Sleep(TimeSpan.FromSeconds(90));
+      Console.WriteLine("Ha I lied! Just 4 seconds");
 
       const string pqName = "testfun666";
       var client = sessionManager.ConnectToPqByName(pqName, false);
