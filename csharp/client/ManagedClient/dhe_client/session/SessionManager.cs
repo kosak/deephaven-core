@@ -2,6 +2,7 @@
 using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;
+using Google.Protobuf;
 
 namespace Deephaven.DheClient.Session;
 
@@ -112,6 +113,7 @@ public class SessionManager : IDisposable {
   public bool PasswordAuthentication(string user, string password, string operateAs) {
     var authResult = _authClient.PasswordAuthentication(user, password, operateAs);
     var authOk = true;
+    MegaCookie666.cookie = authResult.Cookie;
     return authOk && AuthenticateToController();
   }
 
@@ -134,4 +136,8 @@ public class SessionManager : IDisposable {
     var authToken = _authClient.CreateToken(ControllerClient.ControllerServiceName);
     return _controllerClient.Authenticate(authToken);
   }
+}
+
+public static class MegaCookie666 {
+  public static ByteString cookie;
 }

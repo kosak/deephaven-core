@@ -1,4 +1,5 @@
-﻿using Deephaven.ManagedClient;
+﻿using Deephaven.DheClient.Session;
+using Deephaven.ManagedClient;
 using Google.Protobuf;
 using Grpc.Core;
 using Io.Deephaven.Proto.Auth;
@@ -56,10 +57,11 @@ public class AuthClient {
   }
 
   public AuthToken CreateToken(string forService) {
-    var cookie = GetCookieOrThrow();
+    // var cookie = GetCookieOrThrow();
+    var cookie = MegaCookie666.cookie;
     var request = new GetTokenRequest {
       Service = forService,
-      Cookie = ByteString.CopyFromUtf8(cookie)
+      Cookie = cookie
     };
     // var context = new ClientContext();
     // const auto send_time = TimeNow();
@@ -70,7 +72,7 @@ public class AuthClient {
 
   private static AuthToken AuthTokenFromProto(Token token) {
     var uc = new UserContext(token.UserContext.AuthenticatedUser, token.UserContext.EffectiveUser);
-    return new AuthToken(token.TokenId, token.Service, uc, token.IpAddress.ToStringUtf8());
+    return new AuthToken(token.TokenId, token.Service, uc, token.IpAddress);
   }
 
   private string GetCookieOrThrow() {

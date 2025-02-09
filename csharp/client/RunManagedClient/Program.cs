@@ -9,7 +9,12 @@ public static class Program {
     const string descriptiveName = "mysession";
     const string jsonUrl = "https://kosak-grizzle-xp.int.illumon.com:8123/iris/connection.json";
 
-    var sessionManager = SessionManager.FromUrl(descriptiveName, jsonUrl, false);
+    try {
+      var sessionManager = SessionManager.FromUrl(descriptiveName, jsonUrl, false);
+      var temp = sessionManager.PasswordAuthentication("iris", "iris", "iris");
+    } catch (Exception ex) {
+      Console.WriteLine(ex);
+    }
   }
 
   public static void CommunityMain(string[] args) {
