@@ -4,7 +4,6 @@ using Grpc.Core;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
-using System.Linq;
 
 namespace Deephaven.DheClient.Controller;
 
@@ -28,81 +27,25 @@ public class ControllerClient {
     var req = new PingRequest();
     _ = controllerApi.ping(req, co);
 
-    return new ControllerClient(controllerApi);
+    var clientId = ClientUtil.MakeClientId(descriptiveName, Guid.NewGuid().ToString());
+
+    return new ControllerClient(clientId, controllerApi);
   }
 
+  private readonly ClientId _clientId;
   private readonly ControllerApi.ControllerApiClient _controllerApi;
 
-  public ControllerClient(ControllerApi.ControllerApiClient controllerApi) {
+  public ControllerClient(ClientId clientId, ControllerApi.ControllerApiClient controllerApi) {
+    _clientId = clientId;
     _controllerApi = controllerApi;
   }
 
-  bool ControllerClientImpl::
-Authenticate(const auth::AuthToken &auth_token) {
-  CheckNotClosedOrThrow();
-  std::unique_lock lock(auth_ctx_.mux);
-  if (auth_ctx_.authenticating) {
-    if (auth_ctx_.user_context != auth_token.user_context) {
-      const std::string msg = DEEPHAVEN_LOCATION_STR(
-          "already running authentication request doesn't match credentials.");
-  gpr_log(GPR_INFO, WITH_ID("%s"), msg.c_str());
-      throw ControllerClientException(msg);
-    }
-    gpr_log(GPR_INFO,
-            WITH_ID("ControllerClientImpl::Authenticate: "
-                    "holding on already running authentication request."));
-    auth_ctx_.cond.wait(lock, [this]{ return !auth_ctx_.authenticating; });
-const bool authenticated = !auth_ctx_.cookie.empty();
-lock.unlock();
-gpr_log(GPR_INFO, WITH_ID("ControllerClientImpl::Authenticate: "
-
-                          "joined response authenticated=%s"),
-        utility::BoolToCharPtr(authenticated));
-return authenticated;
+  public bool Authenticate(AuthToken authToken) {
+    var req = new AuthenticationRequest();
+    req.ClientId = _clientId;
+    req.Token = AuthUtil.AuthTokenToProto(authToken);
+    req.GetConfiguration = true;
+    var resp = _controllerApi.authenticate(req);
+    return resp.Authenticated;
   }
-  auth_ctx_.authenticating = true;
-auth_ctx_.user_context = auth_token.user_context;
-auth_ctx_.cookie.clear();
-lock.unlock();  // Do not hold a lock while waiting for an RPC response.
-gpr_log(GPR_INFO,
-        WITH_ID("ControllerClientImpl::Authenticate: sending authentication request."));
-AuthenticationRequest request;
-*request.mutable_clientid() = client_id_;
-*request.mutable_token() = auth::impl::AuthTokenToProto(auth_token);
-request.set_getconfiguration(true);
-const auto send_time = TimeNow();
-ClientContext context;
-AuthenticationResponse response;
-SetupClientContext(
-    context, send_time + deephaven_enterprise::auth::impl::kAuthTokenLifetime);
-const Status status =
-    controller_api_stub_->authenticate(&context, request, &response);
-lock.lock () ;
-auth_ctx_.authenticating = false;
-auth_ctx_.cond.notify_all();
-if (!status.ok()) {
-  lock.unlock();
-  auto failure = FailureFromStatus(context, status);
-  const std::string msg = DEEPHAVEN_LOCATION_STR(
-  fmt::format(
-          "authentication RPC failed: {}",
-          failure.msg));
-  gpr_log(GPR_ERROR, WITH_ID("%s."), msg.c_str());
-  throw ControllerClientException(msg);
-}
-if (response.authenticated()) {
-  auth_ctx_.cookie = response.cookie();
-  if (response.has_config()) {
-    auth_ctx_.controller_config = response.config();
-  }
-}
-lock.unlock();
-gpr_log(GPR_INFO,
-        WITH_ID("ControllerClientImpl::Authenticate: "
-
-                "received authentication response=%s"),
-        utility::BoolToCharPtr(response.authenticated()));
-return response.authenticated();
-}
-
 }

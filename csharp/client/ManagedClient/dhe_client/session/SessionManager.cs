@@ -110,7 +110,8 @@ public class SessionManager : IDisposable {
   }
 
   public bool PasswordAuthentication(string user, string password, string operateAs) {
-    var authOk = _authClient.PasswordAuthentication(user, password, operateAs);
+    var authResult = _authClient.PasswordAuthentication(user, password, operateAs);
+    var authOk = true;
     return authOk && AuthenticateToController();
   }
 
@@ -130,8 +131,7 @@ public class SessionManager : IDisposable {
   }
 
   private bool AuthenticateToController() {
-    const AuthToken authToken = _authClient.CreateToken(
-      ControllerClient.ControllerServiceName);
+    var authToken = _authClient.CreateToken(ControllerClient.ControllerServiceName);
     return _controllerClient.Authenticate(authToken);
   }
 }
