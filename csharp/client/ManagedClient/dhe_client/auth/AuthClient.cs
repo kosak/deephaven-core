@@ -1,4 +1,5 @@
 ﻿using Deephaven.ManagedClient;
+using Google.Protobuf;
 using Grpc.Core;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Auth.Grpc;
@@ -20,9 +21,9 @@ public class AuthClient {
     // }
 
     var authApi = new AuthApi.AuthApiClient(channel);
-    var co = new CallOptions();
+    // var co = new CallOptions();
     var req = new PingRequest();
-    _ = authApi.ping(req, co);
+    _ = authApi.ping(req);
 
     var uuid = System.Guid.NewGuid().ToString();
     var clientId = ClientUtil.MakeClientId(descriptiveName, uuid);
@@ -38,11 +39,41 @@ public class AuthClient {
     _authApi = authApi;
   }
 
-  public bool PasswordAuthentication(string user, string password, string operateAs) {
+  public AuthenticationResult PasswordAuthentication(string user, string password,
+    string operateAs) {
     // TODO(kosak) stuff here
-    var req = new AuthenticateByPasswordRequest();
-    req.ClientId = _clientId;
+    var req = new AuthenticateByPasswordRequest {
+      ClientId = _clientId,
+      Password = password,
+      UserContext = new Io.Deephaven.Proto.Auth.UserContext {
+        AuthenticatedUser = user,
+        EffectiveUser = user,
+      }
+    };
 
+    var resp = _authApi.authenticateByPassword(req);
+    return resp.Result;
+  }
 
+  public AuthToken CreateToken(string forService) {
+    var cookie = GetCookieOrThrow();
+    var request = new GetTokenRequest {
+      Service = forService,
+      Cookie = ByteString.CopyFromUtf8(cookie)
+    };
+    // var context = new ClientContext();
+    // const auto send_time = TimeNow();
+    // SetupClientContext(context, send_time + kAuthGrpcRpcDeadlineMillis);
+    var response = _authApi.getToken(request);
+    return AuthTokenFromProto(response.Token);
+  }
+
+  private static AuthToken AuthTokenFromProto(Token token) {
+    var uc = new UserContext(token.UserContext.AuthenticatedUser, token.UserContext.EffectiveUser);
+    return new AuthToken(token.TokenId, token.Service, uc, token.IpAddress.ToStringUtf8());
+  }
+
+  private string GetCookieOrThrow() {
+    return "kosak cookie time";
   }
 }

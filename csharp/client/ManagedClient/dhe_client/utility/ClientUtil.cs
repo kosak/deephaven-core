@@ -16,7 +16,6 @@ public static class ClientUtil {
     };
     return clientId;
   }
-
 }
 
 public static class DhCoreTodo {

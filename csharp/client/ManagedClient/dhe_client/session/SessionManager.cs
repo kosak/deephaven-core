@@ -131,7 +131,7 @@ public class SessionManager : IDisposable {
 
   private bool AuthenticateToController() {
     const AuthToken authToken = _authClient.CreateToken(
-      ControllerClient::kControllerServiceName);
+      ControllerClient.ControllerServiceName);
     return _controllerClient.Authenticate(authToken);
   }
 }
