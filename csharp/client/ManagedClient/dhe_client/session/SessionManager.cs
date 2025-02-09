@@ -144,4 +144,6 @@ public class SessionManager : IDisposable {
 
 public static class MegaCookie666 {
   public static ByteString cookie;
+  public static ByteString moarCookie;
+
 }

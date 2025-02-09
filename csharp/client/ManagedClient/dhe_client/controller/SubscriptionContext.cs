@@ -25,5 +25,10 @@ internal class SubscriptionContext : IDisposable {
     var req = new SubscribeRequest();
     req.Cookie = MegaCookie666.cookie;
     var reader = _controllerApi.subscribe(req);
+
+    var rs = reader.ResponseStream;
+    var ct = new CancellationToken();
+    var q = rs.MoveNext(ct).Result;
+    var r = rs.Current;
   }
 }

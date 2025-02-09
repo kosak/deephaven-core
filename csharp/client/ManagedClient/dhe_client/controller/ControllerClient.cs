@@ -1,4 +1,5 @@
 ﻿using Deephaven.DheClient.Auth;
+using Deephaven.DheClient.Session;
 using Deephaven.ManagedClient;
 using Grpc.Core;
 using Io.Deephaven.Proto.Auth;
@@ -56,10 +57,19 @@ public class ControllerClient : IDisposable {
     req.Token = AuthUtil.AuthTokenToProto(authToken);
     req.GetConfiguration = true;
     var resp = _controllerApi.authenticate(req);
+    MegaCookie666.moarCookie = resp.Cookie;
     return resp.Authenticated;
   }
 
   public void Superpain666() {
-    _subscriptionContext.DoSubscribe666();
+    var req = new SubscribeRequest();
+    req.Cookie = MegaCookie666.moarCookie;
+    var reader = _controllerApi.subscribe(req);
+
+    var rs = reader.ResponseStream;
+    var ct = new CancellationToken();
+    var q = rs.MoveNext(ct).Result;
+    var r = rs.Current;
+    // _subscriptionContext.DoSubscribe666();
   }
 }
