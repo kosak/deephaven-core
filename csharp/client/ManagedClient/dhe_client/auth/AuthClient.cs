@@ -1,16 +1,14 @@
 ﻿using Deephaven.DheClient.Session;
 using Deephaven.ManagedClient;
 using Google.Protobuf;
-using Grpc.Core;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Auth.Grpc;
-using Io.Deephaven.Proto.Common;
 
 namespace Deephaven.DheClient.Auth;
 
 public class AuthClient {
-  public static AuthClient Connect(string descriptiveName, string target,
-    ClientOptions options) {
+  public static AuthClient Connect(string descriptiveName, Credentials credentials,
+    string target, ClientOptions options) {
     var channel = GrpcUtil.CreateChannel(target, options);
     // where does this go: arguments and also credentials
     // grpc::ChannelArguments channel_args;
@@ -22,60 +20,52 @@ public class AuthClient {
     // }
 
     var authApi = new AuthApi.AuthApiClient(channel);
-    // var co = new CallOptions();
-    var req = new PingRequest();
-    _ = authApi.ping(req);
-
-    var uuid = System.Guid.NewGuid().ToString();
+    var uuid = System.Guid.NewGuid().ToByteArray();
     var clientId = ClientUtil.MakeClientId(descriptiveName, uuid);
+    var authCookie = Authenticate(clientId, authApi, credentials);
+    var result = new AuthClient(clientId, authApi, authCookie);
+    return result;
+  }
 
-    return new AuthClient(clientId, authApi);
+  private static byte[] Authenticate(ClientId clientId, AuthApi.AuthApiClient authApi,
+    Credentials credentials) {
+    // TODO(kosak): more credential types here
+    if (credentials is not Credentials.PasswordCredentials pwc) {
+      throw new Exception("Unexpected credentials type");
+    }
+    var req = new AuthenticateByPasswordRequest {
+      ClientId = clientId,
+      Password = pwc.Password,
+      UserContext = new Io.Deephaven.Proto.Auth.UserContext {
+        AuthenticatedUser = pwc.User,
+        EffectiveUser = pwc.OperateAs
+      }
+    };
+
+    var resp = authApi.authenticateByPassword(req);
+    if (!resp.Result.Authenticated) {
+      throw new Exception("Password authentication failed");
+    }
+
+    return resp.Result.Cookie.ToByteArray();
   }
 
   private readonly ClientId _clientId;
   private readonly AuthApi.AuthApiClient _authApi;
+  private readonly byte[] _cookie;
 
-  public AuthClient(ClientId clientId, AuthApi.AuthApiClient authApi) {
+  private AuthClient(ClientId clientId, AuthApi.AuthApiClient authApi, byte[] cookie) {
     _clientId = clientId;
     _authApi = authApi;
+    _cookie = cookie;
   }
 
-  public AuthenticationResult PasswordAuthentication(string user, string password,
-    string operateAs) {
-    // TODO(kosak) stuff here
-    var req = new AuthenticateByPasswordRequest {
-      ClientId = _clientId,
-      Password = password,
-      UserContext = new Io.Deephaven.Proto.Auth.UserContext {
-        AuthenticatedUser = user,
-        EffectiveUser = user,
-      }
-    };
-
-    var resp = _authApi.authenticateByPassword(req);
-    return resp.Result;
-  }
-
-  public AuthToken CreateToken(string forService) {
-    // var cookie = GetCookieOrThrow();
-    var cookie = MegaCookie666.cookie;
+  internal AuthToken CreateToken(string forService) {
     var request = new GetTokenRequest {
       Service = forService,
-      Cookie = cookie
+      Cookie = ByteString.CopyFrom(_cookie)
     };
-    // var context = new ClientContext();
-    // const auto send_time = TimeNow();
-    // SetupClientContext(context, send_time + kAuthGrpcRpcDeadlineMillis);
     var response = _authApi.getToken(request);
-    return AuthTokenFromProto(response.Token);
-  }
-
-  private static AuthToken AuthTokenFromProto(Token token) {
-    var uc = new UserContext(token.UserContext.AuthenticatedUser, token.UserContext.EffectiveUser);
-    return new AuthToken(token.TokenId, token.Service, uc, token.IpAddress);
-  }
-
-  private string GetCookieOrThrow() {
-    return "kosak cookie time";
+    return AuthUtil.AuthTokenFromProto(response.Token);
   }
 }

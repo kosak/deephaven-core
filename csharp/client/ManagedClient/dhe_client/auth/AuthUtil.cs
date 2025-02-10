@@ -4,7 +4,7 @@ using Io.Deephaven.Proto.Auth;
 namespace Deephaven.DheClient.Auth;
 
 public static class AuthUtil {
-  public static Token AuthTokenToProto(AuthToken authToken) {
+  public static Token ProtoFromAuthToken(AuthToken authToken) {
     var tokenProto = new Token {
       TokenId = authToken.TokenId,
       Service = authToken.Service,
@@ -15,5 +15,11 @@ public static class AuthUtil {
       }
     };
     return tokenProto;
+  }
+
+  public static AuthToken AuthTokenFromProto(Token token) {
+    var uc = new UserContext(token.UserContext.AuthenticatedUser,
+      token.UserContext.EffectiveUser);
+    return new AuthToken(token.TokenId, token.Service, uc, token.IpAddress);
   }
 }

@@ -20,12 +20,14 @@ public class SessionManager : IDisposable {
     public string? controller_authority { get; set; }
   }
 
-  public static SessionManager FromUrl(string descriptiveName, string url, bool validateCertificate = true) {
+  public static SessionManager FromUrl(string descriptiveName, Credentials credentials,
+    string url, bool validateCertificate = true) {
     var json = GetUrl(url, validateCertificate);
-    return FromJson(descriptiveName, json);
+    return FromJson(descriptiveName, credentials, json);
   }
 
-  public static SessionManager FromJson(string descriptiveName, string json) {
+  public static SessionManager FromJson(string descriptiveName, Credentials credentials,
+    string json) {
     try {
       var info = JsonSerializer.Deserialize<SessionInfo>(json);
       if (info == null) {
@@ -48,6 +50,7 @@ public class SessionManager : IDisposable {
 
       return Create(
         descriptiveName,
+        credentials,
         info.auth_host[0], info.auth_port,
         authAuthority,
         info.controller_host, info.controller_port,
@@ -58,19 +61,19 @@ public class SessionManager : IDisposable {
     }
   }
 
-  public static SessionManager Create(
-    string descriptiveName,
+  private static SessionManager Create(
+    string descriptiveName, Credentials credentials,
     string authHost, UInt16 authPort, string authAuthority,
     string controllerHost, UInt16 controllerPort, string controllerAuthority,
     string rootCerts) {
     var (authTarget, authOptions) = SetupClientOptions(authHost, authPort,
       authAuthority, rootCerts);
-    var authClient = AuthClient.Connect(descriptiveName, authTarget, authOptions);
+    var authClient = AuthClient.Connect(descriptiveName, credentials, authTarget, authOptions);
     var (controllerTarget, controllerOptions) = SetupClientOptions(
       controllerHost, controllerPort,
       controllerAuthority, rootCerts);
     var controllerClient = ControllerClient.Connect(descriptiveName,
-      controllerTarget, controllerOptions);
+      controllerTarget, controllerOptions, authClient);
     return new SessionManager(descriptiveName, authClient, controllerClient,
       authAuthority, controllerAuthority, rootCerts);
   }
@@ -110,13 +113,6 @@ public class SessionManager : IDisposable {
     throw new NotImplementedException();
   }
 
-  public bool PasswordAuthentication(string user, string password, string operateAs) {
-    var authResult = _authClient.PasswordAuthentication(user, password, operateAs);
-    var authOk = true;
-    MegaCookie666.cookie = authResult.Cookie;
-    return authOk && AuthenticateToController();
-  }
-
   public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
     throw new NotImplementedException();
   }
@@ -131,19 +127,4 @@ public class SessionManager : IDisposable {
     var result = hc.GetStringAsync(url).Result;
     return result;
   }
-
-  private bool AuthenticateToController() {
-    var authToken = _authClient.CreateToken(ControllerClient.ControllerServiceName);
-    return _controllerClient.Authenticate(authToken);
-  }
-
-  public void SuperPain666() {
-    _controllerClient.Superpain666();
-  }
-}
-
-public static class MegaCookie666 {
-  private static ByteString cookie;
-  private static ByteString moarCookie;
-
 }

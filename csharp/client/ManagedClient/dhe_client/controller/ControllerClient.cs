@@ -9,7 +9,7 @@ namespace Deephaven.DheClient.Controller;
 public class ControllerClient : IDisposable {
   private const string ControllerServiceName = "PersistentQueryController";
 
-  public static ControllerClient Create(string descriptiveName, string target,
+  public static ControllerClient Connect(string descriptiveName, string target,
     ClientOptions options, AuthClient authClient) {
 
     // Get an auth token for me from the AuthClient
@@ -29,11 +29,11 @@ public class ControllerClient : IDisposable {
     var controllerApi = new ControllerApi.ControllerApiClient(channel);
 
     // Authenticate to the controller
-    var clientId = ClientUtil.MakeClientId(descriptiveName, Guid.NewGuid().ToString());
+    var clientId = ClientUtil.MakeClientId(descriptiveName, Guid.NewGuid().ToByteArray());
 
     var authReq = new AuthenticationRequest {
       ClientId = clientId,
-      Token = AuthUtil.AuthTokenToProto(authToken),
+      Token = AuthUtil.ProtoFromAuthToken(authToken),
       GetConfiguration = true
     };
     var authResp = controllerApi.authenticate(authReq);

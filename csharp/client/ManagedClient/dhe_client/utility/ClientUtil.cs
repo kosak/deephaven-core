@@ -8,11 +8,11 @@ public static class ClientUtil {
     return DhCoreTodo.GetHostname() + "/" + descriptiveName;
   }
 
-  public static ClientId MakeClientId(string descriptiveName, string uuid) {
+  public static ClientId MakeClientId(string descriptiveName, byte[] uuid) {
     var name = GetName(descriptiveName);
     var clientId = new ClientId {
       Name = name,
-      Uuid = ByteString.CopyFromUtf8(uuid)
+      Uuid = ByteString.CopyFrom(uuid)
     };
     return clientId;
   }
