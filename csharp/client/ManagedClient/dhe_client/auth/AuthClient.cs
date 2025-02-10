@@ -1,5 +1,4 @@
-﻿using Deephaven.DheClient.Session;
-using Deephaven.ManagedClient;
+﻿using Deephaven.ManagedClient;
 using Google.Protobuf;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Auth.Grpc;
@@ -22,12 +21,14 @@ public class AuthClient {
     var authApi = new AuthApi.AuthApiClient(channel);
     var uuid = System.Guid.NewGuid().ToByteArray();
     var clientId = ClientUtil.MakeClientId(descriptiveName, uuid);
-    var authCookie = Authenticate(clientId, authApi, credentials);
-    var result = new AuthClient(clientId, authApi, authCookie);
+    var (authCookie, deadline) = Authenticate(clientId, authApi, credentials);
+    var ct = new CancellationToken();
+    var result = new AuthClient(clientId, authApi, ct, authCookie);
+    Task.Run(() => result.RefreshCookie(ct, deadline), ct).Forget();
     return result;
   }
 
-  private static byte[] Authenticate(ClientId clientId, AuthApi.AuthApiClient authApi,
+  private static (byte[], DateTimeOffset) Authenticate(ClientId clientId, AuthApi.AuthApiClient authApi,
     Credentials credentials) {
     // TODO(kosak): more credential types here
     if (credentials is not Credentials.PasswordCredentials pwc) {
@@ -42,30 +43,50 @@ public class AuthClient {
       }
     };
 
-    var resp = authApi.authenticateByPassword(req);
-    if (!resp.Result.Authenticated) {
+    var res = authApi.authenticateByPassword(req).Result;
+    if (!res.Authenticated) {
       throw new Exception("Password authentication failed");
     }
 
-    return resp.Result.Cookie.ToByteArray();
+    var cookie = res.Cookie.ToByteArray();
+    var deadline = DateTimeOffset.FromUnixTimeMilliseconds(res.CookieDeadlineTimeMillis);
+    return (cookie, deadline);
   }
 
   private readonly ClientId _clientId;
   private readonly AuthApi.AuthApiClient _authApi;
-  private readonly byte[] _cookie;
+  private readonly CancellationToken _cancellationToken;
+  private readonly Atomic<byte[]> _cookie;
 
-  private AuthClient(ClientId clientId, AuthApi.AuthApiClient authApi, byte[] cookie) {
+  private AuthClient(ClientId clientId, AuthApi.AuthApiClient authApi,
+    CancellationToken cancellationToken, byte[] cookie) {
     _clientId = clientId;
     _authApi = authApi;
+    _cancellationToken = cancellationToken;
     _cookie = cookie;
   }
 
   internal AuthToken CreateToken(string forService) {
     var request = new GetTokenRequest {
       Service = forService,
-      Cookie = ByteString.CopyFrom(_cookie)
+      Cookie = ByteString.CopyFrom(_cookie.Value)
     };
     var response = _authApi.getToken(request);
     return AuthUtil.AuthTokenFromProto(response.Token);
+  }
+
+  private async Task RefreshCookie(CancellationToken ct, DateTimeOffset deadline) {
+    var delayMillis = (int)(Math.Max(0, (deadline - DateTimeOffset.Now).TotalMilliseconds) / 2);
+    Console.WriteLine($"Hi, delaying for {delayMillis} milliseconds");
+    await Task.Delay(delayMillis, ct);
+
+    var req = new RefreshCookieRequest {
+      Cookie = _cookie.Value
+    };
+    var resp = _authApi.refreshCookie(req);
+
+    _cookie.Value = resp.Cookie.ToByteArray();
+    var newDeadline = DateTimeOffset.FromUnixTimeMilliseconds(resp.CookieDeadlineTimeMillis);
+    Task.Run(() => RefreshCookie(ct, newDeadline), ct).Forget();
   }
 }
