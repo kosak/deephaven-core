@@ -56,6 +56,7 @@ internal class SubscriptionContext : IDisposable {
       // Optimistically assume a change will happen and we have to notify.
       ++_version;
       Monitor.PulseAll(_pqSync);
+      Console.WriteLine($"Hi event is {resp.Event}");
       switch (resp.Event) {
         case SubscriptionEvent.SePut:
         case SubscriptionEvent.SeBatchEnd: {

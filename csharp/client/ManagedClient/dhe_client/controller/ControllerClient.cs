@@ -63,6 +63,9 @@ public class ControllerClient : IDisposable {
   }
 
   public void Superpain666() {
+    _subscriptionContext.Superpain666();
+    return;
+
     var req = new SubscribeRequest();
     req.Cookie = MegaCookie666.moarCookie;
     var reader = _controllerApi.subscribe(req);
