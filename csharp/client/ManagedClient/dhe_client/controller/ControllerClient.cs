@@ -1,8 +1,5 @@
-﻿using System.Diagnostics;
-using Deephaven.DheClient.Auth;
-using Deephaven.DheClient.Session;
+﻿using Deephaven.DheClient.Auth;
 using Deephaven.ManagedClient;
-using Grpc.Core;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
@@ -10,10 +7,14 @@ using Io.Deephaven.Proto.Controller.Grpc;
 namespace Deephaven.DheClient.Controller;
 
 public class ControllerClient : IDisposable {
-  public const string ControllerServiceName = "PersistentQueryController";
+  private const string ControllerServiceName = "PersistentQueryController";
 
-  public static ControllerClient Connect(string descriptiveName, string target,
-    ClientOptions options) {
+  public static ControllerClient Create(string descriptiveName, string target,
+    ClientOptions options, AuthClient authClient) {
+
+    // Get an auth token for me from the AuthClient
+    var authToken = authClient.CreateToken(ControllerServiceName);
+
     var channel = GrpcUtil.CreateChannel(target, options);
     // where does this go: arguments and also credentials
     // grpc::ChannelArguments channel_args;
@@ -24,16 +25,24 @@ public class ControllerClient : IDisposable {
     //   channel_args.SetString(opt.first, opt.second);
     // }
 
+    // Create the stub
+    var controllerApi = new ControllerApi.ControllerApiClient(channel);
 
+    // Authenticate to the controller
     var clientId = ClientUtil.MakeClientId(descriptiveName, Guid.NewGuid().ToString());
 
-    var controllerApi = new ControllerApi.ControllerApiClient(channel);
-    var co = new CallOptions();
-    var req = new PingRequest();
-    _ = controllerApi.ping(req, co);
+    var authReq = new AuthenticationRequest {
+      ClientId = clientId,
+      Token = AuthUtil.AuthTokenToProto(authToken),
+      GetConfiguration = true
+    };
+    var authResp = controllerApi.authenticate(authReq);
+    if (!authResp.Authenticated) {
+      throw new Exception("Failed to authenticate to the Controller");
+    }
 
-    var subscriptionContext = SubscriptionContext.Create(channel);
-
+    var authCookie = authResp.Cookie.ToByteArray();
+    var subscriptionContext = SubscriptionContext.Create(channel, authCookie);
     return new ControllerClient(clientId, controllerApi, subscriptionContext);
   }
 
@@ -50,56 +59,5 @@ public class ControllerClient : IDisposable {
 
   public void Dispose() {
     throw new NotImplementedException();
-  }
-
-  public bool Authenticate(AuthToken authToken) {
-    var req = new AuthenticationRequest();
-    req.ClientId = _clientId;
-    req.Token = AuthUtil.AuthTokenToProto(authToken);
-    req.GetConfiguration = true;
-    var resp = _controllerApi.authenticate(req);
-    MegaCookie666.moarCookie = resp.Cookie;
-    return resp.Authenticated;
-  }
-
-  public void Superpain666() {
-    _subscriptionContext.Superpain666();
-    return;
-
-    var req = new SubscribeRequest();
-    req.Cookie = MegaCookie666.moarCookie;
-    var reader = _controllerApi.subscribe(req);
-
-    var rs = reader.ResponseStream;
-    var ct = new CancellationToken();
-
-    Task.Run(() => SuperZamboniHate(rs, ct), ct).Forget();
-
-    // while (true) {
-    //   var t = rs.MoveNext(ct);
-    //   var res = t.Result;
-    //   if (!res) {
-    //     Debug.WriteLine("I am sad, continuing");
-    //     continue;
-    //   }
-    //   var r = rs.Current;
-    //   Debug.WriteLine(r.Event);
-    // }
-
-    // _subscriptionContext.DoSubscribe666();
-  }
-
-  private static async void SuperZamboniHate(
-    IAsyncStreamReader<SubscribeResponse> rs,
-    CancellationToken ct) {
-    var vvv = await rs.MoveNext(ct);
-    if (!vvv) {
-      Debug.WriteLine("I am sad, continuing");
-    } else {
-      var r = rs.Current;
-      Debug.WriteLine(r.Event);
-    }
-
-    Task.Run(() => SuperZamboniHate(rs, ct), ct).Forget();
   }
 }
