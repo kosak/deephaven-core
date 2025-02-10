@@ -10,8 +10,6 @@ public static class Program {
     const string descriptiveName = "mysession";
     const string jsonUrl = "https://kosak-grizzle-xp.int.illumon.com:8123/iris/connection.json";
 
-    Debug.WriteLine("HELLO");
-
     try {
       var sessionManager = SessionManager.FromUrl(descriptiveName, jsonUrl, false);
       var temp = sessionManager.PasswordAuthentication("iris", "iris", "iris");
