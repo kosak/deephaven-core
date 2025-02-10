@@ -1,5 +1,6 @@
 ﻿using Deephaven.DheClient.Auth;
 using Deephaven.ManagedClient;
+using Google.Protobuf;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
@@ -8,6 +9,7 @@ namespace Deephaven.DheClient.Controller;
 
 public class ControllerClient : IDisposable {
   private const string ControllerServiceName = "PersistentQueryController";
+  private static readonly TimeSpan HeartbeatPeriod = TimeSpan.FromSeconds(10);
 
   public static ControllerClient Connect(string descriptiveName, string target,
     ClientOptions options, AuthClient authClient) {
@@ -42,22 +44,42 @@ public class ControllerClient : IDisposable {
     }
 
     var authCookie = authResp.Cookie.ToByteArray();
-    var subscriptionContext = SubscriptionContext.Create(channel, authCookie);
-    return new ControllerClient(clientId, controllerApi, subscriptionContext);
+    var subscriptionContext = SubscriptionContext.Create(controllerApi, authCookie);
+    var cancellation = new CancellationToken();
+
+    var result = new ControllerClient(clientId, controllerApi, cancellation,
+      subscriptionContext, authCookie);
+    Task.Run(result.Heartbeat, cancellation).Forget();
+    return result;
   }
 
   private readonly ClientId _clientId;
   private readonly ControllerApi.ControllerApiClient _controllerApi;
+  private readonly CancellationToken _cancellation;
   private readonly SubscriptionContext _subscriptionContext;
+  private readonly byte[] _authCookie;
 
   private ControllerClient(ClientId clientId, ControllerApi.ControllerApiClient controllerApi,
-    SubscriptionContext subscriptionContext) {
+    CancellationToken cancellation, SubscriptionContext subscriptionContext,
+    byte[] authCookie) {
     _clientId = clientId;
     _controllerApi = controllerApi;
+    _cancellation = cancellation;
     _subscriptionContext = subscriptionContext;
+    _authCookie = authCookie;
   }
 
   public void Dispose() {
     throw new NotImplementedException();
+  }
+
+  private async Task Heartbeat() {
+    await Task.Delay(HeartbeatPeriod, _cancellation);
+    Console.WriteLine("heartbeat sent a ping");
+    var req = new PingRequest {
+      Cookie = ByteString.CopyFrom(_authCookie)
+    };
+    _ = _controllerApi.ping(req);
+    Task.Run(Heartbeat, _cancellation).Forget();
   }
 }

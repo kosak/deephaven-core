@@ -9,9 +9,8 @@ using Google.Protobuf;
 namespace Deephaven.DheClient.Controller;
 
 internal class SubscriptionContext : IDisposable {
-  public static SubscriptionContext Create(GrpcChannel channel, byte[] authCookie) {
-    var controllerApi = new ControllerApi.ControllerApiClient(channel);
-
+  public static SubscriptionContext Create(ControllerApi.ControllerApiClient controllerApi,
+    byte[] authCookie) {
     var req = new SubscribeRequest {
       Cookie = ByteString.CopyFrom(authCookie)
     };
@@ -20,23 +19,20 @@ internal class SubscriptionContext : IDisposable {
     var rs = reader.ResponseStream;
     var ct = new CancellationToken();
 
-    var result = new SubscriptionContext(controllerApi, ct);
+    var result = new SubscriptionContext(ct);
 
-    Task.Run(() => result.ProcessNext(rs, ct), ct).Forget();
+    Task.Run(() => result.ProcessNext(rs), ct).Forget();
 
     return result;
   }
 
-  private readonly ControllerApi.ControllerApiClient _controllerApi;
   private readonly CancellationToken _cancellation;
   private readonly object _pqSync = new();
   private long _version = 0;
   private ControllerConfigurationMessage? _pqConfig = null;
   private readonly Dictionary<Int64, PersistentQueryInfoMessage> _pqMap = new();
 
-  private SubscriptionContext(ControllerApi.ControllerApiClient controllerApi,
-    CancellationToken cancellation) {
-    _controllerApi = controllerApi;
+  private SubscriptionContext(CancellationToken cancellation) {
     _cancellation = cancellation;
   }
 
@@ -44,16 +40,15 @@ internal class SubscriptionContext : IDisposable {
     throw new NotImplementedException();
   }
 
-  private async void ProcessNext(IAsyncStreamReader<SubscribeResponse> rs,
-    CancellationToken ct) {
-    var hasNext = await rs.MoveNext(ct);
+  private async void ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {
+    var hasNext = await rs.MoveNext(_cancellation);
     if (!hasNext) {
       Debug.WriteLine("Subscription stream ended");
       return;
     }
 
     ProcessResponse(rs.Current);
-    Task.Run(() => ProcessNext(rs, ct), ct).Forget();
+    Task.Run(() => ProcessNext(rs), _cancellation).Forget();
   }
 
   private void ProcessResponse(SubscribeResponse resp) {
@@ -62,6 +57,7 @@ internal class SubscriptionContext : IDisposable {
       // So, just notify in all cases because it's simpler.
       ++_version;
       Monitor.PulseAll(_pqSync);
+      Console.WriteLine($"Hi, new version, don't judge me {_version} {resp.Event}");
       switch (resp.Event) {
         case SubscriptionEvent.SePut:
         case SubscriptionEvent.SeBatchEnd: {

@@ -63,7 +63,7 @@ public class AuthClient {
     _clientId = clientId;
     _authApi = authApi;
     _cancellationToken = cancellationToken;
-    _cookie = cookie;
+    _cookie = new(cookie);
   }
 
   internal AuthToken CreateToken(string forService) {
@@ -81,7 +81,7 @@ public class AuthClient {
     await Task.Delay(delayMillis, ct);
 
     var req = new RefreshCookieRequest {
-      Cookie = _cookie.Value
+      Cookie = ByteString.CopyFrom(_cookie.Value)
     };
     var resp = _authApi.refreshCookie(req);
 
