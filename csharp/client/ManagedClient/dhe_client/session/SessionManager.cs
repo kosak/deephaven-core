@@ -1,8 +1,11 @@
-﻿using System.Text.Json;
+﻿using System.Data.Common;
+using System.Linq;
+using System.Text.Json;
 using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;
 using Google.Protobuf;
+using Grpc.Core;
 
 namespace Deephaven.DheClient.Session;
 
@@ -116,6 +119,45 @@ public class SessionManager : IDisposable {
   public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
     throw new NotImplementedException();
   }
+
+  (Int64, Client) FindPqAndConnect(Func<double, double> filter) {
+    using var subscription = _controllerClient.Subscribe();
+    if (!subscription.Current(out var version, out var configMap)) {
+      throw new Exception("Controller subscription has closed");
+    }
+
+    var info = filter(configMap);
+    var pqSerial = info.Config().Serial();
+    var pqName = info.Config().Name();
+
+    while (true) {
+      // It may make sense to have the ability to provide a timeout
+      // in the future; absent a terminal or running state being found or
+      // the subscription closing, as is this will happily run forever.
+      var status = info.State().Status();
+      if (ControllerClient.IsTerminal(status)) {
+        throw new Exception($"pqName='{pqName}', pqSerial={pqSerial} " +
+          $"is in terminal state={info.State()}");
+      }
+
+      if (ControllerClient.IsRunning(status)) {
+        break;
+      }
+
+      if (!subscription.Next(version) ||
+          !subscription.Current(out version, out configMap)) {
+        throw new Exception("Controller subscription has closed");
+      }
+
+      if (!configMap.TryGetValue(pqSerial, out info)) {
+        throw new Exception($"pqName='{pqName}', pqSerial={pqSerial} " +
+          $"is no longer available");
+      }
+    }
+
+    return ConnectToPq(info);
+  }
+
 
   private static string GetUrl(string url, bool validateCertificate) {
     var handler = new HttpClientHandler();
