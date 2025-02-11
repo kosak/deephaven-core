@@ -6,11 +6,13 @@ using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;
 using Google.Protobuf;
 using Grpc.Core;
+using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.DheClient.Session;
 
 public class SessionManager : IDisposable {
   private const string DefaultOverrideAuthority = "authserver";
+  private const string DispatcherServiceName = "RemoteQueryProcessor";
 
   private class SessionInfo {
     public required string[] auth_host { get; set; }
@@ -120,7 +122,7 @@ public class SessionManager : IDisposable {
     throw new NotImplementedException();
   }
 
-  (Int64, Client) FindPqAndConnect(Func<double, double> filter) {
+  public (Int64, Client) FindPqAndConnect(Func<double, double> filter) {
     using var subscription = _controllerClient.Subscribe();
     if (!subscription.Current(out var version, out var configMap)) {
       throw new Exception("Controller subscription has closed");
@@ -158,6 +160,70 @@ public class SessionManager : IDisposable {
     return ConnectToPq(info);
   }
 
+  private static (Int64, Client) ConnectToPq(PersistentQueryInfoMessage info) {
+    var url = info.State.ConnectionDetails.GrpcUrl;
+    var pqSerial = info.Config.Serial;
+    const std::string pq_str_for_err = fmt::format(
+      "pq_name='{}', pq_serial={}",
+      info_msg->Config().Name(), pq_serial);
+    const std::string::size_type pos = url.find_first_of(':');
+    const std::string::size_type target_offset_after_colon = 3;  // "://"
+    if (pos == std::string::npos ||
+      pos + target_offset_after_colon >= url.size() ||
+      pos< 1) {
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(
+        pq_str_for_err + " has invalid url='" + url + "'"));
+    }
+    if (url.empty()) {
+      if (info_msg->State().EngineVersion().empty()) {
+        throw std::runtime_error(DEEPHAVEN_LOCATION_STR(
+          pq_str_for_err + " is not a Community engine"));
+      }
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(
+        pq_str_for_err + " has no gRPC connectivity available"));
+    }
+    const std::string url_schema = url.substr(0, pos);
+    const std::string url_target =
+      url.substr(pos + target_offset_after_colon, url.size());
+    const std::string envoy_prefix =
+      info_msg->State().ConnectionDetails().EnvoyPrefix();
+    const std::string scripting_langauge = info_msg->Config().ScriptLanguage();
+    const bool use_tls = (url_schema == "https");
+    return ConnectToDndWorker(
+      pq_serial,
+      url_target,
+      use_tls,
+      envoy_prefix,
+      scripting_langauge,
+      pq_str_for_err + ", url=" + url);
+  }
+
+  private (Int64, Client) ConnectToDndWorker(
+  Int64 pqSerial,
+  string target,
+  bool useTls,
+  string envoyPrefix,
+  string scriptLanguage) {
+    var clientOptions = new ClientOptions();
+    if (!envoyPrefix.IsEmpty()) {
+      clientOptions.AddExtraHeader("envoy-prefix", envoyPrefix);
+    }
+    clientOptions.SetSessionType(scriptLanguage);
+
+    if (useTls) {
+      clientOptions.SetUseTls(true);
+    }
+    if (!_rootCerts.IsEmpty()) {
+      clientOptions.SetTlsRootCerts(_rootCerts);
+    }
+    var authToken = _authClient.CreateToken(DispatcherServiceName);
+    clientOptions.SetCustomAuthentication(
+      "io.deephaven.proto.auth.Token",
+      AuthUtil.AsBase64Proto(authToken));
+
+    var client = Client.Connect(target, clientOptions);
+    return (pqSerial, client);
+  }
 
   private static string GetUrl(string url, bool validateCertificate) {
     var handler = new HttpClientHandler();

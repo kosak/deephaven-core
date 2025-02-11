@@ -22,4 +22,10 @@ public static class AuthUtil {
       token.UserContext.EffectiveUser);
     return new AuthToken(token.TokenId, token.Service, uc, token.IpAddress);
   }
+
+  public static string AsBase64Proto(AuthToken authToken) {
+    var tokenProto = ProtoFromAuthToken(authToken);
+    var bytes = tokenProto.ToByteArray();
+    return System.Convert.ToBase64String(bytes);
+  }
 }
