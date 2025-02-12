@@ -160,12 +160,15 @@ public class SessionManager : IDisposable {
     return ConnectToPq(info);
   }
 
-  private static (Int64, Client) ConnectToPq(PersistentQueryInfoMessage info) {
+  private (Int64, Client) ConnectToPq(PersistentQueryInfoMessage info) {
     var url = info.State.ConnectionDetails.GrpcUrl;
     var pqSerial = info.Config.Serial;
+#if false
     const std::string pq_str_for_err = fmt::format(
       "pq_name='{}', pq_serial={}",
       info_msg->Config().Name(), pq_serial);
+#endif
+#if false
     const std::string::size_type pos = url.find_first_of(':');
     const std::string::size_type target_offset_after_colon = 3;  // "://"
     if (pos == std::string::npos ||
@@ -189,13 +192,13 @@ public class SessionManager : IDisposable {
       info_msg->State().ConnectionDetails().EnvoyPrefix();
     const std::string scripting_langauge = info_msg->Config().ScriptLanguage();
     const bool use_tls = (url_schema == "https");
+#endif
     return ConnectToDndWorker(
-      pq_serial,
-      url_target,
-      use_tls,
-      envoy_prefix,
-      scripting_langauge,
-      pq_str_for_err + ", url=" + url);
+      pqSerial,
+      urlTarget,
+      useTls,
+      envoyPrefix,
+      scriptLanguage);
   }
 
   private (Int64, Client) ConnectToDndWorker(
