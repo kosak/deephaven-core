@@ -161,39 +161,30 @@ public class SessionManager : IDisposable {
     return ConnectToPq(info);
   }
 
-  private (Int64, Client) ConnectToPq(PersistentQueryInfoMessage info) {
-    var url = info.State.ConnectionDetails.GrpcUrl;
-    var pqSerial = info.Config.Serial;
-#if false
-    const std::string pq_str_for_err = fmt::format(
-      "pq_name='{}', pq_serial={}",
-      info_msg->Config().Name(), pq_serial);
-#endif
-#if false
-    const std::string::size_type pos = url.find_first_of(':');
-    const std::string::size_type target_offset_after_colon = 3;  // "://"
-    if (pos == std::string::npos ||
-      pos + target_offset_after_colon >= url.size() ||
-      pos< 1) {
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(
-        pq_str_for_err + " has invalid url='" + url + "'"));
-    }
-    if (url.empty()) {
-      if (info_msg->State().EngineVersion().empty()) {
-        throw std::runtime_error(DEEPHAVEN_LOCATION_STR(
-          pq_str_for_err + " is not a Community engine"));
+  private (Int64, Client) ConnectToPq(PersistentQueryInfoMessage infoMsg) {
+    var url = infoMsg.State.ConnectionDetails.GrpcUrl;
+    var pqSerial = infoMsg.Config.Serial;
+
+    var pqStrForErr = $"pq_name='{infoMsg.Config.Name}', pq_serial={pqSerial}";
+    var pos = url.IndexOf(':');
+    const int targetOffsetAfterColon = 3;  // "://"
+    if (url.IsEmpty()) {
+      if (infoMsg.State.EngineVersion.IsEmpty()) {
+        throw new Exception($"{pqStrForErr} is not a Community engine");
       }
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(
-        pq_str_for_err + " has no gRPC connectivity available"));
+      throw new Exception($"{pqStrForErr} has no gRPC connectivity available");
     }
-    const std::string url_schema = url.substr(0, pos);
-    const std::string url_target =
-      url.substr(pos + target_offset_after_colon, url.size());
-    const std::string envoy_prefix =
-      info_msg->State().ConnectionDetails().EnvoyPrefix();
-    const std::string scripting_langauge = info_msg->Config().ScriptLanguage();
-    const bool use_tls = (url_schema == "https");
-#endif
+
+    // pos < 1 means 0 or not found
+    if (pos < 1 || pos + targetOffsetAfterColon >= url.Length) {
+      throw new Exception($"{pqStrForErr} has invalid url='{url}'");
+    }
+
+    var urlSchema = url.Substring(0, pos);
+    var urlTarget = url.Substring(pos + targetOffsetAfterColon);
+    var envoyPrefix = infoMsg.State.ConnectionDetails.EnvoyPrefix;
+    var scriptLanguage = infoMsg.Config.ScriptLanguage;
+    var useTls = (urlSchema == "https");
     return ConnectToDndWorker(
       pqSerial,
       urlTarget,

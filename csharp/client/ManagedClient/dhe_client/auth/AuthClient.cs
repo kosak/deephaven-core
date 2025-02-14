@@ -69,7 +69,7 @@ public class AuthClient {
   internal AuthToken CreateToken(string forService) {
     var request = new GetTokenRequest {
       Service = forService,
-      Cookie = ByteString.CopyFrom(_cookie.Value)
+      Cookie = ByteString.CopyFrom(_cookie.GetValue())
     };
     var response = _authApi.getToken(request);
     return AuthUtil.AuthTokenFromProto(response.Token);
@@ -81,11 +81,11 @@ public class AuthClient {
     await Task.Delay(delayMillis, ct);
 
     var req = new RefreshCookieRequest {
-      Cookie = ByteString.CopyFrom(_cookie.Value)
+      Cookie = ByteString.CopyFrom(_cookie.GetValue())
     };
     var resp = _authApi.refreshCookie(req);
 
-    _cookie.Value = resp.Cookie.ToByteArray();
+    _cookie.SetValue(resp.Cookie.ToByteArray());
     var newDeadline = DateTimeOffset.FromUnixTimeMilliseconds(resp.CookieDeadlineTimeMillis);
     Task.Run(() => RefreshCookie(ct, newDeadline), ct).Forget();
   }

@@ -9,6 +9,10 @@ public class Subscription : IDisposable {
     _context = context;
   }
 
+  public void Dispose() {
+    Console.Error.WriteLine("TODO(kosak): Subscription not disposing");
+  }
+
   /**
  * Get a snapshot of the current persistent query state.
  * This method stores two values in its provided pointer parameters:
