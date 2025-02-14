@@ -8,16 +8,15 @@ public class Atomic<T> {
     _value = value;
   }
 
-  public T Value {
-    get {
-      lock (_sync) {
-        return _value;
-      }
+  public T GetValue() {
+    lock (_sync) {
+      return _value;
     }
-    set {
-      lock (_sync) {
-        _value = value;
-      }
+  }
+
+  public void SetValue(T value) {
+    lock (_sync) {
+      _value = value;
     }
   }
 }

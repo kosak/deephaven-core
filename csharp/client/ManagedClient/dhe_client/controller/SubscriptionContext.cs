@@ -29,7 +29,7 @@ internal class SubscriptionContext : IDisposable {
   private readonly object _pqSync = new();
   private long _version = 0;
   private ControllerConfigurationMessage? _pqConfig = null;
-  private readonly Dictionary<Int64, PersistentQueryInfoMessage> _pqMap = new();
+  private SharableDict<PersistentQueryInfoMessage> _pqMap = new();
 
   private SubscriptionContext(CancellationToken cancellation) {
     _cancellation = cancellation;
@@ -53,7 +53,9 @@ internal class SubscriptionContext : IDisposable {
   private void ProcessResponse(SubscribeResponse resp) {
     lock (_pqSync) {
       // In non-error cases, we always have a change and have to notify.
-      // So, just notify in all cases because it's simpler.
+      // So we just optimistically notify here to keep the code simple.
+      // In error cases this might result in a notification that didn't reflect
+      // any changes. This is slightly "wasteful" but not an error.
       ++_version;
       Monitor.PulseAll(_pqSync);
       Console.WriteLine($"Hi, new version, don't judge me {_version} {resp.Event}");
@@ -66,13 +68,13 @@ internal class SubscriptionContext : IDisposable {
           }
 
           var serial = qi.Config.Serial;
-          _pqMap[serial] = qi;
+          _pqMap = _pqMap.With(serial, qi);
           return;
         }
 
         case SubscriptionEvent.SeRemove: {
           var serial = resp.QuerySerial;
-          _pqMap.Remove(serial);
+          _pqMap = _pqMap.Without(serial);
           return;
         }
 
@@ -90,6 +92,43 @@ internal class SubscriptionContext : IDisposable {
           Debug.WriteLine($"Unhandled case {resp.Event}");
           return;
         }
+      }
+    }
+  }
+
+  public bool Current(out Int64 version,
+    out IReadOnlyDictionary<Int64, PersistentQueryInfoMessage> map) {
+    lock (_pqSync) {
+      version = _version;
+      map = _pqMap;
+      return true;
+    }
+  }
+
+  public bool Next(out bool hasNewerVersion, Int64 version, DateTimeOffset deadline) {
+    lock (_pqSync) {
+      while (true) {
+        if (version > _version) {
+          hasNewerVersion = true;
+          return true;
+        }
+        var timeToWait = DateTimeOffset.UtcNow - deadline;
+        if (timeToWait <= TimeSpan.Zero) {
+          hasNewerVersion = false;
+          return true;
+        }
+        Monitor.Wait(_pqSync, timeToWait);
+      }
+    }
+  }
+
+  public bool Next(Int64 version) {
+    lock (_pqSync) {
+      while (true) {
+        if (version > _version) {
+          return true;
+        }
+        Monitor.Wait(_pqSync);
       }
     }
   }

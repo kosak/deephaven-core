@@ -73,6 +73,34 @@ public class ControllerClient : IDisposable {
     throw new NotImplementedException();
   }
 
+  public Subscription Subscribe() {
+    return new Subscription(_subscriptionContext);
+  }
+
+  /// <summary>
+  /// Test if a given status implies a running query.
+  /// If not running and not terminal, then the query is in the initialization process.
+  /// </summary>
+  /// <param name="status">The status</param>
+  /// <returns>true if the status represents a running query</returns>
+  public static bool IsRunning(PersistentQueryStatusEnum status) {
+    return status == PersistentQueryStatusEnum.PqsRunning;
+  }
+
+  /// <summary>
+  /// Test if a given status implies a terminal (not running) query.
+  /// If not running and not terminal, then the query is in the initialization process.
+  /// </summary>
+  /// <param name="status">The status</param>
+  /// <returns>true if the status represents a terminal query</returns>
+  public static bool IsTerminal(PersistentQueryStatusEnum status) {
+    return status == PersistentQueryStatusEnum.PqsError ||
+      status == PersistentQueryStatusEnum.PqsDisconnected ||
+      status == PersistentQueryStatusEnum.PqsStopped ||
+      status == PersistentQueryStatusEnum.PqsFailed ||
+      status == PersistentQueryStatusEnum.PqsCompleted;
+  }
+
   private async Task Heartbeat() {
     await Task.Delay(HeartbeatPeriod, _cancellation);
     Console.WriteLine("heartbeat sent a ping");

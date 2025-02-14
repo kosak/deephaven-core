@@ -122,24 +122,25 @@ public class SessionManager : IDisposable {
     throw new NotImplementedException();
   }
 
-  public (Int64, Client) FindPqAndConnect(Func<double, double> filter) {
+  public (Int64, Client) FindPqAndConnect(
+    Func<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>, PersistentQueryInfoMessage> filter) {
     using var subscription = _controllerClient.Subscribe();
     if (!subscription.Current(out var version, out var configMap)) {
       throw new Exception("Controller subscription has closed");
     }
 
     var info = filter(configMap);
-    var pqSerial = info.Config().Serial();
-    var pqName = info.Config().Name();
+    var pqSerial = info.Config.Serial;
+    var pqName = info.Config.Name;
 
     while (true) {
       // It may make sense to have the ability to provide a timeout
       // in the future; absent a terminal or running state being found or
       // the subscription closing, as is this will happily run forever.
-      var status = info.State().Status();
+      var status = info.State.Status;
       if (ControllerClient.IsTerminal(status)) {
         throw new Exception($"pqName='{pqName}', pqSerial={pqSerial} " +
-          $"is in terminal state={info.State()}");
+          $"is in terminal state={info.State}");
       }
 
       if (ControllerClient.IsRunning(status)) {
