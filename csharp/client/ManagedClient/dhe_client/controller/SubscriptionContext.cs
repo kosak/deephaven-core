@@ -68,6 +68,7 @@ internal class SubscriptionContext : IDisposable {
           }
 
           var serial = qi.Config.Serial;
+          Console.WriteLine($"Serial is {serial:x}");
           _pqMap = _pqMap.With(serial, qi);
           return;
         }
@@ -108,7 +109,7 @@ internal class SubscriptionContext : IDisposable {
   public bool Next(out bool hasNewerVersion, Int64 version, DateTimeOffset deadline) {
     lock (_pqSync) {
       while (true) {
-        if (version > _version) {
+        if (version < _version) {
           hasNewerVersion = true;
           return true;
         }
@@ -125,7 +126,7 @@ internal class SubscriptionContext : IDisposable {
   public bool Next(Int64 version) {
     lock (_pqSync) {
       while (true) {
-        if (version > _version) {
+        if (version < _version) {
           return true;
         }
         Monitor.Wait(_pqSync);

@@ -119,10 +119,17 @@ public class SessionManager : IDisposable {
   }
 
   public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
-    throw new NotImplementedException();
+    var (pqSerial, client) = FindPqAndConnect(dict => {
+      var result = dict.Values.FirstOrDefault(i => i.Config.Name == pqName);
+      if (result == null) {
+        throw new Exception($"pq name='{pqName}' not found");
+      }
+      return result;
+    });
+    return DndClient.Create(pqSerial, client);
   }
 
-  public (Int64, Client) FindPqAndConnect(
+  private (Int64, Client) FindPqAndConnect(
     Func<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>, PersistentQueryInfoMessage> filter) {
     using var subscription = _controllerClient.Subscribe();
     if (!subscription.Current(out var version, out var configMap)) {
@@ -194,11 +201,11 @@ public class SessionManager : IDisposable {
   }
 
   private (Int64, Client) ConnectToDndWorker(
-  Int64 pqSerial,
-  string target,
-  bool useTls,
-  string envoyPrefix,
-  string scriptLanguage) {
+    Int64 pqSerial,
+    string target,
+    bool useTls,
+    string envoyPrefix,
+    string scriptLanguage) {
     var clientOptions = new ClientOptions();
     if (!envoyPrefix.IsEmpty()) {
       clientOptions.AddExtraHeader("envoy-prefix", envoyPrefix);

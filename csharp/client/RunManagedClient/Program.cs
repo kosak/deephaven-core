@@ -16,10 +16,10 @@ public static class Program {
       var sessionManager = SessionManager.FromUrl(descriptiveName, creds, jsonUrl, false);
 
       Console.WriteLine("Sleeping for 10 seconds");
-      Thread.Sleep(TimeSpan.FromSeconds(1000));
+      Thread.Sleep(TimeSpan.FromSeconds(4));
       Console.WriteLine("Ha I lied! Just 4 seconds");
 
-      const string pqName = "testfun666";
+      const string pqName = "ptest";
       var client = sessionManager.ConnectToPqByName(pqName, false);
       // var pqSerial = client.PqSerial();
 
