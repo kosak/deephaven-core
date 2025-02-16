@@ -99,6 +99,7 @@ internal class SubscriptionContext : IDisposable {
 
   public bool Current(out Int64 version,
     out IReadOnlyDictionary<Int64, PersistentQueryInfoMessage> map) {
+    Console.WriteLine("*** hi should probably wait until first batch is done");
     lock (_pqSync) {
       version = _version;
       map = _pqMap;

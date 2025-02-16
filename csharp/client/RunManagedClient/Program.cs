@@ -23,6 +23,12 @@ public static class Program {
       var client = sessionManager.ConnectToPqByName(pqName, false);
       // var pqSerial = client.PqSerial();
 
+      var t = client.Manager.FetchTable("slime_table_4p");
+      Console.WriteLine(t.ToString(true));
+      var ct = t.ToClientTable();
+      var c = ct.GetColumn(0);
+
+      Console.WriteLine("hi");
 
     } catch (Exception ex) {
       Console.WriteLine(ex);

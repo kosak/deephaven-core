@@ -147,7 +147,7 @@ public class SessionManager : IDisposable {
       var status = info.State.Status;
       if (ControllerClient.IsTerminal(status)) {
         throw new Exception($"pqName='{pqName}', pqSerial={pqSerial} " +
-          $"is in terminal state={info.State}");
+          $"is in terminal state={info.State.Status}");
       }
 
       if (ControllerClient.IsRunning(status)) {

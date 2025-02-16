@@ -1,11 +1,12 @@
-﻿using Io.Deephaven.Proto.Backplane.Grpc;
+﻿using System.Runtime.InteropServices;
+using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
 namespace Deephaven.ManagedClient;
 
 public class Executor {
   public static Executor Create(string freak) {
-    Console.Error.WriteLine("NOT IMPLEMENTED YET");
+    Console.Error.WriteLine("TODO(kosak): Executor.Create() NOT IMPLEMENTED YET (or ever)");
     return new Executor();
   }
 }
@@ -41,13 +42,10 @@ public class Client : IDisposable {
     return new Client(thm);
   }
 
-  /// <summary>
-  /// Gets the TableHandleManager which you can use to create empty tables, fetch tables, and so on.
-  /// </summary>
-  public TableHandleManager Manager { get; }
+  private TableHandleManager? _manager;
 
   protected Client(TableHandleManager tableHandleManager) {
-    Manager = tableHandleManager;
+    _manager = tableHandleManager;
   }
 
   /// <summary>
@@ -57,6 +55,25 @@ public class Client : IDisposable {
   /// </summary>
   public void Dispose() {
     Console.Error.WriteLine("Client.Dispose: NIY");
+  }
+
+  public TableHandleManager ReleaseTableHandleManager() {
+    var temp = Manager;
+    _manager = null;
+    return temp;
+  }
+
+  /// <summary>
+  /// Gets the TableHandleManager which you can use to create empty tables, fetch tables, and so on.
+  /// </summary>
+  public TableHandleManager Manager {
+    get {
+      var result = _manager;
+      if (result == null) {
+        throw new InvalidOperationException("This Client has no Manager");
+      }
+      return result;
+    }
   }
 
   /// <summary>
