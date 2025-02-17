@@ -28,7 +28,7 @@ public class AuthClient : IDisposable {
     return result;
   }
 
-  private static (byte[], DateTimeOffset) Authenticate(ClientId clientId,
+  private static (byte[], long) Authenticate(ClientId clientId,
     AuthApi.AuthApiClient authApi, Credentials credentials) {
     // TODO(kosak): more credential types here
     if (credentials is not Credentials.PasswordCredentials pwc) {
@@ -49,8 +49,7 @@ public class AuthClient : IDisposable {
     }
 
     var cookie = res.Cookie.ToByteArray();
-    var deadline = DateTimeOffset.FromUnixTimeMilliseconds(res.CookieDeadlineTimeMillis);
-    return (cookie, deadline);
+    return (cookie, res.CookieDeadlineTimeMillis);
   }
 
   private readonly ClientId _clientId;
@@ -74,15 +73,15 @@ public class AuthClient : IDisposable {
 
   private SyncedFields _synced;
 
-  private AuthClient(ClientId clientId, GrpcChannel channel, AuthApi.AuthApiClient authApi, 
+  private AuthClient(ClientId clientId, GrpcChannel channel, AuthApi.AuthApiClient authApi,
     byte[] cookie, long cookieDeadlineTimeMillis) {
     _clientId = clientId;
     _channel = channel;
     _authApi = authApi;
     var keepalive = new Timer(RefreshCookie);
     _synced = new SyncedFields(cookie, keepalive);
-    SetKeepaliveExpiration(cookieDeadlineTimeMillis);
-    keepalive.Change(_expirationInterval, Timeout.InfiniteTimeSpan);
+    var dueTime = CalcDueTime(cookieDeadlineTimeMillis);
+    keepalive.Change(dueTime, Timeout.InfiniteTimeSpan);
   }
 
   public void Dispose() {
@@ -98,10 +97,13 @@ public class AuthClient : IDisposable {
   }
 
   internal AuthToken CreateToken(string forService) {
-    var request = new GetTokenRequest {
-      Service = forService,
-      Cookie = ByteString.CopyFrom(_cookie.GetValue())
-    };
+    GetTokenRequest request;
+    lock (_synced.SyncRoot) {
+      request = new GetTokenRequest {
+        Service = forService,
+        Cookie = ByteString.CopyFrom(_synced.Cookie)
+      };
+    }
     var response = _authApi.getToken(request);
     return AuthUtil.AuthTokenFromProto(response.Token);
   }
@@ -127,9 +129,9 @@ public class AuthClient : IDisposable {
   }
 
   private static TimeSpan CalcDueTime(long cookieDeadlineTimeMillis) {
-    var deadline = DateTimeOffset.FromUnixTimeMilliseconds(res.CookieDeadlineTimeMillis);
-
+    var deadline = DateTimeOffset.FromUnixTimeMilliseconds(cookieDeadlineTimeMillis);
+    var delayMillis = (int)(Math.Max(0,
+      (deadline - DateTimeOffset.Now).TotalMilliseconds) / 2);
+    return TimeSpan.FromMilliseconds(delayMillis);
   }
-
-
 }
