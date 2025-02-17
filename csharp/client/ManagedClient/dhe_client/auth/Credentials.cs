@@ -5,7 +5,7 @@ public abstract class Credentials {
     return new PasswordCredentials(user, password, operateAs);
   }
 
-  public class PasswordCredentials(string user, string password,
+  internal class PasswordCredentials(string user, string password,
     string operateAs) : Credentials {
     public readonly string User = user;
     public readonly string Password = password;

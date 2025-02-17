@@ -1,4 +1,5 @@
-﻿using Deephaven.DheClient.Session;
+﻿using Deephaven.DheClient.Auth;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
@@ -20,14 +21,11 @@ internal static class EndpointFactory {
       handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
     }
 
+    var credentials = Credentials.OfUsernamePassword(config.User, config.Password,
+      config.OperateAs);
     var hc = new HttpClient(handler);
     var json = hc.GetStringAsync(config.JsonUrl).Result;
-    var session = SessionManager.FromJson("Deephaven Excel", json);
-    if (!session.PasswordAuthentication(config.User, config.Password, config.OperateAs)) {
-      session.Dispose();
-      throw new Exception("Authentication failed");
-    }
-
+    var session = SessionManager.FromJson("Deephaven Excel", credentials, json);
     return session;
   }
 }
