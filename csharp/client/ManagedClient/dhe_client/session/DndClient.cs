@@ -16,4 +16,10 @@ public class DndClient : Client {
     : base(tableHandleManager) {
     PqSerial = pqSerial;
   }
+
+  /// <summary>
+  /// Gets the TableHandleManager which you can use to create empty tables, fetch tables,
+  /// and so on.
+  /// </summary>
+  public new DndTableHandleManager Manager => (DndTableHandleManager)base.Manager;
 }
