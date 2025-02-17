@@ -1,6 +1,7 @@
 ﻿using Deephaven.DheClient.Auth;
 using Deephaven.ManagedClient;
 using Google.Protobuf;
+using Grpc.Net.Client;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
@@ -45,31 +46,55 @@ public class ControllerClient : IDisposable {
 
     var authCookie = authResp.Cookie.ToByteArray();
     var subscriptionContext = SubscriptionContext.Create(controllerApi, authCookie);
-    var cancellation = new CancellationToken();
 
-    var result = new ControllerClient(clientId, controllerApi, cancellation,
+    var result = new ControllerClient(clientId, channel, controllerApi,
       subscriptionContext, authCookie);
-    Task.Run(result.Heartbeat, cancellation).Forget();
     return result;
   }
 
   private readonly ClientId _clientId;
+  private readonly GrpcChannel _channel;
   private readonly ControllerApi.ControllerApiClient _controllerApi;
-  private readonly CancellationToken _cancellation;
   private readonly SubscriptionContext _subscriptionContext;
-  private readonly byte[] _authCookie;
 
-  private ControllerClient(ClientId clientId, ControllerApi.ControllerApiClient controllerApi,
-    CancellationToken cancellation, SubscriptionContext subscriptionContext,
-    byte[] authCookie) {
+  /// <summary>
+  /// These fields are all protected by a synchronization object
+  /// </summary>
+  private struct SyncedFields {
+    public readonly object SyncRoot = new();
+    public readonly byte[] AuthCookie;
+    public readonly Timer Keepalive;
+    public bool Cancelled = false;
+
+    public SyncedFields(byte[] authCookie, Timer keepalive) {
+      AuthCookie = authCookie;
+      Keepalive = keepalive;
+    }
+  }
+
+  private SyncedFields _synced;
+
+  private ControllerClient(ClientId clientId, GrpcChannel channel,
+    ControllerApi.ControllerApiClient controllerApi,
+    SubscriptionContext subscriptionContext, byte[] authCookie) {
     _clientId = clientId;
+    _channel = channel;
     _controllerApi = controllerApi;
-    _cancellation = cancellation;
     _subscriptionContext = subscriptionContext;
-    _authCookie = authCookie;
+    var keepalive = new Timer(Heartbeat);
+    _synced = new SyncedFields(authCookie, keepalive);
+    keepalive.Change(HeartbeatPeriod, HeartbeatPeriod);
   }
 
   public void Dispose() {
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+      _synced.Cancelled = true;
+      _synced.Keepalive.Dispose();
+    }
+    _channel.Dispose();
     throw new NotImplementedException();
   }
 
@@ -101,13 +126,17 @@ public class ControllerClient : IDisposable {
       status == PersistentQueryStatusEnum.PqsCompleted;
   }
 
-  private async Task Heartbeat() {
-    await Task.Delay(HeartbeatPeriod, _cancellation);
+  private void Heartbeat(object? unused) {
+    PingRequest req;
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+      req = new PingRequest {
+        Cookie = ByteString.CopyFrom(_synced.AuthCookie)
+      };
+    }
     Console.WriteLine("heartbeat sent a ping");
-    var req = new PingRequest {
-      Cookie = ByteString.CopyFrom(_authCookie)
-    };
     _ = _controllerApi.ping(req);
-    Task.Run(Heartbeat, _cancellation).Forget();
   }
 }
