@@ -4,9 +4,11 @@ using Apache.Arrow.Flight.Client;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 using Google.Protobuf;
+using Grpc.Net.Client;
 
 namespace Deephaven.ManagedClient;
-public class Server {
+
+public class Server : IDisposable {
   private const string AuthorizationKey = "authorization";
   private const string TimeoutKey = "http.session.durationMs";
 
@@ -56,15 +58,16 @@ public class Server {
       }
     }
 
-    var result = new Server(aps, cs, ss, ts, cfs, its, fc, clientOptions.ExtraHeaders, sessionToken,
-      expirationInterval);
+    var result = new Server(channel, aps, cs, ss, ts, cfs, its, fc,
+      clientOptions.ExtraHeaders, sessionToken, expirationInterval);
     return result;
   }
 
   private static InterlockedLong _nextFreeServerId;
 
   public string Me { get; }
-  private readonly ApplicationService.ApplicationServiceClient _applicationStub;
+  private readonly GrpcChannel _channel;
+  public ApplicationService.ApplicationServiceClient ApplicationStub { get; }
   public ConsoleService.ConsoleServiceClient ConsoleStub { get; }
   public SessionService.SessionServiceClient SessionStub { get; }
   public TableService.TableServiceClient TableStub { get; }
@@ -73,18 +76,29 @@ public class Server {
   public FlightClient FlightClient { get; }
   private readonly IReadOnlyList<(string, string)> _extraHeaders;
   private readonly TimeSpan _expirationInterval;
-  private readonly Timer _keepalive;
 
-  private readonly object _sync = new();
   /// <summary>
-  /// Protected by _sync
+  /// These fields are all protected by a synchronization object
   /// </summary>
-  private Int32 _nextFreeTicketId = 1;
-  private readonly HashSet<Ticket> _outstandingTickets = new();
-  private string _sessionToken;
-  private bool _cancelled = false;
+  private struct SyncedFields {
+    public readonly object SyncRoot = new();
+    public Int32 NextFreeTicketId = 1;
+    public readonly HashSet<Ticket> OutstandingTickets = new();
+    public string SessionToken;
+    public readonly Timer Keepalive;
+    public bool Cancelled = false;
 
-  private Server(ApplicationService.ApplicationServiceClient applicationStub,
+    public SyncedFields(string sessionToken, Timer keepalive) {
+      Keepalive = keepalive;
+      SessionToken = sessionToken;
+    }
+  }
+
+  private SyncedFields _synced;
+
+  private Server(
+    GrpcChannel channel,
+    ApplicationService.ApplicationServiceClient applicationStub,
     ConsoleService.ConsoleServiceClient consoleStub,
     SessionService.SessionServiceClient sessionStub,
     TableService.TableServiceClient tableStub,
@@ -95,7 +109,8 @@ public class Server {
     string sessionToken,
     TimeSpan expirationInterval) {
     Me = $"{nameof(Server)}-{_nextFreeServerId.Increment()}";
-    _applicationStub = applicationStub;
+    _channel = channel;
+    ApplicationStub = applicationStub;
     ConsoleStub = consoleStub;
     SessionStub = sessionStub;
     TableStub = tableStub;
@@ -103,25 +118,38 @@ public class Server {
     InputTableStub = inputTableStub;
     FlightClient = flightClient;
     _extraHeaders = extraHeaders.ToArray();
-    _sessionToken = sessionToken;
     _expirationInterval = expirationInterval;
-    _keepalive = new Timer(SendKeepaliveMessage, null, _expirationInterval,
-      Timeout.InfiniteTimeSpan);
+    var keepalive = new Timer(SendKeepaliveMessage);
+    _synced = new SyncedFields(sessionToken, keepalive);
+
+    // Now that the object is ready, start the timer.
+    keepalive.Change(_expirationInterval, Timeout.InfiniteTimeSpan);
   }
 
-  public TResponse SendRpc<TResponse>(Func<CallOptions, AsyncUnaryCall<TResponse>> callback,
-    bool disregardCancellationState = false) {
-    var metadata = new Metadata();
-    ForEachHeaderNameAndValue(metadata.Add);
+  public void Dispose() {
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+      _synced.Cancelled = true;
+      _synced.Keepalive.Dispose();
+    }
 
-    if (!disregardCancellationState) {
-      lock (_sync) {
-        if (_cancelled) {
-          throw new Exception("Server cancelled. All further RPCs are being rejected");
-        }
+    _channel.Dispose();
+  }
+
+  public TResponse SendRpc<TResponse>(Func<CallOptions, AsyncUnaryCall<TResponse>> callback) {
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        throw new Exception("Server cancelled. All further RPCs are being rejected");
       }
     }
 
+    var metadata = new Metadata();
+    ForEachHeaderNameAndValue(metadata.Add);
+
+    // We do an async call, not because we want it to be asynchronous, but because only the
+    // async versions of the calls give us access to the server metadata.
     var options = new CallOptions(headers: metadata);
     var asyncResp = callback(options);
 
@@ -129,12 +157,12 @@ public class Server {
     var result = asyncResp.ResponseAsync.Result;
 
     var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
-    lock (_sync) {
+    lock (_synced.SyncRoot) {
       if (maybeToken != null) {
-        _sessionToken = maybeToken;
+        _synced.SessionToken = maybeToken;
       }
 
-      _keepalive.Change(_expirationInterval, Timeout.InfiniteTimeSpan);
+      _synced.Keepalive.Change(_expirationInterval, Timeout.InfiniteTimeSpan);
     }
 
     return result;
@@ -142,8 +170,8 @@ public class Server {
 
   public void ForEachHeaderNameAndValue(Action<string, string> callback) {
     string tokenCopy;
-    lock (_sync) {
-      tokenCopy = _sessionToken;
+    lock (_synced.SyncRoot) {
+      tokenCopy = _synced.SessionToken;
     }
     callback(AuthorizationKey, tokenCopy);
     foreach (var entry in _extraHeaders) {
@@ -166,15 +194,20 @@ public class Server {
   }
 
   public Ticket NewTicket() {
-    lock (_sync) {
-      var ticketId = _nextFreeTicketId++;
+    lock (_synced.SyncRoot) {
+      var ticketId = _synced.NextFreeTicketId++;
       var ticket = MakeNewTicket(ticketId);
-      _outstandingTickets.Add(ticket);
+      _synced.OutstandingTickets.Add(ticket);
       return ticket;
     }
   }
 
   private void SendKeepaliveMessage(object? _) {
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+    }
     try {
       Debug.WriteLine("Hi sending keepalive");
       var req = new ConfigurationConstantsRequest();
@@ -184,7 +217,11 @@ public class Server {
       Debug.WriteLine($"Keepalive timer: ignoring {e}");
       // Successful SendRpc will reset the timer for us. For a failed SendRpc,
       // we retry relatively frequently.
-      _keepalive.Change(TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
+      lock (_synced.SyncRoot) {
+        if (!_synced.Cancelled) {
+          _synced.Keepalive.Change(TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
+        }
+      }
     }
   }
 

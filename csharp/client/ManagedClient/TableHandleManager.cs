@@ -14,26 +14,22 @@ namespace Deephaven.ManagedClient;
 /// by this class, such as flags that control asynchronous behavior.
 /// </summary>
 public class TableHandleManager : IDisposable {
-  public static TableHandleManager Create(Ticket? consoleId, Server server, Executor executor,
-    Executor flightExecutor) {
-    return new TableHandleManager(consoleId, server, executor, flightExecutor);
+  public static TableHandleManager Create(Ticket? consoleId, Server server) {
+    return new TableHandleManager(consoleId, server);
   }
 
   private readonly Ticket? _consoleId;
-  public readonly Server Server;
-  private readonly Executor _executor;
-  private readonly Executor _flightExecutor;
+  public Server? Server;
 
-  private TableHandleManager(Ticket? consoleId, Server server, Executor executor,
-    Executor flightExecutor) {
+  private TableHandleManager(Ticket? consoleId, Server server) {
     _consoleId = consoleId;
     Server = server;
-    _executor = executor;
-    _flightExecutor = flightExecutor;
   }
 
   public void Dispose() {
-    Console.Error.WriteLine("TableHandleManager.Dispose: NIY");
+    var temp = Server;
+    Server = null;
+    temp?.Dispose();
   }
 
   /// <summary>

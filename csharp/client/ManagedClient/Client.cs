@@ -3,12 +3,6 @@ using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
 namespace Deephaven.ManagedClient;
 
-public class Executor {
-  public static Executor Create(string freak) {
-    Console.Error.WriteLine("TODO(kosak): Executor.Create() NOT IMPLEMENTED YET (or ever)");
-    return new Executor();
-  }
-}
 /// <summary>
 /// The main class for interacting with Deephaven. Start here to Connect with
 /// the server and to get a TableHandleManager.
@@ -24,8 +18,6 @@ public class Client : IDisposable {
     options ??= new ClientOptions();
 
     var server = Server.CreateFromTarget(target, options);
-    var executor = Executor.Create("Client executor for " + server.Me);
-    var flightExecutor = Executor.Create("Flight executor for " + server.Me);
 
     Ticket? consoleTicket = null;
     if (!options.SessionType.IsEmpty()) {
@@ -37,7 +29,7 @@ public class Client : IDisposable {
       consoleTicket = resp.ResultId;
     }
 
-    var thm = TableHandleManager.Create(consoleTicket, server, executor, flightExecutor);
+    var thm = TableHandleManager.Create(consoleTicket, server);
     return new Client(thm);
   }
 
