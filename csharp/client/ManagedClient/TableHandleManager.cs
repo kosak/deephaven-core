@@ -37,7 +37,8 @@ public class TableHandleManager : IDisposable {
   }
 
   /// <summary>
-  /// Creates a "zero-width" table on the server. Such a table knows its number of rows but has no columns.
+  /// Creates a "zero-width" table on the server. Such a table knows its number of rows
+  /// but has no columns.
   /// </summary>
   /// <param name="size">Number of rows in the empty table</param>
   /// <returns>The TableHandle of the new table</returns>

@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Io.Deephaven.Proto.Backplane.Grpc;
+﻿using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
 namespace Deephaven.ManagedClient;

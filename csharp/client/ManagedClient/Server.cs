@@ -2,7 +2,6 @@
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Apache.Arrow.Flight.Client;
 using Grpc.Core;
-using Grpc.Net.Client;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 using Google.Protobuf;
 
