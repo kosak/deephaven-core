@@ -2,10 +2,12 @@
 using Google.Protobuf;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Auth.Grpc;
+using Grpc.Net.Client;
+using System.Net;
 
 namespace Deephaven.DheClient.Auth;
 
-public class AuthClient {
+public class AuthClient : IDisposable {
   public static AuthClient Connect(string descriptiveName, Credentials credentials,
     string target, ClientOptions options) {
     var channel = GrpcUtil.CreateChannel(target, options);
@@ -22,14 +24,12 @@ public class AuthClient {
     var uuid = System.Guid.NewGuid().ToByteArray();
     var clientId = ClientUtil.MakeClientId(descriptiveName, uuid);
     var (authCookie, deadline) = Authenticate(clientId, authApi, credentials);
-    var ct = new CancellationToken();
-    var result = new AuthClient(clientId, authApi, ct, authCookie);
-    Task.Run(() => result.RefreshCookie(ct, deadline), ct).Forget();
+    var result = new AuthClient(clientId, channel, authApi, authCookie, deadline);
     return result;
   }
 
-  private static (byte[], DateTimeOffset) Authenticate(ClientId clientId, AuthApi.AuthApiClient authApi,
-    Credentials credentials) {
+  private static (byte[], DateTimeOffset) Authenticate(ClientId clientId,
+    AuthApi.AuthApiClient authApi, Credentials credentials) {
     // TODO(kosak): more credential types here
     if (credentials is not Credentials.PasswordCredentials pwc) {
       throw new Exception("Unexpected credentials type");
@@ -54,16 +54,47 @@ public class AuthClient {
   }
 
   private readonly ClientId _clientId;
+  private readonly GrpcChannel _channel;
   private readonly AuthApi.AuthApiClient _authApi;
-  private readonly CancellationToken _cancellationToken;
-  private readonly Atomic<byte[]> _cookie;
 
-  private AuthClient(ClientId clientId, AuthApi.AuthApiClient authApi,
-    CancellationToken cancellationToken, byte[] cookie) {
+  /// <summary>
+  /// These fields are all protected by a synchronization object
+  /// </summary>
+  private struct SyncedFields {
+    public readonly object SyncRoot = new();
+    public byte[] Cookie;
+    public readonly Timer Keepalive;
+    public bool Cancelled = false;
+
+    public SyncedFields(byte[] cookie, Timer keepalive) {
+      Cookie = cookie;
+      Keepalive = keepalive;
+    }
+  }
+
+  private SyncedFields _synced;
+
+  private AuthClient(ClientId clientId, GrpcChannel channel, AuthApi.AuthApiClient authApi, 
+    byte[] cookie, long cookieDeadlineTimeMillis) {
     _clientId = clientId;
+    _channel = channel;
     _authApi = authApi;
-    _cancellationToken = cancellationToken;
-    _cookie = new(cookie);
+    var keepalive = new Timer(RefreshCookie);
+    _synced = new SyncedFields(cookie, keepalive);
+    SetKeepaliveExpiration(cookieDeadlineTimeMillis);
+    keepalive.Change(_expirationInterval, Timeout.InfiniteTimeSpan);
+  }
+
+  public void Dispose() {
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+      _synced.Cancelled = true;
+      _synced.Keepalive.Dispose();
+    }
+
+    _channel.Dispose();
   }
 
   internal AuthToken CreateToken(string forService) {
@@ -75,18 +106,30 @@ public class AuthClient {
     return AuthUtil.AuthTokenFromProto(response.Token);
   }
 
-  private async Task RefreshCookie(CancellationToken ct, DateTimeOffset deadline) {
-    var delayMillis = (int)(Math.Max(0, (deadline - DateTimeOffset.Now).TotalMilliseconds) / 2);
-    Console.WriteLine($"Hi, delaying for {delayMillis} milliseconds");
-    await Task.Delay(delayMillis, ct);
+  private void RefreshCookie(object? _) {
+    RefreshCookieRequest req;
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+      req = new RefreshCookieRequest {
+        Cookie = ByteString.CopyFrom(_synced.Cookie)
+      };
+    }
 
-    var req = new RefreshCookieRequest {
-      Cookie = ByteString.CopyFrom(_cookie.GetValue())
-    };
     var resp = _authApi.refreshCookie(req);
+    var dueTime = CalcDueTime(resp.CookieDeadlineTimeMillis);
 
-    _cookie.SetValue(resp.Cookie.ToByteArray());
-    var newDeadline = DateTimeOffset.FromUnixTimeMilliseconds(resp.CookieDeadlineTimeMillis);
-    Task.Run(() => RefreshCookie(ct, newDeadline), ct).Forget();
+    lock (_synced.SyncRoot) {
+      _synced.Cookie = resp.Cookie.ToByteArray();
+      _synced.Keepalive.Change(dueTime, Timeout.InfiniteTimeSpan);
+    }
   }
+
+  private static TimeSpan CalcDueTime(long cookieDeadlineTimeMillis) {
+    var deadline = DateTimeOffset.FromUnixTimeMilliseconds(res.CookieDeadlineTimeMillis);
+
+  }
+
+
 }

@@ -1,11 +1,7 @@
-﻿using System.Data.Common;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;
-using Google.Protobuf;
-using Grpc.Core;
 using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.DheClient.Session;
@@ -115,7 +111,8 @@ public class SessionManager : IDisposable {
   }
 
   public void Dispose() {
-    throw new NotImplementedException();
+    _controllerClient.Dispose();
+    _authClient.Dispose();
   }
 
   public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
