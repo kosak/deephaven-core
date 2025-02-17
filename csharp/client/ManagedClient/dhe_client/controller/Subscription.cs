@@ -10,7 +10,7 @@ public class Subscription : IDisposable {
   }
 
   public void Dispose() {
-    Console.Error.WriteLine("TODO(kosak): Subscription not disposing");
+    _context.Dispose();
   }
 
   /**

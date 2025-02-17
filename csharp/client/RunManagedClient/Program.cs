@@ -15,10 +15,6 @@ public static class Program {
       var creds = Credentials.OfUsernamePassword("iris", "iris", "iris");
       var sessionManager = SessionManager.FromUrl(descriptiveName, creds, jsonUrl, false);
 
-      Console.WriteLine("Sleeping for 10 seconds");
-      Thread.Sleep(TimeSpan.FromSeconds(4));
-      Console.WriteLine("Ha I lied! Just 4 seconds");
-
       const string pqName = "ptest";
       using var client = sessionManager.ConnectToPqByName(pqName, false);
       var pqSerial = client.PqSerial;
@@ -32,7 +28,7 @@ public static class Program {
 
     } catch (Exception ex) {
       Console.WriteLine(ex);
-    }
+    } 
   }
 
   public static void CommunityMain(string[] args) {

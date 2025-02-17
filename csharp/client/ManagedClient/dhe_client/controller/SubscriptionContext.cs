@@ -58,13 +58,23 @@ internal class SubscriptionContext : IDisposable {
   }
 
   private async void ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {
-    var hasNext = await rs.MoveNext(_cts.Token);
-    if (!hasNext) {
-      Debug.WriteLine("Subscription stream ended");
+    try {
+      var hasNext = await rs.MoveNext(_cts.Token);
+      if (!hasNext) {
+        Debug.WriteLine("Subscription stream ended");
+        return;
+      }
+      ProcessResponse(rs.Current);
+    } catch (Exception ex) {
+      lock (_synced.SyncRoot) {
+        if (_synced.Cancelled) {
+          return;
+        }
+      }
+      Debug.WriteLine($"Uncaught exception: {ex}");
       return;
     }
 
-    ProcessResponse(rs.Current);
     Task.Run(() => ProcessNext(rs), _cts.Token).Forget();
   }
 
