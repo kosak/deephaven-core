@@ -15,53 +15,73 @@ internal class SubscriptionContext : IDisposable {
     };
     var reader = controllerApi.subscribe(req);
 
-    var rs = reader.ResponseStream;
-    var ct = new CancellationToken();
-
-    var result = new SubscriptionContext(ct);
-
-    Task.Run(() => result.ProcessNext(rs), ct).Forget();
+    var cts = new CancellationTokenSource();
+    var result = new SubscriptionContext(cts);
+    Task.Run(() => result.ProcessNext(reader.ResponseStream), cts.Token).Forget();
 
     return result;
   }
 
-  private readonly CancellationToken _cancellation;
-  private readonly object _pqSync = new();
-  private long _version = 0;
-  private ControllerConfigurationMessage? _pqConfig = null;
-  private SharableDict<PersistentQueryInfoMessage> _pqMap = new();
+  /// <summary>
+  /// These fields are all protected by a synchronization object
+  /// </summary>
+  private struct SyncedFields {
+    public readonly object SyncRoot = new();
+    public long Version = 0;
+    public ControllerConfigurationMessage? PqConfig = null;
+    public SharableDict<PersistentQueryInfoMessage> PqMap = new();
+    public bool FirstBatchDelivered = false;
+    public bool Cancelled = false;
 
-  private SubscriptionContext(CancellationToken cancellation) {
-    _cancellation = cancellation;
+    public SyncedFields() {
+    }
+  }
+
+  private readonly CancellationTokenSource _cts;
+  private SyncedFields _synced;
+
+  private SubscriptionContext(CancellationTokenSource cts) {
+    _cts = cts;
+    _synced = new();
   }
 
   public void Dispose() {
-    throw new NotImplementedException();
+    lock (_synced.SyncRoot) {
+      if (_synced.Cancelled) {
+        return;
+      }
+      _synced.Cancelled = true;
+      Monitor.PulseAll(_synced.SyncRoot);
+    }
+    _cts.Cancel();
+    _cts.Dispose();
   }
 
   private async void ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {
-    var hasNext = await rs.MoveNext(_cancellation);
+    var hasNext = await rs.MoveNext(_cts.Token);
     if (!hasNext) {
       Debug.WriteLine("Subscription stream ended");
       return;
     }
 
     ProcessResponse(rs.Current);
-    Task.Run(() => ProcessNext(rs), _cancellation).Forget();
+    Task.Run(() => ProcessNext(rs), _cts.Token).Forget();
   }
 
   private void ProcessResponse(SubscribeResponse resp) {
-    lock (_pqSync) {
+    lock (_synced.SyncRoot) {
       // In non-error cases, we always have a change and have to notify.
       // So we just optimistically notify here to keep the code simple.
       // In error cases this might result in a notification that didn't reflect
       // any changes. This is slightly "wasteful" but not an error.
-      ++_version;
-      Monitor.PulseAll(_pqSync);
-      Console.WriteLine($"Hi, new version, don't judge me {_version} {resp.Event}");
+      ++_synced.Version;
+      Monitor.PulseAll(_synced.SyncRoot);
       switch (resp.Event) {
-        case SubscriptionEvent.SePut:
+        case SubscriptionEvent.SePut: 
         case SubscriptionEvent.SeBatchEnd: {
+          if (resp.Event == SubscriptionEvent.SeBatchEnd) {
+            _synced.FirstBatchDelivered = true;
+          }
           var qi = resp.QueryInfo;
           if (qi == null) {
             return;
@@ -69,18 +89,18 @@ internal class SubscriptionContext : IDisposable {
 
           var serial = qi.Config.Serial;
           Console.WriteLine($"Serial is {serial:x}");
-          _pqMap = _pqMap.With(serial, qi);
+          _synced.PqMap = _synced.PqMap.With(serial, qi);
           return;
         }
 
         case SubscriptionEvent.SeRemove: {
           var serial = resp.QuerySerial;
-          _pqMap = _pqMap.Without(serial);
+          _synced.PqMap = _synced.PqMap.Without(serial);
           return;
         }
 
         case SubscriptionEvent.SeConfigUpdate: {
-          _pqConfig = resp.Config;
+          _synced.PqConfig = resp.Config;
           return;
         }
 
@@ -99,18 +119,24 @@ internal class SubscriptionContext : IDisposable {
 
   public bool Current(out Int64 version,
     out IReadOnlyDictionary<Int64, PersistentQueryInfoMessage> map) {
-    Console.WriteLine("*** hi should probably wait until first batch is done");
-    lock (_pqSync) {
-      version = _version;
-      map = _pqMap;
+    lock (_synced.SyncRoot) {
+      while (!_synced.FirstBatchDelivered) {
+        Monitor.Wait(_synced.SyncRoot);
+      }
+      version = _synced.Version;
+      map = _synced.PqMap;
       return true;
     }
   }
 
   public bool Next(out bool hasNewerVersion, Int64 version, DateTimeOffset deadline) {
-    lock (_pqSync) {
+    lock (_synced.SyncRoot) {
       while (true) {
-        if (version < _version) {
+        if (_synced.Cancelled) {
+          hasNewerVersion = false;
+          return false;
+        }
+        if (version < _synced.Version) {
           hasNewerVersion = true;
           return true;
         }
@@ -119,18 +145,21 @@ internal class SubscriptionContext : IDisposable {
           hasNewerVersion = false;
           return true;
         }
-        Monitor.Wait(_pqSync, timeToWait);
+        Monitor.Wait(_synced.SyncRoot, timeToWait);
       }
     }
   }
 
   public bool Next(Int64 version) {
-    lock (_pqSync) {
+    lock (_synced.SyncRoot) {
       while (true) {
-        if (version < _version) {
+        if (_synced.Cancelled) {
+          return false;
+        }
+        if (version < _synced.Version) {
           return true;
         }
-        Monitor.Wait(_pqSync);
+        Monitor.Wait(_synced.SyncRoot);
       }
     }
   }

@@ -94,8 +94,8 @@ public class ControllerClient : IDisposable {
       _synced.Cancelled = true;
       _synced.Keepalive.Dispose();
     }
+    _subscriptionContext.Dispose();
     _channel.Dispose();
-    throw new NotImplementedException();
   }
 
   public Subscription Subscribe() {
