@@ -45,10 +45,15 @@ public class Client : IDisposable {
   /// after Dispose() is called. If the caller tries to do so, the behavior is unspecified.
   /// </summary>
   public void Dispose() {
-    Console.Error.WriteLine("Client.Dispose: NIY");
+    Manager.Dispose();
   }
 
-  public TableHandleManager ReleaseTableHandleManager() {
+  /// <summary>
+  /// We use this to hand off ownership of a TableHandleManager to another Client.
+  /// This is used when we start with a Client and want to use it as a DndClient.
+  /// </summary>
+  /// <returns>The released TableHandleManager</returns>
+  internal TableHandleManager ReleaseTableHandleManager() {
     var temp = Manager;
     _manager = null;
     return temp;

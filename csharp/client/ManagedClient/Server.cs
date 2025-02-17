@@ -127,12 +127,26 @@ public class Server : IDisposable {
   }
 
   public void Dispose() {
+    Ticket[] outstanding;
     lock (_synced.SyncRoot) {
       if (_synced.Cancelled) {
         return;
       }
       _synced.Cancelled = true;
       _synced.Keepalive.Dispose();
+      outstanding = _synced.OutstandingTickets.ToArray();
+      _synced.OutstandingTickets.Clear();
+    }
+
+    foreach (var ticket in outstanding) {
+      var req = new ReleaseRequest {
+        Id = ticket
+      };
+      try {
+        SendRpcUnchecked(opts => SessionStub.ReleaseAsync(req, opts));
+      } catch (Exception e) {
+        Debug.WriteLine($"Ignoring {e}");
+      }
     }
 
     _channel.Dispose();
@@ -144,7 +158,11 @@ public class Server : IDisposable {
         throw new Exception("Server cancelled. All further RPCs are being rejected");
       }
     }
+    return SendRpcUnchecked(callback);
+  }
 
+  private TResponse SendRpcUnchecked<TResponse>(
+    Func<CallOptions, AsyncUnaryCall<TResponse>> callback) {
     var metadata = new Metadata();
     ForEachHeaderNameAndValue(metadata.Add);
 
@@ -167,6 +185,7 @@ public class Server : IDisposable {
 
     return result;
   }
+
 
   public void ForEachHeaderNameAndValue(Action<string, string> callback) {
     string tokenCopy;

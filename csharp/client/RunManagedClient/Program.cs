@@ -20,8 +20,8 @@ public static class Program {
       Console.WriteLine("Ha I lied! Just 4 seconds");
 
       const string pqName = "ptest";
-      var client = sessionManager.ConnectToPqByName(pqName, false);
-      // var pqSerial = client.PqSerial();
+      using var client = sessionManager.ConnectToPqByName(pqName, false);
+      var pqSerial = client.PqSerial;
 
       var t = client.Manager.FetchTable("slime_table_4p");
       Console.WriteLine(t.ToString(true));

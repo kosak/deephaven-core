@@ -1,7 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using System;
-using System.Text;
-using Google.Protobuf;
+﻿using Google.Protobuf;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
@@ -19,17 +16,32 @@ public class TableHandleManager : IDisposable {
   }
 
   private readonly Ticket? _consoleId;
-  public Server? Server;
+  public Server? Server { get; private set; }
 
-  private TableHandleManager(Ticket? consoleId, Server server) {
+  protected TableHandleManager(Ticket? consoleId, Server server) {
     _consoleId = consoleId;
     Server = server;
   }
 
-  public void Dispose() {
-    var temp = Server;
+  /// <summary>
+  /// We use this to hand off ownership of a Server to another TableHandleManager.
+  /// This is used when we start with a TableHandleManager and want to use it as a
+  /// DndTableHandleManager.
+  /// </summary>
+  /// <returns>The released TableHandleManager</returns>
+  internal (Ticket?, Server) ReleaseServer() {
+    var c = _consoleId;
+    var s = Server;
     Server = null;
-    temp?.Dispose();
+
+    if (s == null) {
+      throw new Exception("Server is null");
+    }
+    return (c, s);
+  }
+
+  public void Dispose() {
+    Server?.Dispose();
   }
 
   /// <summary>
