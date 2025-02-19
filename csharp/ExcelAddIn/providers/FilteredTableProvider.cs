@@ -10,6 +10,8 @@ internal class FilteredTableProvider :
   IObserver<RefCounted<StatusOr<TableHandle>>>,
   // IObservable<StatusOrView<TableHandle>>,  // redundant, part of ITableProvider
   ITableProvider {
+  private const string UnsetTableHandleText = "[No Filtered Table]";
+
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -22,7 +24,7 @@ internal class FilteredTableProvider :
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
 
   private RefCounted<StatusOr<TableHandle>> _filteredTableHandle =
-    RefCounted.Acquire(StatusOr<TableHandle>.OfStatus("[No Filtered Table]"));
+    RefCounted.Acquire(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -53,7 +55,7 @@ internal class FilteredTableProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver() {
+  private void RemoveObserver(IObserver<RefCounted<StatusOr<TableHandle>>> observer) {
     _observers.Remove(observer, out var isLast);
     if (!isLast) {
       return;
@@ -75,6 +77,7 @@ internal class FilteredTableProvider :
     lock (_syncRoot) {
       Utility.Swap(ref _filteredTableHandle, ref state);
     }
+    _observers.Send(_filteredTableHandle);
     Utility.DisposeInBackground(state);
   }
 
@@ -104,10 +107,11 @@ internal class FilteredTableProvider :
     // The derived table handle has a sharing dependency on the parent
     // table handle, which in turn has a dependency on Client etc.
     var state = RefCounted.Acquire(result, parentHandle.Share());
+
     lock (_syncRoot) {
       if (object.ReferenceEquals(versionCookie, _latestCookie)) {
         Utility.Swap(ref _filteredTableHandle, ref state);
-        _observers.Enqueue(_filteredTableHandle.View);
+        _observers.Enqueue(_filteredTableHandle.Share());
       }
     }
     state.Dispose();
