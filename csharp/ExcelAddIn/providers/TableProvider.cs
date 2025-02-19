@@ -51,11 +51,11 @@ internal class TableProvider :
       return;
     }
 
-    IDisposable disp1;
-    IDisposable disp2;
+    IDisposable? disp1 = null;
+    IDisposable? disp2 = null;
     lock (_syncRoot) {
-      disp1 = Utility.Release(ref _upstreamDisposer);
-      disp2 = Utility.Release(ref _onDispose);
+      Utility.Swap(ref _upstreamDisposer, ref disp1);
+      Utility.Swap(ref _onDispose, ref disp2);
     }
 
     Utility.DisposeInBackground(disp1);
@@ -64,13 +64,72 @@ internal class TableProvider :
   }
 
   private void DisposeTableHandleState(string statusMessage) {
-    var state = RefCounted.Acquire(StatusOr<TableHandle>.OfStatus(statusMessage));
+    var state = _tableHandle;  // dummy value, to give it the right type
+    SetStatus(out state, statusMessage);
     lock (_syncRoot) {
       Utility.Swap(ref _tableHandle, ref state);
     }
     _observers.Send(_tableHandle);
-    Utility.DisposeInBackground(state);
+    Utility.DisposeStatusOrInBackground(state);
   }
+
+  public void OnNextEx(StatusOr<RefCounted<Client>> client) {
+    if (!client.GetValueOrStatus(out var cli, out var status)) {
+      DisposeTableHandleState(status);
+      return;
+    }
+
+    DisposeTableHandleState($"Fetching \"{_tableName}\"");
+    var versionCookie = new object();
+    lock (_syncRoot) {
+      _latestCookie.SetValue(versionCookie);
+    }
+    Utility.RunInBackground(() => OnNextBackgroundEx(versionCookie, cli));
+  }
+
+  private void OnNextBackgroundEx(object versionCookie,
+    RefCounted<Client> client) {
+    // If the new state is just a status message, make that our state
+    // and transmit to our observers
+    StatusOr<RefCounted<TableHandle>> result;
+    try {
+      var th = client.Value.Manager.FetchTable(_tableName);
+      result = StatusOr<RefCounted<TableHandle>>.OfValue(RefCounted.Acquire(th, client.Share()));
+      AcquireValue(out result, th, client.Share());
+    } catch (Exception ex) {
+      SetStatus(out result, ex.Message);
+      result = StatusOr<RefCounted<TableHandle>>.OfStatus(ex.Message);
+    }
+    lock (_syncRoot) {
+      if (object.ReferenceEquals(versionCookie, _latestCookie)) {
+        Utility.Swap(ref _tableHandle, ref state);
+        _observers.Enqueue(_tableHandle.Share());
+      }
+    }
+
+    DisposeStatusOr(result);
+    client.Dispose();
+  }
+
+  private static void AcquireValue<T>(out StatusOr<RefCounted<T>> result,
+    T item, params IDisposable[] extras) where T : class, IDisposable {
+    var rc = RefCounted.Acquire(item, extras);
+    result = StatusOr<RefCounted<T>>.OfValue(rc);
+  }
+
+  private static void SetStatus<T>(out StatusOr<RefCounted<T>> result,
+    string statusMessage) where T : class, IDisposable {
+    result = StatusOr<RefCounted<T>>.OfStatus(statusMessage);
+  }
+
+
+  private static void DisposeStatusOr<T>(StatusOr<RefCounted<T>> disp)
+    where T : class, IDisposable {
+    if (disp.GetValueOrStatus(out var value, out _)) {
+      value.Dispose();
+    }
+  }
+
 
   public void OnNext(RefCounted<StatusOr<Client>> client) {
     DisposeTableHandleState($"Fetching \"{_tableName}\"");
