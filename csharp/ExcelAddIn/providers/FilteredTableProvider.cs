@@ -7,7 +7,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
   IObserver<StatusOr<View<TableHandle>>>,
-  IObservable<StatusOr<View<TableHandle>>> {
+  // IObservable<StatusOr<View<TableHandle>>>,  // redundant, part of ITableProvider
+  ITableProvider {
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -29,8 +30,11 @@ internal class FilteredTableProvider :
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
+  }
 
-    // Subscribe to a condition-free table
+  public void Start() {
+    // My parent is a condition-free table that I subscribe to and filter with
+    // my condition.
     var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
     Debug.WriteLine($"FTP is subscribing to TableHandle with {tq}");
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
@@ -57,11 +61,27 @@ internal class FilteredTableProvider :
   public void OnNext(StatusOr<View<TableHandle>> tableHandleView) {
     var tableHandle = tableHandleView.Share();
     var versionCookie = new object();
-    _latestCookie.SetValue(versionCookie);
+    lock (_sync) {
+      _latestCookie.SetValue(versionCookie);
+    }
     _executor.EnqueueIndependentWork(() => OnNextIndependentWork(versionCookie, tableHandle));
   }
 
-  private void OnNextIndependentWork(object versionCookie, StatusOr<RefCounted<TableHandle>> tableHandle) {
+  private void OnNextIndependentThread(object versionCookie, StatusOr<RefCounted<TableHandle>> tableHandle) {
+    using var th = tableHandle;
+    using var result = OnNextIndependentWorkHelper(versionCookie, th.View);
+    lock (_sync) {
+      if (!object.ReferenceEquals(versionCookie, _expectedCookie)) {
+        // Stale, do nothing
+        return;
+      }
+
+      _filteredTableHandle = result;
+      _observers.Enqueue(result);
+    }
+  }
+
+  private void OnNextIndependentWorkHelper(object versionCookie, StatusOr<RefCounted<TableHandle>> tableHandle) {
     try {
       if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
         OnNextStoreResult(versionCookie, result);
