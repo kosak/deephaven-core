@@ -28,17 +28,6 @@ internal static class Utility {
     var temp = Exchange(ref item, null);
     temp?.Dispose();
   }
-
-  public static void RunInBackground(Action a) {
-    void Doit() {
-      try {
-        a();
-      } catch (Exception e) {
-        Debug.WriteLine($"Ignoring exception {e}");
-      }
-    }
-    new Thread(Doit) { IsBackground = true }.Start();
-  }
 }
 
 public class Unit {

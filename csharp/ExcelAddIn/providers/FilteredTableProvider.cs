@@ -19,7 +19,7 @@ internal class FilteredTableProvider :
   private readonly SequentialExecutor _executor = new();
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = StatusOr<RefCounted<TableHandle>>.OfStatus("[No Filtered Table]");
+  private StatusOrRef<TableHandle> _filteredTableHandle = StatusOrRef<TableHandle>.OfStatus("[No Filtered Table]");
 
   public FilteredTableProvider(StateManager stateManager,
     EndpointId endpointId, PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -40,80 +40,77 @@ internal class FilteredTableProvider :
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
-    _workerThread.EnqueueOrRun(() => {
+  public IDisposable Subscribe(IObserver<StatusOrView<TableHandle>> observer) {
+    // Locked because I want these to happen together.
+    lock (_sync) {
       _observers.Add(observer, out _);
-      observer.OnNext(_filteredTableHandle);
-    });
+      _observers.ZamboniOneNext(observer, _filteredTableHandle);
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
-        return;
-      }
-
-      Utility.Exchange(ref _tableHandleSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Invoke();
-      DisposeTableHandleState();
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void OnNext(StatusOr<View<TableHandle>> tableHandleView) {
-    var tableHandle = tableHandleView.Share();
+  private void RemoveObserver() {
+    _observers.Remove(observer, out var isLast);
+    if (!isLast) {
+      return;
+    }
+    IDisposable disp1;
+    IDisposable disp2;
+    lock (_sync) {
+      disp1 = Utility.Release(ref _tableHandleSubscriptionDisposer);
+      disp2 = Utility.Release(ref _onDispose);
+    }
+
+    Utility.DisposeInBackground(disp1);
+    Utility.DisposeInBackground(disp2);
+    DisposeTableHandleState("Disposing FilteredTable");
+  }
+
+  private void DisposeTableHandleState(string statusMessage) {
+    var newState = StatusOrRef<TableHandle>.OfStatus(statusMessage);
+    lock (_sync) {
+      var oldState = Utility.Swap(ref _filteredTableHandle, newState);
+    }
+    Utility.DisposeInBackground(oldState);
+  }
+
+  public void OnNext(StatusOrView<TableHandle> parentHandle) {
+    DisposeTableHandleState("Filtering");
     var versionCookie = new object();
     lock (_sync) {
       _latestCookie.SetValue(versionCookie);
     }
-    _executor.EnqueueIndependentWork(() => OnNextIndependentWork(versionCookie, tableHandle));
+    Utility.RunInBackground(() => OnNextBackground(versionCookie, parentHandle.Share()));
   }
 
-  private void OnNextIndependentThread(object versionCookie, StatusOr<RefCounted<TableHandle>> tableHandle) {
+  private void OnNextBackground(object versionCookie, StatusOrRef<TableHandle> tableHandle) {
+    // Dispose on the way out
     using var th = tableHandle;
-    using var result = OnNextIndependentWorkHelper(versionCookie, th.View);
+    // Dispose on the way out. Make a copy with Share() if you need to save it.
+    using var result = OnNextBackgroundHelper(th.View);
     lock (_sync) {
-      if (!object.ReferenceEquals(versionCookie, _expectedCookie)) {
+      if (!object.ReferenceEquals(versionCookie, _latestCookie)) {
         // Stale, do nothing
         return;
       }
 
-      _filteredTableHandle = result;
-      _observers.Enqueue(result);
+      _filteredTableHandle = result.Share();
+      _observers.Enqueue(_filteredTableHandle.View);
     }
   }
 
-  private void OnNextIndependentWorkHelper(object versionCookie, StatusOr<RefCounted<TableHandle>> tableHandle) {
+  private StatusOrRef<TableHandle> OnNextBackgroundHelper(
+    StatusOrView<TableHandle> parent) {
     try {
-      if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
-        OnNextStoreResult(versionCookie, result);
-      } else {
-        // TODO: send two messages
-        OnNextStoreResult(versionCookie, result);
-        _observers.SetAndSendStatus(ref _filteredTableHandle, "Filtering");
-
-        try {
-          var filtered = th.Where(_condition);
-          _observers.SetAndSendValue(ref _filteredTableHandle, filtered);
-          OnNextStoreResult(versionCookie, result);
-        } catch (Exception ex) {
-          _observers.SetAndSendStatus(ref _filteredTableHandle, ex.Message);
-          OnNextStoreResult(versionCookie, result);
-        }
+      if (!parent.GetValueOrStatus(out var th, out var status)) {
+        return StatusOrRef<TableHandle>.OfStatus(status);
       }
-    } finally {
-      tableHandle.Dispose();
-    }
-  }
 
-  private void DisposeTableHandleState() {
-    if (_workerThread.EnqueueOrNop(DisposeTableHandleState)) {
-      return;
-    }
-
-    _ = _filteredTableHandle.GetValueOrStatus(out var oldTh, out _);
-    _observers.SetAndSendStatus(ref _filteredTableHandle, "Disposing TableHandle");
-
-    if (oldTh != null) {
-      Utility.RunInBackground(oldTh.Dispose);
+      var filtered = th.Where(_condition);
+      return StausOrRef<TableHandle>.OfRef(filtered);
+    } catch (Exception ex) {
+      return StausOrRef<TableHandle>.OfStatus(ex.Message);
     }
   }
 
