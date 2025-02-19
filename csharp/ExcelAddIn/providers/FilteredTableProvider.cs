@@ -6,8 +6,8 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<StatusOr<View<TableHandle>>>,
-  // IObservable<StatusOr<View<TableHandle>>>,  // redundant, part of ITableProvider
+  IObserver<StatusOrView<TableHandle>>,
+  // IObservable<StatusOrView<TableHandle>>,  // redundant, part of ITableProvider
   ITableProvider {
 
   private readonly StateManager _stateManager;
@@ -16,13 +16,12 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private Action? _onDispose;
-  private readonly SequentialExecutor _executor = new();
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOrRef<TableHandle> _filteredTableHandle = StatusOrRef<TableHandle>.OfStatus("[No Filtered Table]");
 
-  public FilteredTableProvider(StateManager stateManager,
-    EndpointId endpointId, PersistentQueryId? persistentQueryId, string tableName, string condition,
+  public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
+    PersistentQueryId? persistentQueryId, string tableName, string condition,
     Action onDispose) {
     _stateManager = stateManager;
     _endpointId = endpointId;
@@ -91,7 +90,7 @@ internal class FilteredTableProvider :
     using var result = OnNextBackgroundHelper(th.View);
     lock (_sync) {
       if (!object.ReferenceEquals(versionCookie, _latestCookie)) {
-        // Stale, do nothing
+        // Result is stale. Do nothing.
         return;
       }
 
