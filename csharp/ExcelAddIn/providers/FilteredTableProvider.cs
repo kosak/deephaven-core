@@ -100,7 +100,9 @@ internal class FilteredTableProvider :
       }
     }
 
-    var state = RefCounted.Acquire(result);
+    // The derived table handle has a sharing dependency on the parent
+    // table handle, which in turn has a dependency on Client etc.
+    var state = RefCounted.Acquire(result, tableHandle.Share());
     lock (_syncRoot) {
       if (object.ReferenceEquals(versionCookie, _latestCookie)) {
         Utility.Swap(ref _filteredTableHandle, ref state);

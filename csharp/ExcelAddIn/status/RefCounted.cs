@@ -39,7 +39,9 @@ public class RefCounted<T> : IDisposable where T : class, IDisposable {
     _impl = impl;
   }
 
-  public RefCounted<T> Share => Utility.NotNull(_impl).Share();
+  public RefCounted<T> Share() {
+    return Utility.NotNull(_impl).Share();
+  }
 
   public T Value => Utility.NotNull(_impl).Value;
 
@@ -57,5 +59,7 @@ public readonly struct View<T> where T : class, IDisposable {
 
   public T Value => _impl.Value;
 
-  public RefCounted<T> Share => _impl.Share();
+  public RefCounted<T> Share() {
+    return _impl.Share();
+  }
 }
