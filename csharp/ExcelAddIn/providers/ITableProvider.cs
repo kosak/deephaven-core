@@ -6,6 +6,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// <summary>
 /// Common interface for TableProvider, FilteredTableProvider, and DefaultEndpointTableProvider
 /// </summary>
-public interface ITableProvider : IObservable<StatusOrView<TableHandle>> {
+public interface ITableProvider : IObservable<View<StatusOr<TableHandle>>> {
   void Start();
 }

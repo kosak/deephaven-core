@@ -2,11 +2,12 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<StatusOrView<TableHandle>>,
+  IObserver<View<StatusOr<TableHandle>>>,
   // IObservable<StatusOrView<TableHandle>>,  // redundant, part of ITableProvider
   ITableProvider {
 
@@ -15,10 +16,11 @@ internal class FilteredTableProvider :
   private readonly PersistentQueryId? _persistentQueryId;
   private readonly string _tableName;
   private readonly string _condition;
+  private readonly object _syncRoot = new();
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOrRef<TableHandle> _filteredTableHandle = StatusOrRef<TableHandle>.OfStatus("[No Filtered Table]");
+  private RefCounted<StatusOr<TableHandle>> _filteredTableHandle = StatusOrRef<TableHandle>.OfStatus("[No Filtered Table]");
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -39,9 +41,9 @@ internal class FilteredTableProvider :
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOrView<TableHandle>> observer) {
+  public IDisposable Subscribe(IObserver<View<StatusOr<TableHandle>>> observer) {
     // Locked because I want these to happen together.
-    lock (_sync) {
+    lock (_syncRoot) {
       _observers.Add(observer, out _);
       _observers.ZamboniOneNext(observer, _filteredTableHandle);
     }
@@ -56,7 +58,7 @@ internal class FilteredTableProvider :
     }
     IDisposable disp1;
     IDisposable disp2;
-    lock (_sync) {
+    lock (_syncRoot) {
       disp1 = Utility.Release(ref _tableHandleSubscriptionDisposer);
       disp2 = Utility.Release(ref _onDispose);
     }
@@ -67,50 +69,46 @@ internal class FilteredTableProvider :
   }
 
   private void DisposeTableHandleState(string statusMessage) {
-    var newState = StatusOrRef<TableHandle>.OfStatus(statusMessage);
-    lock (_sync) {
-      var oldState = Utility.Swap(ref _filteredTableHandle, newState);
+    var state = RefCounted.Acquire(StatusOr<TableHandle>.OfStatus(statusMessage));
+    lock (_syncRoot) {
+      Utility.Swap(ref _filteredTableHandle, ref state);
     }
-    Utility.DisposeInBackground(oldState);
+    Utility.DisposeInBackground(state);
   }
 
-  public void OnNext(StatusOrView<TableHandle> parentHandle) {
+  public void OnNext(View<StatusOr<TableHandle>> parentHandle) {
     DisposeTableHandleState("Filtering");
     var versionCookie = new object();
-    lock (_sync) {
+    lock (_syncRoot) {
       _latestCookie.SetValue(versionCookie);
     }
-    Utility.RunInBackground(() => OnNextBackground(versionCookie, parentHandle.Share()));
+    var sharedPh = parentHandle.Share();
+    Utility.RunInBackground(() => OnNextBackground(versionCookie, sharedPh));
   }
 
-  private void OnNextBackground(object versionCookie, StatusOrRef<TableHandle> tableHandle) {
-    // Dispose on the way out
-    using var th = tableHandle;
-    // Dispose on the way out. Make a copy with Share() if you need to save it.
-    using var result = OnNextBackgroundHelper(th.View);
-    lock (_sync) {
-      if (!object.ReferenceEquals(versionCookie, _latestCookie)) {
-        // Result is stale. Do nothing.
-        return;
+  private void OnNextBackground(object versionCookie,
+    RefCounted<StatusOr<TableHandle>> tableHandle) {
+    StatusOr<TableHandle> result;
+    if (!tableHandle.Value.GetValueOrStatus(out var th, out var status)) {
+      result = StatusOr<TableHandle>.OfStatus(status);
+    } else {
+      try {
+        var filtered = th.Where(_condition);
+        result = StatusOr<TableHandle>.OfValue(filtered);
+      } catch (Exception ex) {
+        result = StatusOr<TableHandle>.OfStatus(ex.Message);
       }
-
-      _filteredTableHandle = result.Share();
-      _observers.Enqueue(_filteredTableHandle.View);
     }
-  }
 
-  private StatusOrRef<TableHandle> OnNextBackgroundHelper(
-    StatusOrView<TableHandle> parent) {
-    try {
-      if (!parent.GetValueOrStatus(out var th, out var status)) {
-        return StatusOrRef<TableHandle>.OfStatus(status);
+    var state = RefCounted.Acquire(result);
+    lock (_syncRoot) {
+      if (object.ReferenceEquals(versionCookie, _latestCookie)) {
+        Utility.Swap(ref _filteredTableHandle, ref state);
+        _observers.Enqueue(_filteredTableHandle.View);
       }
-
-      var filtered = th.Where(_condition);
-      return StausOrRef<TableHandle>.OfRef(filtered);
-    } catch (Exception ex) {
-      return StausOrRef<TableHandle>.OfStatus(ex.Message);
     }
+    state.Dispose();
+    tableHandle.Dispose();
   }
 
   public void OnCompleted() {

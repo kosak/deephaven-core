@@ -11,8 +11,6 @@ global using IDateTimeColumnSource = Deephaven.ManagedClient.IColumnSource<Syste
 global using IDateOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.DateOnly>;
 global using ITimeOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.TimeOnly>;
 
-using System.Diagnostics;
-
 namespace Deephaven.ExcelAddIn.Util;
 
 internal static class Utility {
@@ -27,6 +25,18 @@ internal static class Utility {
   public static void MaybeDispose<T>(ref T? item) where T : class, IDisposable {
     var temp = Exchange(ref item, null);
     temp?.Dispose();
+  }
+
+  public static T NotNull<T>(T? item) where T : class {
+    if (item == null) {
+      throw new ArgumentNullException();
+    }
+    return item;
+  }
+
+  public static void RunInBackground5(Action action) {
+
+
   }
 }
 

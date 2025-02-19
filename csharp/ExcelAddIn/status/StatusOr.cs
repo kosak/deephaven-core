@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Deephaven.ExcelAddIn.Util;
+namespace Deephaven.ExcelAddIn;
 
 public sealed class StatusOr<T> {
   private readonly string? _status;
