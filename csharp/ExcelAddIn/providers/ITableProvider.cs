@@ -1,11 +1,10 @@
-﻿using Deephaven.ExcelAddIn.Util;
-using Deephaven.ManagedClient;
+﻿using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 /// <summary>
 /// Common interface for TableProvider, FilteredTableProvider, and DefaultEndpointTableProvider
 /// </summary>
-public interface ITableProvider : IObservable<View<StatusOr<TableHandle>>> {
+public interface ITableProvider : IObservable<RefCounted<StatusOr<TableHandle>>> {
   void Start();
 }

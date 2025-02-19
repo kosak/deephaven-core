@@ -7,7 +7,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<View<StatusOr<TableHandle>>>,
+  IObserver<RefCounted<StatusOr<TableHandle>>>,
   // IObservable<StatusOrView<TableHandle>>,  // redundant, part of ITableProvider
   ITableProvider {
 
@@ -20,7 +20,9 @@ internal class FilteredTableProvider :
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private RefCounted<StatusOr<TableHandle>> _filteredTableHandle = StatusOrRef<TableHandle>.OfStatus("[No Filtered Table]");
+
+  private RefCounted<StatusOr<TableHandle>> _filteredTableHandle =
+    RefCounted.Acquire(StatusOr<TableHandle>.OfStatus("[No Filtered Table]"));
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -41,7 +43,7 @@ internal class FilteredTableProvider :
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public IDisposable Subscribe(IObserver<View<StatusOr<TableHandle>>> observer) {
+  public IDisposable Subscribe(IObserver<RefCounted<StatusOr<TableHandle>>> observer) {
     // Locked because I want these to happen together.
     lock (_syncRoot) {
       _observers.Add(observer, out _);
@@ -76,20 +78,19 @@ internal class FilteredTableProvider :
     Utility.DisposeInBackground(state);
   }
 
-  public void OnNext(View<StatusOr<TableHandle>> parentHandle) {
+  public void OnNext(RefCounted<StatusOr<TableHandle>> parentHandle) {
     DisposeTableHandleState("Filtering");
     var versionCookie = new object();
     lock (_syncRoot) {
       _latestCookie.SetValue(versionCookie);
     }
-    var sharedPh = parentHandle.Share();
-    Utility.RunInBackground(() => OnNextBackground(versionCookie, sharedPh));
+    Utility.RunInBackground(() => OnNextBackground(versionCookie, parentHandle));
   }
 
   private void OnNextBackground(object versionCookie,
-    RefCounted<StatusOr<TableHandle>> tableHandle) {
+    RefCounted<StatusOr<TableHandle>> parentHandle) {
     StatusOr<TableHandle> result;
-    if (!tableHandle.Value.GetValueOrStatus(out var th, out var status)) {
+    if (!parentHandle.Value.GetValueOrStatus(out var th, out var status)) {
       result = StatusOr<TableHandle>.OfStatus(status);
     } else {
       try {
@@ -102,7 +103,7 @@ internal class FilteredTableProvider :
 
     // The derived table handle has a sharing dependency on the parent
     // table handle, which in turn has a dependency on Client etc.
-    var state = RefCounted.Acquire(result, tableHandle.Share());
+    var state = RefCounted.Acquire(result, parentHandle.Share());
     lock (_syncRoot) {
       if (object.ReferenceEquals(versionCookie, _latestCookie)) {
         Utility.Swap(ref _filteredTableHandle, ref state);
@@ -110,7 +111,7 @@ internal class FilteredTableProvider :
       }
     }
     state.Dispose();
-    tableHandle.Dispose();
+    parentHandle.Dispose();
   }
 
   public void OnCompleted() {

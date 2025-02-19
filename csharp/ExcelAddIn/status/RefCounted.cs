@@ -49,17 +49,3 @@ public class RefCounted<T> : IDisposable where T : class, IDisposable {
     Utility.Exchange(ref _impl, null)?.Unshare();
   }
 }
-
-public readonly struct View<T> where T : class, IDisposable {
-  private readonly RefCountedImpl<T> _impl;
-
-  internal View(RefCountedImpl<T> impl) {
-    _impl = impl;
-  }
-
-  public T Value => _impl.Value;
-
-  public RefCounted<T> Share() {
-    return _impl.Share();
-  }
-}
