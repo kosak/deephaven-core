@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Auth;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -22,9 +23,7 @@ internal class FilteredTableProvider :
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-
-  private RefCounted<StatusOr<TableHandle>> _filteredTableHandle =
-    RefCounted.Acquire(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
+  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -35,6 +34,7 @@ internal class FilteredTableProvider :
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
+    ZZTop.SetStatus(ref _filteredTableHandle, UnsetTableHandleText);
   }
 
   public void Start() {
@@ -45,11 +45,11 @@ internal class FilteredTableProvider :
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public IDisposable Subscribe(IObserver<RefCounted<StatusOr<TableHandle>>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     // Locked because I want these to happen together.
     lock (_syncRoot) {
       _observers.Add(observer, out _);
-      _observers.ZamboniOneNext(observer, _filteredTableHandle);
+      _observers.ZamboniOneNext(observer, ZZTop.Share(_filteredTableHandle));
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -60,51 +60,44 @@ internal class FilteredTableProvider :
     if (!isLast) {
       return;
     }
-    IDisposable disp1;
-    IDisposable disp2;
     lock (_syncRoot) {
-      disp1 = Utility.Release(ref _tableHandleSubscriptionDisposer);
-      disp2 = Utility.Release(ref _onDispose);
+      ZZTop.ClearAndDisposeInBackground(ref _tableHandleSubscriptionDisposer);
+      ZZTop.ClearAndDisposeInBackground(ref _onDispose);
     }
-
-    Utility.DisposeInBackground(disp1);
-    Utility.DisposeInBackground(disp2);
     DisposeTableHandleState("Disposing FilteredTable");
   }
 
   private void DisposeTableHandleState(string statusMessage) {
-    var state = RefCounted.Acquire(StatusOr<TableHandle>.OfStatus(statusMessage));
     lock (_syncRoot) {
-      Utility.Swap(ref _filteredTableHandle, ref state);
+      ZZTop.SetStatus(ref _filteredTableHandle, statusMessage);
     }
-    _observers.Send(_filteredTableHandle);
-    Utility.DisposeInBackground(state);
+    _observers.Send(ZZTop.Share(_filteredTableHandle));
   }
 
-  public void OnNext(RefCounted<StatusOr<TableHandle>> parentHandle) {
-    DisposeTableHandleState("Filtering");
-    var versionCookie = new object();
-    lock (_syncRoot) {
-      _latestCookie.SetValue(versionCookie);
+  public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle) {
+    if (!parentHandle.GetValueOrStatus(out var cli, out var status)) {
+      DisposeTableHandleState(status);
+      return;
     }
-    Utility.RunInBackground(() => OnNextBackground(versionCookie, parentHandle));
+
+    DisposeTableHandleState("Filtering");
+    var versionCookie = _versionParty.Mark();
+    Utility.RunInBackground(() => OnNextBackground(versionCookie, cli));
   }
 
   private void OnNextBackground(object versionCookie,
-    RefCounted<StatusOr<TableHandle>> parentHandle) {
-    StatusOr<TableHandle> result;
-    if (!parentHandle.Value.GetValueOrStatus(out var th, out var status)) {
-      result = StatusOr<TableHandle>.OfStatus(status);
-    } else {
-      try {
-        var filtered = th.Where(_condition);
-        result = StatusOr<TableHandle>.OfValue(filtered);
-      } catch (Exception ex) {
-        result = StatusOr<TableHandle>.OfStatus(ex.Message);
-      }
+    RefCounted<TableHandle> parentHandle) {
+    using var cleanup1 = parentHandle;
+    StatusOr<RefCounted<TableHandle>> result = null;
+    try {
+      var filtered = parentHandle.Value.Where(_condition);
+      ZZTop.Acquire(ref result, filtered, parentHandle.Share());
+    } catch (Exception ex) {
+      ZZTop.SetStatus(ref result, ex.Message);
     }
 
-    // The derived table handle has a sharing dependency on the parent
+
+  // The derived table handle has a sharing dependency on the parent
     // table handle, which in turn has a dependency on Client etc.
     var state = RefCounted.Acquire(result, parentHandle.Share());
 
@@ -115,7 +108,6 @@ internal class FilteredTableProvider :
       }
     }
     state.Dispose();
-    parentHandle.Dispose();
   }
 
   public void OnCompleted() {
