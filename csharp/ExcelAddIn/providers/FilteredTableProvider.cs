@@ -6,7 +6,7 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<RefCounted<StatusOr<TableHandle>>>,
+  IObserver<StatusOrCounted<TableHandle>>,
   // IObservable<StatusOrView<TableHandle>>,  // redundant, part of ITableProvider
   ITableProvider {
   private const string UnsetTableHandleText = "[No Filtered Table]";
@@ -43,7 +43,7 @@ internal class FilteredTableProvider :
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<StatusOrCounted<TableHandle>>> observer) {
     // Locked because I want these to happen together.
     lock (_syncRoot) {
       _observers.Add(observer, out _);
@@ -81,7 +81,10 @@ internal class FilteredTableProvider :
 
     DisposeTableHandleState("Filtering");
     var versionCookie = _versionParty.Mark();
-    Utility.RunInBackground(() => OnNextBackground(versionCookie, parentHandle.Share()));
+    // We need to share here, before calling RunInBackground (calling .Share() inside
+    // the lambda would be too late)
+    var sharedParent = parentHandle.Share();
+    Utility.RunInBackground5(() => OnNextBackground(versionCookie, sharedParent));
   }
 
   private void OnNextBackground(object versionCookie,
@@ -91,7 +94,7 @@ internal class FilteredTableProvider :
     try {
       var filtered = parentHandle.Value.Where(_condition);
       // This keeps the dependencies (parentHandle) alive as well.
-      result = StatusOrCounted<TableHandle>.OfValue(filtered, parentHandle.Share());
+      result = StatusOrCounted<TableHandle>.Acquire(filtered, parentHandle.Share());
     } catch (Exception ex) {
       result = StatusOrCounted<TableHandle>.OfStatus(ex.Message);
     }
