@@ -21,8 +21,8 @@ internal class FilteredTableProvider :
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOrCounted<TableHandle> _filteredTableHandle =
-    StatusOrCounted<TableHandle>.OfStatus(UnsetTableHandleText);
+  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
+    StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -43,7 +43,7 @@ internal class FilteredTableProvider :
     _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<StatusOrCounted<TableHandle>>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
     // Locked because I want these to happen together.
     lock (_syncRoot) {
       _observers.Add(observer, out _);

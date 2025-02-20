@@ -22,3 +22,15 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
 
   internal T Value => Utility.NotNull(_value);
 }
+
+public sealed class RefCounted<T> where T : class, IDisposable {
+
+}
+
+public readonly struct View<T> where T : class, IDisposable {
+  private readonly RefCountedImpl<T> _impl;
+
+  internal View(RefCountedImpl<T> impl) {
+    _impl = impl;
+  }
+}
