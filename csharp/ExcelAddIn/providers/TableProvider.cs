@@ -65,7 +65,7 @@ internal class TableProvider :
     }
   }
 
-  public void OnNext(StatusOrCounted<TableHandle> client) {
+  public void OnNext(StatusOrCounted<Client> client) {
     using var cleanup = client;
     if (!client.GetValueOrStatus(out _, out var status)) {
       DisposeTableHandleState(status);
@@ -74,7 +74,9 @@ internal class TableProvider :
 
     DisposeTableHandleState($"Fetching \"{_tableName}\"");
     var versionCookie = _versionParty.Mark();
-    Utility.RunInBackground(() => OnNextBackground(versionCookie, client.Share()));
+    // Share here while still on this thread. (Sharing inside the lambda is too late).
+    var sharedClient = client.Share();
+    Utility.RunInBackground(() => OnNextBackground(versionCookie, sharedClient));
   }
 
   private void OnNextBackground(object versionCookie,
@@ -85,7 +87,7 @@ internal class TableProvider :
     try {
       var th = client.Value.Manager.FetchTable(_tableName);
       // This keeps the dependencies (client) alive as well.
-      result = StatusOrCounted<TableHandle>.OfValue(th, client.Share());
+      result = StatusOrCounted<TableHandle>.Acquire(th, client.Share());
     } catch (Exception ex) {
       result = StatusOrCounted<TableHandle>.OfStatus(ex.Message);
     }

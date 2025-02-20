@@ -20,7 +20,7 @@ internal class FilteredTableProvider :
   private readonly object _syncRoot = new();
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
     StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
 
@@ -39,26 +39,27 @@ internal class FilteredTableProvider :
     // My parent is a condition-free table that I subscribe to and filter with
     // my condition.
     var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
-    Debug.WriteLine($"FTP is subscribing to TableHandle with {tq}");
-    _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
+    Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
+    lock (_syncRoot) {
+      _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
+    }
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
-    // Locked because I want these to happen together.
     lock (_syncRoot) {
       _observers.Add(observer, out _);
-      _observers.ZamboniOneNext(observer, _filteredTableHandle.Share());
+      Just_Call_This_One_observer_painful();
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOrCounted<TableHandle>> observer) {
-    _observers.Remove(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
+  private void RemoveObserver(IObserver<StatusOr<View<TableHandle>>> observer) {
     lock (_syncRoot) {
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
       ZZTop.ClearAndDisposeInBackground(ref _tableHandleSubscriptionDisposer);
       ZZTop.ClearAndDisposeInBackground(ref _onDispose);
     }

@@ -1,52 +1,52 @@
-﻿namespace Deephaven.ExcelAddIn.Util;
+﻿using System.Diagnostics;
+
+namespace Deephaven.ExcelAddIn.Util;
 
 public sealed class ObserverContainer<T> : IObserver<T> {
-  private readonly object _sync = new();
   private readonly HashSet<IObserver<T>> _observers = new();
+  private readonly SequentialExecutor _executor = new();
 
-  public int Count {
-    get {
-      lock (_sync) {
-        return _observers.Count;
-      }
-    }
-  }
+  public int Count => _observers.Count;
 
   public void Add(IObserver<T> observer, out bool isFirst) {
-    lock (_sync) {
-      isFirst = _observers.Count == 0;
-      _observers.Add(observer);
-    }
+    isFirst = _observers.Count == 0;
+    _observers.Add(observer);
   }
 
   public void Remove(IObserver<T> observer, out bool wasLast) {
-    lock (_sync) {
-      var removed = _observers.Remove(observer);
-      wasLast = removed && _observers.Count == 0;
-    }
+    var removed = _observers.Remove(observer);
+    wasLast = removed && _observers.Count == 0;
   }
 
   public void OnNext(T result) {
-    foreach (var observer in SafeCopyObservers()) {
-      observer.OnNext(result);
-    }
+    OnNext(result, null);
+  }
+
+  public void OnNext(T result, IDisposable? onExit) {
+    var observers = _observers.ToArray();
+    _executor.Enqueue(() => {
+      foreach (var observer in observers) {
+        observer.OnNext(result);
+      }
+      onExit?.Dispose();
+    });
   }
 
   public void OnError(Exception ex) {
-    foreach (var observer in SafeCopyObservers()) {
-      observer.OnError(ex);
-    }
+    var observers = _observers.ToArray();
+    _executor.Enqueue(() => {
+      foreach (var observer in observers) {
+        observer.OnError(ex);
+      }
+    });
   }
 
   public void OnCompleted() {
-    foreach (var observer in SafeCopyObservers()) {
-      observer.OnCompleted();
-    }
-  }
-
-  private IObserver<T>[] SafeCopyObservers() {
-    lock (_sync) {
-      return _observers.ToArray();
-    }
+    var observers = _observers.ToArray();
+    _executor.Enqueue(() => {
+      foreach (var observer in observers) {
+        observer.OnCompleted();
+      }
+    });
   }
 }
