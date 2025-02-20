@@ -18,15 +18,16 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _syncRoot = new();
-  private Action? _onDispose;
+  private IDisposable? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
     StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
+  private readonly KeepLatestExecutor _keepLatestExecutor = new();
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
-    Action onDispose) {
+    IDisposable? onDispose) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _persistentQueryId = persistentQueryId;
@@ -47,8 +48,8 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
     lock (_syncRoot) {
-      _observers.Add(observer, out _);
-      Just_Call_This_One_observer_painful();
+      _observers.AddAndNotify(observer, _filteredTableHandle.View(),
+        _filteredTableHandle.Share());
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -60,30 +61,29 @@ internal class FilteredTableProvider :
       if (!isLast) {
         return;
       }
-      ZZTop.ClearAndDisposeInBackground(ref _tableHandleSubscriptionDisposer);
-      ZZTop.ClearAndDisposeInBackground(ref _onDispose);
+      Background.ClearAndDispose(ref _tableHandleSubscriptionDisposer);
+      Background.ClearAndDispose(ref _onDispose);
     }
-    DisposeTableHandleState("Disposing FilteredTable");
+    ResetTableHandleStateAndNotify("Disposing FilteredTable");
   }
 
-  private void DisposeTableHandleState(string statusMessage) {
+  private void ResetTableHandleStateAndNotify(string statusMessage) {
     lock (_syncRoot) {
       StatusOrCounted.ResetWithStatus(ref _filteredTableHandle, statusMessage);
-      _observers.Send(_filteredTableHandle.Share());
+      _observers.OnNext(_filteredTableHandle.View(), _filteredTableHandle.Share());
     }
   }
 
   public void OnNext(StatusOr<View<TableHandle>> parentHandle) {
     if (!parentHandle.GetValueOrStatus(out var th, out var status)) {
-      DisposeTableHandleState(status);
+      ResetTableHandleStateAndNotify(status);
       return;
     }
 
-    DisposeTableHandleState("Filtering");
-    var versionCookie = _versionParty.Mark();
+    ResetTableHandleStateAndNotify("Filtering");
     // Share here while still on this thread. (Sharing inside the lambda is too late).
     var sharedParent = th.Share();
-    Utility.RunInBackground5(() => OnNextBackground(versionCookie, sharedParent));
+    _keepLatestExecutor.Run(cookie => OnNextBackground(cookie, sharedParent));
   }
 
   private void OnNextBackground(object versionCookie,
@@ -114,5 +114,14 @@ internal class FilteredTableProvider :
 
   public void OnError(Exception error) {
     throw new NotImplementedException();
+  }
+}
+
+public static class StatusOrCounted {
+  public static void ResetWithStatus<T>(ref StatusOr<RefCounted<T>> item, string statusMessage)
+     where T : class, IDisposable {
+    var (_, value) = item.Destructure();
+    item = StatusOr<RefCounted<T>>.OfStatus(statusMessage);
+    Background.ClearAndDispose(ref value);
   }
 }
