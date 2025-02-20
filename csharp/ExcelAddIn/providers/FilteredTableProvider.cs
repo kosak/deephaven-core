@@ -2,8 +2,6 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
-using Io.Deephaven.Proto.Auth;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -49,13 +47,13 @@ internal class FilteredTableProvider :
     // Locked because I want these to happen together.
     lock (_syncRoot) {
       _observers.Add(observer, out _);
-      _observers.ZamboniOneNext(observer, ZZTop.Share(_filteredTableHandle));
+      _observers.ZamboniOneNext(observer, _filteredTableHandle.Share());
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<RefCounted<StatusOr<TableHandle>>> observer) {
+  private void RemoveObserver(IObserver<StatusOrCounted<TableHandle>> observer) {
     _observers.Remove(observer, out var isLast);
     if (!isLast) {
       return;
@@ -76,7 +74,7 @@ internal class FilteredTableProvider :
 
   public void OnNext(StatusOrCounted<TableHandle> parentHandle) {
     using var cleanup = parentHandle;
-    if (!parentHandle.GetValueOrStatus(out var _, out var status)) {
+    if (!parentHandle.GetValueOrStatus(out _, out var status)) {
       DisposeTableHandleState(status);
       return;
     }
@@ -92,6 +90,7 @@ internal class FilteredTableProvider :
     StatusOrCounted<TableHandle> result;
     try {
       var filtered = parentHandle.Value.Where(_condition);
+      // This keeps the dependencies (parentHandle) alive as well.
       result = StatusOrCounted<TableHandle>.OfValue(filtered, parentHandle.Share());
     } catch (Exception ex) {
       result = StatusOrCounted<TableHandle>.OfStatus(ex.Message);
@@ -99,8 +98,8 @@ internal class FilteredTableProvider :
     using var cleanup2 = result;
 
     versionCookie.Finish(() => {
-      StatusOrCounted.ResetWithValue(ref _filteredTableHandle, result.Share());
-      _observers.Enqueue(_filteredTableHandle.Share());
+      StatusOrCounted.Replace(ref _filteredTableHandle, result.Share());
+      _observers.Enqueue(result.Share());
     });
   }
 
