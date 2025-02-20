@@ -83,11 +83,11 @@ internal class FilteredTableProvider :
 
     ResetTableHandleStateAndNotify("Filtering");
     // Share here while still on this thread. (Sharing inside the lambda is too late).
-    var sharedParent = th.Share();
     lock (_syncRoot) {
+      // Need these two values created in this thread (not in the body of the lambda).
+      var sharedParent = th.Share();
       var cookie = new object();
       _latestCookie = cookie;
-      // Use cookie here, not _latestCookie. _latestCookie can change before the lambda runs.
       Background.Run(() => OnNextBackground(cookie, sharedParent));
     }
   }
@@ -97,9 +97,9 @@ internal class FilteredTableProvider :
 
     StatusOr<RefCounted<TableHandle>> newFiltered;
     try {
+      // This is a server call that may take some time.
       var childHandle = parentHandle.Value.Where(_condition);
-      // parentHandle is the dependency.
-      newFiltered = StatusOrCounted.Acquire(childHandle, parentHandle.Share());
+      newFiltered = StatusOrCounted.Acquire(childHandle);
     } catch (Exception ex) {
       newFiltered = StatusOrCounted.OfStatus(ex.Message ?? "");
     }
