@@ -92,8 +92,7 @@ internal class FilteredTableProvider :
     }
   }
 
-  private void OnNextBackground(object versionCookie,
-    RefCounted<TableHandle> parentHandle) {
+  private void OnNextBackground(object versionCookie, RefCounted<TableHandle> parentHandle) {
     using var cleanup1 = parentHandle;
 
     StatusOr<RefCounted<TableHandle>> newFiltered;
