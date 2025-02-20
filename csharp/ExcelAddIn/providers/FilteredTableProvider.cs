@@ -48,8 +48,8 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
     lock (_syncRoot) {
-      var shared = _filteredTableHandle.Share();
-      _observers.AddAndNotify(observer, shared.AsView(), shared.AsDisposable());
+      _observers.AddAndNotify(observer, _filteredTableHandle.AsView(),
+        _filteredTableHandle.Shared().AsDisposable());
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -69,9 +69,9 @@ internal class FilteredTableProvider :
 
   private void ResetTableHandleStateAndNotify(string statusMessage) {
     lock (_syncRoot) {
-      StatusOrCounted.ResetWithStatus(ref _filteredTableHandle, statusMessage);
-      var shared = _filteredTableHandle.Share();
-      _observers.OnNext(shared.AsView(), shared.AsDisposable());
+      Background.Dispose(_filteredTableHandle);
+      _filteredTableHandle = StatusOrCounted.OfStatus(statusMessage);
+      _observers.OnNext(_filteredTableHandle.AsView(), _filteredTableHandle.Share());
     }
   }
 
@@ -96,27 +96,23 @@ internal class FilteredTableProvider :
     RefCounted<TableHandle> parentHandle) {
     using var cleanup1 = parentHandle;
 
-    StatusOr<RefCounted<TableHandle>> filtered = null;
+    StatusOr<RefCounted<TableHandle>> newFiltered;
     try {
       var childHandle = parentHandle.Value.Where(_condition);
       // parentHandle is the dependency.
-      StatusOrCounted.Acquire(ref filtered, childHandle, parentHandle.Share());
+      newFiltered = StatusOrCounted.Acquire(childHandle, parentHandle.Share());
     } catch (Exception ex) {
-      StatusOrCounted.SetStatus(ref filtered, ex.Message ?? "");
+      newFiltered = StatusOrCounted.OfStatus(ex.Message ?? "");
     }
-    using var cleanup2 = filteredRc;
+    using var cleanup2 = newFiltered;
 
     lock (_syncRoot) {
       if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
         return;
       }
-      if (filteredRc != null) {
-        StatusOrCounted.SetValue(ref _filteredTableHandle, filteredRc.View());
-      } else {
-        StatusOrCounted.SetStatus(ref _filteredTableHandle, exceptionMessage!);
-      }
-      var shared = _filteredTableHandle.Share();
-      _observers.OnNext(shared.AsView(), shared.AsDisposable());
+      Background.Dispose(_filteredTableHandle);
+      _filteredTableHandle = newFiltered.Share();
+      _observers.OnNext(newFiltered.AsView(), newFiltered.Share());
     }
   }
 
@@ -157,14 +153,6 @@ public static class StatusOrCounted {
   /// </summary>
   public static StatusOr<View<T>> AsView<T>(this StatusOr<RefCounted<T>> item)
     where T : class, IDisposable{
-
-  }
-
-  /// <summary>
-  /// Turns a StatusOr&lt;RefCounted&lt;T&gt;&gt; into a StatusOr&lt;View&lt;T&gt;&gt;
-  /// </summary>
-  public static IDisposable AsDisposable<T>(this StatusOr<RefCounted<T>> item)
-    where T : class, IDisposable {
 
   }
 }
