@@ -5,7 +5,7 @@ internal static class Background {
     throw new NotImplementedException("HELLO");
   }
 
-  public static void ClearAndDispose(ref IDisposable? item) {
+  public static void ClearAndDispose<T>(ref T? item) where T : class, IDisposable {
     (item, var todo) = (null, item);
     if (todo != null) {
       Run(todo.Dispose);

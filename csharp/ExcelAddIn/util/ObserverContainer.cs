@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Deephaven.ExcelAddIn.Util;
+﻿namespace Deephaven.ExcelAddIn.Util;
 
 public sealed class ObserverContainer<T> : IObserver<T> {
   private readonly HashSet<IObserver<T>> _observers = new();

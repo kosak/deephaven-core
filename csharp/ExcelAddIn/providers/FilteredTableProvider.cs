@@ -23,6 +23,7 @@ internal class FilteredTableProvider :
   private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
     StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
+  private object _latestCookie = new();
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -36,8 +37,8 @@ internal class FilteredTableProvider :
   }
 
   public void Start() {
-    // My parent is a condition-free table that I subscribe to and filter with
-    // my condition.
+    // My parent is a condition-free table that I observe. I provide my observers
+    // with that table filtered by a condition.
     var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
     Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
     lock (_syncRoot) {
@@ -47,8 +48,8 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
     lock (_syncRoot) {
-      _observers.AddAndNotify(observer, _filteredTableHandle.View(),
-        _filteredTableHandle.Share());
+      var shared = _filteredTableHandle.Share();
+      _observers.AddAndNotify(observer, shared.AsView(), shared.AsDisposable());
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -60,8 +61,8 @@ internal class FilteredTableProvider :
       if (!isLast) {
         return;
       }
-      Background.ClearAndDispose(ref _tableHandleSubscriptionDisposer);
-      Background.ClearAndDispose(ref _onDispose);
+      Background.Dispose(Utility.Exchange(ref _tableHandleSubscriptionDisposer, null));
+      Background.Dispose(Utility.Exchange(ref _onDispose, null));
     }
     ResetTableHandleStateAndNotify("Disposing FilteredTable");
   }
@@ -69,7 +70,8 @@ internal class FilteredTableProvider :
   private void ResetTableHandleStateAndNotify(string statusMessage) {
     lock (_syncRoot) {
       StatusOrCounted.ResetWithStatus(ref _filteredTableHandle, statusMessage);
-      _observers.OnNext(_filteredTableHandle.View(), _filteredTableHandle.Share());
+      var shared = _filteredTableHandle.Share();
+      _observers.OnNext(shared.AsView(), shared.AsDisposable());
     }
   }
 
@@ -84,9 +86,8 @@ internal class FilteredTableProvider :
     var sharedParent = th.Share();
     lock (_syncRoot) {
       var cookie = new object();
-      _lastCookie = cookie;
-      // We want cookie here, not _lastCookie. Cooke is effectively constant here,
-      // but _lastCookie can change by some other thread before the lambda is run.
+      _latestCookie = cookie;
+      // Use cookie here, not _latestCookie. _latestCookie can change before the lambda runs.
       Background.Run(() => OnNextBackground(cookie, sharedParent));
     }
   }
@@ -95,14 +96,13 @@ internal class FilteredTableProvider :
     RefCounted<TableHandle> parentHandle) {
     using var cleanup1 = parentHandle;
 
-    RefCounted<TableHandle>? filteredRc = null;
-    string? exceptionMessage = null;
+    StatusOr<RefCounted<TableHandle>> filtered = null;
     try {
-      var filtered = parentHandle.Value.Where(_condition);
+      var childHandle = parentHandle.Value.Where(_condition);
       // parentHandle is the dependency.
-      filteredRc = RefCounted.Acquire(filtered, parentHandle.Share());
+      StatusOrCounted.Acquire(ref filtered, childHandle, parentHandle.Share());
     } catch (Exception ex) {
-      exceptionMessage = ex.Message ?? "";
+      StatusOrCounted.SetStatus(ref filtered, ex.Message ?? "");
     }
     using var cleanup2 = filteredRc;
 
@@ -115,7 +115,8 @@ internal class FilteredTableProvider :
       } else {
         StatusOrCounted.SetStatus(ref _filteredTableHandle, exceptionMessage!);
       }
-      _observers.OnNext(_filteredTableHandle.View(), _filteredTableHandle.Share());
+      var shared = _filteredTableHandle.Share();
+      _observers.OnNext(shared.AsView(), shared.AsDisposable());
     }
   }
 
@@ -136,10 +137,34 @@ public static class StatusOrCounted {
     Background.ClearAndDispose(ref rct);
   }
 
-  public static void SetValue<T>(ref StatusOr<RefCounted<T>> target, View<T> value)
+  public static void SetValue666<T>(ref StatusOr<RefCounted<T>> target, View<T> value)
     where T : class, IDisposable {
     var (_, rct) = target.Destructure();
     target = StatusOr<RefCounted<T>>.OfValue(value.Share());
     Background.ClearAndDispose(ref rct);
+  }
+
+  /// <summary>
+  /// Shares a StatusOr&lt;RefCounted&lt;T&gt;&gt;
+  /// </summary>
+  public static StatusOr<RefCounted<T>> Share<T>(this StatusOr<RefCounted<T>> item)
+    where T : class, IDisposable {
+
+  }
+
+  /// <summary>
+  /// Turns a StatusOr&lt;RefCounted&lt;T&gt;&gt; into a StatusOr&lt;View&lt;T&gt;&gt;
+  /// </summary>
+  public static StatusOr<View<T>> AsView<T>(this StatusOr<RefCounted<T>> item)
+    where T : class, IDisposable{
+
+  }
+
+  /// <summary>
+  /// Turns a StatusOr&lt;RefCounted&lt;T&gt;&gt; into a StatusOr&lt;View&lt;T&gt;&gt;
+  /// </summary>
+  public static IDisposable AsDisposable<T>(this StatusOr<RefCounted<T>> item)
+    where T : class, IDisposable {
+
   }
 }

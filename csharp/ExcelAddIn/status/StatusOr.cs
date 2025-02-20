@@ -27,6 +27,10 @@ public sealed class StatusOr<T> {
     return value != null;
   }
 
+  public (string?, T?) Destructure() {
+    return (_status, _value);
+  }
+
   public U AcceptVisitor<U>(Func<T, U> onValue, Func<string, U> onStatus) {
     return _value != null ? onValue(_value) : onStatus(_status!);
   }
