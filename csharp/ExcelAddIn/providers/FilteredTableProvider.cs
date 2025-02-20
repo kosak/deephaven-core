@@ -6,7 +6,7 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<StatusOrCounted<TableHandle>>,
+  IObserver<StatusOr<View<TableHandle>>>,
   // IObservable<StatusOrView<TableHandle>>,  // redundant, part of ITableProvider
   ITableProvider {
   private const string UnsetTableHandleText = "[No Filtered Table]";
@@ -72,37 +72,38 @@ internal class FilteredTableProvider :
     }
   }
 
-  public void OnNext(StatusOrCounted<TableHandle> parentHandle) {
-    using var cleanup = parentHandle;
-    if (!parentHandle.GetValueOrStatus(out _, out var status)) {
+  public void OnNext(StatusOr<View<TableHandle>> parentHandle) {
+    if (!parentHandle.GetValueOrStatus(out var th, out var status)) {
       DisposeTableHandleState(status);
       return;
     }
 
     DisposeTableHandleState("Filtering");
     var versionCookie = _versionParty.Mark();
-    // We need to share here, before calling RunInBackground (calling .Share() inside
-    // the lambda would be too late)
-    var sharedParent = parentHandle.Share();
+    // Share here while still on this thread. (Sharing inside the lambda is too late).
+    var sharedParent = th.Share();
     Utility.RunInBackground5(() => OnNextBackground(versionCookie, sharedParent));
   }
 
   private void OnNextBackground(object versionCookie,
-    StatusOrCounted<TableHandle> parentHandle) {
+    RefCounted<TableHandle> parentHandle) {
     using var cleanup1 = parentHandle;
-    StatusOrCounted<TableHandle> result;
+
+    TableHandle? filtered = null;
+    string? exceptionMessage = null;
     try {
-      var filtered = parentHandle.Value.Where(_condition);
-      // This keeps the dependencies (parentHandle) alive as well.
-      result = StatusOrCounted<TableHandle>.Acquire(filtered, parentHandle.Share());
+      filtered = parentHandle.Value.Where(_condition);
     } catch (Exception ex) {
-      result = StatusOrCounted<TableHandle>.OfStatus(ex.Message);
+      exceptionMessage = ex.Message;
     }
-    using var cleanup2 = result;
 
     versionCookie.Finish(() => {
-      StatusOrCounted.Replace(ref _filteredTableHandle, result.Share());
-      _observers.Enqueue(result.Share());
+      if (filtered != null) {
+        ZZTop.Acquire(ref _filteredTableHandle, filtered, parentHandle.Share());
+      } else {
+        ZZTop.SetStatus(exceptionMessage);
+      }
+      _observers.Enqueue(ZZTop.AsView(_filteredTableHandle));
     });
   }
 

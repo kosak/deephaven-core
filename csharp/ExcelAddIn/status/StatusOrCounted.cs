@@ -86,3 +86,7 @@ public class StatusOrCounted<T> : IDisposable where T : class, IDisposable {
   //   Utility.Exchange(ref _impl, null)?.Unshare();
   // }
 }
+
+public class StatusOrView<T> {
+
+}
