@@ -23,7 +23,6 @@ internal class FilteredTableProvider :
   private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
     StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
-  private readonly KeepLatestExecutor _keepLatestExecutor = new();
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -83,29 +82,41 @@ internal class FilteredTableProvider :
     ResetTableHandleStateAndNotify("Filtering");
     // Share here while still on this thread. (Sharing inside the lambda is too late).
     var sharedParent = th.Share();
-    _keepLatestExecutor.Run(cookie => OnNextBackground(cookie, sharedParent));
+    lock (_syncRoot) {
+      var cookie = new object();
+      _lastCookie = cookie;
+      // We want cookie here, not _lastCookie. Cooke is effectively constant here,
+      // but _lastCookie can change by some other thread before the lambda is run.
+      Background.Run(() => OnNextBackground(cookie, sharedParent));
+    }
   }
 
   private void OnNextBackground(object versionCookie,
     RefCounted<TableHandle> parentHandle) {
     using var cleanup1 = parentHandle;
 
-    TableHandle? filtered = null;
+    RefCounted<TableHandle>? filteredRc = null;
     string? exceptionMessage = null;
     try {
-      filtered = parentHandle.Value.Where(_condition);
+      var filtered = parentHandle.Value.Where(_condition);
+      // parentHandle is the dependency.
+      filteredRc = RefCounted.Acquire(filtered, parentHandle.Share());
     } catch (Exception ex) {
-      exceptionMessage = ex.Message;
+      exceptionMessage = ex.Message ?? "";
     }
+    using var cleanup2 = filteredRc;
 
-    versionCookie.Finish(() => {
-      if (filtered != null) {
-        ZZTop.Acquire(ref _filteredTableHandle, filtered, parentHandle.Share());
-      } else {
-        ZZTop.SetStatus(exceptionMessage);
+    lock (_syncRoot) {
+      if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
+        return;
       }
-      _observers.Enqueue(ZZTop.AsView(_filteredTableHandle));
-    });
+      if (filteredRc != null) {
+        StatusOrCounted.SetValue(ref _filteredTableHandle, filteredRc.View());
+      } else {
+        StatusOrCounted.SetStatus(ref _filteredTableHandle, exceptionMessage!);
+      }
+      _observers.OnNext(_filteredTableHandle.View(), _filteredTableHandle.Share());
+    }
   }
 
   public void OnCompleted() {
@@ -118,10 +129,17 @@ internal class FilteredTableProvider :
 }
 
 public static class StatusOrCounted {
-  public static void ResetWithStatus<T>(ref StatusOr<RefCounted<T>> item, string statusMessage)
+  public static void SetStatus<T>(ref StatusOr<RefCounted<T>> target, string statusMessage)
      where T : class, IDisposable {
-    var (_, value) = item.Destructure();
-    item = StatusOr<RefCounted<T>>.OfStatus(statusMessage);
-    Background.ClearAndDispose(ref value);
+    var (_, rct) = target.Destructure();
+    target = StatusOr<RefCounted<T>>.OfStatus(statusMessage);
+    Background.ClearAndDispose(ref rct);
+  }
+
+  public static void SetValue<T>(ref StatusOr<RefCounted<T>> target, View<T> value)
+    where T : class, IDisposable {
+    var (_, rct) = target.Destructure();
+    target = StatusOr<RefCounted<T>>.OfValue(value.Share());
+    Background.ClearAndDispose(ref rct);
   }
 }
