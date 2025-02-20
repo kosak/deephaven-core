@@ -23,7 +23,8 @@ internal class FilteredTableProvider :
   private Action? _onDispose;
   private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle;
+  private StatusOrCounted<TableHandle> _filteredTableHandle =
+    StatusOrCounted<TableHandle>.OfStatus(UnsetTableHandleText);
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -34,7 +35,6 @@ internal class FilteredTableProvider :
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
-    ZZTop.SetStatus(ref _filteredTableHandle, UnsetTableHandleText);
   }
 
   public void Start() {
@@ -69,45 +69,39 @@ internal class FilteredTableProvider :
 
   private void DisposeTableHandleState(string statusMessage) {
     lock (_syncRoot) {
-      ZZTop.SetStatus(ref _filteredTableHandle, statusMessage);
+      StatusOrCounted.ResetWithStatus(ref _filteredTableHandle, statusMessage);
+      _observers.Send(_filteredTableHandle.Share());
     }
-    _observers.Send(ZZTop.Share(_filteredTableHandle));
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle) {
-    if (!parentHandle.GetValueOrStatus(out var cli, out var status)) {
+  public void OnNext(StatusOrCounted<TableHandle> parentHandle) {
+    using var cleanup = parentHandle;
+    if (!parentHandle.GetValueOrStatus(out var _, out var status)) {
       DisposeTableHandleState(status);
       return;
     }
 
     DisposeTableHandleState("Filtering");
     var versionCookie = _versionParty.Mark();
-    Utility.RunInBackground(() => OnNextBackground(versionCookie, cli));
+    Utility.RunInBackground(() => OnNextBackground(versionCookie, parentHandle.Share()));
   }
 
   private void OnNextBackground(object versionCookie,
-    RefCounted<TableHandle> parentHandle) {
+    StatusOrCounted<TableHandle> parentHandle) {
     using var cleanup1 = parentHandle;
-    StatusOr<RefCounted<TableHandle>> result = null;
+    StatusOrCounted<TableHandle> result;
     try {
       var filtered = parentHandle.Value.Where(_condition);
-      ZZTop.Acquire(ref result, filtered, parentHandle.Share());
+      result = StatusOrCounted<TableHandle>.OfValue(filtered, parentHandle.Share());
     } catch (Exception ex) {
-      ZZTop.SetStatus(ref result, ex.Message);
+      result = StatusOrCounted<TableHandle>.OfStatus(ex.Message);
     }
+    using var cleanup2 = result;
 
-
-  // The derived table handle has a sharing dependency on the parent
-    // table handle, which in turn has a dependency on Client etc.
-    var state = RefCounted.Acquire(result, parentHandle.Share());
-
-    lock (_syncRoot) {
-      if (object.ReferenceEquals(versionCookie, _latestCookie)) {
-        Utility.Swap(ref _filteredTableHandle, ref state);
-        _observers.Enqueue(_filteredTableHandle.Share());
-      }
-    }
-    state.Dispose();
+    versionCookie.Finish(() => {
+      StatusOrCounted.ResetWithValue(ref _filteredTableHandle, result.Share());
+      _observers.Enqueue(_filteredTableHandle.Share());
+    });
   }
 
   public void OnCompleted() {
