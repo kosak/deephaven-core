@@ -18,7 +18,7 @@ internal class FilteredTableProvider :
   private readonly string _condition;
   private readonly object _sync = new();
   private IDisposable? _onDispose;
-  private IDisposable? _tableHandleSubscriptionDisposer = null;
+  private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
     StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
@@ -43,8 +43,10 @@ internal class FilteredTableProvider :
     // with that table filtered by a condition.
     var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
     Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
+    var temp = _stateManager.SubscribeToTable(tq, this);
+
     lock (_sync) {
-      _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
+      _upstreamDisposer = temp;
     }
   }
 
@@ -64,7 +66,7 @@ internal class FilteredTableProvider :
       if (!isLast) {
         return;
       }
-      Background.Dispose(Utility.Exchange(ref _tableHandleSubscriptionDisposer, null));
+      Background.Dispose(Utility.Exchange(ref _upstreamDisposer, null));
       Background.Dispose(Utility.Exchange(ref _onDispose, null));
     }
     ResetTableHandleStateAndNotify("Disposing FilteredTable");
@@ -102,10 +104,9 @@ internal class FilteredTableProvider :
     try {
       // This is a server call that may take some time.
       var childHandle = parentHandle.Value.Where(_condition);
-
       StatusOrCounted.ReplaceWithValue(ref newFiltered, childHandle);
     } catch (Exception ex) {
-      StatusOrCounted.ReplaceWithStatus(ref newFiltered, ex.Message ?? "");
+      StatusOrCounted.ReplaceWithStatus(ref newFiltered, ex.Message);
     }
     using var cleanup2 = newFiltered.AsDisposable();
 

@@ -32,6 +32,7 @@ public sealed class StatusOr<T> {
   }
 }
 
+#if false
 public static class ObserverStatusOr_Extensions {
   public static void SendStatus<T>(this IObserver<StatusOr<T>> observer, string message) {
     var so = StatusOr<T>.OfStatus(message);
@@ -59,3 +60,4 @@ public static class ObserverStatusOr_Extensions {
     observer.OnNext(newSor);
   }
 }
+#endif

@@ -11,10 +11,11 @@ public static class StatusOrCounted {
     target = StatusOr<RefCounted<T>>.OfStatus(statusMessage);
   }
 
-  public static void ReplaceWithValue<T>(ref StatusOr<RefCounted<T>> target, T value)
+  public static void ReplaceWithValue<T>(ref StatusOr<RefCounted<T>> target, T value,
+    params IDisposable[] dependencies)
     where T : class, IDisposable {
     Background.Dispose(target.AsDisposable());
-    var rct = RefCounted<T>.Acquire(value);
+    var rct = RefCounted<T>.Acquire(value, dependencies);
     target = StatusOr<RefCounted<T>>.OfValue(rct);
   }
 
