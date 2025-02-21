@@ -28,6 +28,11 @@ internal static class Utility {
     return item;
   }
 
+  public static T Exchange<T>(ref T location, T value) {
+    var result = location;
+    location = value;
+    return result;
+  }
 }
 
 public class Unit {
