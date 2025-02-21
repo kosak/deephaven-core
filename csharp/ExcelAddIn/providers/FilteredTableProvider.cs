@@ -7,8 +7,8 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class FilteredTableProvider :
-  IObserver<StatusOr<View<TableHandle>>>,
-  IObservable<StatusOr<View<TableHandle>>> {
+  IObserver<StatusOr<TableHandle>>,
+  IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Filtered Table]";
 
   private readonly StateManager _stateManager;
@@ -19,9 +19,8 @@ internal class FilteredTableProvider :
   private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle =
-    StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private KeptAlive<StatusOr<TableHandle>> _filteredTableHandle;
   private object _latestCookie = new();
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
@@ -33,8 +32,9 @@ internal class FilteredTableProvider :
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
+    _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
 
-    // Do my subscriptions on a separate thread to avoid rentrancy on StateManager
+    // Do my subscriptions on a separate thread to avoid reentrancy on StateManager
     Background.Run(Start);
   }
 
@@ -50,17 +50,16 @@ internal class FilteredTableProvider :
     }
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
+  public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Add(observer, out _);
-      _observers.OnNextOne(observer, _filteredTableHandle.AsView(),
-        _filteredTableHandle.Share().AsDisposable());
+      _observers.OnNextOne(observer, _filteredTableHandle);
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<View<TableHandle>>> observer) {
+  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
@@ -74,49 +73,48 @@ internal class FilteredTableProvider :
 
   private void ResetTableHandleStateAndNotify(string statusMessage) {
     lock (_sync) {
-      StatusOrCounted.ReplaceWithStatus(ref _filteredTableHandle, statusMessage);
-      _observers.OnNext(_filteredTableHandle.AsView(),
-        _filteredTableHandle.Share().AsDisposable());
+      Background.Dispose(_filteredTableHandle);
+      _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(statusMessage));
+      _observers.OnNext(_filteredTableHandle);
     }
   }
 
-  public void OnNext(StatusOr<View<TableHandle>> parentHandle) {
-    if (!parentHandle.GetValueOrStatus(out var th, out var status)) {
-      ResetTableHandleStateAndNotify(status);
-      return;
-    }
+  public void OnNext(StatusOr<TableHandle> parentHandle) {
 
+    var keptParent = KeepAlive.Reference(parentHandle);
     ResetTableHandleStateAndNotify("Filtering");
     // Share here while still on this thread. (Sharing inside the lambda is too late).
     lock (_sync) {
       // Need these two values created in this thread (not in the body of the lambda).
       var cookie = new object();
-      var sharedParent = th.Share();
       _latestCookie = cookie;
-      Background.Run(() => OnNextBackground(cookie, sharedParent));
+      Background.Run(() => OnNextBackground(keptParent, cookie));
     }
   }
 
-  private void OnNextBackground(object versionCookie, RefCounted<TableHandle> parentHandle) {
-    using var cleanup1 = parentHandle;
-
-    var newFiltered = StatusOrCounted.Empty<TableHandle>();
-    try {
-      // This is a server call that may take some time.
-      var childHandle = parentHandle.Value.Where(_condition);
-      StatusOrCounted.ReplaceWithValue(ref newFiltered, childHandle);
-    } catch (Exception ex) {
-      StatusOrCounted.ReplaceWithStatus(ref newFiltered, ex.Message);
+  private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptParent, object versionCookie) {
+    StatusOr<TableHandle> newFiltered;
+    if (!keptParent.Target.GetValueOrStatus(out var th, out var status)) {
+      newFiltered = StatusOr<TableHandle>.OfStatus(status);
+    } else {
+      try {
+        // This is a server call that may take some time.
+        var childHandle = th.Where(_condition);
+        newFiltered = StatusOr<TableHandle>.OfValue(childHandle);
+      } catch (Exception ex) {
+        newFiltered = StatusOr<TableHandle>.OfStatus(ex.Message);
+      }
     }
-    using var cleanup2 = newFiltered.AsDisposable();
+    var newKept = KeepAlive.Register(newFiltered, keptParent);
 
     lock (_sync) {
       if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
         return;
       }
-      StatusOrCounted.ReplaceWith(ref _filteredTableHandle, newFiltered.AsView());
-      _observers.OnNext(_filteredTableHandle.AsView(),
-        _filteredTableHandle.Share().AsDisposable());
+
+      Background.Dispose(_filteredTableHandle);
+      _filteredTableHandle = newKept;
+      _observers.OnNext(_filteredTableHandle);
     }
   }
 
