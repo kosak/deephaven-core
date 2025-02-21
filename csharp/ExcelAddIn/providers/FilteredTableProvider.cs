@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -127,60 +128,3 @@ internal class FilteredTableProvider :
   }
 }
 
-public static class StatusOrCounted {
-  public static StatusOr<RefCounted<T>> Empty<T>() where T : class, IDisposable {
-  }
-
-  public static void ReplaceWithStatus<T>(ref StatusOr<RefCounted<T>> target, string statusMessage)
-     where T : class, IDisposable {
-    Background.Dispose(target.AsDisposable());
-    target = StatusOr<RefCounted<T>>.OfStatus(statusMessage);
-  }
-
-  public static void ReplaceWithValue<T>(ref StatusOr<RefCounted<T>> target, T value)
-    where T : class, IDisposable {
-    Background.Dispose(target.AsDisposable());
-    var rct = RefCounted<T>.Acquire(value);
-    target = StatusOr<RefCounted<T>>.OfValue(rct);
-  }
-
-  public static void ReplaceWith<T>(ref StatusOr<RefCounted<T>> target,
-    StatusOr<View<T>> view) where T : class, IDisposable {
-    Background.Dispose(target.AsDisposable());
-    target = Share(view);
-  }
-
-  /// <summary>
-  /// Shares a StatusOr&lt;RefCounted&lt;T&gt;&gt;
-  /// </summary>
-  public static StatusOr<RefCounted<T>> Share<T>(this StatusOr<RefCounted<T>> item)
-    where T : class, IDisposable {
-
-  }
-
-  /// <summary>
-  /// Shares a StatusOr&lt;View&lt;T&gt;&gt;
-  /// </summary>
-  public static StatusOr<RefCounted<T>> Share<T>(this StatusOr<View<T>> item)
-    where T : class, IDisposable {
-
-  }
-
-
-  /// <summary>
-  /// Turns a StatusOr&lt;RefCounted&lt;T&gt;&gt; into a StatusOr&lt;View&lt;T&gt;&gt;
-  /// </summary>
-  public static StatusOr<View<T>> AsView<T>(this StatusOr<RefCounted<T>> item)
-    where T : class, IDisposable{
-
-  }
-
-  /// <summary>
-  /// Turns a StatusOr&lt;RefCounted&lt;T&gt;&gt; into an IDisposable
-  /// </summary>
-  public static IDisposable AsDisposable<T>(this StatusOr<RefCounted<T>> item)
-    where T : class, IDisposable {
-
-  }
-
-}
