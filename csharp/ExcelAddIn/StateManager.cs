@@ -7,7 +7,6 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
-  public readonly WorkerThread WorkerThread = WorkerThread.Create();
   private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
   private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();

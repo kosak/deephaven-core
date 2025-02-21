@@ -6,10 +6,10 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 /**
- * Observes the ConnectionConfig. When a valid ConnectionConfig is received, observes
+ * Observes the EndpointConfig. When a valid EndpointConfig is received, observes
  * the appropriate CoreClientProvider or CorePlusSessionProvider.
  * When those things provide responses, translate them to ConnectionHealth messages.
- * We use StatusOr&lt;ConnectionHealth&gt; .  A healthy connection sends a StatusOr
+ * We use StatusOr&lt;ConnectionHealth&gt; . A healthy connection sends a StatusOr
  * with value set to ConnectionHealth (this is an object without any members). On the
  * other hand, an unhealthy connection sends a StatusOr with the status text sent to
  * whatever status text was received from upstream.

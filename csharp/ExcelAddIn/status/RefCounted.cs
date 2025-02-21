@@ -27,9 +27,11 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
       // Decremented a zero or negative number.
       throw new Exception($"Bad state: {result}");
     }
-    Background.Dispose(_value);
+
+    // Dispose the value first, then its dependencies
+    _value.Dispose();
     for (var i = 0; i != _dependencies.Length; i++) {
-      Background.Dispose(_dependencies[i]);
+      _dependencies[i].Dispose();
     }
   }
 
