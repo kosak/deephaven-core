@@ -1,6 +1,6 @@
 ﻿namespace Deephaven.ExcelAddIn;
 
-internal static class Background {
+internal static class Background666 {
   public static void Run(Action action) {
     throw new NotImplementedException("HELLO");
   }
