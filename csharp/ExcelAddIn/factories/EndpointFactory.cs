@@ -1,7 +1,6 @@
 ﻿using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Factories;
@@ -14,7 +13,7 @@ internal static class EndpointFactory {
     return client;
   }
 
-  public static SessionManager ConnectToCorePlus(CorePlusEndpointConfig config, WorkerThread workerThread) {
+  public static SessionManager ConnectToCorePlus(CorePlusEndpointConfig config) {
     var handler = new HttpClientHandler();
     if (!config.ValidateCertificate) {
       handler.ClientCertificateOptions = ClientCertificateOption.Manual;
