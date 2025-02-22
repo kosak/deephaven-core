@@ -1,5 +1,6 @@
 ﻿using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -22,13 +23,12 @@ internal class EndpointHealthProvider :
   private const string ConnectionOkString = "OK";
 
   private readonly StateManager _stateManager;
-  private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
   private Action? _onDispose;
   private IDisposable? _upstreamConfigSubDisposer = null;
   private IDisposable? _upstreamClientOrSessionSubDisposer = null;
   private StatusOr<EndpointHealth> _endpointHealth = StatusOr<EndpointHealth>.OfStatus("[No config]");
-  private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
+  private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers;
 
   public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
     _stateManager = stateManager;
