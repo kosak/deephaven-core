@@ -20,7 +20,7 @@ internal class TableProvider :
   private readonly SequentialExecutor _executor = new();
   private readonly VersionTracker _versionTracker = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
-  private KeptAlive<StatusOr<TableHandle>> _tableHandle;
+  private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, IDisposable? onDispose) {
@@ -30,13 +30,12 @@ internal class TableProvider :
     _tableName = tableName;
     _onDispose = onDispose;
     _observers = new(_executor);
-    _tableHandle = MakeState(UnsetTableHandleText);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _tableHandle.Target);
+      _observers.OnNextOne(observer, _tableHandle);
       if (isFirst) {
         // Subscribe to parents at the time of the first subscription.
         _upstreamDisposer = _persistentQueryId != null
@@ -65,49 +64,44 @@ internal class TableProvider :
   public void OnNext(StatusOr<Client> client) {
     lock (_sync) {
       if (!client.GetValueOrStatus(out _, out var status)) {
-        SetStateAndNotifyLocked(MakeState(status));
+        SetStateAndNotifyLocked(status);
         return;
       }
 
-      SetStateAndNotifyLocked(MakeState("Fetching Table"));
-      var keptClient = KeepAlive.Reference(client);
-      var cookie = _versionTracker.SetNewVersion();
+      SetStateAndNotifyLocked("Fetching Table");
       // These two values need to be created early (not on the lambda, which is on a different thread)
-      Background666.Run(() => OnNextBackground(keptClient.Move(), cookie));
+      var clientCopy = client.Copy();
+      var cookie = _versionTracker.SetNewVersion();
+      Background666.Run(() => OnNextBackground(clientCopy, cookie));
     }
   }
 
-  private void OnNextBackground(KeptAlive<StatusOr<Client>> keptClient,
+  private void OnNextBackground(StatusOr<Client> clientCopy,
     VersionTrackerCookie cookie) {
-    using var cleanup1 = keptClient;
-    var client = keptClient.Target;
+    using var client = clientCopy;
 
-    KeptAlive<StatusOr<TableHandle>> newState;
+    StatusOr<TableHandle> newState;
     try {
       var (cli, _) = client;
       var th = cli.Manager.FetchTable(_tableName);
-      newState = KeepAlive.Register(StatusOr<TableHandle>.OfValue(th), client);
+      // Keep a dependency on client
+      newState = StatusOr<TableHandle>.OfValue(th, client);
     } catch (Exception ex) {
-      newState = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(ex.Message));
+      newState = StatusOr<TableHandle>.OfStatus(ex.Message);
     }
     using var cleanup2 = newState;
 
     lock (_sync) {
       if (cookie.IsCurrent) {
-        SetStateAndNotifyLocked(newState.Move());
+        SetStateAndNotifyLocked(newState);
       }
     }
   }
 
-  private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
-    var state = StatusOr<TableHandle>.OfStatus(status);
-    return KeepAlive.Register(state);
-  }
-
-  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<TableHandle>> newState) {
+  private void SetStateAndNotifyLocked(StatusOr<TableHandle> newState) {
     Background666.InvokeDispose(_tableHandle);
-    _tableHandle = newState;
-    _observers.OnNext(newState.Target);
+    _tableHandle = newState.Copy();
+    _observers.OnNext(newState);
   }
 
   public void OnCompleted() {

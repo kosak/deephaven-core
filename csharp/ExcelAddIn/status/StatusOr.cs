@@ -19,6 +19,10 @@ public sealed class StatusOr<T> : IDisposable {
     _value = value;
   }
 
+  public StatusOr<T> Copy() {
+
+  }
+
   public bool GetValueOrStatus(
     [NotNullWhen(true)]out T? value,
     [NotNullWhen(false)]out string? status) {
