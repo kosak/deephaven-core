@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -8,13 +9,14 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class CoreClientProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<Client>> {
+  private const string UnsetClientText = "[Not Connected]";
   private readonly StateManager _stateManager;
-  private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
+  private readonly SequentialExecutor _executor = new();
   private Action? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private StatusOr<Client> _client = StatusOr<Client>.OfStatus("[Not connected]");
-  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
+  private KeptAlive<StatusOr<Client>> _client;
+  private readonly ObserverContainer<StatusOr<Client>> _observers;
   private readonly VersionTracker _versionTracker = new();
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {

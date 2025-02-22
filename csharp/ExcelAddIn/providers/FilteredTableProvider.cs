@@ -16,13 +16,13 @@ internal class FilteredTableProvider :
   private readonly PersistentQueryId? _persistentQueryId;
   private readonly string _tableName;
   private readonly string _condition;
+  private readonly SequentialExecutor _executor = new();
+  private readonly VersionTracker _versionTracker = new();
   private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
-  private readonly SequentialExecutor _executor = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
   private KeptAlive<StatusOr<TableHandle>> _filteredTableHandle;
-  private object _latestCookie = new();
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -74,14 +74,14 @@ internal class FilteredTableProvider :
       }
       SetStateAndNotifyLocked(MakeState("Filtering"));
       var keptParentHandle = KeepAlive.Reference(parentHandle);
-      var cookie = new object();
-      _latestCookie = cookie;
+      var cookie = _versionTracker.SetNewVersion();
       // These two values need to be created early (not on the lambda, which is on a different thread)
       _executor.Run(() => OnNextBackground(keptParentHandle.Move(), cookie));
     }
   }
 
-  private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptTableHandle, object versionCookie) {
+  private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptTableHandle,
+    VersionTrackerCookie versionCookie) {
     using var cleanup1 = keptTableHandle;
     var tableHandle = keptTableHandle.Target;
     StatusOr<TableHandle> newResult;
@@ -96,11 +96,9 @@ internal class FilteredTableProvider :
     using var newKeeper = KeepAlive.Register(newResult);
 
     lock (_sync) {
-      if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
-        return;
+      if (versionCookie.IsCurrent) {
+        SetStateAndNotifyLocked(newKeeper.Move());
       }
-
-      SetStateAndNotifyLocked(newKeeper.Move());
     }
   }
 

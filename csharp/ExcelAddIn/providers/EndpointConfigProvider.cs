@@ -1,37 +1,50 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>> {
-  private readonly WorkerThread _workerThread;
-  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
-  private StatusOr<EndpointConfigBase> _credentials = StatusOr<EndpointConfigBase>.OfStatus("[No Credentials]");
+  private const string UnsetCredentialsString = "[No Credentials]";
+  private readonly SequentialExecutor _executor = new();
+  private readonly object _sync = new();
+  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers;
+  private StatusOr<EndpointConfigBase> _credentials;
 
-  public EndpointConfigProvider(StateManager stateManager) {
-    _workerThread = stateManager.WorkerThread;
-  }
-
-  public void Init() {
-    // Do nothing
+  public EndpointConfigProvider() {
+    _observers = new(_executor);
+    _credentials = MakeState(UnsetCredentialsString);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
-    _workerThread.EnqueueOrRun(() => {
+    lock (_sync) {
       _observers.Add(observer, out _);
-      observer.OnNext(_credentials);
-    });
+      _observers.OnNextOne(observer, _credentials);
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => _observers.Remove(observer, out _));
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
+    lock (_sync) {
+      _observers.Remove(observer, out _);
+    }
   }
 
   public void SetCredentials(EndpointConfigBase newConfig) {
-    _observers.SetAndSendValue(ref _credentials, newConfig);
+    lock (_sync) {
+      _credentials = StatusOr<EndpointConfigBase>.OfValue(newConfig);
+      _observers.OnNext(_credentials);
+    }
   }
 
   public void Resend() {
-    _observers.OnNext(_credentials);
+    lock (_sync) {
+      _observers.OnNext(_credentials);
+    }
   }
 
-  public int ObserverCountUnsafe => _observers.Count;
+  private static StatusOr<EndpointConfigBase> MakeState(string status) {
+    return StatusOr<EndpointConfigBase>.OfStatus(status);
+  }
 }

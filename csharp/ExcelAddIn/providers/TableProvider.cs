@@ -18,9 +18,9 @@ internal class TableProvider :
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
   private readonly SequentialExecutor _executor = new();
+  private readonly VersionTracker _versionTracker = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
   private KeptAlive<StatusOr<TableHandle>> _tableHandle;
-  private object _latestCookie = new();
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, IDisposable? onDispose) {
@@ -71,15 +71,14 @@ internal class TableProvider :
 
       SetStateAndNotifyLocked(MakeState("Fetching Table"));
       var keptClient = KeepAlive.Reference(client);
-      var cookie = new object();
-      _latestCookie = cookie;
+      var cookie = _versionTracker.SetNewVersion();
       // These two values need to be created early (not on the lambda, which is on a different thread)
       _executor.Run(() => OnNextBackground(keptClient.Move(), cookie));
     }
   }
 
   private void OnNextBackground(KeptAlive<StatusOr<Client>> keptClient,
-    object versionCookie) {
+    VersionTrackerCookie cookie) {
     using var cleanup1 = keptClient;
     var client = keptClient.Target;
 
@@ -94,10 +93,9 @@ internal class TableProvider :
     using var cleanup2 = newState;
 
     lock (_sync) {
-      if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
-        return;
+      if (cookie.IsCurrent) {
+        SetStateAndNotifyLocked(newState.Move());
       }
-      SetStateAndNotifyLocked(newState.Move());
     }
   }
 
