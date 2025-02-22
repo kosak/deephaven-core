@@ -13,7 +13,7 @@ public class SequentialExecutor {
    * Enqueue an action onto the servicing queue and start a thread pool task if
    * one is not already running.
    */
-  public void Enqueue(Action action) {
+  public void Run(Action action) {
     bool needToStart;
     lock (_sync) {
       _todo.Add(action);

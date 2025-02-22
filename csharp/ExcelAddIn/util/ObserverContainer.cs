@@ -22,19 +22,20 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     wasLast = removed && _observers.Count == 0;
   }
 
-  public void OnNextOne(IObserver<T> observer, T item, IDisposable? onExit = null) {
-    _executor.Enqueue(() => {
+  public void OnNextOne(IObserver<T> observer, T item) {
+    var kept = KeepAlive.TryReference(item);
+    _executor.Run(() => {
       observer.OnNext(item);
-      onExit?.Dispose();
+      kept?.Dispose();
     });
   }
 
-  public void OnNext(T result) {
+  public void OnNext(T item) {
     var observers = _observers.ToArray();
-    var kept = KeepAlive.TryReference(result);
-    _executor.Enqueue(() => {
+    var kept = KeepAlive.TryReference(item);
+    _executor.Run(() => {
       foreach (var observer in observers) {
-        observer.OnNext(result);
+        observer.OnNext(item);
       }
       kept?.Dispose();
     });
@@ -42,7 +43,7 @@ public sealed class ObserverContainer<T> : IObserver<T> {
 
   public void OnError(Exception ex) {
     var observers = _observers.ToArray();
-    _executor.Enqueue(() => {
+    _executor.Run(() => {
       foreach (var observer in observers) {
         observer.OnError(ex);
       }
@@ -51,7 +52,7 @@ public sealed class ObserverContainer<T> : IObserver<T> {
 
   public void OnCompleted() {
     var observers = _observers.ToArray();
-    _executor.Enqueue(() => {
+    _executor.Run(() => {
       foreach (var observer in observers) {
         observer.OnCompleted();
       }

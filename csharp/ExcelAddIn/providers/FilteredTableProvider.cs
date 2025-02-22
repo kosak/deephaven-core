@@ -58,8 +58,11 @@ internal class FilteredTableProvider :
       if (!isLast) {
         return;
       }
-      Background666.InvokeDispose(Utility.Exchange(ref _upstreamDisposer, null));
-      Background666.InvokeDispose(Utility.Exchange(ref _onDispose, null));
+      // Do these teardowns synchronously.
+      Utility.Exchange(ref _upstreamDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Dispose();
+      // Release our Deephaven resource asynchronously.
+      Background666.InvokeDispose(_filteredTableHandle.Move());
     }
   }
 
@@ -83,7 +86,7 @@ internal class FilteredTableProvider :
     StatusOr<TableHandle> newResult;
     try {
       // This is a server call that may take some time.
-      var th = keptTableHandle.Target.Value;
+      var (th, _) = keptTableHandle.Target;
       var childHandle = th.Where(_condition);
       newResult = StatusOr<TableHandle>.OfValue(childHandle);
     } catch (Exception ex) {
