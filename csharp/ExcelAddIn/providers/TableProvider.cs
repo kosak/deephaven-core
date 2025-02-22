@@ -6,8 +6,8 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class TableProvider :
-  IObserver<StatusOr<View<Client>>>,
-  IObservable<StatusOr<View<TableHandle>>> {
+  IObserver<StatusOr<Client>>,
+  IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
@@ -17,9 +17,9 @@ internal class TableProvider :
   private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<StatusOr<View<TableHandle>>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _tableHandle =
-    StatusOr<RefCounted<TableHandle>>.OfStatus(UnsetTableHandleText);
+  private readonly SequentialExecutor _executor = new();
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
+  private KeptAlive<StatusOr<TableHandle>> _tableHandle;
   private object _latestCookie = new();
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
@@ -29,88 +29,87 @@ internal class TableProvider :
     _persistentQueryId = persistentQueryId;
     _tableName = tableName;
     _onDispose = onDispose;
-
-    // Do my subscriptions on a separate thread to avoid rentrancy on StateManager
-    Background.Run(Start);
+    _observers = new(_executor);
+    _tableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
   }
 
-  private void Start() {
-    var temp = _persistentQueryId != null
-      ? _stateManager.SubscribeToPersistentQuery(_endpointId, _persistentQueryId, this)
-      : _stateManager.SubscribeToCoreClient(_endpointId, this);
-
+  public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _upstreamDisposer = temp;
-    }
-  }
-
-  public IDisposable Subscribe(IObserver<StatusOr<View<TableHandle>>> observer) {
-    lock (_sync) {
-      _observers.Add(observer, out _);
-      _observers.OnNextOne(observer, _tableHandle.AsView(),
-        _tableHandle.Share().AsDisposable());
+      _observers.Add(observer, out var isFirst);
+      _observers.OnNextOne(observer, _tableHandle.Target);
+      if (isFirst) {
+        // Subscribe to parents at the time of the first subscription.
+        _upstreamDisposer = _persistentQueryId != null
+          ? _stateManager.SubscribeToPersistentQuery(_endpointId, _persistentQueryId, this)
+          : _stateManager.SubscribeToCoreClient(_endpointId, this);
+      }
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<View<TableHandle>>> observer) {
+  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
-      Background.Dispose(Utility.Exchange(ref _upstreamDisposer, null));
-      Background.Dispose(Utility.Exchange(ref _onDispose, null));
-    }
-    ResetTableHandleStateAndNotify("Disposing TableHandle");
-  }
-
-  private void ResetTableHandleStateAndNotify(string statusMessage) {
-    lock (_sync) {
-      StatusOrCounted.ReplaceWithStatus(ref _tableHandle, statusMessage);
-      _observers.OnNext(_tableHandle.AsView(),
-        _tableHandle.Share().AsDisposable());
+      // Do these teardowns synchronously.
+      Utility.Exchange(ref _upstreamDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Dispose();
+      // Release our Deephaven resource asynchronously.
+      Background666.InvokeDispose(_tableHandle.Move());
     }
   }
 
-  public void OnNext(StatusOr<View<Client>> client) {
-    if (!client.GetValueOrStatus(out var cli, out var status)) {
-      ResetTableHandleStateAndNotify(status);
-      return;
-    }
-
-    ResetTableHandleStateAndNotify("Fetching Table");
-    // Share here while still on this thread. (Sharing inside the lambda is too late).
+  public void OnNext(StatusOr<Client> client) {
     lock (_sync) {
-      // Need these two values created in this thread (not in the body of the lambda).
+      if (!client.GetValueOrStatus(out _, out var status)) {
+        SetStateAndNotifyLocked(MakeState(status));
+        return;
+      }
+
+      SetStateAndNotifyLocked(MakeState("Fetching Table"));
+      var keptClient = KeepAlive.Reference(client);
       var cookie = new object();
-      var sharedClient = cli.Share();
       _latestCookie = cookie;
-      Background.Run(() => OnNextBackground(cookie, sharedClient));
+      // These two values need to be created early (not on the lambda, which is on a different thread)
+      _executor.Run(() => OnNextBackground(keptClient.Move(), cookie));
     }
   }
 
-  private void OnNextBackground(object versionCookie, RefCounted<Client> client) {
-    using var cleanup1 = client;
+  private void OnNextBackground(KeptAlive<StatusOr<Client>> keptClient,
+    object versionCookie) {
+    using var cleanup1 = keptClient;
+    var client = keptClient.Target;
 
-    var newTable = StatusOrCounted.Empty<TableHandle>();
+    KeptAlive<StatusOr<TableHandle>> newState;
     try {
-      var th = client.Value.Manager.FetchTable(_tableName);
-      // This keeps the dependencies (namely, the client) alive as well.
-      StatusOrCounted.ReplaceWithValue(ref newTable, th, client.Share());
+      var (cli, _) = client;
+      var th = cli.Manager.FetchTable(_tableName);
+      newState = KeepAlive.Register(StatusOr<TableHandle>.OfValue(th), client);
     } catch (Exception ex) {
-      StatusOrCounted.ReplaceWithStatus(ref newTable, ex.Message);
+      newState = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(ex.Message));
     }
-    using var cleanup2 = newTable.AsDisposable();
+    using var cleanup2 = newState;
 
     lock (_sync) {
       if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
         return;
       }
-      StatusOrCounted.ReplaceWith(ref _tableHandle, newTable.AsView());
-      _observers.OnNext(_tableHandle.AsView(), _tableHandle.Share().AsDisposable());
+      SetStateAndNotifyLocked(newState.Move());
     }
+  }
+
+  private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
+    var state = StatusOr<TableHandle>.OfStatus(status);
+    return KeepAlive.Register(state);
+  }
+
+  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<TableHandle>> newState) {
+    Background666.InvokeDispose(_tableHandle);
+    _tableHandle = newState;
+    _observers.OnNext(newState.Target);
   }
 
   public void OnCompleted() {

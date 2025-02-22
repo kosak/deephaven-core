@@ -83,10 +83,11 @@ internal class FilteredTableProvider :
 
   private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptTableHandle, object versionCookie) {
     using var cleanup1 = keptTableHandle;
+    var tableHandle = keptTableHandle.Target;
     StatusOr<TableHandle> newResult;
     try {
       // This is a server call that may take some time.
-      var (th, _) = keptTableHandle.Target;
+      var (th, _) = tableHandle;
       var childHandle = th.Where(_condition);
       newResult = StatusOr<TableHandle>.OfValue(childHandle);
     } catch (Exception ex) {
