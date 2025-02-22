@@ -34,7 +34,7 @@ internal class FilteredTableProvider :
     _condition = condition;
     _onDispose = onDispose;
     _observers = new(_executor);
-    _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
+    _filteredTableHandle = MakeState(UnsetTableHandleText);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {

@@ -1,76 +1,102 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
-using System.Diagnostics;
 using Deephaven.ManagedClient;
+using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class DefaultEndpointTableProvider :
   IObserver<StatusOr<TableHandle>>,
   IObserver<EndpointId?>,
-  // IObservable<StatusOr<TableHandle>>, // redundant, part of ITableProvider
-  ITableProvider {
+  IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Default Connection]";
 
   private readonly StateManager _stateManager;
   private readonly PersistentQueryId? _persistentQueryId;
   private readonly string _tableName;
   private readonly string _condition;
-  private readonly WorkerThread _workerThread;
-  private Action? _onDispose;
+  private readonly object _sync = new();
+  private IDisposable? _onDispose;
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = StatusOr<TableHandle>.OfStatus(UnsetTableHandleText);
+  private readonly SequentialExecutor _executor = new();
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
+  private KeptAlive<StatusOr<TableHandle>> _tableHandle;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
-    Action onDispose) {
+    IDisposable? onDispose) {
     _stateManager = stateManager;
-    _workerThread = stateManager.WorkerThread;
     _persistentQueryId = persistentQueryId;
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
+    _observers = new(_executor);
+    _tableHandle = MakeState(UnsetTableHandleText);
   }
 
   public void Init() {
-    _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(observer, out _);
-      observer.OnNext(_tableHandle);
-    });
+    lock (_sync) {
+      _observers.Add(observer, out var isFirst);
+      _observers.OnNextOne(observer, _tableHandle.Target);
+      if (isFirst) {
+        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
+      }
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
+    lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
-
+      // Do these teardowns synchronously.
       Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Invoke();
-    });
+      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _onDispose, null)?.Dispose();
+      // Release our Deephaven resource asynchronously.
+      Background666.InvokeDispose(_tableHandle.Move());
+    }
   }
 
   public void OnNext(EndpointId? endpointId) {
-    // Unsubscribe from old upstream
-    Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+    lock (_sync) {
+      // Unsubscribe from old upstream
+      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
 
-    // If endpoint is null, then don't subscribe to anything.
-    if (endpointId == null) {
-      _observers.SetAndSendStatus(ref _tableHandle, UnsetTableHandleText);
-      return;
+      // If endpoint is null, then don't resubscribe to anything.
+      if (endpointId == null) {
+        SetStateAndNotifyLocked(MakeState(UnsetTableHandleText));
+        return;
+      }
+
+      // Subscribe to a new upstream
+      var tq = new TableQuad(endpointId, _persistentQueryId, _tableName, _condition);
+      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
     }
-
-    var tq = new TableQuad(endpointId, _persistentQueryId, _tableName, _condition);
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
   }
 
   public void OnNext(StatusOr<TableHandle> value) {
-    _observers.SetAndSend(ref _tableHandle, value);
+    var kept = KeepAlive.Reference(value);
+    SetStateAndNotifyLocked(kept);
+  }
+
+  private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
+    var state = StatusOr<TableHandle>.OfStatus(status);
+    return KeepAlive.Register(state);
+  }
+
+  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<TableHandle>> newState) {
+    Background666.InvokeDispose(_tableHandle);
+    _tableHandle = newState;
+    _observers.OnNext(newState.Target);
   }
 
   public void OnCompleted() {
