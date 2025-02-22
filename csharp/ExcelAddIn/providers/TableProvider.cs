@@ -87,7 +87,7 @@ internal class TableProvider :
       // Keep a dependency on client
       newState = StatusOr<TableHandle>.OfValue(th, client);
     } catch (Exception ex) {
-      newState = StatusOr<TableHandle>.OfStatus(ex.Message);
+      newState = ex.Message;
     }
     using var cleanup = newState;
 

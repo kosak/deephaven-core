@@ -86,7 +86,7 @@ internal class CoreClientProvider :
       var client = EndpointFactory.ConnectToCore(config);
       result = StatusOr<Client>.OfValue(client);
     } catch (Exception ex) {
-      result = StatusOr<Client>.OfStatus(ex.Message);
+      result = ex.Message;
     }
     using var cleanup = result;
 

@@ -179,27 +179,28 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
+    lock (_sync) {
       if (!_tableProviders.TryGetValue(key, out var tp)) {
-        Action onDispose = () => _tableProviders.Remove(key);
         if (key.EndpointId == null) {
-          tp = new DefaultEndpointTableProvider(this, key.PersistentQueryId, key.TableName, key.Condition,
-            onDispose);
+          tp = new DefaultEndpointTableProvider(this, key.PersistentQueryId, key.TableName, key.Condition);
         } else if (key.Condition.Length != 0) {
           tp = new FilteredTableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName,
-            key.Condition, onDispose);
+            key.Condition);
         } else {
-          tp = new TableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName, onDispose);
+          tp = new TableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName);
         }
         _tableProviders.Add(key, tp);
-        tp.Init();
       }
-      disposer = tp.Subscribe(observer);
+    }
+    var innerDisposer = tp.Subscribe(observer);
+    var disposer = ActionAsDisposable.Create(() => {
+      innerDisposer.Dispose();
+      if (tp.NumSubscribers == 0) {
+        _tableProviders.Remove(key);
+      }
     });
 
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => Utility.Exchange(ref disposer, null)?.Dispose());
+    return disposer;
   }
   
   public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
