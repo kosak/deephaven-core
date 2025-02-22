@@ -19,7 +19,8 @@ internal class FilteredTableProvider :
   private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private readonly SequentialExecutor _executor = new();
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
   private KeptAlive<StatusOr<TableHandle>> _filteredTableHandle;
   private object _latestCookie = new();
 
@@ -32,19 +33,20 @@ internal class FilteredTableProvider :
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
+    _observers = new(_executor);
     _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      if (_observers.Count == 0) {
+      _observers.Add(observer, out var isFirst);
+      _observers.OnNextOne(observer, _filteredTableHandle.Target);
+      if (isFirst) {
         // Subscribe to parents at the time of the first subscription.
         var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
         Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
         _upstreamDisposer = _stateManager.SubscribeToTable(tq, this);
       }
-      _observers.Add(observer, out _);
-      _observers.OnNextOne(observer, _filteredTableHandle.Target);
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -56,11 +58,9 @@ internal class FilteredTableProvider :
       if (!isLast) {
         return;
       }
-      _executor.Dispose(Utility.Exchange(ref _upstreamDisposer, null));
-      _executor.Dispose(Utility.Exchange(ref _onDispose, null));
-      SetStateAndNotifyLocked(MakeState(status));
+      Background666.InvokeDispose(Utility.Exchange(ref _upstreamDisposer, null));
+      Background666.InvokeDispose(Utility.Exchange(ref _onDispose, null));
     }
-    ResetTableHandleStateAndNotify("Disposing FilteredTable");
   }
 
   public void OnNext(StatusOr<TableHandle> parentHandle) {
@@ -100,8 +100,13 @@ internal class FilteredTableProvider :
     }
   }
 
+  private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
+    var state = StatusOr<TableHandle>.OfStatus(status);
+    return KeepAlive.Register(state);
+  }
+
   private void SetStateAndNotifyLocked(KeptAlive<StatusOr<TableHandle>> newState) {
-    _executor.InvokeDispose(_filteredTableHandle);
+    Background666.InvokeDispose(_filteredTableHandle);
     _filteredTableHandle = newState;
     _observers.OnNext(newState.Target);
   }

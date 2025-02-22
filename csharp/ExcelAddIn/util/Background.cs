@@ -11,7 +11,7 @@ internal static class Background666 {
   //     Run(todo.Dispose);
   //   }
   // }
-  public static void Dispose(IDisposable? disp) {
+  public static void InvokeDispose(IDisposable? disp) {
     if (disp != null) {
       Run(disp.Dispose);
     }

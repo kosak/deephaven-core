@@ -1,8 +1,14 @@
-﻿namespace Deephaven.ExcelAddIn.Util;
+﻿using Deephaven.ExcelAddIn.Status;
+
+namespace Deephaven.ExcelAddIn.Util;
 
 public sealed class ObserverContainer<T> : IObserver<T> {
+  private readonly SequentialExecutor _executor;
   private readonly HashSet<IObserver<T>> _observers = new();
-  private readonly SequentialExecutor _executor = new();
+
+  public ObserverContainer(SequentialExecutor executor) {
+    _executor = executor;
+  }
 
   public int Count => _observers.Count;
 

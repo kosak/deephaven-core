@@ -2,7 +2,7 @@
 
 namespace Deephaven.ExcelAddIn.Status;
 
-public sealed class StatusOr<T> {
+public sealed class StatusOr<T> : IDisposable {
   private readonly string? _status;
   private readonly T? _value;
 
