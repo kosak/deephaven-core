@@ -30,7 +30,7 @@ internal class TableProvider :
     _tableName = tableName;
     _onDispose = onDispose;
     _observers = new(_executor);
-    _tableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
+    _tableHandle = MakeState(UnsetTableHandleText);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -73,7 +73,7 @@ internal class TableProvider :
       var keptClient = KeepAlive.Reference(client);
       var cookie = _versionTracker.SetNewVersion();
       // These two values need to be created early (not on the lambda, which is on a different thread)
-      _executor.Run(() => OnNextBackground(keptClient.Move(), cookie));
+      Background666.Run(() => OnNextBackground(keptClient.Move(), cookie));
     }
   }
 

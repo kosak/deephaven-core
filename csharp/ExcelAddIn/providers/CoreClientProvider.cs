@@ -13,102 +13,102 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly SequentialExecutor _executor = new();
-  private Action? _onDispose;
+  private IDisposable? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
+  private readonly object _sync = new();
+  private readonly VersionTracker _versionTracker = new();
   private KeptAlive<StatusOr<Client>> _client;
   private readonly ObserverContainer<StatusOr<Client>> _observers;
-  private readonly VersionTracker _versionTracker = new();
 
-  public CoreClientProvider(StateManager stateManager, EndpointId endpointId, Action onDispose) {
+  public CoreClientProvider(StateManager stateManager, EndpointId endpointId, IDisposable? onDispose) {
     _stateManager = stateManager;
-    _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
     _onDispose = onDispose;
+    _observers = new(_executor);
+    _client = MakeState(UnsetClientText);
   }
 
   public void Init() {
-    _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
   }
 
   /// <summary>
   /// Subscribe to Core client changes
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(observer, out _);
-      observer.OnNext(_client);
-    });
+    lock (_sync) {
+      _observers.Add(observer, out var isFirst);
+      _observers.OnNextOne(observer, _client.Target);
+      if (isFirst) {
+        _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+      }
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
+    lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
 
+      // Do these teardowns synchronously.
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Invoke();
-      DisposeClientState();
-    });
+      Utility.Exchange(ref _onDispose, null)?.Dispose();
+      // Release our Deephaven resource asynchronously.
+      Background666.InvokeDispose(_client.Move());
+    }
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
-    if (_workerThread.EnqueueOrNop(() => OnNext(credentials))) {
-      return;
+    lock (_sync) {
+      if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
+        SetStateAndNotifyLocked(MakeState(status));
+        return;
+      }
+
+      _ = cbase.AcceptVisitor(
+        core => {
+          SetStateAndNotifyLocked(MakeState("Trying to connect"));
+          var cookie = _versionTracker.SetNewVersion();
+          Background666.Run(() => OnNextBackground(core, cookie));
+          return Unit.Instance;
+        },
+        _ => {
+          // We are a Core entity but we are getting credentials for CorePlus
+          SetStateAndNotifyLocked(MakeState("Enterprise Core+ requires a PQ to be specified"));
+          return Unit.Instance;
+        });
     }
-
-    DisposeClientState();
-
-    if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-      _observers.SetAndSendStatus(ref _client, status);
-      return;
-    }
-
-    _ = cbase.AcceptVisitor(
-      core => {
-        _observers.SetAndSendStatus(ref _client, "Trying to connect");
-        var cookie = _versionTracker.SetNewVersion();
-        Utility.RunInBackground(() => CreateClientInSeparateThread(core, cookie));
-        return Unit.Instance;
-      },
-      _ => {
-        // We are a Core entity but we are getting credentials for CorePlus
-        _observers.SetAndSendStatus(ref _client, "Enterprise Core+ requires a PQ to be specified\"");
-        return Unit.Instance;
-      });
   }
 
-  private void CreateClientInSeparateThread(CoreEndpointConfig config, VersionTrackerCookie versionCookie) {
-    Client? client = null;
+  private void OnNextBackground(CoreEndpointConfig config, VersionTrackerCookie versionCookie) {
     StatusOr<Client> result;
     try {
-      client = EndpointFactory.ConnectToCore(config);
+      var client = EndpointFactory.ConnectToCore(config);
       result = StatusOr<Client>.OfValue(client);
     } catch (Exception ex) {
       result = StatusOr<Client>.OfStatus(ex.Message);
     }
+    using var newKeeper = KeepAlive.Register(result);
 
-    // Some time has passed. It's possible that the VersionTracker has been reset
-    // with a newer version. If so, we should throw away our work and leave.
-    if (!versionCookie.IsCurrent) {
-      client?.Dispose();
-      return;
+    lock (_sync) {
+      if (versionCookie.IsCurrent) {
+        SetStateAndNotifyLocked(newKeeper.Move());
+      }
     }
-
-    // Our results are valid. Keep them and tell everyone about it (on the worker thread).
-    _workerThread.EnqueueOrRun(() => _observers.SetAndSend(ref _client, result));
   }
 
-  private void DisposeClientState() {
-    if (_workerThread.EnqueueOrNop(DisposeClientState)) {
-      return;
-    }
+  private static KeptAlive<StatusOr<Client>> MakeState(string status) {
+    var state = StatusOr<Client>.OfStatus(status);
+    return KeepAlive.Register(state);
+  }
 
-    _ = _client.GetValueOrStatus(out var oldClient, out _);
-    _observers.SetAndSendStatus(ref _client, "Disposing Client");
-
-    if (oldClient != null) {
-      Utility.RunInBackground(oldClient.Dispose);
-    }
+  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<Client>> newState) {
+    Background666.InvokeDispose(_client);
+    _client = newState;
+    _observers.OnNext(newState.Target);
   }
 
   public void OnCompleted() {

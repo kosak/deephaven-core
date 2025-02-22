@@ -17,11 +17,11 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly SequentialExecutor _executor = new();
-  private readonly VersionTracker _versionTracker = new();
   private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
+  private readonly VersionTracker _versionTracker = new();
   private KeptAlive<StatusOr<TableHandle>> _filteredTableHandle;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
@@ -76,7 +76,7 @@ internal class FilteredTableProvider :
       var keptParentHandle = KeepAlive.Reference(parentHandle);
       var cookie = _versionTracker.SetNewVersion();
       // These two values need to be created early (not on the lambda, which is on a different thread)
-      _executor.Run(() => OnNextBackground(keptParentHandle.Move(), cookie));
+      Background666.Run(() => OnNextBackground(keptParentHandle.Move(), cookie));
     }
   }
 
