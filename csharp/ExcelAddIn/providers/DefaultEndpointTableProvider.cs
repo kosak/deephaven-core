@@ -2,7 +2,6 @@
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
-using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -34,9 +33,6 @@ internal class DefaultEndpointTableProvider :
     _onDispose = onDispose;
     _observers = new(_executor);
     _tableHandle = MakeState(UnsetTableHandleText);
-  }
-
-  public void Init() {
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -84,8 +80,10 @@ internal class DefaultEndpointTableProvider :
   }
 
   public void OnNext(StatusOr<TableHandle> value) {
-    var kept = KeepAlive.Reference(value);
-    SetStateAndNotifyLocked(kept);
+    lock (_sync) {
+      var kept = KeepAlive.Reference(value);
+      SetStateAndNotifyLocked(kept);
+    }
   }
 
   private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
