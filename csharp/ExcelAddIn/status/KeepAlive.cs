@@ -9,6 +9,10 @@ public class KeepAlive {
 
   }
 
+  public static KeptAlive<T>? TryReference<T>(T item) {
+
+  }
+
 }
 
 public class KeptAlive<T> : IDisposable {
@@ -16,6 +20,14 @@ public class KeptAlive<T> : IDisposable {
     get {
 
     }
+  }
+
+  public KeptAlive<T> Move() {
+
+  }
+
+  public void Dispose() {
+    throw new Exception("KeptAlive::Dispose todo");
   }
 
 }

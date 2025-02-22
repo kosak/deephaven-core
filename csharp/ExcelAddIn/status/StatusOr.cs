@@ -30,4 +30,8 @@ public sealed class StatusOr<T> : IDisposable {
   public U AcceptVisitor<U>(Func<T, U> onValue, Func<string, U> onStatus) {
     return _value != null ? onValue(_value) : onStatus(_status!);
   }
+
+  public void Deconstruct(out T value, out string status) {
+
+  }
 }
