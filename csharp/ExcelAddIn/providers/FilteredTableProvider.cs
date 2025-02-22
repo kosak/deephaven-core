@@ -75,46 +75,48 @@ internal class FilteredTableProvider :
     lock (_sync) {
       _executor.Dispose(_filteredTableHandle);
       _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(statusMessage));
-      _observers.OnNext(_filteredTableHandle);
+      _observers.EnqueueNext(_filteredTableHandle);
     }
+    _observers.Flush();
   }
 
   public void OnNext(StatusOr<TableHandle> parentHandle) {
-    if (!parentHandle.GetValueOrStatus(out _, out var status)) {
+    if (!parentHandle.GetValueOrStatus(out var th, out var status)) {
       SetStateAndNotify(status);
       return;
     }
 
     SetStateAndNotify("Filtering");
-    var keptParentHandle = KeepAlive.Reference(parentHandle);
+    var keptTableHandle = KeepAlive.Reference(th);
     var cookie = new object();
     lock (_sync) {
       _latestCookie = cookie;
       // These two values need to be created early (not on the lambda, which is on a different thread)
-      Background.Run(() => OnNextBackground(keptParentHandle, cookie));
+      Background.Run(() => OnNextBackground(keptTableHandle.Move(), cookie));
     }
   }
 
-  private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptParent, object versionCookie) {
-    using var cleanup1 = keptParent;
-    StatusOr<TableHandle> newFiltered;
+  private void OnNextBackground(KeptAlive<TableHandle> keptTableHandle, object versionCookie) {
+    using var cleanup1 = keptTableHandle;
+    var th = keptTableHandle.Target;
+    StatusOr<TableHandle> newResult;
+    KeptAlive<TableHandle> newKeeper = null;
     try {
       // This is a server call that may take some time.
       var childHandle = th.Where(_condition);
-      newFiltered = StatusOr<TableHandle>.OfValue(childHandle);
+      newResult = StatusOr<TableHandle>.OfValue(childHandle);
+      newKeeper = KeepAlive.Register(childHandle);
     } catch (Exception ex) {
-      newFiltered = StatusOr<TableHandle>.OfStatus(ex.Message);
+      newResult = StatusOr<TableHandle>.OfStatus(ex.Message);
     }
-    using var newTh = KeepAlive.Register(newFiltered, keptParent.Target);
+    using var cleanup2 = newKeeper;
 
     lock (_sync) {
       if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
         return;
       }
 
-      Background.Dispose(_filteredTableHandle);
-      _filteredTableHandle = KeepAlive.Register(newFiltered, keptParent.Target);
-      _observers.OnNext(_filteredTableHandle);
+      SetStateAndNotifyLocked(newResult, newKeeper.Move());
     }
   }
 
