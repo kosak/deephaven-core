@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.CodeDom.Compiler;
+using System.Diagnostics;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -35,7 +35,7 @@ internal class FilteredTableProvider :
     _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(UnsetTableHandleText));
 
     // Do my subscriptions on a separate thread to avoid reentrancy on StateManager
-    Background.Run(Start);
+    _executor.Run(Start);
   }
 
   private void Start() {
@@ -65,47 +65,47 @@ internal class FilteredTableProvider :
       if (!isLast) {
         return;
       }
-      Background.Dispose(Utility.Exchange(ref _upstreamDisposer, null));
-      Background.Dispose(Utility.Exchange(ref _onDispose, null));
+      _executor.Dispose(Utility.Exchange(ref _upstreamDisposer, null));
+      _executor.Dispose(Utility.Exchange(ref _onDispose, null));
     }
     ResetTableHandleStateAndNotify("Disposing FilteredTable");
   }
 
   private void ResetTableHandleStateAndNotify(string statusMessage) {
     lock (_sync) {
-      Background.Dispose(_filteredTableHandle);
+      _executor.Dispose(_filteredTableHandle);
       _filteredTableHandle = KeepAlive.Register(StatusOr<TableHandle>.OfStatus(statusMessage));
       _observers.OnNext(_filteredTableHandle);
     }
   }
 
   public void OnNext(StatusOr<TableHandle> parentHandle) {
+    if (!parentHandle.GetValueOrStatus(out _, out var status)) {
+      SetStateAndNotify(status);
+      return;
+    }
 
-    var keptParent = KeepAlive.Reference(parentHandle);
-    ResetTableHandleStateAndNotify("Filtering");
-    // Share here while still on this thread. (Sharing inside the lambda is too late).
+    SetStateAndNotify("Filtering");
+    var keptParentHandle = KeepAlive.Reference(parentHandle);
+    var cookie = new object();
     lock (_sync) {
-      // Need these two values created in this thread (not in the body of the lambda).
-      var cookie = new object();
       _latestCookie = cookie;
-      Background.Run(() => OnNextBackground(keptParent, cookie));
+      // These two values need to be created early (not on the lambda, which is on a different thread)
+      Background.Run(() => OnNextBackground(keptParentHandle, cookie));
     }
   }
 
   private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptParent, object versionCookie) {
+    using var cleanup1 = keptParent;
     StatusOr<TableHandle> newFiltered;
-    if (!keptParent.Target.GetValueOrStatus(out var th, out var status)) {
-      newFiltered = StatusOr<TableHandle>.OfStatus(status);
-    } else {
-      try {
-        // This is a server call that may take some time.
-        var childHandle = th.Where(_condition);
-        newFiltered = StatusOr<TableHandle>.OfValue(childHandle);
-      } catch (Exception ex) {
-        newFiltered = StatusOr<TableHandle>.OfStatus(ex.Message);
-      }
+    try {
+      // This is a server call that may take some time.
+      var childHandle = th.Where(_condition);
+      newFiltered = StatusOr<TableHandle>.OfValue(childHandle);
+    } catch (Exception ex) {
+      newFiltered = StatusOr<TableHandle>.OfStatus(ex.Message);
     }
-    var newKept = KeepAlive.Register(newFiltered, keptParent);
+    using var newTh = KeepAlive.Register(newFiltered, keptParent.Target);
 
     lock (_sync) {
       if (!Object.ReferenceEquals(versionCookie, _latestCookie)) {
@@ -113,7 +113,7 @@ internal class FilteredTableProvider :
       }
 
       Background.Dispose(_filteredTableHandle);
-      _filteredTableHandle = newKept;
+      _filteredTableHandle = KeepAlive.Register(newFiltered, keptParent.Target);
       _observers.OnNext(_filteredTableHandle);
     }
   }
