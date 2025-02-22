@@ -12,20 +12,17 @@ internal class CoreClientProvider :
   private const string UnsetClientText = "[Not Connected]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
-  private readonly SequentialExecutor _executor = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly object _sync = new();
   private readonly VersionTracker _versionTracker = new();
-  private KeptAlive<StatusOr<Client>> _client;
-  private readonly ObserverContainer<StatusOr<Client>> _observers;
+  private StatusOr<Client> _client = UnsetClientText;
+  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId, IDisposable? onDispose) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _onDispose = onDispose;
-    _observers = new(_executor);
-    _client = MakeState(UnsetClientText);
   }
 
   public void Init() {
@@ -37,7 +34,7 @@ internal class CoreClientProvider :
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     lock (_sync) {
       _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _client.Target);
+      _observers.OnNextOne(observer, _client);
       if (isFirst) {
         _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
@@ -64,20 +61,20 @@ internal class CoreClientProvider :
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        SetStateAndNotifyLocked(MakeState(status));
+        SetStateAndNotifyLocked(status);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         core => {
-          SetStateAndNotifyLocked(MakeState("Trying to connect"));
+          SetStateAndNotifyLocked("Trying to connect");
           var cookie = _versionTracker.SetNewVersion();
           Background666.Run(() => OnNextBackground(core, cookie));
           return Unit.Instance;
         },
         _ => {
           // We are a Core entity but we are getting credentials for CorePlus
-          SetStateAndNotifyLocked(MakeState("Enterprise Core+ requires a PQ to be specified"));
+          SetStateAndNotifyLocked("Enterprise Core+ requires a PQ to be specified");
           return Unit.Instance;
         });
     }
@@ -91,24 +88,19 @@ internal class CoreClientProvider :
     } catch (Exception ex) {
       result = StatusOr<Client>.OfStatus(ex.Message);
     }
-    using var newKeeper = KeepAlive.Register(result);
+    using var cleanup = result;
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        SetStateAndNotifyLocked(newKeeper.Move());
+        SetStateAndNotifyLocked(result);
       }
     }
   }
 
-  private static KeptAlive<StatusOr<Client>> MakeState(string status) {
-    var state = StatusOr<Client>.OfStatus(status);
-    return KeepAlive.Register(state);
-  }
-
-  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<Client>> newState) {
+  private void SetStateAndNotifyLocked(StatusOr<Client> newState) {
     Background666.InvokeDispose(_client);
-    _client = newState;
-    _observers.OnNext(newState.Target);
+    _client = newState.Copy();
+    _observers.OnNext(newState);
   }
 
   public void OnCompleted() {

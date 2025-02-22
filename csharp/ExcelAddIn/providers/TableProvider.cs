@@ -72,7 +72,7 @@ internal class TableProvider :
       // These two values need to be created early (not on the lambda, which is on a different thread)
       var clientCopy = client.Copy();
       var cookie = _versionTracker.SetNewVersion();
-      Background666.Run(() => OnNextBackground(clientCopy, cookie));
+      Background666.Run(() => OnNextBackground(clientCopy.Move(), cookie));
     }
   }
 
@@ -89,7 +89,7 @@ internal class TableProvider :
     } catch (Exception ex) {
       newState = StatusOr<TableHandle>.OfStatus(ex.Message);
     }
-    using var cleanup2 = newState;
+    using var cleanup = newState;
 
     lock (_sync) {
       if (cookie.IsCurrent) {

@@ -3,12 +3,8 @@
 namespace Deephaven.ExcelAddIn.Util;
 
 public sealed class ObserverContainer<T> : IObserver<T> {
-  private readonly SequentialExecutor _executor;
+  private readonly SequentialExecutor _executor = new();
   private readonly HashSet<IObserver<T>> _observers = new();
-
-  public ObserverContainer(SequentialExecutor executor) {
-    _executor = executor;
-  }
 
   public int Count => _observers.Count;
 
@@ -23,21 +19,21 @@ public sealed class ObserverContainer<T> : IObserver<T> {
   }
 
   public void OnNextOne(IObserver<T> observer, T item) {
-    var kept = KeepAlive.TryReference(item);
+    var disp = item is StatusOr sor ? sor.Copy() : null;
     _executor.Run(() => {
       observer.OnNext(item);
-      kept?.Dispose();
+      disp?.Dispose();
     });
   }
 
   public void OnNext(T item) {
+    var disp = item is StatusOr sor ? sor.Copy() : null;
     var observers = _observers.ToArray();
-    var kept = KeepAlive.TryReference(item);
     _executor.Run(() => {
       foreach (var observer in observers) {
         observer.OnNext(item);
       }
-      kept?.Dispose();
+      disp?.Dispose();
     });
   }
 

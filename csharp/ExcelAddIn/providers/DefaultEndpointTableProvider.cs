@@ -21,7 +21,7 @@ internal class DefaultEndpointTableProvider :
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly SequentialExecutor _executor = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
-  private KeptAlive<StatusOr<TableHandle>> _tableHandle;
+  private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -32,13 +32,12 @@ internal class DefaultEndpointTableProvider :
     _condition = condition;
     _onDispose = onDispose;
     _observers = new(_executor);
-    _tableHandle = MakeState(UnsetTableHandleText);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _tableHandle.Target);
+      _observers.OnNextOne(observer, _tableHandle);
       if (isFirst) {
         _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
       }
@@ -81,20 +80,14 @@ internal class DefaultEndpointTableProvider :
 
   public void OnNext(StatusOr<TableHandle> value) {
     lock (_sync) {
-      var kept = KeepAlive.Reference(value);
-      SetStateAndNotifyLocked(kept);
+      SetStateAndNotifyLocked(value);
     }
   }
 
-  private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
-    var state = StatusOr<TableHandle>.OfStatus(status);
-    return KeepAlive.Register(state);
-  }
-
-  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<TableHandle>> newState) {
+  private void SetStateAndNotifyLocked(StatusOr<TableHandle> newState) {
     Background666.InvokeDispose(_tableHandle);
-    _tableHandle = newState;
-    _observers.OnNext(newState.Target);
+    _tableHandle = newState.Copy();
+    _observers.OnNext(newState);
   }
 
   public void OnCompleted() {

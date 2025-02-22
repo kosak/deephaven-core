@@ -2,15 +2,25 @@
 
 namespace Deephaven.ExcelAddIn.Status;
 
-public sealed class StatusOr<T> : IDisposable {
+public abstract class StatusOr : IDisposable {
+  public abstract StatusOr Copy();
+  public abstract void Dispose();
+}
+
+public sealed class StatusOr<T> : StatusOr {
   private readonly string? _status;
   private readonly T? _value;
+
+  public static implicit operator StatusOr<T>(string s) {
+
+  }
 
   public static StatusOr<T> OfStatus(string status) {
     return new StatusOr<T>(status, default);
   }
 
-  public static StatusOr<T> OfValue(T value) {
+  public static StatusOr<T> OfValue(T value,
+    params StatusOr[] dependencies) {
     return new StatusOr<T>(null, value);
   }
 
@@ -19,9 +29,14 @@ public sealed class StatusOr<T> : IDisposable {
     _value = value;
   }
 
-  public StatusOr<T> Copy() {
+  public override StatusOr<T> Copy() {
 
   }
+
+  public StatusOr<T> Move() {
+
+  }
+
 
   public bool GetValueOrStatus(
     [NotNullWhen(true)]out T? value,

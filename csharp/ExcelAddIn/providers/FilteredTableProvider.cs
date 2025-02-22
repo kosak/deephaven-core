@@ -16,13 +16,12 @@ internal class FilteredTableProvider :
   private readonly PersistentQueryId? _persistentQueryId;
   private readonly string _tableName;
   private readonly string _condition;
-  private readonly SequentialExecutor _executor = new();
   private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
-  private KeptAlive<StatusOr<TableHandle>> _filteredTableHandle;
+  private StatusOr<TableHandle> _filteredTableHandle = UnsetTableHandleText;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PersistentQueryId? persistentQueryId, string tableName, string condition,
@@ -33,14 +32,12 @@ internal class FilteredTableProvider :
     _tableName = tableName;
     _condition = condition;
     _onDispose = onDispose;
-    _observers = new(_executor);
-    _filteredTableHandle = MakeState(UnsetTableHandleText);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _filteredTableHandle.Target);
+      _observers.OnNextOne(observer, _filteredTableHandle);
       if (isFirst) {
         // Subscribe to parents at the time of the first subscription.
         var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
@@ -69,48 +66,42 @@ internal class FilteredTableProvider :
   public void OnNext(StatusOr<TableHandle> parentHandle) {
     lock (_sync) {
       if (!parentHandle.GetValueOrStatus(out _, out var status)) {
-        SetStateAndNotifyLocked(MakeState(status));
+        SetStateAndNotifyLocked(status);
         return;
       }
-      SetStateAndNotifyLocked(MakeState("Filtering"));
-      var keptParentHandle = KeepAlive.Reference(parentHandle);
-      var cookie = _versionTracker.SetNewVersion();
+      SetStateAndNotifyLocked("Filtering");
       // These two values need to be created early (not on the lambda, which is on a different thread)
-      Background666.Run(() => OnNextBackground(keptParentHandle.Move(), cookie));
+      var parentHandleCopy = parentHandle.Copy();
+      var cookie = _versionTracker.SetNewVersion();
+      Background666.Run(() => OnNextBackground(parentHandleCopy.Move(), cookie));
     }
   }
 
-  private void OnNextBackground(KeptAlive<StatusOr<TableHandle>> keptTableHandle,
+  private void OnNextBackground(StatusOr<TableHandle> parentHandleCopy,
     VersionTrackerCookie versionCookie) {
-    using var cleanup1 = keptTableHandle;
-    var tableHandle = keptTableHandle.Target;
+    using var parentHandle = parentHandleCopy;
     StatusOr<TableHandle> newResult;
     try {
       // This is a server call that may take some time.
-      var (th, _) = tableHandle;
+      var (th, _) = parentHandle;
       var childHandle = th.Where(_condition);
       newResult = StatusOr<TableHandle>.OfValue(childHandle);
     } catch (Exception ex) {
-      newResult = StatusOr<TableHandle>.OfStatus(ex.Message);
+      newResult = ex.Message;
     }
-    using var newKeeper = KeepAlive.Register(newResult);
+    using var cleanup = newResult;
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        SetStateAndNotifyLocked(newKeeper.Move());
+        SetStateAndNotifyLocked(newResult);
       }
     }
   }
 
-  private static KeptAlive<StatusOr<TableHandle>> MakeState(string status) {
-    var state = StatusOr<TableHandle>.OfStatus(status);
-    return KeepAlive.Register(state);
-  }
-
-  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<TableHandle>> newState) {
+  private void SetStateAndNotifyLocked(StatusOr<TableHandle> newState) {
     Background666.InvokeDispose(_filteredTableHandle);
     _filteredTableHandle = newState;
-    _observers.OnNext(newState.Target);
+    _observers.OnNext(newState);
   }
 
   public void OnCompleted() {
