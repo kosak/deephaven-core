@@ -130,7 +130,15 @@ internal class SubscriptionContext : IDisposable {
   public bool Current(out Int64 version,
     out IReadOnlyDictionary<Int64, PersistentQueryInfoMessage> map) {
     lock (_synced.SyncRoot) {
-      while (!_synced.FirstBatchDelivered) {
+      while (true) {
+        if (_synced.Cancelled) {
+          version = default;
+          map = null;
+          return false;
+        }
+        if (_synced.FirstBatchDelivered) {
+          break;
+        }
         Monitor.Wait(_synced.SyncRoot);
       }
       version = _synced.Version;

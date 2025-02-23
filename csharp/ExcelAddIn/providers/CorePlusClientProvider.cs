@@ -13,7 +13,7 @@ internal class CorePlusClientProvider :
   IObserver<StatusOr<SessionManager>>,
   IObserver<PersistentQueryInfoMessage>,
   IObservable<StatusOr<DndClient>> {
-  private const string UnsetClientText = "[Not Connected to Core+ Client]";
+  private const string UnsetClientText = "[No Core+ Client]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly string _pqName;
@@ -54,14 +54,20 @@ internal class CorePlusClientProvider :
     if (!isLast) {
       return;
     }
+
+    IDisposable? disp1, disp2;
     lock (_sync) {
-      // Do these teardowns synchronously.
-      Utility.Exchange(ref _sessionManagerDisposer, null)?.Dispose();
-      Utility.Exchange(ref _pqInfoDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(Utility.Exchange(ref _sessionManager, UnsetSessionManagerText));
-      Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
+      disp1 = Utility.Exchange(ref _sessionManagerDisposer, null);
+      disp2 = Utility.Exchange(ref _pqInfoDisposer, null);
     }
+
+    // Do these teardowns synchronously, but not under lock.
+    disp1?.Dispose();
+    disp2?.Dispose();
+
+    // Release our Deephaven resource asynchronously.
+    Background666.InvokeDispose(Utility.Exchange(ref _sessionManager, UnsetSessionManagerText));
+    Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
   }
 
   public void OnNext(StatusOr<SessionManager> sessionManager) {

@@ -7,16 +7,16 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 /**
- * The job of this class is to observe EndpointConfig notifications for a given EndpointId,
- * and then provide SessionManager notifications. If the EndpointConfig does not refer to a Core
+ * The job of this class is to observe EndpointConfigs for a given EndpointId,
+ * and then provide SessionManagers. If the EndpointConfig does not refer to a Core
  * Plus instance, we notify an error. If it does, we try to connect to that instance in the
  * background. If that connection eventually succeeds, we notify our observers with the
  * corresponding SessionManager object. Otherwise we notify an error.
  */
-internal class CorePlusSessionProvider :
+internal class SessionManagerProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<SessionManager>> {
-  private const string UnsetSessionManagerText = "[Not connected]";
+  private const string UnsetSessionManagerText = "[No SessionManager]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
@@ -25,7 +25,7 @@ internal class CorePlusSessionProvider :
   private StatusOr<SessionManager> _session = UnsetSessionManagerText;
   private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
 
-  public CorePlusSessionProvider(StateManager stateManager, EndpointId endpointId) {
+  public SessionManagerProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
   }
@@ -46,15 +46,22 @@ internal class CorePlusSessionProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<SessionManager>> observer) {
-    lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
-      if (!isLast) {
-        return;
-      }
+    _observers.RemoveAndWait(observer, out var isLast);
+    if (!isLast) {
+      return;
+    }
 
-      // Do these teardowns synchronously.
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
+    // Now we have no more observers.
+    IDisposable? disp;
+    lock (_sync) {
+      disp = Utility.Exchange(ref _upstreamSubscriptionDisposer, null);
+    }
+    disp?.Dispose();
+
+    // Now we are not observing anyone. The object should be quiescent.
+
+    // Release our Deephaven resource asynchronously.
+    lock (_sync) {
       Background666.InvokeDispose(Utility.Exchange(ref _session, UnsetSessionManagerText));
     }
   }

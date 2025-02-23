@@ -2,52 +2,58 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class PersistentQueryProvider :
-  IObserver<StatusOr<SessionManager>>, IObservable<StatusOr<Client>> {
+internal class PersistentQueryInfoProvider :
+  IObserver<SharableDict<PersistentQueryInfoMessage>>,
+  IObservable<StatusOr<PersistentQueryInfoMessage>> {
+  private const string UnsetPqText = "[No Persistent Query]";
 
   private readonly StateManager _stateManager;
-  private readonly WorkerThread _workerThread;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryId _pqId;
-  private Action? _onDispose;
+  private readonly string _pqName;
+  private readonly object _sync = new();
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
-  private StatusOr<Client> _client = StatusOr<Client>.OfStatus("[No Client]");
-  private Client? _ownedDndClient = null;
+  private readonly ObserverContainer<StatusOr<PersistentQueryInfoMessage>> _observers = new();
+  private StatusOr<PersistentQueryInfoMessage> _infoMessage = UnsetPqText;
 
-  public PersistentQueryProvider(StateManager stateManager,
-    EndpointId endpointId, PersistentQueryId pqId, Action onDispose) {
+  public PersistentQueryInfoProvider(StateManager stateManager,
+    EndpointId endpointId, string pqName) {
     _stateManager = stateManager;
-    _workerThread = stateManager.WorkerThread;
     _endpointId = endpointId;
-    _pqId = pqId;
-    _onDispose = onDispose;
+    _pqName = pqName;
   }
 
   public void Init() {
     _upstreamSubscriptionDisposer = _stateManager.SubscribeToCorePlusSession(_endpointId, this);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(observer, out _);
-      observer.OnNext(_client);
-    });
-
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
-        return;
+  public IDisposable Subscribe(IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+    lock (_sync) {
+      _observers.Add(observer, out var isFirst);
+      _observers.OnNextOne(observer, _infoMessage);
+      if (isFirst) {
+        _upstreamSubscriptionDisposer = _stateManager.SubscribeToZamboni(_endpointId, this);
       }
+    }
 
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Invoke();
-      DisposeClientState();
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+    _observers.RemoveAndWait(observer, out var isLast);
+    if (!isLast) {
+      return;
+    }
+
+    // Do these teardowns synchronously, but not under lock.
+    IDisposable? disp1;
+    lock (_sync) {
+      disp1 = Utility.Exchange(ref _upstreamSubscriptionDisposer, null);
+    }
+    disp1?.Dispose();
   }
 
   //        : StatusOr<Client>.OfStatus("PQ specified, but Community Core cannot connect to a PQ");

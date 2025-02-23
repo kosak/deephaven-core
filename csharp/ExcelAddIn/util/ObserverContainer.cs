@@ -4,6 +4,7 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Util;
 
 public sealed class ObserverContainer<T> : IObserver<T> {
+  private readonly object _sync = new object();
   private readonly SequentialExecutor _executor = new();
   private readonly HashSet<IObserver<T>> _observers = new();
   private readonly InUseTracker<IObserver<T>> _inUseTracker = new();

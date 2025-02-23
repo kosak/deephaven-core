@@ -11,8 +11,8 @@ public class StateManager {
   private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
   private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
-  private readonly Dictionary<EndpointId, CorePlusSessionProvider> _corePlusSessionProviders = new();
-  private readonly Dictionary<PersistentQueryKey, PersistentQueryProvider> _persistentQueryProviders = new();
+  private readonly Dictionary<EndpointId, SessionManagerProvider> _corePlusSessionProviders = new();
+  private readonly Dictionary<PersistentQueryKey, PersistentQueryInfoProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
@@ -148,7 +148,7 @@ public class StateManager {
     IDisposable? disposer = null;
     WorkerThread.EnqueueOrRun(() => {
       if (!_corePlusSessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = new CorePlusSessionProvider(this, endpointId, () => _corePlusSessionProviders.Remove(endpointId));
+        sp = new SessionManagerProvider(this, endpointId, () => _corePlusSessionProviders.Remove(endpointId));
         _corePlusSessionProviders.Add(endpointId, sp);
         sp.Init();
       }

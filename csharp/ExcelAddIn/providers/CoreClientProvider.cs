@@ -16,7 +16,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class CoreClientProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<Client>> {
-  private const string UnsetClientText = "[Not Connected to Community Core Client]";
+  private const string UnsetClientText = "[No Community Core Client]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
