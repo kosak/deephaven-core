@@ -13,7 +13,12 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     _observers.Add(observer);
   }
 
-  public void RemoveAndWait(IObserver<T> observer, out bool wasLast) {
+  /**
+   * This is probably a mistake... wait???? under lock?? really?
+   * I need some way to guarantee that an observe won't be called after my caller
+   * calls remove
+   */
+  public void RemoveAndWait666(IObserver<T> observer, out bool wasLast) {
     var removed = _observers.Remove(observer);
     wasLast = removed && _observers.Count == 0;
     _inUseTracker.WaitUntilNotInUse(observer);

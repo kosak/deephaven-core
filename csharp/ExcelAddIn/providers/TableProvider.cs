@@ -31,7 +31,7 @@ internal class TableProvider :
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly PersistentQueryName? _pqName;
   private readonly string _tableName;
   private readonly object _sync = new();
   private IDisposable? _upstreamDisposer = null;
@@ -40,10 +40,10 @@ internal class TableProvider :
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
-    PersistentQueryId? persistentQueryId, string tableName) {
+    PersistentQueryName? pqName, string tableName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _persistentQueryId = persistentQueryId;
+    _pqName = pqName;
     _tableName = tableName;
   }
 
@@ -53,8 +53,8 @@ internal class TableProvider :
       _observers.OnNextOne(observer, _tableHandle);
       if (isFirst) {
         // Subscribe to parents at the time of the first subscription.
-        _upstreamDisposer = _persistentQueryId != null
-          ? _stateManager.SubscribeToPersistentQuery(_endpointId, _persistentQueryId, this)
+        _upstreamDisposer = _pqName != null
+          ? _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, this)
           : _stateManager.SubscribeToCoreClient(_endpointId, this);
       }
     }

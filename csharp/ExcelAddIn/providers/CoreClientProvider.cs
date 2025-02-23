@@ -16,11 +16,10 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class CoreClientProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<Client>> {
-  private const string UnsetClientText = "[Not Connected]";
+  private const string UnsetClientText = "[Not Connected to Community Core Client]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private IDisposable? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<Client> _client = UnsetClientText;
@@ -55,7 +54,6 @@ internal class CoreClientProvider :
 
       // Do these teardowns synchronously.
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
       Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
     }
