@@ -42,7 +42,7 @@ internal class CoreClientProvider :
 
   private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
+      _observers.RemoveAndWait(observer, out var isLast);
       if (!isLast) {
         return;
       }
@@ -58,20 +58,20 @@ internal class CoreClientProvider :
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        SetStateAndNotifyLocked(status);
+        _observers.SetStateAndNotify(ref _client, status);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         core => {
-          SetStateAndNotifyLocked("Trying to connect");
+          _observers.SetStateAndNotify(ref _client, "Trying to connect");
           var cookie = _versionTracker.SetNewVersion();
           Background666.Run(() => OnNextBackground(core, cookie));
           return Unit.Instance;
         },
         _ => {
           // We are a Core entity but we are getting credentials for CorePlus
-          SetStateAndNotifyLocked("Enterprise Core+ requires a PQ to be specified");
+          _observers.SetStateAndNotify(ref _client, "Enterprise Core+ requires a PQ to be specified");
           return Unit.Instance;
         });
     }
@@ -89,7 +89,7 @@ internal class CoreClientProvider :
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        SetStateAndNotifyLocked(result);
+        _observers.SetStateAndNotify(ref _client, result);
       }
     }
   }
