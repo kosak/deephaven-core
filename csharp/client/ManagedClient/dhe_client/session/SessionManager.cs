@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Xml.Linq;
 using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;
@@ -120,6 +121,16 @@ public class SessionManager : IDisposable {
       var result = dict.Values.FirstOrDefault(i => i.Config.Name == pqName);
       if (result == null) {
         throw new Exception($"pq name='{pqName}' not found");
+      }
+      return result;
+    });
+    return DndClient.Create(pqSerial, client);
+  }
+
+  public DndClient ConnectToPqById(Int64 pqSerial, bool removeOnClose) {
+    var (_, client) = FindPqAndConnect(dict => {
+      if (!dict.TryGetValue(pqSerial, out var result)) {
+        throw new Exception($"pqSerial='{pqSerial}' not found");
       }
       return result;
     });
