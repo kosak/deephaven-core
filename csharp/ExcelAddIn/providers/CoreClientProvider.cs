@@ -12,9 +12,9 @@ internal class CoreClientProvider :
   private const string UnsetClientText = "[Not Connected]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
+  private readonly object _sync = new();
   private IDisposable? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly object _sync = new();
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<Client> _client = UnsetClientText;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
@@ -23,9 +23,6 @@ internal class CoreClientProvider :
     _stateManager = stateManager;
     _endpointId = endpointId;
     _onDispose = onDispose;
-  }
-
-  public void Init() {
   }
 
   /// <summary>

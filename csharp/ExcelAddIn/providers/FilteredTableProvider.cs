@@ -17,21 +17,18 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<TableHandle> _filteredTableHandle = UnsetTableHandleText;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
-    PersistentQueryId? persistentQueryId, string tableName, string condition,
-    IDisposable? onDispose) {
+    PersistentQueryId? persistentQueryId, string tableName, string condition) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _persistentQueryId = persistentQueryId;
     _tableName = tableName;
     _condition = condition;
-    _onDispose = onDispose;
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -51,13 +48,12 @@ internal class FilteredTableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
+      _observers.RemoveAndWait(observer, out var isLast);
       if (!isLast) {
         return;
       }
-      // Do these teardowns synchronously.
+      // Tear down synchronously.
       Utility.Exchange(ref _upstreamDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
       Background666.InvokeDispose(_filteredTableHandle.Move());
     }

@@ -3,7 +3,6 @@ using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -14,19 +13,14 @@ internal class CorePlusSessionProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private IDisposable? _onDispose;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly SequentialExecutor _executor = new();
-  private KeptAlive<StatusOr<SessionManager>> _session;
-  private readonly ObserverContainer<StatusOr<SessionManager>> _observers;
   private readonly VersionTracker _versionTracker = new();
+  private StatusOr<SessionManager> _session = UnsetSessionManagerText;
+  private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
 
-  public CorePlusSessionProvider(StateManager stateManager, EndpointId endpointId, IDisposable onDispose) {
+  public CorePlusSessionProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _onDispose = onDispose;
-    _observers = new(_executor);
-    _session = MakeState(UnsetSessionManagerText);
   }
 
   /// <summary>
@@ -35,7 +29,7 @@ internal class CorePlusSessionProvider :
   public IDisposable Subscribe(IObserver<StatusOr<SessionManager>> observer) {
     lock (_sync) {
       _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _session.Target);
+      _observers.OnNextOne(observer, _session);
       if (isFirst) {
         _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
@@ -47,13 +41,15 @@ internal class CorePlusSessionProvider :
   private void RemoveObserver(IObserver<StatusOr<SessionManager>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var isLast);
+      // You probably have a race here... You shouldn't return from this disposable
+      // until you can promise that 'observer' will not be called. This is tricky because
+      // you may have background items pending in your SequentialExecutor.
       if (!isLast) {
         return;
       }
 
       // Do these teardowns synchronously.
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
       Background666.InvokeDispose(_session.Move());
     }
