@@ -62,10 +62,10 @@ internal class FilteredTableProvider :
   public void OnNext(StatusOr<TableHandle> parentHandle) {
     lock (_sync) {
       if (!parentHandle.GetValueOrStatus(out _, out var status)) {
-        Utility.SetStateAndNotify(_observers, ref _filteredTableHandle, status);
+        _observers.SetStateAndNotify(ref _filteredTableHandle, status);
         return;
       }
-      Utility.SetStateAndNotify(_observers, ref _filteredTableHandle, "Filtering");
+      _observers.SetStateAndNotify(ref _filteredTableHandle, "Filtering");
       // These two values need to be created early (not on the lambda, which is on a different thread)
       var parentHandleCopy = parentHandle.Copy();
       var cookie = _versionTracker.SetNewVersion();
@@ -89,7 +89,7 @@ internal class FilteredTableProvider :
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        Utility.SetStateAndNotify(_observers, ref _filteredTableHandle, newResult);
+        _observers.SetStateAndNotify(ref _filteredTableHandle, newResult);
       }
     }
   }

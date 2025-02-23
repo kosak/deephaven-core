@@ -88,7 +88,7 @@ internal class TableProvider :
 
     lock (_sync) {
       if (cookie.IsCurrent) {
-        Utility.SetStateAndNotify(_observers, ref _tableHandle, newState);
+        _observers.SetStateAndNotify(ref _tableHandle, newState);
       }
     }
   }
