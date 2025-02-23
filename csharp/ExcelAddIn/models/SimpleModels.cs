@@ -10,10 +10,18 @@ public record AddOrRemove<T>(bool IsAdd, T Value) {
   }
 }
 
+/**
+ * Strong type for EndpointId
+ */
 public record EndpointId(string Id) {
   public override string ToString() => Id;
 }
 
-public record PersistentQueryId(string Id);
+/**
+ * Strong type for PersistentQueryName
+ */
+public record PersistentQueryName(string Name) {
+  public override string ToString() => Name;
+}
 
 public record EndpointHealth;

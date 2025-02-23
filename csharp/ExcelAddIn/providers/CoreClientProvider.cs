@@ -6,6 +6,13 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * The job of this class is to observe EndpointConfig notifications for a given EndpointId,
+ * and then provide Client notifications. If the EndpointConfig does not refer to a Community
+ * Core instance, we notify an error. If it does, we try to connect to that instance in the
+ * background. If that connection eventually succeeds, we notify our observers with the
+ * corresponding Client object. Otherwise we notify an error.
+ */
 internal class CoreClientProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<Client>> {
@@ -19,10 +26,9 @@ internal class CoreClientProvider :
   private StatusOr<Client> _client = UnsetClientText;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
 
-  public CoreClientProvider(StateManager stateManager, EndpointId endpointId, IDisposable? onDispose) {
+  public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _onDispose = onDispose;
   }
 
   /// <summary>
@@ -51,7 +57,7 @@ internal class CoreClientProvider :
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _onDispose, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(_client.Move());
+      Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
     }
   }
 

@@ -5,6 +5,12 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * The job of this class is to observe notifications for the currently specified default EndpointId,
+ * if any, and then upon receiving such a notification, subscribe to the table provider for the key
+ * (endpoint, pqName, tableName, condition). Then, as that table provider provides me with
+ * TableHandles or status messages, forward those to my observers.
+ */
 internal class DefaultEndpointTableProvider :
   IObserver<StatusOr<TableHandle>>,
   IObserver<EndpointId?>,
@@ -12,7 +18,7 @@ internal class DefaultEndpointTableProvider :
   private const string UnsetTableHandleText = "[No Default Connection]";
 
   private readonly StateManager _stateManager;
-  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly PersistentQueryName? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
@@ -23,9 +29,9 @@ internal class DefaultEndpointTableProvider :
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
-    PersistentQueryId? persistentQueryId, string tableName, string condition) {
+    PersistentQueryName? pqName, string tableName, string condition) {
     _stateManager = stateManager;
-    _persistentQueryId = persistentQueryId;
+    _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
   }
@@ -52,7 +58,7 @@ internal class DefaultEndpointTableProvider :
       Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(_tableHandle.Move());
+      Background666.InvokeDispose(Utility.Exchange(ref _tableHandle, UnsetTableHandleText));
     }
   }
 
@@ -68,7 +74,7 @@ internal class DefaultEndpointTableProvider :
       }
 
       // Subscribe to a new upstream
-      var tq = new TableQuad(endpointId, _persistentQueryId, _tableName, _condition);
+      var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
       _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
     }
   }

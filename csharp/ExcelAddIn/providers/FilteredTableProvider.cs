@@ -6,6 +6,15 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * The job of this class is to subscribe to a table provider with the key
+ * (endpoint, pqName, tableName, condition). Then, as that table provider provides me
+ * with TableHandles or status messages, process them.
+ *
+ * If the message received was a status message, then forward it to my observers.
+ * If it was a TableHandle, then filter it by "condition" in the background, and provide
+ * the resulting filtered TableHandle (or error) to my observers.
+ */
 internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>,
   IObservable<StatusOr<TableHandle>> {
@@ -13,7 +22,7 @@ internal class FilteredTableProvider :
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryId? _persistentQueryId;
+  private readonly PersistentQueryName? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
@@ -23,10 +32,10 @@ internal class FilteredTableProvider :
   private StatusOr<TableHandle> _filteredTableHandle = UnsetTableHandleText;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
-    PersistentQueryId? persistentQueryId, string tableName, string condition) {
+    PersistentQueryName? pqName, string tableName, string condition) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _persistentQueryId = persistentQueryId;
+    _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
   }
@@ -36,8 +45,8 @@ internal class FilteredTableProvider :
       _observers.Add(observer, out var isFirst);
       _observers.OnNextOne(observer, _filteredTableHandle);
       if (isFirst) {
-        // Subscribe to parents at the time of the first subscription.
-        var tq = new TableQuad(_endpointId, _persistentQueryId, _tableName, "");
+        // Subscribe to parent at the time of the first subscription.
+        var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
         Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
         _upstreamDisposer = _stateManager.SubscribeToTable(tq, this);
       }

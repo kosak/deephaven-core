@@ -159,7 +159,7 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryId pqId,
+  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryName pqId,
     IObserver<StatusOr<Client>> observer) {
 
     IDisposable? disposer = null;

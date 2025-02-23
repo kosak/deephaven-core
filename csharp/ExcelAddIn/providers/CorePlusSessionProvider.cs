@@ -6,6 +6,13 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * The job of this class is to observe EndpointConfig notifications for a given EndpointId,
+ * and then provide SessionManager notifications. If the EndpointConfig does not refer to a Core
+ * Plus instance, we notify an error. If it does, we try to connect to that instance in the
+ * background. If that connection eventually succeeds, we notify our observers with the
+ * corresponding SessionManager object. Otherwise we notify an error.
+ */
 internal class CorePlusSessionProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<SessionManager>> {
@@ -48,7 +55,7 @@ internal class CorePlusSessionProvider :
       // Do these teardowns synchronously.
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(_session.Move());
+      Background666.InvokeDispose(Utility.Exchange(ref _session, UnsetSessionManagerText));
     }
   }
 
