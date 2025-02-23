@@ -19,9 +19,6 @@ internal class PersistentQueryDictProvider :
   private StatusOr<SharableDict<PersistentQueryInfoMessage>> _dict = UnsetDictText;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
 
-  private void Func() {
-  }
-
 
 
 }
