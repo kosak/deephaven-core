@@ -18,7 +18,8 @@ internal class CorePlusClientProvider :
   private readonly EndpointId _endpointId;
   private readonly string _pqName;
   private readonly object _sync = new();
-  private IDisposable? _upstreamSubscriptionDisposer = null;
+  private IDisposable? _sessionManagerDisposer = null;
+  private IDisposable? _pqInfoDisposer = null;
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<SessionManager> _sessionManager = UnsetSessionManagerText;
   private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
@@ -65,7 +66,7 @@ internal class CorePlusClientProvider :
 
   public void OnNext(StatusOr<SessionManager> sessionManager) {
     lock (_sync) {
-      SetState(ref _sessionManager, status);
+      SetState(ref _sessionManager, sessionManager);
       UpdateStateLocked();
     }
   }
@@ -96,7 +97,7 @@ internal class CorePlusClientProvider :
       return;
     }
 
-    var smCopy = _sessionManager.Copy();
+    var smCopy = _sessionManager.Share();
     var cookie = _versionTracker.SetNewVersion();
     Background666.Run(() => UpdateStateInBackground(smCopy, pq, cookie));
   }

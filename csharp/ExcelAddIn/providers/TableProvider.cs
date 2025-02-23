@@ -92,18 +92,18 @@ internal class TableProvider :
 
   private void OnNextBackground(StatusOr<Client> clientCopy,
     VersionTrackerCookie cookie) {
-    using var client = clientCopy;
+    using var cleanup1 = clientCopy;
 
     StatusOr<TableHandle> newState;
     try {
-      var (cli, _) = client;
+      var (cli, _) = clientCopy;
       var th = cli.Manager.FetchTable(_tableName);
       // Keep a dependency on client
-      newState = StatusOr<TableHandle>.OfValue(th, client);
+      newState = StatusOr<TableHandle>.OfValue(th, clientCopy);
     } catch (Exception ex) {
       newState = ex.Message;
     }
-    using var cleanup = newState;
+    using var cleanup2 = newState;
 
     lock (_sync) {
       if (cookie.IsCurrent) {
