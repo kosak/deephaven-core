@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using System.Collections.Immutable;
+using Grpc.Core;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
 using System.Diagnostics;
@@ -132,18 +133,17 @@ internal class SubscriptionContext : IDisposable {
     lock (_synced.SyncRoot) {
       while (true) {
         if (_synced.Cancelled) {
-          version = default;
-          map = null;
+          version = 0;
+          map = ImmutableDictionary<Int64, PersistentQueryInfoMessage>.Empty;
           return false;
         }
         if (_synced.FirstBatchDelivered) {
-          break;
+          version = _synced.Version;
+          map = _synced.PqMap;
+          return true;
         }
         Monitor.Wait(_synced.SyncRoot);
       }
-      version = _synced.Version;
-      map = _synced.PqMap;
-      return true;
     }
   }
 
