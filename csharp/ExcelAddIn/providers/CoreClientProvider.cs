@@ -46,12 +46,11 @@ internal class CoreClientProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
+    _observers.RemoveAndWait(observer, out var isLast);
+    if (!isLast) {
+      return;
+    }
     lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
-      if (!isLast) {
-        return;
-      }
-
       // Do these teardowns synchronously.
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
       // Release our Deephaven resource asynchronously.

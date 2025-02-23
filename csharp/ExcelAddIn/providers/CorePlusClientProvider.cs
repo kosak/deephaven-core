@@ -18,7 +18,9 @@ internal class CorePlusClientProvider :
   private readonly object _sync = new();
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly VersionTracker _versionTracker = new();
+  private StatusOr<SessionManager> _sessionManager = UnsetSessionManagerText;
   private StatusOr<DndClient> _client = UnsetClientText;
+  private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
   private readonly ObserverContainer<StatusOr<DndClient>> _observers = new();
 
   public CorePlusClientProvider(StateManager stateManager, EndpointId endpointId,
@@ -45,14 +47,15 @@ internal class CorePlusClientProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<DndClient>> observer) {
+    _observers.RemoveAndWait(observer, out var isLast);
+    if (!isLast) {
+      return;
+    }
     lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
-      if (!isLast) {
-        return;
-      }
 
       // Do these teardowns synchronously.
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.Exchange(ref _sessionManagerDisposer, null)?.Dispose();
+      Utility.Exchange(ref _pqInfoDisposer, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
       Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
     }
