@@ -96,7 +96,7 @@ internal class FilteredTableProvider :
 
   private void SetStateAndNotifyLocked(StatusOr<TableHandle> newState) {
     Background666.InvokeDispose(_filteredTableHandle);
-    _filteredTableHandle = newState;
+    _filteredTableHandle = newState.Copy();
     _observers.OnNext(newState);
   }
 
