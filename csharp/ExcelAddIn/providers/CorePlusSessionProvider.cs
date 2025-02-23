@@ -40,10 +40,7 @@ internal class CorePlusSessionProvider :
 
   private void RemoveObserver(IObserver<StatusOr<SessionManager>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      // You probably have a race here... You shouldn't return from this disposable
-      // until you can promise that 'observer' will not be called. This is tricky because
-      // you may have background items pending in your SequentialExecutor.
+      _observers.RemoveAndWait(observer, out var isLast);
       if (!isLast) {
         return;
       }
@@ -58,18 +55,19 @@ internal class CorePlusSessionProvider :
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        SetStateAndNotifyLocked(MakeState(status));
+        _observers.SetStateAndNotify(ref _session, status);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         _ => {
           // We are a CorePlus entity but we are getting credentials for core.
-          SetStateAndNotifyLocked(MakeState("Persistent Queries are not supported in Community Core"));
+          _observers.SetStateAndNotify(ref _session,
+            "Persistent Queries are not supported in Community Core");
           return Unit.Instance;
         },
         corePlus => {
-          SetStateAndNotifyLocked(MakeState("Trying to connect"));
+          _observers.SetStateAndNotify(ref _session, "Trying to connect");
           var cookie = _versionTracker.SetNewVersion();
           Background666.Run(() => OnNextBackground(corePlus, cookie));
           return Unit.Instance;
@@ -87,18 +85,13 @@ internal class CorePlusSessionProvider :
     } catch (Exception ex) {
       result = StatusOr<SessionManager>.OfStatus(ex.Message);
     }
-    using var newKeeper = KeepAlive.Register(result);
+    using var cleanup = result;
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        SetStateAndNotifyLocked(newKeeper.Move());
+        _observers.SetStateAndNotify(ref _session, result);
       }
     }
-  }
-
-  private static KeptAlive<StatusOr<SessionManager>> MakeState(string status) {
-    var state = StatusOr<SessionManager>.OfStatus(status);
-    return KeepAlive.Register(state);
   }
 
   public void OnCompleted() {

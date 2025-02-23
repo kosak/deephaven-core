@@ -16,22 +16,18 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private IDisposable? _onDispose;
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly SequentialExecutor _executor = new();
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
-    PersistentQueryId? persistentQueryId, string tableName, string condition,
-    IDisposable? onDispose) {
+    PersistentQueryId? persistentQueryId, string tableName, string condition) {
     _stateManager = stateManager;
     _persistentQueryId = persistentQueryId;
     _tableName = tableName;
     _condition = condition;
-    _onDispose = onDispose;
-    _observers = new(_executor);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -48,14 +44,13 @@ internal class DefaultEndpointTableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
+      _observers.RemoveAndWait(observer, out var isLast);
       if (!isLast) {
         return;
       }
       // Do these teardowns synchronously.
       Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
       Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
       Background666.InvokeDispose(_tableHandle.Move());
     }
@@ -68,7 +63,7 @@ internal class DefaultEndpointTableProvider :
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
-        SetStateAndNotifyLocked(MakeState(UnsetTableHandleText));
+        _observers.SetStateAndNotify(ref _tableHandle, UnsetTableHandleText);
         return;
       }
 
@@ -80,7 +75,7 @@ internal class DefaultEndpointTableProvider :
 
   public void OnNext(StatusOr<TableHandle> value) {
     lock (_sync) {
-      SetStateAndNotifyLocked(value);
+      _observers.SetStateAndNotify(ref _tableHandle, value);
     }
   }
 

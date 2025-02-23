@@ -71,7 +71,7 @@ public static class ObserverContainer_Extensions {
   public static void SetStateAndNotify<T>(this ObserverContainer<StatusOr<T>> container,
     ref StatusOr<T> dest, StatusOr<T> newValue) {
     Background666.InvokeDispose(dest);
-    dest = newValue.Copy();
+    dest = newValue.Share();
     container.OnNext(newValue);
   }
 }

@@ -6,15 +6,9 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>> {
   private const string UnsetCredentialsString = "[No Credentials]";
-  private readonly SequentialExecutor _executor = new();
   private readonly object _sync = new();
-  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers;
-  private StatusOr<EndpointConfigBase> _credentials;
-
-  public EndpointConfigProvider() {
-    _observers = new(_executor);
-    _credentials = MakeState(UnsetCredentialsString);
-  }
+  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
+  private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
   public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
@@ -27,7 +21,7 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
 
   private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out _);
+      _observers.RemoveAndWait(observer, out _);
     }
   }
 
@@ -42,9 +36,5 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
     lock (_sync) {
       _observers.OnNext(_credentials);
     }
-  }
-
-  private static StatusOr<EndpointConfigBase> MakeState(string status) {
-    return StatusOr<EndpointConfigBase>.OfStatus(status);
   }
 }
