@@ -94,12 +94,6 @@ internal class CoreClientProvider :
     }
   }
 
-  private void SetStateAndNotifyLocked(StatusOr<Client> newState) {
-    Background666.InvokeDispose(_client);
-    _client = newState.Copy();
-    _observers.OnNext(newState);
-  }
-
   public void OnCompleted() {
     // TODO(kosak)
     throw new NotImplementedException();

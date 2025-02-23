@@ -84,12 +84,6 @@ internal class DefaultEndpointTableProvider :
     }
   }
 
-  private void SetStateAndNotifyLocked(StatusOr<TableHandle> newState) {
-    Background666.InvokeDispose(_tableHandle);
-    _tableHandle = newState.Copy();
-    _observers.OnNext(newState);
-  }
-
   public void OnCompleted() {
     throw new NotImplementedException();
   }

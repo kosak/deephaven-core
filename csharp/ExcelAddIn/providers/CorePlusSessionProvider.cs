@@ -101,12 +101,6 @@ internal class CorePlusSessionProvider :
     return KeepAlive.Register(state);
   }
 
-  private void SetStateAndNotifyLocked(KeptAlive<StatusOr<SessionManager>> newState) {
-    Background666.InvokeDispose(_session);
-    _session = newState;
-    _observers.OnNext(newState.Target);
-  }
-
   public void OnCompleted() {
     // TODO(kosak)
     throw new NotImplementedException();

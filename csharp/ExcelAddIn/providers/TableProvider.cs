@@ -15,21 +15,17 @@ internal class TableProvider :
   private readonly PersistentQueryId? _persistentQueryId;
   private readonly string _tableName;
   private readonly object _sync = new();
-  private IDisposable? _onDispose;
   private IDisposable? _upstreamDisposer = null;
-  private readonly SequentialExecutor _executor = new();
   private readonly VersionTracker _versionTracker = new();
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers;
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
-    PersistentQueryId? persistentQueryId, string tableName, IDisposable? onDispose) {
+    PersistentQueryId? persistentQueryId, string tableName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _persistentQueryId = persistentQueryId;
     _tableName = tableName;
-    _onDispose = onDispose;
-    _observers = new(_executor);
   }
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
@@ -49,13 +45,12 @@ internal class TableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
+      _observers.RemoveAndWait(observer, out var isLast);
       if (!isLast) {
         return;
       }
-      // Do these teardowns synchronously.
+      // Do this teardowns synchronously.
       Utility.Exchange(ref _upstreamDisposer, null)?.Dispose();
-      Utility.Exchange(ref _onDispose, null)?.Dispose();
       // Release our Deephaven resource asynchronously.
       Background666.InvokeDispose(_tableHandle.Move());
     }
@@ -64,11 +59,11 @@ internal class TableProvider :
   public void OnNext(StatusOr<Client> client) {
     lock (_sync) {
       if (!client.GetValueOrStatus(out _, out var status)) {
-        SetStateAndNotifyLocked(status);
+        Utility.SetStateAndNotify(_observers, ref _tableHandle, status);
         return;
       }
 
-      SetStateAndNotifyLocked("Fetching Table");
+      Utility.SetStateAndNotify(_observers, ref _tableHandle, "Fetching Table");
       // These two values need to be created early (not on the lambda, which is on a different thread)
       var clientCopy = client.Copy();
       var cookie = _versionTracker.SetNewVersion();
@@ -93,15 +88,9 @@ internal class TableProvider :
 
     lock (_sync) {
       if (cookie.IsCurrent) {
-        SetStateAndNotifyLocked(newState);
+        Utility.SetStateAndNotify(_observers, ref _tableHandle, newState);
       }
     }
-  }
-
-  private void SetStateAndNotifyLocked(StatusOr<TableHandle> newState) {
-    Background666.InvokeDispose(_tableHandle);
-    _tableHandle = newState.Copy();
-    _observers.OnNext(newState);
   }
 
   public void OnCompleted() {

@@ -66,3 +66,12 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     });
   }
 }
+
+public static class ObserverContainer_Extensions {
+  public static void SetStateAndNotify<T>(this ObserverContainer<StatusOr<T>> container,
+    ref StatusOr<T> dest, StatusOr<T> newValue) {
+    Background666.InvokeDispose(dest);
+    dest = newValue.Copy();
+    container.OnNext(newValue);
+  }
+}
