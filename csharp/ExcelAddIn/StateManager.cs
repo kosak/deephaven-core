@@ -159,14 +159,14 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryName pqId,
+  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryName pqName,
     IObserver<StatusOr<Client>> observer) {
 
     IDisposable? disposer = null;
     WorkerThread.EnqueueOrRun(() => {
-      var key = new PersistentQueryKey(endpointId, pqId);
+      var key = new PersistentQueryKey(endpointId, pqName);
       if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
-        pqp = new PersistentQueryProvider(this, endpointId, pqId,
+        pqp = new PersistentQueryProvider(this, endpointId, pqName,
           () => _persistentQueryProviders.Remove(key));
         _persistentQueryProviders.Add(key, pqp);
         pqp.Init();

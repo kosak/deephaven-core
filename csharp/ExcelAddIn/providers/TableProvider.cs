@@ -5,6 +5,25 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+/**
+ * This class has two functions, depending on whether the persistentQueryId is set.
+ * If it is set, the class assumes that this is an Enterprise Core Plus table, and
+ * follows that workflow.
+ *
+ * Otherwise, if it is not set, the class assumes that this is a Community Core table,
+ * and follows that workflow.
+ *
+ * The job of this class is to subscribe to a PersistentQueryMapper with the key
+ * (endpoint, pqName). Then, as that PQ mapper provider provides me with PqIds
+ * with TableHandles (or status messages), process them.
+ *
+ * If the message received was a status message, then forward it to my observers.
+ * If it was a PqId, then 
+ *
+ * If it was a TableHandle, then filter it by "condition" in the background, and provide
+ * the resulting filtered TableHandle (or error) to my observers.
+ */
+
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
   IObservable<StatusOr<TableHandle>> {
