@@ -3,7 +3,7 @@
 namespace Deephaven.ExcelAddIn.Status;
 
 public abstract class StatusOr : IDisposable {
-  public abstract StatusOr Copy();
+  public abstract StatusOr Share();
   public abstract void Dispose();
 }
 
@@ -29,14 +29,9 @@ public sealed class StatusOr<T> : StatusOr {
     _value = value;
   }
 
-  public override StatusOr<T> Copy() {
+  public override StatusOr<T> Share() {
 
   }
-
-  public StatusOr<T> Move() {
-
-  }
-
 
   public bool GetValueOrStatus(
     [NotNullWhen(true)]out T? value,

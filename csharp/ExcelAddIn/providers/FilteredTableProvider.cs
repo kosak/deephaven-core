@@ -67,15 +67,15 @@ internal class FilteredTableProvider :
       }
       _observers.SetStateAndNotify(ref _filteredTableHandle, "Filtering");
       // These two values need to be created early (not on the lambda, which is on a different thread)
-      var parentHandleCopy = parentHandle.Copy();
+      var parentHandleShare = parentHandle.Share();
       var cookie = _versionTracker.SetNewVersion();
-      Background666.Run(() => OnNextBackground(parentHandleCopy.Move(), cookie));
+      Background666.Run(() => OnNextBackground(parentHandleShare, cookie));
     }
   }
 
-  private void OnNextBackground(StatusOr<TableHandle> parentHandleCopy,
+  private void OnNextBackground(StatusOr<TableHandle> parentHandleShare,
     VersionTrackerCookie versionCookie) {
-    using var parentHandle = parentHandleCopy;
+    using var parentHandle = parentHandleShare;
     StatusOr<TableHandle> newResult;
     try {
       // This is a server call that may take some time.
