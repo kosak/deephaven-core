@@ -20,10 +20,10 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private IDisposable? _upstreamSubscriptionDisposer = null;
+  private IDisposable? _upstreamDisposer = null;
+  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<Client> _client = UnsetClientText;
-  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -37,7 +37,7 @@ internal class CoreClientProvider :
     lock (_sync) {
       _observers.AddAndNotify(observer, _client, out var isFirst);
       if (isFirst) {
-        _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+        _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }
 
@@ -52,16 +52,17 @@ internal class CoreClientProvider :
     }
 
     // At this point we have no observers.
-
     IDisposable? disp;
     lock (_sync) {
-      disp = Utility.Exchange(ref _upstreamSubscriptionDisposer, null);
+      disp = Utility.Exchange(ref _upstreamDisposer, null);
     }
     disp?.Dispose();
 
     // At this point we are not observing anything.
     // Release our Deephaven resource asynchronously.
-    Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
+    lock (_sync) {
+      Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
+    }
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {

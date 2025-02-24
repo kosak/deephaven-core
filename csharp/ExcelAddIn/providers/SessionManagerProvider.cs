@@ -3,6 +3,7 @@ using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -20,10 +21,10 @@ internal class SessionManagerProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private IDisposable? _upstreamSubscriptionDisposer = null;
+  private IDisposable? _upstreamDisposer = null;
+  private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<SessionManager> _session = UnsetSessionManagerText;
-  private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
 
   public SessionManagerProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -35,10 +36,9 @@ internal class SessionManagerProvider :
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<SessionManager>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _session);
+      _observers.AddAndNotify(observer, _session, out var isFirst);
       if (isFirst) {
-        _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+        _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }
 
@@ -46,20 +46,20 @@ internal class SessionManagerProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<SessionManager>> observer) {
+    // Do not do this under lock, because we don't want to wait while holding a lock.
     _observers.RemoveAndWait(observer, out var isLast);
     if (!isLast) {
       return;
     }
 
-    // Now we have no more observers.
+    // At this point we have no observers.
     IDisposable? disp;
     lock (_sync) {
-      disp = Utility.Exchange(ref _upstreamSubscriptionDisposer, null);
+      disp = Utility.Exchange(ref _upstreamDisposer, null);
     }
     disp?.Dispose();
 
-    // Now we are not observing anyone. The object should be quiescent.
-
+    // At this point we are not observing anything.
     // Release our Deephaven resource asynchronously.
     lock (_sync) {
       Background666.InvokeDispose(Utility.Exchange(ref _session, UnsetSessionManagerText));
@@ -69,19 +69,19 @@ internal class SessionManagerProvider :
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        _observers.SetStateAndNotify(ref _session, status);
+        ProviderUtil.SetStateAndNotify(ref _session, status, _observers);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         _ => {
           // We are a CorePlus entity but we are getting credentials for core.
-          _observers.SetStateAndNotify(ref _session,
-            "Persistent Queries are not supported in Community Core");
+          ProviderUtil.SetStateAndNotify(ref _session,
+            "Persistent Queries are not supported in Community Core", _observers);
           return Unit.Instance;
         },
         corePlus => {
-          _observers.SetStateAndNotify(ref _session, "Trying to connect");
+          ProviderUtil.SetStateAndNotify(ref _session, "Trying to connect", _observers);
           var cookie = _versionTracker.SetNewVersion();
           Background666.Run(() => OnNextBackground(corePlus, cookie));
           return Unit.Instance;
@@ -93,7 +93,6 @@ internal class SessionManagerProvider :
     VersionTrackerCookie versionCookie) {
     StatusOr<SessionManager> result;
     try {
-      // This operation might take some time.
       var sm = EndpointFactory.ConnectToCorePlus(config);
       result = StatusOr<SessionManager>.OfValue(sm);
     } catch (Exception ex) {
@@ -103,7 +102,7 @@ internal class SessionManagerProvider :
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        _observers.SetStateAndNotify(ref _session, result);
+        ProviderUtil.SetStateAndNotify(ref _session, result, _observers);
       }
     }
   }
