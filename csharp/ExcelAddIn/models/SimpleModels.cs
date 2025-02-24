@@ -17,11 +17,4 @@ public record EndpointId(string Id) {
   public override string ToString() => Id;
 }
 
-/**
- * Strong type for PersistentQueryName
- */
-public record PersistentQueryName(string Name) {
-  public override string ToString() => Name;
-}
-
 public record EndpointHealth;

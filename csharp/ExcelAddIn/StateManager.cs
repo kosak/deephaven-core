@@ -13,7 +13,7 @@ public class StateManager {
   private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
   private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
-  private readonly Dictionary<EndpointId, SessionManagerProvider> _corePlusSessionProviders = new();
+  private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryInfoProvider> _persistentQueryProviders = new();
   private readonly Dictionary<TableQuad, IObservable<StatusOr<TableHandle>>> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
@@ -161,6 +161,32 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
+  public IDisposable SubscribeToPqInfo(
+    EndpointId endpointId, PersistentQueryName pqName,
+    IObserver<StatusOr<Client>> observer) {
+    IObservable<StatusOr<TableHandle>>? wrapped;
+    lock (_sync) {
+      if (!_tableProviders.TryGetValue(key, out wrapped)) {
+        IObservable<StatusOr<TableHandle>> tp;
+        if (key.EndpointId == null) {
+          tp = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
+        } else if (key.Condition.Length != 0) {
+          tp = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+            key.Condition);
+        } else {
+          tp = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
+        }
+        wrapped = Wrapped.Of(tp, () => {
+          lock (_sync) {
+            _tableProviders.Remove(key);
+          }
+        });
+        _tableProviders.Add(key, wrapped);
+      }
+    }
+    return wrapped.Subscribe(observer);
+  }
+
   public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryName pqName,
     IObserver<StatusOr<Client>> observer) {
 
@@ -238,6 +264,24 @@ public class StateManager {
     }
     return wrapped.Subscribe(observer);
   }
+
+  public IDisposable SubscribeToSessionManager(EndpointId endpoint,
+    IObserver<StatusOr<SessionManager>> observer) {
+    IObservable<StatusOr<SessionManager>>? wrapped;
+    lock (_sync) {
+      if (!_sessionManagerProviders.TryGetValue(endpoint, out wrapped)) {
+        var sm = new SessionManagerProvider(this, endpoint);
+        wrapped = Wrapped.Of(sm, () => {
+          lock (_sync) {
+            _sessionManagerProviders.Remove(endpoint);
+          }
+        });
+        _sessionManagerProviders.Add(endpoint, wrapped);
+      }
+    }
+    return wrapped.Subscribe(observer);
+  }
+
 
   public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
     lock (_sync) {

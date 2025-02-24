@@ -14,6 +14,8 @@ internal class CorePlusClientProvider :
   IObserver<PersistentQueryInfoMessage>,
   IObservable<StatusOr<DndClient>> {
   private const string UnsetClientText = "[No Core+ Client]";
+  private const string UnsetSessionManagerText = "[No Session Manager]";
+  private const string UnsetPqInfoText = "[No PQ Info]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly string _pqName;
