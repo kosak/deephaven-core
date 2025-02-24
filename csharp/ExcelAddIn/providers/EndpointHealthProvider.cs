@@ -34,8 +34,8 @@ internal class EndpointHealthProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private IDisposable? _upstreamConfigSubDisposer = null;
-  private IDisposable? _upstreamClientOrSessionSubDisposer = null;
+  private IDisposable? _upstreamConfigDisposer = null;
+  private IDisposable? _upstreamClientOrSessionDisposer = null;
   private StatusOr<EndpointHealth> _endpointHealth = UnsetHealthString;
   private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
 
@@ -49,10 +49,9 @@ internal class EndpointHealthProvider :
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<EndpointHealth>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _endpointHealth);
+      _observers.AddAndNotify(observer, _endpointHealth, out var isFirst);
       if (isFirst) {
-        _upstreamConfigSubDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+        _upstreamConfigDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }
 
@@ -60,34 +59,44 @@ internal class EndpointHealthProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<EndpointHealth>> observer) {
-    lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
-      if (!isLast) {
-        return;
-      }
-
-      // Do these teardowns synchronously.
-      Utility.Exchange(ref _upstreamConfigSubDisposer, null)?.Dispose();
-      Utility.Exchange(ref _upstreamClientOrSessionSubDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(Utility.Exchange(ref _endpointHealth, UnsetHealthString));
+    // Do not do this under lock, because we don't want to wait while holding a lock.
+    _observers.RemoveAndWait(observer, out var isLast);
+    if (!isLast) {
+      return;
     }
+
+    // At this point we have no observers.
+    IDisposable? disp1, disp2;
+    lock (_sync) {
+      disp1 = Utility.Exchange(ref _upstreamConfigDisposer, null);
+    }
+    disp1?.Dispose();
+
+    // At this point no one can call our OnNext(StatusOr<EndpointConfigBase> credentials)
+    lock (_sync) {
+      disp2 = Utility.Exchange(ref _upstreamClientOrSessionDisposer, null);
+    }
+    disp2?.Dispose();
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
+    IDisposable? disp;
+    lock (_sync) {
+      disp = Utility.Exchange(ref _upstreamClientOrSessionDisposer, null);
+    }
+    disp?.Dispose();
+
     lock (_sync) {
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        // Upstream has status text.
-        _observers.SetStateAndNotify(ref _endpointHealth, status);
+        ProviderUtil.SetStateAndNotify(ref _endpointHealth, status, _observers);
         return;
       }
 
-      _observers.SetStateAndNotify(ref _endpointHealth, "[Unknown]");
-      Utility.Exchange(ref _upstreamClientOrSessionSubDisposer, null)?.Dispose();
+      ProviderUtil.SetStateAndNotify(ref _endpointHealth, "[Unknown]", _observers);
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
-      _upstreamClientOrSessionSubDisposer = cbase.AcceptVisitor(
+      _upstreamClientOrSessionDisposer = cbase.AcceptVisitor(
         (CoreEndpointConfig _) => _stateManager.SubscribeToCoreClient(_endpointId, this),
         (CorePlusEndpointConfig _) => _stateManager.SubscribeToCorePlusSession(_endpointId, this));
     }
@@ -98,7 +107,7 @@ internal class EndpointHealthProvider :
       // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
       // the status.
       var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
-      _observers.SetStateAndNotify(ref _endpointHealth, message);
+      ProviderUtil.SetStateAndNotify(ref _endpointHealth, message, _observers);
     }
   }
 
@@ -107,7 +116,7 @@ internal class EndpointHealthProvider :
       // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
       // the status.
       var message = sm.AcceptVisitor(_ => ConnectionOkString, s => s);
-      _observers.SetStateAndNotify(ref _endpointHealth, message);
+      ProviderUtil.SetStateAndNotify(ref _endpointHealth, message, _observers);
     }
   }
 
