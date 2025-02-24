@@ -7,6 +7,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>> {
   private const string UnsetCredentialsString = "[No Credentials]";
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
@@ -20,19 +21,28 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
 
   private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out _);
+      _observers.Remove(observer, out var isLast);
+      if (isLast) {
+        _isDisposed = true;
+      }
     }
   }
 
   public void SetCredentials(EndpointConfigBase newConfig) {
     var newValue = StatusOr<EndpointConfigBase>.OfValue(newConfig);
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       ProviderUtil.SetStateAndNotify(ref _credentials, newValue, _observers);
     }
   }
 
   public void Resend() {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       _observers.OnNext(_credentials);
     }
   }

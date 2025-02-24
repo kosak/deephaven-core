@@ -1,6 +1,6 @@
 ﻿namespace Deephaven.ExcelAddIn.Util;
 
-internal class VersionTracker {
+public class VersionTracker {
   private readonly object _sync = new();
   private Cookie _cookie;
 
@@ -8,7 +8,7 @@ internal class VersionTracker {
     _cookie = new Cookie(this);
   }
 
-  public Cookie SetNewVersion() {
+  public Cookie New() {
     lock (_sync) {
       _cookie = new Cookie(this);
       return _cookie;
