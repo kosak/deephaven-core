@@ -116,6 +116,8 @@ public class SessionManager : IDisposable {
     _authClient.Dispose();
   }
 
+  public Subscription Subscribe() => _controllerClient.Subscribe();
+
   public DndClient ConnectToPqByName(string pqName, bool removeOnClose) {
     var (pqSerial, client) = FindPqAndConnect(dict => {
       var result = dict.Values.FirstOrDefault(i => i.Config.Name == pqName);

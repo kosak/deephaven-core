@@ -98,9 +98,7 @@ public class ControllerClient : IDisposable {
     _channel.Dispose();
   }
 
-  public Subscription Subscribe() {
-    return new Subscription(_subscriptionContext);
-  }
+  public Subscription Subscribe() => new (_subscriptionContext);
 
   /// <summary>
   /// Test if a given status implies a running query.
