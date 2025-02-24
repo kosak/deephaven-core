@@ -7,6 +7,12 @@ using Io.Deephaven.Proto.Auth;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+public interface IObserverWithCookie<T> {
+  void OnNextWithCookie(T value, VersionTracker.Cookie cookie);
+  void OnCompletedWithCookie(VersionTracker.Cookie cookie);
+  void OnErrorWithCookie(VersionTracker.Cookie cookie);
+}
+
 /**
  * The job of this class is to observe EndpointConfig notifications for a given EndpointId,
  * and then provide EndpointHealth notifications. These notifications are either a placeholder
@@ -25,8 +31,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class EndpointHealthProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
-  IObserverWithCookie<StatusOr<EndpointConfigBase>>,
-  IObserverWithCookie<StatusOr<EndpointConfigBase>>,
+  IObserverWithCookie<StatusOr<Client>>,
+  IObserverWithCookie<StatusOr<SessionManager>>,
   IObservable<StatusOr<EndpointHealth>> {
   private const string UnsetHealthString = "[No Config]";
   private const string ConnectionOkString = "OK";
@@ -106,18 +112,15 @@ internal class EndpointHealthProvider :
     }
   }
 
+
   private class ObserverWithCookie<T> : IObserver<T> {
+    private readonly IObserverWithCookie<T> _owner;
     private readonly VersionTracker.Cookie _cookie;
-    Action<T, VersionTracker.Cookie> onNext,
-      Action<VersionTracker.Cookie> onCompleted,
-    Action<Exception, VersionTracker.Cookie> onError) {
 
-    public ClientPain(VersionTracker.Cookie cookie,
-      Action<T, VersionTracker.Cookie> onNext,
-      Action<VersionTracker.Cookie> onCompleted,
-      Action<Exception, VersionTracker.Cookie> onError) {
+    public ClientPain(IObserverWithCookie<T> owner,
+      VersionTracker.Cookie cookie) {
+      _owner = owner;
       _cookie = cookie;
-
     }
 
     public void OnNext(T value) {
