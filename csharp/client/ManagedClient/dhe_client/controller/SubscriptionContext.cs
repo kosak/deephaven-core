@@ -56,6 +56,8 @@ internal class SubscriptionContext : IDisposable {
     }
     _cts.Cancel();
     _cts.Dispose();
+
+    maybe_wait_until_cancel_is_done();
   }
 
   private async void ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {
