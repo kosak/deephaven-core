@@ -14,6 +14,7 @@ internal class PersistentQueryInfoProvider :
   private readonly EndpointId _endpointId;
   private readonly string _pqName;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<PersistentQueryInfoMessage>> _observers = new();
   private StatusOr<PersistentQueryInfoMessage> _infoMessage = UnsetPqText;
@@ -47,40 +48,37 @@ internal class PersistentQueryInfoProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
-    // Do not do this under lock, because we don't want to wait while holding a lock.
-    _observers.RemoveAndWait(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
-
-    // At this point we have no observers.
-    IDisposable? disp1;
     lock (_sync) {
-      disp1 = Utility.Exchange(ref _upstreamDisposer, null);
-    }
-    disp1?.Dispose();
+      // Do not do this under lock, because we don't want to wait while holding a lock.
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
 
-    // At this point we are not observing anything.
-    // Release our message asynchronously. (Doesn't really need to be async, but eh)
-    lock (_sync) {
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
       ProviderUtil.SetState(ref _infoMessage, "[Disposing]");
     }
   }
 
   public void OnNext(StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> dict) {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       if (!dict.GetValueOrStatus(out var d, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _infoMessage, status, _observers);
         return;
       }
 
-      // Try quick lookup
+      // Try quick lookup using the key hint (and then verify that the hint is correct)
       if (!d.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName) {
-        // Quick lookup didn't work. Try slow lookup.
+        // That didn't work. Try exhaustive slow lookup.
         message = d.Values.FirstOrDefault(v => v.Config.Name == _pqName);
       }
 
       if (ReferenceEquals(message, _lastMessage)) {
+        // Suppress duplicate messages, which only confuse 
         // If the last message is the same as this one (i.e. both the same or both
         // null), then we don't have to resend a notification, because it would just
         // be noisy for the observer.
@@ -97,8 +95,6 @@ internal class PersistentQueryInfoProvider :
         result = StatusOr<PersistentQueryInfoMessage>.OfValue(message);
       }
 
-      // Doesn't really matter because PersistentQueryInfoMessage isn't disposable anyway,
-      // but doesn't hurt.
       using var cleanup = result;
 
       ProviderUtil.SetStateAndNotify(ref _infoMessage, result, _observers);
