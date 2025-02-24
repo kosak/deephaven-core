@@ -49,6 +49,9 @@ internal class SubscriptionProvider :
 
   public void OnNext(StatusOr<SessionManager> sessionManager) {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       if (!sessionManager.GetValueOrStatus(out var sm, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _subscription, status, _observers);
         return;

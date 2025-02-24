@@ -34,6 +34,7 @@ internal class TableProvider :
   private readonly PersistentQueryName? _pqName;
   private readonly string _tableName;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly VersionTracker _versionTracker = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
@@ -49,8 +50,7 @@ internal class TableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _tableHandle);
+      _observers.AddAndNotify(observer, _tableHandle, out var isFirst);
       if (isFirst) {
         // Subscribe to parents at the time of the first subscription.
         _upstreamDisposer = _pqName != null
@@ -64,28 +64,30 @@ internal class TableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
+      _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
-      // Do this teardowns synchronously.
-      Utility.Exchange(ref _upstreamDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(_tableHandle.Move());
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
     }
   }
 
   public void OnNext(StatusOr<Client> client) {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
+      // Suppress responses from stale background workers.
+      var cookie = _versionTracker.SetNewVersion();
       if (!client.GetValueOrStatus(out _, out var status)) {
-        Utility.SetStateAndNotify(_observers, ref _tableHandle, status);
+        ProviderUtil.SetStateAndNotify(ref _tableHandle, status, _observers);
         return;
       }
 
-      Utility.SetStateAndNotify(_observers, ref _tableHandle, "Fetching Table");
+      ProviderUtil.SetStateAndNotify(ref _tableHandle, "Fetching Table", _observers);
       // These two values need to be created early (not on the lambda, which is on a different thread)
       var clientCopy = client.Copy();
-      var cookie = _versionTracker.SetNewVersion();
       Background666.Run(() => OnNextBackground(clientCopy.Move(), cookie));
     }
   }
