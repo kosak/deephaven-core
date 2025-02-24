@@ -26,6 +26,7 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
@@ -42,8 +43,7 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _filteredTableHandle);
+      _observers.AddAndNotify(observer, _filteredTableHandle, out var isFirst);
       if (isFirst) {
         // Subscribe to parent at the time of the first subscription.
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
@@ -57,33 +57,39 @@ internal class FilteredTableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
+      _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
-      // Tear down synchronously.
-      Utility.Exchange(ref _upstreamDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(_filteredTableHandle.Move());
+
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _filteredTableHandle, "[Disposed");
     }
   }
 
   public void OnNext(StatusOr<TableHandle> parentHandle) {
     lock (_sync) {
-      if (!parentHandle.GetValueOrStatus(out _, out var status)) {
-        _observers.SetStateAndNotify(ref _filteredTableHandle, status);
+      if (_isDisposed) {
         return;
       }
-      _observers.SetStateAndNotify(ref _filteredTableHandle, "Filtering");
-      // These two values need to be created early (not on the lambda, which is on a different thread)
+
+      // Invalidate any outstanding background work
+      var cookie = _versionTracker.New();
+
+      if (!parentHandle.GetValueOrStatus(out _, out var status)) {
+        ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, status, _observers);
+        return;
+      }
+      ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, "Filtering", _observers);
+      // This needs to be created early (not on the lambda, which is on a different thread)
       var parentHandleShare = parentHandle.Share();
-      var cookie = _versionTracker.SetNewVersion();
       Background666.Run(() => OnNextBackground(parentHandleShare, cookie));
     }
   }
 
   private void OnNextBackground(StatusOr<TableHandle> parentHandleShare,
-    VersionTrackerCookie versionCookie) {
+    VersionTracker.Cookie versionCookie) {
     using var parentHandle = parentHandleShare;
     StatusOr<TableHandle> newResult;
     try {
@@ -98,7 +104,7 @@ internal class FilteredTableProvider :
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        _observers.SetStateAndNotify(ref _filteredTableHandle, newResult);
+        ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }
   }
