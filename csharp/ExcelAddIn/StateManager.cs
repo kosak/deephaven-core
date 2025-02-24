@@ -240,11 +240,9 @@ public class StateManager {
   }
 
   public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
-    if (WorkerThread.EnqueueOrNop(() => SetDefaultEndpointId(defaultEndpointId))) {
-      return;
+    lock (_sync) {
+      _defaultEndpointId = defaultEndpointId;
+      _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
     }
-
-    _defaultEndpointId = defaultEndpointId;
-    _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
   }
 }
