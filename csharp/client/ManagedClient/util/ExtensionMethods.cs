@@ -21,13 +21,13 @@ public static class ExtensionMethods {
 }
 
 public static class TaskExtensions {
+  private static async Task ForgetAwaited(Task task) {
+    await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+  }
+
   public static void Forget(this Task task) {
     if (!task.IsCompleted || task.IsFaulted) {
       _ = ForgetAwaited(task);
-    }
-
-    static async Task ForgetAwaited(Task task) {
-      await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
     }
   }
 }
