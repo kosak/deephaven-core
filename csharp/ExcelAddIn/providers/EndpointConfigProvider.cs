@@ -19,8 +19,9 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
   }
 
   private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
-    // Do not do this under lock, because we don't want to wait while holding a lock.
-    _observers.RemoveAndWait(observer, out _);
+    lock (_sync) {
+      _observers.Remove(observer, out _);
+    }
   }
 
   public void SetCredentials(EndpointConfigBase newConfig) {
