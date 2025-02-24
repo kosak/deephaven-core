@@ -23,11 +23,13 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
   public void SetCredentials(EndpointConfigBase newConfig) {
     var newValue = StatusOr<EndpointConfigBase>.OfValue(newConfig);
     lock (_sync) {
-      ProviderUtil.SetStateAndNotify(ref _credentials, newValue);
+      ProviderUtil.SetStateAndNotify(ref _credentials, newValue, _observers);
     }
   }
 
   public void Resend() {
-    _observers.OnNext(_credentials);
+    lock (_sync) {
+      _observers.OnNext(_credentials);
+    }
   }
 }
