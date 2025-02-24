@@ -12,8 +12,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  * TableHandles or status messages, forward those to my observers.
  */
 internal class DefaultEndpointTableProvider :
-  IObserver<StatusOr<TableHandle>>,
   IObserver<EndpointId?>,
+  IObserverWithCookie<StatusOr<TableHandle>>,
   IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Default Connection]";
 
@@ -22,9 +22,10 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly SequentialExecutor _executor = new();
+  private readonly VersionTracker _versionTracker = new();
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
@@ -38,8 +39,7 @@ internal class DefaultEndpointTableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _tableHandle);
+      _observers.AddAndNotify(observer, _tableHandle, out var isFirst);
       if (isFirst) {
         _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
       }
@@ -50,39 +50,56 @@ internal class DefaultEndpointTableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.RemoveAndWait(observer, out var isLast);
+      _observers.Remove(observer, out var isLast);
       if (!isLast) {
         return;
       }
-      // Do these teardowns synchronously.
-      Utility.Exchange(ref _endpointSubscriptionDisposer, null)?.Dispose();
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(Utility.Exchange(ref _tableHandle, UnsetTableHandleText));
+
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
+      Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
+      ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
     }
   }
 
   public void OnNext(EndpointId? endpointId) {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       // Unsubscribe from old upstream
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
+      Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
+      // Suppress any notifications from the old subscription, which will now be stale
+      var cookie = _versionTracker.New();
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
-        _observers.SetStateAndNotify(ref _tableHandle, UnsetTableHandleText);
+        ProviderUtil.SetStateAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
         return;
       }
 
       // Subscribe to a new upstream
       var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
-      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, this);
+      var observer = new ObserverWithCookie<StatusOr<TableHandle>>(this, cookie);
+      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, observer);
     }
   }
 
-  public void OnNext(StatusOr<TableHandle> value) {
+  public void OnNextWithCookie(StatusOr<TableHandle> value, VersionTracker.Cookie cookie) {
     lock (_sync) {
-      _observers.SetStateAndNotify(ref _tableHandle, value);
+      if (_isDisposed || !cookie.IsCurrent) {
+        return;
+      }
+      ProviderUtil.SetStateAndNotify(ref _tableHandle, value, _observers);
     }
+  }
+
+  public void OnCompletedWithCookie(VersionTracker.Cookie cookie) {
+    throw new NotImplementedException();
+  }
+
+  public void OnErrorWithCookie(Exception ex, VersionTracker.Cookie cookie) {
+    throw new NotImplementedException();
   }
 
   public void OnCompleted() {

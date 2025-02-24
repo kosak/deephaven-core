@@ -18,6 +18,7 @@ internal class CorePlusClientProvider :
   private readonly EndpointId _endpointId;
   private readonly string _pqName;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _sessionManagerDisposer = null;
   private IDisposable? _pqInfoDisposer = null;
   private readonly ObserverContainer<StatusOr<DndClient>> _observers = new();
@@ -38,8 +39,7 @@ internal class CorePlusClientProvider :
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<DndClient>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _client);
+      _observers.AddAndNotify(observer, _client, out var isFirst);
       if (isFirst) {
         _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
         _pqInfoDisposer = _stateManager.SubscribeToPqInfo(_endpointId, _pqName, this);
@@ -50,82 +50,83 @@ internal class CorePlusClientProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<DndClient>> observer) {
-    _observers.RemoveAndWait(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
-
-    IDisposable? disp1, disp2;
     lock (_sync) {
-      disp1 = Utility.Exchange(ref _sessionManagerDisposer, null);
-      disp2 = Utility.Exchange(ref _pqInfoDisposer, null);
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
+
+      _isDisposed = true;
+
+      Utility.ClearAndDispose(ref _sessionManagerDisposer);
+      Utility.ClearAndDispose(ref _pqInfoDisposer);
+
+      // Release our Deephaven resource asynchronously.
+      ProviderUtil.SetState(ref _sessionManager, "[Disposed]");
+      ProviderUtil.SetState(ref _client, "[Disposed]");
     }
-
-    // Do these teardowns synchronously, but not under lock.
-    disp1?.Dispose();
-    disp2?.Dispose();
-
-    // Release our Deephaven resource asynchronously.
-    Background666.InvokeDispose(Utility.Exchange(ref _sessionManager, UnsetSessionManagerText));
-    Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
   }
 
   public void OnNext(StatusOr<SessionManager> sessionManager) {
     lock (_sync) {
-      SetState(ref _sessionManager, sessionManager);
+      if (_isDisposed) {
+        return;
+      }
+      ProviderUtil.SetState(ref _sessionManager, sessionManager);
       UpdateStateLocked();
     }
   }
 
-  public void OnNext(StatusOr<PersistentQueryInfoMessage> message) {
+  public void OnNext(StatusOr<PersistentQueryInfoMessage> pqInfo) {
     lock (_sync) {
-      SetState(ref _pqInfo, message);
+      if (_isDisposed) {
+        return;
+      }
+      ProviderUtil.SetState(ref _pqInfo, pqInfo);
       UpdateStateLocked();
     }
   }
 
   private void UpdateStateLocked() {
-    // Do we have a session?
-    if (!_sessionManager.GetValueOrStatus(out var sm, out var status)) {
-      _observers.SetStateAndNotify(ref _client, status);
-      return;
-    }
+    // Invalidate any background work that might be running.
+    var cookie = _versionTracker.New();
 
-    // Do we have a PQInfo?
-    if (!_pqInfo.GetValueOrStatus(out var pq, out status)) {
-      _observers.SetStateAndNotify(ref _client, status);
+    // Do we have a session and a PQInfo?
+    if (!_sessionManager.GetValueOrStatus(out var _, out var status) || 
+        !_pqInfo.GetValueOrStatus(out var pq, out status)) {
+      // No, transmit error status
+      ProviderUtil.SetStateAndNotify(ref _client, status, _observers);
       return;
     }
 
     // Is our PQInfo in the running state?
     if (!ControllerClient.IsRunning(pq.State.Status)) {
-      _observers.SetStateAndNotify(ref _client, $"PQ is in state {pq.State.Status}");
+      ProviderUtil.SetStateAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
       return;
     }
 
     var smCopy = _sessionManager.Share();
-    var cookie = _versionTracker.SetNewVersion();
     Background666.Run(() => UpdateStateInBackground(smCopy, pq, cookie));
   }
 
   private void UpdateStateInBackground(StatusOr<SessionManager> smCopy,
-    PersistentQueryInfoMessage pq, VersionTrackerCookie cookie) {
+    PersistentQueryInfoMessage pq, VersionTracker.Cookie cookie) {
     using var cleanup1 = smCopy;
 
     StatusOr<DndClient> newState;
     try {
       var (sm, _) = smCopy;
       var client = sm.ConnectToPqById(pq.State.Serial, false);
-      // Keep a dependency on sm
+      // Our value is the client, with a dependency on the SessionManager
       newState = StatusOr<DndClient>.OfValue(client, smCopy);
     } catch (Exception ex) {
       newState = ex.Message;
     }
-    using var cleanup = newState;
+    using var cleanup2 = newState;
 
     lock (_sync) {
       if (cookie.IsCurrent) {
-        _observers.SetStateAndNotify(ref _client, newState);
+        ProviderUtil.SetStateAndNotify(ref _client, newState, _observers);
       }
     }
   }

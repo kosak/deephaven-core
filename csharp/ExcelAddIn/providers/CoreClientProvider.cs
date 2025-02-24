@@ -62,7 +62,11 @@ internal class CoreClientProvider :
     lock (_sync) {
       if (_isDisposed) {
         return;
-      }
+      }    
+      
+      // Invalidate any background work that might be running.
+      var cookie = _versionTracker.New();
+
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _client, status, _observers);
         return;
@@ -71,7 +75,6 @@ internal class CoreClientProvider :
       _ = cbase.AcceptVisitor(
         core => {
           ProviderUtil.SetStateAndNotify(ref _client, "Trying to connect", _observers);
-          var cookie = _versionTracker.New();
           Background666.Run(() => OnNextBackground(core, cookie));
           return Unit.Instance;  // have to return something
         },
