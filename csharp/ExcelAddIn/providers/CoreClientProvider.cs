@@ -35,8 +35,7 @@ internal class CoreClientProvider :
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out var isFirst);
-      _observers.OnNextOne(observer, _client);
+      _observers.AddAndNotify(observer, _client, out var isFirst);
       if (isFirst) {
         _upstreamSubscriptionDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
@@ -46,35 +45,43 @@ internal class CoreClientProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
+    // Do not do this under lock, because we don't want to wait while holding a lock.
     _observers.RemoveAndWait(observer, out var isLast);
     if (!isLast) {
       return;
     }
+
+    // At this point we have no observers.
+
+    IDisposable? disp;
     lock (_sync) {
-      // Do these teardowns synchronously.
-      Utility.Exchange(ref _upstreamSubscriptionDisposer, null)?.Dispose();
-      // Release our Deephaven resource asynchronously.
-      Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
+      disp = Utility.Exchange(ref _upstreamSubscriptionDisposer, null);
     }
+    disp?.Dispose();
+
+    // At this point we are not observing anything.
+    // Release our Deephaven resource asynchronously.
+    Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        _observers.SetStateAndNotify(ref _client, status);
+        ProviderUtil.SetStateAndNotify(ref _client, status, _observers);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         core => {
-          _observers.SetStateAndNotify(ref _client, "Trying to connect");
+          ProviderUtil.SetStateAndNotify(ref _client, "Trying to connect", _observers);
           var cookie = _versionTracker.SetNewVersion();
           Background666.Run(() => OnNextBackground(core, cookie));
           return Unit.Instance;
         },
         _ => {
           // We are a Core entity but we are getting credentials for CorePlus
-          _observers.SetStateAndNotify(ref _client, "Enterprise Core+ requires a PQ to be specified");
+          ProviderUtil.SetStateAndNotify(ref _client,
+            "Enterprise Core+ requires a PQ to be specified", _observers);
           return Unit.Instance;
         });
     }
@@ -92,7 +99,7 @@ internal class CoreClientProvider :
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        _observers.SetStateAndNotify(ref _client, result);
+        ProviderUtil.SetStateAndNotify(ref _client, result, _observers);
       }
     }
   }

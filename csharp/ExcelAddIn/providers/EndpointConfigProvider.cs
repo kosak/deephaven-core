@@ -11,12 +11,15 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
   public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
-    _observers.AddAndNotify(observer, _credentials, out _);
+    lock (_sync) {
+      _observers.AddAndNotify(observer, _credentials, out _);
+    }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
   private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
+    // Do not do this under lock, because we don't want to wait while holding a lock.
     _observers.RemoveAndWait(observer, out _);
   }
 
