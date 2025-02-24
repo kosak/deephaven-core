@@ -63,6 +63,10 @@ internal class SessionManagerProvider :
       if (_isDisposed) {
         return;
       }
+
+      // Suppress background messages that might come in after this point.
+      var cookie = _versionTracker.New();
+
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _session, status, _observers);
         return;
@@ -77,7 +81,6 @@ internal class SessionManagerProvider :
         },
         corePlus => {
           ProviderUtil.SetStateAndNotify(ref _session, "Trying to connect", _observers);
-          var cookie = _versionTracker.New();
           Background666.Run(() => OnNextBackground(corePlus, cookie));
           return Unit.Instance;
         });
@@ -96,7 +99,7 @@ internal class SessionManagerProvider :
     using var cleanup = result;
 
     lock (_sync) {
-      if (versionCookie.IsCurrent) {
+      if (!_isDisposed && versionCookie.IsCurrent) {
         ProviderUtil.SetStateAndNotify(ref _session, result, _observers);
       }
     }
