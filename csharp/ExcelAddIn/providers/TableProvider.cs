@@ -68,6 +68,7 @@ internal class TableProvider :
       if (!isLast) {
         return;
       }
+      _isDisposed = true;
       Utility.ClearAndDispose(ref _upstreamDisposer);
       ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
     }
@@ -79,21 +80,19 @@ internal class TableProvider :
         return;
       }
       // Suppress responses from stale background workers.
-      var cookie = _versionTracker.SetNewVersion();
+      var cookie = _versionTracker.New();
       if (!client.GetValueOrStatus(out _, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _tableHandle, status, _observers);
         return;
       }
 
       ProviderUtil.SetStateAndNotify(ref _tableHandle, "Fetching Table", _observers);
-      // These two values need to be created early (not on the lambda, which is on a different thread)
-      var clientCopy = client.Copy();
-      Background666.Run(() => OnNextBackground(clientCopy.Move(), cookie));
+      var clientCopy = client.Share();
+      Background666.Run(() => OnNextBackground(clientCopy, cookie));
     }
   }
 
-  private void OnNextBackground(StatusOr<Client> clientCopy,
-    VersionTrackerCookie cookie) {
+  private void OnNextBackground(StatusOr<Client> clientCopy, VersionTracker.Cookie cookie) {
     using var cleanup1 = clientCopy;
 
     StatusOr<TableHandle> newState;
@@ -109,7 +108,7 @@ internal class TableProvider :
 
     lock (_sync) {
       if (cookie.IsCurrent) {
-        _observers.SetStateAndNotify(ref _tableHandle, newState);
+        ProviderUtil.SetStateAndNotify(ref _tableHandle, newState, _observers);
       }
     }
   }
