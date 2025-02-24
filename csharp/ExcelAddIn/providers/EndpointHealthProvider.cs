@@ -91,8 +91,9 @@ internal class EndpointHealthProvider :
       }
 
       _isDisposed = true;
-      Utility.Exchange(ref _upstreamConfigDisposer, null)?.Dispose();
-      Utility.Exchange(ref _upstreamClientOrSessionDisposer, null)?.Dispose();
+      Utility.ClearAndDispose(ref _upstreamConfigDisposer);
+      Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
+      ProviderUtil.SetState(ref _endpointHealth, "[Disposed]");
     }
   }
 
@@ -106,7 +107,7 @@ internal class EndpointHealthProvider :
       // midstream and we don't want to get confused by stale notifications
       // from something we just unsubscribed from.
       var cookie = _versionTracker.New();
-      Utility.Exchange(ref _upstreamClientOrSessionDisposer, null)?.Dispose();
+      Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
 
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _endpointHealth, status, _observers);

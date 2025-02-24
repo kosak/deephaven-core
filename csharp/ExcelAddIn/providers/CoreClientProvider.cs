@@ -20,6 +20,7 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
@@ -45,28 +46,23 @@ internal class CoreClientProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
-    // Do not do this under lock, because we don't want to wait while holding a lock.
-    _observers.RemoveAndWait(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
-
-    // At this point we have no observers.
-    IDisposable? disp;
     lock (_sync) {
-      disp = Utility.Exchange(ref _upstreamDisposer, null);
-    }
-    disp?.Dispose();
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
 
-    // At this point we are not observing anything.
-    // Release our Deephaven resource asynchronously.
-    lock (_sync) {
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
       ProviderUtil.SetState(ref _client, "[Disposing]");
     }
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _client, status, _observers);
         return;
@@ -75,20 +71,20 @@ internal class CoreClientProvider :
       _ = cbase.AcceptVisitor(
         core => {
           ProviderUtil.SetStateAndNotify(ref _client, "Trying to connect", _observers);
-          var cookie = _versionTracker.SetNewVersion();
+          var cookie = _versionTracker.New();
           Background666.Run(() => OnNextBackground(core, cookie));
-          return Unit.Instance;
+          return Unit.Instance;  // have to return something
         },
         _ => {
           // We are a Core entity but we are getting credentials for CorePlus
           ProviderUtil.SetStateAndNotify(ref _client,
             "Enterprise Core+ requires a PQ to be specified", _observers);
-          return Unit.Instance;
+          return Unit.Instance;  // have to return something
         });
     }
   }
 
-  private void OnNextBackground(CoreEndpointConfig config, VersionTrackerCookie versionCookie) {
+  private void OnNextBackground(CoreEndpointConfig config, VersionTracker.Cookie versionCookie) {
     StatusOr<Client> result;
     try {
       var client = EndpointFactory.ConnectToCore(config);

@@ -3,7 +3,6 @@ using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -21,6 +20,7 @@ internal class SessionManagerProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
@@ -46,28 +46,23 @@ internal class SessionManagerProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<SessionManager>> observer) {
-    // Do not do this under lock, because we don't want to wait while holding a lock.
-    _observers.RemoveAndWait(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
-
-    // At this point we have no observers.
-    IDisposable? disp;
     lock (_sync) {
-      disp = Utility.Exchange(ref _upstreamDisposer, null);
-    }
-    disp?.Dispose();
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
 
-    // At this point we are not observing anything.
-    // Release our Deephaven resource asynchronously.
-    lock (_sync) {
-      Background666.InvokeDispose(Utility.Exchange(ref _session, UnsetSessionManagerText));
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _session, "[Disposed]");
     }
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
     lock (_sync) {
+      if (_isDisposed) {
+        return;
+      }
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _session, status, _observers);
         return;
@@ -82,7 +77,7 @@ internal class SessionManagerProvider :
         },
         corePlus => {
           ProviderUtil.SetStateAndNotify(ref _session, "Trying to connect", _observers);
-          var cookie = _versionTracker.SetNewVersion();
+          var cookie = _versionTracker.New();
           Background666.Run(() => OnNextBackground(corePlus, cookie));
           return Unit.Instance;
         });
@@ -90,7 +85,7 @@ internal class SessionManagerProvider :
   }
 
   private void OnNextBackground(CorePlusEndpointConfig config,
-    VersionTrackerCookie versionCookie) {
+    VersionTracker.Cookie versionCookie) {
     StatusOr<SessionManager> result;
     try {
       var sm = EndpointFactory.ConnectToCorePlus(config);

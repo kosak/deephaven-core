@@ -7,10 +7,9 @@ internal static class Background666 {
 
   // public static void ClearAndDispose<T>(ref T? item) where T : class, IDisposable {
   //   (item, var todo) = (null, item);
-  //   if (todo != null) {
-  //     Run(todo.Dispose);
-  //   }
+  //   InvokeDispose(todo);
   // }
+
   public static void InvokeDispose(IDisposable? disp) {
     if (disp != null) {
       Run(disp.Dispose);

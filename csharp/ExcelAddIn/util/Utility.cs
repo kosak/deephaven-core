@@ -18,10 +18,10 @@ namespace Deephaven.ExcelAddIn;
 internal static class Utility {
   public const string VersionString = "Version 1.0.0-snapshot";
 
-  // public static void MaybeDispose<T>(ref T? item) where T : class, IDisposable {
-  //   var temp = Exchange(ref item, null);
-  //   temp?.Dispose();
-  // }
+  public static void ClearAndDispose<T>(ref T? item) where T : class, IDisposable {
+    var temp = Exchange(ref item, null);
+    temp?.Dispose();
+  }
 
   public static T NotNull<T>(T? item) where T : class {
     if (item == null) {
