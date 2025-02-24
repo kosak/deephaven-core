@@ -13,6 +13,7 @@ internal class SubscriptionProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
+  private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<Subscription>> _observers = new();
   private StatusOr<Subscription> _subscription = UnsetSubText;
@@ -34,22 +35,14 @@ internal class SubscriptionProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<Subscription>> observer) {
-    // Do not do this under lock, because we don't want to wait while holding a lock.
-    _observers.RemoveAndWait(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
-
-    // At this point we have no observers.
-    IDisposable? disp;
     lock (_sync) {
-      disp = Utility.Exchange(ref _upstreamDisposer, null);
-    }
-    disp?.Dispose();
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
 
-    // At this point we are not observing anything.
-    // Release our Subscription asynchronously.
-    lock (_sync) {
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
       ProviderUtil.SetState(ref _subscription, "[Disposing]");
     }
   }
