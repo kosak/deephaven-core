@@ -61,7 +61,7 @@ internal class CoreClientProvider :
     // At this point we are not observing anything.
     // Release our Deephaven resource asynchronously.
     lock (_sync) {
-      Background666.InvokeDispose(Utility.Exchange(ref _client, UnsetClientText));
+      ProviderUtil.SetState(ref _client, UnsetClientText);
     }
   }
 

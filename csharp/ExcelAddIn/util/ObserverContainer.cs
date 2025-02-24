@@ -85,4 +85,9 @@ public static class ProviderUtil {
     dest = newValue.Share();
     container.OnNext(newValue);
   }
+
+  public static void SetState<T>(ref StatusOr<T> dest, StatusOr<T> newValue) {
+    Background666.InvokeDispose(dest);
+    dest = newValue.Share();
+  }
 }
