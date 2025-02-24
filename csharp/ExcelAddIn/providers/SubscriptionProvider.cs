@@ -9,7 +9,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SubscriptionProvider :
   IObserver<StatusOr<SessionManager>>,
   IObservable<StatusOr<Subscription>> {
-  private const string UnsetSubText = "[No Subscription Dict]";
+  private const string UnsetSubText = "[No Subscription]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
@@ -68,5 +68,15 @@ internal class SubscriptionProvider :
       using var newState = StatusOr<Subscription>.OfValue(sub, sessionManager);
       ProviderUtil.SetStateAndNotify(ref _subscription, newState, _observers);
     }
+  }
+
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
   }
 }
