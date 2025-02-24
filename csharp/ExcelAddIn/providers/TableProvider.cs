@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.DheClient.Session;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
@@ -26,6 +27,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
+  IObserver<StatusOr<DndClient>>,
   IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Table]";
 
@@ -75,6 +77,14 @@ internal class TableProvider :
   }
 
   public void OnNext(StatusOr<Client> client) {
+    OnNextHelper(client);
+  }
+
+  public void OnNext(StatusOr<DndClient> client) {
+    OnNextHelper(client);
+  }
+
+  private void OnNextHelper<T>(StatusOr<T> client) where T : Client {
     lock (_sync) {
       if (_isDisposed) {
         return;
@@ -92,7 +102,8 @@ internal class TableProvider :
     }
   }
 
-  private void OnNextBackground(StatusOr<Client> clientCopy, VersionTracker.Cookie cookie) {
+  private void OnNextBackground<T>(StatusOr<T> clientCopy, VersionTracker.Cookie cookie)
+    where T : Client {
     using var cleanup1 = clientCopy;
 
     StatusOr<TableHandle> newState;
