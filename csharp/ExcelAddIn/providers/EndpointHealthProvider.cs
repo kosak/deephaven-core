@@ -164,7 +164,7 @@ internal class EndpointHealthProvider :
 
   public void OnNextWithCookie(StatusOr<SessionManager> sm, VersionTracker.Cookie cookie) {
     lock (_sync) {
-      if (!cookie.IsCurrent) {
+      if (_isDisposed || !cookie.IsCurrent) {
         return;
       }
       // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
