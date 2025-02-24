@@ -63,6 +63,7 @@ internal class CorePlusClientProvider :
 
       // Release our Deephaven resource asynchronously.
       ProviderUtil.SetState(ref _sessionManager, "[Disposed]");
+      ProviderUtil.SetState(ref _pqInfo, "[Disposed]");
       ProviderUtil.SetState(ref _client, "[Disposed]");
     }
   }
