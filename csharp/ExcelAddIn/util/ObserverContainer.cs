@@ -2,15 +2,23 @@
 
 namespace Deephaven.ExcelAddIn.Util;
 
+public class Boxed<T> {
+  public T Value;
+
+  public Boxed(T value) {
+    Value = value;
+  }
+}
+
 public sealed class ObserverContainer<T> : IObserver<T> {
   private readonly object _sync = new();
   private readonly SequentialExecutor _executor = new();
-  private readonly HashSet<IObserver<T>> _observers = new();
+  private readonly Dictionary<IObserver<T>, Boxed<bool>> _observers = new();
 
   public void AddAndNotify(IObserver<T> observer, T value, out bool isFirst) {
     lock (_sync) {
       isFirst = _observers.Count == 0;
-      _observers.Add(observer);
+      _observers.Add(observer, new Boxed<bool>(true));
       OnNextHelperLocked([observer], value);
     }
   }
@@ -22,12 +30,15 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     }
   }
 
-  private void OnNextHelperLocked(IObserver<T>[] observers, T item) {
+  private void OnNextHelperLocked(KeyValuePair<IObserver<T>, Boxed<bool>>[] observers, T item) {
     var disp = item is StatusOr sor ? sor.Share() : null;
     _executor.Run(() => {
       // Note: We're on different thread now. _sync is not held inside here.
-      foreach (var observer in observers) {
-        observer.OnNext(item);
+      foreach (var (observer, enabled) in observers) {
+        if (Interlocked.Read(ref enabled.Value)) {
+          observer.OnNext(item);
+          Interlocked.
+        }
       }
       disp?.Dispose();
     });
