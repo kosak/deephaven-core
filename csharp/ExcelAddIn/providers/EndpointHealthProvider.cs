@@ -25,8 +25,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class EndpointHealthProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
-  IObserver<StatusOr<Client>>,
-  IObserver<StatusOr<SessionManager>>,
+  IObserverWithCookie<StatusOr<EndpointConfigBase>>,
+  IObserverWithCookie<StatusOr<EndpointConfigBase>>,
   IObservable<StatusOr<EndpointHealth>> {
   private const string UnsetHealthString = "[No Config]";
   private const string ConnectionOkString = "OK";
@@ -59,34 +59,30 @@ internal class EndpointHealthProvider :
   }
 
   private void RemoveObserver(IObserver<StatusOr<EndpointHealth>> observer) {
-    // Do not do this under lock, because we don't want to wait while holding a lock.
-    _observers.RemoveAndWait(observer, out var isLast);
-    if (!isLast) {
-      return;
-    }
-
-    // At this point we have no observers.
-    IDisposable? disp1, disp2;
     lock (_sync) {
-      disp1 = Utility.Exchange(ref _upstreamConfigDisposer, null);
-    }
-    disp1?.Dispose();
+      _observers.Remove(observer, out var isLast);
+      if (!isLast) {
+        return;
+      }
 
-    // At this point no one can call our OnNext(StatusOr<EndpointConfigBase> credentials)
-    lock (_sync) {
-      disp2 = Utility.Exchange(ref _upstreamClientOrSessionDisposer, null);
+      _isDisposed = true;
+      Utility.Exchange(ref _upstreamConfigDisposer, null)?.Dispose();
+      Utility.Exchange(ref _upstreamClientOrSessionDisposer, null)?.Dispose();
     }
-    disp2?.Dispose();
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> credentials) {
-    IDisposable? disp;
     lock (_sync) {
-      disp = Utility.Exchange(ref _upstreamClientOrSessionDisposer, null);
-    }
-    disp?.Dispose();
+      if (_isDisposed) {
+        return;
+      }
 
-    lock (_sync) {
+      // We do this cookie thing because we don't want to get stale notifications
+      // from the thing we just unsubcribed from
+      var cookie = _versionTracker.SetNew();
+
+      Utility.Exchange(ref _upstreamClientOrSessionDisposer, null)?.Dispose();
+
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         ProviderUtil.SetStateAndNotify(ref _endpointHealth, status, _observers);
         return;
@@ -97,13 +93,52 @@ internal class EndpointHealthProvider :
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
       _upstreamClientOrSessionDisposer = cbase.AcceptVisitor(
-        (CoreEndpointConfig _) => _stateManager.SubscribeToCoreClient(_endpointId, this),
-        (CorePlusEndpointConfig _) => _stateManager.SubscribeToCorePlusSession(_endpointId, this));
+        (CoreEndpointConfig _) => {
+          var observerWithCookie = new ClientPain<StatusOr<Client>>(cookie,
+            OnNextWithCookie, OnCompletedWithCookie, OnErrorWithCookie);
+          return _stateManager.SubscribeToCoreClient(_endpointId, observerWithCookie);
+        },
+        (CorePlusEndpointConfig _) => {
+          var observerWithCookie = new ClientPain<StatusOr<SessionManager>>(cookie,
+            OnNextWithCookie, OnCompletedWithCookie, OnErrorWithCookie);
+          return _stateManager.SubscribeToCorePlusSession(_endpointId, observerWithCookie);
+        });
     }
   }
 
-  public void OnNext(StatusOr<Client> client) {
+  private class ObserverWithCookie<T> : IObserver<T> {
+    private readonly VersionTracker.Cookie _cookie;
+    Action<T, VersionTracker.Cookie> onNext,
+      Action<VersionTracker.Cookie> onCompleted,
+    Action<Exception, VersionTracker.Cookie> onError) {
+
+    public ClientPain(VersionTracker.Cookie cookie,
+      Action<T, VersionTracker.Cookie> onNext,
+      Action<VersionTracker.Cookie> onCompleted,
+      Action<Exception, VersionTracker.Cookie> onError) {
+      _cookie = cookie;
+
+    }
+
+    public void OnNext(T value) {
+      _onNextWithCookie(value, _cookie);
+    }
+
+    public void OnCompleted() {
+      _onNextWithCookie(value, _cookie);
+    }
+
+    public void OnError(Exception error) {
+      _onErrorWithCookie(value, _cookie);
+    }
+  }
+
+
+  public void OnNextWithCookie(StatusOr<Client> client, VersionTracker.Cookie cookie) {
     lock (_sync) {
+      if (!cookie.IsCurrent) {
+        return;
+      }
       // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
       // the status.
       var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
@@ -111,8 +146,35 @@ internal class EndpointHealthProvider :
     }
   }
 
-  public void OnNext(StatusOr<SessionManager> sm) {
+  public void OnCompletedWithCookie(VersionTracker.Cookie cookie) {
     lock (_sync) {
+      if (!cookie.IsCurrent) {
+        return;
+      }
+      // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
+      // the status.
+      var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
+      ProviderUtil.SetStateAndNotify(ref _endpointHealth, message, _observers);
+    }
+  }
+
+  public void OnErrorWithCookie(Exception ex, VersionTracker.Cookie cookie) {
+    lock (_sync) {
+      if (!cookie.IsCurrent) {
+        return;
+      }
+      // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
+      // the status.
+      var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
+      ProviderUtil.SetStateAndNotify(ref _endpointHealth, message, _observers);
+    }
+  }
+
+  public void OnNextWithCookie(StatusOr<SessionManager> sm, VersionTracker.Cookie cookie) {
+    lock (_sync) {
+      if (!cookie.IsCurrent) {
+        return;
+      }
       // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
       // the status.
       var message = sm.AcceptVisitor(_ => ConnectionOkString, s => s);

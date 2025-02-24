@@ -44,24 +44,11 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     });
   }
 
-  public void RemoveAndWait(IObserver<T> observer, out bool wasLast) {
-    Task task;
+  public void Remove(IObserver<T> observer, out bool wasLast) {
     lock (_sync) {
       var removed = _observers.Remove(observer);
       wasLast = removed && _observers.Count == 0;
-      if (!removed) {
-        return;
-      }
-      // This little job will set the task flag at the end of the
-      // SequentialExecutor queue. By waiting until the SequentialExecutor
-      // gets to this point, we can prove that we will not have any more
-      // references to "observer".
-      var tcs = new TaskCompletionSource();
-      task = tcs.Task;
-      _executor.Run(tcs.SetResult);
     }
-
-    task.Wait();
   }
 
   public void OnError(Exception ex) {
