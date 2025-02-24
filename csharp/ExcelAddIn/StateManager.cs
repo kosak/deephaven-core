@@ -4,16 +4,18 @@ using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using static Deephaven.ExcelAddIn.StateManager;
 
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
+  private readonly object _sync = new();
   private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
   private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
   private readonly Dictionary<EndpointId, SessionManagerProvider> _corePlusSessionProviders = new();
   private readonly Dictionary<PersistentQueryKey, PersistentQueryInfoProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableQuad, ITableProvider> _tableProviders = new();
+  private readonly Dictionary<TableQuad, IObservable<StatusOr<TableHandle>>> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -178,31 +180,65 @@ public class StateManager {
       () => Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
+  public static class Wrapped {
+    public static Wrapped<T> Of<T>(IObservable<T> observable, Action onCleanup) {
+      return new Wrapped<T>(observable, onCleanup);
+    }
+
+  }
+
+  public class Wrapped<T> : IObservable<T>  {
+    private readonly IObservable<T> _inner;
+    private readonly Action _onCleanup;
+    private int _referenceCount = 0;
+
+    public Wrapped(IObservable<T> inner, Action onCleanup) {
+      _inner = inner;
+      _onCleanup = onCleanup;
+    }
+
+    public IDisposable Subscribe(IObserver<T> observer) {
+      Interlocked.Increment(ref _referenceCount);
+      var innerDisposer = _inner.Subscribe(observer);
+
+      var isDisposed = false;
+      return ActionAsDisposable.Create(() => {
+        if (Utility.Exchange(ref isDisposed, true)) {
+          return;
+        }
+
+        if (Interlocked.Decrement(ref _referenceCount) == 0) {
+          _onCleanup();
+        }
+        innerDisposer.Dispose();
+      });
+    }
+  }
+
   public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
+    IObservable<StatusOr<TableHandle>>? wrapped;
     lock (_sync) {
-      if (!_tableProviders.TryGetValue(key, out var tp)) {
+      if (!_tableProviders.TryGetValue(key, out wrapped)) {
+        IObservable<StatusOr<TableHandle>> tp;
         if (key.EndpointId == null) {
-          tp = new DefaultEndpointTableProvider(this, key.PersistentQueryId, key.TableName, key.Condition);
+          tp = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
         } else if (key.Condition.Length != 0) {
-          tp = new FilteredTableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName,
+          tp = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
             key.Condition);
         } else {
-          tp = new TableProvider(this, key.EndpointId, key.PersistentQueryId, key.TableName);
+          tp = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
         }
-        _tableProviders.Add(key, tp);
+        wrapped = Wrapped.Of(tp, () => {
+          lock (_sync) {
+            _tableProviders.Remove(key);
+          }
+        });
+        _tableProviders.Add(key, wrapped);
       }
     }
-    var innerDisposer = tp.Subscribe(observer);
-    var disposer = ActionAsDisposable.Create(() => {
-      innerDisposer.Dispose();
-      if (tp.NumSubscribers == 0) {
-        _tableProviders.Remove(key);
-      }
-    });
-
-    return disposer;
+    return wrapped.Subscribe(observer);
   }
-  
+
   public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
     if (WorkerThread.EnqueueOrNop(() => SetDefaultEndpointId(defaultEndpointId))) {
       return;
