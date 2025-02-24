@@ -12,23 +12,20 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
 
   public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.Add(observer, out _);
-      _observers.OnNextOne(observer, _credentials);
+      _observers.AddAndNotify(observer, _credentials, out _);
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
   private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
-    lock (_sync) {
-      _observers.RemoveAndWait(observer, out _);
-    }
+    _observers.RemoveAndWait(observer, out _);
   }
 
   public void SetCredentials(EndpointConfigBase newConfig) {
+    var newValue = StatusOr<EndpointConfigBase>.OfValue(newConfig);
     lock (_sync) {
-      _credentials = StatusOr<EndpointConfigBase>.OfValue(newConfig);
-      _observers.OnNext(_credentials);
+      _observers.SetStateAndNotify(ref _credentials, newValue);
     }
   }
 
