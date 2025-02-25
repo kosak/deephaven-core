@@ -19,8 +19,7 @@ public class StateManager {
     _persistentQueryDictProviders = new();
   private readonly Dictionary<(EndpointId, string), WrappedProvider<StatusOr<PersistentQueryInfoMessage>>>
     _persistentQueryInfoProviders = new();
-
-  private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
+  private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<SessionManager>>> _sessionManagerProviders = new();
 
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
@@ -87,6 +86,14 @@ public class StateManager {
     var factory = () => new PersistentQueryInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(key, _persistentQueryInfoProviders, observer, factory);
   }
+
+  public IDisposable SubscribeToSessionManager(EndpointId endpoint,
+    IObserver<StatusOr<SessionManager>> observer) {
+
+    var factory = () => new SessionManagerProvider(this, endpoint);
+    return SubscribeHelper(endpoint, _sessionManagerProviders, observer, factory);
+  }
+
 
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
@@ -167,15 +174,6 @@ public class StateManager {
 
   
 
-
-
-
-  public IDisposable SubscribeToSessionManager(EndpointId endpoint,
-    IObserver<StatusOr<SessionManager>> observer) {
-
-    var factory = () => new SessionManagerProvider(this, endpoint);
-    return SubscribeHelper(endpoint, _sessionManagerProviders, observer, factory);
-  }
 
 
 
