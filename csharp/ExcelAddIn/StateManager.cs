@@ -13,8 +13,8 @@ public class StateManager {
   private readonly object _sync = new();
   private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<Client>>> _coreClientProviders = new();
   private readonly Dictionary<(EndpointId, string), WrappedProvider<StatusOr<DndClient>>> _corePlusClientProviders = new();
-  private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
-  private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
+  private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<EndpointConfigBase>>> _endpointConfigProviders = new();
+  private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<EndpointHealth>>> _endpointHealthProviders = new();
   private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
   private readonly Dictionary<(EndpointId, string), Wrapped<StatusOr<PersistentQueryInfoMessage>>> _pqInfoProviders = new();
   private readonly Dictionary<TableQuad, Wrapped<StatusOr<TableHandle>>> _tableProviders = new();
@@ -40,6 +40,23 @@ public class StateManager {
     return SubscribeHelper(key, _corePlusClientProviders, observer, factory);
   }
 
+  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
+    IObserver<StatusOr<EndpointConfigBase>> observer) {
+    // TODO(kosak): do something here about EndpointConfig population management
+
+    Func<IObservable<StatusOr<EndpointConfigBase>>> factory =
+      () => new EndpointConfigProvider();
+    return SubscribeHelper(endpointId, _endpointConfigProviders, observer, factory);
+  }
+
+  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
+    IObserver<StatusOr<EndpointHealth>> observer) {
+
+    Func<IObservable<StatusOr<EndpointHealth>>> factory =
+      () => new EndpointHealthProvider(this, endpointId);
+    return SubscribeHelper(endpointId, _endpointHealthProviders, observer, factory);
+  }
+
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
       _endpointConfigPopulationObservers.Add(observer, out _);
@@ -63,37 +80,6 @@ public class StateManager {
 
     return WorkerThread.EnqueueOrRunWhenDisposed(
       () => _defaultEndpointSelectionObservers.Remove(observer, out _));
-  }
-
-  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
-    IObserver<StatusOr<EndpointHealth>> observer) {
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      if (!_endpointHealthProviders.TryGetValue(endpointId, out var ehp)) {
-        ehp = new EndpointHealthProvider(this, endpointId, () => _endpointHealthProviders.Remove(endpointId));
-        _endpointHealthProviders.Add(endpointId, ehp);
-        ehp.Init();
-      }
-      disposer = ehp.Subscribe(observer);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
-      Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  /// <summary>
-  /// Note that, unlike the other providers, the connection configs don't remove themselves
-  /// from the map upon the last unsubscribe. Rather, they hang around until manually
-  /// removed with a TryDeleteCredentials call.
-  /// </summary>
-  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
-    IObserver<StatusOr<EndpointConfigBase>> observer) {
-    IDisposable? disposer = null;
-    LookupOrCreateEndpointConfigProvider(endpointId,
-      cp => disposer = cp.Subscribe(observer));
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
-      Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
   public void SetCredentials(EndpointConfigBase config) {
