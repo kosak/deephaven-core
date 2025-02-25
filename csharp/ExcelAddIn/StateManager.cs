@@ -15,9 +15,10 @@ public class StateManager {
   private readonly Dictionary<(EndpointId, string), WrappedProvider<StatusOr<DndClient>>> _corePlusClientProviders = new();
   private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<EndpointConfigBase>>> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<EndpointHealth>>> _endpointHealthProviders = new();
+  private readonly Dictionary<TableQuad, WrappedProvider<StatusOr<TableHandle>>> _tableProviders = new();
   private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
+
   private readonly Dictionary<(EndpointId, string), Wrapped<StatusOr<PersistentQueryInfoMessage>>> _pqInfoProviders = new();
-  private readonly Dictionary<TableQuad, Wrapped<StatusOr<TableHandle>>> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -49,7 +50,6 @@ public class StateManager {
 
   public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
     IObserver<StatusOr<EndpointHealth>> observer) {
-
     Func<IObservable<StatusOr<EndpointHealth>>> factory =
       () => new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(endpointId, _endpointHealthProviders, observer, factory);
@@ -69,6 +69,15 @@ public class StateManager {
 
     return SubscribeHelper(key, _tableProviders, observer, factory);
   }
+
+  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
+    IObserver<StatusOr<EndpointHealth>> observer) {
+
+    Func<IObservable<StatusOr<EndpointHealth>>> factory =
+      () => new EndpointHealthProvider(this, endpointId);
+    return SubscribeHelper(endpointId, _endpointHealthProviders, observer, factory);
+  }
+
 
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
