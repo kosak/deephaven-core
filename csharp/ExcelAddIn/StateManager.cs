@@ -42,8 +42,6 @@ public class StateManager {
 
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
-    // TODO(kosak): do something here about EndpointConfig population management
-
     Func<IObservable<StatusOr<EndpointConfigBase>>> factory =
       () => new EndpointConfigProvider();
     return SubscribeHelper(endpointId, _endpointConfigProviders, observer, factory);
@@ -55,6 +53,21 @@ public class StateManager {
     Func<IObservable<StatusOr<EndpointHealth>>> factory =
       () => new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(endpointId, _endpointHealthProviders, observer, factory);
+  }
+
+  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
+    Func<IObservable<StatusOr<TableHandle>>> factory = () => {
+      if (key.EndpointId == null) {
+        return new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
+      }
+      if (key.Condition.Length != 0) {
+        return new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+          key.Condition);
+      }
+      return new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
+    };
+
+    return SubscribeHelper(key, _tableProviders, observer, factory);
   }
 
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
@@ -152,22 +165,7 @@ public class StateManager {
     return SubscribeHelper(endpoint, _sessionManagerProviders, observer, factory);
   }
 
-  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    Wrapped<StatusOr<TableHandle>>? wrapped;
 
-    Func<IObservable<StatusOr<TableHandle>>> factory = () => {
-      if (key.EndpointId == null) {
-        return new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
-      }
-      if (key.Condition.Length != 0) {
-        return new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
-          key.Condition);
-      }
-      return new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
-    };
-
-    return SubscribeHelper(key, _tableProviders, observer, factory);
-  }
 
   private IDisposable SubscribeHelper<TKey, T>(TKey key,
     IDictionary<TKey, WrappedProvider<T>> dict,

@@ -12,6 +12,8 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
   public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
+    throw new Exception("This needs to be an observer of the");
+    this_needs_to_be_an_observer_of_the_endpoint_config_dictionary();
     lock (_sync) {
       _observers.AddAndNotify(observer, _credentials, out _);
     }
