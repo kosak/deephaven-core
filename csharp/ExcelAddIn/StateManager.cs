@@ -5,7 +5,6 @@ using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
-using System.Windows.Forms;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -16,9 +15,13 @@ public class StateManager {
   private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<EndpointConfigBase>>> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<EndpointHealth>>> _endpointHealthProviders = new();
   private readonly Dictionary<TableQuad, WrappedProvider<StatusOr<TableHandle>>> _tableProviders = new();
+  private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>>
+    _persistentQueryDictProviders = new();
+  private readonly Dictionary<(EndpointId, string), WrappedProvider<StatusOr<PersistentQueryInfoMessage>>>
+    _persistentQueryInfoProviders = new();
+
   private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
 
-  private readonly Dictionary<(EndpointId, string), Wrapped<StatusOr<PersistentQueryInfoMessage>>> _pqInfoProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -70,14 +73,20 @@ public class StateManager {
     return SubscribeHelper(key, _tableProviders, observer, factory);
   }
 
-  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
-    IObserver<StatusOr<EndpointHealth>> observer) {
+  public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
+    IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
 
-    Func<IObservable<StatusOr<EndpointHealth>>> factory =
-      () => new EndpointHealthProvider(this, endpointId);
-    return SubscribeHelper(endpointId, _endpointHealthProviders, observer, factory);
+    Func<IObservable<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>> factory =
+      () => new PersistentQueryDictProvider(this, endpointId);
+    return SubscribeHelper(endpointId, _persistentQueryDictProviders, observer, factory);
   }
 
+  public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, string pqName,
+    IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+    var key = (endpointId, pqName);
+    var factory = () => new PersistentQueryInfoProvider(this, endpointId, pqName);
+    return SubscribeHelper(key, _persistentQueryInfoProviders, observer, factory);
+  }
 
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
@@ -159,13 +168,7 @@ public class StateManager {
   
 
 
-  public IDisposable SubscribeToPqInfo(EndpointId endpointId, string pqName,
-    IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
 
-    var key = (endpointId, pqName);
-    var factory = () => new PersistentQueryInfoProvider(this, endpointId, pqName);
-    return SubscribeHelper(key, _pqInfoProviders, observer, factory);
-  }
 
   public IDisposable SubscribeToSessionManager(EndpointId endpoint,
     IObserver<StatusOr<SessionManager>> observer) {
