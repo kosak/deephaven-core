@@ -4,6 +4,10 @@ using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Controller;
+using System.Collections.Generic;
+using System.Net;
+using System.Windows.Forms;
 using static Deephaven.ExcelAddIn.StateManager;
 
 namespace Deephaven.ExcelAddIn;
@@ -14,8 +18,8 @@ public class StateManager {
   private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
   private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
   private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
-  private readonly Dictionary<PersistentQueryKey, PersistentQueryInfoProvider> _persistentQueryProviders = new();
-  private readonly Dictionary<TableQuad, IObservable<StatusOr<TableHandle>>> _tableProviders = new();
+  private readonly Dictionary<(EndpointId, string), Wrapped<StatusOr<PersistentQueryInfoMessage>>> _pqInfoProviders = new();
+  private readonly Dictionary<TableQuad, Wrapped<StatusOr<TableHandle>>> _tableProviders = new();
   private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
@@ -161,70 +165,72 @@ public class StateManager {
       Utility.Exchange(ref disposer, null)?.Dispose());
   }
 
-  public IDisposable SubscribeToPqInfo(
-    EndpointId endpointId, PersistentQueryName pqName,
-    IObserver<StatusOr<Client>> observer) {
-    IObservable<StatusOr<TableHandle>>? wrapped;
+  private IDisposable SubscribeHelper<TKey, T>(TKey key, IDictionary<TKey, Wrapped<T>> dict,
+    IObserver<T> observer, Func<IObservable<T>> factory) {
+    Wrapped<T>? wrapped;
     lock (_sync) {
-      if (!_tableProviders.TryGetValue(key, out wrapped)) {
-        IObservable<StatusOr<TableHandle>> tp;
-        if (key.EndpointId == null) {
-          tp = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
-        } else if (key.Condition.Length != 0) {
-          tp = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
-            key.Condition);
-        } else {
-          tp = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
-        }
-        wrapped = Wrapped.Of(tp, () => {
-          lock (_sync) {
-            _tableProviders.Remove(key);
-          }
-        });
-        _tableProviders.Add(key, wrapped);
+      if (!dict.TryGetValue(key, out wrapped)) {
+        var observable = factory();
+        wrapped = Wrapped.Of(observable, () => dict.Remove(key));
+        dict.Add(key, wrapped);
+      } else {
+        wrapped.IncrementLocked();
       }
     }
     return wrapped.Subscribe(observer);
   }
 
-  public IDisposable SubscribeToPersistentQuery(EndpointId endpointId, PersistentQueryName pqName,
-    IObserver<StatusOr<Client>> observer) {
+  public IDisposable SubscribeToPqInfo(EndpointId endpointId, string pqName,
+    IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
 
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      var key = new PersistentQueryKey(endpointId, pqName);
-      if (!_persistentQueryProviders.TryGetValue(key, out var pqp)) {
-        pqp = new PersistentQueryProvider(this, endpointId, pqName,
-          () => _persistentQueryProviders.Remove(key));
-        _persistentQueryProviders.Add(key, pqp);
-        pqp.Init();
+    var key = (endpointId, pqName);
+    var factory = () => new PersistentQueryInfoProvider(this, endpointId, pqName);
+    return SubscribeHelper(key, _pqInfoProviders, observer, factory);
+  }
+
+  public IDisposable SubscribeToSessionManager(EndpointId endpoint,
+    IObserver<StatusOr<SessionManager>> observer) {
+
+    var factory = () => new SessionManagerProvider(this, endpoint);
+    return SubscribeHelper(endpoint, _sessionManagerProviders, observer, factory);
+  }
+
+  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
+    Wrapped<StatusOr<TableHandle>>? wrapped;
+
+    Func<IObservable<StatusOr<TableHandle>>> factory = () => {
+      if (key.EndpointId == null) {
+        return new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
       }
-      disposer = pqp.Subscribe(observer);
-    });
+      if (key.Condition.Length != 0) {
+        return new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+          key.Condition);
+      }
+      return new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
+    };
 
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => Utility.Exchange(ref disposer, null)?.Dispose());
+    return SubscribeHelper(key, _tableProviders, observer, factory);
   }
 
   public static class Wrapped {
     public static Wrapped<T> Of<T>(IObservable<T> observable, Action onCleanup) {
       return new Wrapped<T>(observable, onCleanup);
     }
-
   }
 
-  public class Wrapped<T> : IObservable<T>  {
+  public class Wrapped<T> : IObservable<T> {
+    private readonly object _sharedSync;
     private readonly IObservable<T> _inner;
-    private readonly Action _onCleanup;
+    private readonly Action _onCleanupLocked;
     private int _referenceCount = 0;
 
-    public Wrapped(IObservable<T> inner, Action onCleanup) {
+    public Wrapped(object sharedSync, IObservable<T> inner, Action onCleanupLocked) {
+      _sharedSync = sharedSync;
       _inner = inner;
-      _onCleanup = onCleanup;
+      _onCleanupLocked = onCleanupLocked;
     }
 
     public IDisposable Subscribe(IObserver<T> observer) {
-      Interlocked.Increment(ref _referenceCount);
       var innerDisposer = _inner.Subscribe(observer);
 
       var isDisposed = false;
@@ -232,56 +238,19 @@ public class StateManager {
         if (Utility.Exchange(ref isDisposed, true)) {
           return;
         }
-
-        if (Interlocked.Decrement(ref _referenceCount) == 0) {
-          _onCleanup();
+        lock (_sharedSync) {
+          if (--_referenceCount == 0) {
+            _onCleanupLocked();
+          }
         }
         innerDisposer.Dispose();
       });
     }
-  }
 
-  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    IObservable<StatusOr<TableHandle>>? wrapped;
-    lock (_sync) {
-      if (!_tableProviders.TryGetValue(key, out wrapped)) {
-        IObservable<StatusOr<TableHandle>> tp;
-        if (key.EndpointId == null) {
-          tp = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
-        } else if (key.Condition.Length != 0) {
-          tp = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
-            key.Condition);
-        } else {
-          tp = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
-        }
-        wrapped = Wrapped.Of(tp, () => {
-          lock (_sync) {
-            _tableProviders.Remove(key);
-          }
-        });
-        _tableProviders.Add(key, wrapped);
-      }
+    public void IncrementLocked() {
+      ++_referenceCount;
     }
-    return wrapped.Subscribe(observer);
   }
-
-  public IDisposable SubscribeToSessionManager(EndpointId endpoint,
-    IObserver<StatusOr<SessionManager>> observer) {
-    IObservable<StatusOr<SessionManager>>? wrapped;
-    lock (_sync) {
-      if (!_sessionManagerProviders.TryGetValue(endpoint, out wrapped)) {
-        var sm = new SessionManagerProvider(this, endpoint);
-        wrapped = Wrapped.Of(sm, () => {
-          lock (_sync) {
-            _sessionManagerProviders.Remove(endpoint);
-          }
-        });
-        _sessionManagerProviders.Add(endpoint, wrapped);
-      }
-    }
-    return wrapped.Subscribe(observer);
-  }
-
 
   public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
     lock (_sync) {
