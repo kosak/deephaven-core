@@ -5,18 +5,16 @@ using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
-using System.Collections.Generic;
-using System.Net;
 using System.Windows.Forms;
-using static Deephaven.ExcelAddIn.StateManager;
 
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   private readonly object _sync = new();
+  private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<Client>>> _coreClientProviders = new();
+  private readonly Dictionary<(EndpointId, string), WrappedProvider<StatusOr<DndClient>>> _corePlusClientProviders = new();
   private readonly Dictionary<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly Dictionary<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
-  private readonly Dictionary<EndpointId, CoreClientProvider> _coreClientProviders = new();
   private readonly Dictionary<EndpointId, IObservable<StatusOr<SessionManager>>> _sessionManagerProviders = new();
   private readonly Dictionary<(EndpointId, string), Wrapped<StatusOr<PersistentQueryInfoMessage>>> _pqInfoProviders = new();
   private readonly Dictionary<TableQuad, Wrapped<StatusOr<TableHandle>>> _tableProviders = new();
@@ -24,6 +22,23 @@ public class StateManager {
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
   private EndpointId? _defaultEndpointId = null;
+
+  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
+    IObserver<StatusOr<Client>> observer) {
+
+    Func<IObservable<StatusOr<Client>>> factory =
+      () => new CoreClientProvider(this, endpointId);
+    return SubscribeHelper(endpointId, _coreClientProviders, observer, factory);
+  }
+
+  public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, string pqName,
+    IObserver<StatusOr<DndClient>> observer) {
+
+    var key = (endpointId, pqName);
+    Func<IObservable<StatusOr<DndClient>>> factory =
+      () => new CorePlusClientProvider(this, endpointId, pqName);
+    return SubscribeHelper(key, _corePlusClientProviders, observer, factory);
+  }
 
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<EndpointId>> observer) {
     WorkerThread.EnqueueOrRun(() => {
@@ -133,52 +148,8 @@ public class StateManager {
     action(cp);
   }
 
-  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
-    IObserver<StatusOr<Client>> observer) {
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      if (!_coreClientProviders.TryGetValue(endpointId, out var ccp)) {
-        ccp = new CoreClientProvider(this, endpointId, () => _coreClientProviders.Remove(endpointId));
-        _coreClientProviders.Add(endpointId, ccp);
-        ccp.Init();
-      }
-      disposer = ccp.Subscribe(observer);
-    });
+  
 
-    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
-      Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  public IDisposable SubscribeToCorePlusSession(EndpointId endpointId,
-    IObserver<StatusOr<SessionManager>> observer) {
-    IDisposable? disposer = null;
-    WorkerThread.EnqueueOrRun(() => {
-      if (!_corePlusSessionProviders.TryGetValue(endpointId, out var sp)) {
-        sp = new SessionManagerProvider(this, endpointId, () => _corePlusSessionProviders.Remove(endpointId));
-        _corePlusSessionProviders.Add(endpointId, sp);
-        sp.Init();
-      }
-      disposer = sp.Subscribe(observer);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(() =>
-      Utility.Exchange(ref disposer, null)?.Dispose());
-  }
-
-  private IDisposable SubscribeHelper<TKey, T>(TKey key, IDictionary<TKey, Wrapped<T>> dict,
-    IObserver<T> observer, Func<IObservable<T>> factory) {
-    Wrapped<T>? wrapped;
-    lock (_sync) {
-      if (!dict.TryGetValue(key, out wrapped)) {
-        var observable = factory();
-        wrapped = Wrapped.Of(observable, () => dict.Remove(key));
-        dict.Add(key, wrapped);
-      } else {
-        wrapped.IncrementLocked();
-      }
-    }
-    return wrapped.Subscribe(observer);
-  }
 
   public IDisposable SubscribeToPqInfo(EndpointId endpointId, string pqName,
     IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
@@ -212,38 +183,52 @@ public class StateManager {
     return SubscribeHelper(key, _tableProviders, observer, factory);
   }
 
-  public static class Wrapped {
-    public static Wrapped<T> Of<T>(IObservable<T> observable, Action onCleanup) {
-      return new Wrapped<T>(observable, onCleanup);
+  private IDisposable SubscribeHelper<TKey, T>(TKey key,
+    IDictionary<TKey, WrappedProvider<T>> dict,
+    IObserver<T> observer, Func<IObservable<T>> factory) {
+    WrappedProvider<T>? wrapped;
+    lock (_sync) {
+      if (!dict.TryGetValue(key, out wrapped)) {
+        var observable = factory();
+        wrapped = new WrappedProvider<T>(_sync, observable, () => dict.Remove(key));
+        dict.Add(key, wrapped);
+      } else {
+        wrapped.IncrementLocked();
+      }
     }
+    return wrapped.Subscribe(observer);
   }
 
-  public class Wrapped<T> : IObservable<T> {
+  private class WrappedProvider<T> : IObservable<T> {
     private readonly object _sharedSync;
-    private readonly IObservable<T> _inner;
-    private readonly Action _onCleanupLocked;
+    private readonly IObservable<T> _provider;
+    private readonly Action _outerCleanupLocked;
     private int _referenceCount = 0;
 
-    public Wrapped(object sharedSync, IObservable<T> inner, Action onCleanupLocked) {
+    public WrappedProvider(object sharedSync, IObservable<T> provider, Action outerCleanupLocked) {
       _sharedSync = sharedSync;
-      _inner = inner;
-      _onCleanupLocked = onCleanupLocked;
+      _provider = provider;
+      _outerCleanupLocked = outerCleanupLocked;
     }
 
     public IDisposable Subscribe(IObserver<T> observer) {
-      var innerDisposer = _inner.Subscribe(observer);
-
+      var providerDisposer = _provider.Subscribe(observer);
       var isDisposed = false;
       return ActionAsDisposable.Create(() => {
         if (Utility.Exchange(ref isDisposed, true)) {
           return;
         }
+        var providerNeedsDisposing = false;
         lock (_sharedSync) {
           if (--_referenceCount == 0) {
-            _onCleanupLocked();
+            _outerCleanupLocked();
+            providerNeedsDisposing = true;
           }
         }
-        innerDisposer.Dispose();
+        providerDisposer.Dispose();
+        if (providerNeedsDisposing) {
+          _provider.Dispose();
+        }
       });
     }
 
