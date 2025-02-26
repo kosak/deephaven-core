@@ -193,13 +193,12 @@ public static class Splitter {
   }
 }
 
-
 public interface INode<out T> {
   public static abstract T Empty { get; }
 }
 
 public abstract class NodeBase {
-  public readonly int Count;
+  public readonly int Count = 0;
   public readonly Bitset64 ValiditySet;
 
   protected NodeBase() {
