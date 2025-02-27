@@ -62,7 +62,7 @@ function build {
     time ./docker-build.sh --base-distro ubuntu:22.04 --prefix ${INSTALL_DIR}
 
     cat <<EOF >install_packages.R
-    install.packages(c("Rcpp", "R6", "arrow", "dplyr"), Ncpus=parallel::detectCores())  # run this command inside R
+    install.packages(c("Rcpp", "R6", "arrow", "dplyr"), Ncpus=parallel::detectCores())
     install.packages("build/dhe-r-rdeephaven-latest-ubuntu-22.04.tgz", repos=NULL)
     install.packages("build/dhe-r-rdnd-latest-ubuntu-22.04.tgz", repos=NULL)
     library("rdnd")  # if this looks like it worked, then the above process went well
