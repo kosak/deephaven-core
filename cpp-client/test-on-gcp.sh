@@ -86,8 +86,7 @@ function test_controller {
 
 function test_r {
     source ${INSTALL_DIR}/env.sh
-    cd ${INSTALL_DIR}/src/iris/DhcInDhe/cpp-client/build/tests/controller_tests
-    ./controller_tests
+    Rscript ${SRC_DIR}/DhcInDhe/R/rdnd/etc/manual_test_session.R
 }
 
 if [ "$#" -ne 1 ]; then
