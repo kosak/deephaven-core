@@ -14,6 +14,7 @@ export DH_TEST_PASSWORD=yyyyy  # password for the Deephaven server account
 export SRC_DIR=~/deephaven_src
 export INSTALL_DIR=~/deephaven_install
 export R_LIBS_USER=~/r_libs_user
+export MAKEFLAGS=-j`getconf _NPROCESSORS_ONLN`
 
 # REST OF SCRIPT STARTS HERE
 set -euo pipefail
@@ -59,7 +60,6 @@ function build {
     # Build the R stuff. This takes about 6 minutes
     cd ${SRC_DIR}/DhcInDhe/R/rdnd
     time ./docker-build.sh --base-distro ubuntu:22.04 --prefix ${INSTALL_DIR}
-    export MAKEFLAGS=`getconf _NPROCESSORS_ONLN`
 
     cat <<EOF >install_packages.R
     install.packages(c("Rcpp", "R6", "arrow", "dplyr"), Ncpus=parallel::detectCores())  # run this command inside R
@@ -69,7 +69,7 @@ function build {
     q(save="yes")   # exit R
 EOF
 
-    Rscript install_packages.R
+    time Rscript install_packages.R
 }
 
 function test_auth {
