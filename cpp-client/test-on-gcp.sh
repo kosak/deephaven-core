@@ -90,17 +90,18 @@ function test_r {
     ./controller_tests
 }
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 1 ]; then
     usage
     exit 1
-elif [ "$1" -eq "build" ]; then
+elif [ "$1" = "build" ]; then
     build
-elif [ "$1" -eq "test_auth" ]; then
+elif [ "$1" = "test_auth" ]; then
     test_auth
-elif [ "$1" -eq "test_controller" ]; then
+elif [ "$1" = "test_controller" ]; then
     test_controller
-elif [ "$1" -eq "test_r" ]; then
+elif [ "$1" = "test_r" ]; then
     test_r
 else
+    echo Unexpected argument "$1"
     usage
 fi
