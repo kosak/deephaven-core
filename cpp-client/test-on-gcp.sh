@@ -2,11 +2,16 @@
 
 # REQUIRED CUSTOMIZATIONS
 
-export DEEPHAVEN_VERSION=1.20240517.380   # set to correct version
-export DEEPHAVEN_MAJOR_VERSION=20240517   # set to correct version
-export DH_TEST_JSON_URL=https://zzzzzz.int.illumon.com:8123/iris/connection.json  # JSON string for your Deephaven server
-export DH_TEST_USER=xxxxx  # username for the Deephaven server account
-export DH_TEST_PASSWORD=yyyyy  # password for the Deephaven server account
+#set these to the correct versio
+export DEEPHAVEN_VERSION=1.20240517.380
+export DEEPHAVEN_MAJOR_VERSION=20240517
+
+# JSON string for your Deephaven server
+export DH_TEST_JSON_URL=https://zzzzzz.int.illumon.com:8123/iris/connection.json
+
+# credentials for your Deephaven server
+export DH_TEST_USER=xxxxx
+export DH_TEST_PASSWORD=yyyyy
 
 # OPTIONAL CUSTOMIZATIONS
 
