@@ -93,20 +93,14 @@ function test_r {
 if [ "$#" -ne 2 ]; then
     usage
     exit 1
-fi
-
-if [ "$1" -eq "build"]; then
+elif [ "$1" -eq "build" ]; then
     build
-fi
-
-if [ "$1" -eq "test_auth"]; then
+elif [ "$1" -eq "test_auth" ]; then
     test_auth
-fi
-
-if [ "$1" -eq "test_controller"]; then
+elif [ "$1" -eq "test_controller" ]; then
     test_controller
-fi
-
-if [ "$1" -eq "test_r"]; then
+elif [ "$1" -eq "test_r" ]; then
     test_r
+else
+    usage
 fi
