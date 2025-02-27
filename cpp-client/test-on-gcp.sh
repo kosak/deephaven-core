@@ -67,7 +67,7 @@ function build {
     install.packages("build/dhe-r-rdnd-latest-ubuntu-22.04.tgz", repos=NULL)
     library("rdnd")  # if this looks like it worked, then the above process went well
     q(save="yes")   # exit R
-    EOF
+EOF
 
     Rscript install_packages.R
 }
