@@ -78,6 +78,18 @@ function test_auth {
     ./auth_tests
 }
 
+function test_controller {
+    source ${INSTALL_DIR}/env.sh
+    cd ${INSTALL_DIR}/src/iris/DhcInDhe/cpp-client/build/tests/controller_tests
+    ./controller_tests
+}
+
+function test_r {
+    source ${INSTALL_DIR}/env.sh
+    cd ${INSTALL_DIR}/src/iris/DhcInDhe/cpp-client/build/tests/controller_tests
+    ./controller_tests
+}
+
 if [ "$#" -ne 2 ]; then
     usage
     exit 1
@@ -98,4 +110,3 @@ fi
 if [ "$1" -eq "test_r"]; then
     test_r
 fi
-
