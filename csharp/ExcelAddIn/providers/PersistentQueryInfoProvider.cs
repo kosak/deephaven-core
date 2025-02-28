@@ -73,8 +73,10 @@ internal class PersistentQueryInfoProvider :
 
       // Try quick lookup using the key hint (and then verify that the hint is correct)
       if (!d.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName) {
+        use_dict_differencing();
         // That didn't work. Try exhaustive slow lookup.
-        message = d.Values.FirstOrDefault(v => v.Config.Name == _pqName);
+        var stupid = d.FirstOrDefault(v => v.Value.Config.Name == _pqName);
+        _keyHint = what;
       }
 
       if (ReferenceEquals(message, _lastMessage)) {

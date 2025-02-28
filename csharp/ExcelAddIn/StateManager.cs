@@ -21,7 +21,8 @@ public class StateManager {
     _persistentQueryInfoProviders = new();
   private readonly Dictionary<EndpointId, WrappedProvider<StatusOr<SessionManager>>> _sessionManagerProviders = new();
 
-  private readonly ObserverContainer<AddOrRemove<EndpointId>> _endpointConfigPopulationObservers = new();
+  private readonly EndpointDictProvider _endpointDictProvider = new();
+
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
   private EndpointId? _defaultEndpointId = null;

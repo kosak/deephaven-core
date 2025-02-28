@@ -1,10 +1,13 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
+using System.Windows.Forms;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>> {
+internal class EndpointConfigProvider :
+  IObserver<IReadOnlyDictionary<Int64, EndpointConfigBase?>>,
+  IObservable<StatusOr<EndpointConfigBase>> {
   private const string UnsetCredentialsString = "[No Credentials]";
   private readonly object _sync = new();
   private bool _isDisposed = false;
@@ -12,10 +15,12 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
   public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
-    throw new Exception("This needs to be an observer of the");
-    this_needs_to_be_an_observer_of_the_endpoint_config_dictionary();
     lock (_sync) {
-      _observers.AddAndNotify(observer, _credentials, out _);
+      _observers.AddAndNotify(observer, _credentials, out var isFirst);
+
+      if (isFirst) {
+        _upstreamDisposer = _stateManager.SubscribeTo.SubscribeToEndpointDict(this);
+      }
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -24,28 +29,46 @@ internal class EndpointConfigProvider : IObservable<StatusOr<EndpointConfigBase>
   private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var isLast);
-      if (isLast) {
-        _isDisposed = true;
+      if (!isLast) {
+        return;
       }
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _credentials, "[Disposed");
     }
   }
 
-  public void SetCredentials(EndpointConfigBase newConfig) {
-    var newValue = StatusOr<EndpointConfigBase>.OfValue(newConfig);
+  public void OnNext(IReadOnlyDictionary<long, EndpointConfigBase> dict) {
     lock (_sync) {
       if (_isDisposed) {
         return;
       }
-      ProviderUtil.SetStateAndNotify(ref _credentials, newValue, _observers);
-    }
-  }
 
-  public void Resend() {
-    lock (_sync) {
-      if (_isDisposed) {
+      // Try to find with fast path
+      if (!dict.TryGetValue(_keyHint, out var config) || !config.Id.Equals(_endpointId)) {
+        // Try to find with differencing and slower path
+        var (added, _, _) = _prevDict.CalcDifference(dict);
+        var entry = added.FirstOrDefault(kvp => kvp.Value.Endpoint.Equals(_endpointId));
+        _keyHint = entry.Key;
+        config = entry.Value ?? null;
+      }
+
+      _prevDict = dict;
+
+      // need extra logic to debounce duplicates
+
+      if (ReferenceEquals(_prevConfig, config)) {
         return;
       }
-      _observers.OnNext(_credentials);
+      _prevConfig = config;
+
+      if (config == null) {
+        ProviderUtil.SetStateAndNotify(ref _credentials, UnsetCredentialsString, _observers);
+        return;
+      }
+
+      var value = StatusOr<EndpointConfigBase>.OfValue(config);
+      ProviderUtil.SetStateAndNotify(ref _credentials, value, _observers);
     }
   }
 }
