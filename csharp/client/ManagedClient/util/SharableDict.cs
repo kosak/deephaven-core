@@ -36,6 +36,15 @@ public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue>
     return TryGetValue(key, out _);
   }
 
+  public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
+    CalcDifference(SharableDict<TValue> other) {
+    var (added, removed, modified) = _root.CalcDifference(other._root);
+    var aResult = new SharableDict<TValue>(added);
+    var rResult = new SharableDict<TValue>(removed);
+    var mResult = new SharableDict<TValue>(modified);
+    return (aResult, rResult, mResult);
+  }
+
   public TValue this[Int64 key] {
     get {
       if (!TryGetValue(key, out var value)) {
@@ -226,7 +235,7 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
   /// <param name="other">The node we are copying from</param>
   /// <param name="newIndex">The index of the child</param>
   /// <param name="newChild">The new child (if adding) or T.Empty if removing</param>
-  private Internal(Internal<T> other, int newIndex, T newChild)
+  private Internal(Internal<T> other, int newIndex, T newChild, double this_depresses_me)
     : base(CalcCountAndValiditySet(other, newIndex, newChild)) {
     ((ReadOnlySpan<T>)other.Children).CopyTo(Children);
     Children[newIndex] = newChild;
@@ -255,28 +264,37 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     }
     return new Internal<T>(this, index, T.Empty);
   }
+
+  
 }
 
 public class Leaf<T> : NodeBase, INode<Leaf<T>> {
   public static Leaf<T> Empty { get; } = new();
+
+  public static Leaf<T> CreateWith(Leaf<T> orig, int newIndex, T newValue) {
+    var newVs = orig.ValiditySet.WithElement(newIndex);
+    var subtreeSize = newVs.Count;
+    return new Leaf<T>(subtreeSize, newVs, orig.Data, newIndex, newValue);
+  }
+
+  public static Leaf<T> CreateWithout(Leaf<T> orig, int removedIndex) {
+    var newVs = orig.ValiditySet.WithoutElement(removedIndex);
+    if (newVs.IsEmpty) {
+      return Empty;
+    }
+    var subtreeSize = newVs.Count;
+    return new Leaf<T>(subtreeSize, newVs, orig.Data, removedIndex, default);
+  }
 
   public readonly Array64<T> Data;
 
   private Leaf() {
   }
 
-  private Leaf(Leaf<T> other, int newIndex, T newData, bool adding)
-    : base(CalcCountAndValiditySet(other, newIndex, adding)) {
-    ((ReadOnlySpan<T>)other.Data).CopyTo(Data);
-    Data[newIndex] = newData;
-  }
-
-  private static (int, Bitset64) CalcCountAndValiditySet(Leaf<T> other,
-    int newIndex, bool adding) {
-    var otherVs = other.ValiditySet;
-    var newBs = adding ? otherVs.WithElement(newIndex) :
-      otherVs.WithoutElement(newIndex);
-    return (newBs.Count, newBs);
+  private Leaf(int count, Bitset64 validitySet, ReadOnlySpan<T> data,
+    int replacementIndex, T? replacementData) : base(count, validitySet) {
+    data.CopyTo(Data);
+    Data[replacementIndex] = replacementData;
   }
 
   public bool TryGetValue(int index, [MaybeNullWhen(false)] out T value) {
@@ -290,6 +308,7 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
   }
 
   public Leaf<T> With(int index, T value) {
+    return CreateWith();
     return new Leaf<T>(this, index, value, true);
   }
 
