@@ -238,6 +238,7 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     }
     return Create(validitySet, count, children, 0, children[0]);
   }
+
   public static Internal<T> Create(Bitset64 validitySet, int subtreeCount,
     ReadOnlySpan<T> children, int replacementIndex, T replacementChild) {
     if (validitySet.IsEmpty) {
@@ -350,7 +351,7 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     return Create(newVs, Data, index, default);
   }
 
-  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target, Func<T, T, bool> equals) {
+  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target, Func<T?, T?, bool> equals) {
     if (this == target) {
       // Source and target are the same. No changes
       return (Empty, Empty, Empty);  // added, removed, modified
@@ -369,7 +370,7 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
 
     var addedVs = ValiditySet.Without(target.ValiditySet);
     var removedVs = target.ValiditySet.Without(ValiditySet);
-    // These are maybe modified or maybe equal
+    // These are present on both sides and either equal or unequal.
     var maybeModifiedVs = ValiditySet.Intersect(target.ValiditySet);
 
     foreach (var element in addedVs) {
