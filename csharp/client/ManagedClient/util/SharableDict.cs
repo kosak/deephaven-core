@@ -202,9 +202,9 @@ public static class Splitter {
   }
 }
 
-public interface INode<T> {
-  public static abstract T Empty { get; }
-  public (INode<T>, INode<T>, INode<T>) CalcDifference(INode<T> target);
+public interface INode<TSelf> {
+  public static abstract TSelf Empty { get; }
+  public (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
 }
 
 public abstract class NodeBase {
@@ -269,22 +269,22 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
       return (Empty, this, Empty);  // added, removed, modified
     }
     // Need to recurse to all children to find out
-    Array64<T> addedChildren;
-    Array64<T> removedChildren;
-    Array64<T> modifiedChildren;
+    Array64<T> addedChildren = new();
+    Array64<T> removedChildren = new();
+    Array64<T> modifiedChildren = new();
 
-    var srcChildren = (ReadOnlySpan<T>)Children;
-    var targetChildren = (ReadOnlySpan<T>)target.Children;
-    for (var i = 0; i != srcChildren.Length; ++i) {
-      var (a, r, m) = srcChildren[i].CalcDifference(targetChildren[i]);
+    // TODO(kosak): this is awkward, especially because it's fixed at 64
+    var length = ((ReadOnlySpan<T>)Children).Length;
+    for (var i = 0; i != length; ++i) {
+      var (a, r, m) = Children[i].CalcDifference(target.Children[i]);
       addedChildren[i] = a;
       removedChildren[i] = r;
       modifiedChildren[i] = m;
     }
 
-    var zamboniA = Internal<T>.Create(addedChildren);
-    var zamboniR = Internal<T>.Create(removedChildren);
-    var zamboniM = Internal<T>.Create(modifiedChildren);
+    var aResult = OfArray64(addedChildren);
+    var rResult = OfArray64(removedChildren);
+    var mResult = OfArray64(modifiedChildren);
     return (aResult, rResult, mResult);
   }
 }
@@ -327,6 +327,50 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     var subtreeSize = newVs.Count;
     return new Leaf<T>(subtreeSize, newVs, Data, index, default);
   }
+
+  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target) {
+    if (this == target) {
+      // Source and target are the same. No changes
+      return (Empty, Empty, Empty);  // added, removed, modified
+    }
+    if (this == Empty) {
+      // Relative to an empty source, everything in target was added
+      return (target, Empty, Empty);  // added, removed, modified
+    }
+    if (target == Empty) {
+      // Relative to an empty destination, everything in src was removed
+      return (Empty, this, Empty);  // added, removed, modified
+    }
+    // Need to recurse to all children to find out
+    Array64<T> addedData = new();
+    Array64<T> removedData = new();
+    Array64<T> modifiedData = new();
+
+    var addedVs = ValiditySet.Without(target.ValiditySet);
+    var removedVs = target.ValiditySet.Without(ValiditySet);
+    // The initial modified validity set. We need to go through each value
+    // to see if it has actually changed
+    var maybeModifiedVs = ValiditySet.Intersect(target.ValiditySet);
+    foreach (var element in maybeModifiedVs) {
+      if ()
+
+    }
+
+    // TODO(kosak): this is awkward, especially because it's fixed at 64
+    var length = ((ReadOnlySpan<T>)Children).Length;
+    for (var i = 0; i != length; ++i) {
+      var (a, r, m) = srcChildren[i].CalcDifference(targetChildren[i]);
+      addedChildren[i] = a;
+      removedChildren[i] = r;
+      modifiedChildren[i] = m;
+    }
+
+    var aResult = OfArray64(addedChildren);
+    var rResult = OfArray64(removedChildren);
+    var mResult = OfArray64(modifiedChildren);
+    return (aResult, rResult, mResult);
+  }
+
 }
 
 public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
