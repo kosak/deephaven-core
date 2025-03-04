@@ -223,26 +223,16 @@ public abstract class NodeBase {
 public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
   public static Internal<T> Empty { get; } = new();
 
-  public readonly Array64<T?> Children;
+  public readonly Array64<T> Children;
 
   private Internal() {
-    ((Span<T?>)Children).Fill(T.Empty);
+    ((Span<T>)Children).Fill(T.Empty);
   }
 
-  private Internal(int count, Bitset64 validitySet, ReadOnlySpan<T?> children,
-    int replacementIndex, T? replacementChild) : base(count, validitySet) {
+  private Internal(int count, Bitset64 validitySet, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) : base(count, validitySet) {
     children.CopyTo(Children);
     Children[replacementIndex] = replacementChild;
-  }
-
-  private static (int, Bitset64) CalcCountAndValiditySet(Internal<T> other,
-    int newIndex, T newChild) {
-    var adding = newChild != T.Empty;
-    var otherVs = other.ValiditySet;
-    var newVs = adding ? otherVs.WithElement(newIndex) :
-      otherVs.WithoutElement(newIndex);
-    var newCount = other.Count - other.Children[newIndex].Count + newChild.Count;
-    return (newCount, newVs);
   }
 
   public Internal<T> With(int index, T child) {
@@ -256,13 +246,13 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
   }
 
   private Internal<T> Without(int index) {
-    if (ValiditySet.WithoutElement(index).IsEmpty) {
+    var newVs = ValiditySet.WithoutElement(index);
+    if (newVs.IsEmpty) {
       return Empty;
     }
-    return new Internal<T>(this, index, T.Empty);
+    var newCount = Count - Children[index].Count;
+    return new Internal<T>(newCount, newVs, Children, index, T.Empty);
   }
-
-  
 }
 
 public class Leaf<T> : NodeBase, INode<Leaf<T>> {
