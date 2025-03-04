@@ -224,25 +224,20 @@ public abstract class NodeBase {
 public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
   public static Internal<T> Empty { get; } = new();
 
-  public static Internal<T> Create(ReadOnlySpan<T> children) {
-    // There are designs that would avoid some of this copying and recalculating,
-    // but doing it all here is simpler for the rest of the code and avoids mistakes.
-    var validitySet = new Bitset64();
-    var count = 0;
-    var empty = T.Empty;
-    for (var i = 0; i != children.Length; ++i) {
-      var child = children[i];
-      if (child == empty) {
-        continue;
-      }
-      validitySet = validitySet.WithElement(i);
-      count += child.Count;
+  public static Internal<T> OfArray64(Bitset64 validitySet, ReadOnlySpan<T> children) {
+    var subtreeCount = 0;
+    foreach (var index in validitySet) {
+      subtreeCount += children[index].Count;
     }
+    return Create(subtreeCount, children, 0, children[0]);
+  }
 
-    if (count == 0) {
+  public static Internal<T> Create(int subtreeCount, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) {
+    if (subtreeCount == 0) {
       return Empty;
     }
-    return new Internal<T>(validitySet, count, children);
+    return new Internal<T>(subtreeCount, children, 0, children[0]);
   }
 
   public readonly Array64<T> Children;
@@ -251,22 +246,20 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     ((Span<T>)Children).Fill(T.Empty);
   }
 
-  private Internal(Bitset64 validitySet, int count, ReadOnlySpan<T> children) : base(validitySet, count) {
+  private Internal(Bitset64 validitySet, int count, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) : base(validitySet, count) {
     children.CopyTo(Children);
+    Children[replacementIndex] = replacementChild;
   }
 
   public Internal<T> With(int index, T child) {
-    var temp = new Array64<T>();
-    ((ReadOnlySpan<T>)Children).CopyTo(temp);
-    temp[index] = child;
-    return Create(temp);
+    var newCount = Count - Children[index].Count + child.Count;
+    return Create(newCount, Children, index, child);
   }
 
   private Internal<T> Without(int index) {
-    var temp = new Array64<T>();
-    ((ReadOnlySpan<T>)Children).CopyTo(temp);
-    temp[index] = T.Empty;
-    return Create(temp);
+    var newCount = Count - Children[index].Count;
+    return Create(newCount, Children, index, T.Empty);
   }
 
   public (Internal<T>, Internal<T>, Internal<T>) CalcDifference(Internal<T> target) {
@@ -287,6 +280,7 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     Array64<T> removedChildren = new();
     Array64<T> modifiedChildren = new();
 
+    // TODO(kosak): this is awkward, especially because it's fixed at 64
     var length = ((ReadOnlySpan<T>)Children).Length;
     for (var i = 0; i != length; ++i) {
       var (a, r, m) = Children[i].CalcDifference(target.Children[i]);
@@ -295,9 +289,9 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
       modifiedChildren[i] = m;
     }
 
-    var aResult = Create(addedChildren);
-    var rResult = Create(removedChildren);
-    var mResult = Create(modifiedChildren);
+    var aResult = OfArray64(addedChildren);
+    var rResult = OfArray64(removedChildren);
+    var mResult = OfArray64(modifiedChildren);
     return (aResult, rResult, mResult);
   }
 }
