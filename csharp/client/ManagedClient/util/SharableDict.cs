@@ -223,11 +223,19 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
   public static Internal<T> Empty { get; } = new();
 
   public static Internal<T> OfArray64(ReadOnlySpan<T> children) {
-    var count = 0;
+    var subtreeCount = 0;
     foreach (var child in children) {
-      count += child.Count;
+      subtreeCount += child.Count;
     }
-    return new Internal<T>(count, children);
+    return Create(subtreeCount, children, 0, children[0]);
+  }
+
+  public static Internal<T> Create(int subtreeCount, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) {
+    if (subtreeCount == 0) {
+      return Empty;
+    }
+    return new Internal<T>(subtreeCount, children, 0, children[0]);
   }
 
   public readonly Array64<T> Children;
@@ -236,24 +244,20 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     ((Span<T>)Children).Fill(T.Empty);
   }
 
-  private Internal(int count, ReadOnlySpan<T> children) : base(count) {
+  private Internal(int count, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) : base(count) {
     children.CopyTo(Children);
+    Children[replacementIndex] = replacementChild;
   }
 
   public Internal<T> With(int index, T child) {
     var newCount = Count - Children[index].Count + child.Count;
-    if (newCount == 0) {
-      return Empty;
-    }
-    return new Internal<T>(newCount, Children, index, child);
+    return Create(newCount, Children, index, child);
   }
 
   private Internal<T> Without(int index) {
     var newCount = Count - Children[index].Count;
-    if (newCount == 0) {
-      return Empty;
-    }
-    return new Internal<T>(newCount, Children, index, T.Empty);
+    return Create(newCount, Children, index, T.Empty);
   }
 
   public (Internal<T>, Internal<T>, Internal<T>) CalcDifference(Internal<T> target) {
