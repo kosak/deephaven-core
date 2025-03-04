@@ -37,8 +37,8 @@ public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue>
   }
 
   public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
-    CalcDifference(SharableDict<TValue> other) {
-    var (added, removed, modified) = _root.CalcDifference(other._root);
+    CalcDifference(SharableDict<TValue> target) {
+    var (added, removed, modified) = _root.CalcDifference(target._root);
     var aResult = new SharableDict<TValue>(added);
     var rResult = new SharableDict<TValue>(removed);
     var mResult = new SharableDict<TValue>(modified);
@@ -202,8 +202,9 @@ public static class Splitter {
   }
 }
 
-public interface INode<out T> {
+public interface INode<T> {
   public static abstract T Empty { get; }
+  public (INode<T>, INode<T>, INode<T>) CalcDifference(INode<T> target);
 }
 
 public abstract class NodeBase {
@@ -252,6 +253,39 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     }
     var newCount = Count - Children[index].Count;
     return new Internal<T>(newCount, newVs, Children, index, T.Empty);
+  }
+
+  public (Internal<T>, Internal<T>, Internal<T>) CalcDifference(Internal<T> target) {
+    if (this == target) {
+      // Source and target are the same. No changes
+      return (Empty, Empty, Empty);  // added, removed, modified
+    }
+    if (this == Empty) {
+      // Relative to an empty source, everything in target was added
+      return (target, Empty, Empty);  // added, removed, modified
+    }
+    if (target == Empty) {
+      // Relative to an empty destination, everything in src was removed
+      return (Empty, this, Empty);  // added, removed, modified
+    }
+    // Need to recurse to all children to find out
+    Array64<T> addedChildren;
+    Array64<T> removedChildren;
+    Array64<T> modifiedChildren;
+
+    var srcChildren = (ReadOnlySpan<T>)Children;
+    var targetChildren = (ReadOnlySpan<T>)target.Children;
+    for (var i = 0; i != srcChildren.Length; ++i) {
+      var (a, r, m) = srcChildren[i].CalcDifference(targetChildren[i]);
+      addedChildren[i] = a;
+      removedChildren[i] = r;
+      modifiedChildren[i] = m;
+    }
+
+    var zamboniA = Internal<T>.Create(addedChildren);
+    var zamboniR = Internal<T>.Create(removedChildren);
+    var zamboniM = Internal<T>.Create(modifiedChildren);
+    return (aResult, rResult, mResult);
   }
 }
 
