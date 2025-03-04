@@ -351,7 +351,7 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     return Create(newVs, Data, index, default);
   }
 
-  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target, Func<T?, T?, bool> equals) {
+  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target) {
     if (this == target) {
       // Source and target are the same. No changes
       return (Empty, Empty, Empty);  // added, removed, modified
@@ -385,12 +385,13 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     foreach (var element in maybeModifiedVs) {
       // We return modified-after. In another design we could return
       // both modified-before and modified-after.
-      var srcItem = Data[element];
-      var targetItem = target.Data[element];
-      if (!equals(srcItem, targetItem)) {
-        modifiedVs = modifiedVs.WithElement(element);
-        modifiedData[element] = target.Data[element];
+      var srcItem = Data[element]!;
+      var targetItem = target.Data[element]!;
+      if (srcItem.Equals(targetItem)) {
+        continue;
       }
+      modifiedVs = modifiedVs.WithElement(element);
+      modifiedData[element] = target.Data[element];
     }
 
     var aResult = Create(addedVs, addedData, 0, addedData[0]);
