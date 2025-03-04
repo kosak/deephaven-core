@@ -231,13 +231,12 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     }
     return Create(subtreeCount, children, 0, children[0]);
   }
-
-  public static Internal<T> Create(int subtreeCount, ReadOnlySpan<T> children,
-    int replacementIndex, T replacementChild) {
-    if (subtreeCount == 0) {
+  public static Internal<T> Create(Bitset64 validitySet, int subtreeCount,
+    ReadOnlySpan<T> children, int replacementIndex, T replacementChild) {
+    if (validitySet.IsEmpty) {
       return Empty;
     }
-    return new Internal<T>(subtreeCount, children, 0, children[0]);
+    return new Internal<T>(validitySet, subtreeCount, children, 0, children[0]);
   }
 
   public readonly Array64<T> Children;
@@ -253,13 +252,18 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
   }
 
   public Internal<T> With(int index, T child) {
+    if (child == T.Empty) {
+      return Without(index);
+    }
+    var newVs = ValiditySet.WithElement(index);
     var newCount = Count - Children[index].Count + child.Count;
-    return Create(newCount, Children, index, child);
+    return Create(newVs, newCount, Children, index, child);
   }
 
   private Internal<T> Without(int index) {
+    var newVs = ValiditySet.WithoutElement(index);
     var newCount = Count - Children[index].Count;
-    return Create(newCount, Children, index, T.Empty);
+    return Create(newVs, newCount, Children, index, T.Empty);
   }
 
   public (Internal<T>, Internal<T>, Internal<T>) CalcDifference(Internal<T> target) {
