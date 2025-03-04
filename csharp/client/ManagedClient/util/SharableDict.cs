@@ -208,13 +208,15 @@ public interface INode<TSelf> {
 }
 
 public abstract class NodeBase {
+  public readonly Bitset64 ValiditySet;
   public readonly int Count = 0;
 
   protected NodeBase() {
     // defaults
   }
 
-  protected NodeBase(int count) {
+  protected NodeBase(Bitset64 validitySet, int count) {
+    ValiditySet = validitySet;
     Count = count;
   }
 }
@@ -222,10 +224,10 @@ public abstract class NodeBase {
 public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
   public static Internal<T> Empty { get; } = new();
 
-  public static Internal<T> OfArray64(ReadOnlySpan<T> children) {
+  public static Internal<T> OfArray64(Bitset64 validitySet, ReadOnlySpan<T> children) {
     var subtreeCount = 0;
-    foreach (var child in children) {
-      subtreeCount += child.Count;
+    foreach (var index in validitySet) {
+      subtreeCount += children[index].Count;
     }
     return Create(subtreeCount, children, 0, children[0]);
   }
@@ -244,8 +246,8 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     ((Span<T>)Children).Fill(T.Empty);
   }
 
-  private Internal(int count, ReadOnlySpan<T> children,
-    int replacementIndex, T replacementChild) : base(count) {
+  private Internal(Bitset64 validitySet, int count, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) : base(validitySet, count) {
     children.CopyTo(Children);
     Children[replacementIndex] = replacementChild;
   }
@@ -306,15 +308,13 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
       replacementIndex, replacementData);
   }
 
-  public readonly Bitset64 ValiditySet;
   public readonly Array64<T?> Data;
 
   private Leaf() {
   }
 
   private Leaf(int count, Bitset64 validitySet, ReadOnlySpan<T?> data,
-    int replacementIndex, T? replacementData) : base(count) {
-    ValiditySet = validitySet;
+    int replacementIndex, T? replacementData) : base(validitySet, count) {
     data.CopyTo(Data);
     Data[replacementIndex] = replacementData;
   }
