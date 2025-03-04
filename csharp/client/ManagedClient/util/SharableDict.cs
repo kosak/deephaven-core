@@ -224,12 +224,19 @@ public abstract class NodeBase {
 public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
   public static Internal<T> Empty { get; } = new();
 
-  public static Internal<T> OfArray64(Bitset64 validitySet, ReadOnlySpan<T> children) {
-    var subtreeCount = 0;
+  public static Internal<T> OfArray64(ReadOnlySpan<T> children) {
+    var validitySet = new Bitset64();
+    var count = 0;
+    var empty = T.Empty;
     foreach (var index in validitySet) {
-      subtreeCount += children[index].Count;
+      var child = children[index];
+      if (child == empty) {
+        continue;
+      }
+      validitySet = validitySet.WithElement(index);
+      count += child.Count;
     }
-    return Create(subtreeCount, children, 0, children[0]);
+    return Create(validitySet, count, children, 0, children[0]);
   }
   public static Internal<T> Create(Bitset64 validitySet, int subtreeCount,
     ReadOnlySpan<T> children, int replacementIndex, T replacementChild) {
@@ -373,28 +380,35 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
       // Removed data items come from self
       removedData[element] = Data[element];
     }
+    var modifiedVs = new Bitset64();
     foreach (var element in maybeModifiedVs) {
       // We return modified-after. In another design we could return
       // both modified-before and modified-after.
       var srcItem = Data[element];
       var targetItem = target.Data[element];
-      if (equals(srcItem, targetItem)) {
-        // collection modification during iteration is ok for Bitset64
-        maybeModifiedVs = maybeModifiedVs.Without(element);
-        continue;
+      if (!equals(srcItem, targetItem)) {
+        modifiedVs = modifiedVs.WithElement(element);
+        modifiedData[element] = target.Data[element];
       }
-      modifiedData[element] = target.Data[element];
     }
 
     var aResult = Create(addedVs, addedData, 0, addedData[0]);
     var rResult = Create(removedVs, removedData, 0, removedData[0]);
-    var mResult = Create(maybeModifiedVs, modifiedData, 0, modifiedData[0]);
+    var mResult = Create(modifiedVs, modifiedData, 0, modifiedData[0]);
     return (aResult, rResult, mResult);
   }
 }
 
 public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
   private readonly UInt64 _value = value;
+
+  public Bitset64 Intersect(Bitset64 other) {
+    return new Bitset64(_value & other._value);
+  }
+
+  public Bitset64 Without(Bitset64 other) {
+    return new Bitset64(_value & ~other._value);
+  }
 
   public Bitset64 WithElement(int element) {
     return new Bitset64(_value | ((UInt64)1 << element));
