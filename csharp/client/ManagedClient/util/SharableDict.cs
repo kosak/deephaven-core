@@ -350,7 +350,7 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     return Create(newVs, Data, index, default);
   }
 
-  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target) {
+  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target, Func<T, T, bool> equals) {
     if (this == target) {
       // Source and target are the same. No changes
       return (Empty, Empty, Empty);  // added, removed, modified
