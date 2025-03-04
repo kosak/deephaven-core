@@ -309,7 +309,7 @@ public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
   public bool TryExtractLowestBit(out Bitset64 result, out int element) {
     if (IsEmpty) {
       result = default;
-      element = default;
+      element = 0;
       return false;
     }
 
@@ -335,13 +335,14 @@ public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
   }
 
   public struct Enumerator(Bitset64 bitset) {
+    private Bitset64 _bitset = bitset;
     private int _current;
 
     public bool MoveNext() {
-      if (!bitset.TryExtractLowestBit(out var newBitset, out _current)) {
+      if (!_bitset.TryExtractLowestBit(out var newBitset, out _current)) {
         return false;
       }
-      bitset = newBitset;
+      _bitset = newBitset;
       return true;
     }
 
