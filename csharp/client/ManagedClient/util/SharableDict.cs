@@ -227,9 +227,7 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     foreach (var child in children) {
       count += child.Count;
     }
-
-    // Here, the 0, children[0] is duplicative but harmless.
-    return new Internal<T>(count, children, 0, children[0]);
+    return new Internal<T>(count, children);
   }
 
   public readonly Array64<T> Children;
@@ -238,10 +236,8 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     ((Span<T>)Children).Fill(T.Empty);
   }
 
-  private Internal(int count, ReadOnlySpan<T> children,
-    int replacementIndex, T replacementChild) : base(count) {
+  private Internal(int count, ReadOnlySpan<T> children) : base(count) {
     children.CopyTo(Children);
-    Children[replacementIndex] = replacementChild;
   }
 
   public Internal<T> With(int index, T child) {
@@ -297,6 +293,15 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
 public class Leaf<T> : NodeBase, INode<Leaf<T>> {
   public static Leaf<T> Empty { get; } = new();
 
+  public static Leaf<T> Create(Bitset64 validitySet, ReadOnlySpan<T?> srcData,
+    int replacementIndex, T? replacementData) {
+    if (validitySet.IsEmpty) {
+      return Empty;
+    }
+    return new Leaf<T>(validitySet.Count, validitySet, srcData,
+      replacementIndex, replacementData);
+  }
+
   public readonly Bitset64 ValiditySet;
   public readonly Array64<T?> Data;
 
@@ -322,17 +327,12 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
 
   public Leaf<T> With(int index, T value) {
     var newVs = ValiditySet.WithElement(index);
-    var subtreeSize = newVs.Count;
-    return new Leaf<T>(subtreeSize, newVs, Data, index, value);
+    return Create(newVs, Data, index, value);
   }
 
   public Leaf<T> Without(int index) {
     var newVs = ValiditySet.WithoutElement(index);
-    if (newVs.IsEmpty) {
-      return Empty;
-    }
-    var subtreeSize = newVs.Count;
-    return new Leaf<T>(subtreeSize, newVs, Data, index, default);
+    return Create(newVs, Data, index, default);
   }
 
   public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target) {
@@ -352,38 +352,37 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     Array64<T?> removedData = new();
     Array64<T?> modifiedData = new();
 
-    foreach (var element in )
-
-
-    var length = ((ReadOnlySpan<T>)Children).Length;
-
-
-
-
     var addedVs = ValiditySet.Without(target.ValiditySet);
     var removedVs = target.ValiditySet.Without(ValiditySet);
     // These are maybe modified or maybe equal
     var maybeModifiedVs = ValiditySet.Intersect(target.ValiditySet);
+
+    foreach (var element in addedVs) {
+      // Added data items come from target
+      addedData[element] = target.Data[element];
+    }
+    foreach (var element in removedVs) {
+      // Removed data items come from self
+      removedData[element] = Data[element];
+    }
     foreach (var element in maybeModifiedVs) {
-      if ()
-
+      // We return modified-after. In another design we could return
+      // both modified-before and modified-after.
+      var srcItem = Data[element];
+      var targetItem = target.Data[element];
+      if (equals(srcItem, targetItem)) {
+        // collection modification during iteration is ok for Bitset64
+        maybeModifiedVs = maybeModifiedVs.Without(element);
+        continue;
+      }
+      modifiedData[element] = target.Data[element];
     }
 
-    // TODO(kosak): this is awkward, especially because it's fixed at 64
-    var length = ((ReadOnlySpan<T>)Children).Length;
-    for (var i = 0; i != length; ++i) {
-      var (a, r, m) = srcChildren[i].CalcDifference(targetChildren[i]);
-      addedChildren[i] = a;
-      removedChildren[i] = r;
-      modifiedChildren[i] = m;
-    }
-
-    var aResult = OfArray64(addedChildren);
-    var rResult = OfArray64(removedChildren);
-    var mResult = OfArray64(modifiedChildren);
+    var aResult = Create(addedVs, addedData, 0, addedData[0]);
+    var rResult = Create(removedVs, removedData, 0, removedData[0]);
+    var mResult = Create(maybeModifiedVs, modifiedData, 0, modifiedData[0]);
     return (aResult, rResult, mResult);
   }
-
 }
 
 public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
