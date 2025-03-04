@@ -214,31 +214,25 @@ public abstract class NodeBase {
     // defaults
   }
 
-  protected NodeBase((int count, Bitset64 validitySet) countAndValiditySet) {
-    Count = countAndValiditySet.count;
-    ValiditySet = countAndValiditySet.validitySet;
+  protected NodeBase(int count, Bitset64 validitySet) {
+    Count = count;
+    ValiditySet = validitySet;
   }
 }
 
 public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
   public static Internal<T> Empty { get; } = new();
 
-  public readonly Array64<T> Children;
+  public readonly Array64<T?> Children;
 
   private Internal() {
-    ((Span<T>)Children).Fill(T.Empty);
+    ((Span<T?>)Children).Fill(T.Empty);
   }
 
-  /// <summary>
-  /// This constructor can be used to add or remove a child
-  /// </summary>
-  /// <param name="other">The node we are copying from</param>
-  /// <param name="newIndex">The index of the child</param>
-  /// <param name="newChild">The new child (if adding) or T.Empty if removing</param>
-  private Internal(Internal<T> other, int newIndex, T newChild, double this_depresses_me)
-    : base(CalcCountAndValiditySet(other, newIndex, newChild)) {
-    ((ReadOnlySpan<T>)other.Children).CopyTo(Children);
-    Children[newIndex] = newChild;
+  private Internal(int count, Bitset64 validitySet, ReadOnlySpan<T?> children,
+    int replacementIndex, T? replacementChild) : base(count, validitySet) {
+    children.CopyTo(Children);
+    Children[replacementIndex] = replacementChild;
   }
 
   private static (int, Bitset64) CalcCountAndValiditySet(Internal<T> other,
@@ -252,10 +246,13 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
   }
 
   public Internal<T> With(int index, T child) {
+    // Convenience because we sometimes call "With" with an empty child
     if (child == T.Empty) {
       return Without(index);
     }
-    return new Internal<T>(this, index, child);
+    var newVs = ValiditySet.WithElement(index);
+    var newCount = Count - Children[index].Count + child.Count;
+    return new Internal<T>(newCount, newVs, Children, index, child);
   }
 
   private Internal<T> Without(int index) {
@@ -271,33 +268,18 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
 public class Leaf<T> : NodeBase, INode<Leaf<T>> {
   public static Leaf<T> Empty { get; } = new();
 
-  public static Leaf<T> CreateWith(Leaf<T> orig, int newIndex, T newValue) {
-    var newVs = orig.ValiditySet.WithElement(newIndex);
-    var subtreeSize = newVs.Count;
-    return new Leaf<T>(subtreeSize, newVs, orig.Data, newIndex, newValue);
-  }
-
-  public static Leaf<T> CreateWithout(Leaf<T> orig, int removedIndex) {
-    var newVs = orig.ValiditySet.WithoutElement(removedIndex);
-    if (newVs.IsEmpty) {
-      return Empty;
-    }
-    var subtreeSize = newVs.Count;
-    return new Leaf<T>(subtreeSize, newVs, orig.Data, removedIndex, default);
-  }
-
-  public readonly Array64<T> Data;
+  public readonly Array64<T?> Data;
 
   private Leaf() {
   }
 
-  private Leaf(int count, Bitset64 validitySet, ReadOnlySpan<T> data,
+  private Leaf(int count, Bitset64 validitySet, ReadOnlySpan<T?> data,
     int replacementIndex, T? replacementData) : base(count, validitySet) {
     data.CopyTo(Data);
     Data[replacementIndex] = replacementData;
   }
 
-  public bool TryGetValue(int index, [MaybeNullWhen(false)] out T value) {
+  public bool TryGetValue(int index, out T? value) {
     if (!ValiditySet.ContainsElement(index)) {
       value = default;
       return false;
@@ -308,15 +290,18 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
   }
 
   public Leaf<T> With(int index, T value) {
-    return CreateWith();
-    return new Leaf<T>(this, index, value, true);
+    var newVs = ValiditySet.WithElement(index);
+    var subtreeSize = newVs.Count;
+    return new Leaf<T>(subtreeSize, newVs, Data, index, value);
   }
 
   public Leaf<T> Without(int index) {
-    if (ValiditySet.WithoutElement(index).IsEmpty) {
+    var newVs = ValiditySet.WithoutElement(index);
+    if (newVs.IsEmpty) {
       return Empty;
     }
-    return new Leaf<T>(this, index, default, false);
+    var subtreeSize = newVs.Count;
+    return new Leaf<T>(subtreeSize, newVs, Data, index, default);
   }
 }
 

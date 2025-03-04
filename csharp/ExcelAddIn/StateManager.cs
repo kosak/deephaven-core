@@ -173,11 +173,6 @@ public class StateManager {
     action(cp);
   }
 
-  
-
-
-
-
   private IDisposable SubscribeHelper<TKey, T>(TKey key,
     IDictionary<TKey, WrappedProvider<T>> dict,
     IObserver<T> observer, Func<IObservable<T>> factory) {
