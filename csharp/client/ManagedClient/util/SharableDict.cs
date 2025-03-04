@@ -209,20 +209,28 @@ public interface INode<TSelf> {
 
 public abstract class NodeBase {
   public readonly int Count = 0;
-  public readonly Bitset64 ValiditySet;
 
   protected NodeBase() {
     // defaults
   }
 
-  protected NodeBase(int count, Bitset64 validitySet) {
+  protected NodeBase(int count) {
     Count = count;
-    ValiditySet = validitySet;
   }
 }
 
 public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
   public static Internal<T> Empty { get; } = new();
+
+  public static Internal<T> OfArray64(ReadOnlySpan<T> children) {
+    var count = 0;
+    foreach (var child in children) {
+      count += child.Count;
+    }
+
+    // Here, the 0, children[0] is duplicative but harmless.
+    return new Internal<T>(count, children, 0, children[0]);
+  }
 
   public readonly Array64<T> Children;
 
@@ -230,29 +238,26 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     ((Span<T>)Children).Fill(T.Empty);
   }
 
-  private Internal(int count, Bitset64 validitySet, ReadOnlySpan<T> children,
-    int replacementIndex, T replacementChild) : base(count, validitySet) {
+  private Internal(int count, ReadOnlySpan<T> children,
+    int replacementIndex, T replacementChild) : base(count) {
     children.CopyTo(Children);
     Children[replacementIndex] = replacementChild;
   }
 
   public Internal<T> With(int index, T child) {
-    // Convenience because we sometimes call "With" with an empty child
-    if (child == T.Empty) {
-      return Without(index);
-    }
-    var newVs = ValiditySet.WithElement(index);
     var newCount = Count - Children[index].Count + child.Count;
-    return new Internal<T>(newCount, newVs, Children, index, child);
+    if (newCount == 0) {
+      return Empty;
+    }
+    return new Internal<T>(newCount, Children, index, child);
   }
 
   private Internal<T> Without(int index) {
-    var newVs = ValiditySet.WithoutElement(index);
-    if (newVs.IsEmpty) {
+    var newCount = Count - Children[index].Count;
+    if (newCount == 0) {
       return Empty;
     }
-    var newCount = Count - Children[index].Count;
-    return new Internal<T>(newCount, newVs, Children, index, T.Empty);
+    return new Internal<T>(newCount, Children, index, T.Empty);
   }
 
   public (Internal<T>, Internal<T>, Internal<T>) CalcDifference(Internal<T> target) {
@@ -268,7 +273,7 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
       // Relative to an empty destination, everything in src was removed
       return (Empty, this, Empty);  // added, removed, modified
     }
-    // Need to recurse to all children to find out
+    // Need to recurse to all children to build new nodes
     Array64<T> addedChildren = new();
     Array64<T> removedChildren = new();
     Array64<T> modifiedChildren = new();
@@ -292,13 +297,15 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
 public class Leaf<T> : NodeBase, INode<Leaf<T>> {
   public static Leaf<T> Empty { get; } = new();
 
+  public readonly Bitset64 ValiditySet;
   public readonly Array64<T?> Data;
 
   private Leaf() {
   }
 
   private Leaf(int count, Bitset64 validitySet, ReadOnlySpan<T?> data,
-    int replacementIndex, T? replacementData) : base(count, validitySet) {
+    int replacementIndex, T? replacementData) : base(count) {
+    ValiditySet = validitySet;
     data.CopyTo(Data);
     Data[replacementIndex] = replacementData;
   }
@@ -341,15 +348,21 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
       // Relative to an empty destination, everything in src was removed
       return (Empty, this, Empty);  // added, removed, modified
     }
-    // Need to recurse to all children to find out
-    Array64<T> addedData = new();
-    Array64<T> removedData = new();
-    Array64<T> modifiedData = new();
+    Array64<T?> addedData = new();
+    Array64<T?> removedData = new();
+    Array64<T?> modifiedData = new();
+
+    foreach (var element in )
+
+
+    var length = ((ReadOnlySpan<T>)Children).Length;
+
+
+
 
     var addedVs = ValiditySet.Without(target.ValiditySet);
     var removedVs = target.ValiditySet.Without(ValiditySet);
-    // The initial modified validity set. We need to go through each value
-    // to see if it has actually changed
+    // These are maybe modified or maybe equal
     var maybeModifiedVs = ValiditySet.Intersect(target.ValiditySet);
     foreach (var element in maybeModifiedVs) {
       if ()
