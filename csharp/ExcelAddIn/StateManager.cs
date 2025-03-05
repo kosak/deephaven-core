@@ -188,9 +188,9 @@ public class StateManager {
   private IDisposable SubscribeHelper<TKey, TObservable, T>(ReferenceCountingDict<TKey, TObservable> dict,
     TKey key, TObservable candidateObservable, IObserver<T> observer)
     where TObservable : IObservable<T> {
-    IObservable<T>? actualObservable;
+    ReferenceCountingDict<TKey, TObservable>.Entry? entry;
     lock (_sync) {
-      actualObservable = dict.AddOrIncrement(key, candidateObservable);
+      entry = dict.AddOrIncrement(key, candidateObservable);
     }
     var isDisposed = new Latch();
     return ActionAsDisposable.Create(() => {
@@ -198,13 +198,13 @@ public class StateManager {
         return;
       }
       lock (_sync) {
-        if (!dict.DecrementOrRemove(key)) {
+        if (!dict.DecrementOrRemove(entry)) {
           return;
         }
       }
-      actualObservable.Dispose();
+      entry.Value.Dispose();
     });
-    return actualObservable.Subscribe(observer);
+    return entry.Value.Subscribe(observer);
   }
 
   private class WrappedProvider<T> : IObservable<T> {
