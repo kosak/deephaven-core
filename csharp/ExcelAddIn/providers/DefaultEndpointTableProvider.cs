@@ -24,8 +24,8 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private bool _subscribeDone = false;
-  private bool _isDisposed = false;
+  private readonly Latch _subscribeDone = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly VersionTracker _versionTracker = new();
@@ -43,7 +43,7 @@ internal class DefaultEndpointTableProvider :
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _tableHandle, out _);
-      if (!Utility.Exchange(ref _subscribeDone, true)) {
+      if (_subscribeDone.Set()) {
         _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
       }
     }
@@ -70,7 +70,7 @@ internal class DefaultEndpointTableProvider :
 
   public void OnNext(EndpointId? endpointId) {
     lock (_sync) {
-      if (_isDisposed) {
+      if (!_isDisposed.Set()) {
         return;
       }
       // Unsubscribe from old upstream
