@@ -17,7 +17,7 @@ internal class CorePlusClientProvider :
   private const string UnsetSessionManagerText = "[No Session Manager]";
   private const string UnsetPqInfoText = "[No PQ Info]";
   private readonly StateManager _stateManager;
-  private readonly EndpointId _endpointId;
+  private readonly string _endpointId;
   private readonly string _pqName;
   private readonly object _sync = new();
   private bool _isDisposed = false;
@@ -29,7 +29,7 @@ internal class CorePlusClientProvider :
   private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
   private StatusOr<DndClient> _client = UnsetClientText;
 
-  public CorePlusClientProvider(StateManager stateManager, EndpointId endpointId,
+  public CorePlusClientProvider(StateManager stateManager, string endpointId,
     string pqName) {
     _stateManager = stateManager;
     _endpointId = endpointId;

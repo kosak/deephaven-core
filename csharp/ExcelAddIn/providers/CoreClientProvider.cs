@@ -19,7 +19,7 @@ internal class CoreClientProvider :
   IDisposable {
   private const string UnsetClientText = "[No Community Core Client]";
   private readonly StateManager _stateManager;
-  private readonly EndpointId _endpointId;
+  private readonly string _endpointId;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
@@ -27,7 +27,7 @@ internal class CoreClientProvider :
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<Client> _client = UnsetClientText;
 
-  public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
+  public CoreClientProvider(StateManager stateManager, string endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
   }

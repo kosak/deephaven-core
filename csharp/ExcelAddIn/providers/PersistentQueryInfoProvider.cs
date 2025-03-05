@@ -11,7 +11,7 @@ internal class PersistentQueryInfoProvider :
   private const string UnsetPqText = "[No Persistent Query]";
 
   private readonly StateManager _stateManager;
-  private readonly EndpointId _endpointId;
+  private readonly string _endpointId;
   private readonly string _pqName;
   private readonly object _sync = new();
   private bool _isDisposed = false;
@@ -29,7 +29,7 @@ internal class PersistentQueryInfoProvider :
   private PersistentQueryInfoMessage? _lastMessage = new();
 
   public PersistentQueryInfoProvider(StateManager stateManager,
-    EndpointId endpointId, string pqName) {
+    string endpointId, string pqName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;

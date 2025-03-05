@@ -21,7 +21,7 @@ internal class FilteredTableProvider :
   private const string UnsetTableHandleText = "[No Filtered Table]";
 
   private readonly StateManager _stateManager;
-  private readonly EndpointId _endpointId;
+  private readonly string _endpointId;
   private readonly string? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
@@ -32,7 +32,7 @@ internal class FilteredTableProvider :
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<TableHandle> _filteredTableHandle = UnsetTableHandleText;
 
-  public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
+  public FilteredTableProvider(StateManager stateManager, string endpointId,
     string? pqName, string tableName, string condition) {
     _stateManager = stateManager;
     _endpointId = endpointId;
