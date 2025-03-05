@@ -4,14 +4,13 @@ using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CorePlusClientProvider :
   IObserver<StatusOr<SessionManager>>,
-  IObserver<PersistentQueryInfoMessage>,
+  IObserver<StatusOr<PersistentQueryInfoMessage>>,
   IObservable<StatusOr<DndClient>>, 
   IDisposable {
   private const string UnsetClientText = "[No Core+ Client]";
@@ -21,6 +20,7 @@ internal class CorePlusClientProvider :
   private readonly EndpointId _endpointId;
   private readonly PqName _pqName;
   private readonly object _sync = new();
+  private bool _subscribeDone = false;
   private bool _isDisposed = false;
   private IDisposable? _sessionManagerDisposer = null;
   private IDisposable? _pqInfoDisposer = null;
@@ -42,8 +42,8 @@ internal class CorePlusClientProvider :
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<DndClient>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _client, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _client, out _);
+      if (!Utility.Exchange(ref _subscribeDone, true)) {
         _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
         _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, this);
       }
@@ -54,13 +54,15 @@ internal class CorePlusClientProvider :
 
   private void RemoveObserver(IObserver<StatusOr<DndClient>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
+      _observers.Remove(observer, out _);
+    }
+  }
+
+  public void Dispose() {
+    lock (_sync) {
+      if (Utility.Exchange(ref _isDisposed, true)) {
         return;
       }
-
-      _isDisposed = true;
-
       Utility.ClearAndDispose(ref _sessionManagerDisposer);
       Utility.ClearAndDispose(ref _pqInfoDisposer);
 
@@ -110,7 +112,7 @@ internal class CorePlusClientProvider :
     }
 
     var smCopy = _sessionManager.Share();
-    Background666.Run(() => UpdateStateInBackground(smCopy, pq, cookie));
+    Background.Run(() => UpdateStateInBackground(smCopy, pq, cookie));
   }
 
   private void UpdateStateInBackground(StatusOr<SessionManager> smCopy,
@@ -133,5 +135,15 @@ internal class CorePlusClientProvider :
         ProviderUtil.SetStateAndNotify(ref _client, newState, _observers);
       }
     }
+  }
+
+  public void OnCompleted() {
+    // TODO(kosak)
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    // TODO(kosak)
+    throw new NotImplementedException();
   }
 }

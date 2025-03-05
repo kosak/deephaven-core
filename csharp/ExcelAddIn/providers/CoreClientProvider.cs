@@ -21,7 +21,7 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private bool _firstTime = true;
+  private bool _subscribeDone = false;
   private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
@@ -39,7 +39,7 @@ internal class CoreClientProvider :
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _client, out _);
-      if (Utility.Exchange(ref _firstTime, false)) {
+      if (!Utility.Exchange(ref _subscribeDone, true)) {
         _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }
