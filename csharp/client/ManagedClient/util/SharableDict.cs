@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
+public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> where TValue : IEquatable<TValue> {
   private readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> _root;
 
   public SharableDict() {
@@ -106,7 +106,7 @@ public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue>
   public int Count => _root.Count;
 }
 
-internal readonly struct Destructured<TValue> {
+internal readonly struct Destructured<TValue> where TValue : IEquatable<TValue> {
   public readonly Int64 Key;
   public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> Root;
   public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>> Child0;
@@ -308,7 +308,7 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
   }
 }
 
-public class Leaf<T> : NodeBase, INode<Leaf<T>> {
+public class Leaf<T> : NodeBase, INode<Leaf<T>> where T : IEquatable<T> {
   public static Leaf<T> Empty { get; } = new();
 
   public static Leaf<T> Create(Bitset64 validitySet, ReadOnlySpan<T?> srcData,
