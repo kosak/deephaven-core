@@ -21,6 +21,7 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
+  private bool _firstTime = true;
   private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<Client>> _observers = new();
@@ -37,8 +38,8 @@ internal class CoreClientProvider :
   /// </summary>
   public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _client, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _client, out _);
+      if (Utility.Exchange(ref _firstTime, false)) {
         _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }
@@ -48,12 +49,15 @@ internal class CoreClientProvider :
 
   private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
+      _observers.Remove(observer, out _);
+    }
+  }
+
+  public void Dispose() {
+    lock (_sync) {
+      if (Utility.Exchange(ref _isDisposed, true)) {
         return;
       }
-
-      _isDisposed = true;
       Utility.ClearAndDispose(ref _upstreamDisposer);
       ProviderUtil.SetState(ref _client, "[Disposing]");
     }
@@ -76,7 +80,7 @@ internal class CoreClientProvider :
       _ = cbase.AcceptVisitor(
         core => {
           ProviderUtil.SetStateAndNotify(ref _client, "Trying to connect", _observers);
-          Background666.Run(() => OnNextBackground(core, cookie));
+          Background.Run(() => OnNextBackground(core, cookie));
           return Unit.Instance;  // have to return something
         },
         _ => {
