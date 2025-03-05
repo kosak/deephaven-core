@@ -93,7 +93,7 @@ internal class DefaultEndpointTableProvider :
 
   public void OnNextWithCookie(StatusOr<TableHandle> value, VersionTracker.Cookie cookie) {
     lock (_sync) {
-      if (_isDisposed || !cookie.IsCurrent) {
+      if (_isDisposed.Value || !cookie.IsCurrent) {
         return;
       }
       ProviderUtil.SetStateAndNotify(ref _tableHandle, value, _observers);

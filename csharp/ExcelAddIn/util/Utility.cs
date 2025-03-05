@@ -10,8 +10,6 @@ global using IStringColumnSource = Deephaven.ManagedClient.IColumnSource<string>
 global using IDateTimeColumnSource = Deephaven.ManagedClient.IColumnSource<System.DateTime>;
 global using IDateOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.DateOnly>;
 global using ITimeOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.TimeOnly>;
-using Deephaven.ExcelAddIn.Status;
-using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn;
 

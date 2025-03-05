@@ -23,7 +23,7 @@ public class StateManager {
 
   private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
-  private string? _defaultEndpointId = null;
+  private EndpointId? _defaultEndpointId = null;
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
     IObserver<StatusOr<Client>> observer) {
@@ -82,6 +82,18 @@ public class StateManager {
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
 
+  public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
+    lock (_sync) {
+      _defaultEndpointSelectionObservers.AddAndNotify(observer, _defaultEndpointId, out _);
+    }
+
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _defaultEndpointSelectionObservers.Remove(observer, out _);
+      }
+    });
+  }
+
 #if false
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<string>> observer) {
     WorkerThread.EnqueueOrRun(() => {
@@ -98,15 +110,6 @@ public class StateManager {
       () => _endpointConfigPopulationObservers.Remove(observer, out _));
   }
 
-  public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
-    WorkerThread.EnqueueOrRun(() => {
-      _defaultEndpointSelectionObservers.Add(observer, out _);
-      observer.OnNext(_defaultEndpointId);
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => _defaultEndpointSelectionObservers.Remove(observer, out _));
-  }
 
   public void SetCredentials(EndpointConfigBase config) {
     LookupOrCreateEndpointConfigProvider(config.Id,
@@ -205,7 +208,7 @@ public class StateManager {
     });
   }
 
-  public void SetDefaultEndpointId(string? defaultEndpointId) {
+  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
     lock (_sync) {
       _defaultEndpointId = defaultEndpointId;
       _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
