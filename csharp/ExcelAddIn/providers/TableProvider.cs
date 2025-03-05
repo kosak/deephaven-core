@@ -72,7 +72,7 @@ internal class TableProvider :
       }
       _isDisposed = true;
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
+      ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
     }
   }
 
