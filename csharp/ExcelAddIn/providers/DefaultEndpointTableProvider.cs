@@ -59,7 +59,7 @@ internal class DefaultEndpointTableProvider :
 
   public void Dispose() {
     lock (_sync) {
-      if (Utility.Exchange(ref _isDisposed, true)) {
+      if (!_isDisposed.Set()) {
         return;
       }
       Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
@@ -70,7 +70,7 @@ internal class DefaultEndpointTableProvider :
 
   public void OnNext(EndpointId? endpointId) {
     lock (_sync) {
-      if (!_isDisposed.Set()) {
+      if (_isDisposed.Value) {
         return;
       }
       // Unsubscribe from old upstream
