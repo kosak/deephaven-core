@@ -209,43 +209,6 @@ public class StateManager {
     });
   }
 
-  private class WrappedProvider<T> : IObservable<T> {
-    private readonly object _sharedSync;
-    private readonly IObservable<T> _provider;
-    private readonly Action _outerCleanupLocked;
-    private int _referenceCount = 1;
-
-    public WrappedProvider(object sharedSync, IObservable<T> provider, Action outerCleanupLocked) {
-      _sharedSync = sharedSync;
-      _provider = provider;
-      _outerCleanupLocked = outerCleanupLocked;
-    }
-
-    public IDisposable Subscribe(IObserver<T> observer) {
-      var providerDisposer = _provider.Subscribe(observer);
-      var isDisposed = false;
-      return ActionAsDisposable.Create(() => {
-        if (Utility.Exchange(ref isDisposed, true)) {
-          return;
-        }
-        var providerNeedsDisposing = false;
-        lock (_sharedSync) {
-          if (--_referenceCount == 0) {
-            _outerCleanupLocked();
-            providerNeedsDisposing = true;
-          }
-        }
-        if (providerNeedsDisposing) {
-          providerDisposer.Dispose();
-        }
-      });
-    }
-
-    public void IncrementLocked() {
-      ++_referenceCount;
-    }
-  }
-
   public void SetDefaultEndpointId(string? defaultEndpointId) {
     lock (_sync) {
       _defaultEndpointId = defaultEndpointId;

@@ -1,6 +1,6 @@
 ﻿namespace Deephaven.ExcelAddIn.Util;
 
-public class ReferenceCountingDict<TKey, TValue> {
+public class ReferenceCountingDict<TKey, TValue> where TKey : notnull {
   private readonly Dictionary<TKey, WithCount> _dict = new();
 
   public TValue AddOrIncrement(TKey key, TValue candidateValue) {
