@@ -11,21 +11,37 @@ namespace Deephaven.ExcelAddIn;
 public class StateManager {
   private readonly object _sync = new();
   /// <summary>
-  /// Endpoint to CoreClientProvider
+  /// EndpointId to CoreClientProvider
   /// </summary>
-  private readonly Dictionary<string, WrappedProvider<StatusOr<Client>>> _coreClientProviders = new();
+  private readonly ReferenceCountingDict<string, CoreClientProvider> _coreClientProviders = new();
   /// <summary>
-  /// (Endpoint, PQ Name) to CorePlusClientProvider
+  /// (EndpointId, PQ Name) to CorePlusClientProvider
   /// </summary>
-  private readonly Dictionary<(string, string), WrappedProvider<StatusOr<DndClient>>> _corePlusClientProviders = new();
-  private readonly Dictionary<string, WrappedProvider<StatusOr<EndpointConfigBase>>> _endpointConfigProviders = new();
-  private readonly Dictionary<string, WrappedProvider<StatusOr<EndpointHealth>>> _endpointHealthProviders = new();
-  private readonly Dictionary<TableQuad, WrappedProvider<StatusOr<TableHandle>>> _tableProviders = new();
-  private readonly Dictionary<string, WrappedProvider<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>>
-    _persistentQueryDictProviders = new();
-  private readonly Dictionary<(string, string), WrappedProvider<StatusOr<PersistentQueryInfoMessage>>>
-    _persistentQueryInfoProviders = new();
-  private readonly Dictionary<string, WrappedProvider<StatusOr<SessionManager>>> _sessionManagerProviders = new();
+  private readonly ReferenceCountingDict<(string, string), CorePlusClientProvider> _corePlusClientProviders = new();
+  /// <summary>
+  /// EndpointId to EndpointConfigProvider
+  /// </summary>
+  private readonly ReferenceCountingDict<string, EndpointConfigProvider> _endpointConfigProviders = new();
+  /// <summary>
+  /// EndpointId to EndpointHealthProvider
+  /// </summary>
+  private readonly ReferenceCountingDict<string, EndpointHealthProvider> _endpointHealthProviders = new();
+  /// <summary>
+  /// EndpointId to (DefaultEndpointTableProvider, FilteredTableProvider, or TableProvider)
+  /// </summary>
+  private readonly ReferenceCountingDict<TableQuad, IObservable<StatusOr<TableHandle>>> _tableProviders = new();
+  /// <summary>
+  /// EndpointId to PersistentQueryDictProvider
+  /// </summary>
+  private readonly ReferenceCountingDict<string, PersistentQueryDictProvider> _persistentQueryDictProviders = new();
+  /// <summary>
+  /// (EndpointId, PQ Name) to PersistentQueryInfoProvider
+  /// </summary>
+  private readonly ReferenceCountingDict<(string, string), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
+  /// <summary>
+  /// (EndpointId, PQ Name) to SessionManagerProvider
+  /// </summary>
+  private readonly ReferenceCountingDict<string, SessionManagerProvider> _sessionManagerProviders = new();
 
   private readonly EndpointDictProvider _endpointDictProvider = new();
 
@@ -84,10 +100,10 @@ public class StateManager {
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToSessionManager(string endpoint,
+  public IDisposable SubscribeToSessionManager(string endpointId,
     IObserver<StatusOr<SessionManager>> observer) {
-    var candidate = new SessionManagerProvider(this, endpoint);
-    return SubscribeHelper(_sessionManagerProviders, endpoint, candidate, observer);
+    var candidate = new SessionManagerProvider(this, endpointId);
+    return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
 
 #if false
@@ -169,22 +185,9 @@ public class StateManager {
   }
 #endif
 
-  private IDisposable SubscribeHelper<TKey, T>(IDictionary<TKey, WrappedProvider<T>> dict,
-    TKey key, IObservable<T> candidateObservable, IObserver<T> observer) {
-    WrappedProvider<T>? wrapped;
-    lock (_sync) {
-      if (!dict.TryGetValue(key, out wrapped)) {
-        wrapped = new WrappedProvider<T>(_sync, candidateObservable, () => dict.Remove(key));
-        dict.Add(key, wrapped);
-      } else {
-        wrapped.IncrementLocked();
-      }
-    }
-    return wrapped.Subscribe(observer);
-  }
-
-  private IDisposable SubscribeHelper2<TKey, T>(ReferenceCountingDict<TKey, IObservable<T>> dict,
-    TKey key, IObservable<T> candidateObservable, IObserver<T> observer) {
+  private IDisposable SubscribeHelper<TKey, TObservable, T>(ReferenceCountingDict<TKey, TObservable> dict,
+    TKey key, TObservable candidateObservable, IObserver<T> observer)
+    where TObservable : IObservable<T> {
     IObservable<T>? actualObservable;
     lock (_sync) {
       actualObservable = dict.AddOrIncrement(key, candidateObservable);
@@ -195,11 +198,11 @@ public class StateManager {
         return;
       }
       lock (_sync) {
-        if (!dict.DecrementOrRemove(key, out nubbin)) {
+        if (!dict.DecrementOrRemove(key)) {
           return;
         }
       }
-      nubbin?.Dispose();
+      actualObservable.Dispose();
     });
     return actualObservable.Subscribe(observer);
   }
