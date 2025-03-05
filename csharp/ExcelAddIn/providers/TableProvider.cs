@@ -28,7 +28,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<DndClient>>,
-  IObservable<StatusOr<TableHandle>> {
+  IObservable<StatusOr<TableHandle>>,
+  IDisposable {
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
@@ -64,15 +65,24 @@ internal class TableProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
+  public void Dispose() {
+    lock (_sync) {
+      _isDisposed = true;
+      ResetStateLocked();
+    }
+  }
+
+  private void ResetStateLocked() {
+    Utility.ClearAndDispose(ref _upstreamDisposer);
+    ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
+  }
+
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var isLast);
-      if (!isLast) {
-        return;
+      if (isLast) {
+        ResetStateLocked();
       }
-      _isDisposed = true;
-      Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
     }
   }
 
@@ -118,9 +128,10 @@ internal class TableProvider :
     using var cleanup2 = newState;
 
     lock (_sync) {
-      if (cookie.IsCurrent) {
-        ProviderUtil.SetStateAndNotify(ref _tableHandle, newState, _observers);
+      if (_isDisposed || !cookie.IsCurrent) {
+        return;
       }
+      ProviderUtil.SetStateAndNotify(ref _tableHandle, newState, _observers);
     }
   }
 
