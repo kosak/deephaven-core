@@ -188,16 +188,10 @@ public class StateManager {
   private IDisposable SubscribeHelper<TKey, TObservable, T>(ReferenceCountingDict<TKey, TObservable> dict,
     TKey key, TObservable candidateObservable, IObserver<T> observer)
     where TKey : notnull
-    where TObservable : IObservable<T>, IDisposable {
-    bool candidateAdded;
+    where TObservable : IObservable<T> {
     TObservable actualObservable;
     lock (_sync) {
-      candidateAdded = dict.AddOrIncrement(key, candidateObservable, out actualObservable);
-    }
-
-    if (!candidateAdded) {
-      // If we're not going to keep the candidate, we dispose it
-      candidateObservable.Dispose();
+      _ = dict.AddOrIncrement(key, candidateObservable, out actualObservable);
     }
 
     // Subscribe the observer to the (new or existing) observable
@@ -215,17 +209,12 @@ public class StateManager {
       }
 
       // Decrement or remove entry from dictionary
-      bool needToDisposeObservable;
       lock (_sync) {
-        needToDisposeObservable = dict.DecrementOrRemove(key);
+        _ = dict.DecrementOrRemove(key);
       }
 
       // Unsubscribe the observer from the observable
       disposer.Dispose();
-      // Maybe also dispose the observable
-      if (needToDisposeObservable) {
-        actualObservable.Dispose();
-      }
     });
   }
 

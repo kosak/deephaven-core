@@ -28,8 +28,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<DndClient>>,
-  IObservable<StatusOr<TableHandle>>,
-  IDisposable {
+  IObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
@@ -53,9 +52,8 @@ internal class TableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _tableHandle, out _);
-      if (_firstTime) {
-        _firstTime = false;
+      _observers.AddAndNotify(observer, _tableHandle, out var first);
+      if (first) {
         // Subscribe to parents at the time of the first subscription.
         _upstreamDisposer = _pqName != null
           ? _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, this)
@@ -66,19 +64,16 @@ internal class TableProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
-    lock (_sync) {
-      if (Utility.Exchange(ref _isDisposed, true)) {
-        return;
-      }
-      Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
-    }
-  }
-
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out _);
+      _observers.Remove(observer, out var last);
+      if (!last) {
+        return;
+      }
+      // Our convention is that the last unsubscriber disposes the Observable
+      _isDisposed = true;
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
     }
   }
 
