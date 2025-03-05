@@ -59,41 +59,38 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    IObservable<StatusOr<TableHandle>> observable;
+    IObservable<StatusOr<TableHandle>> candidate;
     if (key.EndpointId == null) {
-      observable = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
+      candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
     } else if (key.Condition.Length != 0) {
-      observable = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+      candidate = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
         key.Condition);
     } else {
-      observable = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
+      candidate = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
     };
-    return SubscribeHelper(_tableProviders, key, observable, observer);
+    return SubscribeHelper(_tableProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryDict(string endpointId,
     IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
-
-    Func<IObservable<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>> factory =
-      () => new PersistentQueryDictProvider(this, endpointId);
-    return SubscribeHelper(endpointId, _persistentQueryDictProviders, observer, factory);
+    var candidate = new PersistentQueryDictProvider(this, endpointId);
+    return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryInfo(string endpointId, string pqName,
     IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     var key = (endpointId, pqName);
-    var factory = () => new PersistentQueryInfoProvider(this, endpointId, pqName);
-    return SubscribeHelper(key, _persistentQueryInfoProviders, observer, factory);
+    var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
+    return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToSessionManager(string endpoint,
     IObserver<StatusOr<SessionManager>> observer) {
-
-    var factory = () => new SessionManagerProvider(this, endpoint);
-    return SubscribeHelper(endpoint, _sessionManagerProviders, observer, factory);
+    var candidate = new SessionManagerProvider(this, endpoint);
+    return SubscribeHelper(_sessionManagerProviders, endpoint, candidate, observer);
   }
 
-
+#if false
   public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<string>> observer) {
     WorkerThread.EnqueueOrRun(() => {
       _endpointConfigPopulationObservers.Add(observer, out _);
@@ -170,6 +167,7 @@ public class StateManager {
 
     action(cp);
   }
+#endif
 
   private IDisposable SubscribeHelper<TKey, T>(IDictionary<TKey, WrappedProvider<T>> dict,
     TKey key, IObservable<T> candidateObservable, IObserver<T> observer) {
@@ -185,11 +183,32 @@ public class StateManager {
     return wrapped.Subscribe(observer);
   }
 
+  private IDisposable SubscribeHelper2<TKey, T>(ReferenceCountingDict<TKey, IObservable<T>> dict,
+    TKey key, IObservable<T> candidateObservable, IObserver<T> observer) {
+    IObservable<T>? actualObservable;
+    lock (_sync) {
+      actualObservable = dict.AddOrIncrement(key, candidateObservable);
+    }
+    var isDisposed = new Latch();
+    return ActionAsDisposable.Create(() => {
+      if (!isDisposed.TrySet()) {
+        return;
+      }
+      lock (_sync) {
+        if (!dict.DecrementOrRemove(key, out nubbin)) {
+          return;
+        }
+      }
+      nubbin?.Dispose();
+    });
+    return actualObservable.Subscribe(observer);
+  }
+
   private class WrappedProvider<T> : IObservable<T> {
     private readonly object _sharedSync;
     private readonly IObservable<T> _provider;
     private readonly Action _outerCleanupLocked;
-    private int _referenceCount = 0;
+    private int _referenceCount = 1;
 
     public WrappedProvider(object sharedSync, IObservable<T> provider, Action outerCleanupLocked) {
       _sharedSync = sharedSync;
@@ -211,9 +230,8 @@ public class StateManager {
             providerNeedsDisposing = true;
           }
         }
-        providerDisposer.Dispose();
         if (providerNeedsDisposing) {
-          _provider.Dispose();
+          providerDisposer.Dispose();
         }
       });
     }
