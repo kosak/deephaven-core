@@ -10,72 +10,48 @@ namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   private readonly object _sync = new();
-  /// <summary>
-  /// EndpointId to CoreClientProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<string, CoreClientProvider> _coreClientProviders = new();
-  /// <summary>
-  /// (EndpointId, PQ Name) to CorePlusClientProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<(string, string), CorePlusClientProvider> _corePlusClientProviders = new();
-  /// <summary>
-  /// EndpointId to EndpointConfigProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<string, EndpointConfigProvider> _endpointConfigProviders = new();
-  /// <summary>
-  /// EndpointId to EndpointHealthProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<string, EndpointHealthProvider> _endpointHealthProviders = new();
-  /// <summary>
-  /// EndpointId to (DefaultEndpointTableProvider, FilteredTableProvider, or TableProvider)
-  /// </summary>
-  private readonly ReferenceCountingDict<TableQuad, IObservable<StatusOr<TableHandle>>> _tableProviders = new();
-  /// <summary>
-  /// EndpointId to PersistentQueryDictProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<string, PersistentQueryDictProvider> _persistentQueryDictProviders = new();
-  /// <summary>
-  /// (EndpointId, PQ Name) to PersistentQueryInfoProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<(string, string), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
-  /// <summary>
-  /// (EndpointId, PQ Name) to SessionManagerProvider
-  /// </summary>
-  private readonly ReferenceCountingDict<string, SessionManagerProvider> _sessionManagerProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, CoreClientProvider> _coreClientProviders = new();
+  private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
+  private readonly ReferenceCountingDict<TableQuad, ITableProviderBase> _tableProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, PersistentQueryDictProvider> _persistentQueryDictProviders = new();
+  private readonly ReferenceCountingDict<(EndpointId, PqName), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
 
   private readonly EndpointDictProvider _endpointDictProvider = new();
 
-  private readonly ObserverContainer<string?> _defaultEndpointSelectionObservers = new();
+  private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
 
   private string? _defaultEndpointId = null;
 
-  public IDisposable SubscribeToCoreClient(string endpointId,
+  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
     IObserver<StatusOr<Client>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToCorePlusClient(string endpointId, string pqName,
+  public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
     IObserver<StatusOr<DndClient>> observer) {
     var key = (endpointId, pqName);
     var candidate = new CorePlusClientProvider(this, endpointId, pqName);
     return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToEndpointConfig(string endpointId,
+  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
     var candidate = new EndpointConfigProvider();
     return SubscribeHelper(_endpointConfigProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToEndpointHealth(string endpointId,
+  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
     IObserver<StatusOr<EndpointHealth>> observer) {
     var candidate = new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    IObservable<StatusOr<TableHandle>> candidate;
+    ITableProviderBase candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
     } else if (key.Condition.Length != 0) {
@@ -87,20 +63,20 @@ public class StateManager {
     return SubscribeHelper(_tableProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToPersistentQueryDict(string endpointId,
+  public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
     IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
     var candidate = new PersistentQueryDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToPersistentQueryInfo(string endpointId, string pqName,
+  public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
     IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     var key = (endpointId, pqName);
     var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToSessionManager(string endpointId,
+  public IDisposable SubscribeToSessionManager(EndpointId endpointId,
     IObserver<StatusOr<SessionManager>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);

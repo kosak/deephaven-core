@@ -14,12 +14,13 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class DefaultEndpointTableProvider :
   IObserver<EndpointId?>,
   IObserverWithCookie<StatusOr<TableHandle>>,
-  IObservable<StatusOr<TableHandle>>,
-  IDisposable {
+  // IObservable<StatusOr<TableHandle>>,
+  // IDisposable,
+  ITableProviderBase {
   private const string UnsetTableHandleText = "[No Default Connection]";
 
   private readonly StateManager _stateManager;
-  private readonly string? _pqName;
+  private readonly PqName? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
@@ -31,7 +32,7 @@ internal class DefaultEndpointTableProvider :
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
-    string? pqName, string tableName, string condition) {
+    PqName? pqName, string tableName, string condition) {
     _stateManager = stateManager;
     _pqName = pqName;
     _tableName = tableName;

@@ -19,7 +19,7 @@ internal class SessionManagerProvider :
   IDisposable {
   private const string UnsetSessionManagerText = "[No SessionManager]";
   private readonly StateManager _stateManager;
-  private readonly string _endpointId;
+  private readonly EndpointId _endpointId;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
@@ -27,7 +27,7 @@ internal class SessionManagerProvider :
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<SessionManager> _session = UnsetSessionManagerText;
 
-  public SessionManagerProvider(StateManager stateManager, string endpointId) {
+  public SessionManagerProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
   }

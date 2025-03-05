@@ -6,6 +6,9 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
+internal interface ITableProviderBase : IObservable<StatusOr<TableHandle>>,
+  IDisposable;
+
 /**
  * This class has two functions, depending on whether the persistentQueryId is set.
  * If it is set, the class assumes that this is an Enterprise Core Plus table, and
@@ -24,17 +27,17 @@ namespace Deephaven.ExcelAddIn.Providers;
  * If it was a TableHandle, then filter it by "condition" in the background, and provide
  * the resulting filtered TableHandle (or error) to my observers.
  */
-
 internal class TableProvider :
   IObserver<StatusOr<Client>>,
   IObserver<StatusOr<DndClient>>,
-  IObservable<StatusOr<TableHandle>>,
-  IDisposable {
+  // IObservable<StatusOr<TableHandle>>,
+  // IDisposable,
+  ITableProviderBase {
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
-  private readonly string _endpointId;
-  private readonly string? _pqName;
+  private readonly EndpointId _endpointId;
+  private readonly PqName? _pqName;
   private readonly string _tableName;
   private readonly object _sync = new();
   private bool _firstTime = true;
@@ -44,8 +47,8 @@ internal class TableProvider :
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
-  public TableProvider(StateManager stateManager, string endpointId,
-    string? pqName, string tableName) {
+  public TableProvider(StateManager stateManager, EndpointId endpointId,
+    PqName? pqName, string tableName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;

@@ -37,7 +37,7 @@ public record TableTriple(
 }
 
 public record TableQuad(
-  string? EndpointId,
-  string? PqName,
+  EndpointId? EndpointId,
+  PqName? PqName,
   string TableName,
   string Condition);

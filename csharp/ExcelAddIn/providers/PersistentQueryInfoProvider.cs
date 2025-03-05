@@ -12,8 +12,8 @@ internal class PersistentQueryInfoProvider :
   private const string UnsetPqText = "[No Persistent Query]";
 
   private readonly StateManager _stateManager;
-  private readonly string _endpointId;
-  private readonly string _pqName;
+  private readonly EndpointId _endpointId;
+  private readonly PqName _pqName;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
@@ -30,7 +30,7 @@ internal class PersistentQueryInfoProvider :
   private PersistentQueryInfoMessage? _lastMessage = new();
 
   public PersistentQueryInfoProvider(StateManager stateManager,
-    string endpointId, string pqName) {
+    EndpointId endpointId, PqName pqName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;
@@ -73,9 +73,9 @@ internal class PersistentQueryInfoProvider :
       }
 
       // Try quick lookup using the key hint (and then verify that the hint is correct)
-      if (!d.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName) {
-        use_dict_differencing();
-        // That didn't work. Try exhaustive slow lookup.
+      if (!d.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName.Name) {
+        // That didn't work. Try lookup based on difference
+        var (added, removed, modified) = d.OhHellNo();
         var stupid = d.FirstOrDefault(v => v.Value.Config.Name == _pqName);
         _keyHint = what;
       }

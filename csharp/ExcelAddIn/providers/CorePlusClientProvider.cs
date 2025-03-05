@@ -18,8 +18,8 @@ internal class CorePlusClientProvider :
   private const string UnsetSessionManagerText = "[No Session Manager]";
   private const string UnsetPqInfoText = "[No PQ Info]";
   private readonly StateManager _stateManager;
-  private readonly string _endpointId;
-  private readonly string _pqName;
+  private readonly EndpointId _endpointId;
+  private readonly PqName _pqName;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private IDisposable? _sessionManagerDisposer = null;
@@ -30,8 +30,8 @@ internal class CorePlusClientProvider :
   private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
   private StatusOr<DndClient> _client = UnsetClientText;
 
-  public CorePlusClientProvider(StateManager stateManager, string endpointId,
-    string pqName) {
+  public CorePlusClientProvider(StateManager stateManager, EndpointId endpointId,
+    PqName pqName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;
@@ -45,7 +45,7 @@ internal class CorePlusClientProvider :
       _observers.AddAndNotify(observer, _client, out var isFirst);
       if (isFirst) {
         _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
-        _pqInfoDisposer = _stateManager.SubscribeToPqInfo(_endpointId, _pqName, this);
+        _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, this);
       }
     }
 

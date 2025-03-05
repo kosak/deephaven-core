@@ -12,7 +12,7 @@ internal class PersistentQueryDictProvider :
   IDisposable {
   private const string UnsetDictText = "[No PQ Dict]";
   private readonly StateManager _stateManager;
-  private readonly string _endpointId;
+  private readonly EndpointId _endpointId;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private IDisposable? _upstreamDisposer = null;
@@ -20,7 +20,7 @@ internal class PersistentQueryDictProvider :
   private readonly ObserverContainer<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> _observers = new();
   private StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> _dict = UnsetDictText;
 
-  public PersistentQueryDictProvider(StateManager stateManager, string endpointId) {
+  public PersistentQueryDictProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
   }

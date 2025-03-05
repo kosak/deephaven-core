@@ -17,12 +17,14 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class FilteredTableProvider :
   IObserver<StatusOr<TableHandle>>,
-  IObservable<StatusOr<TableHandle>> {
+  // IObservable<StatusOr<TableHandle>>,
+  // IDisposable
+  ITableProviderBase {
   private const string UnsetTableHandleText = "[No Filtered Table]";
 
   private readonly StateManager _stateManager;
-  private readonly string _endpointId;
-  private readonly string? _pqName;
+  private readonly EndpointId _endpointId;
+  private readonly PqName? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
@@ -32,8 +34,8 @@ internal class FilteredTableProvider :
   private readonly VersionTracker _versionTracker = new();
   private StatusOr<TableHandle> _filteredTableHandle = UnsetTableHandleText;
 
-  public FilteredTableProvider(StateManager stateManager, string endpointId,
-    string? pqName, string tableName, string condition) {
+  public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
+    PqName? pqName, string tableName, string condition) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;
