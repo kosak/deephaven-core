@@ -18,7 +18,7 @@ internal class DefaultEndpointTableProvider :
   private const string UnsetTableHandleText = "[No Default Connection]";
 
   private readonly StateManager _stateManager;
-  private readonly PersistentQueryName? _pqName;
+  private readonly string? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
@@ -30,7 +30,7 @@ internal class DefaultEndpointTableProvider :
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
-    PersistentQueryName? pqName, string tableName, string condition) {
+    string? pqName, string tableName, string condition) {
     _stateManager = stateManager;
     _pqName = pqName;
     _tableName = tableName;

@@ -33,7 +33,7 @@ internal class TableProvider :
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
-  private readonly PersistentQueryName? _pqName;
+  private readonly string? _pqName;
   private readonly string _tableName;
   private readonly object _sync = new();
   private bool _isDisposed = false;
@@ -43,7 +43,7 @@ internal class TableProvider :
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
-    PersistentQueryName? pqName, string tableName) {
+    string? pqName, string tableName) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;

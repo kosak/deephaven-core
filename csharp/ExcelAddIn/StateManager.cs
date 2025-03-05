@@ -64,7 +64,7 @@ public class StateManager {
         return new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
       }
       if (key.Condition.Length != 0) {
-        return new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+        return new FilteredTableProvider(this, key.EndpointId!, key.PqName, key.TableName,
           key.Condition);
       }
       return new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
