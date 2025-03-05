@@ -24,6 +24,7 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
+  private bool _subscribeDone = false;
   private bool _isDisposed = false;
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
