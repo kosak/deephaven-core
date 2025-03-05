@@ -41,8 +41,8 @@ internal class DefaultEndpointTableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _tableHandle, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _tableHandle, out _);
+      if (!Utility.Exchange(ref _subscribeDone, true)) {
         _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
       }
     }
@@ -52,12 +52,15 @@ internal class DefaultEndpointTableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
+      _observers.Remove(observer, out _);
+    }
+  }
+
+  public void Dispose() {
+    lock (_sync) {
+      if (Utility.Exchange(ref _isDisposed, true)) {
         return;
       }
-
-      _isDisposed = true;
       Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
       ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
