@@ -3,14 +3,16 @@
 public class ReferenceCountingDict<TKey, TValue> where TKey : notnull {
   private readonly Dictionary<TKey, WithCount> _dict = new();
 
-  public TValue AddOrIncrement(TKey key, TValue candidateValue) {
+  public bool AddOrIncrement(TKey key, TValue candidateValue, out TValue actualValue) {
     if (_dict.TryGetValue(key, out var withCount)) {
       ++withCount.Count;
-    } else {
-      withCount = new WithCount(candidateValue);
-      _dict.Add(key, withCount);
+      actualValue = withCount.Value;
+      return false;
     }
-    return withCount.Value;
+    withCount = new WithCount(candidateValue);
+    _dict.Add(key, withCount);
+    actualValue = candidateValue;
+    return true;
   }
 
   public bool DecrementOrRemove(TKey key) {

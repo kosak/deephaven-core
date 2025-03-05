@@ -187,6 +187,7 @@ public class StateManager {
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(ReferenceCountingDict<TKey, TObservable> dict,
     TKey key, TObservable candidateObservable, IObserver<T> observer)
+    where TKey : notnull
     where TObservable : IObservable<T>, IDisposable {
     bool candidateAdded;
     TObservable actualObservable;
@@ -195,7 +196,7 @@ public class StateManager {
     }
 
     if (!candidateAdded) {
-      // To be nice, if we're not going to keep the candidate, we dispose it
+      // If we're not going to keep the candidate, we dispose it
       candidateObservable.Dispose();
     }
 
@@ -207,9 +208,9 @@ public class StateManager {
     // 2. Otherwise, call "disposer" to unsubscribe the observable
     // 3. If the reference count hits zero, remove from the dictionary and dispse the observable
 
-    var isDisposed = new Latch();
+    var isDisposed = false;
     return ActionAsDisposable.Create(() => {
-      if (!isDisposed.TrySet()) {
+      if (Utility.Exchange(ref isDisposed, true)) {
         return;
       }
 
@@ -221,8 +222,8 @@ public class StateManager {
 
       // Unsubscribe the observer from the observable
       disposer.Dispose();
+      // Maybe also dispose the observable
       if (needToDisposeObservable) {
-        // Reference count is 0, so dispose the observable
         actualObservable.Dispose();
       }
     });

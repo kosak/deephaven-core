@@ -53,8 +53,9 @@ internal class TableProvider :
 
   public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _tableHandle, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _tableHandle, out _);
+      if (_firstTime) {
+        _firstTime = false;
         // Subscribe to parents at the time of the first subscription.
         _upstreamDisposer = _pqName != null
           ? _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, this)
@@ -67,22 +68,17 @@ internal class TableProvider :
 
   public void Dispose() {
     lock (_sync) {
-      _isDisposed = true;
-      ResetStateLocked();
+      if (Utility.Exchange(ref _isDisposed, true)) {
+        return;
+      }
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
     }
-  }
-
-  private void ResetStateLocked() {
-    Utility.ClearAndDispose(ref _upstreamDisposer);
-    ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
   }
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (isLast) {
-        ResetStateLocked();
-      }
+      _observers.Remove(observer, out _);
     }
   }
 
