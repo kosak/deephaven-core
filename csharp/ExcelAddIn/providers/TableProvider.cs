@@ -32,7 +32,7 @@ internal class TableProvider :
   private const string UnsetTableHandleText = "[No Table]";
 
   private readonly StateManager _stateManager;
-  private readonly EndpointId _endpointId;
+  private readonly string _endpointId;
   private readonly string? _pqName;
   private readonly string _tableName;
   private readonly object _sync = new();
@@ -42,7 +42,7 @@ internal class TableProvider :
   private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
   private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
 
-  public TableProvider(StateManager stateManager, EndpointId endpointId,
+  public TableProvider(StateManager stateManager, string endpointId,
     string? pqName, string tableName) {
     _stateManager = stateManager;
     _endpointId = endpointId;

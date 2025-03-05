@@ -10,7 +10,13 @@ namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   private readonly object _sync = new();
+  /// <summary>
+  /// Endpoint to CoreClientProvider
+  /// </summary>
   private readonly Dictionary<string, WrappedProvider<StatusOr<Client>>> _coreClientProviders = new();
+  /// <summary>
+  /// (Endpoint, PQ Name) to CorePlusClientProvider
+  /// </summary>
   private readonly Dictionary<(string, string), WrappedProvider<StatusOr<DndClient>>> _corePlusClientProviders = new();
   private readonly Dictionary<string, WrappedProvider<StatusOr<EndpointConfigBase>>> _endpointConfigProviders = new();
   private readonly Dictionary<string, WrappedProvider<StatusOr<EndpointHealth>>> _endpointHealthProviders = new();
@@ -29,48 +35,40 @@ public class StateManager {
 
   public IDisposable SubscribeToCoreClient(string endpointId,
     IObserver<StatusOr<Client>> observer) {
-
-    Func<IObservable<StatusOr<Client>>> factory =
-      () => new CoreClientProvider(this, endpointId);
-    return SubscribeHelper(endpointId, _coreClientProviders, observer, factory);
+    var candidate = new CoreClientProvider(this, endpointId);
+    return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToCorePlusClient(string endpointId, string pqName,
     IObserver<StatusOr<DndClient>> observer) {
-
     var key = (endpointId, pqName);
-    Func<IObservable<StatusOr<DndClient>>> factory =
-      () => new CorePlusClientProvider(this, endpointId, pqName);
-    return SubscribeHelper(key, _corePlusClientProviders, observer, factory);
+    var candidate = new CorePlusClientProvider(this, endpointId, pqName);
+    return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToEndpointConfig(string endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
-    Func<IObservable<StatusOr<EndpointConfigBase>>> factory =
-      () => new EndpointConfigProvider();
-    return SubscribeHelper(endpointId, _endpointConfigProviders, observer, factory);
+    var candidate = new EndpointConfigProvider();
+    return SubscribeHelper(_endpointConfigProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToEndpointHealth(string endpointId,
     IObserver<StatusOr<EndpointHealth>> observer) {
-    Func<IObservable<StatusOr<EndpointHealth>>> factory =
-      () => new EndpointHealthProvider(this, endpointId);
-    return SubscribeHelper(endpointId, _endpointHealthProviders, observer, factory);
+    var candidate = new EndpointHealthProvider(this, endpointId);
+    return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
-    Func<IObservable<StatusOr<TableHandle>>> factory = () => {
-      if (key.EndpointId == null) {
-        return new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
-      }
-      if (key.Condition.Length != 0) {
-        return new FilteredTableProvider(this, key.EndpointId!, key.PqName, key.TableName,
-          key.Condition);
-      }
-      return new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
+    IObservable<StatusOr<TableHandle>> observable;
+    if (key.EndpointId == null) {
+      observable = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
+    } else if (key.Condition.Length != 0) {
+      observable = new FilteredTableProvider(this, key.EndpointId, key.PqName, key.TableName,
+        key.Condition);
+    } else {
+      observable = new TableProvider(this, key.EndpointId, key.PqName, key.TableName);
     };
-
-    return SubscribeHelper(key, _tableProviders, observer, factory);
+    return SubscribeHelper(_tableProviders, key, observable, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryDict(string endpointId,
@@ -173,14 +171,12 @@ public class StateManager {
     action(cp);
   }
 
-  private IDisposable SubscribeHelper<TKey, T>(TKey key,
-    IDictionary<TKey, WrappedProvider<T>> dict,
-    IObserver<T> observer, Func<IObservable<T>> factory) {
+  private IDisposable SubscribeHelper<TKey, T>(IDictionary<TKey, WrappedProvider<T>> dict,
+    TKey key, IObservable<T> candidateObservable, IObserver<T> observer) {
     WrappedProvider<T>? wrapped;
     lock (_sync) {
       if (!dict.TryGetValue(key, out wrapped)) {
-        var observable = factory();
-        wrapped = new WrappedProvider<T>(_sync, observable, () => dict.Remove(key));
+        wrapped = new WrappedProvider<T>(_sync, candidateObservable, () => dict.Remove(key));
         dict.Add(key, wrapped);
       } else {
         wrapped.IncrementLocked();
@@ -227,7 +223,7 @@ public class StateManager {
     }
   }
 
-  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
+  public void SetDefaultEndpointId(string? defaultEndpointId) {
     lock (_sync) {
       _defaultEndpointId = defaultEndpointId;
       _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);

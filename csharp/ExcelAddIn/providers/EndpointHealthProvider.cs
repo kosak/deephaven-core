@@ -55,7 +55,7 @@ internal class EndpointHealthProvider :
   private const string ConnectionOkString = "OK";
 
   private readonly StateManager _stateManager;
-  private readonly EndpointId _endpointId;
+  private readonly string _endpointId;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private IDisposable? _upstreamConfigDisposer = null;
@@ -64,7 +64,7 @@ internal class EndpointHealthProvider :
   private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
 
-  public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId) {
+  public EndpointHealthProvider(StateManager stateManager, string endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
   }
