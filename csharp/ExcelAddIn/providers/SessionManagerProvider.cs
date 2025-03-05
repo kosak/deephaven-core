@@ -15,7 +15,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class SessionManagerProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
-  IObservable<StatusOr<SessionManager>> {
+  IObservable<StatusOr<SessionManager>>,
+  IDisposable {
   private const string UnsetSessionManagerText = "[No SessionManager]";
   private readonly StateManager _stateManager;
   private readonly string _endpointId;

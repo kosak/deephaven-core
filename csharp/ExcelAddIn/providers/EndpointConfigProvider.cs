@@ -7,7 +7,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider :
   IObserver<IReadOnlyDictionary<Int64, EndpointConfigBase?>>,
-  IObservable<StatusOr<EndpointConfigBase>> {
+  IObservable<StatusOr<EndpointConfigBase>>,
+  IDisposable {
   private const string UnsetCredentialsString = "[No Credentials]";
   private readonly object _sync = new();
   private bool _isDisposed = false;

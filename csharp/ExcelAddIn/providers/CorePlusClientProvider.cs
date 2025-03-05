@@ -12,7 +12,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class CorePlusClientProvider :
   IObserver<StatusOr<SessionManager>>,
   IObserver<PersistentQueryInfoMessage>,
-  IObservable<StatusOr<DndClient>> {
+  IObservable<StatusOr<DndClient>>, 
+  IDisposable {
   private const string UnsetClientText = "[No Core+ Client]";
   private const string UnsetSessionManagerText = "[No Session Manager]";
   private const string UnsetPqInfoText = "[No PQ Info]";

@@ -50,7 +50,8 @@ internal class EndpointHealthProvider :
   IObserver<StatusOr<EndpointConfigBase>>,
   IObserverWithCookie<StatusOr<Client>>,
   IObserverWithCookie<StatusOr<SessionManager>>,
-  IObservable<StatusOr<EndpointHealth>> {
+  IObservable<StatusOr<EndpointHealth>>,
+  IDisposable {
   private const string UnsetHealthString = "[No Config]";
   private const string ConnectionOkString = "OK";
 

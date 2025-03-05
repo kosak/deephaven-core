@@ -8,7 +8,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryDictProvider :
   IObserver<StatusOr<Subscription>>,
-  IObservable<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> {
+  IObservable<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>,
+  IDisposable {
   private const string UnsetDictText = "[No PQ Dict]";
   private readonly StateManager _stateManager;
   private readonly string _endpointId;
