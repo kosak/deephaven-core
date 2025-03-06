@@ -68,10 +68,10 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
 
   private void OnNextBackground(StatusOr<TableHandle> tableHandleShare,
     VersionTracker.Cookie versionCookie) {
-    using var tableHandle = tableHandleShare;
+    using var cleanup1 = tableHandleShare;
     StatusOr<object?[,]> newResult;
     try {
-      var (th, _) = tableHandle;
+      var (th, _) = tableHandleShare;
       // This is a server call that may take some time.
       using var ct = th.ToClientTable();
       var rendered = Renderer.Render(ct, _wantHeaders);
@@ -79,7 +79,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
     } catch (Exception ex) {
       newResult = ex.Message;
     }
-    using var cleanup = newResult;
+    using var cleanup2 = newResult;
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
