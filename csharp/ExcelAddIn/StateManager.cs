@@ -19,11 +19,8 @@ public class StateManager {
   private readonly ReferenceCountingDict<(EndpointId, PqName), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
 
+  private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
-
-  private readonly ObserverContainer<EndpointId?> _defaultEndpointSelectionObservers = new();
-
-  private EndpointId? _defaultEndpointId = null;
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
     IObserver<StatusOr<Client>> observer) {
@@ -86,28 +83,18 @@ public class StateManager {
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToDefaultEndpointSelection(IObserver<EndpointId?> observer) {
-    lock (_sync) {
-      _defaultEndpointSelectionObservers.AddAndNotify(observer, _defaultEndpointId, out _);
-    }
+  public IDisposable SubscribeToDefaultEndpoint(IObserver<EndpointId?> observer) {
+    return _defaultEndpointProvider.Subscribe(observer);
+  }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _defaultEndpointSelectionObservers.Remove(observer, out _);
-      }
-    });
+  public void SetDefaultEndpoint(EndpointId? defaultEndpointId) {
+    _defaultEndpointProvider.SetDefaultEndpoint(defaultEndpointId);
   }
 
   public IDisposable SubscribeToEndpointDict(IObserver<SharableDict<EndpointConfigBase>> observer) {
     return _endpointDictProvider.Subscribe(observer);
   }
 
-
-  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
-    lock (_sync) {
-      _defaultEndpointId = defaultEndpointId;
-      _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
-    }
 
 #if false
   public void SetCredentials(EndpointConfigBase config) {
