@@ -12,8 +12,10 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
-  private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IDisposable? _upstreamDisposer = null;
+  private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
+  private readonly VersionTracker _versionTracker = new();
+  private StatusOr<object?[,]> _rendered = "[No data]";
 
   public SnapshotOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
@@ -25,7 +27,7 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
     var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
 
     lock (_sync) {
-      _observers.AddAndNotify(wrappedObserver, "[Snapshotting]", out var isFirst);
+      _observers.AddAndNotify(wrappedObserver, _rendered, out var isFirst);
 
       if (isFirst) {
         _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
@@ -43,27 +45,46 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
       }
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
+      ProviderUtil.SetState(ref _rendered, "[Disposed]");
     }
-  }S
+  }
 
   public void OnNext(StatusOr<TableHandle> tableHandle) {
-    if (_workerThread.EnqueueOrNop(() => OnNext(tableHandle))) {
-      return;
+    lock (_sync) {
+      // Invalidate any outstanding background work
+      var cookie = _versionTracker.New();
+
+      if (!tableHandle.GetValueOrStatus(out _, out var status)) {
+        ProviderUtil.SetStateAndNotify(ref _rendered, status, _observers);
+        return;
+      }
+      ProviderUtil.SetStateAndNotify(ref _rendered, "[Rendering]", _observers);
+
+      // This needs to be created early (not on the lambda, which is on a different thread)
+      var tableHandleShare = tableHandle.Share();
+      Background.Run(() => OnNextBackground(tableHandleShare, cookie));
     }
+  }
 
-    if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
-      _observers.SendStatus(status);
-      return;
-    }
-
-    _observers.SendStatus($"Snapshotting \"{_tableQuad.TableName}\"");
-
+  private void OnNextBackground(StatusOr<TableHandle> tableHandleShare,
+    VersionTracker.Cookie versionCookie) {
+    using var tableHandle = tableHandleShare;
+    StatusOr<object?[,]> newResult;
     try {
+      var (th, _) = tableHandle;
+      // This is a server call that may take some time.
       using var ct = th.ToClientTable();
       var rendered = Renderer.Render(ct, _wantHeaders);
-      _observers.SendValue(rendered);
+      newResult = StatusOr<object?[,]>.OfValue(rendered);
     } catch (Exception ex) {
-      _observers.SendStatus(ex.Message);
+      newResult = ex.Message;
+    }
+    using var cleanup = newResult;
+
+    lock (_sync) {
+      if (versionCookie.IsCurrent) {
+        ProviderUtil.SetStateAndNotify(ref _rendered, newResult, _observers);
+      }
     }
   }
 
