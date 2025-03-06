@@ -86,7 +86,7 @@ internal class FilteredTableProvider :
       ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, "Filtering", _observers);
       // This needs to be created early (not on the lambda, which is on a different thread)
       var parentHandleShare = parentHandle.Share();
-      Background666.Run(() => OnNextBackground(parentHandleShare, cookie));
+      Background.Run(() => OnNextBackground(parentHandleShare, cookie));
     }
   }
 
