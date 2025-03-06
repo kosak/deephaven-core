@@ -2,9 +2,6 @@
 using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
-using Google.FlatBuffers;
-using Google.Protobuf;
-using io.deephaven.barrage.flatbuf;
 using Table = Apache.Arrow.Table;
 
 namespace Deephaven.ManagedClient;

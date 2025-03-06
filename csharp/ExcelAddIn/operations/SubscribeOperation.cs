@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using ExcelDna.Integration;
@@ -11,7 +12,6 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
-  private readonly WorkerThread _workerThread;
   private IDisposable? _tableDisposer = null;
   private TableHandle? _currentTableHandle = null;
   private IDisposable? _currentSubDisposer = null;
@@ -20,8 +20,6 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
     _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
-    // Convenience
-    _workerThread = _stateManager.WorkerThread;
   }
 
   public IDisposable Subscribe(IExcelObserver observer) {
