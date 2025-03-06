@@ -49,7 +49,7 @@ internal class EndpointConfigProvider :
       if (!_isDisposed.TrySet()) {
         return;
       }
-      Utility.ClearAndDispose(ref _upstreamDisposer);
+      Utility.ClearAndDispose(ref _upstreamSubscription);
       ProviderUtil.SetState(ref _credentials, "[Disposed");
     }
   }
