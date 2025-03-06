@@ -104,10 +104,6 @@ internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointCon
   }
 
   void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
-    if (_workerThread.EnqueueOrNop(() => OnDeleteButtonClicked(rows))) {
-      return;
-    }
-
     void ShowFailuresIfAny(Dictionary<EndpointId, bool> results) {
       var failureMessages = results.Where(kvp => !kvp.Value)
         .Select(kvp => $"{kvp.Key} still in use")

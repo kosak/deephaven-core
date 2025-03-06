@@ -1,6 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 
@@ -50,15 +50,12 @@ public sealed class EndpointManagerDialogRowManager :
   private readonly EndpointManagerDialogRow _row;
   private readonly EndpointId _endpointId;
   private readonly StateManager _stateManager;
-  private readonly WorkerThread _workerThread;
-  private readonly List<IDisposable> _disposables = new();
 
   private EndpointManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
     StateManager stateManager) {
     _row = row;
     _endpointId = endpointId;
     _stateManager = stateManager;
-    _workerThread = stateManager.WorkerThread;
   }
 
   public void Dispose() {
@@ -66,10 +63,6 @@ public sealed class EndpointManagerDialogRowManager :
   }
 
   private void Resubscribe() {
-    if (_workerThread.EnqueueOrNop(Resubscribe)) {
-      return;
-    }
-
     if (_disposables.Count != 0) {
       throw new Exception("State error: already subscribed");
     }
