@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using ExcelDna.Integration;
@@ -10,37 +11,40 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
+  private readonly object _sync = new();
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
-  private readonly WorkerThread _workerThread;
-  private IDisposable? _filteredTableDisposer = null;
+  private IDisposable? _upstreamDisposer = null;
 
   public SnapshotOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
-    // Convenience
-    _workerThread = _stateManager.WorkerThread;
   }
 
   public IDisposable Subscribe(IExcelObserver observer) {
     var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(wrappedObserver, out var isFirst);
+
+    lock (_sync) {
+      _observers.AddAndNotify(wrappedObserver, "[Snapshotting]", out var isFirst);
 
       if (isFirst) {
-        _filteredTableDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
+        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
       }
-    });
+    }
 
-    return _workerThread.EnqueueOrRunWhenDisposed(() => {
+    return ActionAsDisposable.Create(() => RemoveObserver(wrappedObserver));
+  }
+
+  private void RemoveObserver(IObserver<StatusOr<object?[,]>> wrappedObserver) {
+    lock (_sync) {
       _observers.Remove(wrappedObserver, out var wasLast);
       if (!wasLast) {
         return;
       }
 
-      Utility.Exchange(ref _filteredTableDisposer, null)?.Dispose();
-    });
-  }
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+    }
+  }S
 
   public void OnNext(StatusOr<TableHandle> tableHandle) {
     if (_workerThread.EnqueueOrNop(() => OnNext(tableHandle))) {
