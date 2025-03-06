@@ -45,14 +45,14 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
   }
 }
 
-public static class NONRefCounted {
+public static class RefCounted {
   public static RefCounted<T> Acquire<T>(T value, params IDisposable[] dependencies)
     where T : class, IDisposable {
     return RefCounted<T>.Acquire(value, dependencies);
   }
 }
 
-public sealed class ZODRefCounted<T> : IDisposable where T : class, IDisposable {
+public sealed class RefCounted<T> : IDisposable where T : class, IDisposable {
   public static RefCounted<T> Acquire(T value, params IDisposable[] dependencies) {
     var impl = new RefCountedImpl<T>(value, dependencies);
     return new RefCounted<T>(impl);
@@ -79,17 +79,5 @@ public sealed class ZODRefCounted<T> : IDisposable where T : class, IDisposable 
 
   public T Value => _impl.Value;
 
-  public View<T> View() => new (_impl);
-
   public RefCounted<T> Share() => Join(_impl);
-}
-
-public readonly struct KLEXView<T> where T : class, IDisposable {
-  private readonly RefCountedImpl<T> _impl;
-
-  internal View(RefCountedImpl<T> impl) {
-    _impl = impl;
-  }
-
-  public RefCounted<T> Share() => RefCounted<T>.Join(_impl);
 }

@@ -4,10 +4,11 @@ using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using ExcelDna.Integration;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
-internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
+internal class SnapshotOperation : IExcelObservable, IStatusObserver<RefCounted<TableHandle>> {
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
@@ -49,15 +50,19 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
     }
   }
 
-  public void OnNext(StatusOr<TableHandle> tableHandle) {
+  public void OnNext(string status) {
+    lock (_sync) {
+      // Invalidate any outstanding background work
+      _ = _versionTracker.New();
+      ProviderUtil.SetStateAndNotify(ref _rendered, status, _observers);
+    }
+  }
+
+  public void OnNext(RefCounted<TableHandle> tableHandle) {
     lock (_sync) {
       // Invalidate any outstanding background work
       var cookie = _versionTracker.New();
 
-      if (!tableHandle.GetValueOrStatus(out _, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _rendered, status, _observers);
-        return;
-      }
       ProviderUtil.SetStateAndNotify(ref _rendered, "[Rendering]", _observers);
 
       // This needs to be created early (not on the lambda, which is on a different thread)
@@ -66,14 +71,13 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
     }
   }
 
-  private void OnNextBackground(StatusOr<TableHandle> tableHandleShare,
+  private void OnNextBackground(RefCounted<TableHandle> tableHandleShare,
     VersionTracker.Cookie versionCookie) {
     using var cleanup1 = tableHandleShare;
     StatusOr<object?[,]> newResult;
     try {
-      var (th, _) = tableHandleShare;
       // This is a server call that may take some time.
-      using var ct = th.ToClientTable();
+      using var ct = th.Value.ToClientTable();
       var rendered = Renderer.Render(ct, _wantHeaders);
       newResult = StatusOr<object?[,]>.OfValue(rendered);
     } catch (Exception ex) {
@@ -86,15 +90,5 @@ internal class SnapshotOperation : IExcelObservable, IObserver<StatusOr<TableHan
         ProviderUtil.SetStateAndNotify(ref _rendered, newResult, _observers);
       }
     }
-  }
-
-  void IObserver<StatusOr<TableHandle>>.OnCompleted() {
-    // TODO(kosak): TODO
-    throw new NotImplementedException();
-  }
-
-  void IObserver<StatusOr<TableHandle>>.OnError(Exception error) {
-    // TODO(kosak): TODO
-    throw new NotImplementedException();
   }
 }

@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using C5;
 
 namespace Deephaven.ExcelAddIn.Status;
 
 public abstract class StatusOr : IDisposable {
-  public abstract StatusOr Share();
   public abstract void Dispose();
 }
 
@@ -14,6 +14,11 @@ public sealed class StatusOr<T> : StatusOr {
   public static implicit operator StatusOr<T>(string s) {
 
   }
+
+  public static implicit operator StatusOr<T>(T value) {
+
+  }
+
 
   public static StatusOr<T> OfStatus(string status) {
     return new StatusOr<T>(status, default);
@@ -29,8 +34,8 @@ public sealed class StatusOr<T> : StatusOr {
     _value = value;
   }
 
-  public override StatusOr<T> Share() {
-
+  public override void Dispose() {
+    throw new NotImplementedException("TODO");
   }
 
   public bool GetValueOrStatus(

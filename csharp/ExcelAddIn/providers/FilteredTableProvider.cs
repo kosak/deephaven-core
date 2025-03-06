@@ -16,7 +16,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  * the resulting filtered TableHandle (or error) to my observers.
  */
 internal class FilteredTableProvider :
-  IObserver<StatusOr<TableHandle>>,
+  IStatusObserver<RefCounted<TableHandle>>,
   // IObservable<StatusOr<TableHandle>>,
   // IDisposable
   ITableProviderBase {
@@ -28,11 +28,11 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private bool _isDisposed = false;
+  private Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
-  private StatusOr<TableHandle> _filteredTableHandle = UnsetTableHandleText;
+  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName, string condition) {
@@ -43,7 +43,7 @@ internal class FilteredTableProvider :
     _condition = condition;
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _filteredTableHandle, out var isFirst);
       if (isFirst) {
@@ -59,30 +59,42 @@ internal class FilteredTableProvider :
 
   private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
+      _observers.Remove(observer, out _);
+    }
+  }
+
+  public void Dispose() {
+    lock (_sync) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
-
-      _isDisposed = true;
       Utility.ClearAndDispose(ref _upstreamDisposer);
       ProviderUtil.SetState(ref _filteredTableHandle, "[Disposed");
     }
   }
 
-  public void OnNext(StatusOr<TableHandle> parentHandle) {
+  public void OnStatus(string status) {
     lock (_sync) {
-      if (_isDisposed) {
+      if (_isDisposed.Value) {
         return;
       }
 
       // Invalidate any outstanding background work
       var cookie = _versionTracker.New();
 
-      if (!parentHandle.GetValueOrStatus(out _, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, status, _observers);
+      ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, status, _observers);
+    }
+  }
+
+  public void OnNext(RefCounted<TableHandle> parentHandle) {
+    lock (_sync) {
+      if (_isDisposed.Value) {
         return;
       }
+
+      // Invalidate any outstanding background work
+      var cookie = _versionTracker.New();
+
       ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, "Filtering", _observers);
       // This needs to be created early (not on the lambda, which is on a different thread)
       var parentHandleShare = parentHandle.Share();
@@ -90,15 +102,14 @@ internal class FilteredTableProvider :
     }
   }
 
-  private void OnNextBackground(StatusOr<TableHandle> parentHandleShare,
+  private void OnNextBackground(RefCounted<TableHandle> parentHandleShare,
     VersionTracker.Cookie versionCookie) {
-    using var parentHandle = parentHandleShare;
-    StatusOr<TableHandle> newResult;
+    using var cleanup1 = parentHandleShare;
+    StatusOr<RefCounted<TableHandle>> newResult;
     try {
       // This is a server call that may take some time.
-      var (th, _) = parentHandle;
-      var childHandle = th.Where(_condition);
-      newResult = StatusOr<TableHandle>.OfValue(childHandle);
+      var childHandle = parentHandleShare.Value.Where(_condition);
+      newResult = RefCounted.Acquire(childHandle);
     } catch (Exception ex) {
       newResult = ex.Message;
     }
@@ -109,13 +120,5 @@ internal class FilteredTableProvider :
         ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }
-  }
-
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
   }
 }

@@ -6,7 +6,7 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal interface ITableProviderBase : IObservable<StatusOr<TableHandle>>,
+internal interface ITableProviderBase : IStatusObservable<TableHandle>,
   IDisposable;
 
 /**

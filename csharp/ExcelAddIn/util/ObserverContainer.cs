@@ -1,13 +1,14 @@
-﻿using Deephaven.ExcelAddIn.Status;
+﻿using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Status;
 
 namespace Deephaven.ExcelAddIn.Util;
 
-public sealed class ObserverContainer<T> : IObserver<T> {
+public sealed class ObserverContainer<T> {
   private readonly object _sync = new();
   private readonly SequentialExecutor _executor = new();
-  private readonly HashSet<IObserver<T>> _observers = new();
+  private readonly HashSet<IStatusObserver<T>> _observers = new();
 
-  public void AddAndNotify(IObserver<T> observer, T value, out bool isFirst) {
+  public void AddAndNotify(IStatusObserver<T> observer, T value, out bool isFirst) {
     lock (_sync) {
       isFirst = _observers.Count == 0;
       _observers.Add(observer);
@@ -22,7 +23,7 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     }
   }
 
-  private void OnNextHelperLocked(IObserver<T>[] observers, T item) {
+  private void OnNextHelperLocked(IStatusObserver<T>[] observers, T item) {
     var disp = item is StatusOr sor ? sor.Share() : null;
     _executor.Run(() => {
       // Note: We're on different thread now. _sync is not held inside here.
@@ -33,34 +34,10 @@ public sealed class ObserverContainer<T> : IObserver<T> {
     });
   }
 
-  public void Remove(IObserver<T> observer, out bool wasLast) {
+  public void Remove(IStatusObserver<T> observer, out bool wasLast) {
     lock (_sync) {
       var removed = _observers.Remove(observer);
       wasLast = removed && _observers.Count == 0;
-    }
-  }
-
-  public void OnError(Exception ex) {
-    lock (_sync) {
-      var observers = _observers.ToArray();
-      _executor.Run(() => {
-        // Note: We're on different thread now. _sync is not held inside here.
-        foreach (var observer in observers) {
-          observer.OnError(ex);
-        }
-      });
-    }
-  }
-
-  public void OnCompleted() {
-    lock (_sync) {
-      var observers = _observers.ToArray();
-      _executor.Run(() => {
-        // Note: We're on different thread now. _sync is not held inside here.
-        foreach (var observer in observers) {
-          observer.OnCompleted();
-        }
-      });
     }
   }
 }
