@@ -40,7 +40,11 @@ public class StateManager {
 
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
-    var candidate = new EndpointConfigProvider();
+    // As a value-added behavior, any request for an EndpointId gets a placeholder
+    // in the endpoint dictionary (if it's not already there).
+    _ = _endpointDictProvider.TryAddEmpty(endpointId);
+
+    var candidate = new EndpointConfigProvider(this, endpointId);
     return SubscribeHelper(_endpointConfigProviders, endpointId, candidate, observer);
   }
 
@@ -94,23 +98,18 @@ public class StateManager {
     });
   }
 
-#if false
-  public IDisposable SubscribeToEndpointConfigPopulation(IObserver<AddOrRemove<string>> observer) {
-    WorkerThread.EnqueueOrRun(() => {
-      _endpointConfigPopulationObservers.Add(observer, out _);
-
-      // Give this observer the current set of endpoint ids.
-      var keys = _endpointConfigProviders.Keys.ToArray();
-      foreach (var endpointId in keys) {
-        observer.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
-      }
-    });
-
-    return WorkerThread.EnqueueOrRunWhenDisposed(
-      () => _endpointConfigPopulationObservers.Remove(observer, out _));
+  public IDisposable SubscribeToEndpointDict(IObserver<SharableDict<EndpointConfigBase>> observer) {
+    return _endpointDictProvider.Subscribe(observer);
   }
 
 
+  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
+    lock (_sync) {
+      _defaultEndpointId = defaultEndpointId;
+      _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
+    }
+
+#if false
   public void SetCredentials(EndpointConfigBase config) {
     LookupOrCreateEndpointConfigProvider(config.Id,
       cp => cp.SetCredentials(config));
@@ -206,12 +205,5 @@ public class StateManager {
         actualObservable.Dispose();
       }
     });
-  }
-
-  public void SetDefaultEndpointId(EndpointId? defaultEndpointId) {
-    lock (_sync) {
-      _defaultEndpointId = defaultEndpointId;
-      _defaultEndpointSelectionObservers.OnNext(_defaultEndpointId);
-    }
   }
 }

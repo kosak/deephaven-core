@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> where TValue : IEquatable<TValue> {
+  public static readonly SharableDict<TValue> Empty = new();
+
   private readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> _root;
 
   public SharableDict() {

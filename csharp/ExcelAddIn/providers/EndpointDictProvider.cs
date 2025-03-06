@@ -4,24 +4,24 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointDictProvider :
-  IObservable<IReadOnlyDictionary<Int64, EndpointConfigBase?>> {
+  IObservable<SharableDict<EndpointConfigBase>> {
   private readonly object _sync = new();
-  private readonly ObserverContainer<IReadOnlyDictionary<Int64, EndpointConfigBase?>> _observers = new();
-  private SharableDict<EndpointConfigBase?> _dict = new();
+  private readonly ObserverContainer<SharableDict<EndpointConfigBase>> _observers = new();
+  private SharableDict<EndpointConfigBase> _dict = new();
   private readonly Dictionary<EndpointId, Int64> _idToKey = new();
   private Int64 _nextFreeId = 0;
 
-  public IDisposable Subscribe(IObserver<IReadOnlyDictionary<Int64, EndpointConfigBase?>> observer) {
+  public IDisposable Subscribe(IObserver<SharableDict<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _dict, out var isFirst);
+      _observers.AddAndNotify(observer, _dict, out _);
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<IReadOnlyDictionary<Int64, EndpointConfigBase?>> observer) {
+  private void RemoveObserver(IObserver<SharableDict<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
+      _observers.Remove(observer, out _);
     }
   }
 
@@ -29,11 +29,12 @@ internal class EndpointDictProvider :
     lock (_sync) {
       var key = _nextFreeId;
       if (_idToKey.TryAdd(endpointId, key)) {
-        // Key already exists.
+        // endpointId is already in dictionary
         return false;
       }
       ++_nextFreeId;
-      _dict = _dict.With(key, null);
+      var newValue = EndpointConfigBase.OfEmpty(endpointId);
+      _dict = _dict.With(key, newValue);
 
       _observers.OnNext(_dict);
       return true;
