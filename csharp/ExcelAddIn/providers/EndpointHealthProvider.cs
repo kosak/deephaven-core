@@ -119,14 +119,15 @@ internal class EndpointHealthProvider :
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
-      _upstreamClientOrSessionDisposer = cbase.AcceptVisitor(
+      _upstreamClientOrSessionDisposer = cbase.AcceptVisitor<IDisposable?>(
+        (EmptyEndpointConfig _) => null,
         (CoreEndpointConfig _) => {
           var observerWithCookie = new ObserverWithCookie<StatusOr<Client>>(this, cookie);
           return _stateManager.SubscribeToCoreClient(_endpointId, observerWithCookie);
         },
         (CorePlusEndpointConfig _) => {
           var observerWithCookie = new ObserverWithCookie<StatusOr<SessionManager>>(this, cookie);
-          return _stateManager.SubscribeToCorePlusSession(_endpointId, observerWithCookie);
+          return _stateManager.SubscribeToSessionManager(_endpointId, observerWithCookie);
         });
     }
   }
