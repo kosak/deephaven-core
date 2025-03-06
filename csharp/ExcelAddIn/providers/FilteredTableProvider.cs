@@ -45,7 +45,7 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _filteredTableHandle, out var isFirst);
+      RefUtil.AddAndNotify(_observers, observer, _filteredTableHandle, out var isFirst);
       if (isFirst) {
         // Subscribe to parent at the time of the first subscription.
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");

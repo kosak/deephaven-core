@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
+using System;
 
 namespace Deephaven.ExcelAddIn.Util;
 
@@ -12,7 +13,7 @@ public sealed class ObserverContainer<T> : IStatusObserver<T> {
     lock (_sync) {
       isFirst = _observers.Count == 0;
       _observers.Add(observer);
-      OnNextHelperLocked([observer], value);
+      _executor.Run(() => observer.OnNext(value));
     }
   }
 
@@ -25,28 +26,17 @@ public sealed class ObserverContainer<T> : IStatusObserver<T> {
 
   public void OnNext(T item) {
     lock (_sync) {
-      OnNextHelperLocked(_observers, item);
+      foreach (var observer in _observers) {
+        _executor.Run(() => observer.OnNext(item));
+      }
     }
   }
-
 
   public void OnStatus(string status) {
     lock (_sync) {
       foreach (var observer in _observers) {
         _executor.Run(() => observer.OnStatus(status));
       }
-    }
-  }
-
-  private void OnNextHelperLocked(IEnumerable<IStatusObserver<T>> observers, T item) {
-    foreach (var observer in observers) {
-      _executor.Run(() => observer.OnNext(item));
-    }
-    // If the item is RefCounted, then before leaving, acquire it here
-    // and then release it in the executor.
-    if (item is RefCounted rc) {
-      var disp = rc.Share();
-      _executor.Run(disp.Dispose);
     }
   }
 }
