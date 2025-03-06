@@ -1,10 +1,10 @@
 ﻿namespace Deephaven.ExcelAddIn.Models;
 
-public abstract class EndpointConfigBase(EndpointId id) : IEquatable<EndpointConfigBase> {
+public abstract class EndpointConfigBase(EndpointId id) {
   public readonly EndpointId Id = id;
 
   public static EndpointConfigBase OfEmpty(EndpointId id) {
-    return new CoreEndpointConfig(id);
+    return new EmptyEndpointConfig(id);
   }
 
   public static EndpointConfigBase OfCore(EndpointId id, string connectionString) {
@@ -31,10 +31,8 @@ public sealed class EmptyEndpointConfig(EndpointId id) : EndpointConfigBase(id) 
 
 public sealed class CoreEndpointConfig(
   EndpointId id,
-  string connectionString,
-  bool sessionTypeIsPython) : EndpointConfigBase(id) {
+  string connectionString) : EndpointConfigBase(id) {
   public readonly string ConnectionString = connectionString;
-  public readonly bool SessionTypeIsPython = sessionTypeIsPython;
 
   public override T AcceptVisitor<T>(Func<EmptyEndpointConfig, T> ofEmpty,
     Func<CoreEndpointConfig, T> ofCore, Func<CorePlusEndpointConfig, T> ofCorePlus) {
