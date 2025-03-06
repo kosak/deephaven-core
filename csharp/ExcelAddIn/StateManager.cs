@@ -38,7 +38,10 @@ public class StateManager {
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IObserver<StatusOr<EndpointConfigBase>> observer) {
     // As a value-added behavior, any request for an EndpointId gets a placeholder
-    // in the endpoint dictionary (if it's not already there).
+    // in the endpoint dictionary (if it's not already there). The symmetric behavior
+    // is deliberately NOT supported: the item is not removed from the endpoint dictionary
+    // unless TryDeleteEndpointConfig is called (and that in turn only succeeds if
+    // there are no subscribers to the endpoint config).
     _ = _endpointDictProvider.TryAddEmpty(endpointId);
 
     var candidate = new EndpointConfigProvider(this, endpointId);
@@ -95,6 +98,15 @@ public class StateManager {
     return _endpointDictProvider.Subscribe(observer);
   }
 
+  public bool TryDeleteEndpointConfig(EndpointId id) {
+    lock (_sync) {
+      if (_endpointConfigProviders.ContainsKey(id)) {
+        // Someone is still referencing it, so it's unsafe to delete
+        return false;
+      }
+      return _endpointDictProvider.TryRemove(id);
+    }
+  }
 
 #if false
   public void SetCredentials(EndpointConfigBase config) {
@@ -107,32 +119,6 @@ public class StateManager {
     LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
   }
 
-  public void TryDeleteEndpointConfig(EndpointId id, Action<bool> successOrFailure) {
-    if (WorkerThread.EnqueueOrNop(() => TryDeleteEndpointConfig(id, successOrFailure))) {
-      return;
-    }
-
-    if (!_endpointConfigProviders.TryGetValue(id, out var cp)) {
-      successOrFailure(false);
-      return;
-    }
-
-    if (cp.ObserverCountUnsafe != 0) {
-      successOrFailure(false);
-      return;
-    }
-
-    // success!
-    successOrFailure(true);
-
-    // If we are about to delete the config for the default endpoint
-    if (id.Equals(_defaultEndpointId)) {
-      SetDefaultEndpointId(null);
-    }
-
-    _endpointConfigProviders.Remove(id);
-    _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfRemove(id));
-  }
 
   private void LookupOrCreateEndpointConfigProvider(EndpointId endpointId,
     Action<EndpointConfigProvider> action) {

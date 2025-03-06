@@ -19,34 +19,7 @@ public sealed class EndpointManagerDialogRowManager :
     return result;
   }
 
-  public static void TryDeleteBatch(EndpointManagerDialogRowManager[] managers,
-    Action<Dictionary<EndpointId, bool>> resultsAction) {
-    var sync = new object();
-    var results = new Dictionary<EndpointId, bool>();
-    var remaining = managers.Length;
-
-    void ProcessResult(EndpointId endpointId, bool success) {
-      bool transmitResults;
-      lock (sync) {
-        // Use TryAdd in case our caller is being annoying and passes the same manager twice
-        _ = results.TryAdd(endpointId, success);
-        --remaining;
-        transmitResults = remaining == 0;
-      }
-
-      if (!transmitResults) {
-        return;
-      }
-
-      resultsAction(results);
-    }
-
-    foreach (var manager in managers) {
-      manager.DoDelete(ProcessResult);
-    }
-  }
-
-
+  private readonly object _sync = new();
   private readonly EndpointManagerDialogRow _row;
   private readonly EndpointId _endpointId;
   private readonly StateManager _stateManager;
@@ -107,39 +80,38 @@ public sealed class EndpointManagerDialogRowManager :
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
   }
 
-  public void DoDelete(Action<EndpointId, bool> successOrFailure) {
-    if (_workerThread.EnqueueOrNop(() => DoDelete(successOrFailure))) {
-      return;
+  public bool TryDelete() {
+    lock (_sync) {
+      // Strategy:
+      // 1. Unsubscribe to everything
+      // 2. Ask the StateManager to delete the endpoint config.
+      // 3. If this succeeds, great.
+      // 4. If it fails, then there are other users of the endpoint, so resubscribe and
+      //    signal that the delete failed.
+      Unsubscribe();
+      var success = _stateManager.TryDeleteEndpointConfig(_endpointId);
+      if (!success) {
+        Resubscribe();
+      }
+      return success;
     }
-
-    // Strategy:
-    // 1. Unsubscribe to everything
-    // 2. Ask the StateManager to delete the endpoint config.
-    // 3. If this succeeds, great.
-    // 4. If it fails, then there are other users of the endpoint, so resubscribe and
-    //    signal that the delete failed.
-    Unsubscribe();
-    _stateManager.TryDeleteEndpointConfig(_endpointId,
-      success => {
-        if (!success) {
-          Resubscribe();
-        }
-
-        successOrFailure(_endpointId, success);
-      });
   }
 
   public void DoReconnect() {
-    _stateManager.Reconnect(_endpointId);
+    lock (_sync) {
+      _stateManager.Reconnect(_endpointId);
+    }
   }
 
   public void DoSetAsDefault() {
-    // If the connection is already the default, do nothing.
-    if (_row.IsDefault) {
-      return;
-    }
+    lock (_sync) {
+      // If the connection is already the default, do nothing.
+      if (_row.IsDefault) {
+        return;
+      }
 
-    _stateManager.SetDefaultEndpointId(_endpointId);
+      _stateManager.SetDefaultEndpoint(_endpointId);
+    }
   }
 
   public void OnCompleted() {

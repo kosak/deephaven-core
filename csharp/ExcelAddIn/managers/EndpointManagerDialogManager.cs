@@ -119,11 +119,18 @@ internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointCon
       });
     }
 
-    var managers = rows.Where(_rowToManager.ContainsKey)
-      .Select(row => _rowToManager[row])
-      .ToArray();
+    var failures = new List<string>();
+    lock (_sync) {
+      var managers = rows.Where(_rowToManager.ContainsKey)
+        .Select(row => _rowToManager[row])
+        .ToArray();
 
-    EndpointManagerDialogRowManager.TryDeleteBatch(managers, ShowFailuresIfAny);
+      foreach (var manager in managers) {
+        if (!manager.TryDelete()) {
+          failures.Add(manager.EndpointWhatever);
+        }
+      }
+    }
   }
 
   void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {

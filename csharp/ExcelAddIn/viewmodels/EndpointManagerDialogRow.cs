@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
+using Deephaven.ExcelAddIn.Status;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
@@ -9,8 +9,8 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
-  private StatusOr<EndpointConfigBase> _endpointConfig = StatusOr<EndpointConfigBase>.OfStatus("[Not set]");
-  private StatusOr<EndpointHealth> _endpointHealth = StatusOr<EndpointHealth>.OfStatus("[Not connected]");
+  private StatusOr<EndpointConfigBase> _endpointConfig = "[Not set]";
+  private StatusOr<EndpointHealth> _endpointHealth = "[Not connected]";
   private EndpointId? _defaultEndpointId = null;
 
   [DisplayName("Name")]
@@ -18,7 +18,7 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
 
   public string Status {
     get {
-      var health = GetEndpointHealthSynced();
+      var health = GetEndpointHealth();
       // If we have a valid session, return "[Connected]", otherwise pass through the status text we have.
       return health.AcceptVisitor(
         _ => "[Connected]",
@@ -29,7 +29,7 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   [DisplayName("Server Type")]
   public string ServerType {
     get {
-      var config = GetEndpointConfigSynced();
+      var config = GetEndpointConfig();
       // Nested AcceptVisitor!!
       // If we have valid credentials, determine whether they are for Core or Core+ and return the appropriate string.
       // Otherwise (if we have invalid credentials), ignore their status text and just say "[Unknown]".
@@ -44,18 +44,18 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   public bool IsDefault {
     get {
       var id = Id;  // readonly so no synchronization needed.
-      var defaultEp = GetDefaultEndpointIdSynced();
+      var defaultEp = GetDefaultEndpointId();
       return defaultEp != null && defaultEp.Id == id;
     }
   }
 
-  public StatusOr<EndpointConfigBase> GetEndpointConfigSynced() {
+  public StatusOr<EndpointConfigBase> GetEndpointConfig() {
     lock (_sync) {
       return _endpointConfig;
     }
   }
 
-  public void SetCredentialsSynced(StatusOr<EndpointConfigBase> value) {
+  public void SetCredentials(StatusOr<EndpointConfigBase> value) {
     lock (_sync) {
       _endpointConfig = value;
     }
@@ -63,20 +63,20 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
     OnPropertyChanged(nameof(ServerType));
   }
 
-  public EndpointId? GetDefaultEndpointIdSynced() {
+  public EndpointId? GetDefaultEndpointId() {
     lock (_sync) {
       return _defaultEndpointId;
     }
   }
 
-  public void SetDefaultEndpointIdSynced(EndpointId? value) {
+  public void SetDefaultEndpointId(EndpointId? value) {
     lock (_sync) {
       _defaultEndpointId = value;
     }
     OnPropertyChanged(nameof(IsDefault));
   }
 
-  public StatusOr<EndpointHealth> GetEndpointHealthSynced() {
+  public StatusOr<EndpointHealth> GetEndpointHealth() {
     lock (_sync) {
       return _endpointHealth;
     }
