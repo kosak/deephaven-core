@@ -88,7 +88,7 @@ public class StateManager {
   }
 
   public void SetDefaultEndpoint(EndpointId? defaultEndpointId) {
-    _defaultEndpointProvider.SetDefaultEndpoint(defaultEndpointId);
+    _defaultEndpointProvider.Set(defaultEndpointId);
   }
 
   public IDisposable SubscribeToEndpointDict(IObserver<SharableDict<EndpointConfigBase>> observer) {
