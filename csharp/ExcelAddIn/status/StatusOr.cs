@@ -1,13 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using C5;
 
 namespace Deephaven.ExcelAddIn.Status;
 
-public abstract class StatusOr : IDisposable {
-  public abstract void Dispose();
-}
-
-public sealed class StatusOr<T> : StatusOr {
+public sealed class StatusOr<T> {
   private readonly string? _status;
   private readonly T? _value;
 
@@ -24,18 +19,13 @@ public sealed class StatusOr<T> : StatusOr {
     return new StatusOr<T>(status, default);
   }
 
-  public static StatusOr<T> OfValue(T value,
-    params StatusOr[] dependencies) {
+  public static StatusOr<T> OfValue(T value) {
     return new StatusOr<T>(null, value);
   }
 
   private StatusOr(string? status, T? value) {
     _status = status;
     _value = value;
-  }
-
-  public override void Dispose() {
-    throw new NotImplementedException("TODO");
   }
 
   public bool GetValueOrStatus(

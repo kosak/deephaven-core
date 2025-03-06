@@ -8,5 +8,5 @@ public interface IStatusObserver<in T> {
 }
 
 public interface IStatusObservable<out T> {
-  void Subscribe(IStatusObserver<T> observer);
+  IDisposable Subscribe(IStatusObserver<T> observer);
 }

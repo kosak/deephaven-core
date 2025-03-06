@@ -45,14 +45,17 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
   }
 }
 
-public static class RefCounted {
+public abstract class RefCounted : IDisposable {
   public static RefCounted<T> Acquire<T>(T value, params IDisposable[] dependencies)
     where T : class, IDisposable {
     return RefCounted<T>.Acquire(value, dependencies);
   }
+
+  public abstract void Dispose();
+  public abstract RefCounted Share();
 }
 
-public sealed class RefCounted<T> : IDisposable where T : class, IDisposable {
+public sealed class RefCounted<T> : RefCounted where T : class, IDisposable {
   public static RefCounted<T> Acquire(T value, params IDisposable[] dependencies) {
     var impl = new RefCountedImpl<T>(value, dependencies);
     return new RefCounted<T>(impl);

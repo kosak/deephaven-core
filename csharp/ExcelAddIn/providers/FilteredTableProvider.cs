@@ -57,7 +57,7 @@ internal class FilteredTableProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
+  private void RemoveObserver(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -80,8 +80,7 @@ internal class FilteredTableProvider :
       }
 
       // Invalidate any outstanding background work
-      var cookie = _versionTracker.New();
-
+      _ = _versionTracker.New();
       ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, status, _observers);
     }
   }
