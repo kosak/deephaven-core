@@ -77,7 +77,7 @@ internal class DefaultEndpointTableProvider :
       // Unsubscribe from old upstream
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
       // Suppress any notifications from the old subscription, which will now be stale
-      _freshness.New();
+      _freshness.Reset();
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
