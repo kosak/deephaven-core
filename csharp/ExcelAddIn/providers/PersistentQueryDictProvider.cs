@@ -8,27 +8,29 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryDictProvider :
   IValueObserver<StatusOr<Subscription>>,
-  IValueObservable<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>,
+  IValueObservable<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
   IDisposable {
   private const string UnsetDictText = "[No PQ Dict]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private bool _isDisposed = false;
+  private readonly FreshnessSource _freshness;
+  private readonly Latch _subscribeDone = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
-  private readonly VersionTracker _versionTracker = new();
-  private readonly ObserverContainer<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> _observers = new();
-  private StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> _dict = UnsetDictText;
+  private readonly ObserverContainer<StatusOr<SharableDict<PersistentQueryInfoMessage>>> _observers = new();
+  private StatusOr<SharableDict<PersistentQueryInfoMessage>> _dict = UnsetDictText;
 
   public PersistentQueryDictProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
+    _freshness = new(_sync);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _dict, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _dict, out _);
+      if (_subscribeDone.TrySet()) {
         _upstreamDisposer = _stateManager.SubscribeToSubscription(_endpointId);
       }
     }
@@ -36,7 +38,13 @@ internal class PersistentQueryDictProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
+    lock (_sync) {
+      _observers.Remove(observer, out _);
+    }
+  }
+
+  public void Dispose() {
     lock (_sync) {
       _observers.Remove(observer, out var isLast);
       if (!isLast) {
@@ -89,13 +97,5 @@ internal class PersistentQueryDictProvider :
         }
       }
     }
-  }
-
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
   }
 }
