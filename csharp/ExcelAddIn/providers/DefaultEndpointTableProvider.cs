@@ -29,8 +29,8 @@ internal class DefaultEndpointTableProvider :
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
   private readonly VersionTracker _versionTracker = new();
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
+  private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
+  private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
     PqName? pqName, string tableName, string condition) {
@@ -40,10 +40,10 @@ internal class DefaultEndpointTableProvider :
     _condition = condition;
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _tableHandle, out _);
-      if (_subscribeDone.Set()) {
+      if (_subscribeDone.TrySet()) {
         _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
       }
     }
@@ -51,7 +51,7 @@ internal class DefaultEndpointTableProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
+  private void RemoveObserver(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -59,12 +59,12 @@ internal class DefaultEndpointTableProvider :
 
   public void Dispose() {
     lock (_sync) {
-      if (!_isDisposed.Set()) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
       Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
-      ProviderUtil.SetState(ref _tableHandle, UnsetTableHandleText);
+      SorUtil.Replace(ref _tableHandle, UnsetTableHandleText);
     }
   }
 
@@ -80,7 +80,7 @@ internal class DefaultEndpointTableProvider :
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
-        ProviderUtil.SetStateAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
+        SorUtil.ReplaceAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
         return;
       }
 
@@ -96,23 +96,7 @@ internal class DefaultEndpointTableProvider :
       if (_isDisposed.Value || !cookie.IsCurrent) {
         return;
       }
-      ProviderUtil.SetStateAndNotify(ref _tableHandle, value, _observers);
+      SorUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);
     }
-  }
-
-  public void OnCompletedWithCookie(VersionTracker.Cookie cookie) {
-    throw new NotImplementedException();
-  }
-
-  public void OnErrorWithCookie(Exception ex, VersionTracker.Cookie cookie) {
-    throw new NotImplementedException();
-  }
-
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
   }
 }
