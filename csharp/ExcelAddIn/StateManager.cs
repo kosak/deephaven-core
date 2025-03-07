@@ -86,7 +86,7 @@ public class StateManager {
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToDefaultEndpoint(IStatusObserver<EndpointId?> observer) {
+  public IDisposable SubscribeToDefaultEndpoint(IStatusObserver<EndpointId> observer) {
     return _defaultEndpointProvider.Subscribe(observer);
   }
 

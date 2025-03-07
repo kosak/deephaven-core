@@ -12,8 +12,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  * TableHandles or status messages, forward those to my observers.
  */
 internal class DefaultEndpointTableProvider :
-  IStatusObserver<EndpointId?>,
-  IObserverWithCookie<StatusOr<TableHandle>>,
+  IStatusObserver<EndpointId>,
+  IStatusObserverWithCookie<RefCounted<TableHandle>>,
   // IObservable<StatusOr<TableHandle>>,
   // IDisposable,
   ITableProviderBase {
@@ -28,7 +28,7 @@ internal class DefaultEndpointTableProvider :
   private readonly Latch _isDisposed = new();
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly VersionTracker _versionTracker = new();
+  private readonly object _expectedCookie = new();
   private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
@@ -42,9 +42,9 @@ internal class DefaultEndpointTableProvider :
 
   public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _tableHandle, out _);
+      SorUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
       if (_subscribeDone.TrySet()) {
-        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpointSelection(this);
+        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpoint(this);
       }
     }
 
@@ -76,7 +76,7 @@ internal class DefaultEndpointTableProvider :
       // Unsubscribe from old upstream
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
       // Suppress any notifications from the old subscription, which will now be stale
-      var cookie = _versionTracker.New();
+      _expectedCookie = new();
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
@@ -86,14 +86,14 @@ internal class DefaultEndpointTableProvider :
 
       // Subscribe to a new upstream
       var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
-      var observer = new ObserverWithCookie<StatusOr<TableHandle>>(this, cookie);
+      var observer = new ObserverWithCookie<StatusOr<TableHandle>>(this, _expectedCookie);
       _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, observer);
     }
   }
 
-  public void OnNextWithCookie(StatusOr<TableHandle> value, VersionTracker.Cookie cookie) {
+  public void OnNext(RefCounted<TableHandle> value, object cookie) {
     lock (_sync) {
-      if (_isDisposed.Value || !cookie.IsCurrent) {
+      if (_isDisposed.Value || !ReferenceEquals(_expectedCookie, cookie)) {
         return;
       }
       SorUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);

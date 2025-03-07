@@ -1,6 +1,4 @@
 ﻿using Deephaven.ExcelAddIn.Providers;
-using Deephaven.ExcelAddIn.Status;
-using System;
 
 namespace Deephaven.ExcelAddIn.Util;
 
