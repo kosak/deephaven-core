@@ -45,7 +45,7 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
-      RefUtil.AddAndNotify(_observers, observer, _filteredTableHandle, out var isFirst);
+      SorUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out var isFirst);
       if (isFirst) {
         // Subscribe to parent at the time of the first subscription.
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
@@ -69,7 +69,7 @@ internal class FilteredTableProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _filteredTableHandle, "[Disposed");
+      SorUtil.Replace(ref _filteredTableHandle, "[Disposed");
     }
   }
 
@@ -81,7 +81,7 @@ internal class FilteredTableProvider :
 
       // Invalidate any outstanding background work
       _ = _versionTracker.New();
-      ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, status, _observers);
+      SorUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
     }
   }
 
@@ -94,8 +94,8 @@ internal class FilteredTableProvider :
       // Invalidate any outstanding background work
       var cookie = _versionTracker.New();
 
-      ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, "Filtering", _observers);
-      // This needs to be created early (not on the lambda, which is on a different thread)
+      SorUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
+      // Share the handle (outside the lambda) so it can be owned by the separate thread.
       var parentHandleShare = parentHandle.Share();
       Background.Run(() => OnNextBackground(parentHandleShare, cookie));
     }
@@ -103,20 +103,25 @@ internal class FilteredTableProvider :
 
   private void OnNextBackground(RefCounted<TableHandle> parentHandleShare,
     VersionTracker.Cookie versionCookie) {
+    // This thread owns parentHandleShare so it needs to dispose it on the way out
     using var cleanup1 = parentHandleShare;
+    RefCounted<TableHandle>? newRef = null;
     StatusOr<RefCounted<TableHandle>> newResult;
     try {
       // This is a server call that may take some time.
       var childHandle = parentHandleShare.Value.Where(_condition);
-      newResult = RefCounted.Acquire(childHandle);
+      newRef = RefCounted.Acquire(childHandle);
+      newResult = newRef;
     } catch (Exception ex) {
       newResult = ex.Message;
     }
-    using var cleanup = newResult;
+    // Dispose newRef on the way out (but the ReplaceAndNotify below will typically
+    // share it with _filteredTableHandle).
+    using var cleanup2 = newRef;
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        ProviderUtil.SetStateAndNotify(ref _filteredTableHandle, newResult, _observers);
+        SorUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }
   }

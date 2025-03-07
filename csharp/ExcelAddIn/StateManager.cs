@@ -23,20 +23,20 @@ public class StateManager {
   private readonly EndpointDictProvider _endpointDictProvider = new();
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
-    IObserver<StatusOr<Client>> observer) {
+    IStatusObserver<StatusOr<Client>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
-    IObserver<StatusOr<DndClient>> observer) {
+    IStatusObserver<StatusOr<DndClient>> observer) {
     var key = (endpointId, pqName);
     var candidate = new CorePlusClientProvider(this, endpointId, pqName);
     return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
-    IObserver<StatusOr<EndpointConfigBase>> observer) {
+    IStatusObserver<StatusOr<EndpointConfigBase>> observer) {
     // As a value-added behavior, any request for an EndpointId gets a placeholder
     // in the endpoint dictionary (if it's not already there). The symmetric behavior
     // is deliberately NOT supported: the item is not removed from the endpoint dictionary
@@ -49,12 +49,12 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
-    IObserver<StatusOr<EndpointHealth>> observer) {
+    IStatusObserver<StatusOr<EndpointHealth>> observer) {
     var candidate = new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToTable(TableQuad key, IObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable SubscribeToTable(TableQuad key, IStatusObserver<StatusOr<TableHandle>> observer) {
     ITableProviderBase candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
@@ -68,25 +68,25 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
-    IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
+    IStatusObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
     var candidate = new PersistentQueryDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
-    IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+    IStatusObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     var key = (endpointId, pqName);
     var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToSessionManager(EndpointId endpointId,
-    IObserver<StatusOr<SessionManager>> observer) {
+    IStatusObserver<StatusOr<SessionManager>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToDefaultEndpoint(IObserver<EndpointId?> observer) {
+  public IDisposable SubscribeToDefaultEndpoint(IStatusObserver<EndpointId?> observer) {
     return _defaultEndpointProvider.Subscribe(observer);
   }
 
@@ -94,7 +94,7 @@ public class StateManager {
     _defaultEndpointProvider.Set(defaultEndpointId);
   }
 
-  public IDisposable SubscribeToEndpointDict(IObserver<SharableDict<EndpointConfigBase>> observer) {
+  public IDisposable SubscribeToEndpointDict(IStatusObserver<SharableDict<EndpointConfigBase>> observer) {
     return _endpointDictProvider.Subscribe(observer);
   }
 
@@ -137,9 +137,9 @@ public class StateManager {
 #endif
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(ReferenceCountingDict<TKey, TObservable> dict,
-    TKey key, TObservable candidateObservable, IObserver<T> observer)
+    TKey key, TObservable candidateObservable, IStatusObserver<T> observer)
     where TKey : notnull
-    where TObservable : IObservable<T>, IDisposable {
+    where TObservable : IStatusObservable<T>, IDisposable {
     TObservable actualObservable;
     bool candidateAdded;
     lock (_sync) {

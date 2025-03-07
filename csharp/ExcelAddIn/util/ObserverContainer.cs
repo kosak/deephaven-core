@@ -40,24 +40,3 @@ public sealed class ObserverContainer<T> : IStatusObserver<T> {
     }
   }
 }
-
-public static class RefUtil {
-  public static void SetStatusAndNotify<T>(ref StatusOr<RefCounted<T>> dest,
-    string status, ObserverContainer<RefCounted<T>> container) where T : class, IDisposable {
-    Background.InvokeDispose(dest);
-    container.OnStatus(status);
-  }
-
-  public static void SetStateAndNotify<T>(ref StatusOr<RefCounted<T>> dest,
-    StatusOr<RefCounted<T>> newValue,
-    ObserverContainer<T> container) where T : class, IDisposable {
-    Background.InvokeDispose(dest);
-    container.OnNext(newValue);
-  }
-
-
-  public static void SetState<T>(ref StatusOr<T> dest, StatusOr<T> newValue) {
-    Background666.InvokeDispose(dest);
-    dest = newValue.Share();
-  }
-}
