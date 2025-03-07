@@ -94,7 +94,7 @@ public class StateManager {
     _defaultEndpointProvider.Set(defaultEndpointId);
   }
 
-  public IDisposable SubscribeToEndpointDict(IStatusObserver<SharableDict<EndpointConfigBase>> observer) {
+  public IDisposable SubscribeToEndpointDict(IStatusObserver<SharableDict<EndpointConfigEntry>> observer) {
     return _endpointDictProvider.Subscribe(observer);
   }
 
