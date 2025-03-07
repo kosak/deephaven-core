@@ -5,7 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider :
-  IStatusObserver<SharableDict<EndpointConfigBase>>,
+  IStatusObserver<SharableDict<EndpointConfigEntry>>,
   IStatusObservable<EndpointConfigBase>,
   IDisposable {
   private const string UnsetCredentialsString = "[No Credentials]";
@@ -16,7 +16,7 @@ internal class EndpointConfigProvider :
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamSubscription = null;
   private long _keyHint = 0;
-  private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
+  private SharableDict<EndpointConfigEntry> _prevDict = SharableDict<EndpointConfigEntry>.Empty;
   private EndpointConfigBase? _prevConfig = null;
   private readonly ObserverContainer<EndpointConfigBase> _observers = new();
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
@@ -58,27 +58,27 @@ internal class EndpointConfigProvider :
     if (_isDisposed.Value) {
       return;
     }
-    _prevDict = SharableDict<EndpointConfigBase>.Empty;
+    _prevDict = SharableDict<EndpointConfigEntry>.Empty;
     _prevConfig = null;
     SorUtil.ReplaceAndNotify(ref _credentials, status, _observers);
   }
 
-  public void OnNext(SharableDict<EndpointConfigBase> dict) {
+  public void OnNext(SharableDict<EndpointConfigEntry> dict) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
       }
 
       // Try to find with fast path
-      if (!dict.TryGetValue(_keyHint, out var config) || !config.Id.Equals(_endpointId)) {
+      if (!dict.TryGetValue(_keyHint, out var configEntry) || !configEntry.Id.Equals(_endpointId)) {
         // Try to find with slower differencing path
         var (added, _, modified) = _prevDict.CalcDifference(dict);
         var combined = added.Concat(modified);
-        var entry = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
-        _keyHint = entry.Key;
-        config = entry.Value;
+        var kvp = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
+        _keyHint = kvp.Key;
+        configEntry = kvp.Value;
       }
-
+      var config = configEntry?.Config;
       _prevDict = dict;
       if (ReferenceEquals(_prevConfig, config)) {
         return;

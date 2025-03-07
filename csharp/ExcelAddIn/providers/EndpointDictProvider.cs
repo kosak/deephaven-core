@@ -4,14 +4,14 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointDictProvider :
-  IStatusObservable<SharableDict<EndpointConfigBase>> {
+  IStatusObservable<SharableDict<EndpointConfigEntry>> {
   private readonly object _sync = new();
-  private readonly ObserverContainer<SharableDict<EndpointConfigBase>> _observers = new();
-  private SharableDict<EndpointConfigBase> _dict = new();
+  private readonly ObserverContainer<SharableDict<EndpointConfigEntry>> _observers = new();
+  private SharableDict<EndpointConfigEntry> _dict = new();
   private readonly Dictionary<EndpointId, Int64> _idToKey = new();
   private Int64 _nextFreeId = 0;
 
-  public IDisposable Subscribe(IStatusObserver<SharableDict<EndpointConfigBase>> observer) {
+  public IDisposable Subscribe(IStatusObserver<SharableDict<EndpointConfigEntry>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
     }
@@ -19,7 +19,7 @@ internal class EndpointDictProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IStatusObserver<SharableDict<EndpointConfigBase>> observer) {
+  private void RemoveObserver(IStatusObserver<SharableDict<EndpointConfigEntry>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -33,7 +33,7 @@ internal class EndpointDictProvider :
         return false;
       }
       ++_nextFreeId;
-      _dict = _dict.With(key, null);
+      _dict = _dict.With(key, new EndpointConfigEntry(endpointId, null));
 
       _observers.OnNext(_dict);
       return true;
@@ -48,7 +48,8 @@ internal class EndpointDictProvider :
         _idToKey[config.Id] = key;
         inserted = true;
       }
-      _dict = _dict.With(key, config);
+      var entry = new EndpointConfigEntry(config.Id, config);
+      _dict = _dict.With(key, entry);
       _observers.OnNext(_dict);
       return inserted;
     }

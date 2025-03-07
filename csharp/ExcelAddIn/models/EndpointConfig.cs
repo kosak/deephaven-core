@@ -1,5 +1,10 @@
 ﻿namespace Deephaven.ExcelAddIn.Models;
 
+/// <summary>
+/// A key-value pair suitable for use as an entry in our SharableDict
+/// </summary>
+public record EndpointConfigEntry(EndpointId Id, EndpointConfigBase Config);
+
 public abstract class EndpointConfigBase(EndpointId id) {
   public readonly EndpointId Id = id;
 
