@@ -13,7 +13,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class DefaultEndpointTableProvider :
   IStatusObserver<EndpointId>,
-  IStatusObserverWithCookie<RefCounted<TableHandle>>,
+  IStatusObserver<RefCounted<TableHandle>>,
   // IObservable<StatusOr<TableHandle>>,
   // IDisposable,
   ITableProviderBase {
@@ -28,7 +28,7 @@ internal class DefaultEndpointTableProvider :
   private readonly Latch _isDisposed = new();
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly object _expectedCookie = new();
+  private object _currentCookie = new();
   private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
@@ -76,7 +76,7 @@ internal class DefaultEndpointTableProvider :
       // Unsubscribe from old upstream
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
       // Suppress any notifications from the old subscription, which will now be stale
-      _expectedCookie = new();
+      _currentCookie = new();
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
@@ -86,12 +86,12 @@ internal class DefaultEndpointTableProvider :
 
       // Subscribe to a new upstream
       var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
-      var observer = new ObserverWithCookie<StatusOr<TableHandle>>(this, _expectedCookie);
+      var observer = new ObserverWithCookie<RefCounted<TableHandle>>(this, _currentCookie);
       _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, observer);
     }
   }
 
-  public void OnNext(RefCounted<TableHandle> value, object cookie) {
+  public void OnNext(RefCounted<TableHandle> value) {
     lock (_sync) {
       if (_isDisposed.Value || !ReferenceEquals(_expectedCookie, cookie)) {
         return;

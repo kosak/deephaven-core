@@ -6,15 +6,14 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-public class ObserverWithCookie<T>(IStatusObserver<WithCookie<T>> target,
-  VersionTracker.Cookie cookie)
+public class ObserverWithCookie<T>(IStatusObserver<T> target, FreshnessToken token)
   : IStatusObserver<T> {
   public void OnStatus(string status) {
-    throw new NotImplementedException();
+    token.InvokeIfCurrent(() => target.OnStatus(status));
   }
 
   public void OnNext(T value) {
-    target.OnNextWithCookie(value, cookie);
+    token.InvokeIfCurrent(() => target.OnNext(value));
   }
 }
 
