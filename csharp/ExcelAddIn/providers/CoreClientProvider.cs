@@ -26,7 +26,7 @@ internal class CoreClientProvider :
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<RefCounted<Client>> _observers = new();
-  private readonly VersionTracker _versionTracker = new();
+  private object _currentCookie = new();
   private StatusOr<RefCounted<Client>> _client = UnsetClientText;
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
@@ -72,7 +72,7 @@ internal class CoreClientProvider :
       }
 
       // Invalidate any background work that might be running.
-      _ = _versionTracker.New();
+      _currentCookie = new();
       SorUtil.ReplaceAndNotify(ref _client, status, _observers);
     }
   }
@@ -84,12 +84,12 @@ internal class CoreClientProvider :
       }    
       
       // Invalidate any background work that might be running.
-      var cookie = _versionTracker.New();
+      _currentCookie = new();
 
       _ = credentials.AcceptVisitor(
         core => {
           SorUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
-          Background.Run(() => OnNextBackground(core, cookie));
+          Background.Run(() => OnNextBackground(core, _currentCookie));
           return Unit.Instance;  // have to return something
         },
         _ => {
@@ -101,7 +101,7 @@ internal class CoreClientProvider :
     }
   }
 
-  private void OnNextBackground(CoreEndpointConfig config, VersionTracker.Cookie versionCookie) {
+  private void OnNextBackground(CoreEndpointConfig config, object cookie) {
     RefCounted<Client>? newRef = null;
     StatusOr<RefCounted<Client>> result;
     try {
@@ -114,7 +114,7 @@ internal class CoreClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (versionCookie.IsCurrent) {
+      if (ReferenceEquals(_currentCookie, cookie)) {
         SorUtil.ReplaceAndNotify(ref _client, result, _observers);
       }
     }

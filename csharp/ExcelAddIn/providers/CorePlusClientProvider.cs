@@ -25,7 +25,7 @@ internal class CorePlusClientProvider :
   private IDisposable? _sessionManagerDisposer = null;
   private IDisposable? _pqInfoDisposer = null;
   private readonly ObserverContainer<StatusOr<DndClient>> _observers = new();
-  private readonly VersionTracker _versionTracker = new();
+  private object _currentCookie = new();
   private StatusOr<SessionManager> _sessionManager = UnsetSessionManagerText;
   private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
   private StatusOr<DndClient> _client = UnsetClientText;
