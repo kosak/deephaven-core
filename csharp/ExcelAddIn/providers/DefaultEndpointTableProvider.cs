@@ -69,7 +69,11 @@ internal class DefaultEndpointTableProvider :
     }
   }
 
-  public void OnNext(EndpointId? endpointId) {
+  void IStatusObserver<EndpointId>.OnStatus(string status) {
+    throw new NotImplementedException();
+  }
+
+  public void OnNext(EndpointId endpointId) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
@@ -87,8 +91,17 @@ internal class DefaultEndpointTableProvider :
 
       // Subscribe to a new upstream
       var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
-      var observer = new ObserverWithFreshness<RefCounted<TableHandle>>(this, _freshness.Current);
-      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, observer);
+      var fobs = new FreshnessObserver<RefCounted<TableHandle>>(this, _freshness.Current);
+      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, fobs);
+    }
+  }
+
+  void IStatusObserver<RefCounted<TableHandle>>.OnStatus(string status) {
+    lock (_sync) {
+      if (_isDisposed.Value) {
+        return;
+      }
+      SorUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
     }
   }
 
