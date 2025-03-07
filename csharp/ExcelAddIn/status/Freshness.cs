@@ -6,12 +6,12 @@ public class FreshnessSource {
 
   public FreshnessSource(object sync) {
     _sync = sync;
-    Current = new();
+    Current = new(this);
   }
 
-  public void New() {
+  public void Reset() {
     lock (_sync) {
-      Current = new FreshnessToken(this);
+      Current = new(this);
     }
   }
 }

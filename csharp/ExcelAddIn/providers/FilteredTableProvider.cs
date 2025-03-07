@@ -82,7 +82,7 @@ internal class FilteredTableProvider :
       }
 
       // Invalidate any outstanding background work
-      _ = _freshnessSource.New();
+      _freshnessSource.Reset();
       SorUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
     }
   }
@@ -94,12 +94,12 @@ internal class FilteredTableProvider :
       }
 
       // Invalidate any outstanding background work
-      var token = _freshnessSource.New();
+      _freshnessSource.Reset();
 
       SorUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
       // Share the handle (outside the lambda) so it can be owned by the separate thread.
       var parentHandleShare = parentHandle.Share();
-      Background.Run(() => OnNextBackground(parentHandleShare, token));
+      Background.Run(() => OnNextBackground(parentHandleShare, _freshnessSource.Current));
     }
   }
 
@@ -122,7 +122,7 @@ internal class FilteredTableProvider :
     using var cleanup2 = newRef;
 
     lock (_sync) {
-      if (token.IsCurrent) {
+      if (token.IsCurrentUnsafe) {
         SorUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }

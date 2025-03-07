@@ -72,7 +72,7 @@ internal class CoreClientProvider :
       }
 
       // Invalidate any background work that might be running.
-      _freshness.New();
+      _freshness.Reset();
       SorUtil.ReplaceAndNotify(ref _client, status, _observers);
     }
   }
@@ -84,7 +84,7 @@ internal class CoreClientProvider :
       }
 
       // Invalidate any background work that might be running.
-      _freshness.New();
+      _freshness.Reset();
 
       _ = credentials.AcceptVisitor(
         core => {
