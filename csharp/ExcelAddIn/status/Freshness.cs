@@ -9,9 +9,10 @@ public class FreshnessSource {
     Current = new();
   }
 
-  public FreshnessToken New() {
-    _currentToken = new FreshnessToken(this);
-    return _currentToken;
+  public void New() {
+    lock (_sync) {
+      Current = new FreshnessToken(this);
+    }
   }
 }
 

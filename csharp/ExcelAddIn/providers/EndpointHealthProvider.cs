@@ -6,7 +6,7 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-public class ObserverWithCookie<T>(IStatusObserver<T> target, FreshnessToken token)
+public class ObserverWithFreshness<T>(IStatusObserver<T> target, FreshnessToken token)
   : IStatusObserver<T> {
   public void OnStatus(string status) {
     token.InvokeIfCurrent(() => target.OnStatus(status));
@@ -35,7 +35,7 @@ public class ObserverWithCookie<T>(IStatusObserver<T> target, FreshnessToken tok
  */
 internal class EndpointHealthProvider :
   IStatusObserver<EndpointConfigBase>,
-  IObserverWithCookie<StatusOr<Client>>,
+  IStatusObserver<StatusOr<Client>>,
   IObserverWithCookie<StatusOr<SessionManager>>,
   IStatusObservable<EndpointHealth>,
   IDisposable {

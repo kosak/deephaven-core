@@ -24,11 +24,11 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
+  private readonly FreshnessSource _freshness;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private object _currentCookie = new();
   private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
@@ -38,6 +38,7 @@ internal class DefaultEndpointTableProvider :
     _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
+    _freshness = new(_sync);
   }
 
   public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
@@ -76,7 +77,7 @@ internal class DefaultEndpointTableProvider :
       // Unsubscribe from old upstream
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
       // Suppress any notifications from the old subscription, which will now be stale
-      _currentCookie = new();
+      _freshness.New();
 
       // If endpoint is null, then don't resubscribe to anything.
       if (endpointId == null) {
@@ -86,14 +87,14 @@ internal class DefaultEndpointTableProvider :
 
       // Subscribe to a new upstream
       var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
-      var observer = new ObserverWithCookie<RefCounted<TableHandle>>(this, _currentCookie);
+      var observer = new ObserverWithFreshness<RefCounted<TableHandle>>(this, _freshness.Current);
       _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, observer);
     }
   }
 
   public void OnNext(RefCounted<TableHandle> value) {
     lock (_sync) {
-      if (_isDisposed.Value || !ReferenceEquals(_expectedCookie, cookie)) {
+      if (_isDisposed.Value) {
         return;
       }
       SorUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);
