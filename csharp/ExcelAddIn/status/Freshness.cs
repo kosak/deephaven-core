@@ -11,7 +11,7 @@ public class FreshnessSource {
     Current = new(this);
   }
 
-  public void Reset() {
+  public void Refresh() {
     lock (_sync) {
       Current = new(this);
     }

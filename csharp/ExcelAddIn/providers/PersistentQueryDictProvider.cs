@@ -46,52 +46,50 @@ internal class PersistentQueryDictProvider :
 
   public void Dispose() {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
-
-      _isDisposed = true;
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _dict, "[Disposing]");
+      SorUtil.Replace(ref _dict, "[Disposing]");
     }
   }
 
   public void OnNext(StatusOr<Subscription> subscription) {
     lock (_sync) {
-      if (_isDisposed) {
+      if (_isDisposed.Value) {
         return;
       }
       // Suppress any stale notifications that happen to show up.
-      var newCookie = _versionTracker.New();
+      _freshness.Refresh();
 
       if (!subscription.GetValueOrStatus(out var sub, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _dict, status, _observers);
+        SorUtil.ReplaceAndNotify(ref _dict, status, _observers);
         return;
       }
 
-      ProviderUtil.SetStateAndNotify(ref _dict, "[Processing Subscriptions]", _observers);
-      Background666.Run(() => ProcessSubscriptionStream(sub, newCookie));
+      SorUtil.ReplaceAndNotify(ref _dict, "[Processing Subscriptions]", _observers);
+      Background.Run(() => ProcessSubscriptionStream(sub, _freshness.Current));
     }
   }
 
-  private void ProcessSubscriptionStream(Subscription sub, VersionTracker.Cookie cookie) {
+  private void ProcessSubscriptionStream(Subscription sub, FreshnessToken token) {
     Int64 version = -1;
     var wantExit = false;
     while (true) {
-      StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> newDict;
+      StatusOr<SharableDict<PersistentQueryInfoMessage>> newDict;
       if (sub.Next(version) && sub.Current(out version, out var dict)) {
-        newDict = StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>.OfValue(dict);
+        // TODO(kosak): do something about this sneaky downcast
+        newDict = (SharableDict<PersistentQueryInfoMessage>)dict;
       } else {
         newDict = "[Subscription closed]";
         wantExit = true;
       }
 
       lock (_sync) {
-        if (!cookie.IsCurrent) {
+        if (!token.IsCurrentUnsafe) {
           return;
         }
-        ProviderUtil.SetStateAndNotify(ref _dict, newDict, _observers);
+        SorUtil.ReplaceAndNotify(ref _dict, newDict, _observers);
         if (wantExit) {
           return;
         }

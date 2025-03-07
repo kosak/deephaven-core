@@ -65,14 +65,4 @@ internal class SubscriptionProvider :
       ProviderUtil.SetStateAndNotify(ref _subscription, newState, _observers);
     }
   }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
 }

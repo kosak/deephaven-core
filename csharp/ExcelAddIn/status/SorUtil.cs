@@ -3,7 +3,7 @@ using Deephaven.ExcelAddIn.Status;
 
 namespace Deephaven.ExcelAddIn.Util;
 
-internal class RefUtil {
+internal class RefUtil666_NO {
   public static void Replace<T>(ref StatusOr<RefCounted<T>> dest,
     StatusOr<RefCounted<T>> newValue) where T : class, IDisposable {
     Background.InvokeDispose(dest);
@@ -33,7 +33,7 @@ internal class SorUtil {
   }
 
   public static void ReplaceAndNotify<T>(ref StatusOr<T> dest,
-    StatusOr<T> newValue, ObserverContainer<T> container) {
+    StatusOr<T> newValue, ObserverContainer<StatusOr<T>> container) {
     Background.InvokeDispose(dest);
     container.OnNext(newValue);
   }
