@@ -23,7 +23,7 @@ public class StateManager {
   private readonly EndpointDictProvider _endpointDictProvider = new();
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
-    IStatusObserver<StatusOr<Client>> observer) {
+    IStatusObserver<RefCounted<Client>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }

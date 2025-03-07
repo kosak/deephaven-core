@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.Status;
+﻿using Deephaven.ExcelAddIn.Providers;
+
+namespace Deephaven.ExcelAddIn.Status;
 
 public class FreshnessSource {
   private readonly object _sync;
@@ -21,5 +23,16 @@ public class FreshnessToken {
     get {
 
     }
+  }
+}
+
+public class FreshnessObserver<T>(IStatusObserver<T> target, FreshnessToken token)
+  : IStatusObserver<T> {
+  public void OnStatus(string status) {
+    token.InvokeIfCurrent(() => target.OnStatus(status));
+  }
+
+  public void OnNext(T value) {
+    token.InvokeIfCurrent(() => target.OnNext(value));
   }
 }

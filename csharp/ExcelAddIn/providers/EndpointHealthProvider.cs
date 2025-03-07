@@ -6,17 +6,6 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-public class ObserverWithFreshness<T>(IStatusObserver<T> target, FreshnessToken token)
-  : IStatusObserver<T> {
-  public void OnStatus(string status) {
-    token.InvokeIfCurrent(() => target.OnStatus(status));
-  }
-
-  public void OnNext(T value) {
-    token.InvokeIfCurrent(() => target.OnNext(value));
-  }
-}
-
 /**
  * The job of this class is to observe EndpointConfig notifications for a given EndpointId,
  * and then provide EndpointHealth notifications. These notifications are either a placeholder
@@ -35,8 +24,8 @@ public class ObserverWithFreshness<T>(IStatusObserver<T> target, FreshnessToken 
  */
 internal class EndpointHealthProvider :
   IStatusObserver<EndpointConfigBase>,
-  IStatusObserver<StatusOr<Client>>,
-  IObserverWithCookie<StatusOr<SessionManager>>,
+  IStatusObserver<RefCounted<Client>>,
+  IStatusObserver<RefCounted<SessionManager>>,
   IStatusObservable<EndpointHealth>,
   IDisposable {
   private const string UnsetHealthString = "[No Config]";
@@ -45,17 +34,18 @@ internal class EndpointHealthProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
+  private readonly FreshnessSource _freshness;
   private readonly Latch _isSubscribed = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamConfigDisposer = null;
   private IDisposable? _upstreamClientOrSessionDisposer = null;
   private StatusOr<EndpointHealth> _endpointHealth = UnsetHealthString;
   private readonly ObserverContainer<EndpointHealth> _observers = new();
-  private readonly VersionTracker _versionTracker = new();
 
   public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
+    _freshness = new(_sync);
   }
 
   /// <summary>
@@ -63,7 +53,7 @@ internal class EndpointHealthProvider :
   /// </summary>
   public IDisposable Subscribe(IStatusObserver<EndpointHealth> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _endpointHealth, out _);
+      SorUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out _);
       if (_isSubscribed.TrySet()) {
         _upstreamConfigDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
@@ -72,115 +62,81 @@ internal class EndpointHealthProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<EndpointHealth>> observer) {
+  private void RemoveObserver(IStatusObserver<EndpointHealth> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
-        return;
-      }
-
-      _isDisposed = true;
-      Utility.ClearAndDispose(ref _upstreamConfigDisposer);
-      Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
-      ProviderUtil.SetState(ref _endpointHealth, "[Disposed]");
+      _observers.Remove(observer, out _);
     }
   }
 
-  public void OnNext(StatusOr<EndpointConfigBase> credentials) {
+  public void Dispose() {
     lock (_sync) {
-      if (_isDisposed) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
 
-      // We use this cookie approach because we are switching subscriptions
-      // midstream and we don't want to get confused by stale notifications
-      // from something we just unsubscribed from.
-      var cookie = _versionTracker.New();
+      Utility.ClearAndDispose(ref _upstreamConfigDisposer);
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
+      SorUtil.Replace(ref _endpointHealth, "[Disposed]");
+    }
+  }
 
-      if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _endpointHealth, status, _observers);
+  void IStatusObserver<EndpointConfigBase>.OnStatus(string status) {
+    lock (_sync) {
+      if (_isDisposed.Value) {
+        return;
+      }
+      _freshness.Reset();
+      Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
+      SorUtil.ReplaceAndNotify(ref _endpointHealth, status, _observers);
+    }
+  }
+
+  public void OnNext(EndpointConfigBase credentials) {
+    lock (_sync) {
+      if (_isDisposed.Value) {
         return;
       }
 
-      ProviderUtil.SetStateAndNotify(ref _endpointHealth, "[Unknown]", _observers);
+      _freshness.Reset();
+      Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
+      SorUtil.ReplaceAndNotify(ref _endpointHealth, "[Unknown]", _observers);
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
-      _upstreamClientOrSessionDisposer = cbase.AcceptVisitor<IDisposable?>(
-        (EmptyEndpointConfig _) => null,
+      _upstreamClientOrSessionDisposer = credentials.AcceptVisitor(
         (CoreEndpointConfig _) => {
-          var observerWithCookie = new ObserverWithCookie<StatusOr<Client>>(this, cookie);
-          return _stateManager.SubscribeToCoreClient(_endpointId, observerWithCookie);
+          var fobs = new FreshnessObserver<RefCounted<Client>>(this, _freshness.Current);
+          return _stateManager.SubscribeToCoreClient(_endpointId, fobs);
         },
         (CorePlusEndpointConfig _) => {
-          var observerWithCookie = new ObserverWithCookie<StatusOr<SessionManager>>(this, cookie);
-          return _stateManager.SubscribeToSessionManager(_endpointId, observerWithCookie);
+          var fobs = new FreshnessObserver<RefCounted<SessionManager>>(this, _freshness.Current);
+          return _stateManager.SubscribeToSessionManager(_endpointId, fobs);
         });
     }
   }
 
-  public void OnCompleted() {
-    lock (_sync) {
-      if (_isDisposed) {
-        return;
-      }
-      // TODO(kosak)
-      throw new NotImplementedException();
-    }
+  void IStatusObserver<RefCounted<Client>>.OnStatus(string status) {
+    OnNextHelper(status);
   }
 
-  public void OnError(Exception error) {
-    lock (_sync) {
-      if (_isDisposed) {
-        return;
-      }
-      // TODO(kosak)
-      throw new NotImplementedException();
-    }
+  public void OnNext(RefCounted<Client> client) {
+    OnNextHelper(ConnectionOkString);
   }
 
-  public void OnNextWithCookie(StatusOr<Client> client, VersionTracker.Cookie cookie) {
-    lock (_sync) {
-      if (_isDisposed || !cookie.IsCurrent) {
-        return;
-      }
-      // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
-      // the status.
-      var message = client.AcceptVisitor(_ => ConnectionOkString, s => s);
-      ProviderUtil.SetStateAndNotify(ref _endpointHealth, message, _observers);
-    }
+  void IStatusObserver<RefCounted<SessionManager>>.OnStatus(string status) {
+    OnNextHelper(status);
   }
 
-  public void OnNextWithCookie(StatusOr<SessionManager> sm, VersionTracker.Cookie cookie) {
-    lock (_sync) {
-      if (_isDisposed || !cookie.IsCurrent) {
-        return;
-      }
-      // If valid value, then we notify with the ConnectionOKString. Otherwise we pass through
-      // the status.
-      var message = sm.AcceptVisitor(_ => ConnectionOkString, s => s);
-      ProviderUtil.SetStateAndNotify(ref _endpointHealth, message, _observers);
-    }
+  public void OnNext(RefCounted<SessionManager> sm) {
+    OnNextHelper(ConnectionOkString);
   }
 
-  public void OnCompletedWithCookie(VersionTracker.Cookie cookie) {
+  private void OnNextHelper(string message) {
     lock (_sync) {
-      if (_isDisposed || !cookie.IsCurrent) {
+      if (_isDisposed.Value) {
         return;
       }
-      // TODO(kosak)
-      throw new NotImplementedException();
-    }
-  }
-
-  public void OnErrorWithCookie(Exception ex, VersionTracker.Cookie cookie) {
-    lock (_sync) {
-      if (_isDisposed || !cookie.IsCurrent) {
-        return;
-      }
-      // TODO(kosak)
-      throw new NotImplementedException();
+      SorUtil.ReplaceAndNotify(ref _endpointHealth, message, _observers);
     }
   }
 }
