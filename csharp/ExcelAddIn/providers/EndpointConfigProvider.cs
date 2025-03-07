@@ -58,6 +58,9 @@ internal class EndpointConfigProvider :
     if (_isDisposed.Value) {
       return;
     }
+    _prevDict = SharableDict<EndpointConfigBase>.Empty;
+    _prevConfig = null;
+    SorUtil.ReplaceAndNotify(ref _credentials, status, _observers);
   }
 
   public void OnNext(SharableDict<EndpointConfigBase> dict) {
