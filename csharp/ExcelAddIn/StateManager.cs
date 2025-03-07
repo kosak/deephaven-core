@@ -29,7 +29,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
-    IStatusObserver<StatusOr<DndClient>> observer) {
+    IStatusObserver<RefCounted<DndClient>> observer) {
     var key = (endpointId, pqName);
     var candidate = new CorePlusClientProvider(this, endpointId, pqName);
     return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
@@ -49,7 +49,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
-    IStatusObserver<StatusOr<EndpointHealth>> observer) {
+    IStatusObserver<EndpointHealth> observer) {
     var candidate = new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
@@ -68,7 +68,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
-    IStatusObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>> observer) {
+    IStatusObserver<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> observer) {
     var candidate = new PersistentQueryDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
