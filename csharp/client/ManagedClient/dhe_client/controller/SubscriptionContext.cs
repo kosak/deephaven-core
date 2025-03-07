@@ -136,7 +136,7 @@ internal class SubscriptionContext : IDisposable {
       while (true) {
         if (_synced.Cancelled) {
           version = 0;
-          map = ImmutableDictionary<Int64, PersistentQueryInfoMessage>.Empty;
+          map = SharableDict<PersistentQueryInfoMessage>.Empty;
           return false;
         }
         if (_synced.FirstBatchDelivered) {

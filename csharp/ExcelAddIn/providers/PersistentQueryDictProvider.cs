@@ -7,8 +7,8 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryDictProvider :
-  IObserver<StatusOr<Subscription>>,
-  IObservable<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>,
+  IValueObserver<StatusOr<Subscription>>,
+  IValueObservable<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>,
   IDisposable {
   private const string UnsetDictText = "[No PQ Dict]";
   private readonly StateManager _stateManager;
