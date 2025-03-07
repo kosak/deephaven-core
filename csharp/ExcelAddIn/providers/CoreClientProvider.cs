@@ -85,7 +85,6 @@ internal class CoreClientProvider :
 
       // Invalidate any background work that might be running.
       var cookie = _freshness.New();
-      _currentCookie = new();
 
       _ = credentials.AcceptVisitor(
         core => {
@@ -102,7 +101,7 @@ internal class CoreClientProvider :
     }
   }
 
-  private void OnNextBackground(CoreEndpointConfig config, object cookie) {
+  private void OnNextBackground(CoreEndpointConfig config, FreshnessToken token) {
     RefCounted<Client>? newRef = null;
     StatusOr<RefCounted<Client>> result;
     try {
@@ -115,7 +114,7 @@ internal class CoreClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (_currentCookie ==  cookie) {
+      if (token.IsCurrentUnsafe) {
         SorUtil.ReplaceAndNotify(ref _client, result, _observers);
       }
     }

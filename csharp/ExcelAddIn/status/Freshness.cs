@@ -16,7 +16,9 @@ public class FreshnessSource {
 }
 
 public class FreshnessToken {
-  public bool IsCurrent {
-    get;
+  public bool IsCurrentUnsafe {
+    get {
+
+    }
   }
 }
