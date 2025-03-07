@@ -21,16 +21,17 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
+  private readonly FreshnessSource _freshness;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<RefCounted<Client>> _observers = new();
-  private object _currentCookie = new();
   private StatusOr<RefCounted<Client>> _client = UnsetClientText;
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
+    _freshness = new(_sync);
   }
 
   /// <summary>
@@ -71,7 +72,7 @@ internal class CoreClientProvider :
       }
 
       // Invalidate any background work that might be running.
-      _currentCookie = new();
+      _ = _freshness.New();
       SorUtil.ReplaceAndNotify(ref _client, status, _observers);
     }
   }
@@ -80,15 +81,16 @@ internal class CoreClientProvider :
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
-      }    
-      
+      }
+
       // Invalidate any background work that might be running.
+      var cookie = _freshness.New();
       _currentCookie = new();
 
       _ = credentials.AcceptVisitor(
         core => {
           SorUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
-          Background.Run(() => OnNextBackground(core, _currentCookie));
+          Background.Run(() => OnNextBackground(core, _freshness.Current));
           return Unit.Instance;  // have to return something
         },
         _ => {

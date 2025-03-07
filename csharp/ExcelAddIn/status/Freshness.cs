@@ -1,12 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Deephaven.ExcelAddIn.Status;
 
-namespace ExcelAddIn.status
-{
-    class Freshness
-    {
-    }
+public class FreshnessSource {
+  private readonly object _sync;
+  public FreshnessToken Current { get; private set; }
+
+  public FreshnessSource(object sync) {
+    _sync = sync;
+    Current = new();
+  }
+
+  public FreshnessToken New() {
+    _currentToken = new FreshnessToken(this);
+    return _currentToken;
+  }
+}
+
+public class FreshnessToken {
+  public bool IsCurrent {
+    get;
+  }
 }

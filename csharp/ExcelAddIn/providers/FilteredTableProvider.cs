@@ -28,11 +28,11 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
+  private readonly FreshnessSource _freshnessSource;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
-  private readonly VersionTracker _versionTracker = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
@@ -42,6 +42,7 @@ internal class FilteredTableProvider :
     _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
+    _freshnessSource = new(_sync);
   }
 
   public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
@@ -81,7 +82,7 @@ internal class FilteredTableProvider :
       }
 
       // Invalidate any outstanding background work
-      _ = _versionTracker.New();
+      _ = _freshnessSource.New();
       SorUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
     }
   }
@@ -93,17 +94,17 @@ internal class FilteredTableProvider :
       }
 
       // Invalidate any outstanding background work
-      var cookie = _versionTracker.New();
+      var token = _freshnessSource.New();
 
       SorUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
       // Share the handle (outside the lambda) so it can be owned by the separate thread.
       var parentHandleShare = parentHandle.Share();
-      Background.Run(() => OnNextBackground(parentHandleShare, cookie));
+      Background.Run(() => OnNextBackground(parentHandleShare, token));
     }
   }
 
   private void OnNextBackground(RefCounted<TableHandle> parentHandleShare,
-    VersionTracker.Cookie versionCookie) {
+    FreshnessToken token) {
     // This thread owns parentHandleShare so it needs to dispose it on the way out
     using var cleanup1 = parentHandleShare;
     RefCounted<TableHandle>? newRef = null;
@@ -121,7 +122,7 @@ internal class FilteredTableProvider :
     using var cleanup2 = newRef;
 
     lock (_sync) {
-      if (versionCookie.IsCurrent) {
+      if (token.IsCurrent) {
         SorUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }
