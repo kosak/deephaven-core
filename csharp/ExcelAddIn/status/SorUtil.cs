@@ -25,19 +25,4 @@ internal class SorUtil {
     Background.InvokeDispose(dest);
     container.OnStatus(status);
   }
-
-
-  public static void SetStatusAndNotify<T>(ref StatusOr<RefCounted<T>> dest,
-    string status, ObserverContainer<RefCounted<T>> container) where T : class, IDisposable {
-    Background.InvokeDispose(dest);
-    container.OnStatus(status);
-  }
-
-  public static void SetStateAndNotify<T>(ref StatusOr<RefCounted<T>> dest,
-    StatusOr<RefCounted<T>> newValue,
-    ObserverContainer<T> container) where T : class, IDisposable {
-    Background.InvokeDispose(dest);
-    container.OnNext(newValue);
-  }
-
 }

@@ -74,14 +74,14 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
-    IStatusObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+    IStatusObserver<PersistentQueryInfoMessage> observer) {
     var key = (endpointId, pqName);
     var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToSessionManager(EndpointId endpointId,
-    IStatusObserver<StatusOr<SessionManager>> observer) {
+    IStatusObserver<RefCounted<SessionManager>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }

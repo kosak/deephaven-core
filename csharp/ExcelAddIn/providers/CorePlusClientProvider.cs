@@ -1,5 +1,4 @@
-﻿using Deephaven.DheClient.Auth;
-using Deephaven.DheClient.Controller;
+﻿using Deephaven.DheClient.Controller;
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
@@ -9,9 +8,9 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CorePlusClientProvider :
-  IObserver<StatusOr<SessionManager>>,
-  IObserver<StatusOr<PersistentQueryInfoMessage>>,
-  IObservable<StatusOr<DndClient>>, 
+  IStatusObserver<RefCounted<SessionManager>>,
+  IStatusObserver<PersistentQueryInfoMessage>,
+  IStatusObservable<RefCounted<DndClient>>, 
   IDisposable {
   private const string UnsetClientText = "[No Core+ Client]";
   private const string UnsetSessionManagerText = "[No Session Manager]";
@@ -20,15 +19,15 @@ internal class CorePlusClientProvider :
   private readonly EndpointId _endpointId;
   private readonly PqName _pqName;
   private readonly object _sync = new();
-  private bool _subscribeDone = false;
-  private bool _isDisposed = false;
+  private readonly Latch _subscribeDone = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _sessionManagerDisposer = null;
   private IDisposable? _pqInfoDisposer = null;
-  private readonly ObserverContainer<StatusOr<DndClient>> _observers = new();
+  private readonly ObserverContainer<RefCounted<DndClient>> _observers = new();
   private object _currentCookie = new();
-  private StatusOr<SessionManager> _sessionManager = UnsetSessionManagerText;
+  private StatusOr<RefCounted<SessionManager>> _sessionManager = UnsetSessionManagerText;
   private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
-  private StatusOr<DndClient> _client = UnsetClientText;
+  private StatusOr<RefCounted<DndClient>> _client = UnsetClientText;
 
   public CorePlusClientProvider(StateManager stateManager, EndpointId endpointId,
     PqName pqName) {
@@ -40,10 +39,10 @@ internal class CorePlusClientProvider :
   /// <summary>
   /// Subscribe to Enterprise Core+ client changes
   /// </summary>
-  public IDisposable Subscribe(IObserver<StatusOr<DndClient>> observer) {
+  public IDisposable Subscribe(IStatusObserver<RefCounted<DndClient>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _client, out _);
-      if (!Utility.Exchange(ref _subscribeDone, true)) {
+      SorUtil.AddObserverAndNotify(_observers, observer, _client, out _);
+      if (_subscribeDone.TrySet()) {
         _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
         _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, this);
       }
@@ -52,7 +51,7 @@ internal class CorePlusClientProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<DndClient>> observer) {
+  private void RemoveObserver(IStatusObserver<RefCounted<DndClient>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -60,90 +59,101 @@ internal class CorePlusClientProvider :
 
   public void Dispose() {
     lock (_sync) {
-      if (Utility.Exchange(ref _isDisposed, true)) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
       Utility.ClearAndDispose(ref _sessionManagerDisposer);
       Utility.ClearAndDispose(ref _pqInfoDisposer);
 
       // Release our Deephaven resource asynchronously.
-      ProviderUtil.SetState(ref _sessionManager, "[Disposed]");
-      ProviderUtil.SetState(ref _pqInfo, "[Disposed]");
-      ProviderUtil.SetState(ref _client, "[Disposed]");
+      SorUtil.Replace(ref _sessionManager, "[Disposed]");
+      _pqInfo = "[Disposed]";
+      _client = "[Disposed]";
     }
   }
 
-  public void OnNext(StatusOr<SessionManager> sessionManager) {
+  void IStatusObserver<RefCounted<SessionManager>>.OnStatus(string status) {
     lock (_sync) {
-      if (_isDisposed) {
+      if (!_isDisposed.Value) {
         return;
       }
-      ProviderUtil.SetState(ref _sessionManager, sessionManager);
+      SorUtil.Replace(ref _sessionManager, status);
       UpdateStateLocked();
     }
   }
 
-  public void OnNext(StatusOr<PersistentQueryInfoMessage> pqInfo) {
+  public void OnNext(RefCounted<SessionManager> sessionManager) {
     lock (_sync) {
-      if (_isDisposed) {
+      if (!_isDisposed.Value) {
         return;
       }
-      ProviderUtil.SetState(ref _pqInfo, pqInfo);
+      SorUtil.Replace(ref _sessionManager, sessionManager);
+      UpdateStateLocked();
+    }
+  }
+
+  void IStatusObserver<PersistentQueryInfoMessage>.OnStatus(string status) {
+    lock (_sync) {
+      if (!_isDisposed.Value) {
+        return;
+      }
+      _pqInfo = status;
+      UpdateStateLocked();
+    }
+  }
+
+  public void OnNext(PersistentQueryInfoMessage pqInfo) {
+    lock (_sync) {
+      if (!_isDisposed.Value) {
+        return;
+      }
+      _pqInfo = pqInfo;
       UpdateStateLocked();
     }
   }
 
   private void UpdateStateLocked() {
     // Invalidate any background work that might be running.
-    var cookie = _versionTracker.New();
+    _currentCookie = new();
 
     // Do we have a session and a PQInfo?
-    if (!_sessionManager.GetValueOrStatus(out var _, out var status) || 
+    if (!_sessionManager.GetValueOrStatus(out var sm, out var status) || 
         !_pqInfo.GetValueOrStatus(out var pq, out status)) {
       // No, transmit error status
-      ProviderUtil.SetStateAndNotify(ref _client, status, _observers);
+      SorUtil.ReplaceAndNotify(ref _client, status, _observers);
       return;
     }
 
     // Is our PQInfo in the running state?
     if (!ControllerClient.IsRunning(pq.State.Status)) {
-      ProviderUtil.SetStateAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
+      SorUtil.ReplaceAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
       return;
     }
 
-    var smCopy = _sessionManager.Share();
-    Background.Run(() => UpdateStateInBackground(smCopy, pq, cookie));
+    var smShared = sm.Share();
+    Background.Run(() => UpdateStateInBackground(smShared, pq, _currentCookie));
   }
 
-  private void UpdateStateInBackground(StatusOr<SessionManager> smCopy,
-    PersistentQueryInfoMessage pq, VersionTracker.Cookie cookie) {
-    using var cleanup1 = smCopy;
+  private void UpdateStateInBackground(RefCounted<SessionManager> smShared,
+    PersistentQueryInfoMessage pq, object expectedCookie) {
+    using var cleanup1 = smShared;
 
-    StatusOr<DndClient> newState;
+    RefCounted<DndClient>? newRef = null;
+    StatusOr<RefCounted<DndClient>> newState;
     try {
-      var (sm, _) = smCopy;
-      var client = sm.ConnectToPqById(pq.State.Serial, false);
+      var client = smShared.Value.ConnectToPqById(pq.State.Serial, false);
       // Our value is the client, with a dependency on the SessionManager
-      newState = StatusOr<DndClient>.OfValue(client, smCopy);
+      newRef = RefCounted.Acquire(client, smShared);
+      newState = newRef;
     } catch (Exception ex) {
       newState = ex.Message;
     }
-    using var cleanup2 = newState;
+    using var cleanup2 = newRef;
 
     lock (_sync) {
-      if (cookie.IsCurrent) {
-        ProviderUtil.SetStateAndNotify(ref _client, newState, _observers);
+      if (_currentCookie == expectedCookie) {
+        SorUtil.ReplaceAndNotify(ref _client, newState, _observers);
       }
     }
-  }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
   }
 }
