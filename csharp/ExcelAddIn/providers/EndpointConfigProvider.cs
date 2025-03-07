@@ -5,8 +5,8 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider :
-  IObserver<SharableDict<EndpointConfigBase>>,
-  IObservable<StatusOr<EndpointConfigBase>>,
+  IStatusObserver<SharableDict<EndpointConfigBase>>,
+  IStatusObservable<EndpointConfigBase>,
   IDisposable {
   private const string UnsetCredentialsString = "[No Credentials]";
   private readonly StateManager _stateManager;
@@ -18,7 +18,7 @@ internal class EndpointConfigProvider :
   private long _keyHint = 0;
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
   private EndpointConfigBase? _prevConfig = null;
-  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
+  private readonly ObserverContainer<EndpointConfigBase> _observers = new();
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
   public EndpointConfigProvider(StateManager stateManager, EndpointId endpointId) {
@@ -26,9 +26,9 @@ internal class EndpointConfigProvider :
     _endpointId = endpointId;
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<EndpointConfigBase>> observer) {
+  public IDisposable Subscribe(IStatusObserver<EndpointConfigBase> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _credentials, out _);
+      SorUtil.AddObserverAndNotify(_observers, observer, _credentials, out _);
 
       if (_needsSubscription.TrySet()) {
         _upstreamSubscription = _stateManager.SubscribeToEndpointDict(this);
@@ -38,7 +38,7 @@ internal class EndpointConfigProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<EndpointConfigBase>> observer) {
+  private void RemoveObserver(IStatusObserver<EndpointConfigBase> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -50,7 +50,13 @@ internal class EndpointConfigProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamSubscription);
-      ProviderUtil.SetState(ref _credentials, "[Disposed");
+      SorUtil.Replace(ref _credentials, "[Disposed]");
+    }
+  }
+
+  public void OnStatus(string status) {
+    if (_isDisposed.Value) {
+      return;
     }
   }
 
@@ -62,7 +68,7 @@ internal class EndpointConfigProvider :
 
       // Try to find with fast path
       if (!dict.TryGetValue(_keyHint, out var config) || !config.Id.Equals(_endpointId)) {
-        // Try to find with differencing and slower path
+        // Try to find with slower differencing path
         var (added, _, modified) = _prevDict.CalcDifference(dict);
         var combined = added.Concat(modified);
         var entry = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
@@ -77,12 +83,12 @@ internal class EndpointConfigProvider :
       _prevConfig = config;
       
       if (config == null) {
-        ProviderUtil.SetStateAndNotify(ref _credentials, UnsetCredentialsString, _observers);
+        SorUtil.ReplaceAndNotify(ref _credentials, UnsetCredentialsString, _observers);
         return;
       }
 
       var value = StatusOr<EndpointConfigBase>.OfValue(config);
-      ProviderUtil.SetStateAndNotify(ref _credentials, value, _observers);
+      SorUtil.ReplaceAndNotify(ref _credentials, value, _observers);
     }
   }
 }
