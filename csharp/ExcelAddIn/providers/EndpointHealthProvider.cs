@@ -3,30 +3,18 @@ using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
-using Io.Deephaven.Proto.Auth;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-public interface IObserverWithCookie<T> {
-  void OnNextWithCookie(T value, VersionTracker.Cookie cookie);
-  void OnCompletedWithCookie(VersionTracker.Cookie cookie);
-  void OnErrorWithCookie(Exception ex, VersionTracker.Cookie cookie);
-}
-
-public class ObserverWithCookie<T>(
-  IObserverWithCookie<T> owner,
+public class ObserverWithCookie<T>(IStatusObserver<WithCookie<T>> target,
   VersionTracker.Cookie cookie)
-  : IObserver<T> {
+  : IStatusObserver<T> {
+  public void OnStatus(string status) {
+    throw new NotImplementedException();
+  }
+
   public void OnNext(T value) {
-    owner.OnNextWithCookie(value, cookie);
-  }
-
-  public void OnCompleted() {
-    owner.OnCompletedWithCookie(cookie);
-  }
-
-  public void OnError(Exception ex) {
-    owner.OnErrorWithCookie(ex, cookie);
+    target.OnNextWithCookie(value, cookie);
   }
 }
 
@@ -47,10 +35,10 @@ public class ObserverWithCookie<T>(
  * whatever status text was received from upstream.
  */
 internal class EndpointHealthProvider :
-  IObserver<StatusOr<EndpointConfigBase>>,
+  IStatusObserver<EndpointConfigBase>,
   IObserverWithCookie<StatusOr<Client>>,
   IObserverWithCookie<StatusOr<SessionManager>>,
-  IObservable<StatusOr<EndpointHealth>>,
+  IStatusObservable<EndpointHealth>,
   IDisposable {
   private const string UnsetHealthString = "[No Config]";
   private const string ConnectionOkString = "OK";
@@ -58,11 +46,12 @@ internal class EndpointHealthProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private bool _isDisposed = false;
+  private readonly Latch _isSubscribed = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamConfigDisposer = null;
   private IDisposable? _upstreamClientOrSessionDisposer = null;
   private StatusOr<EndpointHealth> _endpointHealth = UnsetHealthString;
-  private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
+  private readonly ObserverContainer<EndpointHealth> _observers = new();
   private readonly VersionTracker _versionTracker = new();
 
   public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId) {
@@ -73,10 +62,10 @@ internal class EndpointHealthProvider :
   /// <summary>
   /// Subscribe to connection health changes
   /// </summary>
-  public IDisposable Subscribe(IObserver<StatusOr<EndpointHealth>> observer) {
+  public IDisposable Subscribe(IStatusObserver<EndpointHealth> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _endpointHealth, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _endpointHealth, out _);
+      if (_isSubscribed.TrySet()) {
         _upstreamConfigDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }

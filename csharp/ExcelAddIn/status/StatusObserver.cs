@@ -1,6 +1,4 @@
-﻿using Deephaven.ManagedClient;
-
-namespace Deephaven.ExcelAddIn.Providers;
+﻿namespace Deephaven.ExcelAddIn.Providers;
 
 public interface IStatusObserver<in T> {
   public void OnStatus(string status);

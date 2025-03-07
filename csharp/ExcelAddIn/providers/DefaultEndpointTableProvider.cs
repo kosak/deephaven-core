@@ -12,7 +12,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  * TableHandles or status messages, forward those to my observers.
  */
 internal class DefaultEndpointTableProvider :
-  IObserver<EndpointId?>,
+  IStatusObserver<EndpointId?>,
   IObserverWithCookie<StatusOr<TableHandle>>,
   // IObservable<StatusOr<TableHandle>>,
   // IDisposable,

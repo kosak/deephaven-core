@@ -36,7 +36,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
-    IStatusObserver<StatusOr<EndpointConfigBase>> observer) {
+    IStatusObserver<EndpointConfigBase> observer) {
     // As a value-added behavior, any request for an EndpointId gets a placeholder
     // in the endpoint dictionary (if it's not already there). The symmetric behavior
     // is deliberately NOT supported: the item is not removed from the endpoint dictionary
