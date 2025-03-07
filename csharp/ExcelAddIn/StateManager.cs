@@ -54,7 +54,7 @@ public class StateManager {
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToTable(TableQuad key, IStatusObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable SubscribeToTable(TableQuad key, IStatusObserver<RefCounted<TableHandle>> observer) {
     ITableProviderBase candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);

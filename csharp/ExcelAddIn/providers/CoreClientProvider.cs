@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Factories;
+﻿using Deephaven.DheClient.Auth;
+using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
@@ -14,19 +15,19 @@ namespace Deephaven.ExcelAddIn.Providers;
  * corresponding Client object. Otherwise we notify an error.
  */
 internal class CoreClientProvider :
-  IObserver<StatusOr<EndpointConfigBase>>,
-  IObservable<StatusOr<Client>>,
+  IStatusObserver<EndpointConfigBase>,
+  IStatusObservable<RefCounted<Client>>,
   IDisposable {
   private const string UnsetClientText = "[No Community Core Client]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private bool _subscribeDone = false;
-  private bool _isDisposed = false;
+  private readonly Latch _subscribeDone = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
+  private readonly ObserverContainer<RefCounted<Client>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
-  private StatusOr<Client> _client = UnsetClientText;
+  private StatusOr<RefCounted<Client>> _client = UnsetClientText;
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -36,10 +37,11 @@ internal class CoreClientProvider :
   /// <summary>
   /// Subscribe to Core client changes
   /// </summary>
-  public IDisposable Subscribe(IObserver<StatusOr<Client>> observer) {
+  public IDisposable Subscribe(IStatusObserver<RefCounted<Client>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _client, out _);
-      if (!Utility.Exchange(ref _subscribeDone, true)) {
+      SorUtil.AddObserverAndNotify(_observers, observer, _client, out _);
+      if (_subscribeDone.TrySet()) {
+        // Subscribe to parent at the first-ever subscribe
         _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
     }
@@ -47,7 +49,7 @@ internal class CoreClientProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<Client>> observer) {
+  private void RemoveObserver(IStatusObserver<RefCounted<Client>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -55,37 +57,44 @@ internal class CoreClientProvider :
 
   public void Dispose() {
     lock (_sync) {
-      if (Utility.Exchange(ref _isDisposed, true)) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _client, "[Disposing]");
+      SorUtil.Replace(ref _client, "[Disposing]");
     }
   }
 
-  public void OnNext(StatusOr<EndpointConfigBase> credentials) {
+  public void OnStatus(string status) {
     lock (_sync) {
-      if (_isDisposed) {
+      if (_isDisposed.Value) {
+        return;
+      }
+
+      // Invalidate any background work that might be running.
+      _ = _versionTracker.New();
+      SorUtil.ReplaceAndNotify(ref _client, status, _observers);
+    }
+  }
+
+  public void OnNext(EndpointConfigBase credentials) {
+    lock (_sync) {
+      if (_isDisposed.Value) {
         return;
       }    
       
       // Invalidate any background work that might be running.
       var cookie = _versionTracker.New();
 
-      if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _client, status, _observers);
-        return;
-      }
-
-      _ = cbase.AcceptVisitor(
+      _ = credentials.AcceptVisitor(
         core => {
-          ProviderUtil.SetStateAndNotify(ref _client, "Trying to connect", _observers);
+          SorUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
           Background.Run(() => OnNextBackground(core, cookie));
           return Unit.Instance;  // have to return something
         },
         _ => {
-          // We are a Core entity but we are getting credentials for CorePlus
-          ProviderUtil.SetStateAndNotify(ref _client,
+          // Error: we are a Core entity but we are getting credentials for CorePlus
+          SorUtil.ReplaceAndNotify(ref _client,
             "Enterprise Core+ requires a PQ to be specified", _observers);
           return Unit.Instance;  // have to return something
         });
@@ -93,29 +102,21 @@ internal class CoreClientProvider :
   }
 
   private void OnNextBackground(CoreEndpointConfig config, VersionTracker.Cookie versionCookie) {
-    StatusOr<Client> result;
+    RefCounted<Client>? newRef = null;
+    StatusOr<RefCounted<Client>> result;
     try {
       var client = EndpointFactory.ConnectToCore(config);
-      result = StatusOr<Client>.OfValue(client);
+      newRef = RefCounted.Acquire(client);
+      result = newRef;
     } catch (Exception ex) {
       result = ex.Message;
     }
-    using var cleanup = result;
+    using var cleanup = newRef;
 
     lock (_sync) {
       if (versionCookie.IsCurrent) {
-        ProviderUtil.SetStateAndNotify(ref _client, result, _observers);
+        SorUtil.ReplaceAndNotify(ref _client, result, _observers);
       }
     }
-  }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
   }
 }

@@ -17,7 +17,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class FilteredTableProvider :
   IStatusObserver<RefCounted<TableHandle>>,
-  // IObservable<StatusOr<TableHandle>>,
+  // IStatusObservable<RefCounted<TableHandle>>,
   // IDisposable
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Filtered Table]";
@@ -28,7 +28,8 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private Latch _isDisposed = new();
+  private readonly Latch _subscribeDone = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
   private readonly VersionTracker _versionTracker = new();
@@ -45,9 +46,9 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out var isFirst);
-      if (isFirst) {
-        // Subscribe to parent at the time of the first subscription.
+      SorUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out _);
+      if (_subscribeDone.TrySet()) {
+        // Subscribe to parent at the first-ever subscribe
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
         Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
         _upstreamDisposer = _stateManager.SubscribeToTable(tq, this);
