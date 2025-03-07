@@ -76,7 +76,7 @@ internal class EndpointConfigProvider :
         var combined = added.Concat(modified);
         var entry = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
         _keyHint = entry.Key;
-        config = entry.Value ?? null;
+        config = entry.Value;
       }
 
       _prevDict = dict;
