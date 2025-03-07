@@ -1,16 +1,18 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class DefaultEndpointProvider : IStatusObservable<EndpointId> {
+  private const string UnsetEndpointText = "[No endpoint]";
   private readonly object _sync = new();
   private readonly ObserverContainer<EndpointId> _observers = new();
-  private EndpointId? _endpointId = null;
+  private StatusOr<EndpointId> _endpointId = UnsetEndpointText;
   
   public IDisposable Subscribe(IStatusObserver<EndpointId> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _endpointId, out _);
+      SorUtil.AddObserverAndNotify(_observers, observer, _endpointId, out _);
     }
 
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
@@ -24,8 +26,11 @@ internal class DefaultEndpointProvider : IStatusObservable<EndpointId> {
 
   public void Set(EndpointId? endpointId) {
     lock (_sync) {
-      _endpointId = endpointId;
-      _observers.OnNext(endpointId);
+      if (endpointId == null) {
+        SorUtil.ReplaceAndNotify(ref _endpointId, UnsetEndpointText, _observers);
+      } else {
+        SorUtil.ReplaceAndNotify(ref _endpointId, endpointId, _observers);
+      }
     }
   }
 }

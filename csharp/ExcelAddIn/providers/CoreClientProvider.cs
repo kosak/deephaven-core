@@ -113,7 +113,7 @@ internal class CoreClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (ReferenceEquals(_currentCookie, cookie)) {
+      if (_currentCookie ==  cookie) {
         SorUtil.ReplaceAndNotify(ref _client, result, _observers);
       }
     }
