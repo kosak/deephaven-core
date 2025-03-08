@@ -70,7 +70,7 @@ internal class CoreClientProvider :
       }
 
       // Invalidate any background work that might be running.
-      _freshness.Refresh();
+      var token = _freshness.Refresh();
 
       if (!config.GetValueOrStatus(out var ecb, out var status)) {
         SorUtil.ReplaceAndNotify(ref _client, status, _observers);
@@ -80,7 +80,7 @@ internal class CoreClientProvider :
       _ = ecb.AcceptVisitor(
         core => {
           SorUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
-          Background.Run(() => OnNextBackground(core, _freshness.Current));
+          Background.Run(() => OnNextBackground(core, token));
           return Unit.Instance;  // have to return something
         },
         _ => {

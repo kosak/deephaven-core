@@ -6,6 +6,7 @@ using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
+using System.Net;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -108,7 +109,13 @@ public class StateManager {
     return _endpointDictProvider.Subscribe(observer);
   }
 
-  public bool TryDeleteEndpointConfig(EndpointId id) {
+  public void SetConfig(EndpointConfigBase config) {
+    lock (_sync) {
+      _endpointDictProvider.InsertOrReplace(config);
+    }
+  }
+
+  public bool TryDeleteConfig(EndpointId id) {
     lock (_sync) {
       if (_endpointConfigProviders.ContainsKey(id)) {
         // Someone is still referencing it, so it's unsafe to delete
@@ -119,10 +126,6 @@ public class StateManager {
   }
 
 #if false
-  public void SetCredentials(EndpointConfigBase config) {
-    LookupOrCreateEndpointConfigProvider(config.Id,
-      cp => cp.SetCredentials(config));
-  }
 
   public void Reconnect(EndpointId id) {
     // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
@@ -170,9 +173,9 @@ public class StateManager {
     // 2. Otherwise, call "disposer" to unsubscribe the observable
     // 3. If the reference count hits zero, remove from the dictionary and dispse the observable
 
-    var isDisposed = false;
+    var isDisposed = new Latch();
     return ActionAsDisposable.Create(() => {
-      if (Utility.Exchange(ref isDisposed, true)) {
+      if (!isDisposed.TrySet()) {
         return;
       }
 

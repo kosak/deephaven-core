@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
+using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
 
@@ -8,30 +9,31 @@ namespace Deephaven.ExcelAddIn.Factories;
 internal static class ConfigDialogFactory {
   public static void CreateAndShow(StateManager stateManager, EndpointDialogViewModel cvm,
     EndpointId? whitelistId) {
-    Utility.RunInBackground(() => {
+    Background.Run(() => {
       var cd = new ConfigDialog(cvm);
       var state = new EndpointConfigDialogState(stateManager, cd, cvm, whitelistId);
-
 
       cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
       cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
 
       cd.Closed += (_, _) => state.Dispose();
-      // Blocks forever (in this private thread)
+      // Blocks (in this private thread) until the dialog is closed.
       cd.ShowDialog();
     });
   }
 }
 
-internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, IDisposable {
+internal class EndpointConfigDialogState :
+  IValueObserver<SharableDict<EndpointConfigEntry>>,
+  IDisposable {
   private readonly StateManager _stateManager;
   private readonly ConfigDialog _configDialog;
   private readonly EndpointDialogViewModel _cvm;
   private readonly EndpointId? _whitelistId;
-  private IDisposable? _disposer;
   private readonly object _sync = new();
-  private readonly HashSet<EndpointId> _knownIds = new();
-  private readonly VersionTracker _versionTracker = new();
+  private readonly FreshnessSource _freshness;
+  private SharableDict<EndpointConfigEntry> _endpointDict;
+  private IDisposable? _disposer;
 
   public EndpointConfigDialogState(
     StateManager stateManager,
@@ -42,28 +44,17 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
     _configDialog = configDialog;
     _cvm = cvm;
     _whitelistId = whitelistId;
-    _disposer = stateManager.SubscribeToEndpointConfigPopulation(this);
+    _freshness = new(_sync);
+    _disposer = stateManager.SubscribeToEndpointDict(this);
   }
 
   public void Dispose() {
-    Utility.Exchange(ref _disposer, null)?.Dispose();
+    Utility.ClearAndDispose(ref _disposer);
   }
 
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
-  }
-
-  public void OnNext(AddOrRemove<EndpointId> value) {
+  public void OnNext(SharableDict<EndpointConfigEntry> dict) {
     lock (_sync) {
-      if (value.IsAdd) {
-        _knownIds.Add(value.Value);
-      } else {
-        _knownIds.Remove(value.Value);
-      }
+      _endpointDict = dict;
     }
   }
 
@@ -75,7 +66,8 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
 
     bool isKnown;
     lock (_sync) {
-      isKnown = _knownIds.Contains(newCreds.Id);
+      // linear search but the dictionary is small
+      isKnown = _endpointDict.Values.Any(ep => ep.Id.Equals(newCreds.Id));
     }
 
     if (isKnown && !newCreds.Id.Equals(_whitelistId)) {
@@ -88,9 +80,9 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
       }
     }
 
-    _stateManager.SetCredentials(newCreds);
+    _stateManager.SetConfig(newCreds);
     if (_cvm.IsDefault) {
-      _stateManager.SetDefaultEndpointId(newCreds.Id);
+      _stateManager.SetDefaultEndpoint(newCreds.Id);
     }
 
     _configDialog.Close();
@@ -104,30 +96,25 @@ internal class EndpointConfigDialogState : IObserver<AddOrRemove<EndpointId>>, I
 
     _configDialog.SetTestResultsBox("Checking credentials");
     // Check credentials on its own thread
-    Utility.RunInBackground(() => TestCredentialsThreadFunc(newCreds));
+    var token = _freshness.Refresh();
+    Background.Run(() => TestCredentialsBackground(newCreds, token));
   }
 
-  private void TestCredentialsThreadFunc(EndpointConfigBase config) {
-    var latestCookie = _versionTracker.SetNewVersion();
-
+  private void TestCredentialsBackground(EndpointConfigBase config, FreshnessToken token) {
     var state = "OK";
     try {
       // This operation might take some time.
       var temp = config.AcceptVisitor(
         core => (IDisposable)EndpointFactory.ConnectToCore(core),
-        corePlus => EndpointFactory.ConnectToCorePlus(corePlus, _stateManager.WorkerThread));
-      temp.Dispose();
+        corePlus => EndpointFactory.ConnectToCorePlus(corePlus));
+      Background.InvokeDispose(temp);
     } catch (Exception ex) {
       state = ex.Message;
     }
 
-    if (!latestCookie.IsCurrent) {
-      // Our results are moot. Dispose of them.
-      return;
-    }
-
-    // Our results are valid. Keep them and tell everyone about it.
-    _configDialog.SetTestResultsBox(state);
+    token.InvokeIfCurrent(() => {
+      _configDialog.SetTestResultsBox(state);
+    });
   }
 
   private void ShowMessageBox(string error) {
