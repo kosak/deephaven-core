@@ -6,31 +6,27 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal interface ITableProviderBase : IStatusObservable<RefCounted<TableHandle>>,
-  IDisposable;
-
-/**
- * This class has two functions, depending on whether the persistentQueryId is set.
- * If it is set, the class assumes that this is an Enterprise Core Plus table, and
- * follows that workflow.
- *
- * Otherwise, if it is not set, the class assumes that this is a Community Core table,
- * and follows that workflow.
- *
- * The job of this class is to subscribe to a PersistentQueryMapper with the key
- * (endpoint, pqName). Then, as that PQ mapper provider provides me with PqIds
- * with TableHandles (or status messages), process them.
- *
- * If the message received was a status message, then forward it to my observers.
- * If it was a PqId, then 
- *
- * If it was a TableHandle, then filter it by "condition" in the background, and provide
- * the resulting filtered TableHandle (or error) to my observers.
- */
+/// <summary>
+/// This class has two functions, depending on whether the persistentQueryId is set.
+/// If it is set, the class assumes that this is an Enterprise Core Plus table, and
+/// follows that workflow.
+/// 
+/// Otherwise, if it is not set, the class assumes that this is a Community Core table,
+/// and follows that workflow.
+/// 
+/// The job of this class is to subscribe to a PersistentQueryMapper with the key
+/// (endpoint, pqName). Then, as that PQ mapper provider provides me with PqIds
+/// with TableHandles (or status messages), process them.
+/// If the message received was a status message, then forward it to my observers.
+/// If it was a PqId, then [TODO]
+/// 
+/// If it was a TableHandle, then filter it by "condition" in the background, and provide
+/// the resulting filtered TableHandle (or error) to my observers.
+/// </summary>
 internal class TableProvider :
-  IObserver<StatusOr<Client>>,
-  IObserver<StatusOr<DndClient>>,
-  // IObservable<StatusOr<TableHandle>>,
+  IValueObserver<StatusOr<RefCounted<Client>>>,
+  IValueObserver<StatusOr<RefCounted<DndClient>>>,
+  // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
   // IDisposable,
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Table]";
@@ -40,12 +36,12 @@ internal class TableProvider :
   private readonly PqName? _pqName;
   private readonly string _tableName;
   private readonly object _sync = new();
-  private bool _firstTime = true;
-  private bool _isDisposed = false;
+  private readonly FreshnessSource _freshness;
+  private readonly Latch _isSubscribed = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
-  private readonly VersionTracker _versionTracker = new();
-  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
-  private StatusOr<TableHandle> _tableHandle = UnsetTableHandleText;
+  private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
+  private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName) {
@@ -53,12 +49,13 @@ internal class TableProvider :
     _endpointId = endpointId;
     _pqName = pqName;
     _tableName = tableName;
+    _freshness = new(_sync);
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<TableHandle>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _tableHandle, out _);
-      if (Utility.Exchange(ref _firstTime, false)) {
+      SorUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
+      if (_isSubscribed.TrySet()) {
         // Subscribe to parents at the time of the first subscription.
         _upstreamDisposer = _pqName != null
           ? _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, this)
@@ -69,7 +66,7 @@ internal class TableProvider :
     return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  private void RemoveObserver(IObserver<StatusOr<TableHandle>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out _);
     }
@@ -77,68 +74,62 @@ internal class TableProvider :
 
   public void Dispose() {
     lock (_sync) {
-      if (Utility.Exchange(ref _isDisposed, true)) {
+      if (_isDisposed.TrySet()) {
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _tableHandle, "[Disposed]");
+      SorUtil.Replace(ref _tableHandle, "[Disposed]");
     }
   }
 
-  public void OnNext(StatusOr<Client> client) {
+  public void OnNext(StatusOr<RefCounted<Client>> client) {
     OnNextHelper(client);
   }
 
-  public void OnNext(StatusOr<DndClient> client) {
+  public void OnNext(StatusOr<RefCounted<DndClient>> client) {
     OnNextHelper(client);
   }
 
-  private void OnNextHelper<T>(StatusOr<T> client) where T : Client {
+  private void OnNextHelper<T>(StatusOr<RefCounted<T>> client) where T : Client {
     lock (_sync) {
-      if (_isDisposed) {
+      if (_isDisposed.Value) {
         return;
       }
       // Suppress responses from stale background workers.
-      var cookie = _versionTracker.New();
-      if (!client.GetValueOrStatus(out _, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _tableHandle, status, _observers);
+      _freshness.Refresh();
+      if (!client.GetValueOrStatus(out var cliRef, out var status)) {
+        SorUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
         return;
       }
 
-      ProviderUtil.SetStateAndNotify(ref _tableHandle, "Fetching Table", _observers);
-      var clientCopy = client.Share();
-      Background666.Run(() => OnNextBackground(clientCopy, cookie));
+      SorUtil.ReplaceAndNotify(ref _tableHandle, "Fetching Table", _observers);
+      var clientShare = cliRef.Share();
+      Background.Run(() => {
+        using var cleanup = clientShare;
+        OnNextBackground(clientShare, _freshness.Current);
+      });
     }
   }
 
-  private void OnNextBackground<T>(StatusOr<T> clientCopy, VersionTracker.Cookie cookie)
+  private void OnNextBackground<T>(RefCounted<T> client, FreshnessToken token)
     where T : Client {
-    using var cleanup1 = clientCopy;
-
-    StatusOr<TableHandle> newState;
+    RefCounted<TableHandle>? newRef = null;
+    StatusOr<RefCounted<TableHandle>> newState;
     try {
-      var (cli, _) = clientCopy;
-      var th = cli.Manager.FetchTable(_tableName);
+      var th = client.Value.Manager.FetchTable(_tableName);
       // Keep a dependency on client
-      newState = StatusOr<TableHandle>.OfValue(th, clientCopy);
+      newRef = RefCounted.Acquire(th, client);
+      newState = newRef;
     } catch (Exception ex) {
       newState = ex.Message;
     }
-    using var cleanup2 = newState;
+    using var cleanup = newRef;
 
     lock (_sync) {
-      if (_isDisposed || !cookie.IsCurrent) {
+      if (_isDisposed.Value || !token.IsCurrentUnsafe) {
         return;
       }
-      ProviderUtil.SetStateAndNotify(ref _tableHandle, newState, _observers);
+      SorUtil.ReplaceAndNotify(ref _tableHandle, newState, _observers);
     }
-  }
-
-  public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
   }
 }
