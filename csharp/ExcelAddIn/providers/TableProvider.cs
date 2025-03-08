@@ -63,18 +63,16 @@ internal class TableProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
-    lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
   public void Dispose() {
     lock (_sync) {
-      if (_isDisposed.TrySet()) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
