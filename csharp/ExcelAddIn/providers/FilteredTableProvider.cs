@@ -16,8 +16,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  * the resulting filtered TableHandle (or error) to my observers.
  */
 internal class FilteredTableProvider :
-  IStatusObserver<RefCounted<TableHandle>>,
-  // IStatusObservable<RefCounted<TableHandle>>,
+  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
+  // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
   // IDisposable
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Filtered Table]";
@@ -32,7 +32,7 @@ internal class FilteredTableProvider :
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
+  private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
@@ -45,7 +45,7 @@ internal class FilteredTableProvider :
     _freshnessSource = new(_sync);
   }
 
-  public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
       SorUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out _);
       if (_subscribeDone.TrySet()) {
@@ -56,13 +56,11 @@ internal class FilteredTableProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IStatusObserver<RefCounted<TableHandle>> observer) {
-    lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
   public void Dispose() {
@@ -75,51 +73,45 @@ internal class FilteredTableProvider :
     }
   }
 
-  public void OnStatus(string status) {
+  public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
       }
 
       // Invalidate any outstanding background work
-      _freshnessSource.Reset();
-      SorUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
-    }
-  }
+      _freshnessSource.Refresh();
 
-  public void OnNext(RefCounted<TableHandle> parentHandle) {
-    lock (_sync) {
-      if (_isDisposed.Value) {
+      if (!parentHandle.GetValueOrStatus(out var ph, out var status)) {
+        SorUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
         return;
       }
-
-      // Invalidate any outstanding background work
-      _freshnessSource.Reset();
 
       SorUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
-      // Share the handle (outside the lambda) so it can be owned by the separate thread.
-      var parentHandleShare = parentHandle.Share();
-      Background.Run(() => OnNextBackground(parentHandleShare, _freshnessSource.Current));
+      var phShare = ph.Share();
+      Background.Run(() => {
+        using var cleanup = phShare;
+        OnNextBackground(phShare, _freshnessSource.Current);
+      });
     }
   }
 
-  private void OnNextBackground(RefCounted<TableHandle> parentHandleShare,
+  private void OnNextBackground(RefCounted<TableHandle> parentHandle,
     FreshnessToken token) {
-    // This thread owns parentHandleShare so it needs to dispose it on the way out
-    using var cleanup1 = parentHandleShare;
     RefCounted<TableHandle>? newRef = null;
     StatusOr<RefCounted<TableHandle>> newResult;
     try {
       // This is a server call that may take some time.
-      var childHandle = parentHandleShare.Value.Where(_condition);
-      newRef = RefCounted.Acquire(childHandle);
+      var childHandle = parentHandle.Value.Where(_condition);
+      // The child handle takes a dependency on the parent handle, not because
+      // TableHandles have a dependency on each other, but because the parent handle
+      // likely has a transitive dependency on the Client or DndClient
+      newRef = RefCounted.Acquire(childHandle, parentHandle);
       newResult = newRef;
     } catch (Exception ex) {
       newResult = ex.Message;
     }
-    // Dispose newRef on the way out (but the ReplaceAndNotify below will typically
-    // share it with _filteredTableHandle).
-    using var cleanup2 = newRef;
+    using var cleanup = newRef;
 
     lock (_sync) {
       if (token.IsCurrentUnsafe) {

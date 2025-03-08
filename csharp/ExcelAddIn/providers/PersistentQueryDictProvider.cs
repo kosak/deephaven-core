@@ -31,7 +31,7 @@ internal class PersistentQueryDictProvider :
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
       if (_subscribeDone.TrySet()) {
-        _upstreamDisposer = _stateManager.SubscribeToSubscription(_endpointId);
+        _upstreamDisposer = _stateManager.SubscribeToSubscription(_endpointId, this);
       }
     }
 
