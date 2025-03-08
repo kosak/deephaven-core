@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
@@ -7,14 +8,18 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
-internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHandle>> {
+internal class SubscribeOperation : IExcelObservable,
+  IValueObserver<StatusOr<RefCounted<TableHandle>>> {
+  private const string UnsetTableData = "[No data]";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
+  private readonly object _sync = new();
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IDisposable? _tableDisposer = null;
-  private TableHandle? _currentTableHandle = null;
-  private IDisposable? _currentSubDisposer = null;
+  private IDisposable? _currentSub666Disposer = null;
+  private StatusOr<object?[,]> _rendered = UnsetTableData;
+
 
   public SubscribeOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
@@ -23,63 +28,66 @@ internal class SubscribeOperation : IExcelObservable, IObserver<StatusOr<TableHa
   }
 
   public IDisposable Subscribe(IExcelObserver observer) {
-    var wrappedObserver = ExcelDnaHelpers.WrapExcelObserver(observer);
-    _workerThread.EnqueueOrRun(() => {
-      _observers.Add(wrappedObserver, out var isFirst);
+    lock (_sync) {
+      var wrappedObserver = new ExcelObserverWrapper(observer);
+      _observers.AddAndNotify(wrappedObserver, _rendered, out var isFirst);
 
       if (isFirst) {
         _tableDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
       }
-    });
 
-    return ActionAsDisposable.Create(() => {
-      _workerThread.EnqueueOrRun(() => {
-        _observers.Remove(wrappedObserver, out var wasLast);
-        if (!wasLast) {
-          return;
-        }
+      return ActionAsDisposable.Create(() => RemoveObserver(wrappedObserver));
+    }
+  }
 
-        Utility.Exchange(ref _tableDisposer, null)?.Dispose();
+  private void RemoveObserver(ExcelObserverWrapper observer) {
+    lock (_sync) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
+        return;
+      }
+
+      Utility.ClearAndDispose(ref _tableDisposer);
+    }
+  }
+
+  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle) {
+    lock (_sync) {
+      var token = _freshness.Refresh();
+      Background.ClearAndDispose(ref _subRef);
+
+      if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
+        SorUtil.ReplaceAndNotify(ref _rendered, status, _observers);
+        return;
+      }
+
+      var message = $"Subscribing to \"{_tableQuad.TableName}\"";
+      SorUtil.ReplaceAndNotify(ref _rendered, message, _observers);
+
+      var thShare = th.Share();
+      Background.Run(() => {
+        using var cleanup = thShare;
+        SubscribeInBackground(thShare, token);
       });
-    });
-  }
-
-  public void OnNext(StatusOr<TableHandle> soth) {
-    if (_workerThread.EnqueueOrNop(() => OnNext(soth))) {
-      return;
-    }
-
-    // First tear down old state
-    Utility.MaybeDispose(ref _currentSubDisposer);
-    Utility.MaybeDispose(ref _currentTableHandle);
-
-    if (!soth.GetValueOrStatus(out var tableHandle, out var status)) {
-      _observers.SendStatus(status);
-      return;
-    }
-
-    _observers.SendStatus($"Subscribing to \"{_tableQuad.TableName}\"");
-
-    _currentTableHandle = tableHandle;
-    _currentSubDisposer = _currentTableHandle.Subscribe(new MyTickingObserver(_observers, _wantHeaders));
-
-    try {
-      using var ct = tableHandle.ToClientTable();
-      var result = Renderer.Render(ct, _wantHeaders);
-      _observers.SendValue(result);
-    } catch (Exception ex) {
-      _observers.SendStatus(ex.Message);
     }
   }
 
-  void IObserver<StatusOr<TableHandle>>.OnCompleted() {
-    // TODO(kosak): TODO
-    throw new NotImplementedException();
+  private void SubscribeInBackground(RefCounted<TableHandle> tableHandle,
+    FreshnessToken token) {
+
   }
 
-  void IObserver<StatusOr<TableHandle>>.OnError(Exception error) {
-    // TODO(kosak): TODO
-    throw new NotImplementedException();
+  _currentTableHandle = tableHandle;
+      _currentSubDisposer = _currentTableHandle.Subscribe(new MyTickingObserver(_observers, _wantHeaders));
+
+      try {
+        using var ct = tableHandle.ToClientTable();
+        var result = Renderer.Render(ct, _wantHeaders);
+        _observers.SendValue(result);
+      } catch (Exception ex) {
+        _observers.SendStatus(ex.Message);
+      }
+    }
   }
 
   private class MyTickingObserver : IObserver<TickingUpdate> {
