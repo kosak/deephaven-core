@@ -6,8 +6,8 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryInfoProvider :
-  IObserver<StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>>>,
-  IObservable<StatusOr<PersistentQueryInfoMessage>>,
+  IValueObserver<SharableDict<PersistentQueryInfoMessage>>,
+  IValueObservable<StatusOr<PersistentQueryInfoMessage>>,
   IDisposable {
   private const string UnsetPqText = "[No Persistent Query]";
 
@@ -15,7 +15,8 @@ internal class PersistentQueryInfoProvider :
   private readonly EndpointId _endpointId;
   private readonly PqName _pqName;
   private readonly object _sync = new();
-  private bool _isDisposed = false;
+  private readonly Latch _isSubscribed = new();
+  private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<PersistentQueryInfoMessage>> _observers = new();
   private StatusOr<PersistentQueryInfoMessage> _infoMessage = UnsetPqText;
@@ -23,6 +24,7 @@ internal class PersistentQueryInfoProvider :
   /// Cached value of the last named lookup. Is only a hint so it's ok if it is some garbage value.
   /// </summary>
   private Int64 _keyHint = -1;
+  private SharableDict<PersistentQueryInfoMessage> _prevDict = SharableDict<PersistentQueryInfoMessage>.Empty;
 
   /// <summary>
   /// Cached value of the last message. Used to deduplicate notifications.
@@ -36,81 +38,64 @@ internal class PersistentQueryInfoProvider :
     _pqName = pqName;
   }
 
-  public IDisposable Subscribe(IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _infoMessage, out var isFirst);
-      if (isFirst) {
+      _observers.AddAndNotify(observer, _infoMessage, out _);
+      if (_isSubscribed.TrySet()) {
         _upstreamDisposer = _stateManager.SubscribeToPersistentQueryDict(
           _endpointId, this);
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
-  private void RemoveObserver(IObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
+  public void Dispose() {
     lock (_sync) {
-      // Do not do this under lock, because we don't want to wait while holding a lock.
-      _observers.Remove(observer, out var isLast);
-      if (!isLast) {
+      if (!_isDisposed.TrySet()) {
         return;
       }
-
-      _isDisposed = true;
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      ProviderUtil.SetState(ref _infoMessage, "[Disposing]");
+      SorUtil.Replace(ref _infoMessage, "[Disposing]");
     }
   }
 
-  public void OnNext(StatusOr<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> dict) {
+  public void OnNext(SharableDict<PersistentQueryInfoMessage> dict) {
     lock (_sync) {
-      if (_isDisposed) {
-        return;
-      }
-      if (!dict.GetValueOrStatus(out var d, out var status)) {
-        ProviderUtil.SetStateAndNotify(ref _infoMessage, status, _observers);
+      if (_isDisposed.Value) {
         return;
       }
 
-      // Try quick lookup using the key hint (and then verify that the hint is correct)
-      if (!d.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName.Name) {
-        // That didn't work. Try lookup based on difference
-        var (added, removed, modified) = d.OhHellNo();
-        var stupid = d.FirstOrDefault(v => v.Value.Config.Name == _pqName);
-        _keyHint = what;
+      // Try to find with fast path
+      if (!dict.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName.Name) {
+        // That didn't work. Try to find with slower differencing path
+        var (added, _, modified) = _prevDict.CalcDifference(dict);
+
+        // If there is a new entry, it's in 'added' or 'modified'
+        var combined = added.Concat(modified);
+        var kvp = combined.FirstOrDefault(kvp => kvp.Value.Config.Name == _pqName.Name);
+
+        // Save the keyhint for next time (it will either be an accurate hint or a zero)
+        _keyHint = kvp.Key;
+        message = kvp.Value;
       }
 
       if (ReferenceEquals(message, _lastMessage)) {
-        // Suppress duplicate messages, which only confuse 
-        // If the last message is the same as this one (i.e. both the same or both
-        // null), then we don't have to resend a notification, because it would just
-        // be noisy for the observer.
+        // Debounce duplicate messages
+        return;
+      }
+      _lastMessage = message;
+
+      if (message == null) {
+        SorUtil.ReplaceAndNotify(ref _infoMessage, $"PQ \"{_pqName}\" not found", _observers);
         return;
       }
 
-      _lastMessage = message;
-
-      StatusOr<PersistentQueryInfoMessage> result;
-      if (message == null) {
-        result = $"PQ \"{_pqName}\" not found";
-      } else {
-        _keyHint = message.Config.Serial;
-        result = StatusOr<PersistentQueryInfoMessage>.OfValue(message);
-      }
-
-      using var cleanup = result;
-
-      ProviderUtil.SetStateAndNotify(ref _infoMessage, result, _observers);
+      SorUtil.ReplaceAndNotify(ref _infoMessage, message, _observers);
     }
-  }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
   }
 }

@@ -71,7 +71,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
-    IValueObserver<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> observer) {
+    IValueObserver<SharableDict<PersistentQueryInfoMessage>> observer) {
     var candidate = new PersistentQueryDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }

@@ -15,7 +15,7 @@ internal class EndpointConfigProvider :
   private readonly Latch _needsSubscription = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamSubscription = null;
-  private long _keyHint = 0;
+  private Int64 _keyHint = -1;
   private SharableDict<EndpointConfigEntry> _prevDict = SharableDict<EndpointConfigEntry>.Empty;
   private EndpointConfigBase? _prevConfig = null;
   private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
@@ -60,15 +60,14 @@ internal class EndpointConfigProvider :
 
       // Try to find with fast path
       if (!dict.TryGetValue(_keyHint, out var configEntry) || !configEntry.Id.Equals(_endpointId)) {
-        // Try to find with slower differencing path
+        // That didn't work. Try to find with slower differencing path
         var (added, _, modified) = _prevDict.CalcDifference(dict);
 
         // If there is a new entry, it's in 'added' or 'modified'
         var combined = added.Concat(modified);
         var kvp = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
 
-        // Save the keyhint for next time (if not found, this will be 0, which is OK because
-        // it's just a hint).
+        // Save the keyhint for next time (it will either be an accurate hint or a zero)
         _keyHint = kvp.Key;
         configEntry = kvp.Value;
       }
