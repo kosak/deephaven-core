@@ -9,12 +9,14 @@ using ExcelDna.Integration;
 namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SubscribeOperation : IExcelObservable,
-  IValueObserver<StatusOr<RefCounted<TableHandle>>> {
+  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
+  IObserver<TickingUpdate> {
   private const string UnsetTableData = "[No data]";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
+  private readonly FreshnessSource _freshness;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IDisposable? _tableDisposer = null;
   private IDisposable? _currentSub666Disposer = null;
@@ -25,6 +27,7 @@ internal class SubscribeOperation : IExcelObservable,
     _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
+    _freshness = new(_sync);
   }
 
   public IDisposable Subscribe(IExcelObserver observer) {
@@ -47,7 +50,7 @@ internal class SubscribeOperation : IExcelObservable,
         return;
       }
 
-      Utility.ClearAndDispose(ref _tableDisposer);
+      Utility.ProbablyBackgroundThoughClearAndDispose(ref _tableDisposer);
     }
   }
 
@@ -74,49 +77,41 @@ internal class SubscribeOperation : IExcelObservable,
 
   private void SubscribeInBackground(RefCounted<TableHandle> tableHandle,
     FreshnessToken token) {
+    try {
+      disposer = tableHandle.Value.Subscribe(tickingObserver);
+      subRef = RefCounted.Acquire(disposer, tableHandle);
+    } catch (Exception ex) {
+      subRef = ex.Message;
+    }
 
+    using var cleanup = subRef;
+    lock (_sync) {
+      if (!token.IsCurrentUnsafe) {
+        return;
+      }
+      SorUtil.Replace(ref _subscription, subRef);
+    }
   }
 
-  _currentTableHandle = tableHandle;
-      _currentSubDisposer = _currentTableHandle.Subscribe(new MyTickingObserver(_observers, _wantHeaders));
-
-      try {
-        using var ct = tableHandle.ToClientTable();
-        var result = Renderer.Render(ct, _wantHeaders);
-        _observers.SendValue(result);
-      } catch (Exception ex) {
-        _observers.SendStatus(ex.Message);
-      }
+  public void OnNext(TickingUpdate update) {
+    StatusOr<object?[,]> results;
+    try {
+      // When we fix the subscription API we will do this on a separate thread
+      results = Renderer.Render(update.Current, _wantHeaders);
+      SorUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+    } catch (Exception e) {
+      results = e.Message;
     }
+    SorUtil.ReplaceAndNotify(ref _rendered, results, _observers);
   }
 
-  private class MyTickingObserver : IObserver<TickingUpdate> {
-    private readonly ObserverContainer<StatusOr<object?[,]>> _observers;
-    private readonly bool _wantHeaders;
+  public void OnError(Exception ex) {
+    SorUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
+  }
 
-    public MyTickingObserver(ObserverContainer<StatusOr<object?[,]>> observers,
-      bool wantHeaders) {
-      _observers = observers;
-      _wantHeaders = wantHeaders;
-    }
-
-    public void OnNext(TickingUpdate update) {
-      try {
-        var results = Renderer.Render(update.Current, _wantHeaders);
-        _observers.SendValue(results);
-      } catch (Exception e) {
-        _observers.SendStatus(e.Message);
-      }
-    }
-
-    public void OnError(Exception ex) {
-      _observers.SendStatus(ex.Message);
-    }
-
-    public void OnCompleted() {
-      // Even though my subscription has ended, my observers may get more data
-      // from some future subscription. So at this point they only get a message.
-      _observers.SendStatus("Subscription closed");
-    }
+  public void OnCompleted() {
+    // Even though my subscription has ended, my observers may get more data
+    // from some future subscription. So at this point they only get a message.
+    SorUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
   }
 }
