@@ -51,7 +51,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
-    IValueObserver<EndpointHealth> observer) {
+    IValueObserver<StatusOr<EndpointHealth>> observer) {
     var candidate = new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
@@ -71,13 +71,13 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
-    IValueObserver<SharableDict<PersistentQueryInfoMessage>> observer) {
+    IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
     var candidate = new PersistentQueryDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
-    IValueObserver<PersistentQueryInfoMessage> observer) {
+    IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     var key = (endpointId, pqName);
     var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
@@ -90,7 +90,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToSubscription(EndpointId endpointId,
-    IValueObserver<StatusOr<Subscription>> observer) {
+    IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
     var candidate = new SubscriptionProvider(this, endpointId);
     return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }

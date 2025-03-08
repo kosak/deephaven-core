@@ -9,7 +9,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CorePlusClientProvider :
   IValueObserver<StatusOr<RefCounted<SessionManager>>>,
-  IValueObserver<PersistentQueryInfoMessage>,
+  IValueObserver<StatusOr<PersistentQueryInfoMessage>>,
   IValueObservable<StatusOr<RefCounted<DndClient>>>,
   IDisposable {
   private const string UnsetClientText = "[No Core+ Client]";
@@ -81,7 +81,7 @@ internal class CorePlusClientProvider :
     }
   }
 
-  public void OnNext(PersistentQueryInfoMessage pqInfo) {
+  public void OnNext(StatusOr<PersistentQueryInfoMessage> pqInfo) {
     lock (_sync) {
       if (!_isDisposed.Value) {
         return;

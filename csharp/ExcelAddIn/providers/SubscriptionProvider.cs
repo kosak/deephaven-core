@@ -65,7 +65,7 @@ internal class SubscriptionProvider :
       // Subscribe is a cheap (and nonblocking) operation. If it were not cheap
       // or if it were blocking, we would have to do it on a background thread.
       var sub = smRef.Value.Subscribe();
-      // newState holds a Subscription with a dependency on a SessionManager
+      // The subscription is stored as a ref with a dependency on a SessionManager
       using var subRef = RefCounted.Acquire(sub, smRef);
       SorUtil.ReplaceAndNotify(ref _subscription, subRef, _observers);
     }

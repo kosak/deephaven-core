@@ -6,7 +6,7 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryInfoProvider :
-  IValueObserver<SharableDict<PersistentQueryInfoMessage>>,
+  IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
   IValueObservable<StatusOr<PersistentQueryInfoMessage>>,
   IDisposable {
   private const string UnsetPqText = "[No Persistent Query]";
@@ -64,16 +64,23 @@ internal class PersistentQueryInfoProvider :
     }
   }
 
-  public void OnNext(SharableDict<PersistentQueryInfoMessage> dict) {
+  public void OnNext(StatusOr<SharableDict<PersistentQueryInfoMessage>> dict) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
       }
 
+      if (!dict.GetValueOrStatus(out var d, out var status)) {
+        _prevDict = SharableDict<PersistentQueryInfoMessage>.Empty;
+        _lastMessage = null;
+        SorUtil.ReplaceAndNotify(ref _infoMessage, status, _observers);
+        return;
+      }
+
       // Try to find with fast path
-      if (!dict.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName.Name) {
+      if (!d.TryGetValue(_keyHint, out var message) || message.Config.Name != _pqName.Name) {
         // That didn't work. Try to find with slower differencing path
-        var (added, _, modified) = _prevDict.CalcDifference(dict);
+        var (added, _, modified) = _prevDict.CalcDifference(d);
 
         // If there is a new entry, it's in 'added' or 'modified'
         var combined = added.Concat(modified);

@@ -7,7 +7,7 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PersistentQueryDictProvider :
-  IValueObserver<StatusOr<Subscription>>,
+  IValueObserver<StatusOr<RefCounted<Subscription>>>,
   IValueObservable<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
   IDisposable {
   private const string UnsetDictText = "[No PQ Dict]";
@@ -54,7 +54,7 @@ internal class PersistentQueryDictProvider :
     }
   }
 
-  public void OnNext(StatusOr<Subscription> subscription) {
+  public void OnNext(StatusOr<RefCounted<Subscription>> subscription) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
@@ -68,13 +68,18 @@ internal class PersistentQueryDictProvider :
       }
 
       SorUtil.ReplaceAndNotify(ref _dict, "[Processing Subscriptions]", _observers);
-      Background.Run(() => ProcessSubscriptionStream(sub, _freshness.Current));
+      var subShare = sub.Share();
+      Background.Run(() => {
+        using var cleanup = subShare;
+        ProcessSubscriptionStream(subShare, _freshness.Current);
+      });
     }
   }
 
-  private void ProcessSubscriptionStream(Subscription sub, FreshnessToken token) {
+  private void ProcessSubscriptionStream(RefCounted<Subscription> subRef, FreshnessToken token) {
     Int64 version = -1;
     var wantExit = false;
+    var sub = subRef.Value;
     while (true) {
       StatusOr<SharableDict<PersistentQueryInfoMessage>> newDict;
       if (sub.Next(version) && sub.Current(out version, out var dict)) {
