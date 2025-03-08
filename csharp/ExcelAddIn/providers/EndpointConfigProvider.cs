@@ -5,10 +5,10 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider :
-  IStatusObserver<SharableDict<EndpointConfigEntry>>,
-  IStatusObservable<EndpointConfigBase>,
+  IValueObserver<SharableDict<EndpointConfigEntry>>,
+  IValueObservable<StatusOr<EndpointConfigBase>>,
   IDisposable {
-  private const string UnsetCredentialsString = "[No Credentials]";
+  private const string UnsetCredentialsString = "[No Config]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
@@ -18,7 +18,7 @@ internal class EndpointConfigProvider :
   private long _keyHint = 0;
   private SharableDict<EndpointConfigEntry> _prevDict = SharableDict<EndpointConfigEntry>.Empty;
   private EndpointConfigBase? _prevConfig = null;
-  private readonly ObserverContainer<EndpointConfigBase> _observers = new();
+  private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
 
   public EndpointConfigProvider(StateManager stateManager, EndpointId endpointId) {
@@ -26,22 +26,20 @@ internal class EndpointConfigProvider :
     _endpointId = endpointId;
   }
 
-  public IDisposable Subscribe(IStatusObserver<EndpointConfigBase> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _credentials, out _);
+      _observers.AddAndNotify(observer, _credentials, out _);
 
       if (_needsSubscription.TrySet()) {
         _upstreamSubscription = _stateManager.SubscribeToEndpointDict(this);
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IStatusObserver<EndpointConfigBase> observer) {
-    lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
   public void Dispose() {
@@ -54,15 +52,6 @@ internal class EndpointConfigProvider :
     }
   }
 
-  public void OnStatus(string status) {
-    if (_isDisposed.Value) {
-      return;
-    }
-    _prevDict = SharableDict<EndpointConfigEntry>.Empty;
-    _prevConfig = null;
-    SorUtil.ReplaceAndNotify(ref _credentials, status, _observers);
-  }
-
   public void OnNext(SharableDict<EndpointConfigEntry> dict) {
     lock (_sync) {
       if (_isDisposed.Value) {
@@ -73,14 +62,21 @@ internal class EndpointConfigProvider :
       if (!dict.TryGetValue(_keyHint, out var configEntry) || !configEntry.Id.Equals(_endpointId)) {
         // Try to find with slower differencing path
         var (added, _, modified) = _prevDict.CalcDifference(dict);
+
+        // If there is a new entry, it's in 'added' or 'modified'
         var combined = added.Concat(modified);
         var kvp = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
+
+        // Save the keyhint for next time (if not found, this will be 0, which is OK because
+        // it's just a hint).
         _keyHint = kvp.Key;
         configEntry = kvp.Value;
       }
       var config = configEntry?.Config;
+
       _prevDict = dict;
       if (ReferenceEquals(_prevConfig, config)) {
+        // Debounce duplicate messages
         return;
       }
       _prevConfig = config;

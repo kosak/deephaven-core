@@ -4,25 +4,23 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointDictProvider :
-  IStatusObservable<SharableDict<EndpointConfigEntry>> {
+  IValueObservable<SharableDict<EndpointConfigEntry>> {
   private readonly object _sync = new();
   private readonly ObserverContainer<SharableDict<EndpointConfigEntry>> _observers = new();
   private SharableDict<EndpointConfigEntry> _dict = new();
   private readonly Dictionary<EndpointId, Int64> _idToKey = new();
   private Int64 _nextFreeId = 0;
 
-  public IDisposable Subscribe(IStatusObserver<SharableDict<EndpointConfigEntry>> observer) {
+  public IDisposable Subscribe(IValueObserver<SharableDict<EndpointConfigEntry>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IStatusObserver<SharableDict<EndpointConfigEntry>> observer) {
-    lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
   public bool TryAddEmpty(EndpointId endpointId) {
