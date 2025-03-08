@@ -3,9 +3,9 @@
 internal class RefCountedImpl<T> where T : class, IDisposable {
   private long _refCount = 1;
   private readonly T _value;
-  private readonly IDisposable[] _dependencies;
+  private readonly RefCounted[] _dependencies;
 
-  internal RefCountedImpl(T value, IDisposable[] dependencies_satan666) {
+  internal RefCountedImpl(T value, RefCounted[] dependencies) {
     _value = value;
     _dependencies = dependencies;
   }
@@ -46,6 +46,8 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
 }
 
 public abstract class RefCounted : IDisposable {
+  protected bool IsDisposed = false;
+
   public static RefCounted<T> Acquire<T>(T value, params RefCounted[] dependencies)
     where T : class, IDisposable {
     return RefCounted<T>.Acquire(value, dependencies);
@@ -61,20 +63,14 @@ public sealed class RefCounted<T> : RefCounted where T : class, IDisposable {
     return new RefCounted<T>(impl);
   }
 
-  internal static RefCounted<T> Join(RefCountedImpl<T> impl) {
-    impl.Increment();
-    return new RefCounted<T>(impl);
-  }
-
   private readonly RefCountedImpl<T> _impl;
-  private bool _isDisposed = false;
 
-  internal RefCounted(RefCountedImpl<T> impl) {
+  private RefCounted(RefCountedImpl<T> impl) {
     _impl = impl;
   }
 
-  public void Dispose() {
-    if (Utility.Exchange(ref _isDisposed, true)) {
+  public override void Dispose() {
+    if (Utility.Exchange(ref IsDisposed, true)) {
       return;
     }
     _impl.Decrement();
@@ -82,5 +78,8 @@ public sealed class RefCounted<T> : RefCounted where T : class, IDisposable {
 
   public T Value => _impl.Value;
 
-  public RefCounted<T> Share() => Join(_impl);
+  public override RefCounted<T> Share() {
+    _impl.Increment();
+    return new RefCounted<T>(_impl);
+  }
 }

@@ -108,8 +108,7 @@ public class TableHandle : IDisposable {
   }
 
   public IDisposable Subscribe(IObserver<TickingUpdate> observer) {
-    var disposer = SubscriptionThread.St
-    art(_manager.Server, _schema, _ticket, observer);
+    var disposer = SubscriptionThread.Start(_manager.Server, _schema, _ticket, observer);
     // _manager.AddSubscriptionDisposer(disposer);
     return disposer;
   }

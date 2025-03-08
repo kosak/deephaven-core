@@ -6,14 +6,13 @@ public sealed class StatusOr<T> {
   private readonly string? _status;
   private readonly T? _value;
 
-  public static implicit operator StatusOr<T>(string s) {
-
+  public static implicit operator StatusOr<T>(string status) {
+    return OfStatus(status);
   }
 
   public static implicit operator StatusOr<T>(T value) {
-
+    return OfValue(value);
   }
-
 
   public static StatusOr<T> OfStatus(string status) {
     return new StatusOr<T>(status, default);
@@ -40,7 +39,8 @@ public sealed class StatusOr<T> {
     return _value != null ? onValue(_value) : onStatus(_status!);
   }
 
-  public void Deconstruct(out T value, out string status) {
-
+  public void Deconstruct(out T? value, out string? status) {
+    value = _value;
+    status = _status;
   }
 }
