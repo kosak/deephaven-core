@@ -1,8 +1,8 @@
 ﻿namespace Deephaven.ExcelAddIn.Models;
 
 public record TableTriple(
-  string? EndpointId,
-  string? PqName,
+  EndpointId? EndpointId,
+  PqName? PqName,
   string TableName) {
 
   public static bool TryParse(string text, out TableTriple result, out string errorText) {

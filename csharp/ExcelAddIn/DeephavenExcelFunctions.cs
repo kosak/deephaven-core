@@ -66,7 +66,7 @@ public static class DeephavenExcelFunctions {
       return false;
     }
 
-    tableQuadResult = new TableQuad(tt.EndpointId, tt.PersistentQueryId, tt.TableName, condition);
+    tableQuadResult = new TableQuad(tt.EndpointId, tt.PqName, tt.TableName, condition);
     return true;
   }
 }
