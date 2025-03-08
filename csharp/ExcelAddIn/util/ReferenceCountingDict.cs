@@ -26,6 +26,10 @@ public class ReferenceCountingDict<TKey, TValue> where TKey : notnull {
     return true;
   }
 
+  public bool ContainsKey(TKey key) {
+    return _dict.ContainsKey(key);
+  }
+
   private class WithCount(TValue value) {
     public int Count = 1;
     public readonly TValue Value = value;

@@ -14,8 +14,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  * corresponding Client object. Otherwise we notify an error.
  */
 internal class CoreClientProvider :
-  IStatusObserver<EndpointConfigBase>,
-  IStatusObservable<RefCounted<Client>>,
+  IValueObserver<StatusOr<EndpointConfigBase>>,
+  IValueObservable<StatusOr<RefCounted<Client>>>,
   IDisposable {
   private const string UnsetClientText = "[No Community Core Client]";
   private readonly StateManager _stateManager;
@@ -25,7 +25,7 @@ internal class CoreClientProvider :
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
-  private readonly ObserverContainer<RefCounted<Client>> _observers = new();
+  private readonly ObserverContainer<StatusOr<RefCounted<Client>>> _observers = new();
   private StatusOr<RefCounted<Client>> _client = UnsetClientText;
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
@@ -37,7 +37,7 @@ internal class CoreClientProvider :
   /// <summary>
   /// Subscribe to Core client changes
   /// </summary>
-  public IDisposable Subscribe(IStatusObserver<RefCounted<Client>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     lock (_sync) {
       SorUtil.AddObserverAndNotify(_observers, observer, _client, out _);
       if (_subscribeDone.TrySet()) {
@@ -46,13 +46,11 @@ internal class CoreClientProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IStatusObserver<RefCounted<Client>> observer) {
-    lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
   public void Dispose() {
@@ -65,28 +63,21 @@ internal class CoreClientProvider :
     }
   }
 
-  public void OnStatus(string status) {
+  public void OnNext(StatusOr<EndpointConfigBase> config) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
       }
 
       // Invalidate any background work that might be running.
-      _freshness.Reset();
-      SorUtil.ReplaceAndNotify(ref _client, status, _observers);
-    }
-  }
+      _freshness.Refresh();
 
-  public void OnNext(EndpointConfigBase credentials) {
-    lock (_sync) {
-      if (_isDisposed.Value) {
+      if (!config.GetValueOrStatus(out var ecb, out var status)) {
+        SorUtil.ReplaceAndNotify(ref _client, status, _observers);
         return;
       }
 
-      // Invalidate any background work that might be running.
-      _freshness.Reset();
-
-      _ = credentials.AcceptVisitor(
+      _ = ecb.AcceptVisitor(
         core => {
           SorUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
           Background.Run(() => OnNextBackground(core, _freshness.Current));

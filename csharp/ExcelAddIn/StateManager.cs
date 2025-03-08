@@ -25,20 +25,20 @@ public class StateManager {
   private readonly EndpointDictProvider _endpointDictProvider = new();
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
-    IValueObserver<RefCounted<Client>> observer) {
+    IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
-    IStatusObserver<RefCounted<DndClient>> observer) {
+    IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     var key = (endpointId, pqName);
     var candidate = new CorePlusClientProvider(this, endpointId, pqName);
     return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
-    IStatusObserver<EndpointConfigBase> observer) {
+    IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     // As a value-added behavior, any request for an EndpointId gets a placeholder
     // in the endpoint dictionary (if it's not already there). The symmetric behavior
     // is deliberately NOT supported: the item is not removed from the endpoint dictionary
@@ -51,12 +51,13 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
-    IStatusObserver<EndpointHealth> observer) {
+    IValueObserver<EndpointHealth> observer) {
     var candidate = new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToTable(TableQuad key, IStatusObserver<RefCounted<TableHandle>> observer) {
+  public IDisposable SubscribeToTable(TableQuad key,
+    IValueObserver<RefCounted<TableHandle>> observer) {
     ITableProviderBase candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
@@ -70,20 +71,20 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
-    IStatusObserver<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> observer) {
+    IValueObserver<IReadOnlyDictionary<Int64, PersistentQueryInfoMessage>> observer) {
     var candidate = new PersistentQueryDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
-    IStatusObserver<PersistentQueryInfoMessage> observer) {
+    IValueObserver<PersistentQueryInfoMessage> observer) {
     var key = (endpointId, pqName);
     var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
   public IDisposable SubscribeToSessionManager(EndpointId endpointId,
-    IStatusObserver<RefCounted<SessionManager>> observer) {
+    IValueObserver<RefCounted<SessionManager>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
@@ -94,7 +95,7 @@ public class StateManager {
     return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToDefaultEndpoint(IStatusObserver<EndpointId> observer) {
+  public IDisposable SubscribeToDefaultEndpoint(IValueObserver<EndpointId> observer) {
     return _defaultEndpointProvider.Subscribe(observer);
   }
 
@@ -102,7 +103,8 @@ public class StateManager {
     _defaultEndpointProvider.Set(defaultEndpointId);
   }
 
-  public IDisposable SubscribeToEndpointDict(IStatusObserver<SharableDict<EndpointConfigEntry>> observer) {
+  public IDisposable SubscribeToEndpointDict(
+    IValueObserver<SharableDict<EndpointConfigEntry>> observer) {
     return _endpointDictProvider.Subscribe(observer);
   }
 
@@ -144,10 +146,11 @@ public class StateManager {
   }
 #endif
 
-  private IDisposable SubscribeHelper<TKey, TObservable, T>(ReferenceCountingDict<TKey, TObservable> dict,
-    TKey key, TObservable candidateObservable, IStatusObserver<T> observer)
+  private IDisposable SubscribeHelper<TKey, TObservable, T>(
+    ReferenceCountingDict<TKey, TObservable> dict,
+    TKey key, TObservable candidateObservable, IValueObserver<T> observer)
     where TKey : notnull
-    where TObservable : IStatusObservable<T>, IDisposable {
+    where TObservable : IValueObservable<T>, IDisposable {
     TObservable actualObservable;
     bool candidateAdded;
     lock (_sync) {
