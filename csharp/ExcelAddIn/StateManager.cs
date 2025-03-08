@@ -1,4 +1,5 @@
-﻿using Deephaven.DheClient.Session;
+﻿using Deephaven.DheClient.Controller;
+using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
@@ -18,12 +19,13 @@ public class StateManager {
   private readonly ReferenceCountingDict<EndpointId, PersistentQueryDictProvider> _persistentQueryDictProviders = new();
   private readonly ReferenceCountingDict<(EndpointId, PqName), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, SubscriptionProvider> _subscriptionProviders = new();
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
-    IStatusObserver<RefCounted<Client>> observer) {
+    IValueObserver<RefCounted<Client>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
@@ -84,6 +86,12 @@ public class StateManager {
     IStatusObserver<RefCounted<SessionManager>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
+  }
+
+  public IDisposable SubscribeToSubscription(EndpointId endpointId,
+    IValueObserver<StatusOr<Subscription>> observer) {
+    var candidate = new SubscriptionProvider(this, endpointId);
+    return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToDefaultEndpoint(IStatusObserver<EndpointId> observer) {

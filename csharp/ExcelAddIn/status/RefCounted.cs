@@ -5,7 +5,7 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
   private readonly T _value;
   private readonly IDisposable[] _dependencies;
 
-  internal RefCountedImpl(T value, IDisposable[] dependencies) {
+  internal RefCountedImpl(T value, IDisposable[] dependencies_satan666) {
     _value = value;
     _dependencies = dependencies;
   }
@@ -46,7 +46,7 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
 }
 
 public abstract class RefCounted : IDisposable {
-  public static RefCounted<T> Acquire<T>(T value, params IDisposable[] dependencies)
+  public static RefCounted<T> Acquire<T>(T value, params RefCounted[] dependencies)
     where T : class, IDisposable {
     return RefCounted<T>.Acquire(value, dependencies);
   }
@@ -56,7 +56,7 @@ public abstract class RefCounted : IDisposable {
 }
 
 public sealed class RefCounted<T> : RefCounted where T : class, IDisposable {
-  public static RefCounted<T> Acquire(T value, params IDisposable[] dependencies) {
+  public static RefCounted<T> Acquire(T value, params RefCounted[] dependencies) {
     var impl = new RefCountedImpl<T>(value, dependencies);
     return new RefCounted<T>(impl);
   }
