@@ -26,12 +26,8 @@ public class FreshnessToken {
   }
 }
 
-public class FreshnessObserver<T>(IStatusObserver<T> target, FreshnessToken token)
-  : IStatusObserver<T> {
-  public void OnStatus(string status) {
-    token.InvokeIfCurrent(() => target.OnStatus(status));
-  }
-
+public class FreshnessFilter<T>(IValueObserver<T> target, FreshnessToken token)
+  : IValueObserver<T> {
   public void OnNext(T value) {
     token.InvokeIfCurrent(() => target.OnNext(value));
   }

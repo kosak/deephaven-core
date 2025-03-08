@@ -57,7 +57,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToTable(TableQuad key,
-    IValueObserver<RefCounted<TableHandle>> observer) {
+    IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     ITableProviderBase candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
@@ -95,7 +95,7 @@ public class StateManager {
     return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToDefaultEndpoint(IValueObserver<EndpointId> observer) {
+  public IDisposable SubscribeToDefaultEndpoint(IValueObserver<StatusOr<EndpointId>> observer) {
     return _defaultEndpointProvider.Subscribe(observer);
   }
 

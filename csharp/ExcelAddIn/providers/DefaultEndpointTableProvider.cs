@@ -12,9 +12,9 @@ namespace Deephaven.ExcelAddIn.Providers;
  * TableHandles or status messages, forward those to my observers.
  */
 internal class DefaultEndpointTableProvider :
-  IStatusObserver<EndpointId>,
-  IStatusObserver<RefCounted<TableHandle>>,
-  // IObservable<StatusOr<TableHandle>>,
+  IValueObserver<StatusOr<EndpointId>>,
+  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
+  // IValueObserver<StatusOr<TableHandle>>,
   // IDisposable,
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Default Connection]";
@@ -29,7 +29,7 @@ internal class DefaultEndpointTableProvider :
   private readonly Latch _isDisposed = new();
   private IDisposable? _endpointSubscriptionDisposer = null;
   private IDisposable? _upstreamSubscriptionDisposer = null;
-  private readonly ObserverContainer<RefCounted<TableHandle>> _observers = new();
+  private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
   public DefaultEndpointTableProvider(StateManager stateManager,
@@ -41,7 +41,7 @@ internal class DefaultEndpointTableProvider :
     _freshness = new(_sync);
   }
 
-  public IDisposable Subscribe(IStatusObserver<RefCounted<TableHandle>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
       SorUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
       if (_subscribeDone.TrySet()) {
@@ -49,13 +49,11 @@ internal class DefaultEndpointTableProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
-  }
-
-  private void RemoveObserver(IStatusObserver<RefCounted<TableHandle>> observer) {
-    lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
+    return ActionAsDisposable.Create(() => {
+      lock (_sync) {
+        _observers.Remove(observer, out _);
+      }
+    });
   }
 
   public void Dispose() {
@@ -69,11 +67,7 @@ internal class DefaultEndpointTableProvider :
     }
   }
 
-  void IStatusObserver<EndpointId>.OnStatus(string status) {
-    throw new NotImplementedException();
-  }
-
-  public void OnNext(EndpointId endpointId) {
+  public void OnNext(StatusOr<EndpointId> endpointId) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
@@ -81,31 +75,21 @@ internal class DefaultEndpointTableProvider :
       // Unsubscribe from old upstream
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
       // Suppress any notifications from the old subscription, which will now be stale
-      _freshness.Reset();
+      _freshness.Refresh();
 
-      // If endpoint is null, then don't resubscribe to anything.
-      if (endpointId == null) {
+      if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
         SorUtil.ReplaceAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
         return;
       }
 
       // Subscribe to a new upstream
-      var tq = new TableQuad(endpointId, _pqName, _tableName, _condition);
-      var fobs = new FreshnessObserver<RefCounted<TableHandle>>(this, _freshness.Current);
+      var tq = new TableQuad(ep, _pqName, _tableName, _condition);
+      var fobs = new FreshnessFilter<StatusOr<RefCounted<TableHandle>>>(this, _freshness.Current);
       _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, fobs);
     }
   }
 
-  void IStatusObserver<RefCounted<TableHandle>>.OnStatus(string status) {
-    lock (_sync) {
-      if (_isDisposed.Value) {
-        return;
-      }
-      SorUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
-    }
-  }
-
-  public void OnNext(RefCounted<TableHandle> value) {
+  public void OnNext(StatusOr<RefCounted<TableHandle>> value) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
