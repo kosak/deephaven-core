@@ -29,9 +29,24 @@ public class FreshnessToken {
   }
 }
 
-public class FreshnessFilter<T>(IValueObserver<T> target, FreshnessToken token)
+public class ValueObserverFreshnessFilter<T>(IValueObserver<T> target, FreshnessToken token)
   : IValueObserver<T> {
   public void OnNext(T value) {
     token.InvokeIfCurrent(() => target.OnNext(value));
+  }
+}
+
+public class ObserverFreshnessFilter<T>(IObserver<T> target, FreshnessToken token)
+  : IObserver<T> {
+  public void OnNext(T value) {
+    token.InvokeIfCurrent(() => target.OnNext(value));
+  }
+
+  public void OnCompleted() {
+    token.InvokeIfCurrent(target.OnCompleted);
+  }
+
+  public void OnError(Exception error) {
+    token.InvokeIfCurrent(() => target.OnError(error));
   }
 }

@@ -12,16 +12,16 @@ internal class SubscribeOperation : IExcelObservable,
   IValueObserver<StatusOr<RefCounted<TableHandle>>>,
   IObserver<TickingUpdate> {
   private const string UnsetTableData = "[No data]";
+  private const string UnsetTickingSubscription = "[no ticking subscription]";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private readonly FreshnessSource _freshness;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
-  private IDisposable? _tableDisposer = null;
-  private IDisposable? _currentSub666Disposer = null;
+  private IDisposable? _upstreamDisposer = null;
+  private StatusOr<RefCounted<IDisposable>> _tickingSubscription = UnsetTickingSubscription;
   private StatusOr<object?[,]> _rendered = UnsetTableData;
-
 
   public SubscribeOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
@@ -36,7 +36,7 @@ internal class SubscribeOperation : IExcelObservable,
       _observers.AddAndNotify(wrappedObserver, _rendered, out var isFirst);
 
       if (isFirst) {
-        _tableDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
+        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
       }
 
       return ActionAsDisposable.Create(() => RemoveObserver(wrappedObserver));
@@ -50,14 +50,15 @@ internal class SubscribeOperation : IExcelObservable,
         return;
       }
 
-      Utility.ProbablyBackgroundThoughClearAndDispose(ref _tableDisposer);
+      Utility.ClearAndDispose(ref _upstreamDisposer);
+      SorUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
     }
   }
 
   public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle) {
     lock (_sync) {
       var token = _freshness.Refresh();
-      Background.ClearAndDispose(ref _subRef);
+      SorUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
 
       if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
         SorUtil.ReplaceAndNotify(ref _rendered, status, _observers);
@@ -77,41 +78,53 @@ internal class SubscribeOperation : IExcelObservable,
 
   private void SubscribeInBackground(RefCounted<TableHandle> tableHandle,
     FreshnessToken token) {
+    RefCounted<IDisposable>? subRef = null;
+    StatusOr<RefCounted<IDisposable>> result;
     try {
-      disposer = tableHandle.Value.Subscribe(tickingObserver);
+      var fobs = new ObserverFreshnessFilter<TickingUpdate>(this, token);
+      var disposer = tableHandle.Value.Subscribe(fobs);
+      // Hang on to the disposer, with a dependency on the tableHandle
       subRef = RefCounted.Acquire(disposer, tableHandle);
+      result = subRef;
     } catch (Exception ex) {
-      subRef = ex.Message;
+      result = ex.Message;
     }
 
     using var cleanup = subRef;
+
     lock (_sync) {
-      if (!token.IsCurrentUnsafe) {
+      if (token.IsCurrentUnsafe) {
         return;
       }
-      SorUtil.Replace(ref _subscription, subRef);
+      SorUtil.Replace(ref _tickingSubscription, result);
     }
   }
 
   public void OnNext(TickingUpdate update) {
-    StatusOr<object?[,]> results;
-    try {
-      // When we fix the subscription API we will do this on a separate thread
-      results = Renderer.Render(update.Current, _wantHeaders);
+    lock (_sync) {
+      StatusOr<object?[,]> results;
+      try {
+        // When we fix the subscription API we will do this on a separate thread
+        results = Renderer.Render(update.Current, _wantHeaders);
+        SorUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+      } catch (Exception e) {
+        results = e.Message;
+      }
       SorUtil.ReplaceAndNotify(ref _rendered, results, _observers);
-    } catch (Exception e) {
-      results = e.Message;
     }
-    SorUtil.ReplaceAndNotify(ref _rendered, results, _observers);
   }
 
   public void OnError(Exception ex) {
-    SorUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
+    lock (_sync) {
+      SorUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
+    }
   }
 
   public void OnCompleted() {
-    // Even though my subscription has ended, my observers may get more data
-    // from some future subscription. So at this point they only get a message.
-    SorUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
+    lock (_sync) {
+      // Even though my subscription has ended, my observers may get more data
+      // from some future subscription. So at this point they only get a message.
+      SorUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
+    }
   }
 }
