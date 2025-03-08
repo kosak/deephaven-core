@@ -84,7 +84,7 @@ public class StateManager {
   }
 
   public IDisposable SubscribeToSessionManager(EndpointId endpointId,
-    IValueObserver<RefCounted<SessionManager>> observer) {
+    IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
