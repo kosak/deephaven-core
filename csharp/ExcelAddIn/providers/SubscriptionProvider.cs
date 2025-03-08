@@ -6,9 +6,6 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-/// <summary>
-/// 
-/// </summary>
 internal class SubscriptionProvider :
   IValueObserver<StatusOr<RefCounted<SessionManager>>>,
   IValueObservable<StatusOr<RefCounted<Subscription>>>,
