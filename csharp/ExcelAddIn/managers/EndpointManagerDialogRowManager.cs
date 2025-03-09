@@ -1,15 +1,19 @@
 ﻿using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
+/// <summary>
+/// How to parse the name: this is the Manager for the EndpointManagerDialogRow.
+/// </summary>
 public sealed class EndpointManagerDialogRowManager :
-  IObserver<StatusOr<EndpointConfigBase>>,
-  IObserver<StatusOr<EndpointHealth>>,
-  IObserver<EndpointId?>,
+  IValueObserver<StatusOr<EndpointConfigBase>>,
+  IValueObserver<StatusOr<EndpointHealth>>,
+  IValueObserver<StatusOr<EndpointId>>,
   IDisposable {
 
   public static EndpointManagerDialogRowManager Create(EndpointManagerDialogRow row,
@@ -23,6 +27,9 @@ public sealed class EndpointManagerDialogRowManager :
   private readonly EndpointManagerDialogRow _row;
   private readonly EndpointId _endpointId;
   private readonly StateManager _stateManager;
+  private IDisposable? _healthDisposable;
+  private IDisposable? _configDisposable;
+  private IDisposable? _defaultEndpointDisposable;
 
   private EndpointManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
     StateManager stateManager) {
@@ -36,42 +43,40 @@ public sealed class EndpointManagerDialogRowManager :
   }
 
   private void Resubscribe() {
-    if (_disposables.Count != 0) {
-      throw new Exception("State error: already subscribed");
+    lock (_sync) {
+      // paranoia
+      Unsubscribe();
+
+      // We watch for session and credential state changes in our ID
+      _healthDisposable = _stateManager.SubscribeToEndpointHealth(_endpointId, this);
+      _configDisposable = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+      _defaultEndpointDisposable = _stateManager.SubscribeToDefaultEndpoint(this);
     }
-    // We watch for session and credential state changes in our ID
-    var d1 = _stateManager.SubscribeToEndpointHealth(_endpointId, this);
-    var d2 = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
-    var d3 = _stateManager.SubscribeToDefaultEndpointSelection(this);
-    _disposables.AddRange(new[] { d1, d2, d3 });
   }
 
   private void Unsubscribe() {
-    if (_workerThread.EnqueueOrNop(Unsubscribe)) {
-      return;
-    }
-    var temp = _disposables.ToArray();
-    _disposables.Clear();
-
-    foreach (var disposable in temp) {
-      disposable.Dispose();
+    lock (_sync) {
+      Utility.ClearAndDispose(ref _healthDisposable);
+      Utility.ClearAndDispose(ref _configDisposable);
+      Utility.ClearAndDispose(ref _defaultEndpointDisposable);
     }
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> ecb) {
-    _row.SetCredentialsSynced(ecb);
+    _row.SetCredentials(ecb);
   }
 
   public void OnNext(StatusOr<EndpointHealth> eh) {
     _row.SetEndpointHealthSynced(eh);
   }
 
-  public void OnNext(EndpointId? value) {
-    _row.SetDefaultEndpointIdSynced(value);
+  public void OnNext(StatusOr<EndpointId> value) {
+    var (ep, _) = value;
+    _row.SetDefaultEndpointId(ep);
   }
 
   public void DoEdit() {
-    var config = _row.GetEndpointConfigSynced();
+    var config = _row.GetEndpointConfig();
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
     var cvm = config.AcceptVisitor(
@@ -89,7 +94,7 @@ public sealed class EndpointManagerDialogRowManager :
       // 4. If it fails, then there are other users of the endpoint, so resubscribe and
       //    signal that the delete failed.
       Unsubscribe();
-      var success = _stateManager.TryDeleteEndpointConfig(_endpointId);
+      var success = _stateManager.TryDeleteConfig(_endpointId);
       if (!success) {
         Resubscribe();
       }
@@ -112,15 +117,5 @@ public sealed class EndpointManagerDialogRowManager :
 
       _stateManager.SetDefaultEndpoint(_endpointId);
     }
-  }
-
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
   }
 }

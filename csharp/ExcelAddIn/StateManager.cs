@@ -6,7 +6,6 @@ using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
-using System.Net;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -125,13 +124,10 @@ public class StateManager {
     }
   }
 
-#if false
-
   public void Reconnect(EndpointId id) {
     // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
     LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
   }
-
 
   private void LookupOrCreateEndpointConfigProvider(EndpointId endpointId,
     Action<EndpointConfigProvider> action) {
@@ -147,7 +143,6 @@ public class StateManager {
 
     action(cp);
   }
-#endif
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(
     ReferenceCountingDict<TKey, TObservable> dict,
