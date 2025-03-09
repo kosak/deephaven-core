@@ -17,8 +17,10 @@ internal class SubscriptionContext : IDisposable {
 
     var cts = new CancellationTokenSource();
     var result = new SubscriptionContext(cts);
-    var zamboni = Task.Run(() => result.ProcessNext(reader.ResponseStream), cts.Token);
-
+    var task = Task.Run(() => result.ProcessNext(reader.ResponseStream), cts.Token);
+    lock (result._synced.SyncRoot) {
+      result._synced.ProcessingTask = task;
+    }
     return result;
   }
 
@@ -32,6 +34,7 @@ internal class SubscriptionContext : IDisposable {
     public SharableDict<PersistentQueryInfoMessage> PqMap = new();
     public bool FirstBatchDelivered = false;
     public bool Cancelled = false;
+    public Task? ProcessingTask;
 
     public SyncedFields() {
     }
@@ -54,9 +57,8 @@ internal class SubscriptionContext : IDisposable {
       Monitor.PulseAll(_synced.SyncRoot);
     }
     _cts.Cancel();
+    _synced.ProcessingTask?.Wait();
     _cts.Dispose();
-
-    maybe_wait_until_cancel_is_done();
   }
 
   private async Task ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {

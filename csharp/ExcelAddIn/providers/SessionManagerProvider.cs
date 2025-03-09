@@ -70,7 +70,7 @@ internal class SessionManagerProvider :
       }
 
       // Suppress background messages that might come in after this point.
-      _freshness.Refresh();
+      var token = _freshness.Refresh();
 
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _session, status, _observers);
@@ -78,7 +78,10 @@ internal class SessionManagerProvider :
       }
 
       _ = cbase.AcceptVisitor(
-        _ => {
+        empty => {
+          var message = $"Config for {empty.Id} is empty");
+        },
+        core => { 
           // We are a CorePlus entity but we are getting credentials for core.
           StatusOrUtil.ReplaceAndNotify(ref _session,
             "Persistent Queries are not supported in Community Core", _observers);
@@ -86,7 +89,7 @@ internal class SessionManagerProvider :
         },
         corePlus => {
           StatusOrUtil.ReplaceAndNotify(ref _session, "Trying to connect", _observers);
-          Background.Run(() => OnNextBackground(corePlus, _freshness.Current));
+          Background.Run(() => OnNextBackground(corePlus, token));
           return Unit.Instance;
         });
     }
