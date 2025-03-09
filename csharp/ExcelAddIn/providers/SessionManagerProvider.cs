@@ -79,7 +79,9 @@ internal class SessionManagerProvider :
 
       _ = cbase.AcceptVisitor(
         empty => {
-          var message = $"Config for {empty.Id} is empty");
+          var message = $"Config for {empty.Id} is empty";
+          StatusOrUtil.ReplaceAndNotify(ref _session, message, _observers);
+          return Unit.Instance;
         },
         core => { 
           // We are a CorePlus entity but we are getting credentials for core.
