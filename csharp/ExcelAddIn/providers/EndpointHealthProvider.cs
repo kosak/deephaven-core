@@ -29,7 +29,6 @@ internal class EndpointHealthProvider :
   IValueObservable<StatusOr<EndpointHealth>>,
   IDisposable {
   private const string UnsetHealthString = "[No Config]";
-  private const string ConnectionOkString = "OK";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -96,7 +95,11 @@ internal class EndpointHealthProvider :
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
-      _upstreamClientOrSessionDisposer = creds.AcceptVisitor(
+      _upstreamClientOrSessionDisposer = creds.AcceptVisitor<IDisposable?>(
+        (EmptyEndpointConfig _) => {
+          StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, UnsetHealthString, _observers);
+          return null;
+        },
         (CoreEndpointConfig _) => {
           var fobs = new ValueObserverFreshnessFilter<StatusOr<RefCounted<Client>>>(
             this, token);
