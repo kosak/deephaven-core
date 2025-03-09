@@ -92,7 +92,6 @@ internal class EndpointHealthProvider :
         return;
       }
 
-
       StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, "[Unknown]", _observers);
 
       // Upstream has core or corePlus value. Use the visitor to figure 
