@@ -54,7 +54,7 @@ internal class TableProvider :
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
       if (_isSubscribed.TrySet()) {
         // Subscribe to parents at the time of the first subscription.
         _upstreamDisposer = _pqName != null
@@ -76,7 +76,7 @@ internal class TableProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _tableHandle, "[Disposed]");
+      StatusOrUtil.Replace(ref _tableHandle, "[Disposed]");
     }
   }
 
@@ -94,17 +94,17 @@ internal class TableProvider :
         return;
       }
       // Suppress responses from stale background workers.
-      _freshness.Refresh();
+      var token = _freshness.Refresh();
       if (!client.GetValueOrStatus(out var cliRef, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
         return;
       }
 
-      SorUtil.ReplaceAndNotify(ref _tableHandle, "Fetching Table", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _tableHandle, "Fetching Table", _observers);
       var clientShare = cliRef.Share();
       Background.Run(() => {
         using var cleanup = clientShare;
-        OnNextBackground(clientShare, _freshness.Current);
+        OnNextBackground(clientShare, token);
       });
     }
   }
@@ -127,7 +127,7 @@ internal class TableProvider :
       if (_isDisposed.Value || !token.IsCurrentUnsafe) {
         return;
       }
-      SorUtil.ReplaceAndNotify(ref _tableHandle, newState, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _tableHandle, newState, _observers);
     }
   }
 }
