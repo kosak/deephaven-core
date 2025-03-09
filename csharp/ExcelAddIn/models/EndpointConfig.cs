@@ -1,10 +1,5 @@
 ﻿namespace Deephaven.ExcelAddIn.Models;
 
-/// <summary>
-/// A key-value pair suitable for use as an entry in our SharableDict
-/// </summary>
-public record EndpointConfigEntry(EndpointId Id, EndpointConfigBase? Config);
-
 public abstract class EndpointConfigBase(EndpointId id) {
   public readonly EndpointId Id = id;
 
@@ -18,8 +13,20 @@ public abstract class EndpointConfigBase(EndpointId id) {
   }
 
   public abstract T AcceptVisitor<T>(
+    Func<EmptyEndpointConfig, T> ofEmpty,
     Func<CoreEndpointConfig, T> ofCore,
     Func<CorePlusEndpointConfig, T> ofCorePlus);
+}
+
+public sealed class EmptyEndpointConfig(
+  EndpointId id) : EndpointConfigBase(id) {
+
+  public override T AcceptVisitor<T>(
+    Func<EmptyEndpointConfig, T> ofEmpty,
+    Func<CoreEndpointConfig, T> ofCore,
+    Func<CorePlusEndpointConfig, T> ofCorePlus) {
+    return ofEmpty(this);
+  }
 }
 
 public sealed class CoreEndpointConfig(
@@ -27,7 +34,9 @@ public sealed class CoreEndpointConfig(
   string connectionString) : EndpointConfigBase(id) {
   public readonly string ConnectionString = connectionString;
 
-  public override T AcceptVisitor<T>(Func<CoreEndpointConfig, T> ofCore,
+  public override T AcceptVisitor<T>(
+    Func<EmptyEndpointConfig, T> ofEmpty,
+    Func<CoreEndpointConfig, T> ofCore,
     Func<CorePlusEndpointConfig, T> ofCorePlus) {
     return ofCore(this);
   }
@@ -46,7 +55,9 @@ public sealed class CorePlusEndpointConfig(
   public readonly string OperateAs = operateAs;
   public readonly bool ValidateCertificate = validateCertificate;
 
-  public override T AcceptVisitor<T>(Func<CoreEndpointConfig, T> ofCore,
+  public override T AcceptVisitor<T>(
+    Func<EmptyEndpointConfig, T> ofEmpty,
+    Func<CoreEndpointConfig, T> ofCore,
     Func<CorePlusEndpointConfig, T> ofCorePlus) {
     return ofCorePlus(this);
   }

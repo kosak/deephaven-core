@@ -9,6 +9,8 @@ namespace Deephaven.ExcelAddIn.Managers;
 
 /// <summary>
 /// How to parse the name: this is the Manager for the EndpointManagerDialogRow.
+/// This should not be confused with EndpointManagerDialogManager, which is the
+/// Manager for the EndpointManagerDialog.
 /// </summary>
 public sealed class EndpointManagerDialogRowManager :
   IValueObserver<StatusOr<EndpointConfigBase>>,
