@@ -96,7 +96,7 @@ internal class SubscribeOperation : IExcelObservable,
     using var cleanup = subRef;
 
     lock (_sync) {
-      if (token.IsCurrent) {
+      if (!token.IsCurrent) {
         return;
       }
       StatusOrUtil.Replace(ref _tickingSubscription, result);

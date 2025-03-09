@@ -54,7 +54,7 @@ internal class SubscriptionThread {
     private void RunForever() {
       Exception? savedException = null;
       try {
-        RunForeverHelper();
+        RunForeverHelper(); 
       } catch (Exception ex) {
         savedException = ex;
       }
