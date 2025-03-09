@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
 using System.Diagnostics;
@@ -18,7 +17,7 @@ internal class SubscriptionContext : IDisposable {
 
     var cts = new CancellationTokenSource();
     var result = new SubscriptionContext(cts);
-    Task.Run(() => result.ProcessNext(reader.ResponseStream), cts.Token).Forget();
+    var zamboni = Task.Run(() => result.ProcessNext(reader.ResponseStream), cts.Token);
 
     return result;
   }
@@ -60,25 +59,25 @@ internal class SubscriptionContext : IDisposable {
     maybe_wait_until_cancel_is_done();
   }
 
-  private async void ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {
-    try {
-      var hasNext = await rs.MoveNext(_cts.Token);
-      if (!hasNext) {
-        Debug.WriteLine("Subscription stream ended");
-        return;
-      }
-      ProcessResponse(rs.Current);
-    } catch (Exception ex) {
-      lock (_synced.SyncRoot) {
-        if (_synced.Cancelled) {
+  private async Task ProcessNext(IAsyncStreamReader<SubscribeResponse> rs) {
+    while (true) {
+      try {
+        var hasNext = await rs.MoveNext(_cts.Token);
+        if (!hasNext) {
+          Debug.WriteLine("Subscription stream ended");
           return;
         }
+        ProcessResponse(rs.Current);
+      } catch (Exception ex) {
+        lock (_synced.SyncRoot) {
+          if (_synced.Cancelled) {
+            return;
+          }
+        }
+        Debug.WriteLine($"Uncaught exception: {ex}");
+        return;
       }
-      Debug.WriteLine($"Uncaught exception: {ex}");
-      return;
     }
-
-    Task.Run(() => ProcessNext(rs), _cts.Token).Forget();
   }
 
   private void ProcessResponse(SubscribeResponse resp) {
