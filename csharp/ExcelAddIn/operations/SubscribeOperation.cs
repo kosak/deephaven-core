@@ -51,22 +51,22 @@ internal class SubscribeOperation : IExcelObservable,
       }
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      RefUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
+      StatusOrUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
     }
   }
 
   public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle) {
     lock (_sync) {
       var token = _freshness.Refresh();
-      RefUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
+      StatusOrUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
 
       if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
-        RefUtil.ReplaceAndNotify(ref _rendered, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _rendered, status, _observers);
         return;
       }
 
       var message = $"Subscribing to \"{_tableQuad.TableName}\"";
-      RefUtil.ReplaceAndNotify(ref _rendered, message, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, message, _observers);
 
       var thShare = th.Share();
       Background.Run(() => {
@@ -96,7 +96,7 @@ internal class SubscribeOperation : IExcelObservable,
       if (token.IsCurrentUnsafe) {
         return;
       }
-      RefUtil.Replace(ref _tickingSubscription, result);
+      StatusOrUtil.Replace(ref _tickingSubscription, result);
     }
   }
 
@@ -106,23 +106,23 @@ internal class SubscribeOperation : IExcelObservable,
       try {
         // When we fix the subscription API we will do this on a separate thread
         results = Renderer.Render(update.Current, _wantHeaders);
-        RefUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
       } catch (Exception e) {
         results = e.Message;
       }
-      RefUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
     }
   }
 
   public void OnError(Exception ex) {
     lock (_sync) {
-      RefUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
     }
   }
 
   public void OnCompleted() {
     lock (_sync) {
-      RefUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
     }
   }
 }
