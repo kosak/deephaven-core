@@ -9,6 +9,11 @@ using ExcelAddIn.views;
 
 namespace Deephaven.ExcelAddIn.Managers;
 
+/// <summary>
+/// How to parse the name: this is the Manager for the EndpointManagerDialog.
+/// This should not be confused with EndpointManagerDialogRowManager, which is the
+/// Manager for the EndpointManagerDialogRow.
+/// </summary>
 internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
   public static EndpointManagerDialogManager Create(StateManager stateManager,
