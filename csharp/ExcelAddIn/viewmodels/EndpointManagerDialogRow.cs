@@ -9,7 +9,10 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
-  private StatusOr<EndpointConfigBase> _endpointConfig = "[Not set]";
+  /// <summary>
+  /// Make a placeholder EmptyConfig based on our id.
+  /// </summary>
+  private EndpointConfigBase _endpointConfig = EndpointConfigBase.OfEmpty(new EndpointId(id));
   private StatusOr<EndpointHealth> _endpointHealth = "[Not connected]";
   private EndpointId? _defaultEndpointId = null;
 
@@ -30,13 +33,7 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   public string ServerType {
     get {
       var config = GetEndpointConfig();
-      // Nested AcceptVisitor!!
-      // If we have valid credentials, determine whether they are for Core or Core+ and return the appropriate string.
-      // Otherwise (if we have invalid credentials), ignore their status text and just say "[Unknown]".
-      return config.AcceptVisitor(
-        crs => crs.AcceptVisitor(_ => "Core", _ => "Core+"),
-        _ => "[Unknown]");
-
+      return config.AcceptVisitor(_ => "[Unknown]", _ => "Core", _ => "Core+");
     }
   }
 
@@ -49,13 +46,13 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
     }
   }
 
-  public StatusOr<EndpointConfigBase> GetEndpointConfig() {
+  public EndpointConfigBase GetEndpointConfig() {
     lock (_sync) {
       return _endpointConfig;
     }
   }
 
-  public void SetCredentials(StatusOr<EndpointConfigBase> value) {
+  public void SetCredentials(EndpointConfigBase value) {
     lock (_sync) {
       _endpointConfig = value;
     }

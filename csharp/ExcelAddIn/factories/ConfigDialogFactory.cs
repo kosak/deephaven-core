@@ -24,7 +24,7 @@ internal static class ConfigDialogFactory {
 }
 
 internal class EndpointConfigDialogState :
-  IValueObserver<SharableDict<EndpointConfigEntry>>,
+  IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
   private readonly StateManager _stateManager;
   private readonly ConfigDialog _configDialog;
@@ -32,7 +32,7 @@ internal class EndpointConfigDialogState :
   private readonly EndpointId? _whitelistId;
   private readonly object _sync = new();
   private readonly FreshnessSource _freshness;
-  private SharableDict<EndpointConfigEntry> _endpointDict;
+  private SharableDict<EndpointConfigBase> _endpointDict;
   private IDisposable? _disposer;
 
   public EndpointConfigDialogState(
@@ -52,7 +52,7 @@ internal class EndpointConfigDialogState :
     Utility.ClearAndDispose(ref _disposer);
   }
 
-  public void OnNext(SharableDict<EndpointConfigEntry> dict) {
+  public void OnNext(SharableDict<EndpointConfigBase> dict) {
     lock (_sync) {
       _endpointDict = dict;
     }
