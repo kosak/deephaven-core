@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Util;
+﻿using Deephaven.ExcelAddIn;
+using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 
 namespace ExcelAddIn.views {

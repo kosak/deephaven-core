@@ -47,7 +47,7 @@ internal class FilteredTableProvider :
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out _);
       if (_subscribeDone.TrySet()) {
         // Subscribe to parent at the first-ever subscribe
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
@@ -69,7 +69,7 @@ internal class FilteredTableProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _filteredTableHandle, "[Disposed");
+      StatusOrUtil.Replace(ref _filteredTableHandle, "[Disposed");
     }
   }
 
@@ -80,18 +80,18 @@ internal class FilteredTableProvider :
       }
 
       // Invalidate any outstanding background work
-      _freshnessSource.Refresh();
+      var token = _freshnessSource.Refresh();
 
       if (!parentHandle.GetValueOrStatus(out var ph, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
         return;
       }
 
-      SorUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
       var phShare = ph.Share();
       Background.Run(() => {
         using var cleanup = phShare;
-        OnNextBackground(phShare, _freshnessSource.Current);
+        OnNextBackground(phShare, token);
       });
     }
   }
@@ -105,7 +105,8 @@ internal class FilteredTableProvider :
       var childHandle = parentHandle.Value.Where(_condition);
       // The child handle takes a dependency on the parent handle, not because
       // TableHandles have a dependency on each other, but because the parent handle
-      // likely has a transitive dependency on the Client or DndClient
+      // has a transitive dependency on the Client or DndClient, and that's what
+      // we need to keep alive while we're alive.
       newRef = RefCounted.Acquire(childHandle, parentHandle);
       newResult = newRef;
     } catch (Exception ex) {
@@ -115,7 +116,7 @@ internal class FilteredTableProvider :
 
     lock (_sync) {
       if (token.IsCurrentUnsafe) {
-        SorUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }
   }

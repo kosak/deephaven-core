@@ -47,7 +47,7 @@ internal class SnapshotOperation : IExcelObservable,
       }
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _rendered, "[Disposed]");
+      StatusOrUtil.Replace(ref _rendered, "[Disposed]");
     }
   }
 
@@ -57,11 +57,11 @@ internal class SnapshotOperation : IExcelObservable,
       var token = _freshness.Refresh();
 
       if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _rendered, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _rendered, status, _observers);
         return;
       }
 
-      SorUtil.ReplaceAndNotify(ref _rendered, "[Rendering]", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, "[Rendering]", _observers);
 
       var thShare = th.Share();
       Background.Run(() => {
@@ -83,9 +83,10 @@ internal class SnapshotOperation : IExcelObservable,
     }
 
     lock (_sync) {
-      if (token.IsCurrentUnsafe) {
-        SorUtil.ReplaceAndNotify(ref _rendered, newResult, _observers);
+      if (!token.IsCurrentUnsafe) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, newResult, _observers);
     }
   }
 }

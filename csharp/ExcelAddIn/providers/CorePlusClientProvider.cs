@@ -42,7 +42,7 @@ internal class CorePlusClientProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _client, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out _);
       if (_subscribeDone.TrySet()) {
         _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
         _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, this);
@@ -65,9 +65,9 @@ internal class CorePlusClientProvider :
       Utility.ClearAndDispose(ref _pqInfoDisposer);
 
       // Release our Deephaven resource asynchronously.
-      SorUtil.Replace(ref _sessionManager, "[Disposed]");
+      StatusOrUtil.Replace(ref _sessionManager, "[Disposed]");
       _pqInfo = "[Disposed]";
-      SorUtil.Replace(ref _client, "[Disposed]");
+      StatusOrUtil.Replace(ref _client, "[Disposed]");
     }
   }
 
@@ -76,7 +76,7 @@ internal class CorePlusClientProvider :
       if (!_isDisposed.Value) {
         return;
       }
-      SorUtil.Replace(ref _sessionManager, sessionManager);
+      StatusOrUtil.Replace(ref _sessionManager, sessionManager);
       UpdateStateLocked();
     }
   }
@@ -93,26 +93,26 @@ internal class CorePlusClientProvider :
 
   private void UpdateStateLocked() {
     // Invalidate any background work that might be running.
-    _freshness.Refresh();
+    var token = _freshness.Refresh();
 
     // Do we have a session and a PQInfo?
     if (!_sessionManager.GetValueOrStatus(out var sm, out var status) || 
         !_pqInfo.GetValueOrStatus(out var pq, out status)) {
       // No, transmit error status
-      SorUtil.ReplaceAndNotify(ref _client, status, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _client, status, _observers);
       return;
     }
 
     // Is our PQInfo in the running state?
     if (!ControllerClient.IsRunning(pq.State.Status)) {
-      SorUtil.ReplaceAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
       return;
     }
 
     var smShared = sm.Share();
     Background.Run(() => {
       using var cleanup = smShared;
-      UpdateStateInBackground(smShared, pq, _freshness.Current);
+      UpdateStateInBackground(smShared, pq, token);
     });
   }
 
@@ -132,7 +132,7 @@ internal class CorePlusClientProvider :
 
     lock (_sync) {
       if (token.IsCurrentUnsafe) {
-        SorUtil.ReplaceAndNotify(ref _client, newState, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _client, newState, _observers);
       }
     }
   }

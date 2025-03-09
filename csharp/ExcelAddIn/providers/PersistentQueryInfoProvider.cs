@@ -60,7 +60,7 @@ internal class PersistentQueryInfoProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _infoMessage, "[Disposing]");
+      StatusOrUtil.Replace(ref _infoMessage, "[Disposing]");
     }
   }
 
@@ -73,7 +73,7 @@ internal class PersistentQueryInfoProvider :
       if (!dict.GetValueOrStatus(out var d, out var status)) {
         _prevDict = SharableDict<PersistentQueryInfoMessage>.Empty;
         _lastMessage = null;
-        SorUtil.ReplaceAndNotify(ref _infoMessage, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _infoMessage, status, _observers);
         return;
       }
 
@@ -98,11 +98,11 @@ internal class PersistentQueryInfoProvider :
       _lastMessage = message;
 
       if (message == null) {
-        SorUtil.ReplaceAndNotify(ref _infoMessage, $"PQ \"{_pqName}\" not found", _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _infoMessage, $"PQ \"{_pqName}\" not found", _observers);
         return;
       }
 
-      SorUtil.ReplaceAndNotify(ref _infoMessage, message, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _infoMessage, message, _observers);
     }
   }
 }

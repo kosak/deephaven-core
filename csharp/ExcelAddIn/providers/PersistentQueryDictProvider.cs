@@ -50,7 +50,7 @@ internal class PersistentQueryDictProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _dict, "[Disposing]");
+      StatusOrUtil.Replace(ref _dict, "[Disposing]");
     }
   }
 
@@ -60,18 +60,18 @@ internal class PersistentQueryDictProvider :
         return;
       }
       // Suppress any stale notifications that happen to show up.
-      _freshness.Refresh();
+      var token = _freshness.Refresh();
 
       if (!subscription.GetValueOrStatus(out var sub, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _dict, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _dict, status, _observers);
         return;
       }
 
-      SorUtil.ReplaceAndNotify(ref _dict, "[Processing Subscriptions]", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _dict, "[Processing Subscriptions]", _observers);
       var subShare = sub.Share();
       Background.Run(() => {
         using var cleanup = subShare;
-        ProcessSubscriptionStream(subShare, _freshness.Current);
+        ProcessSubscriptionStream(subShare, token);
       });
     }
   }
@@ -94,7 +94,7 @@ internal class PersistentQueryDictProvider :
         if (!token.IsCurrentUnsafe) {
           return;
         }
-        SorUtil.ReplaceAndNotify(ref _dict, newDict, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _dict, newDict, _observers);
         if (wantExit) {
           return;
         }

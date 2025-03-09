@@ -36,9 +36,6 @@
       corePanel = new Panel();
       connectionStringBox = new TextBox();
       connectionStringLabel = new Label();
-      groupBox1 = new GroupBox();
-      sessionTypeIsGroovyButton = new RadioButton();
-      sessionTypeIsPythonButton = new RadioButton();
       finalPanel = new Panel();
       versionLabel = new Label();
       makeDefaultCheckBox = new CheckBox();
@@ -54,7 +51,6 @@
       connectionIdPanel = new Panel();
       corePlusPanel.SuspendLayout();
       corePanel.SuspendLayout();
-      groupBox1.SuspendLayout();
       finalPanel.SuspendLayout();
       connectionTypeGroup.SuspendLayout();
       connectionIdPanel.SuspendLayout();
@@ -162,11 +158,10 @@
       // 
       corePanel.Controls.Add(connectionStringBox);
       corePanel.Controls.Add(connectionStringLabel);
-      corePanel.Controls.Add(groupBox1);
       corePanel.Dock = DockStyle.Top;
       corePanel.Location = new Point(0, 490);
       corePanel.Name = "corePanel";
-      corePanel.Size = new Size(1054, 170);
+      corePanel.Size = new Size(1054, 79);
       corePanel.TabIndex = 3;
       // 
       // connectionStringBox
@@ -186,39 +181,6 @@
       connectionStringLabel.TabIndex = 0;
       connectionStringLabel.Text = "Connection String";
       // 
-      // groupBox1
-      // 
-      groupBox1.Controls.Add(sessionTypeIsGroovyButton);
-      groupBox1.Controls.Add(sessionTypeIsPythonButton);
-      groupBox1.Location = new Point(18, 80);
-      groupBox1.Name = "groupBox1";
-      groupBox1.Size = new Size(970, 71);
-      groupBox1.TabIndex = 2;
-      groupBox1.TabStop = false;
-      groupBox1.Text = "Session Type";
-      // 
-      // sessionTypeIsGroovyButton
-      // 
-      sessionTypeIsGroovyButton.AutoSize = true;
-      sessionTypeIsGroovyButton.Location = new Point(338, 30);
-      sessionTypeIsGroovyButton.Name = "sessionTypeIsGroovyButton";
-      sessionTypeIsGroovyButton.Size = new Size(95, 29);
-      sessionTypeIsGroovyButton.TabIndex = 2;
-      sessionTypeIsGroovyButton.TabStop = true;
-      sessionTypeIsGroovyButton.Text = "Groovy";
-      sessionTypeIsGroovyButton.UseVisualStyleBackColor = true;
-      // 
-      // sessionTypeIsPythonButton
-      // 
-      sessionTypeIsPythonButton.AutoSize = true;
-      sessionTypeIsPythonButton.Location = new Point(192, 30);
-      sessionTypeIsPythonButton.Name = "sessionTypeIsPythonButton";
-      sessionTypeIsPythonButton.Size = new Size(93, 29);
-      sessionTypeIsPythonButton.TabIndex = 1;
-      sessionTypeIsPythonButton.TabStop = true;
-      sessionTypeIsPythonButton.Text = "Python";
-      sessionTypeIsPythonButton.UseVisualStyleBackColor = true;
-      // 
       // finalPanel
       // 
       finalPanel.Controls.Add(versionLabel);
@@ -228,7 +190,7 @@
       finalPanel.Controls.Add(testCredentialsButton);
       finalPanel.Controls.Add(setCredentialsButton);
       finalPanel.Dock = DockStyle.Bottom;
-      finalPanel.Location = new Point(0, 481);
+      finalPanel.Location = new Point(0, 476);
       finalPanel.Name = "finalPanel";
       finalPanel.Size = new Size(1054, 106);
       finalPanel.TabIndex = 4;
@@ -352,11 +314,11 @@
       connectionIdPanel.Size = new Size(1054, 191);
       connectionIdPanel.TabIndex = 1;
       // 
-      // CredentialsDialog
+      // ConfigDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(1054, 587);
+      ClientSize = new Size(1054, 582);
       Controls.Add(finalPanel);
       Controls.Add(corePanel);
       Controls.Add(corePlusPanel);
@@ -367,8 +329,6 @@
       corePlusPanel.PerformLayout();
       corePanel.ResumeLayout(false);
       corePanel.PerformLayout();
-      groupBox1.ResumeLayout(false);
-      groupBox1.PerformLayout();
       finalPanel.ResumeLayout(false);
       finalPanel.PerformLayout();
       connectionTypeGroup.ResumeLayout(false);
@@ -402,9 +362,6 @@
     private TextBox testResultsTextBox;
     private CheckBox makeDefaultCheckBox;
     private CheckBox validateCertCheckBox;
-    private GroupBox groupBox1;
-    private RadioButton sessionTypeIsGroovyButton;
-    private RadioButton sessionTypeIsPythonButton;
     private Panel connectionIdPanel;
     private Label operateAsLabel;
     private Label versionLabel;

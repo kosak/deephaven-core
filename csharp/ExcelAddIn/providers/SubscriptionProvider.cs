@@ -48,7 +48,7 @@ internal class SubscriptionProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _subscription, "[Disposing]");
+      StatusOrUtil.Replace(ref _subscription, "[Disposing]");
     }
   }
 
@@ -58,7 +58,7 @@ internal class SubscriptionProvider :
         return;
       }
       if (!sessionManager.GetValueOrStatus(out var smRef, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _subscription, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _subscription, status, _observers);
         return;
       }
 
@@ -67,7 +67,7 @@ internal class SubscriptionProvider :
       var sub = smRef.Value.Subscribe();
       // The subscription is stored as a ref with a dependency on a SessionManager
       using var subRef = RefCounted.Acquire(sub, smRef);
-      SorUtil.ReplaceAndNotify(ref _subscription, subRef, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _subscription, subRef, _observers);
     }
   }
 }

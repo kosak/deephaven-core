@@ -12,7 +12,7 @@ internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> 
   
   public IDisposable Subscribe(IValueObserver<StatusOr<EndpointId>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _endpointId, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointId, out _);
     }
 
     return ActionAsDisposable.Create(() => {
@@ -25,9 +25,9 @@ internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> 
   public void Set(EndpointId? endpointId) {
     lock (_sync) {
       if (endpointId == null) {
-        SorUtil.ReplaceAndNotify(ref _endpointId, UnsetEndpointText, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _endpointId, UnsetEndpointText, _observers);
       } else {
-        SorUtil.ReplaceAndNotify(ref _endpointId, endpointId, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _endpointId, endpointId, _observers);
       }
     }
   }
