@@ -31,7 +31,7 @@ internal class EndpointConfigDialogState :
   private readonly EndpointDialogViewModel _cvm;
   private readonly EndpointId? _whitelistId;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshness;
+  private readonly FreshnessTokenSource _freshness;
   private SharableDict<EndpointConfigBase> _endpointDict;
   private IDisposable? _disposer;
 
@@ -112,7 +112,7 @@ internal class EndpointConfigDialogState :
       state = ex.Message;
     }
 
-    token.InvokeIfCurrent(() => {
+    token.InvokeUnderLockIfCurrent(() => {
       _configDialog.SetTestResultsBox(state);
     });
   }

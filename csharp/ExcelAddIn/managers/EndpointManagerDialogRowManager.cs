@@ -49,7 +49,7 @@ public sealed class EndpointManagerDialogRowManager :
       // paranoia
       Unsubscribe();
 
-      // We watch for session and credential state changes in our ID
+      // We watch for endpoint health, endpoint config, and default endpoint
       _healthDisposable = _stateManager.SubscribeToEndpointHealth(EndpointId, this);
       _configDisposable = _stateManager.SubscribeToEndpointConfig(EndpointId, this);
       _defaultEndpointDisposable = _stateManager.SubscribeToDefaultEndpoint(this);
@@ -65,7 +65,12 @@ public sealed class EndpointManagerDialogRowManager :
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> ecb) {
-    _row.SetConfig(ecb);
+    // If we get any status message (meaning there's no config) we're going
+    // to translate for our purposes into an "empty config with this endpoint ID".
+    if (!ecb.GetValueOrStatus(out var config, out var _)) {
+      config = EndpointConfigBase.OfEmpty(new EndpointId(_row.Id));
+    }
+    _row.SetConfig(config);
   }
 
   public void OnNext(StatusOr<EndpointHealth> eh) {
@@ -81,9 +86,7 @@ public sealed class EndpointManagerDialogRowManager :
     var config = _row.GetConfig();
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
-    var cvm = config.AcceptVisitor(
-      crs => EndpointDialogViewModel.OfIdAndCredentials(EndpointId, crs),
-      _ => EndpointDialogViewModel.OfIdButOtherwiseEmpty(EndpointId));
+    var cvm = EndpointDialogViewModel.OfConfig(config);
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, EndpointId);
   }
 

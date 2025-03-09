@@ -110,7 +110,7 @@ internal class SessionManagerProvider :
     using var cleanup = smRef;
 
     lock (_sync) {
-      if (!_isDisposed.Value && token.IsCurrentUnsafe) {
+      if (!_isDisposed.Value && token.IsCurrent) {
         StatusOrUtil.ReplaceAndNotify(ref _session, result, _observers);
       }
     }

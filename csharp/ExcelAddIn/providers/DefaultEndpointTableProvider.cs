@@ -24,7 +24,7 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshness;
+  private readonly FreshnessTokenSource _freshness;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _endpointSubscriptionDisposer = null;

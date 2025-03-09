@@ -83,7 +83,7 @@ internal class SnapshotOperation : IExcelObservable,
     }
 
     lock (_sync) {
-      if (!token.IsCurrentUnsafe) {
+      if (!token.IsCurrent) {
         return;
       }
       StatusOrUtil.ReplaceAndNotify(ref _rendered, newResult, _observers);

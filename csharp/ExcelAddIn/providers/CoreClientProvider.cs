@@ -21,7 +21,7 @@ internal class CoreClientProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshness;
+  private readonly FreshnessTokenSource _freshness;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
@@ -78,12 +78,16 @@ internal class CoreClientProvider :
       }
 
       _ = ecb.AcceptVisitor(
+        empty => {
+          StatusOrUtil.ReplaceAndNotify(ref _client, UnsetClientText, _observers);
+          return Unit.Instance;  // have to return something
+        },
         core => {
           StatusOrUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
           Background.Run(() => OnNextBackground(core, token));
           return Unit.Instance;  // have to return something
         },
-        _ => {
+        corePlus => {
           // Error: we are a Core entity but we are getting credentials for CorePlus
           StatusOrUtil.ReplaceAndNotify(ref _client,
             "Enterprise Core+ requires a PQ to be specified", _observers);
@@ -105,7 +109,7 @@ internal class CoreClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (token.IsCurrentUnsafe) {
+      if (token.IsCurrent) {
         StatusOrUtil.ReplaceAndNotify(ref _client, result, _observers);
       }
     }

@@ -91,7 +91,7 @@ internal class PersistentQueryDictProvider :
       }
 
       lock (_sync) {
-        if (!token.IsCurrentUnsafe) {
+        if (!token.IsCurrent) {
           return;
         }
         StatusOrUtil.ReplaceAndNotify(ref _dict, newDict, _observers);

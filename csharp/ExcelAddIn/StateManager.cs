@@ -39,13 +39,6 @@ public class StateManager {
 
   public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
     IValueObserver<StatusOr<EndpointConfigBase>> observer) {
-    // As a value-added behavior, any request for an EndpointId gets a placeholder
-    // in the endpoint dictionary (if it's not already there). The symmetric behavior
-    // is deliberately NOT supported: the item is not removed from the endpoint dictionary
-    // unless TryDeleteEndpointConfig is called (and that in turn only succeeds if
-    // there are no subscribers to the endpoint config).
-    _ = _endpointDictProvider.TryAddEmpty(endpointId);
-
     var candidate = new EndpointConfigProvider(this, endpointId);
     return SubscribeHelper(_endpointConfigProviders, endpointId, candidate, observer);
   }
@@ -110,7 +103,7 @@ public class StateManager {
 
   public void SetConfig(EndpointConfigBase config) {
     lock (_sync) {
-      _endpointDictProvider.InsertOrReplace(config);
+      _endpointDictProvider.AddOrReplace(config);
     }
   }
 

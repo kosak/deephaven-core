@@ -131,7 +131,7 @@ internal class CorePlusClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (token.IsCurrentUnsafe) {
+      if (token.IsCurrent) {
         StatusOrUtil.ReplaceAndNotify(ref _client, newState, _observers);
       }
     }

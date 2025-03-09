@@ -17,7 +17,7 @@ internal class SubscribeOperation : IExcelObservable,
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshness;
+  private readonly FreshnessTokenSource _freshness;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IDisposable? _upstreamDisposer = null;
   private StatusOr<RefCounted<IDisposable>> _tickingSubscription = UnsetTickingSubscription;
@@ -93,7 +93,7 @@ internal class SubscribeOperation : IExcelObservable,
     using var cleanup = subRef;
 
     lock (_sync) {
-      if (token.IsCurrentUnsafe) {
+      if (token.IsCurrent) {
         return;
       }
       StatusOrUtil.Replace(ref _tickingSubscription, result);

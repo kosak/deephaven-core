@@ -22,6 +22,21 @@ public static class DeephavenExcelFunctions {
     StateManager.SetConfig(config);
   }
 
+  // See if this works to set note or comment
+  // ExcelReference? refCaller = XlCall.Excel(XlCall.xlfCaller) as ExcelReference;
+  // and then
+
+  // [ExcelFunction(IsThreadSafe = false)]
+  // public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
+  //   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
+  //   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
+  //   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
+  //
+  //   // Add the comment
+  //   cell.AddComment(commentText);
+  // }
+
+
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out var errorText)) {

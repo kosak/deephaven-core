@@ -7,9 +7,7 @@ namespace Deephaven.ExcelAddIn.Factories;
 
 internal static class EndpointFactory {
   public static Client ConnectToCore(CoreEndpointConfig config) {
-    var options = new ClientOptions();
-    options.SetSessionType(config.SessionTypeIsPython ? "python" : "groovy");
-    var client = Client.Connect(config.ConnectionString, options);
+    var client = Client.Connect(config.ConnectionString);
     return client;
   }
 

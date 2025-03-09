@@ -124,7 +124,7 @@ internal class TableProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (_isDisposed.Value || !token.IsCurrentUnsafe) {
+      if (_isDisposed.Value || !token.IsCurrent) {
         return;
       }
       StatusOrUtil.ReplaceAndNotify(ref _tableHandle, newState, _observers);
