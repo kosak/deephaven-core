@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
@@ -39,6 +40,48 @@ public static class DeephavenExcelFunctions {
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
+    var refCaller = (ExcelReference)XlCall.Excel(XlCall.xlfCaller);
+    ExcelAsyncUtil.QueueAsMacro(() => {
+      try {
+        var app = ExcelDnaUtil.Application;
+        var ws = (Microsoft.Office.Interop.Excel.Worksheet)app.ActiveSheet;
+        var range = (Microsoft.Office.Interop.Excel.Range)
+          ws.Cells[refCaller.RowFirst + 1, refCaller.ColumnFirst + 1];
+        range.Comment?.Delete();
+        range.AddComment(
+          "zamboni time the naming of cats is "
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          + "\nzamboni time the naming of cats is a difficult matter it isn't just one of your holiday games"
+          );
+      } catch (Exception e) {
+        Debug.WriteLine("NOW WHAT " + e);
+        Debug.WriteLine("NOW WHAT " + e);
+      }
+    });
+
+    // try {
+    //   var app = ExcelDnaUtil.Application;
+    //   var range = app.ActiveCell;
+    //   range.AddComment("hello it is party time");
+    // } catch (Exception e666) {
+    //   Debug.WriteLine(e666);
+    //   Debug.WriteLine(e666);
+    // }
+    return 444499;
+
+#if false
+    // refCaller.S
+    // Excel.Application app = (Application)ExcelDnaUtil.Application;
+    // Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
+    // Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out var errorText)) {
       return errorText;
     }
@@ -48,6 +91,7 @@ public static class DeephavenExcelFunctions {
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => new SnapshotOperation(tq, wh, StateManager);
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
+#endif
   }
 
   [ExcelFunction(Description = "Subscribes to a table", IsThreadSafe = true)]
