@@ -43,7 +43,7 @@ internal class DefaultEndpointTableProvider :
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      RefUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
       if (_subscribeDone.TrySet()) {
         _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpoint(this);
       }
@@ -63,7 +63,7 @@ internal class DefaultEndpointTableProvider :
       }
       Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
       Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
-      RefUtil.Replace(ref _tableHandle, UnsetTableHandleText);
+      StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
     }
   }
 
@@ -78,7 +78,7 @@ internal class DefaultEndpointTableProvider :
       var token = _freshness.Refresh();
 
       if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
-        RefUtil.ReplaceAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
         return;
       }
 
@@ -95,7 +95,7 @@ internal class DefaultEndpointTableProvider :
       if (_isDisposed.Value) {
         return;
       }
-      RefUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);
     }
   }
 }

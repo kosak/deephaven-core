@@ -59,7 +59,7 @@ internal class SessionManagerProvider :
       }
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _session, "[Disposed]");
+      StatusOrUtil.Replace(ref _session, "[Disposed]");
     }
   }
 
@@ -73,19 +73,19 @@ internal class SessionManagerProvider :
       _freshness.Refresh();
 
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _session, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _session, status, _observers);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         _ => {
           // We are a CorePlus entity but we are getting credentials for core.
-          SorUtil.ReplaceAndNotify(ref _session,
+          StatusOrUtil.ReplaceAndNotify(ref _session,
             "Persistent Queries are not supported in Community Core", _observers);
           return Unit.Instance;
         },
         corePlus => {
-          SorUtil.ReplaceAndNotify(ref _session, "Trying to connect", _observers);
+          StatusOrUtil.ReplaceAndNotify(ref _session, "Trying to connect", _observers);
           Background.Run(() => OnNextBackground(corePlus, _freshness.Current));
           return Unit.Instance;
         });
@@ -106,7 +106,7 @@ internal class SessionManagerProvider :
 
     lock (_sync) {
       if (!_isDisposed.Value && token.IsCurrentUnsafe) {
-        SorUtil.ReplaceAndNotify(ref _session, result, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _session, result, _observers);
       }
     }
   }
