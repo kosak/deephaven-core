@@ -53,7 +53,7 @@ internal class EndpointHealthProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<EndpointHealth>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out _);
       if (_isSubscribed.TrySet()) {
         _upstreamConfigDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
       }
@@ -74,7 +74,7 @@ internal class EndpointHealthProvider :
 
       Utility.ClearAndDispose(ref _upstreamConfigDisposer);
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
-      SorUtil.Replace(ref _endpointHealth, "[Disposed]");
+      StatusOrUtil.Replace(ref _endpointHealth, "[Disposed]");
     }
   }
 
@@ -84,26 +84,28 @@ internal class EndpointHealthProvider :
         return;
       }
 
-      _freshness.Refresh();
+      var token = _freshness.Refresh();
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
 
       if (!credentials.GetValueOrStatus(out var creds, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _endpointHealth, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, status, _observers);
         return;
       }
 
 
-      SorUtil.ReplaceAndNotify(ref _endpointHealth, "[Unknown]", _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, "[Unknown]", _observers);
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
       _upstreamClientOrSessionDisposer = creds.AcceptVisitor(
         (CoreEndpointConfig _) => {
-          var fobs = new FreshnessFilter<StatusOr<RefCounted<Client>>>(this, _freshness.Current);
+          var fobs = new ValueObserverFreshnessFilter<StatusOr<RefCounted<Client>>>(
+            this, token);
           return _stateManager.SubscribeToCoreClient(_endpointId, fobs);
         },
         (CorePlusEndpointConfig _) => {
-          var fobs = new FreshnessFilter<StatusOr<RefCounted<SessionManager>>>(this, _freshness.Current);
+          var fobs = new ValueObserverFreshnessFilter<StatusOr<RefCounted<SessionManager>>>(
+            this, token);
           return _stateManager.SubscribeToSessionManager(_endpointId, fobs);
         });
     }
@@ -122,12 +124,13 @@ internal class EndpointHealthProvider :
       if (_isDisposed.Value) {
         return;
       }
-      if (!statusOr.GetValueOrStatus(out _, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _endpointHealth, status, _observers);
-        return;
+      StatusOr<EndpointHealth> result;
+      if (statusOr.GetValueOrStatus(out _, out var status)) {
+        result = new EndpointHealth();
+      } else {
+        result = status;
       }
-      var result = new EndpointHealth();
-      SorUtil.ReplaceAndNotify(ref _endpointHealth, result, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, result, _observers);
     }
   }
 }

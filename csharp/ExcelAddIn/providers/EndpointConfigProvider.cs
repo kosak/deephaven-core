@@ -89,4 +89,8 @@ internal class EndpointConfigProvider :
       SorUtil.ReplaceAndNotify(ref _credentials, value, _observers);
     }
   }
+
+  public void Resend() {
+    zmaboni_time();
+  }
 }

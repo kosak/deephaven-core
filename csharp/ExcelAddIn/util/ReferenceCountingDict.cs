@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.Util;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Deephaven.ExcelAddIn.Util;
 
 public class ReferenceCountingDict<TKey, TValue> where TKey : notnull {
   private readonly Dictionary<TKey, WithCount> _dict = new();
@@ -30,8 +32,11 @@ public class ReferenceCountingDict<TKey, TValue> where TKey : notnull {
     return _dict.ContainsKey(key);
   }
 
-  private class WithCount(TValue value) {
+  public bool TryGetValue(TKey key, [NotNullWhen(true)]out TValue? value) {
+
+  }
+
+  private record WithCount(TValue Value) {
     public int Count = 1;
-    public readonly TValue Value = value;
   }
 }

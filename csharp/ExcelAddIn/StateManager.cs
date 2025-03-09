@@ -126,22 +126,11 @@ public class StateManager {
 
   public void Reconnect(EndpointId id) {
     // Quick-and-dirty trick for reconnect is to re-send the credentials to the observers.
-    LookupOrCreateEndpointConfigProvider(id, cp => cp.Resend());
-  }
-
-  private void LookupOrCreateEndpointConfigProvider(EndpointId endpointId,
-    Action<EndpointConfigProvider> action) {
-    if (WorkerThread.EnqueueOrNop(() => LookupOrCreateEndpointConfigProvider(endpointId, action))) {
-      return;
+    lock (_sync) {
+      if (_endpointConfigProviders.TryGetValue(id, out var cp)) {
+        cp.Resend();
+      }
     }
-    if (!_endpointConfigProviders.TryGetValue(endpointId, out var cp)) {
-      cp = new EndpointConfigProvider(this);
-      _endpointConfigProviders.Add(endpointId, cp);
-      cp.Init();
-      _endpointConfigPopulationObservers.OnNext(AddOrRemove<EndpointId>.OfAdd(endpointId));
-    }
-
-    action(cp);
   }
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(

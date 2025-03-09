@@ -24,16 +24,6 @@ internal static class RefUtil {
     EnqueueKeepAlive(observers, dest);
   }
 
-  public static void ReplaceAndNotify<T>(ref StatusOr<T> dest,
-    StatusOr<T> newValue, ObserverContainer<StatusOr<T>> observers) { 
-    // Sanity check. Prevent StatusOr<RefCounted<T>> from getting here. Can this ever happen?
-    if (typeof(RefCounted).IsAssignableFrom(typeof(T))) {
-      throw new Exception("Programming error: Should have invoked the other ReplaceAndNotify method");
-    }
-    dest = newValue;
-    observers.OnNext(dest);
-  }
-
   public static void AddObserverAndNotify<T>(ObserverContainer<StatusOr<RefCounted<T>>> observers,
     IValueObserver<StatusOr<RefCounted<T>>> observer,
     StatusOr<RefCounted<T>> item,
@@ -51,5 +41,31 @@ internal static class RefUtil {
     // the ObserverContainer gets to this point.
     var shared = value.Share();
     observers.EnqueueAction(() => Background.InvokeDispose(shared));
+  }
+}
+
+internal static class StatusOrUtil {
+  public static void ReplaceAndNotify<T>(ref StatusOr<T> dest,
+    StatusOr<T> newValue, ObserverContainer<StatusOr<T>> observers) {
+    AssertNotRefCounted<T>();
+    dest = newValue;
+    observers.OnNext(dest);
+  }
+
+  public static void AddObserverAndNotify<T>(ObserverContainer<StatusOr<T>> observers,
+    IValueObserver<StatusOr<T>> observer,
+    StatusOr<T> item,
+    out bool isFirst) {
+    AssertNotRefCounted<T>();
+    observers.AddAndNotify(observer, item, out isFirst);
+  }
+
+  /// <summary>
+  /// Sanity check. Prevents T from being any RefCounted subtype
+  /// </summary>
+  private static void AssertNotRefCounted<T>() {
+    if (typeof(RefCounted).IsAssignableFrom(typeof(T))) {
+      throw new Exception("Programming error: Should have invoked the other ReplaceAndNotify method");
+    }
   }
 }
