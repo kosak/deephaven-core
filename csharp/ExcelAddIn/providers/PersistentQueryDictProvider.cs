@@ -14,7 +14,7 @@ internal class PersistentQueryDictProvider :
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshness;
+  private readonly FreshnessTokenSource _freshness;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;

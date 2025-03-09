@@ -28,7 +28,7 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshnessSource;
+  private readonly FreshnessTokenSource _freshnessSource;
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;

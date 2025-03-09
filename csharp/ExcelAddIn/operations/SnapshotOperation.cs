@@ -15,7 +15,7 @@ internal class SnapshotOperation : IExcelObservable,
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
-  private readonly FreshnessSource _freshness;
+  private readonly FreshnessTokenSource _freshness;
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private StatusOr<object?[,]> _rendered = UnsetTableData;

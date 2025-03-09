@@ -40,12 +40,6 @@ namespace ExcelAddIn.views {
       connectionStringBox.DataBindings.Add(nameof(connectionStringBox.Text),
         vm, nameof(vm.ConnectionString));
 
-      // Bind the SessionType checkboxes
-      sessionTypeIsPythonButton.DataBindings.Add(nameof(sessionTypeIsPythonButton.Checked),
-        vm, nameof(vm.SessionTypeIsPython));
-      sessionTypeIsGroovyButton.DataBindings.Add(nameof(sessionTypeIsGroovyButton.Checked),
-        vm, nameof(vm.SessionTypeIsGroovy));
-
       // Bind the IsDefault property
       makeDefaultCheckBox.DataBindings.Add(nameof(makeDefaultCheckBox.Checked),
         vm, nameof(vm.IsDefault));
