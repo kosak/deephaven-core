@@ -45,12 +45,6 @@ internal class EndpointDictProvider :
         return false;
       }
       _dict = _dict.With(key, config);
-      Debug.WriteLine($"Now dict has size {_dict.Count} and is {_dict}");
-      foreach (var kvp in _dict) {
-        Debug.WriteLine($"ANNOYING: {kvp}");
-      }
-      using var stupid = _dict.GetEnumerator();
-      var temp = stupid.MoveNext();
       _observers.OnNext(_dict);
       return inserted;
     }

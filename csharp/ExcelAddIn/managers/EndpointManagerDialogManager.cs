@@ -51,7 +51,14 @@ internal class EndpointManagerDialogManager : IValueObserver<SharableDict<Endpoi
       }
       // If there are modifies in the dict, we ignore them.
       // Modifies are handled by the existing EndpointManagerDialogRowManager for that row.
-      var (adds, removes, _) = _prevDict.CalcDifference(dict);
+      var (adds, removes, modifies) = _prevDict.CalcDifference(dict);
+
+      Debug.WriteLine($"_prevDict was {_prevDict}");
+      Debug.WriteLine($"dict is {dict}");
+      Debug.WriteLine($"These are your adds: {adds}");
+      Debug.WriteLine($"These are your removes: {removes}");
+      Debug.WriteLine($"These are your modified: {modifies}");
+
       _prevDict = dict;
 
       foreach (var item in adds.Values) {

@@ -234,12 +234,12 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     var validitySet = new Bitset64();
     var count = 0;
     var empty = T.Empty;
-    foreach (var index in validitySet) {
-      var child = children[index];
+    for (var i = 0; i != children.Length; ++i) {
+      var child = children[i];
       if (child == empty) {
         continue;
       }
-      validitySet = validitySet.WithElement(index);
+      validitySet = validitySet.WithElement(i);
       count += child.Count;
     }
     return Create(validitySet, count, children, 0, children[0]);
@@ -375,8 +375,8 @@ public class Leaf<T> : NodeBase, INode<Leaf<T>> {
     Array64<T?> removedData = new();
     Array64<T?> modifiedData = new();
 
-    var addedVs = ValiditySet.Without(target.ValiditySet);
-    var removedVs = target.ValiditySet.Without(ValiditySet);
+    var addedVs = target.ValiditySet.Without(ValiditySet);
+    var removedVs = ValiditySet.Without(target.ValiditySet);
     // These are present on both sides and either equal or unequal.
     var maybeModifiedVs = ValiditySet.Intersect(target.ValiditySet);
 
