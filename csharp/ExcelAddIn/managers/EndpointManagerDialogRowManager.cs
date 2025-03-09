@@ -27,7 +27,7 @@ public sealed class EndpointManagerDialogRowManager :
 
   private readonly object _sync = new();
   private readonly EndpointManagerDialogRow _row;
-  private readonly EndpointId _endpointId;
+  public readonly EndpointId EndpointId;
   private readonly StateManager _stateManager;
   private IDisposable? _healthDisposable;
   private IDisposable? _configDisposable;
@@ -36,7 +36,7 @@ public sealed class EndpointManagerDialogRowManager :
   private EndpointManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
     StateManager stateManager) {
     _row = row;
-    _endpointId = endpointId;
+    EndpointId = endpointId;
     _stateManager = stateManager;
   }
 
@@ -50,8 +50,8 @@ public sealed class EndpointManagerDialogRowManager :
       Unsubscribe();
 
       // We watch for session and credential state changes in our ID
-      _healthDisposable = _stateManager.SubscribeToEndpointHealth(_endpointId, this);
-      _configDisposable = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+      _healthDisposable = _stateManager.SubscribeToEndpointHealth(EndpointId, this);
+      _configDisposable = _stateManager.SubscribeToEndpointConfig(EndpointId, this);
       _defaultEndpointDisposable = _stateManager.SubscribeToDefaultEndpoint(this);
     }
   }
@@ -65,7 +65,7 @@ public sealed class EndpointManagerDialogRowManager :
   }
 
   public void OnNext(StatusOr<EndpointConfigBase> ecb) {
-    _row.SetCredentials(ecb);
+    _row.SetConfig(ecb);
   }
 
   public void OnNext(StatusOr<EndpointHealth> eh) {
@@ -78,13 +78,13 @@ public sealed class EndpointManagerDialogRowManager :
   }
 
   public void DoEdit() {
-    var config = _row.GetEndpointConfig();
+    var config = _row.GetConfig();
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
     var cvm = config.AcceptVisitor(
-      crs => EndpointDialogViewModel.OfIdAndCredentials(_endpointId.Id, crs),
-      _ => EndpointDialogViewModel.OfIdButOtherwiseEmpty(_endpointId.Id));
-    ConfigDialogFactory.CreateAndShow(_stateManager, cvm, _endpointId);
+      crs => EndpointDialogViewModel.OfIdAndCredentials(EndpointId, crs),
+      _ => EndpointDialogViewModel.OfIdButOtherwiseEmpty(EndpointId));
+    ConfigDialogFactory.CreateAndShow(_stateManager, cvm, EndpointId);
   }
 
   public bool TryDelete() {
@@ -96,7 +96,7 @@ public sealed class EndpointManagerDialogRowManager :
       // 4. If it fails, then there are other users of the endpoint, so resubscribe and
       //    signal that the delete failed.
       Unsubscribe();
-      var success = _stateManager.TryDeleteConfig(_endpointId);
+      var success = _stateManager.TryDeleteConfig(EndpointId);
       if (!success) {
         Resubscribe();
       }
@@ -106,7 +106,7 @@ public sealed class EndpointManagerDialogRowManager :
 
   public void DoReconnect() {
     lock (_sync) {
-      _stateManager.Reconnect(_endpointId);
+      _stateManager.Reconnect(EndpointId);
     }
   }
 
@@ -117,7 +117,7 @@ public sealed class EndpointManagerDialogRowManager :
         return;
       }
 
-      _stateManager.SetDefaultEndpoint(_endpointId);
+      _stateManager.SetDefaultEndpoint(EndpointId);
     }
   }
 }

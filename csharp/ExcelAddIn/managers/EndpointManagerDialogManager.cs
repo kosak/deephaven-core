@@ -3,6 +3,7 @@ using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Factories;
+using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
@@ -14,7 +15,7 @@ namespace Deephaven.ExcelAddIn.Managers;
 /// This should not be confused with EndpointManagerDialogRowManager, which is the
 /// Manager for the EndpointManagerDialogRow.
 /// </summary>
-internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointConfigBase>>,
+internal class EndpointManagerDialogManager : IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
   public static EndpointManagerDialogManager Create(StateManager stateManager,
     EndpointManagerDialog cmDialog) {
@@ -48,7 +49,9 @@ internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointCon
       if (_isDisposed.Value) {
         return;
       }
-      var (adds, removes, modifies) = _prevDict.CalcDifference(dict);
+      // If there are modifies in the dict, we ignore them.
+      // Modifies are handled by the existing EndpointManagerDialogRowManager for that row.
+      var (adds, removes, _) = _prevDict.CalcDifference(dict);
       _prevDict = dict;
 
       foreach (var item in adds.Values) {
@@ -69,11 +72,6 @@ internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointCon
         _cmDialog.RemoveRow(rowToDelete);
         rowManager.Dispose();
       }
-
-      foreach (var item in modifies.Values) {
-        // TODO(kosak)
-        Debug.WriteLine("what to do about modifies??");
-      }
     }
   }
 
@@ -93,37 +91,12 @@ internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointCon
     }
   }
 
-  public void OnCompleted() {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    // TODO(kosak)
-    throw new NotImplementedException();
-  }
-
   void OnNewButtonClicked() {
     var cvm = EndpointDialogViewModel.OfEmpty();
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, null);
   }
 
   void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
-    void ShowFailuresIfAny(Dictionary<EndpointId, bool> results) {
-      var failureMessages = results.Where(kvp => !kvp.Value)
-        .Select(kvp => $"{kvp.Key} still in use")
-        .ToArray();
-      if (failureMessages.Length == 0) {
-        return;
-      }
-      var failureText = string.Join(Environment.NewLine, failureMessages);
-      const string caption = "Couldn't delete some selections";
-      _cmDialog.BeginInvoke(() => {
-        var mbox = new DeephavenMessageBox(caption, failureText, false);
-        _ = mbox.ShowDialog(_cmDialog);
-      });
-    }
-
     var failures = new List<string>();
     lock (_sync) {
       var managers = rows.Where(_rowToManager.ContainsKey)
@@ -132,53 +105,63 @@ internal class EndpointManagerDialogManager : IObserver<SharableDict<EndpointCon
 
       foreach (var manager in managers) {
         if (!manager.TryDelete()) {
-          failures.Add(manager.EndpointWhatever);
+          failures.Add(manager.EndpointId.Id);
         }
       }
     }
+
+    if (failures.Count == 0) {
+      return;
+    }
+    var failureText = string.Join(Environment.NewLine, failures);
+    const string caption = "Couldn't delete some selections";
+    _cmDialog.BeginInvoke(() => {
+      var mbox = new DeephavenMessageBox(caption, failureText, false);
+      _ = mbox.ShowDialog(_cmDialog);
+    });
   }
 
   void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {
-    if (_workerThread.EnqueueOrNop(() => OnReconnectButtonClicked(rows))) {
-      return;
-    }
-
-    foreach (var row in rows) {
-      if (!_rowToManager.TryGetValue(row, out var manager)) {
-        continue;
+    lock (_sync) {
+      foreach (var row in rows) {
+        if (!_rowToManager.TryGetValue(row, out var manager)) {
+          continue;
+        }
+        manager.DoReconnect();
       }
-      manager.DoReconnect();
     }
   }
 
+  /// <summary>
+  /// Sets the default endpoint. In the case where there are multiple selected rows,
+  /// tries to do the reasonable thing.
+  /// </summary>
+  /// <param name="rows"></param>
   void OnMakeDefaultButtonClicked(EndpointManagerDialogRow[] rows) {
-    if (_workerThread.EnqueueOrNop(() => OnMakeDefaultButtonClicked(rows))) {
-      return;
-    }
+    lock (_sync) {
+      if (rows.Length == 0) {
+        // If no rows are selected, do nothing.
+        return;
+      }
 
-    // Make the last selected row the default
-    if (rows.Length == 0) {
-      return;
-    }
+      // If one or more rows are selected, arbitrarily choose the last one.
+      var row = rows[^1];
+      if (!_rowToManager.TryGetValue(row, out var manager)) {
+        return;
+      }
 
-    var row = rows[^1];
-    if (!_rowToManager.TryGetValue(row, out var manager)) {
-      return;
+      manager.DoSetAsDefault();
     }
-
-    manager.DoSetAsDefault();
   }
 
   void OnEditButtonClicked(EndpointManagerDialogRow[] rows) {
-    if (_workerThread.EnqueueOrNop(() => OnEditButtonClicked(rows))) {
-      return;
-    }
-
-    foreach (var row in rows) {
-      if (!_rowToManager.TryGetValue(row, out var manager)) {
-        continue;
+    lock (_sync) {
+      foreach (var row in rows) {
+        if (!_rowToManager.TryGetValue(row, out var manager)) {
+          continue;
+        }
+        manager.DoEdit();
       }
-      manager.DoEdit();
     }
   }
 }

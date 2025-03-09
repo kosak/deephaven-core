@@ -32,7 +32,7 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
   [DisplayName("Server Type")]
   public string ServerType {
     get {
-      var config = GetEndpointConfig();
+      var config = GetConfig();
       return config.AcceptVisitor(_ => "[Unknown]", _ => "Core", _ => "Core+");
     }
   }
@@ -46,13 +46,13 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
     }
   }
 
-  public EndpointConfigBase GetEndpointConfig() {
+  public EndpointConfigBase GetConfig() {
     lock (_sync) {
       return _endpointConfig;
     }
   }
 
-  public void SetCredentials(EndpointConfigBase value) {
+  public void SetConfig(EndpointConfigBase value) {
     lock (_sync) {
       _endpointConfig = value;
     }

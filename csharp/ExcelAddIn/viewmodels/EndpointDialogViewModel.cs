@@ -10,11 +10,11 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
     return new EndpointDialogViewModel();
   }
 
-  public static EndpointDialogViewModel OfIdButOtherwiseEmpty(string id) {
-    return new EndpointDialogViewModel { Id = id };
+  public static EndpointDialogViewModel OfIdButOtherwiseEmpty(EndpointId id) {
+    return new EndpointDialogViewModel { Id = id.Id };
   }
 
-  public static EndpointDialogViewModel OfIdAndCredentials(string id,
+  public static EndpointDialogViewModel OfIdAndCredentials(EndpointId id,
     PopulatedEndpointConfig config) {
     var result = new EndpointDialogViewModel {
       Id = config.Id.Id
