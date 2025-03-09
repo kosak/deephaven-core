@@ -4,14 +4,14 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointDictProvider :
-  IValueObservable<SharableDict<EndpointConfigEntry>> {
+  IValueObservable<SharableDict<EndpointConfigBase>> {
   private readonly object _sync = new();
-  private readonly ObserverContainer<SharableDict<EndpointConfigEntry>> _observers = new();
-  private SharableDict<EndpointConfigEntry> _dict = new();
+  private readonly ObserverContainer<SharableDict<EndpointConfigBase>> _observers = new();
+  private SharableDict<EndpointConfigBase> _dict = new();
   private readonly Dictionary<EndpointId, Int64> _idToKey = new();
   private Int64 _nextFreeId = 0;
 
-  public IDisposable Subscribe(IValueObserver<SharableDict<EndpointConfigEntry>> observer) {
+  public IDisposable Subscribe(IValueObserver<SharableDict<EndpointConfigBase>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
     }
@@ -23,35 +23,32 @@ internal class EndpointDictProvider :
     });
   }
 
-  public bool TryAddEmpty(EndpointId endpointId) {
-    lock (_sync) {
-      var key = _nextFreeId;
-      if (_idToKey.TryAdd(endpointId, key)) {
-        // endpointId is already in dictionary
-        return false;
-      }
-      ++_nextFreeId;
-      _dict = _dict.With(key, new EndpointConfigEntry(endpointId, null));
-
-      _observers.OnNext(_dict);
-      return true;
-    }
+  public bool TryAdd(EndpointConfigBase config) {
+    return TryAddOrMaybeReplace(config, false);
   }
 
-  public bool InsertOrReplace(EndpointConfigBase config) {
+  public bool AddOrReplace(EndpointConfigBase config) {
+    return TryAddOrMaybeReplace(config, true);
+  }
+
+  private bool TryAddOrMaybeReplace(EndpointConfigBase config, bool permitReplace) {
     lock (_sync) {
       var inserted = false;
       if (!_idToKey.TryGetValue(config.Id, out var key)) {
+        // Key does not exist, so allocate one.
         key = _nextFreeId++;
         _idToKey[config.Id] = key;
         inserted = true;
       }
-      var entry = new EndpointConfigEntry(config.Id, config);
-      _dict = _dict.With(key, entry);
+      if (!inserted && !permitReplace) {
+        return false;
+      }
+      _dict = _dict.With(key, config);
       _observers.OnNext(_dict);
       return inserted;
     }
   }
+
 
   public bool TryRemove(EndpointId endpointId) {
     lock (_sync) {
