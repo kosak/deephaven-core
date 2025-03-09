@@ -106,6 +106,10 @@ public readonly struct SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue>
   IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
   public int Count => _root.Count;
+
+  public override string ToString() {
+    return string.Join(", ", this.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+  }
 }
 
 internal readonly struct Destructured<TValue> {
@@ -246,7 +250,8 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     if (validitySet.IsEmpty) {
       return Empty;
     }
-    return new Internal<T>(validitySet, subtreeCount, children, 0, children[0]);
+    return new Internal<T>(validitySet, subtreeCount, children, replacementIndex,
+      replacementChild);
   }
 
   public readonly Array64<T> Children;

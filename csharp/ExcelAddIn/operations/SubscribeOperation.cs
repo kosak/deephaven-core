@@ -36,6 +36,9 @@ internal class SubscribeOperation : IExcelObservable,
       _observers.AddAndNotify(wrappedObserver, _rendered, out var isFirst);
 
       if (isFirst) {
+        if (_tableQuad.EndpointId != null) {
+          _stateManager.EnsureConfig(_tableQuad.EndpointId);
+        }
         _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
       }
 

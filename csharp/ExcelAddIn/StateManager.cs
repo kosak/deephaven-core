@@ -107,6 +107,13 @@ public class StateManager {
     }
   }
 
+  public void EnsureConfig(EndpointId id) {
+    lock (_sync) {
+      var empty = EndpointConfigBase.OfEmpty(id);
+      _ = _endpointDictProvider.TryAdd(empty);
+    }
+  }
+
   public bool TryDeleteConfig(EndpointId id) {
     lock (_sync) {
       if (_endpointConfigProviders.ContainsKey(id)) {

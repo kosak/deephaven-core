@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Models;
+﻿using System.Diagnostics;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 
@@ -63,6 +64,9 @@ internal class EndpointConfigProvider :
         // That didn't work. Try to find with slower differencing path
         var (added, _, modified) = _prevDict.CalcDifference(dict);
 
+        Debug.WriteLine($"This is prevdict: {_prevDict}");
+        Debug.WriteLine($"This is dict: {dict}");
+
         // If there is a new entry, it's in 'added' or 'modified'
         var combined = added.Concat(modified);
         var kvp = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
@@ -73,6 +77,7 @@ internal class EndpointConfigProvider :
       }
 
       _prevDict = dict;
+      Debug.WriteLine($"Now this is prevdict: {_prevDict}");
       if (ReferenceEquals(_prevConfig, config)) {
         // Debounce duplicate messages
         return;
