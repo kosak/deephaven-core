@@ -18,8 +18,8 @@ public static class DeephavenExcelFunctions {
   [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]
   public static void AddKosakConnection() {
     var id = new EndpointId("con1");
-    var config = EndpointConfigBase.OfCore(id, "10.0.4.109:10000", true);
-    StateManager.SetCredentials(config);
+    var config = EndpointConfigBase.OfCore(id, "10.0.4.109:10000");
+    StateManager.SetConfig(config);
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]

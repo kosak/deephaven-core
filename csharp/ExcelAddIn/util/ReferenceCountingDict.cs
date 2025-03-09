@@ -32,7 +32,7 @@ public class ReferenceCountingDict<TKey, TValue> where TKey : notnull {
     return _dict.ContainsKey(key);
   }
 
-  public bool TryGetValue(TKey key, out TValue? value) {
+  public bool TryGetValue(TKey key, [MaybeNullWhen(false)]out TValue value) {
     if (!_dict.TryGetValue(key, out var entry)) {
       value = default;
       return false;

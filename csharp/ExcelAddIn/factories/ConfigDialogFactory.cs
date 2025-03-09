@@ -100,7 +100,7 @@ internal class EndpointConfigDialogState :
     Background.Run(() => TestCredentialsBackground(newCreds, token));
   }
 
-  private void TestCredentialsBackground(EndpointConfigBase config, FreshnessToken token) {
+  private void TestCredentialsBackground(PopulatedEndpointConfig config, FreshnessToken token) {
     var state = "OK";
     try {
       // This operation might take some time.

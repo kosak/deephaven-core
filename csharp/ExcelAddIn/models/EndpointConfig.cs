@@ -3,11 +3,15 @@
 public abstract class EndpointConfigBase(EndpointId id) {
   public readonly EndpointId Id = id;
 
-  public static EndpointConfigBase OfCore(EndpointId id, string connectionString) {
+  public static EmptyEndpointConfig OfEmpty(EndpointId id) {
+    return new EmptyEndpointConfig(id);
+  }
+
+  public static CoreEndpointConfig OfCore(EndpointId id, string connectionString) {
     return new CoreEndpointConfig(id, connectionString);
   }
 
-  public static EndpointConfigBase OfCorePlus(EndpointId id, string jsonUrl, string userId,
+  public static CorePlusEndpointConfig OfCorePlus(EndpointId id, string jsonUrl, string userId,
     string password, string operateAs, bool validateCertificate) {
     return new CorePlusEndpointConfig(id, jsonUrl, userId, password, operateAs, validateCertificate);
   }
@@ -29,9 +33,20 @@ public sealed class EmptyEndpointConfig(
   }
 }
 
+public abstract class PopulatedEndpointConfig(EndpointId id) : EndpointConfigBase(id) {
+  public T AcceptVisitor<T>(
+    Func<CoreEndpointConfig, T> ofCore,
+    Func<CorePlusEndpointConfig, T> ofCorePlus) {
+    return AcceptVisitor(
+      _ => throw new NotImplementedException("impossible"),
+      ofCore,
+      ofCorePlus);
+  }
+}
+
 public sealed class CoreEndpointConfig(
   EndpointId id,
-  string connectionString) : EndpointConfigBase(id) {
+  string connectionString) : PopulatedEndpointConfig(id) {
   public readonly string ConnectionString = connectionString;
 
   public override T AcceptVisitor<T>(
@@ -48,7 +63,7 @@ public sealed class CorePlusEndpointConfig(
   string user,
   string password,
   string operateAs,
-  bool validateCertificate) : EndpointConfigBase(id) {
+  bool validateCertificate) : PopulatedEndpointConfig(id) {
   public readonly string JsonUrl = jsonUrl;
   public readonly string User = user;
   public readonly string Password = password;

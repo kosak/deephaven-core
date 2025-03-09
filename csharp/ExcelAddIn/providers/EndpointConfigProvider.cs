@@ -5,7 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider :
-  IValueObserver<SharableDict<EndpointConfigEntry>>,
+  IValueObserver<SharableDict<EndpointConfigBase>>,
   IValueObservable<StatusOr<EndpointConfigBase>>,
   IDisposable {
   private const string UnsetCredentialsString = "[No Config]";
@@ -16,7 +16,7 @@ internal class EndpointConfigProvider :
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamSubscription = null;
   private Int64 _keyHint = -1;
-  private SharableDict<EndpointConfigEntry> _prevDict = SharableDict<EndpointConfigEntry>.Empty;
+  private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
   private EndpointConfigBase? _prevConfig = null;
   private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
   private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
@@ -48,18 +48,18 @@ internal class EndpointConfigProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamSubscription);
-      SorUtil.Replace(ref _credentials, "[Disposed]");
+      StatusOrUtil.Replace(ref _credentials, "[Disposed]");
     }
   }
 
-  public void OnNext(SharableDict<EndpointConfigEntry> dict) {
+  public void OnNext(SharableDict<EndpointConfigBase> dict) {
     lock (_sync) {
       if (_isDisposed.Value) {
         return;
       }
 
       // Try to find with fast path
-      if (!dict.TryGetValue(_keyHint, out var configEntry) || !configEntry.Id.Equals(_endpointId)) {
+      if (!dict.TryGetValue(_keyHint, out var config) || !config.Id.Equals(_endpointId)) {
         // That didn't work. Try to find with slower differencing path
         var (added, _, modified) = _prevDict.CalcDifference(dict);
 
@@ -69,9 +69,8 @@ internal class EndpointConfigProvider :
 
         // Save the keyhint for next time (it will either be an accurate hint or a zero)
         _keyHint = kvp.Key;
-        configEntry = kvp.Value;
+        config = kvp.Value;
       }
-      var config = configEntry?.Config;
 
       _prevDict = dict;
       if (ReferenceEquals(_prevConfig, config)) {
@@ -81,16 +80,18 @@ internal class EndpointConfigProvider :
       _prevConfig = config;
       
       if (config == null) {
-        SorUtil.ReplaceAndNotify(ref _credentials, UnsetCredentialsString, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _credentials, UnsetCredentialsString, _observers);
         return;
       }
 
       var value = StatusOr<EndpointConfigBase>.OfValue(config);
-      SorUtil.ReplaceAndNotify(ref _credentials, value, _observers);
+      StatusOrUtil.ReplaceAndNotify(ref _credentials, value, _observers);
     }
   }
 
   public void Resend() {
-    zmaboni_time();
+    lock (_sync) {
+      _observers.OnNext(_credentials);
+    }
   }
 }

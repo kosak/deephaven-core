@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
@@ -15,7 +14,8 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
     return new EndpointDialogViewModel { Id = id };
   }
 
-  public static EndpointDialogViewModel OfIdAndCredentials(string id, EndpointConfigBase config) {
+  public static EndpointDialogViewModel OfIdAndCredentials(string id,
+    PopulatedEndpointConfig config) {
     var result = new EndpointDialogViewModel {
       Id = config.Id.Id
     };
@@ -23,7 +23,6 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
       core => {
         result._isCorePlus = false;
         result.ConnectionString = core.ConnectionString;
-        result.SessionTypeIsPython = core.SessionTypeIsPython;
         return Unit.Instance;
       },
       corePlus => {
@@ -42,7 +41,6 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
   private string _id = "";
   private bool _isDefault = false;
   private bool _isCorePlus = true;
-  private bool _sessionTypeIsPython = true;
 
   // Core properties
   private string _connectionString = "";
@@ -56,7 +54,7 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  public bool TryMakeCredentials([NotNullWhen(true)] out EndpointConfigBase? result,
+  public bool TryMakeCredentials([NotNullWhen(true)] out PopulatedEndpointConfig? result,
     [NotNullWhen(false)] out string? errorText) {
     result = null;
     errorText = null;
@@ -86,7 +84,7 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
     var epId = new EndpointId(_id);
     result = _isCorePlus
       ? EndpointConfigBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
-      : EndpointConfigBase.OfCore(epId, ConnectionString, SessionTypeIsPython);
+      : EndpointConfigBase.OfCore(epId, ConnectionString);
     return true;
   }
 
@@ -217,32 +215,6 @@ public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
 
       _validateCertificate = value;
       OnPropertyChanged();
-    }
-  }
-
-  public bool SessionTypeIsPython {
-    get => _sessionTypeIsPython;
-    set {
-      if (_sessionTypeIsPython == value) {
-        return;
-      }
-
-      _sessionTypeIsPython = value;
-      OnPropertyChanged();
-      OnPropertyChanged(nameof(SessionTypeIsGroovy));
-    }
-  }
-
-  public bool SessionTypeIsGroovy {
-    get => !_sessionTypeIsPython;
-    set {
-      if (!_sessionTypeIsPython == value) {
-        return;
-      }
-
-      _sessionTypeIsPython = !value;
-      OnPropertyChanged();
-      OnPropertyChanged(nameof(SessionTypeIsPython));
     }
   }
 

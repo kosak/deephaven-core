@@ -1,4 +1,5 @@
-﻿using Deephaven.ExcelAddIn.Status;
+﻿using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Status;
 namespace Deephaven.ExcelAddIn.Util;
 
 /// <summary>
@@ -42,6 +43,12 @@ internal static class StatusOrUtil {
     Replace(ref dest, newValue);
     observers.OnNext(dest);
     EnqueueKeepAlive(observers, dest);
+  }
+
+  public static void AddObserverAndNotify<T>(ObserverContainer<StatusOr<T>> observers,
+    IValueObserver<StatusOr<T>> observer, StatusOr<T> item, out bool isFirst) {
+    observers.AddAndNotify(observer, item, out isFirst);
+    EnqueueKeepAlive(observers, item);
   }
 
   private static void EnqueueKeepAlive<T>(ObserverContainer<StatusOr<T>> observers,

@@ -39,7 +39,7 @@ internal class CoreClientProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     lock (_sync) {
-      SorUtil.AddObserverAndNotify(_observers, observer, _client, out _);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out _);
       if (_subscribeDone.TrySet()) {
         // Subscribe to parent at the first-ever subscribe
         _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
@@ -59,7 +59,7 @@ internal class CoreClientProvider :
         return;
       }
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      SorUtil.Replace(ref _client, "[Disposing]");
+      StatusOrUtil.Replace(ref _client, "[Disposing]");
     }
   }
 
@@ -73,19 +73,19 @@ internal class CoreClientProvider :
       var token = _freshness.Refresh();
 
       if (!config.GetValueOrStatus(out var ecb, out var status)) {
-        SorUtil.ReplaceAndNotify(ref _client, status, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _client, status, _observers);
         return;
       }
 
       _ = ecb.AcceptVisitor(
         core => {
-          SorUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
+          StatusOrUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
           Background.Run(() => OnNextBackground(core, token));
           return Unit.Instance;  // have to return something
         },
         _ => {
           // Error: we are a Core entity but we are getting credentials for CorePlus
-          SorUtil.ReplaceAndNotify(ref _client,
+          StatusOrUtil.ReplaceAndNotify(ref _client,
             "Enterprise Core+ requires a PQ to be specified", _observers);
           return Unit.Instance;  // have to return something
         });
@@ -106,7 +106,7 @@ internal class CoreClientProvider :
 
     lock (_sync) {
       if (token.IsCurrentUnsafe) {
-        SorUtil.ReplaceAndNotify(ref _client, result, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _client, result, _observers);
       }
     }
   }
