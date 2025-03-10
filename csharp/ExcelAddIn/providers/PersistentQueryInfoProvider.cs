@@ -72,7 +72,9 @@ internal class PersistentQueryInfoProvider :
 
       if (!dict.GetValueOrStatus(out var d, out var status)) {
         _prevDict = SharableDict<PersistentQueryInfoMessage>.Empty;
-        _lastMessage = null;
+        // A unique message that will not be equal to anything else and
+        // therefore won't mislead the debouncer.
+        _lastMessage = new();
         StatusOrUtil.ReplaceAndNotify(ref _infoMessage, status, _observers);
         return;
       }
