@@ -3,7 +3,7 @@
 namespace Deephaven.ExcelAddIn.Util;
 
 public sealed class ObserverContainer<T> : IValueObserver<T> {
-  private readonly SequentialExecutor _executor = new();
+  private readonly SequentialExecutor _executor = SequentialExecutor.Create();
   private readonly HashSet<IValueObserver<T>> _observers = new();
 
   public void AddAndNotify(IValueObserver<T> observer, T value, out bool isFirst) {

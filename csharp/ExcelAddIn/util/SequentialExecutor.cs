@@ -4,9 +4,19 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Util;
 
 public class SequentialExecutor {
+  private static readonly SequentialExecutor SingleGlobalInstanceDebugging = new();
+
+  public static SequentialExecutor Create() {
+    return SingleGlobalInstanceDebugging;
+  }
+
   private readonly object _sync = new();
   private List<Action> _todo = new();
   private bool _serviceThreadExists = false;
+
+  private SequentialExecutor() {
+
+  }
 
   /**
    * Enqueue an action onto the servicing queue and start a thread pool task if
