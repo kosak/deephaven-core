@@ -73,7 +73,7 @@ internal class CorePlusClientProvider :
 
   public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager) {
     lock (_sync) {
-      if (!_isDisposed.Value) {
+      if (_isDisposed.Value) {
         return;
       }
       StatusOrUtil.Replace(ref _sessionManager, sessionManager);
@@ -83,7 +83,7 @@ internal class CorePlusClientProvider :
 
   public void OnNext(StatusOr<PersistentQueryInfoMessage> pqInfo) {
     lock (_sync) {
-      if (!_isDisposed.Value) {
+      if (_isDisposed.Value) {
         return;
       }
       _pqInfo = pqInfo;
@@ -131,9 +131,10 @@ internal class CorePlusClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (token.IsCurrent) {
-        StatusOrUtil.ReplaceAndNotify(ref _client, newState, _observers);
+      if (!token.IsCurrent) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _client, newState, _observers);
     }
   }
 }
