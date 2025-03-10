@@ -82,11 +82,15 @@ internal class PersistentQueryDictProvider :
     var sub = subRef.Value;
     while (true) {
       StatusOr<SharableDict<PersistentQueryInfoMessage>> newDict;
+      var oversion = version;
       if (sub.Next(version) && sub.Current(out version, out var dict)) {
         // TODO(kosak): do something about this sneaky downcast
         newDict = (SharableDict<PersistentQueryInfoMessage>)dict;
       } else {
         newDict = "[Subscription closed]";
+        var t1 = sub.Next(oversion);
+        var t2 = sub.Current(out var v9, out var d9);
+
         wantExit = true;
       }
 
