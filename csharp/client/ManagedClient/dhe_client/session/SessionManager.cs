@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Xml.Linq;
 using Deephaven.DheClient.Auth;
 using Deephaven.DheClient.Controller;
 using Deephaven.ManagedClient;

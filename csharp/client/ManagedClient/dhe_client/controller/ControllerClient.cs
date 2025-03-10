@@ -56,6 +56,7 @@ public class ControllerClient : IDisposable {
   private readonly GrpcChannel _channel;
   private readonly ControllerApi.ControllerApiClient _controllerApi;
   private readonly SubscriptionContext _subscriptionContext;
+  private readonly Subscription _sharedSubscription;
 
   /// <summary>
   /// These fields are all protected by a synchronization object
@@ -81,6 +82,7 @@ public class ControllerClient : IDisposable {
     _channel = channel;
     _controllerApi = controllerApi;
     _subscriptionContext = subscriptionContext;
+    _sharedSubscription = new(_subscriptionContext);
     var keepalive = new Timer(Heartbeat);
     _synced = new SyncedFields(authCookie, keepalive);
     keepalive.Change(HeartbeatPeriod, HeartbeatPeriod);
@@ -98,7 +100,7 @@ public class ControllerClient : IDisposable {
     _channel.Dispose();
   }
 
-  public Subscription Subscribe() => new (_subscriptionContext);
+  public Subscription Subscribe() => _sharedSubscription;
 
   /// <summary>
   /// Test if a given status implies a running query.

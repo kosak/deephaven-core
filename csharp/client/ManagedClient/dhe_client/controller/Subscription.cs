@@ -10,7 +10,8 @@ public class Subscription : IDisposable {
   }
 
   public void Dispose() {
-    _context.Dispose();
+    // In the current implementation, all users share the same subscription,
+    // so Dispose is a no-op.
   }
 
   /**
