@@ -36,6 +36,10 @@ public static class DeephavenExcelFunctions {
   //   cell.AddComment(commentText);
   // }
 
+  [ExcelFunction(Description = "Test function", IsThreadSafe = true)]
+  public static object DEEPHAVEN_TEST() {
+    return ExcelError.ExcelErrorGettingData;
+  }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
