@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.CodeDom.Compiler;
+using System.Diagnostics;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
@@ -74,29 +75,26 @@ internal class FilteredTableProvider :
   }
 
   public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle) {
-    lock (_sync) {
-      if (_isDisposed.Value) {
-        return;
-      }
-
-      // Invalidate any outstanding background work
-      var token = _freshnessSource.Refresh();
-
-      if (!parentHandle.GetValueOrStatus(out var ph, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
-        return;
-      }
-
-      StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
-      var phShare = ph.Share();
-      Background.Run(() => {
-        using var cleanup = phShare;
-        OnNextBackground(phShare, token);
-      });
+    if (_executor.MaybeDefer(OnNext, parentHandle)) {
+      return;
     }
+    if (_isDisposed.Value) {
+      return;
+    }
+
+    // Invalidate any outstanding background work
+    var token = _freshnessSource.Refresh();
+
+    if (!parentHandle.GetValueOrStatus(out var ph, out var status)) {
+      StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
+      return;
+    }
+
+    StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
+    Background.Run(OnNextBackground, parentHandle, token);
   }
 
-  private void OnNextBackground(RefCounted<TableHandle> parentHandle,
+  private static void OnNextBackground(RefCounted<TableHandle> parentHandle,
     FreshnessToken token) {
     RefCounted<TableHandle>? newRef = null;
     StatusOr<RefCounted<TableHandle>> newResult;
@@ -114,10 +112,24 @@ internal class FilteredTableProvider :
     }
     using var cleanup = newRef;
 
+    OnNextFinish(ref _filteredTableHandle, _newResuilt, _observers);
+
     lock (_sync) {
       if (token.IsCurrent) {
         StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
       }
     }
+  }
+
+  private void OnNextFinish(StatusOr<RefCounted<TableHandle>> result) {
+    if (_executor.MaybeDefer(OnNextFinish, result)) {
+      return;
+    }
+
+
+
+
+
+
   }
 }
