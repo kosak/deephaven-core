@@ -67,7 +67,7 @@ public sealed class EndpointManagerDialogRowManager :
   public void OnNext(StatusOr<EndpointConfigBase> ecb) {
     // If we get any status message (meaning there's no config) we're going
     // to translate for our purposes into an "empty config with this endpoint ID".
-    if (!ecb.GetValueOrStatus(out var config, out var _)) {
+    if (!ecb.GetValueOrStatus(out var config, out _)) {
       config = EndpointConfigBase.OfEmpty(new EndpointId(_row.Id));
     }
     _row.SetConfig(config);

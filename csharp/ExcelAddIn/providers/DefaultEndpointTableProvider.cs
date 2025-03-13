@@ -78,7 +78,7 @@ internal class DefaultEndpointTableProvider :
       var token = _freshness.Refresh();
 
       if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _tableHandle, UnsetTableHandleText, _observers);
+        StatusOrUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
         return;
       }
 
