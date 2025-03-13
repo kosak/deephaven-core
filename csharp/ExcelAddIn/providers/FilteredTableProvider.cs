@@ -28,8 +28,8 @@ internal class FilteredTableProvider :
   private readonly PqName? _pqName;
   private readonly string _tableName;
   private readonly string _condition;
-  private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshnessSource;
+  private readonly SequentialExecutor _executor = SequentialExecutor.Create();
+  private CancellationTokenSource _cts = new();
   private readonly Latch _subscribeDone = new();
   private readonly Latch _isDisposed = new();
   private IDisposable? _upstreamDisposer = null;
@@ -43,11 +43,10 @@ internal class FilteredTableProvider :
     _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
-    _freshnessSource = new(_sync);
   }
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
-    lock (_sync) {
+    _executor.Defer(() => {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out _);
       if (_subscribeDone.TrySet()) {
         // Subscribe to parent at the first-ever subscribe
@@ -55,12 +54,13 @@ internal class FilteredTableProvider :
         Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
         _upstreamDisposer = _stateManager.SubscribeToTable(tq, this);
       }
-    }
+    });
 
     return ActionAsDisposable.Create(() => {
-      lock (_sync) {
+      deferredZamboni.Mute();
+      _executor.Defer(() => {
         _observers.Remove(observer, out _);
-      }
+      });
     });
   }
 
@@ -94,13 +94,13 @@ internal class FilteredTableProvider :
     Background.Run(OnNextBackground, parentHandle, token);
   }
 
-  private static void OnNextBackground(RefCounted<TableHandle> parentHandle,
-    FreshnessToken token) {
+  private static void OnNextBackground(FilteredTableProvider self,
+    RefCounted<TableHandle> parentHandle, CancellationToken token) {
     RefCounted<TableHandle>? newRef = null;
     StatusOr<RefCounted<TableHandle>> newResult;
     try {
       // This is a server call that may take some time.
-      var childHandle = parentHandle.Value.Where(_condition);
+      var childHandle = parentHandle.Value.Where(self._condition);
       // The child handle takes a dependency on the parent handle, not because
       // TableHandles have a dependency on each other, but because the parent handle
       // has a transitive dependency on the Client or DndClient, and that's what
@@ -112,24 +112,18 @@ internal class FilteredTableProvider :
     }
     using var cleanup = newRef;
 
-    OnNextFinish(ref _filteredTableHandle, _newResuilt, _observers);
-
-    lock (_sync) {
-      if (token.IsCurrent) {
-        StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
-      }
-    }
+    self.OnNextFinish(newResult, token);
   }
 
-  private void OnNextFinish(StatusOr<RefCounted<TableHandle>> result) {
+  private void OnNextFinish(StatusOr<RefCounted<TableHandle>> result, CancellationToken token) {
     if (_executor.MaybeDefer(OnNextFinish, result)) {
       return;
     }
 
+    if (token.IsCancellationRequested) {
+      return;
+    }
 
-
-
-
-
+    StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
   }
 }
