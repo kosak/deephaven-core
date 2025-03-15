@@ -11,8 +11,12 @@ public sealed class StatusOr<T> {
   private readonly Status? _status;
   private readonly T? _value;
 
+  public static implicit operator StatusOr<T>(Status status) {
+    return new StatusOr<T>(status, default);
+  }
+
   public static implicit operator StatusOr<T>(string status) {
-    return OfStatus(status);
+    return OfState(status);
   }
 
   public static implicit operator StatusOr<T>(T value) {

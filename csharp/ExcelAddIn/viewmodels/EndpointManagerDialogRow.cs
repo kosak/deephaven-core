@@ -25,7 +25,7 @@ public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged
       // If we have a valid session, return "[Connected]", otherwise pass through the status text we have.
       return health.AcceptVisitor(
         _ => "[Connected]",
-        status => status);
+        status => status.Text);
     }
   }
 

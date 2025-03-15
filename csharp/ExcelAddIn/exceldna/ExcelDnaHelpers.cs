@@ -25,7 +25,10 @@ internal class ExcelObserverWrapper(IExcelObserver inner) : IValueObserver<Statu
   public void OnNext(StatusOr<object?[,]> sov) {
     if (!sov.GetValueOrStatus(out var value, out var status)) {
       // Reformat the status text as an object[,] 2D array so Excel renders it as 1x1 "table".
-      value = new object[,] { { status } };
+      var text = status.Text;
+      // TODO(kosak): return Excel st atuses here and optionally decorate the
+      // calling cell with the state.
+      value = new object[,] { { text } };
     }
     inner.OnNext(value);
   }
