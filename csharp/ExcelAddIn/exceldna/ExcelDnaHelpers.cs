@@ -1,6 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
-using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.ExcelDna;

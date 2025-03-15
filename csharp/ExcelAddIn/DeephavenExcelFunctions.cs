@@ -38,7 +38,7 @@ public static class DeephavenExcelFunctions {
 
   [ExcelFunction(Description = "Test function", IsThreadSafe = true)]
   public static object DEEPHAVEN_TEST() {
-    return ExcelError.ExcelErrorGettingData;
+    return ExcelError.ExcelErrorNull;
   }
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
