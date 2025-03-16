@@ -220,28 +220,28 @@ void deephaven_client_TableHandle_GetAttributes(
   });
 }
 
-void deephaven_client_TableHandle_GetSchema(
-    NativePtr<TableHandle> self,
-    int32_t num_columns, StringHandle *column_handles, int32_t *column_types,
-    StringPoolHandle *string_pool_handle,
-    ErrorStatus *status) {
-  status->Run([=]() {
-    const auto &schema = self->Schema();
-
-    if (num_columns != schema->NumCols()) {
-      auto message = fmt::format("Expected {} columns, but schema has {}",
-          num_columns, schema->NumCols());
-      throw std::runtime_error(message);
-    }
-
-    StringPoolBuilder builder;
-    for (int32_t i = 0; i != num_columns; ++i) {
-      column_handles[i] = builder.Add(schema->Names()[i]);
-      column_types[i] = static_cast<int32_t>(schema->Types()[i]);
-    }
-    *string_pool_handle = builder.Build();
-  });
-}
+//void deephaven_client_TableHandle_GetSchema(
+//    NativePtr<TableHandle> self,
+//    int32_t num_columns, StringHandle *column_handles, int32_t *column_types,
+//    StringPoolHandle *string_pool_handle,
+//    ErrorStatus *status) {
+//  status->Run([=]() {
+//    const auto &schema = self->Schema();
+//
+//    if (num_columns != schema->NumCols()) {
+//      auto message = fmt::format("Expected {} columns, but schema has {}",
+//          num_columns, schema->NumCols());
+//      throw std::runtime_error(message);
+//    }
+//
+//    StringPoolBuilder builder;
+//    for (int32_t i = 0; i != num_columns; ++i) {
+//      column_handles[i] = builder.Add(schema->Names()[i]);
+//      column_types[i] = static_cast<int32_t>(schema->Types()[i]);
+//    }
+//    *string_pool_handle = builder.Build();
+//  });
+//}
 
 // There is no TableHandle_ctor entry point because we don't need callers to invoke
 // the TableHandle ctor directly.
@@ -778,28 +778,28 @@ void deephaven_client_ArrowTable_GetDimensions(
   });
 }
 
-void deephaven_client_ArrowTable_GetSchema(
-    NativePtr<ArrowTableSpWrapper> self,
-  int32_t num_columns, StringHandle *column_handles, int32_t *column_types,
-  StringPoolHandle *string_pool_handle, ErrorStatus *status) {
-  status->Run([=]() {
-    const auto &schema = self->table_->schema();
-    if (schema->num_fields() != num_columns) {
-      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
-          schema->num_fields(), num_columns);
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-    }
-
-    StringPoolBuilder builder;
-    for (int32_t i = 0; i != num_columns; ++i) {
-      const auto &field = schema->fields()[i];
-      column_handles[i] = builder.Add(field->name());
-      auto element_type_id = *ArrowUtil::GetElementTypeId(*field->type(), true);
-      column_types[i] = static_cast<int32_t>(element_type_id);
-    }
-    *string_pool_handle = builder.Build();
-  });
-}
+//void deephaven_client_ArrowTable_GetSchema(
+//    NativePtr<ArrowTableSpWrapper> self,
+//  int32_t num_columns, StringHandle *column_handles, int32_t *column_types,
+//  StringPoolHandle *string_pool_handle, ErrorStatus *status) {
+//  status->Run([=]() {
+//    const auto &schema = self->table_->schema();
+//    if (schema->num_fields() != num_columns) {
+//      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
+//          schema->num_fields(), num_columns);
+//      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+//    }
+//
+//    StringPoolBuilder builder;
+//    for (int32_t i = 0; i != num_columns; ++i) {
+//      const auto &field = schema->fields()[i];
+//      column_handles[i] = builder.Add(field->name());
+//      auto element_type_id = *ArrowUtil::GetElementTypeId(*field->type(), true);
+//      column_types[i] = static_cast<int32_t>(element_type_id);
+//    }
+//    *string_pool_handle = builder.Build();
+//  });
+//}
 
 void deephaven_client_TickingUpdate_dtor(NativePtr<TickingUpdate> self) {
   delete self.Get();
@@ -823,26 +823,26 @@ void deephaven_client_ClientTable_GetDimensions(
   });
 }
 
-void deephaven_client_ClientTable_Schema(NativePtr<ClientTableSpWrapper> self,
-    int32_t num_columns, StringHandle *column_handles, int32_t *column_types,
-    StringPoolHandle *string_pool_handle,
-    ErrorStatus *status) {
-  status->Run([=]() {
-    const auto &schema = self->table_->Schema();
-    if (schema->NumCols() != num_columns) {
-      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
-          schema->NumCols(), num_columns);
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-    }
-
-    StringPoolBuilder builder;
-    for (int32_t i = 0; i != num_columns; ++i) {
-      column_handles[i] = builder.Add(schema->Names()[i]);
-      column_types[i] = static_cast<int32_t>(schema->Types()[i]);
-    }
-    *string_pool_handle = builder.Build();
-  });
-}
+//void deephaven_client_ClientTable_Schema(NativePtr<ClientTableSpWrapper> self,
+//    int32_t num_columns, StringHandle *column_handles, int32_t *column_types,
+//    StringPoolHandle *string_pool_handle,
+//    ErrorStatus *status) {
+//  status->Run([=]() {
+//    const auto &schema = self->table_->Schema();
+//    if (schema->NumCols() != num_columns) {
+//      auto message = fmt::format("Expected schema->num_fields ({}) == num_columns ({})",
+//          schema->NumCols(), num_columns);
+//      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+//    }
+//
+//    StringPoolBuilder builder;
+//    for (int32_t i = 0; i != num_columns; ++i) {
+//      column_handles[i] = builder.Add(schema->Names()[i]);
+//      column_types[i] = static_cast<int32_t>(schema->Types()[i]);
+//    }
+//    *string_pool_handle = builder.Build();
+//  });
+//}
 
 void deephaven_client_ClientTable_ToString(
     NativePtr<ClientTableSpWrapper> self,
