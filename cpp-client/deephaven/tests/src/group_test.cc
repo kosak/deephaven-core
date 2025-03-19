@@ -15,6 +15,7 @@ using deephaven::client::utility::TableMaker;
 using deephaven::dhcore::DateTime;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::ColumnSourceChunk;
+using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::container::RowSequence;
 
 namespace deephaven::client::tests {
@@ -70,6 +71,16 @@ TEST_CASE("Group a Table", "[group]") {
   (void)data0;
   (void)data1;
 
+  auto stringchunk = StringChunk::Create(3);
+  auto twoRows = RowSequence::CreateSequential(0, 3);
+  data0.FillChunk(*twoRows, &stringchunk, nullptr);
+
+  const auto &sc0 = stringchunk.data()[0];
+  const auto &sc1 = stringchunk.data()[1];
+  const auto &sc2 = stringchunk.data()[2];
+  (void)sc0;
+  (void)sc1;
+  (void)sc2;
   std::cout << "What is this\n";
 }
 }  // namespace deephaven::client::tests
