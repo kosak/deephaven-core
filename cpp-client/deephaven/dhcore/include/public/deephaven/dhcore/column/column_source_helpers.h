@@ -23,6 +23,7 @@ public:
   static const char kDateTimeName[];
   static const char kLocalDateName[];
   static const char kLocalTimeName[];
+  static const char kColumnSourceName[];
 };
 
 struct ElementTypeVisitor : public ColumnSourceVisitor {
@@ -72,6 +73,10 @@ struct ElementTypeVisitor : public ColumnSourceVisitor {
 
   void Visit(const LocalTimeColumnSource & /*source*/) final {
     value_ = HumanReadableTypeNames::kLocalTimeName;
+  }
+
+  void Visit(const ColumnSourceColumnSource & /*source*/) final {
+    value_ = HumanReadableTypeNames::kColumnSourceName;
   }
 
   const char *value_ = nullptr;
@@ -150,4 +155,8 @@ struct HumanReadableStaticTypeName<deephaven::dhcore::LocalTime> {
   static const char *GetName() { return internal::HumanReadableTypeNames::kLocalTimeName; }
 };
 
+template<>
+struct HumanReadableStaticTypeName<std::shared_ptr<deephaven::dhcore::column::ColumnSource>> {
+  static const char *GetName() { return internal::HumanReadableTypeNames::kColumnSourceName; }
+};
 }  // namespace deephaven::client::column
