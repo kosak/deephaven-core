@@ -4,6 +4,7 @@
 #include "deephaven/client/arrowutil/arrow_column_source.h"
 #include "deephaven/client/arrowutil/arrow_client_table.h"
 #include "deephaven/client/utility/arrow_util.h"
+#include "deephaven/dhcore/column/array_column_source.h"
 #include "deephaven/dhcore/types.h"
 #include "arrow/scalar.h"
 
@@ -35,6 +36,7 @@ using deephaven::dhcore::clienttable::ClientTable;
 using deephaven::dhcore::column::BooleanColumnSource;
 using deephaven::dhcore::column::CharColumnSource;
 using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::column::ColumnSourceArrayColumnSource;
 using deephaven::dhcore::column::DoubleColumnSource;
 using deephaven::dhcore::column::FloatColumnSource;
 using deephaven::dhcore::column::Int8ColumnSource;
@@ -111,51 +113,32 @@ struct ElementIsListVisitor final : public arrow::TypeVisitor {
       list_arrays_(std::move(list_arrays)) {}
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    std::cout << "OK, list_arrays_ has size " << list_arrays_.size() << '\n';
+    // the real deal starts here
+    int64_t total_size = 0;
     for (const auto &la : list_arrays_) {
-      const auto &v = la->values();
-      std::cout << "why1 " << la->ToString() << '\n';
-      std::cout << "why2 " << v->ToString() << '\n';
-      auto v3 = std::dynamic_pointer_cast<arrow::StringArray>(v);
-      std::cout << "why3 " << v3->ToString() << '\n';
-
-      std::cout << "offsets are " << la->offsets()->ToString() << '\n';
-      std::cout << "slice 0 is " << la->value_slice(0)->ToString() << '\n';
-      std::cout << "slice 1 is " << la->value_slice(1)->ToString() << '\n';
+      total_size += la->length();
     }
 
-    // result_ = StringArrowColumnSource::OfArrowArrayVec(std::move(arrays));
-    auto l = list_arrays_[0]->length();
-    auto z = list_arrays_[0]->GetScalar(0);
-    std::cout << "la[0].length is " << l << '\n';
-    std::cout << "la[0] is " << list_arrays_[0]->ToString() << '\n';
+    auto elements = std::make_unique<std::shared_ptr<ColumnSource>[]>(total_size);
+    auto nulls = std::make_unique<bool[]>(total_size);
 
-    auto z2 = *z;
-    const auto &z3 = *z2;
-    std::cout << "z is " << z3.ToString() << "\n";
-    auto z3s = z3.ToString();
-
-    auto v = list_arrays_[0]->values();
-    const auto &v2 = *v;
-    (void)v2;
-    auto v3 = std::dynamic_pointer_cast<arrow::StringArray>(v);
-    auto zamboni = StringArrowColumnSource::OfArrowArray(v3);
-
-    // the real deal starts here
-    std::vector<std::shared_ptr<StringArrowColumnSource>> result;
-
+    int64_t next_index = 0;
     for (const auto &la : list_arrays_) {
-      for (int64_t i = 0; i != la->length(); ++i) {
+      for (int64_t i = 0; i != la->length(); ++i, ++next_index) {
         if (la->IsNull(i)) {
-          // TODO(kosak): deal with nulls
+          elements[next_index] = nullptr;
+          nulls[next_index] = true;
           continue;
         }
         auto slice = la->value_slice(i);
         auto as_element_array = std::dynamic_pointer_cast<arrow::StringArray>(slice);
         auto as_cs = StringArrowColumnSource::OfArrowArray(as_element_array);
-        result.push_back(as_cs);
+        elements[next_index] = std::move(as_cs);
+        nulls[next_index] = false;
       }
     }
+    result_ = ColumnSourceArrayColumnSource::CreateFromArrays(std::move(elements),
+        std::move(nulls), total_size);
     return arrow::Status::OK();
   }
 

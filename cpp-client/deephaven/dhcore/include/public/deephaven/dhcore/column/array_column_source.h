@@ -249,4 +249,5 @@ using StringArrayColumnSource = GenericArrayColumnSource<std::string>;
 using DateTimeArrayColumnSource = GenericArrayColumnSource<DateTime>;
 using LocalDateArrayColumnSource = GenericArrayColumnSource<LocalDate>;
 using LocalTimeArrayColumnSource = GenericArrayColumnSource<LocalTime>;
+using ColumnSourceArrayColumnSource = GenericArrayColumnSource<std::shared_ptr<ColumnSource>>;
 }  // namespace deephaven::dhcore::column
