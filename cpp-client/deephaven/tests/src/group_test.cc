@@ -31,7 +31,8 @@ TEST_CASE("Group a Table", "[group]") {
   };
 
   std::vector<int32_t> weight_data = {
-      102, 85, 79, 92, 78, 99
+      // 102, 85, 79, 92, 78, 99
+      0, 0, 0, 1, 1, 1
   };
 
   std::vector<int32_t> calorie_data = {
@@ -45,7 +46,7 @@ TEST_CASE("Group a Table", "[group]") {
   maker.AddColumn("Calories", calorie_data);
   auto t1 = maker.MakeTable(tm.Client().GetManager());
 
-  auto grouped = t1.By();
+  auto grouped = t1.By("Weight");
 
   std::cout << grouped.Stream(true) << '\n';
 

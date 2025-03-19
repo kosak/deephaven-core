@@ -107,19 +107,59 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 }
 
 struct ElementIsListVisitor final : public arrow::TypeVisitor {
-  explicit ElementIsListVisitor(std::vector<std::shared_ptr<arrow::ListArray>> list_array) :
-      list_array_(std::move(list_array)) {}
+  explicit ElementIsListVisitor(std::vector<std::shared_ptr<arrow::ListArray>> list_arrays) :
+      list_arrays_(std::move(list_arrays)) {}
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
+    std::cout << "OK, list_arrays_ has size " << list_arrays_.size() << '\n';
+    for (const auto &la : list_arrays_) {
+      const auto &v = la->values();
+      std::cout << "why1 " << la->ToString() << '\n';
+      std::cout << "why2 " << v->ToString() << '\n';
+      auto v3 = std::dynamic_pointer_cast<arrow::StringArray>(v);
+      std::cout << "why3 " << v3->ToString() << '\n';
+
+      std::cout << "offsets are " << la->offsets()->ToString() << '\n';
+      std::cout << "slice 0 is " << la->value_slice(0)->ToString() << '\n';
+      std::cout << "slice 1 is " << la->value_slice(1)->ToString() << '\n';
+    }
+
     // result_ = StringArrowColumnSource::OfArrowArrayVec(std::move(arrays));
-    auto z = list_array_[0]->GetScalar(0);
+    auto l = list_arrays_[0]->length();
+    auto z = list_arrays_[0]->GetScalar(0);
+    std::cout << "la[0].length is " << l << '\n';
+    std::cout << "la[0] is " << list_arrays_[0]->ToString() << '\n';
+
     auto z2 = *z;
     const auto &z3 = *z2;
     std::cout << "z is " << z3.ToString() << "\n";
+    auto z3s = z3.ToString();
+
+    auto v = list_arrays_[0]->values();
+    const auto &v2 = *v;
+    (void)v2;
+    auto v3 = std::dynamic_pointer_cast<arrow::StringArray>(v);
+    auto zamboni = StringArrowColumnSource::OfArrowArray(v3);
+
+    // the real deal starts here
+    std::vector<std::shared_ptr<StringArrowColumnSource>> result;
+
+    for (const auto &la : list_arrays_) {
+      for (int64_t i = 0; i != la->length(); ++i) {
+        if (la->IsNull(i)) {
+          // TODO(kosak): deal with nulls
+          continue;
+        }
+        auto slice = la->value_slice(i);
+        auto as_element_array = std::dynamic_pointer_cast<arrow::StringArray>(slice);
+        auto as_cs = StringArrowColumnSource::OfArrowArray(as_element_array);
+        result.push_back(as_cs);
+      }
+    }
     return arrow::Status::OK();
   }
 
-  std::vector<std::shared_ptr<arrow::ListArray>> list_array_;
+  std::vector<std::shared_ptr<arrow::ListArray>> list_arrays_;
   std::shared_ptr<ColumnSource> result_;
 };
 
