@@ -147,6 +147,10 @@ struct ElementTypeIdVisitor final : ColumnSourceVisitor {
     elementTypeId_ = ElementTypeId::kLocalTime;
   }
 
+  void Visit(const column::ColumnSourceColumnSource &/*source*/) final {
+    elementTypeId_ = ElementTypeId::kList;
+  }
+
   ElementTypeId::Enum elementTypeId_ = ElementTypeId::kChar;
 };
 }  // namespace
