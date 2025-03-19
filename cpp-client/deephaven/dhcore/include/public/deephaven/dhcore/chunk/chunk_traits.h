@@ -6,6 +6,10 @@
 #include <cstdint>
 #include "deephaven/dhcore/chunk/chunk.h"
 
+namespace deephaven::dhcore::column {
+class ColumnSource;
+}  // namespace deephaven::dhcore::column
+
 namespace deephaven::dhcore::chunk {
 template<typename T>
 struct TypeToChunk {};
@@ -73,5 +77,10 @@ struct TypeToChunk<deephaven::dhcore::LocalDate> {
 template<>
 struct TypeToChunk<deephaven::dhcore::LocalTime> {
   using type_t = deephaven::dhcore::chunk::LocalTimeChunk;
+};
+
+template<>
+struct TypeToChunk<std::shared_ptr<deephaven::dhcore::column::ColumnSource>> {
+  using type_t = deephaven::dhcore::chunk::ColumnSourceChunk;
 };
 }  // namespace deephaven::client::chunk

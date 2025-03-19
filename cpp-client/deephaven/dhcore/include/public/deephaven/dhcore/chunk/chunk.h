@@ -10,6 +10,10 @@
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 
+namespace deephaven::dhcore::column {
+class ColumnSource;
+}  // namespace deephaven::dhcore::column
+
 namespace deephaven::dhcore::chunk {
 
 class ChunkVisitor;
@@ -223,6 +227,10 @@ using LocalDateChunk = GenericChunk<deephaven::dhcore::LocalDate>;
  * Convenience using.
  */
 using LocalTimeChunk = GenericChunk<deephaven::dhcore::LocalTime>;
+/**
+ * Convenience using.
+ */
+using ColumnSourceChunk = GenericChunk<std::shared_ptr<deephaven::dhcore::column::ColumnSource>>;
 
 
 /**
