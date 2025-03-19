@@ -5,32 +5,53 @@
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/tests/test_util.h"
 #include "deephaven/client/client.h"
+#include "deephaven/dhcore/utility/utility.h"
 
 using deephaven::client::TableHandle;
+using deephaven::client::Client;
+using deephaven::client::TableHandle;
+using deephaven::client::utility::TableMaker;
+using deephaven::dhcore::DateTime;
 
 namespace deephaven::client::tests {
 TEST_CASE("Group a Table", "[group]") {
   auto tm = TableMakerForTests::Create();
-  auto table = tm.Table();
 
-  auto t1 = table.Where(
-      "ImportDate == `2017-11-01` && Ticker == `AAPL` && (Close <= 120.0 || isNull(Close))");
-  std::cout << t1.Stream(true) << '\n';
-  table.Ungroup()
+  std::vector<std::string> type_data = {
+      "Granny Smith",
+      "Granny Smith",
+      "Gala",
+      "Gala",
+      "Golden Delicious",
+      "Golden Delicious"
+  };
 
-  std::vector<std::string> import_date_data = {"2017-11-01", "2017-11-01", "2017-11-01"};
-  std::vector<std::string> ticker_data = {"AAPL", "AAPL", "AAPL"};
-  std::vector<double> open_data = {22.1, 26.8, 31.5};
-  std::vector<double> close_data = {23.5, 24.2, 26.7};
-  std::vector<int64_t> vol_data = {100000, 250000, 19000};
+  std::vector<std::string> color_data = {
+      "Green", "Green", "Red-Green", "Orange-Green", "Yellow", "Yellow"
+  };
 
-  CompareTable(
-      t1,
-      "ImportDate", import_date_data,
-      "Ticker", ticker_data,
-      "Open", open_data,
-      "Close", close_data,
-      "Volume", vol_data
-  );
+  std::vector<int32_t> weight_data = {
+      102, 85, 79, 92, 78, 99
+  };
+
+  std::vector<int32_t> calorie_data = {
+      53, 48, 51, 61, 46, 57
+  };
+
+  TableMaker maker;
+  maker.AddColumn("Type", type_data);
+  maker.AddColumn("Color", color_data);
+  maker.AddColumn("Weight", weight_data);
+  maker.AddColumn("Calories", calorie_data);
+  auto t1 = maker.MakeTable(tm.Client().GetManager());
+
+  auto grouped = t1.By();
+
+  std::cout << grouped.Stream(true) << '\n';
+
+  auto ct1 = grouped.ToClientTable();
+  auto c1 = ct1->GetColumn(2);
+
+  std::cout << "What is this\n";
 }
 }  // namespace deephaven::client::tests

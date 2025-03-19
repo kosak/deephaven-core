@@ -5,6 +5,7 @@
 #include "deephaven/client/arrowutil/arrow_client_table.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/types.h"
+#include "arrow/scalar.h"
 
 using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::OkOrThrow;
@@ -105,6 +106,23 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
   return downcasted;
 }
 
+struct ElementIsListVisitor final : public arrow::TypeVisitor {
+  explicit ElementIsListVisitor(std::vector<std::shared_ptr<arrow::ListArray>> list_array) :
+      list_array_(std::move(list_array)) {}
+
+  arrow::Status Visit(const arrow::StringType &/*type*/) final {
+    // result_ = StringArrowColumnSource::OfArrowArrayVec(std::move(arrays));
+    auto z = list_array_[0]->GetScalar(0);
+    auto z2 = *z;
+    const auto &z3 = *z2;
+    std::cout << "z is " << z3.ToString() << "\n";
+    return arrow::Status::OK();
+  }
+
+  std::vector<std::shared_ptr<arrow::ListArray>> list_array_;
+  std::shared_ptr<ColumnSource> result_;
+};
+
 struct Visitor final : public arrow::TypeVisitor {
   explicit Visitor(const arrow::ChunkedArray &chunked_array) : chunked_array_(chunked_array) {}
 
@@ -177,6 +195,17 @@ struct Visitor final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
     auto arrays = DowncastChunks<arrow::Time64Array>(chunked_array_);
     result_ = LocalTimeArrowColumnSource::OfArrowArrayVec(std::move(arrays));
+    return arrow::Status::OK();
+  }
+
+  /**
+   * When the element is a list, we need to go one level deeper to decode it.
+   */
+  arrow::Status Visit(const arrow::ListType &type) final {
+    auto arrays = DowncastChunks<arrow::ListArray>(chunked_array_);
+    ElementIsListVisitor visitor(std::move(arrays));
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&visitor)));
+    result_ = std::move(visitor.result_);
     return arrow::Status::OK();
   }
 
