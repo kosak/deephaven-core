@@ -294,6 +294,10 @@ public:
    * Implements the visitor pattern.
    */
   virtual void Visit(const LocalTimeChunk &) = 0;
+  /**
+   * Implements the visitor pattern.
+   */
+  virtual void Visit(const ColumnSourceChunk &) = 0;
 };
 
 template<typename T>
@@ -309,7 +313,7 @@ void GenericChunk<T>::AcceptVisitor(ChunkVisitor *visitor) const {
 class AnyChunk {
   using variant_t = std::variant<CharChunk, Int8Chunk, Int16Chunk, Int32Chunk, Int64Chunk,
      UInt64Chunk, FloatChunk, DoubleChunk, BooleanChunk, StringChunk, DateTimeChunk,
-     LocalDateChunk, LocalTimeChunk>;
+     LocalDateChunk, LocalTimeChunk, ColumnSourceChunk>;
 
 public:
   /**
