@@ -182,6 +182,10 @@ using LocalDateColumnSource = GenericColumnSource<deephaven::dhcore::LocalDate>;
  * Convenience using.
  */
 using LocalTimeColumnSource = GenericColumnSource<deephaven::dhcore::LocalTime>;
+/**
+ * Convenience using.
+ */
+using ColumnSourceColumnSource = GenericColumnSource<std::shared_ptr<ColumnSource>>;
 
 // the mutable per-type interfaces
 template<typename T>
@@ -245,5 +249,9 @@ public:
    * Implements the visitor pattern.
    */
   virtual void Visit(const LocalTimeColumnSource &) = 0;
+  /**
+   * Implements the visitor pattern.
+   */
+  virtual void Visit(const ColumnSourceColumnSource &) = 0;
 };
 }  // namespace deephaven::dhcore::column
