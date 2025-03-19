@@ -10,6 +10,10 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
+namespace deephaven::dhcore::column {
+class ColumnSource;
+}  // namespace deephaven::dhcore::column
+
 namespace deephaven::dhcore {
 struct ElementTypeId {
   ElementTypeId() = delete;
@@ -79,6 +83,10 @@ void VisitElementTypeId(ElementTypeId::Enum type_id, T *visitor) {
     }
     case ElementTypeId::kLocalTime: {
       visitor->template operator()<deephaven::dhcore::LocalTime>();
+      break;
+    }
+    case ElementTypeId::kList: {
+      visitor->template operator()<std::shared_ptr<deephaven::dhcore::column::ColumnSource>>();
       break;
     }
     default: {
@@ -333,6 +341,11 @@ struct DeephavenTraits<LocalDate> {
 
 template<>
 struct DeephavenTraits<LocalTime> {
+  static constexpr bool kIsNumeric = false;
+};
+
+template<>
+struct DeephavenTraits<std::shared_ptr<deephaven::dhcore::column::ColumnSource>> {
   static constexpr bool kIsNumeric = false;
 };
 

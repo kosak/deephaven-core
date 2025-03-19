@@ -6,12 +6,16 @@
 #include "deephaven/tests/test_util.h"
 #include "deephaven/client/client.h"
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/dhcore/container/row_sequence.h"
 
 using deephaven::client::TableHandle;
 using deephaven::client::Client;
 using deephaven::client::TableHandle;
 using deephaven::client::utility::TableMaker;
 using deephaven::dhcore::DateTime;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::ColumnSourceChunk;
+using deephaven::dhcore::container::RowSequence;
 
 namespace deephaven::client::tests {
 TEST_CASE("Group a Table", "[group]") {
@@ -52,6 +56,19 @@ TEST_CASE("Group a Table", "[group]") {
 
   auto ct1 = grouped.ToClientTable();
   auto c1 = ct1->GetColumn(2);
+  const auto &c1r = *c1;
+  (void)c1r;
+  auto chunk = ColumnSourceChunk::Create(50);
+  auto nulls = BooleanChunk::Create(50);
+  auto rs = RowSequence::CreateSequential(0, grouped.NumRows());
+  c1r.FillChunk(*rs, &chunk, &nulls);
+
+  auto nr = grouped.NumRows();
+  const auto &data0 = *chunk.data()[0];
+  const auto &data1 = *chunk.data()[1];
+  (void)nr;
+  (void)data0;
+  (void)data1;
 
   std::cout << "What is this\n";
 }

@@ -112,6 +112,37 @@ struct ElementIsListVisitor final : public arrow::TypeVisitor {
   explicit ElementIsListVisitor(std::vector<std::shared_ptr<arrow::ListArray>> list_arrays) :
       list_arrays_(std::move(list_arrays)) {}
 
+  // TODO(kosak): migrate to template helper
+  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
+    // the real deal starts here
+    int64_t total_size = 0;
+    for (const auto &la : list_arrays_) {
+      total_size += la->length();
+    }
+
+    auto elements = std::make_unique<std::shared_ptr<ColumnSource>[]>(total_size);
+    auto nulls = std::make_unique<bool[]>(total_size);
+
+    int64_t next_index = 0;
+    for (const auto &la : list_arrays_) {
+      for (int64_t i = 0; i != la->length(); ++i, ++next_index) {
+        if (la->IsNull(i)) {
+          elements[next_index] = nullptr;
+          nulls[next_index] = true;
+          continue;
+        }
+        auto slice = la->value_slice(i);
+        auto as_element_array = std::dynamic_pointer_cast<arrow::Int32Array>(slice);
+        auto as_cs = Int32ArrowColumnSource::OfArrowArray(as_element_array);
+        elements[next_index] = std::move(as_cs);
+        nulls[next_index] = false;
+      }
+    }
+    result_ = ColumnSourceArrayColumnSource::CreateFromArrays(std::move(elements),
+        std::move(nulls), total_size);
+    return arrow::Status::OK();
+  }
+
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
     // the real deal starts here
     int64_t total_size = 0;
