@@ -104,6 +104,7 @@ set(ALL_FILES
 
     # we vendor the date library also but it's private to us, so we don't export its .h file
     third_party/date/include/date/date.h
+        src/container/container.cc
 )
 
 #

@@ -14,7 +14,7 @@ using deephaven::client::TableHandle;
 using deephaven::client::utility::TableMaker;
 using deephaven::dhcore::DateTime;
 using deephaven::dhcore::chunk::BooleanChunk;
-using deephaven::dhcore::chunk::ColumnSourceChunk;
+using deephaven::dhcore::chunk::ContainerBaseChunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::container::RowSequence;
 
@@ -56,31 +56,16 @@ TEST_CASE("Group a Table", "[group]") {
   std::cout << grouped.Stream(true) << '\n';
 
   auto ct1 = grouped.ToClientTable();
-  auto c1 = ct1->GetColumn(2);
-  const auto &c1r = *c1;
-  (void)c1r;
-  auto chunk = ColumnSourceChunk::Create(50);
+  auto col2 = ct1->GetColumn(2);
+  auto chunk = ContainerBaseChunk::Create(50);
   auto nulls = BooleanChunk::Create(50);
   auto rs = RowSequence::CreateSequential(0, grouped.NumRows());
-  c1r.FillChunk(*rs, &chunk, &nulls);
+  col2->FillChunk(*rs, &chunk, &nulls);
 
-  auto nr = grouped.NumRows();
-  const auto &data0 = *chunk.data()[0];
-  const auto &data1 = *chunk.data()[1];
-  (void)nr;
-  (void)data0;
-  (void)data1;
+  // auto nr = grouped.NumRows();
+  const auto &data0 = chunk.data()[0]->AsContainer<std::int32_t>();
+  const auto &data1 = chunk.data()[1]->AsContainer<std::int32_t>();
 
-  auto stringchunk = StringChunk::Create(3);
-  auto twoRows = RowSequence::CreateSequential(0, 3);
-  data0.FillChunk(*twoRows, &stringchunk, nullptr);
-
-  const auto &sc0 = stringchunk.data()[0];
-  const auto &sc1 = stringchunk.data()[1];
-  const auto &sc2 = stringchunk.data()[2];
-  (void)sc0;
-  (void)sc1;
-  (void)sc2;
   std::cout << "What is this\n";
 }
 }  // namespace deephaven::client::tests

@@ -17,19 +17,20 @@ class Container;
 
 class ContainerBase : public std::enable_shared_from_this<ContainerBase> {
 public:
+  virtual ~ContainerBase();
+
   size_t Size() const {
     return size_;
   }
 
   template<class T>
-  const Container<T> *AsContainer() const {
+  std::shared_ptr<const Container<T>> AsContainer() const {
     auto self = shared_from_this();
-    return std::dynamic_pointer_cast<const Container<T>*>(self);
+    return std::dynamic_pointer_cast<const Container<T>>(self);
   }
 
 protected:
   size_t size_ = 0;
-
 };
 
 template<typename T>
