@@ -10,9 +10,9 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
-namespace deephaven::dhcore::column {
-class ColumnSource;
-}  // namespace deephaven::dhcore::column
+namespace deephaven::dhcore::container {
+class ContainerBase;
+}  // namespace deephaven::dhcore::container
 
 namespace deephaven::dhcore {
 struct ElementTypeId {
@@ -86,7 +86,7 @@ void VisitElementTypeId(ElementTypeId::Enum type_id, T *visitor) {
       break;
     }
     case ElementTypeId::kList: {
-      visitor->template operator()<std::shared_ptr<deephaven::dhcore::column::ColumnSource>>();
+      visitor->template operator()<std::shared_ptr<deephaven::dhcore::container::ContainerBase>>();
       break;
     }
     default: {
@@ -345,7 +345,7 @@ struct DeephavenTraits<LocalTime> {
 };
 
 template<>
-struct DeephavenTraits<std::shared_ptr<deephaven::dhcore::column::ColumnSource>> {
+struct DeephavenTraits<std::shared_ptr<deephaven::dhcore::container::ContainerBase>> {
   static constexpr bool kIsNumeric = false;
 };
 
