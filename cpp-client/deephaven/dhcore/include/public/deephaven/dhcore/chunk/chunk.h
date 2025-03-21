@@ -60,6 +60,8 @@ class GenericChunk final : public Chunk {
 public:
   using value_type = T;
 
+  static_assert(!std::is_same_v<T, std::shared_ptr<deephaven::dhcore::column::ColumnSource>>);
+
   /**
    * Factory method. Create a Chunk having the specified size, with a privately allocated buffer.
    */

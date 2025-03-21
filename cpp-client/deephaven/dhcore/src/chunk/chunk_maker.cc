@@ -7,7 +7,7 @@
 #include "deephaven/dhcore/column/column_source.h"
 
 using deephaven::dhcore::column::CharColumnSource;
-using deephaven::dhcore::column::ColumnSourceColumnSource;
+using deephaven::dhcore::column::ContainerBaseColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::DateTimeColumnSource;
 using deephaven::dhcore::column::DoubleColumnSource;
@@ -73,8 +73,8 @@ struct Visitor final : ColumnSourceVisitor {
     result_ = LocalTimeChunk::Create(chunk_size_);
   }
 
-  void Visit(const ColumnSourceColumnSource &/*source*/) final {
-    result_ = ColumnSourceChunk::Create(chunk_size_);
+  void Visit(const ContainerBaseColumnSource &/*source*/) final {
+    result_ = ContainerBaseChunk::Create(chunk_size_);
   }
 
   size_t chunk_size_;
