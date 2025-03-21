@@ -246,7 +246,7 @@ public:
   /**
    * Implements the visitor pattern.
    */
-  virtual GenericChunk<std::shared_ptr<column::ColumnSource>> Visit(const CharChunk &) = 0;
+  virtual void Visit(const CharChunk &) = 0;
   /**
    * Implements the visitor pattern.
    */

@@ -9,6 +9,7 @@
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
 #include "deephaven/dhcore/column/column_source.h"
+#include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/immerutil/abstract_flex_vector.h"
 #include "deephaven/dhcore/ticking/shift_processor.h"
@@ -24,6 +25,7 @@ using deephaven::dhcore::chunk::ChunkVisitor;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
+using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::container::RowSequenceBuilder;
 using deephaven::dhcore::container::RowSequenceIterator;
@@ -289,8 +291,8 @@ struct FlexVectorFromSourceMaker final : public ColumnSourceVisitor {
     result_ = std::make_unique<GenericAbstractFlexVector<LocalTime>>();
   }
 
-  void Visit(const column::ColumnSourceColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ColumnSource>>>();
+  void Visit(const column::ContainerBaseColumnSource &/*source*/) final {
+    result_ = std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>();
   }
 
   std::unique_ptr<AbstractFlexVectorBase> result_;
