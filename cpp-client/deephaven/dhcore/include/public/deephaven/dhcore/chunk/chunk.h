@@ -10,9 +10,12 @@
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 
-namespace deephaven::dhcore::column {
-class ColumnSource;
-}  // namespace deephaven::dhcore::column
+namespace deephaven::dhcore::container {
+/**
+ * Forward declaration
+ */
+class ContainerBase;
+}  // namespace deephaven::dhcore::container
 
 namespace deephaven::dhcore::chunk {
 
@@ -230,7 +233,7 @@ using LocalTimeChunk = GenericChunk<deephaven::dhcore::LocalTime>;
 /**
  * Convenience using.
  */
-using ColumnSourceChunk = GenericChunk<std::shared_ptr<deephaven::dhcore::column::ColumnSource>>;
+using ContainerBaseChunk = GenericChunk<std::shared_ptr<deephaven::dhcore::container::ContainerBase>>;
 
 
 /**
@@ -297,7 +300,7 @@ public:
   /**
    * Implements the visitor pattern.
    */
-  virtual void Visit(const ColumnSourceChunk &) = 0;
+  virtual void Visit(const ContainerBaseChunk &) = 0;
 };
 
 template<typename T>
@@ -313,7 +316,7 @@ void GenericChunk<T>::AcceptVisitor(ChunkVisitor *visitor) const {
 class AnyChunk {
   using variant_t = std::variant<CharChunk, Int8Chunk, Int16Chunk, Int32Chunk, Int64Chunk,
      UInt64Chunk, FloatChunk, DoubleChunk, BooleanChunk, StringChunk, DateTimeChunk,
-     LocalDateChunk, LocalTimeChunk, ColumnSourceChunk>;
+     LocalDateChunk, LocalTimeChunk, ContainerBaseChunk>;
 
 public:
   /**

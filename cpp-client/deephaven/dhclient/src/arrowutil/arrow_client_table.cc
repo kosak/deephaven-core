@@ -5,6 +5,7 @@
 #include "deephaven/client/arrowutil/arrow_client_table.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/column/array_column_source.h"
+#include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/types.h"
 #include "arrow/scalar.h"
 
@@ -36,7 +37,7 @@ using deephaven::dhcore::clienttable::ClientTable;
 using deephaven::dhcore::column::BooleanColumnSource;
 using deephaven::dhcore::column::CharColumnSource;
 using deephaven::dhcore::column::ColumnSource;
-using deephaven::dhcore::column::ColumnSourceArrayColumnSource;
+using deephaven::dhcore::column::ContainerArrayColumnSource;
 using deephaven::dhcore::column::DoubleColumnSource;
 using deephaven::dhcore::column::FloatColumnSource;
 using deephaven::dhcore::column::Int8ColumnSource;
@@ -45,6 +46,7 @@ using deephaven::dhcore::column::Int32ColumnSource;
 using deephaven::dhcore::column::Int64ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::StringColumnSource;
+using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::DateTime;
 using deephaven::dhcore::DeephavenTraits;
@@ -112,37 +114,6 @@ struct ElementIsListVisitor final : public arrow::TypeVisitor {
   explicit ElementIsListVisitor(std::vector<std::shared_ptr<arrow::ListArray>> list_arrays) :
       list_arrays_(std::move(list_arrays)) {}
 
-  // TODO(kosak): migrate to template helper
-  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    // the real deal starts here
-    int64_t total_size = 0;
-    for (const auto &la : list_arrays_) {
-      total_size += la->length();
-    }
-
-    auto elements = std::make_unique<std::shared_ptr<ColumnSource>[]>(total_size);
-    auto nulls = std::make_unique<bool[]>(total_size);
-
-    int64_t next_index = 0;
-    for (const auto &la : list_arrays_) {
-      for (int64_t i = 0; i != la->length(); ++i, ++next_index) {
-        if (la->IsNull(i)) {
-          elements[next_index] = nullptr;
-          nulls[next_index] = true;
-          continue;
-        }
-        auto slice = la->value_slice(i);
-        auto as_element_array = std::dynamic_pointer_cast<arrow::Int32Array>(slice);
-        auto as_cs = Int32ArrowColumnSource::OfArrowArray(as_element_array);
-        elements[next_index] = std::move(as_cs);
-        nulls[next_index] = false;
-      }
-    }
-    result_ = ColumnSourceArrayColumnSource::CreateFromArrays(std::move(elements),
-        std::move(nulls), total_size);
-    return arrow::Status::OK();
-  }
-
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
     // the real deal starts here
     int64_t total_size = 0;
@@ -150,7 +121,7 @@ struct ElementIsListVisitor final : public arrow::TypeVisitor {
       total_size += la->length();
     }
 
-    auto elements = std::make_unique<std::shared_ptr<ColumnSource>[]>(total_size);
+    auto elements = std::make_unique<std::shared_ptr<ContainerBase>[]>(total_size);
     auto nulls = std::make_unique<bool[]>(total_size);
 
     int64_t next_index = 0;
@@ -168,7 +139,7 @@ struct ElementIsListVisitor final : public arrow::TypeVisitor {
         nulls[next_index] = false;
       }
     }
-    result_ = ColumnSourceArrayColumnSource::CreateFromArrays(std::move(elements),
+    result_ = ContainerArrayColumnSource::CreateFromArrays(std::move(elements),
         std::move(nulls), total_size);
     return arrow::Status::OK();
   }

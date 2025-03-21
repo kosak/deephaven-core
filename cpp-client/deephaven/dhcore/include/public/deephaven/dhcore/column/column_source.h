@@ -8,6 +8,7 @@
 #include <vector>
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/chunk/chunk.h"
+#include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/utility/utility.h"
 
@@ -185,7 +186,7 @@ using LocalTimeColumnSource = GenericColumnSource<deephaven::dhcore::LocalTime>;
 /**
  * Convenience using.
  */
-using ColumnSourceColumnSource = GenericColumnSource<std::shared_ptr<ColumnSource>>;
+using ContainerBaseColumnSource = GenericColumnSource<std::shared_ptr<deephaven::dhcore::container::ContainerBase>>;
 
 // the mutable per-type interfaces
 template<typename T>
@@ -252,6 +253,6 @@ public:
   /**
    * Implements the visitor pattern.
    */
-  virtual void Visit(const ColumnSourceColumnSource &) = 0;
+  virtual void Visit(const ContainerBaseColumnSource &) = 0;
 };
 }  // namespace deephaven::dhcore::column
