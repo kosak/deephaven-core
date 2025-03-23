@@ -58,6 +58,8 @@ namespace deephaven::client::arrowutil {
 
 namespace {
 std::shared_ptr<ColumnSource> MakeColumnSource(const arrow::ChunkedArray &array);
+std::shared_ptr<ColumnSource> MakeColumnSource(
+    const std::vector<std::shared_ptr<arrow::Array>> &array_chunks, const arrow::DataType &type);
 }  // namespace
 
 std::shared_ptr<ClientTable> ArrowClientTable::Create(std::shared_ptr<arrow::Table> arrow_table) {
@@ -282,9 +284,26 @@ struct Visitor final : public arrow::TypeVisitor {
    */
   arrow::Status Visit(const arrow::ListType &type) final {
     auto arrays = DowncastChunks<arrow::ListArray>(chunked_array_);
-    ElementIsListVisitor visitor(std::move(arrays));
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&visitor)));
-    result_ = std::move(visitor.result_);
+
+    std::vector<std::shared_ptr<arrow::ListArray>> skunked_array;
+
+    // 1. extract offsets
+    // 2. use recursion to create a column set of values
+    // 3. use rowset operations to extract an array from that column source (hacky)
+    // 4. return a ContainerColumnSource of that array
+
+    auto inner_chunks = MakeReservedVector<std::shared_ptr<arrow::Array>>(skunked_array.size());
+    for (const auto &la : skunked_array) {
+      inner_chunks.push_back(la->values());
+    }
+
+    auto inner_cs = MakeColumnSource(inner_chunks, *type.value_type());
+
+    // this is us wishing we knew our size
+    auto size = 11;
+    ZamboniCopier copier(std::move(inner_cs), size);
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&copier)));
+    result_ = std::move(copier.result);
     return arrow::Status::OK();
   }
 
@@ -295,6 +314,13 @@ struct Visitor final : public arrow::TypeVisitor {
 std::shared_ptr<ColumnSource> MakeColumnSource(const arrow::ChunkedArray &chunked_array) {
   Visitor visitor(chunked_array);
   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(chunked_array.type()->Accept(&visitor)));
+  return std::move(visitor.result_);
+}
+
+std::shared_ptr<ColumnSource> MakeColumnSource(
+    const std::vector<std::shared_ptr<arrow::Array>> &array_chunks, const arrow::DataType &type) {
+  Visitor visitor(array_chunks);
+  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.Accept(&visitor)));
   return std::move(visitor.result_);
 }
 }  // namespace
