@@ -114,23 +114,30 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 
 
 struct ZamboniCopier final : public arrow::TypeVisitor {
+  ZamboniCopier(std::shared_ptr<ColumnSource> flattened_elements,
+    std::unique_ptr<size_t[]> slice_lengths,
+    std::unique_ptr<bool[]> slice_nulls,
+    size_t num_slices,
+    size_t flattened_size) :
+    flattened_elements_(std::move(flattened_elements)),
+    slice_lengths_(std::move(slice_lengths)),
+    slice_nulls_(std::move(slice_nulls)),
+    num_slices_(num_slices),
+    flattened_size_(flattened_size) {}
+
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    auto flattened_size = slice_offsets_.back();
+    std::shared_ptr<std::string[]> flattened_data(new std::string[flattened_size_]);
+    std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size_]);
 
-    std::shared_ptr<std::string[]> flattened_data(new std::string[flattened_size]);
-    std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size]);
-
-    auto flattened_data_chunk = StringChunk::CreateView(flattened_data.get(), flattened_size);
-    auto flattened_nulls_chunk = BooleanChunk::CreateView(flattened_nulls.get(), flattened_size);
-    auto rs = RowSequence::CreateSequential(0, flattened_size);
+    auto flattened_data_chunk = StringChunk::CreateView(flattened_data.get(), flattened_size_);
+    auto flattened_nulls_chunk = BooleanChunk::CreateView(flattened_nulls.get(), flattened_size_);
+    auto rs = RowSequence::CreateSequential(0, flattened_size_);
     flattened_elements_->FillChunk(*rs, &flattened_data_chunk, &flattened_nulls_chunk);
 
-    auto num_slices = slice_offsets_.size() - 1;
-    auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices);
+    auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_);
 
-    for (size_t i = 0; i != num_slices; ++i) {
-      auto slice_offset = slice_offsets_[i];
-      auto slice_size = slice_offsets_[i + 1] - slice_offsets_[i];
+    size_t slice_offset = 0;
+    for (size_t i = 0; i != num_slices_; ++i) {
       auto *slice_data_start = flattened_data.get() + slice_offset;
       auto *slice_null_start = flattened_nulls.get() + slice_offset;
 
@@ -139,18 +146,23 @@ struct ZamboniCopier final : public arrow::TypeVisitor {
       std::shared_ptr<std::string[]> slice_data_start_sp(flattened_data, slice_data_start);
       std::shared_ptr<bool[]> slice_null_start_sp(flattened_nulls, slice_null_start);
 
+      auto slice_size = slice_lengths_[i];
       auto slice = Container<std::string>::Create(std::move(slice_data_start_sp),
           std::move(slice_null_start_sp), slice_size);
       slices[i] = std::move(slice);
+      slice_offset += slice_size;
     }
 
     result_ = ContainerArrayColumnSource::CreateFromArrays(
-        std::move(slices), std::move(slice_nulls_), num_slices);
+        std::move(slices), std::move(slice_nulls_), num_slices_);
+    return arrow::Status::OK();
   }
 
   std::shared_ptr<ColumnSource> flattened_elements_;
-  std::vector<size_t> slice_offsets_;
+  std::unique_ptr<size_t[]> slice_lengths_;
   std::unique_ptr<bool[]> slice_nulls_;
+  size_t num_slices_ = 0;
+  size_t flattened_size_ = 0;
   std::shared_ptr<ColumnSource> result_;
 
 };
@@ -242,8 +254,12 @@ struct Visitor final : public arrow::TypeVisitor {
     // 4. return a ContainerColumnSource of that array
     auto flattened_chunks = MakeReservedVector<std::shared_ptr<arrow::Array>>(
         chunked_listarrays.size());
+    size_t num_slices = 0;
+    size_t flattened_size = 0;
     for (const auto &la: chunked_listarrays) {
+      num_slices += la->length();
       flattened_chunks.push_back(la->values());
+      flattened_size += la->values()->length();
     }
     auto flattened_chunked_array = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(
         arrow::ChunkedArray::Make(std::move(flattened_chunks), type.value_type())));
@@ -253,20 +269,22 @@ struct Visitor final : public arrow::TypeVisitor {
     // recover the offset, length, and nullness of each slice. This is unusually annoying because
     // our input was a ChunkedArray, not just an array.
 
-    std::vector<size_t> offsets;
-    std::vector<bool> nulls;
-    size_t next_offset = 0;
+    auto slice_lengths = std::make_unique<size_t[]>(num_slices);
+    auto slice_nulls = std::make_unique<bool[]>(num_slices);
+    size_t next_index = 0;
     for (const auto &la : chunked_listarrays) {
-      for (size_t i = 0; i != la->length(); ++i) {
-        offsets.push_back(next_offset);
-        nulls.push_back(la->IsNull(i));
-        next_offset += la->value_length(i);
+      for (int64_t i = 0; i != la->length(); ++i, ++next_index) {
+        slice_lengths[next_index] = la->value_length(i);
+        slice_nulls[next_index] = la->IsNull(i);
       }
     }
-    // Add one final value for the last offset
-    offsets.push_back(next_offset);
+    if (next_index != num_slices) {
+      auto message = fmt::format("Programming error: {} != {}", next_index, num_slices);
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
 
-    ZamboniCopier copier(std::move(flattened_elements), std::move(offsets), std::move(nulls));
+    ZamboniCopier copier(std::move(flattened_elements), std::move(slice_lengths),
+        std::move(slice_nulls), num_slices, flattened_size);
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&copier)));
     result_ = std::move(copier.result_);
     return arrow::Status::OK();
