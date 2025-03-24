@@ -11,6 +11,7 @@
 
 using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::OkOrThrow;
+using deephaven::client::utility::ValueOrThrow;
 using deephaven::client::arrowutil::BooleanArrowColumnSource;
 using deephaven::client::arrowutil::CharArrowColumnSource;
 using deephaven::client::arrowutil::DateTimeArrowColumnSource;
@@ -59,8 +60,6 @@ namespace deephaven::client::arrowutil {
 
 namespace {
 std::shared_ptr<ColumnSource> MakeColumnSource(const arrow::ChunkedArray &array);
-std::shared_ptr<ColumnSource> MakeColumnSource(
-    const std::vector<std::shared_ptr<arrow::Array>> &array_chunks, const arrow::DataType &type);
 }  // namespace
 
 std::shared_ptr<ClientTable> ArrowClientTable::Create(std::shared_ptr<arrow::Table> arrow_table) {
@@ -116,29 +115,29 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 
 struct ZamboniCopier final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    auto flattened_size = offsets_.back();
+    auto flattened_size = slice_offsets_.back();
 
-    std::shared_ptr<std::string[]> data(new std::string[flattened_size]);
-    std::shared_ptr<bool[]> nulls(new bool[flattened_size]);
+    std::shared_ptr<std::string[]> flattened_data(new std::string[flattened_size]);
+    std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size]);
 
-    auto data_chunk = StringChunk::CreateView(data.get(), flattened_size);
-    auto nulls_chunk = BooleanChunk::CreateView(nulls.get(), flattened_size);
+    auto flattened_data_chunk = StringChunk::CreateView(flattened_data.get(), flattened_size);
+    auto flattened_nulls_chunk = BooleanChunk::CreateView(flattened_nulls.get(), flattened_size);
     auto rs = RowSequence::CreateSequential(0, flattened_size);
-    flattened_elements_->FillChunk(*rs, &data_chunk, &nulls_chunk);
+    flattened_elements_->FillChunk(*rs, &flattened_data_chunk, &flattened_nulls_chunk);
 
-    auto num_slices = offsets_.size() - 1;
+    auto num_slices = slice_offsets_.size() - 1;
     auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices);
 
     for (size_t i = 0; i != num_slices; ++i) {
-      auto slice_offset = offsets_[i];
-      auto slice_size = offsets_[i + 1] - offsets_[i];
-      auto *slice_data_start = data.get() + slice_offset;
-      auto *slice_null_start = nulls.get() + slice_offset;
+      auto slice_offset = slice_offsets_[i];
+      auto slice_size = slice_offsets_[i + 1] - slice_offsets_[i];
+      auto *slice_data_start = flattened_data.get() + slice_offset;
+      auto *slice_null_start = flattened_nulls.get() + slice_offset;
 
       // Make shared pointers from these slice pointers that share the lifetime of the
       // original shared pointers
-      std::shared_ptr<std::string[]> slice_data_start_sp(data, slice_data_start);
-      std::shared_ptr<bool[]> slice_null_start_sp(nulls, slice_null_start);
+      std::shared_ptr<std::string[]> slice_data_start_sp(flattened_data, slice_data_start);
+      std::shared_ptr<bool[]> slice_null_start_sp(flattened_nulls, slice_null_start);
 
       auto slice = Container<std::string>::Create(std::move(slice_data_start_sp),
           std::move(slice_null_start_sp), slice_size);
@@ -146,12 +145,12 @@ struct ZamboniCopier final : public arrow::TypeVisitor {
     }
 
     result_ = ContainerArrayColumnSource::CreateFromArrays(
-        std::move(slices), std::move(nulls_), num_slices);
+        std::move(slices), std::move(slice_nulls_), num_slices);
   }
 
   std::shared_ptr<ColumnSource> flattened_elements_;
-  std::vector<size_t> offsets_;
-  std::vector<bool> nulls_;
+  std::vector<size_t> slice_offsets_;
+  std::unique_ptr<bool[]> slice_nulls_;
   std::shared_ptr<ColumnSource> result_;
 
 };
@@ -235,25 +234,29 @@ struct Visitor final : public arrow::TypeVisitor {
    * When the element is a list, we need to go one level deeper to decode it.
    */
   arrow::Status Visit(const arrow::ListType &type) final {
-    auto arrays = DowncastChunks<arrow::ListArray>(chunked_array_);
-
-    std::vector<std::shared_ptr<arrow::ListArray>> skunked_array;
+    auto chunked_listarrays = DowncastChunks<arrow::ListArray>(chunked_array_);
 
     // 1. extract offsets
     // 2. use recursion to create a column set of values
     // 3. use rowset operations to extract an array from that column source (hacky)
     // 4. return a ContainerColumnSource of that array
-
-    auto inner_chunks = MakeReservedVector<std::shared_ptr<arrow::Array>>(skunked_array.size());
-    for (const auto &la : skunked_array) {
-      inner_chunks.push_back(la->values());
+    auto flattened_chunks = MakeReservedVector<std::shared_ptr<arrow::Array>>(
+        chunked_listarrays.size());
+    for (const auto &la: chunked_listarrays) {
+      flattened_chunks.push_back(la->values());
     }
-    auto flattened_elements = MakeColumnSource(inner_chunks, *type.value_type());
+    auto flattened_chunked_array = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(
+        arrow::ChunkedArray::Make(std::move(flattened_chunks), type.value_type())));
+    auto flattened_elements = MakeColumnSource(*flattened_chunked_array);
+
+    // We have a single column source with all the flattened data in it. Now we have to
+    // recover the offset, length, and nullness of each slice. This is unusually annoying because
+    // our input was a ChunkedArray, not just an array.
 
     std::vector<size_t> offsets;
     std::vector<bool> nulls;
     size_t next_offset = 0;
-    for (const auto &la : skunked_array) {
+    for (const auto &la : chunked_listarrays) {
       for (size_t i = 0; i != la->length(); ++i) {
         offsets.push_back(next_offset);
         nulls.push_back(la->IsNull(i));
@@ -265,7 +268,7 @@ struct Visitor final : public arrow::TypeVisitor {
 
     ZamboniCopier copier(std::move(flattened_elements), std::move(offsets), std::move(nulls));
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&copier)));
-    result_ = std::move(copier.result);
+    result_ = std::move(copier.result_);
     return arrow::Status::OK();
   }
 
@@ -276,13 +279,6 @@ struct Visitor final : public arrow::TypeVisitor {
 std::shared_ptr<ColumnSource> MakeColumnSource(const arrow::ChunkedArray &chunked_array) {
   Visitor visitor(chunked_array);
   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(chunked_array.type()->Accept(&visitor)));
-  return std::move(visitor.result_);
-}
-
-std::shared_ptr<ColumnSource> MakeColumnSource(
-    const std::vector<std::shared_ptr<arrow::Array>> &array_chunks, const arrow::DataType &type) {
-  Visitor visitor(array_chunks);
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.Accept(&visitor)));
   return std::move(visitor.result_);
 }
 }  // namespace
