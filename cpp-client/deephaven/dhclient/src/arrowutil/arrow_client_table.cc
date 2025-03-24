@@ -261,9 +261,9 @@ struct Visitor final : public arrow::TypeVisitor {
 
   /**
    * When the element is a list, we use recursion to extract the flattened elements of the list into
-   * a single column source, we extract the data out of a column source into a single pair of arrays
-   * (one for the flattened data, and one for the flattened null flags), and then we reconstitute
-   * the list structure as a ColumnSource<shared_ptr<ContainerBase>>, where the
+   * a single column source. Then  we extract the data out of that column source into a single pair
+   * of arrays (one for the flattened data, and one for the flattened null flags), and then we
+   * reconstitute the 2D list structure as a ColumnSource<shared_ptr<ContainerBase>>, where the
    * shared_ptr<ContainerBase> has the appropriate dynamic type.
    *
    * Example
@@ -271,54 +271,65 @@ struct Visitor final : public arrow::TypeVisitor {
    *   [a, b, c]
    *   null
    *   []
-   *   [d, null, e, f]
+   *   [d, e, f, null, g]
    *
    * It has 4 slices.
-   * When it is flattened, it looks like [a, b, c, d, null, e, f]. There are 7 elements in the
-   * flattened data.
+   * When it is flattened, it looks like [a, b, c, d, e, f, null, g]. There are 8 elements in the
+   * flattened data. Note: that troughout this discussion it will be important to recognize the
+   * difference between a slice that is null (the second slice, above), a slice that is empty
+   * (the third slice above), and a slice that is not null but contains a null element (the fourth
+   * element of the fourth slice above).
    *
-   * We use recursion to create the flattened data [a, b, c, d, null, e, f] as a ColumnSource.
-   * This is only a temporary holding area, because we soon copy all the data out of it. We do this
-   * as a convenience mainly because the ColumnSource has knowledge about Deephaven null
-   * conventions.
+   * We use recursion to create the flattened data [a, b, c, d, e, f, null, g] as a ColumnSource
+   * (of the appropriate dynamic type). This ColumnSource is only a very temporary holding area,
+   * because we immediately copy all the data back out of it. We do this as a convenience mainly
+   * because the ColumnSource has knowledge about data type conversions and Deephaven null
+   * conventions. In an alternate implementation we might be able to copy data directly from Arrow
+   * to the two target arrays, but that would require some refactoring of our code.
    *
-   * Then we make an array of slice lengths and slice null flags.  In our example these arrays
-   * are of size 4 and contain:
-   *   lengths: [3, 0, 0, 4]
-   *   null flags: [false, true, false, false]
+   * Anyway, next we make an array of slice lengths and slice null flags. These will be inputs to
+   * the Reconstituter. In our example these arrays are of size 4 and contain:
+   *   lengths: [3, 0, 0, 5]  [bookmark #1]
+   *   null flags: [false, true, false, false]   [bookmark #2]
    *
-   *  The first 0 in lengths is a "dontcare" because the element itself is null
-   *  The second 0 is a "true" 0 in the sense that it represents a list of length 0 (not a null
+   *  The first 0 in lengths is a "dontcare" because the element itself is null.
+   *  The second 0 is an actual zero in the sense that it represents a list of length 0 (not a null
    *  entry)
    *
    * We then pass these arrays to the Reconstituter to finish the job of reconstituting a
    * ColumnSource<shared_ptr<ContainerBase>> from these arrays.
    *
    * Inside the Reconstituter, we make two arrays for the flattened data and the flattened null
-   * flags. In our example these arrays are of size 8 and contain:
-   *   data: [a, b, c, d, null, e, f]
-   *   nulls: [false, false, false, false, true, false, false]
+   * flags. We use ColumnSource::FillChunk to populate these arrays. In our example these arrays
+   * are of size 8 and contain:
+   *   data: [a, b, c, d, e, f, null, g]
+   *   nulls: [false, false, false, false, false, false, true, false]
    *
-   * These arrays are managed by shared pointers because, when we are done, there will be multiple
+   * These arrays are owned by shared pointers because, when we are done, there will be multiple
    * Container<T> objects that point to (the interior) of these arrays and share their lifetime.
    *
-   * The reconstituter makes four Container<T> objects:
+   * Then the Reconstituter goes to work at recovering the original shape of the ListArray slices.
+   * To do this, it uses the flattened data we just obtained, combined with the original slice
+   * lengths (bookmark #1) and slice null flags (bookmark #2) that were passed in.
    *
-   *   con0: size=3, data = [a,b,c], nulls=[false, false, false].
+   *   con0: size=3, data = [a, b, c], nulls=[false, false, false].
    *         It points into the above data and nulls arrays at offset 0.
    *   con1: size = 0, data = [], nulls = [].  This entry is null and so it doesn't matter where its
    *         data points to
    *   con2: size = 0, data = [], nulls = [].  This entry is of length zero, so for different
    *         reasons it also doesn't matter where its data points to
-   *   con3: size=4, data = [d, null, e, f], nulls = [false, true, false, false]
+   *   con3: size = 5, data = [d, e, f, null, g], nulls = [false, false, false, true, false]
+   *         It points into the above data and nulls arrays at offset 3.
    *
    * We arrange these container objects into an array of size 4 of shared_ptr<ContainerBase>
    *
-   * The reconstituter also uses the same null flags array it was passed, namely
+   * The Reconstituter also needs a null flags array of size 4 to work in tandem with this
+   * shared_ptr array. But the Reconstituter already have this null array; it was passed in as an
+   * input to the Reconstituter (see bookmark #2). In this example it is:
    * [false, true, false, false]
    *
    * We provide these two arrays to ContainerArrayColumnSource::CreateFromArrays() and we are
-   * done!
+   * done.
    */
   arrow::Status Visit(const arrow::ListType &type) final {
     auto chunked_listarrays = DowncastChunks<arrow::ListArray>(chunked_array_);
