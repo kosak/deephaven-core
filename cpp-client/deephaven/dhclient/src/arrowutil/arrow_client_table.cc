@@ -46,6 +46,7 @@ using deephaven::dhcore::column::Int32ColumnSource;
 using deephaven::dhcore::column::Int64ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::StringColumnSource;
+using deephaven::dhcore::container::Container;
 using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::DateTime;
@@ -115,105 +116,44 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 
 struct ZamboniCopier final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    auto data = new std::string[size_];
-    auto nulls = new bool[size_];
+    auto flattened_size = offsets_.back();
 
-    auto data_chunk = StringChunk::CreateView(data, size_);
-    auto null_chunk = BooleanChunk::CreateView(nulls, size_);
-    auto rs = RowSequence::CreateSequential(0, size_);
-    column_source_->FillChunk(*rs, &data_chunk, &null_chunk);
+    std::shared_ptr<std::string[]> data(new std::string[flattened_size]);
+    std::shared_ptr<bool[]> nulls(new bool[flattened_size]);
 
-    auto next_nubbin = Container<std::string>::Create(start, size_);
-    nubbins.emplace_back(std::move(next_nubbin));
+    auto data_chunk = StringChunk::CreateView(data.get(), flattened_size);
+    auto nulls_chunk = BooleanChunk::CreateView(nulls.get(), flattened_size);
+    auto rs = RowSequence::CreateSequential(0, flattened_size);
+    flattened_elements_->FillChunk(*rs, &data_chunk, &nulls_chunk);
+
+    auto num_slices = offsets_.size() - 1;
+    auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices);
+
+    for (size_t i = 0; i != num_slices; ++i) {
+      auto slice_offset = offsets_[i];
+      auto slice_size = offsets_[i + 1] - offsets_[i];
+      auto *slice_data_start = data.get() + slice_offset;
+      auto *slice_null_start = nulls.get() + slice_offset;
+
+      // Make shared pointers from these slice pointers that share the lifetime of the
+      // original shared pointers
+      std::shared_ptr<std::string[]> slice_data_start_sp(data, slice_data_start);
+      std::shared_ptr<bool[]> slice_null_start_sp(nulls, slice_null_start);
+
+      auto slice = Container<std::string>::Create(std::move(slice_data_start_sp),
+          std::move(slice_null_start_sp), slice_size);
+      slices[i] = std::move(slice);
+    }
 
     result_ = ContainerArrayColumnSource::CreateFromArrays(
-        std::move(nubbins), std::move(nulls), size_);
-
-    int64_t total_rows = 0;
-    for (const auto &la : list_arrays_) {
-      total_rows += la->length();
-    }
-
-    auto all_flattened_elements =
-        MakeReservedVector<std::vector<std::optional<std::string>>>(list_arrays_.size());
-
-    {
-      for (const auto &la: list_arrays_) {
-        auto next_slice_values = std::dynamic_pointer_cast<arrow::StringArray>(la->values());
-        auto next_slice_size = la->values()->length();
-
-        auto as_cs = StringArrowColumnSource::OfArrowArray(std::move(next_slice_values));
-
-        auto rs = RowSequence::CreateSequential(0, next_slice_size);
-        auto element_chunk = StringChunk::Create(next_slice_size);
-        auto element_nulls = BooleanChunk::Create(next_slice_size);
-        as_cs->FillChunk(*rs, &element_chunk, &element_nulls);
-
-        auto flattened_elements = MakeReservedVector<std::optional<std::string>>(next_slice_size);
-        for (int64_t i = 0; i != next_slice_size; ++i) {
-          if (element_nulls[i]) {
-            // The empty optional, signifying null
-            flattened_elements.emplace_back();
-            continue;
-          }
-          flattened_elements.emplace_back(std::move(element_chunk.data()[i]));
-        }
-
-        all_flattened_elements.push_back(std::move(flattened_elements));
-      }
-    }
-
-    for (const auto &outer : all_flattened_elements) {
-      std::cout << "NEXT OUTER\n";
-      for (const auto &inner : outer) {
-        std::cout << *inner << '\n';
-      }
-    }
-
-//    for (auto i = 0; i != num_flattened_elements; ++i) {
-//    }
-//    std::cout << "Right? Wrong? Who can say\n";
-//
-//    auto result_elements = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_rows);
-//    auto result_nulls = std::make_unique<bool[]>(num_rows);
-//
-//    int64_t next_row = 0;
-//    for (const auto &la : list_arrays_) {
-//      for (int64_t i = 0; i != la->length(); ++i, ++next_row) {
-//        if (la->IsNull(i)) {
-//          result_elements[next_row] = nullptr;
-//          result_nulls[next_row] = true;
-//          continue;
-//        }
-//        auto blah = la->value_offset(i);
-//        auto blah2 = la->value_length(i);
-//
-//
-//        auto slice = la->value_slice(i);
-//        auto slice_length = slice->length();
-//        auto as_element_array = std::dynamic_pointer_cast<arrow::StringArray>(slice);
-//
-//        // Use ColumnSource as an intermediate data structure to do any necessary conversions
-//        // This is a bit much. We could take another pass at this to do it more efficiently.
-//        auto as_cs = StringArrowColumnSource::OfArrowArray(std::move(as_element_array));
-//
-//        auto rs = RowSequence::CreateSequential(0, slice_length);
-//        auto element_chunk = StringChunk::Create(slice_length);
-//        auto element_nulls = BooleanChunk::Create(slice_length);
-//        as_cs->FillChunk(*rs, &element_chunk, &element_nulls);
-//
-//
-//        elements[next_index] = std::move(as_cs);
-//        nulls[next_index] = false;
-//      }
-//    }
-//    result_ = ContainerArrayColumnSource::CreateFromArrays(std::move(elements),
-//        std::move(nulls), total_size);
-    return arrow::Status::OK();
+        std::move(slices), std::move(nulls_), num_slices);
   }
 
-private:
-  std::shared_ptr<ColumnSource> column_source_;
+  std::shared_ptr<ColumnSource> flattened_elements_;
+  std::vector<size_t> offsets_;
+  std::vector<bool> nulls_;
+  std::shared_ptr<ColumnSource> result_;
+
 };
 
 struct ElementIsListVisitor final : public arrow::TypeVisitor {
@@ -400,12 +340,22 @@ struct Visitor final : public arrow::TypeVisitor {
     for (const auto &la : skunked_array) {
       inner_chunks.push_back(la->values());
     }
+    auto flattened_elements = MakeColumnSource(inner_chunks, *type.value_type());
 
-    auto inner_cs = MakeColumnSource(inner_chunks, *type.value_type());
+    std::vector<size_t> offsets;
+    std::vector<bool> nulls;
+    size_t next_offset = 0;
+    for (const auto &la : skunked_array) {
+      for (size_t i = 0; i != la->length(); ++i) {
+        offsets.push_back(next_offset);
+        nulls.push_back(la->IsNull(i));
+        next_offset += la->value_length(i);
+      }
+    }
+    // Add one final value for the last offset
+    offsets.push_back(next_offset);
 
-    // this is us wishing we knew our size
-    auto size = 11;
-    ZamboniCopier copier(std::move(inner_cs), size);
+    ZamboniCopier copier(std::move(flattened_elements), std::move(offsets), std::move(nulls));
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&copier)));
     result_ = std::move(copier.result);
     return arrow::Status::OK();

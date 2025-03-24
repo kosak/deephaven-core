@@ -36,6 +36,10 @@ protected:
 template<typename T>
 class Container : public ContainerBase {
 public:
+  static std::shared_ptr<Container<T>> Create(std::shared_ptr<T[]> data,
+      std::shared_ptr<bool[]> nulls, size_t size) {
+
+  }
   const std::optional<T> &operator[](size_t index) const {
     return elements_[index];
   }
@@ -49,6 +53,6 @@ public:
   }
 
 private:
-  std::unique_ptr<std::optional<T>[]> elements_;
+  std::shared_ptr<std::optional<T>[]> elements_;
 };
 }  // namespace deephaven::dhcore::container
