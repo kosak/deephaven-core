@@ -56,7 +56,7 @@ TEST_CASE("Group a Table", "[group]") {
   std::cout << grouped.Stream(true) << '\n';
 
   auto ct1 = grouped.ToClientTable();
-  auto col2 = ct1->GetColumn(2);
+  auto col2 = ct1->GetColumn(3);
   auto chunk = ContainerBaseChunk::Create(50);
   auto nulls = BooleanChunk::Create(50);
   auto rs = RowSequence::CreateSequential(0, grouped.NumRows());

@@ -125,6 +125,39 @@ struct ZamboniCopier final : public arrow::TypeVisitor {
     num_slices_(num_slices),
     flattened_size_(flattened_size) {}
 
+  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
+    std::shared_ptr<int32_t[]> flattened_data(new int32_t[flattened_size_]);
+    std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size_]);
+
+    auto flattened_data_chunk = Int32Chunk::CreateView(flattened_data.get(), flattened_size_);
+    auto flattened_nulls_chunk = BooleanChunk::CreateView(flattened_nulls.get(), flattened_size_);
+    auto rs = RowSequence::CreateSequential(0, flattened_size_);
+    flattened_elements_->FillChunk(*rs, &flattened_data_chunk, &flattened_nulls_chunk);
+
+    auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_);
+
+    size_t slice_offset = 0;
+    for (size_t i = 0; i != num_slices_; ++i) {
+      auto *slice_data_start = flattened_data.get() + slice_offset;
+      auto *slice_null_start = flattened_nulls.get() + slice_offset;
+
+      // Make shared pointers from these slice pointers that share the lifetime of the
+      // original shared pointers
+      std::shared_ptr<int32_t[]> slice_data_start_sp(flattened_data, slice_data_start);
+      std::shared_ptr<bool[]> slice_null_start_sp(flattened_nulls, slice_null_start);
+
+      auto slice_size = slice_lengths_[i];
+      auto slice = Container<int32_t>::Create(std::move(slice_data_start_sp),
+          std::move(slice_null_start_sp), slice_size);
+      slices[i] = std::move(slice);
+      slice_offset += slice_size;
+    }
+
+    result_ = ContainerArrayColumnSource::CreateFromArrays(
+        std::move(slices), std::move(slice_nulls_), num_slices_);
+    return arrow::Status::OK();
+  }
+
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
     std::shared_ptr<std::string[]> flattened_data(new std::string[flattened_size_]);
     std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size_]);
@@ -164,7 +197,6 @@ struct ZamboniCopier final : public arrow::TypeVisitor {
   size_t num_slices_ = 0;
   size_t flattened_size_ = 0;
   std::shared_ptr<ColumnSource> result_;
-
 };
 
 struct Visitor final : public arrow::TypeVisitor {
@@ -257,8 +289,8 @@ struct Visitor final : public arrow::TypeVisitor {
     size_t num_slices = 0;
     size_t flattened_size = 0;
     for (const auto &la: chunked_listarrays) {
-      num_slices += la->length();
       flattened_chunks.push_back(la->values());
+      num_slices += la->length();
       flattened_size += la->values()->length();
     }
     auto flattened_chunked_array = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(
