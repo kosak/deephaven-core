@@ -113,7 +113,8 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 }
 
 
-struct Reconstituter final : public arrow::TypeVisitor {
+class Reconstituter final : public arrow::TypeVisitor {
+public:
   Reconstituter(std::shared_ptr<ColumnSource> flattened_elements,
     std::unique_ptr<size_t[]> slice_lengths,
     std::unique_ptr<bool[]> slice_nulls,
@@ -123,71 +124,52 @@ struct Reconstituter final : public arrow::TypeVisitor {
     slice_lengths_(std::move(slice_lengths)),
     slice_nulls_(std::move(slice_nulls)),
     num_slices_(num_slices),
-    flattened_size_(flattened_size) {}
+    flattened_size_(flattened_size),
+    flattened_nulls_(new bool[flattened_size_]),
+    flattened_nulls_chunk_(BooleanChunk::CreateView(flattened_nulls_.get(), flattened_size_)),
+    rowSequence_(RowSequence::CreateSequential(0, flattened_size_)),
+    slices_(std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_)) {
+  }
+
+  ~Reconstituter() final;
+
+  std::shared_ptr<ContainerArrayColumnSource> MakeResult() {
+    return ContainerArrayColumnSource::CreateFromArrays(
+        std::move(slices_), std::move(slice_nulls_), num_slices_);
+  }
 
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    std::shared_ptr<int32_t[]> flattened_data(new int32_t[flattened_size_]);
-    std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size_]);
-
-    auto flattened_data_chunk = Int32Chunk::CreateView(flattened_data.get(), flattened_size_);
-    auto flattened_nulls_chunk = BooleanChunk::CreateView(flattened_nulls.get(), flattened_size_);
-    auto rs = RowSequence::CreateSequential(0, flattened_size_);
-    flattened_elements_->FillChunk(*rs, &flattened_data_chunk, &flattened_nulls_chunk);
-
-    auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_);
-
-    size_t slice_offset = 0;
-    for (size_t i = 0; i != num_slices_; ++i) {
-      auto *slice_data_start = flattened_data.get() + slice_offset;
-      auto *slice_null_start = flattened_nulls.get() + slice_offset;
-
-      // Make shared pointers from these slice pointers that share the lifetime of the
-      // original shared pointers
-      std::shared_ptr<int32_t[]> slice_data_start_sp(flattened_data, slice_data_start);
-      std::shared_ptr<bool[]> slice_null_start_sp(flattened_nulls, slice_null_start);
-
-      auto slice_size = slice_lengths_[i];
-      auto slice = Container<int32_t>::Create(std::move(slice_data_start_sp),
-          std::move(slice_null_start_sp), slice_size);
-      slices[i] = std::move(slice);
-      slice_offset += slice_size;
-    }
-
-    result_ = ContainerArrayColumnSource::CreateFromArrays(
-        std::move(slices), std::move(slice_nulls_), num_slices_);
-    return arrow::Status::OK();
+    return VisitHelper<int32_t, Int32Chunk>();
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    std::shared_ptr<std::string[]> flattened_data(new std::string[flattened_size_]);
-    std::shared_ptr<bool[]> flattened_nulls(new bool[flattened_size_]);
+    return VisitHelper<std::string, StringChunk>();
+  }
 
-    auto flattened_data_chunk = StringChunk::CreateView(flattened_data.get(), flattened_size_);
-    auto flattened_nulls_chunk = BooleanChunk::CreateView(flattened_nulls.get(), flattened_size_);
-    auto rs = RowSequence::CreateSequential(0, flattened_size_);
-    flattened_elements_->FillChunk(*rs, &flattened_data_chunk, &flattened_nulls_chunk);
 
-    auto slices = std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_);
+private:
+  template<typename TElement, typename TChunk>
+  arrow::Status VisitHelper() {
+    std::shared_ptr<TElement[]> flattened_data(new TElement[flattened_size_]);
+    auto flattened_data_chunk = TChunk::CreateView(flattened_data.get(), flattened_size_);
+    flattened_elements_->FillChunk(*rowSequence_, &flattened_data_chunk, &flattened_nulls_chunk_);
 
     size_t slice_offset = 0;
     for (size_t i = 0; i != num_slices_; ++i) {
       auto *slice_data_start = flattened_data.get() + slice_offset;
-      auto *slice_null_start = flattened_nulls.get() + slice_offset;
+      auto *slice_null_start = flattened_nulls_.get() + slice_offset;
 
       // Make shared pointers from these slice pointers that share the lifetime of the
       // original shared pointers
-      std::shared_ptr<std::string[]> slice_data_start_sp(flattened_data, slice_data_start);
-      std::shared_ptr<bool[]> slice_null_start_sp(flattened_nulls, slice_null_start);
+      std::shared_ptr<TElement[]> slice_data_start_sp(flattened_data, slice_data_start);
+      std::shared_ptr<bool[]> slice_null_start_sp(flattened_nulls_, slice_null_start);
 
       auto slice_size = slice_lengths_[i];
-      auto slice = Container<std::string>::Create(std::move(slice_data_start_sp),
+      auto slice = Container<TElement>::Create(std::move(slice_data_start_sp),
           std::move(slice_null_start_sp), slice_size);
-      slices[i] = std::move(slice);
+      slices_[i] = std::move(slice);
       slice_offset += slice_size;
     }
-
-    result_ = ContainerArrayColumnSource::CreateFromArrays(
-        std::move(slices), std::move(slice_nulls_), num_slices_);
     return arrow::Status::OK();
   }
 
@@ -196,7 +178,10 @@ struct Reconstituter final : public arrow::TypeVisitor {
   std::unique_ptr<bool[]> slice_nulls_;
   size_t num_slices_ = 0;
   size_t flattened_size_ = 0;
-  std::shared_ptr<ContainerArrayColumnSource> result_;
+  std::shared_ptr<bool[]> flattened_nulls_;
+  BooleanChunk flattened_nulls_chunk_;
+  std::shared_ptr<RowSequence> rowSequence_;
+  std::unique_ptr<std::shared_ptr<ContainerBase>[]> slices_;
 };
 
 struct Visitor final : public arrow::TypeVisitor {
@@ -373,10 +358,10 @@ struct Visitor final : public arrow::TypeVisitor {
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
 
-    ZamboniCopier copier(std::move(flattened_elements), std::move(slice_lengths),
+    Reconstituter reconstituter(std::move(flattened_elements), std::move(slice_lengths),
         std::move(slice_nulls), num_slices, flattened_size);
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&copier)));
-    result_ = std::move(copier.result_);
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&reconstituter)));
+    result_ = reconstituter.MakeResult();
     return arrow::Status::OK();
   }
 
