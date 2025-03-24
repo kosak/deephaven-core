@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <optional>
+#include "deephaven/dhcore/utility/utility.h"
 
 namespace deephaven::dhcore::container {
 /**
@@ -20,14 +21,19 @@ public:
   explicit ContainerBase(size_t size) : size_(size) {}
   virtual ~ContainerBase();
 
-  size_t Size() const {
+  size_t size() const {
     return size_;
   }
 
   template<class T>
-  std::shared_ptr<const Container<T>> AsContainer() const {
+  std::shared_ptr<const Container<T>> AsContainerPtr() const {
     auto self = shared_from_this();
     return std::dynamic_pointer_cast<const Container<T>>(self);
+  }
+
+  template<class T>
+  const Container<T> &AsContainer() const {
+    return *deephaven::dhcore::utility::VerboseCast<const Container<T>*>(DEEPHAVEN_LOCATION_EXPR(this));
   }
 
 protected:
@@ -53,6 +59,14 @@ public:
 
   bool IsNull(size_t index) const {
     return nulls_[index];
+  }
+
+  const T *begin() const {
+    return data_.get();
+  }
+
+  const T *end() const {
+    return begin() + size();
   }
 
 private:

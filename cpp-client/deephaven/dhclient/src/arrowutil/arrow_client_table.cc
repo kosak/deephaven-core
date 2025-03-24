@@ -113,8 +113,8 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 }
 
 
-struct ZamboniCopier final : public arrow::TypeVisitor {
-  ZamboniCopier(std::shared_ptr<ColumnSource> flattened_elements,
+struct Reconstituter final : public arrow::TypeVisitor {
+  Reconstituter(std::shared_ptr<ColumnSource> flattened_elements,
     std::unique_ptr<size_t[]> slice_lengths,
     std::unique_ptr<bool[]> slice_nulls,
     size_t num_slices,
@@ -196,7 +196,7 @@ struct ZamboniCopier final : public arrow::TypeVisitor {
   std::unique_ptr<bool[]> slice_nulls_;
   size_t num_slices_ = 0;
   size_t flattened_size_ = 0;
-  std::shared_ptr<ColumnSource> result_;
+  std::shared_ptr<ContainerArrayColumnSource> result_;
 };
 
 struct Visitor final : public arrow::TypeVisitor {
@@ -275,7 +275,65 @@ struct Visitor final : public arrow::TypeVisitor {
   }
 
   /**
-   * When the element is a list, we need to go one level deeper to decode it.
+   * When the element is a list, we use recursion to extract the flattened elements of the list into
+   * a single column source, we extract the data out of a column source into a single pair of arrays
+   * (one for the flattened data, and one for the flattened null flags), and then we reconstitute
+   * the list structure as a ColumnSource<shared_ptr<ContainerBase>>, where the
+   * shared_ptr<ContainerBase> has the appropriate dynamic type.
+   *
+   * Example
+   * Input is ListArray:
+   *   [a, b, c]
+   *   null
+   *   []
+   *   [d, null, e, f]
+   *
+   * It has 4 slices.
+   * When it is flattened, it looks like [a, b, c, d, null, e, f]. There are 7 elements in the
+   * flattened data.
+   *
+   * We use recursion to create the flattened data [a, b, c, d, null, e, f] as a ColumnSource.
+   * This is only a temporary holding area, because we soon copy all the data out of it. We do this
+   * as a convenience mainly because the ColumnSource has knowledge about Deephaven null
+   * conventions.
+   *
+   * Then we make an array of slice lengths and slice null flags.  In our example these arrays
+   * are of size 4 and contain:
+   *   lengths: [3, 0, 0, 4]
+   *   null flags: [false, true, false, false]
+   *
+   *  The first 0 in lengths is a "dontcare" because the element itself is null
+   *  The second 0 is a "true" 0 in the sense that it represents a list of length 0 (not a null
+   *  entry)
+   *
+   * We then pass these arrays to the Reconstituter to finish the job of reconstituting a
+   * ColumnSource<shared_ptr<ContainerBase>> from these arrays.
+   *
+   * Inside the Reconstituter, we make two arrays for the flattened data and the flattened null
+   * flags. In our example these arrays are of size 8 and contain:
+   *   data: [a, b, c, d, null, e, f]
+   *   nulls: [false, false, false, false, true, false, false]
+   *
+   * These arrays are managed by shared pointers because, when we are done, there will be multiple
+   * Container<T> objects that point to (the interior) of these arrays and share their lifetime.
+   *
+   * The reconstituter makes four Container<T> objects:
+   *
+   *   con0: size=3, data = [a,b,c], nulls=[false, false, false].
+   *         It points into the above data and nulls arrays at offset 0.
+   *   con1: size = 0, data = [], nulls = [].  This entry is null and so it doesn't matter where its
+   *         data points to
+   *   con2: size = 0, data = [], nulls = [].  This entry is of length zero, so for different
+   *         reasons it also doesn't matter where its data points to
+   *   con3: size=4, data = [d, null, e, f], nulls = [false, true, false, false]
+   *
+   * We arrange these container objects into an array of size 4 of shared_ptr<ContainerBase>
+   *
+   * The reconstituter also uses the same null flags array it was passed, namely
+   * [false, true, false, false]
+   *
+   * We provide these two arrays to ContainerArrayColumnSource::CreateFromArrays() and we are
+   * done!
    */
   arrow::Status Visit(const arrow::ListType &type) final {
     auto chunked_listarrays = DowncastChunks<arrow::ListArray>(chunked_array_);
