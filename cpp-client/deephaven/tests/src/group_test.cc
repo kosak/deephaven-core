@@ -36,8 +36,7 @@ TEST_CASE("Group a Table", "[group]") {
   };
 
   std::vector<int32_t> weight_data = {
-      // 102, 85, 79, 92, 78, 99
-      0, 0, 0, 1, 1, 1
+      102, 85, 79, 92, 78, 99
   };
 
   std::vector<int32_t> calorie_data = {
@@ -51,30 +50,28 @@ TEST_CASE("Group a Table", "[group]") {
   maker.AddColumn("Calories", calorie_data);
   auto t1 = maker.MakeTable(tm.Client().GetManager());
 
-  auto grouped = t1.By("Weight");
+  auto grouped = t1.By("Type");
 
   std::cout << grouped.Stream(true) << '\n';
 
-  auto ct1 = grouped.ToClientTable();
-  auto col2 = ct1->GetColumn(1);
-  auto chunk = ContainerBaseChunk::Create(50);
-  auto nulls = BooleanChunk::Create(50);
-  auto rs = RowSequence::CreateSequential(0, grouped.NumRows());
-  col2->FillChunk(*rs, &chunk, &nulls);
+  std::vector<std::string> type_as_group_key = {
+      "Granny Smith",
+      "Gala",
+      "Golden Delicious"
+  };
 
-  // auto nr = grouped.NumRows();
-  const auto &data0 = chunk.data()[0]->AsContainer<std::string>();
-  const auto &data1 = chunk.data()[1]->AsContainer<std::int32_t>();
+  std::vector<std::vector<std::string>> grouped_color = {
+      {"Green", "Green"},
+      {"Red-Green", "Orange-Green"},
+      {"Yellow", "Yellow"}
+  };
 
-  for (const auto &e : data0) {
-    std::cout << "hello " << e << '\n';
-  }
-
-  for (const auto &e : data1) {
-    std::cout << "hello " << e << '\n';
-  }
-
-
-  std::cout << "What is this\n";
+  CompareTable(
+      grouped,
+      "Type", type_as_group_key,
+      "Color", grouped_color,
+      "Weight", grouped_color,
+      "Calories", grouped_color
+  );
 }
 }  // namespace deephaven::client::tests

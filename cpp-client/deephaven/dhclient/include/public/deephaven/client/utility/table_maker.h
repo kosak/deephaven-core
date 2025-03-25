@@ -459,7 +459,7 @@ void TableMaker::AddColumn(std::string name, const std::vector<T> &values) {
 }
 
 template<typename T>
-void TableMaker::AddColumn(std::string name, const std::vector<std::optional<T>> &values) {
+void TableMaker:: AddColumn(std::string name, const std::vector<std::optional<T>> &values) {
   auto get_value = [&](size_t index) -> const T& { return *values[index]; };
   auto is_null = [&](size_t index) { return !values[index].has_value(); };
   return AddColumn<T>(std::move(name), get_value, is_null, values.size());

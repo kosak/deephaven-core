@@ -22,6 +22,8 @@ using deephaven::client::arrowutil::Int16ArrowColumnSource;
 using deephaven::client::arrowutil::Int32ArrowColumnSource;
 using deephaven::client::arrowutil::Int64ArrowColumnSource;
 using deephaven::client::arrowutil::StringArrowColumnSource;
+using deephaven::dhcore::LocalDate;
+using deephaven::dhcore::LocalTime;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::Chunk;
 using deephaven::dhcore::chunk::CharChunk;
@@ -32,6 +34,8 @@ using deephaven::dhcore::chunk::Int8Chunk;
 using deephaven::dhcore::chunk::Int16Chunk;
 using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::LocalDateChunk;
+using deephaven::dhcore::chunk::LocalTimeChunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::chunk::UInt64Chunk;
 using deephaven::dhcore::clienttable::ClientTable;
@@ -131,21 +135,60 @@ public:
     slices_(std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_)) {
   }
 
-  ~Reconstituter() final;
+  ~Reconstituter() final = default;
 
   std::shared_ptr<ContainerArrayColumnSource> MakeResult() {
     return ContainerArrayColumnSource::CreateFromArrays(
         std::move(slices_), std::move(slice_nulls_), num_slices_);
   }
 
+  arrow::Status Visit(const arrow::UInt16Type &/*type*/) final {
+    return VisitHelper<char16_t, CharChunk>();
+  }
+
+  arrow::Status Visit(const arrow::Int8Type &/*type*/) final {
+    return VisitHelper<int8_t, Int8Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::Int16Type &/*type*/) final {
+    return VisitHelper<int16_t, Int16Chunk>();
+  }
+
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
     return VisitHelper<int32_t, Int32Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
+    return VisitHelper<int64_t, Int64Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::FloatType &/*type*/) final {
+    return VisitHelper<float, FloatChunk>();
+  }
+
+  arrow::Status Visit(const arrow::DoubleType &/*type*/) final {
+    return VisitHelper<double, DoubleChunk>();
+  }
+
+  arrow::Status Visit(const arrow::BooleanType &/*type*/) final {
+    return VisitHelper<bool, BooleanChunk>();
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
     return VisitHelper<std::string, StringChunk>();
   }
 
+  arrow::Status Visit(const arrow::TimestampType &/*type*/) final {
+    return VisitHelper<DateTime, DateTimeChunk>();
+  }
+
+  arrow::Status Visit(const arrow::Date64Type &/*type*/) final {
+    return VisitHelper<LocalDate, LocalDateChunk>();
+  }
+
+  arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
+    return VisitHelper<LocalTime, LocalTimeChunk>();
+  }
 
 private:
   template<typename TElement, typename TChunk>
