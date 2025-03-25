@@ -392,6 +392,32 @@ struct TypeConverterTraits<deephaven::client::utility::internal::InternalLocalTi
 };
 
 template<typename T>
+struct Kosak666Builder {
+  arrow::Status Append(const std::vector<T> &element);
+  arrow::Status AppendNull();
+  arrow::Result<std::shared_ptr<arrow::Array>> Finish();
+};
+
+template<typename T>
+struct TypeConverterTraits<std::vector<T>> {
+  using inner_t = TypeConverterTraits<T>;
+  static auto GetDataType() {
+    auto inner_type = inner_t::GetDataType();
+    return arrow::list(inner_type);
+  }
+  static auto GetBuilder() {
+    return Kosak666Builder<T>();
+  }
+  static const auto &Reinterpret(const std::vector<T> &o) {
+    return o;
+  }
+  static std::string_view GetDeephavenTypeName() {
+    // TODO(kosak)
+    return "kosak_list_todo";
+  }
+};
+
+template<typename T>
 TypeConverter TypeConverter::CreateNew(const std::vector<T> &values) {
   using deephaven::client::utility::OkOrThrow;
 
