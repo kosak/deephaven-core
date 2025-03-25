@@ -71,10 +71,5 @@ TEST_CASE("Group a Table", "[group]") {
   expected.AddColumn("Color", grouped_color);
   expected.AddColumn("Weight", grouped_color);
   expected.AddColumn("Calories", grouped_color);
-
-      "Color", grouped_color,
-      "Weight", grouped_color,
-      "Calories", grouped_color
-  );
 }
 }  // namespace deephaven::client::tests
