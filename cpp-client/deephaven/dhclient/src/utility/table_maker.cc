@@ -7,11 +7,126 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
+#include "arrow/array/builder_nested.h"
+
 using deephaven::client::TableHandle;
 using deephaven::client::utility::OkOrThrow;
 using deephaven::client::utility::ValueOrThrow;
 
 #include <memory>
+
+namespace kosak_alt {
+template<typename T>
+class ZamboniBuilder;
+
+template<>
+class ZamboniBuilder<int32_t> {
+public:
+  void Append(int32_t value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value)));
+  }
+
+  void AppendNull() {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+  }
+
+//  void AppendValues(const std::vector<int32_t> &values) {
+//    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendValues(values)));
+//  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+
+private:
+  std::shared_ptr<arrow::Int32Builder> builder_;
+};
+
+template<typename T>
+class ZamboniBuilder<std::optional<T>> {
+public:
+  void Append(const std::optional<T> &value) {
+    if (!value.has_value()) {
+      inner_builder_.AppendNull();
+    } else {
+      inner_builder_.Append(*value);
+    }
+  }
+
+  void AppendNull() {
+    inner_builder_.AppendNull();
+  }
+
+//  void AppendValues(const std::vector<std::optional<T>> &values) {
+//    for (const auto &opt : values) {
+//      if (!opt.has_value()) {
+//        inner_builder_.AppendNull();
+//      } else {
+//        inner_builder_.Append(*opt);
+//      }
+//    }
+//  }
+
+  ZamboniBuilder<T> inner_builder_;
+};
+
+
+template<typename T>
+class ZamboniBuilder<std::vector<T>> {
+public:
+  ZamboniBuilder() :
+    builder_(std::make_shared<arrow::ListBuilder>(arrow::default_memory_pool(), inner_builder_.builder_)) {
+  }
+
+//  void AppendValues(const std::vector<std::vector<T>> &values) {
+//    for (const auto &entry : values) {
+//      inner_builder_.AppendValues(entry);
+//      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
+//    }
+//  }
+
+  void Append(const std::vector<T> &entry) {
+    for (const auto &element : entry) {
+      inner_builder_.Append(element);
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
+    }
+  }
+
+  void AppendNull() {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+  }
+
+private:
+  ZamboniBuilder<T> inner_builder_;
+  std::shared_ptr<arrow::ListBuilder> builder_;
+};
+
+void kosak_test() {
+  ZamboniBuilder<int32_t> b1;
+  std::vector<int32_t> v1;
+  for (const auto &element : v1) {
+    b1.Append(element);
+  }
+
+  ZamboniBuilder<std::optional<int32_t>> b2;
+  std::vector<std::optional<int32_t>> v2;
+  for (const auto &element : v2) {
+    b2.Append(element);
+  }
+
+  ZamboniBuilder<std::vector<int32_t>> b3;
+  std::vector<std::vector<int32_t>> v3;
+  for (const auto &element : v3) {
+    b3.Append(element);
+  }
+
+  ZamboniBuilder<std::optional<std::vector<int32_t>>> b4;
+  std::vector<std::optional<std::vector<int32_t>>> v4;
+  for (const auto &element : v4) {
+    b4.Append(element);
+  }
+}
+}
 
 namespace deephaven::client::utility {
 TableMaker::TableMaker() = default;
