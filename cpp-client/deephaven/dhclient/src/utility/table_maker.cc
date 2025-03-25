@@ -38,7 +38,6 @@ public:
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
 
-private:
   std::shared_ptr<arrow::Int32Builder> builder_;
 };
 
@@ -55,6 +54,10 @@ public:
 
   void AppendNull() {
     inner_builder_.AppendNull();
+  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return inner_builder_.Finish();
   }
 
 //  void AppendValues(const std::vector<std::optional<T>> &values) {
@@ -96,7 +99,10 @@ public:
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
   }
 
-private:
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+
   ZamboniBuilder<T> inner_builder_;
   std::shared_ptr<arrow::ListBuilder> builder_;
 };
@@ -107,24 +113,36 @@ void kosak_test() {
   for (const auto &element : v1) {
     b1.Append(element);
   }
+  b1.Finish();
 
   ZamboniBuilder<std::optional<int32_t>> b2;
   std::vector<std::optional<int32_t>> v2;
   for (const auto &element : v2) {
     b2.Append(element);
   }
+  b2.Finish();
 
   ZamboniBuilder<std::vector<int32_t>> b3;
   std::vector<std::vector<int32_t>> v3;
   for (const auto &element : v3) {
     b3.Append(element);
   }
+  b3.Finish();
 
   ZamboniBuilder<std::optional<std::vector<int32_t>>> b4;
   std::vector<std::optional<std::vector<int32_t>>> v4;
   for (const auto &element : v4) {
     b4.Append(element);
   }
+  b4.Finish();
+
+  ZamboniBuilder<std::vector<std::vector<int32_t>>> b5;
+  std::vector<std::vector<std::vector<int32_t>>> v5;
+  for (const auto &element : v5) {
+    b5.Append(element);
+  }
+  b5.Finish();
+
 }
 }
 

@@ -131,7 +131,7 @@ public:
     slices_(std::make_unique<std::shared_ptr<ContainerBase>[]>(num_slices_)) {
   }
 
-  ~Reconstituter() final;
+  ~Reconstituter() final = default;
 
   std::shared_ptr<ContainerArrayColumnSource> MakeResult() {
     return ContainerArrayColumnSource::CreateFromArrays(
