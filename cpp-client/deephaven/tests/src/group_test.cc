@@ -66,9 +66,12 @@ TEST_CASE("Group a Table", "[group]") {
       {"Yellow", "Yellow"}
   };
 
-  CompareTable(
-      grouped,
-      "Type", type_as_group_key,
+  TableMaker expected;
+  expected.AddColumn("Type", type_as_group_key);
+  expected.AddColumn("Color", grouped_color);
+  expected.AddColumn("Weight", grouped_color);
+  expected.AddColumn("Calories", grouped_color);
+
       "Color", grouped_color,
       "Weight", grouped_color,
       "Calories", grouped_color

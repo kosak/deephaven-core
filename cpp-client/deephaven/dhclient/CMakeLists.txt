@@ -110,6 +110,7 @@ set(ALL_FILES
     include/public/deephaven/client/utility/arrow_util.h
     include/public/deephaven/client/utility/internal_types.h
     include/public/deephaven/client/utility/misc_types.h
+    include/public/deephaven/client/utility/table_comparer.h
     include/public/deephaven/client/utility/table_maker.h
 )
 
