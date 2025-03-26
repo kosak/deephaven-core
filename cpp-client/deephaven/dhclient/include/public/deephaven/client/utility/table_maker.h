@@ -252,26 +252,27 @@ private:
  * A convenience class for populating small tables. It is a wrapper around Arrow Flight's
  * DoPut functionality. Typical usage
  * @code
- * TableBuilder tb;
+ * TableMaker tm;
  * std::vector<T1> data1 = { ... };
  * std::vector<T2> data2 = { ... };
- * tb.AddColumn("col1", data1);
- * tb.AddColumn("col2", data2);
- * auto tableHandle = tb.Build().MakeTable();
+ * tm.AddColumn("col1", data1);
+ * tm.AddColumn("col2", data2);
+ * auto arrow_table = tm.MakeArrowTable();
+ * auto table_handle = tm.MakeDeephavenTable(const TableHandleManager &manager);
  * @endcode
  */
-class TableBuilder {
+class TableMaker {
   using TableHandleManager = deephaven::client::TableHandleManager;
   using TableHandle = deephaven::client::TableHandle;
 public:
   /**
    * Constructor
    */
-  TableBuilder();
+  TableMaker();
   /**
    * Destructor
    */
-  ~TableBuilder();
+  ~TableMaker();
 
   /**
    * Creates a column whose server type most closely matches type T, having the given name and
@@ -294,19 +295,27 @@ public:
       size_t size);
 
   /**
-   * Make the table. Call this after all your calls to AddColumn().
+   * Make a table on the Deephaven server based on all the AddColumn calls you have made so far.
    * @param manager The TableHandleManager
    * @return The TableHandle referencing the newly-created table.
    */
   [[nodiscard]]
-  TableHandle MakeTable(const TableHandleManager &manager);
+  TableHandle MakeDeephavenTable(const TableHandleManager &manager) const;
+
+  [[nodiscard]]
+  arrow::Table MakeArrowTable() const;
 
 private:
   void FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> array);
 
-  arrow::SchemaBuilder schemaBuilder_;
-  int64_t numRows_ = 0;
-  std::vector<std::shared_ptr<arrow::Array>> columns_;
+  struct ColumnInfo {
+    std::string name_;
+    std::shared_ptr<arrow::DataType> arrow_type_;
+    std::string deepaven_type_;
+    std::shared_ptr<arrow::Array> data_;
+  };
+
+  std::vector<ColumnInfo> column_infos_;
 };
 
 namespace internal {

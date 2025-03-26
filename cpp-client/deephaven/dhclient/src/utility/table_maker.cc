@@ -162,6 +162,8 @@ void kosak_test() {
     b5.Append(element);
   }
   b5.Finish();
+  arrow::Table tb;
+
 }
 }
 
@@ -169,7 +171,20 @@ namespace deephaven::client::utility {
 TableMaker::TableMaker() = default;
 TableMaker::~TableMaker() = default;
 
-void TableMaker::FinishAddColumn(std::string name, internal::TypeConverter info) {
+void TableMaker::FinishAddColumn(std::string name, std::shared_ptr<arrow::DataType> type,
+    std::shared_ptr<arrow::Array> data) {
+  if (!column_infos_.empty()) {
+    auto num_rows = column_infos_.back().data_->length();
+    if (data->length() != num_rows) {
+      auto message = fmt::format("Column sizes not consistent: expected {}, have {}", num_rows,
+          data->length());
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+  }
+
+  column_infos_.emplace_back(std::move(name), std::move(arrow_type), std::move(deephaven_type),
+      std::move(data));
+
   auto kv_metadata = std::make_shared<arrow::KeyValueMetadata>();
   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(kv_metadata->Set("deephaven:type", info.DeephavenType())));
 
@@ -188,7 +203,7 @@ void TableMaker::FinishAddColumn(std::string name, internal::TypeConverter info)
   columns_.push_back(std::move(info.Column()));
 }
 
-TableHandle TableMaker::MakeTable(const TableHandleManager &manager) {
+TableHandle TableMaker::MakeDeephavenTable(const TableHandleManager &manager) const {
   auto schema = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(schemaBuilder_.Finish()));
 
   auto wrapper = manager.CreateFlightWrapper();
@@ -210,6 +225,35 @@ TableHandle TableMaker::MakeTable(const TableHandleManager &manager) {
   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->Close()));
   return manager.MakeTableHandleFromTicket(std::move(ticket));
 }
+
+std::shared_ptr<arrow::Table> TableMaker::MakeArrowTable() const {
+  auto schema = MakeSchema();
+  return arrow::Table::Make(std::move(schema), data_);
+}
+
+std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
+  arrow::SchemaBuilder sb;
+  for (const auto &info : column_infos_) {
+    auto kv_metadata = std::make_shared<arrow::KeyValueMetadata>();
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(kv_metadata->Set("deephaven:type", info.deepaven_type_)));
+
+    auto field = std::make_shared<arrow::Field>(info.name_, info.arrow_type_, true,
+        std::move(kv_metadata));
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.AddField(field)));
+
+
+  }
+
+
+  auto field = std::make_shared<arrow::Field>(std::move(name), std::move(info.DataType()), true,
+      std::move(kv_metadata));
+  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(schemaBuilder_.AddField(field)));
+
+
+
+}
+
+
 
 namespace internal {
 TypeConverter::TypeConverter(std::shared_ptr<arrow::DataType> data_type,
