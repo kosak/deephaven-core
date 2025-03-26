@@ -14,6 +14,7 @@
 #include <arrow/flight/types.h>
 #include <arrow/array/array_primitive.h>
 #include <arrow/array/builder_binary.h>
+#include <arrow/array/builder_nested.h>
 #include <arrow/array/builder_primitive.h>
 #include <arrow/util/key_value_metadata.h>
 
@@ -27,6 +28,171 @@
 
 namespace deephaven::client::utility {
 namespace internal {
+template<typename T>
+struct ColumnBuilder {
+  // The below assert fires when this class is instantiated; i.e. when none of the specializations
+  // match. It needs to be written this way (with "is_same<T,T>") because for technical reasons it
+  // needs to be dependent on T, even if degenerately so.
+  static_assert(!std::is_same_v<T, T>, "ColumnBuilder doesn't know how to work with this type");
+};
+
+template<>
+struct ColumnBuilder<char16_t> {
+  void Append(char16_t value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::UInt16Builder> builder_;
+};
+
+template<>
+struct ColumnBuilder<bool> {
+  void Append(bool value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::BooleanBuilder> builder_;
+};
+
+template<>
+struct ColumnBuilder<int8_t> {
+  void Append(int8_t value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Int8Builder> builder_;
+};
+
+template<>
+struct ColumnBuilder<int16_t> {
+  void Append(int16_t value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Int16Builder> builder_;
+};
+
+template<>
+struct ColumnBuilder<int32_t> {
+  void Append(int32_t value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Int32Builder> builder_;
+};
+
+template<>
+struct ColumnBuilder<int64_t> {
+  void Append(int64_t value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Int64Builder> builder_;
+};
+
+template<>
+struct ColumnBuilder<float> {
+  void Append(float value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::FloatBuilder> builder_;
+};
+
+template<>
+struct ColumnBuilder<double> {
+  void Append(double value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::DoubleBuilder> builder_;
+};
+
+template<>
+struct ColumnBuilder<std::string> {
+  void Append(const std::string &value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::StringBuilder> builder_;
+};
+
+template<>
+struct ColumnBuilder<deephaven::dhcore::DateTime> {
+  void Append(const deephaven::dhcore::DateTime &value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::TimestampBuilder> builder_;
+};
+
+template<>
+struct ColumnBuilder<deephaven::dhcore::LocalDate> {
+  void Append(const deephaven::dhcore::LocalDate &value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Date64Builder> builder_;
+};
+
+template<>
+struct ColumnBuilder<deephaven::dhcore::LocalTime> {
+  void Append(const deephaven::dhcore::LocalTime &value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Time64Builder> builder_;
+};
+
+template<typename T>
+class ColumnBuilder<std::optional<T>> {
+public:
+  void Append(const std::optional<T> &value) {
+    if (!value.has_value()) {
+      inner_builder_.AppendNull();
+    } else {
+      inner_builder_.Append(*value);
+    }
+  }
+
+  void AppendNull() {
+    inner_builder_.AppendNull();
+  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return inner_builder_.Finish();
+  }
+
+  ColumnBuilder<T> inner_builder_;
+};
+
+template<typename T>
+class ColumnBuilder<std::vector<T>> {
+public:
+  ColumnBuilder() :
+      builder_(std::make_shared<arrow::ListBuilder>(arrow::default_memory_pool(),
+          inner_builder_.builder_)) {
+  }
+
+  void Append(const std::vector<T> &entry) {
+    for (const auto &element : entry) {
+      inner_builder_.Append(element);
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
+    }
+  }
+
+  void AppendNull() {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+
+  ColumnBuilder<T> inner_builder_;
+  std::shared_ptr<arrow::ListBuilder> builder_;
+};
+
 class TypeConverter {
 public:
   template<typename T>
@@ -86,37 +252,42 @@ private:
  * A convenience class for populating small tables. It is a wrapper around Arrow Flight's
  * DoPut functionality. Typical usage
  * @code
- * TableMaker tm;
+ * TableBuilder tb;
  * std::vector<T1> data1 = { ... };
  * std::vector<T2> data2 = { ... };
- * tm.AddColumn("col1", data1);
- * tm.AddColumn("col2", data2);
- * auto tableHandle = tm.MakeTable();
+ * tb.AddColumn("col1", data1);
+ * tb.AddColumn("col2", data2);
+ * auto tableHandle = tb.Build().MakeTable();
  * @endcode
  */
-class TableMaker {
+class TableBuilder {
   using TableHandleManager = deephaven::client::TableHandleManager;
   using TableHandle = deephaven::client::TableHandle;
 public:
   /**
    * Constructor
    */
-  TableMaker();
+  TableBuilder();
   /**
    * Destructor
    */
-  ~TableMaker();
+  ~TableBuilder();
 
   /**
-   * Creates a column whose server type most closely matches type T, having the given
-   * name and values. Each call to this method adds a column. When there are multiple calls
-   * to this method, the sizes of the `values` arrays must be consistent.
+   * Creates a column whose server type most closely matches type T, having the given name and
+   * values. Each call to this method adds a column. When there are multiple calls to this method,
+   * the sizes of the `values` arrays must be consistent across those calls. That is, when the
+   * table has multiple columns, they all have to have the same number of rows.
    */
   template<typename T>
-  void AddColumn(std::string name, const std::vector<T> &values);
-
-  template<typename T>
-  void AddColumn(std::string name, const std::vector<std::optional<T>> &values);
+  void AddColumn(std::string name, const std::vector<T> &values) {
+    internal::ColumnBuilder<T> cb;
+    for (const auto &element : values) {
+      cb.Append(element);
+    }
+    auto array = cb.Finish();
+    FinishAddColumn(std::move(name), std::move(array));
+  }
 
   template<typename T, typename GetValue, typename IsNull>
   void AddColumn(std::string name, const GetValue &get_value, const IsNull &is_null,
@@ -131,7 +302,7 @@ public:
   TableHandle MakeTable(const TableHandleManager &manager);
 
 private:
-  void FinishAddColumn(std::string name, internal::TypeConverter info);
+  void FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> array);
 
   arrow::SchemaBuilder schemaBuilder_;
   int64_t numRows_ = 0;

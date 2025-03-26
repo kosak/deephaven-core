@@ -4,11 +4,13 @@
 #include "deephaven/client/flight.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/arrow_util.h"
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
 #include "arrow/array/builder_nested.h"
 
+using deephaven::dhcore::DeephavenConstants;
 using deephaven::client::TableHandle;
 using deephaven::client::utility::OkOrThrow;
 using deephaven::client::utility::ValueOrThrow;
@@ -19,20 +21,21 @@ namespace kosak_alt {
 template<typename T>
 class ZamboniBuilder;
 
+#if false
 template<>
 class ZamboniBuilder<int32_t> {
 public:
   void Append(int32_t value) {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value)));
+    if (value == DeephavenConstants::kNullInt) {
+      AppendNull();
+    } else {
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value)));
+    }
   }
 
   void AppendNull() {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
   }
-
-//  void AppendValues(const std::vector<int32_t> &values) {
-//    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendValues(values)));
-//  }
 
   std::shared_ptr<arrow::Array> Finish() {
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
@@ -40,6 +43,22 @@ public:
 
   std::shared_ptr<arrow::Int32Builder> builder_;
 };
+#endif
+
+template<>
+class ZamboniBuilder<int32_t> {
+public:
+  void Append(int32_t value);
+  void AppendNull();
+  std::shared_ptr<arrow::Array> Finish();
+
+  std::shared_ptr<arrow::Int32Builder> builder_;
+};
+
+void ZamboniBuilder<int32_t>::Append(int32_t value) {
+
+}
+
 
 template<typename T>
 class ZamboniBuilder<std::optional<T>> {
@@ -122,6 +141,7 @@ void kosak_test() {
   }
   b2.Finish();
 
+
   ZamboniBuilder<std::vector<int32_t>> b3;
   std::vector<std::vector<int32_t>> v3;
   for (const auto &element : v3) {
@@ -142,7 +162,6 @@ void kosak_test() {
     b5.Append(element);
   }
   b5.Finish();
-
 }
 }
 
