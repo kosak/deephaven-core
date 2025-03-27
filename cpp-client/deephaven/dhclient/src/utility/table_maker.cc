@@ -103,16 +103,16 @@ std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
 
 namespace internal {
 const char DeephavenServerConstants::kBool[] = "java.lang.Boolean";
-const char DeephavenServerConstants::kChar16[] = "java.lang.Boolean";
-std::string_view ColumnBuilder<int8_t>::GetDeephavenServerTypeName() { return "byte"; }
-std::string_view ColumnBuilder<int16_t>::GetDeephavenServerTypeName() { return "short"; }
-std::string_view ColumnBuilder<int32_t>::GetDeephavenServerTypeName() { return "int"; }
-std::string_view ColumnBuilder<int64_t>::GetDeephavenServerTypeName() { return "long"; }
-std::string_view ColumnBuilder<float>::GetDeephavenServerTypeName() { return "float"; }
-std::string_view ColumnBuilder<double>::GetDeephavenServerTypeName() { return "double"; }
-std::string_view ColumnBuilder<std::string>::GetDeephavenServerTypeName() { return "java.lang.String"; }
-std::string_view ColumnBuilder<deephaven::dhcore::DateTime>::GetDeephavenServerTypeName() { return "java.time.ZonedDateTime"; }
-std::string_view ColumnBuilder<deephaven::dhcore::LocalDate>::GetDeephavenServerTypeName() { return "java.time.LocalDate"; }
-std::string_view ColumnBuilder<deephaven::dhcore::LocalTime>::GetDeephavenServerTypeName() { return "java.time.LocalTime"; }
+const char DeephavenServerConstants::kChar16[] = "char";
+const char DeephavenServerConstants::kInt8[] = "byte";
+const char DeephavenServerConstants::kInt16[] = "short";
+const char DeephavenServerConstants::kInt32[] = "int";
+const char DeephavenServerConstants::kInt64[] = "long";
+const char DeephavenServerConstants::kFloat[] = "float";
+const char DeephavenServerConstants::kDouble[] = "double";
+const char DeephavenServerConstants::kString[] = "java.lang.String";
+const char DeephavenServerConstants::kDateTime[] = "java.time.ZonedDateTime";
+const char DeephavenServerConstants::kLocalDate[] = "java.time.LocalDate";
+const char DeephavenServerConstants::kLocalTime[] = "java.time.LocalTime";
 }  // namespace internal
 }  // namespace deephaven::client::utility
