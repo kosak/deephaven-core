@@ -38,6 +38,8 @@ struct ColumnBuilder {
 
 template<typename TArrowBuilder, const char *kDeephavenTypeName>
 struct BuilderBase {
+  BuilderBase(std::shared_ptr<TArrowBuilder> builder) : builder_(std::move(builder)) {}
+
   void AppendNull() {
     builder_->AppendNull();
   }
@@ -52,9 +54,18 @@ struct BuilderBase {
 };
 
 template<typename T, typename TArrowBuilder, const char *kDeephavenTypeName>
-struct BuilderBaseWithAppend : public BuilderBase<TArrowBuilder, kDeephavenTypeName> {
+struct TypicalBuilderBase : public BuilderBase<TArrowBuilder, kDeephavenTypeName> {
+  /**
+   * Convenience using.
+   */
+  using base = BuilderBase<TArrowBuilder, kDeephavenTypeName>;
+
+  TypicalBuilderBase() : BuilderBase<TArrowBuilder, kDeephavenTypeName>(
+      std::make_shared<TArrowBuilder>()) {
+  }
+
   void Append(const T &value) {
-    builder_->Append(value);
+    base::builder_->Append(value);
   }
 };
 
@@ -74,129 +85,93 @@ struct DeephavenServerConstants {
 };
 
 template<>
-struct ColumnBuilder<bool> : public BuilderBaseWithAppend<bool,
+struct ColumnBuilder<bool> : public TypicalBuilderBase<bool,
     arrow::BooleanBuilder,
     DeephavenServerConstants::kBool> {
 };
 
 template<>
-struct ColumnBuilder<char16_t> : public BuilderBaseWithAppend<char16_t, arrow::UInt16Builder,
+struct ColumnBuilder<char16_t> : public TypicalBuilderBase<char16_t, arrow::UInt16Builder,
     DeephavenServerConstants::kChar16> {
 };
 
 template<>
-struct ColumnBuilder<int8_t> : public BuilderBaseWithAppend<int8_t, arrow::Int8Builder,
+struct ColumnBuilder<int8_t> : public TypicalBuilderBase<int8_t, arrow::Int8Builder,
     DeephavenServerConstants::kInt8> {
 };
 
 template<>
-struct ColumnBuilder<int16_t> : public BuilderBaseWithAppend<int16_t, arrow::Int16Builder,
+struct ColumnBuilder<int16_t> : public TypicalBuilderBase<int16_t, arrow::Int16Builder,
     DeephavenServerConstants::kInt16> {
 };
 
 template<>
-struct ColumnBuilder<int32_t> : public BuilderBaseWithAppend<int32_t, arrow::Int32Builder,
+struct ColumnBuilder<int32_t> : public TypicalBuilderBase<int32_t, arrow::Int32Builder,
     DeephavenServerConstants::kInt32> {
 };
 
 template<>
-struct ColumnBuilder<int64_t> : public BuilderBaseWithAppend<int64_t, arrow::Int64Builder,
+struct ColumnBuilder<int64_t> : public TypicalBuilderBase<int64_t, arrow::Int64Builder,
     DeephavenServerConstants::kInt64> {
 };
 
 template<>
-struct ColumnBuilder<float> : public BuilderBaseWithAppend<float, arrow::FloatBuilder,
+struct ColumnBuilder<float> : public TypicalBuilderBase<float, arrow::FloatBuilder,
     DeephavenServerConstants::kFloat> {
 };
 
 template<>
-struct ColumnBuilder<double> : public BuilderBaseWithAppend<double, arrow::DoubleBuilder,
+struct ColumnBuilder<double> : public TypicalBuilderBase<double, arrow::DoubleBuilder,
     DeephavenServerConstants::kDouble> {
 };
 
 template<>
-struct ColumnBuilder<std::string> : public BuilderBaseWithAppend<std::string, arrow::StringBuilder,
+struct ColumnBuilder<std::string> : public TypicalBuilderBase<std::string, arrow::StringBuilder,
     DeephavenServerConstants::kString> {
 };
 
 template<>
-struct ColumnBuilder<deephaven::dhcore::DateTime> {
+struct ColumnBuilder<deephaven::dhcore::DateTime> : public BuilderBase<arrow::TimestampBuilder,
+    DeephavenServerConstants::kDateTime> {
+  // using base = BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>;
+
   // constructor with data type nanos
-  ColumnBuilder() {
-    auto data_type = arrow::timestamp(arrow::TimeUnit::NANO, "UTC");
-    arrow::TimestampBuilder builder(std::move(data_type), arrow::default_memory_pool());
-    builder_ = std::make_shared<arrow::TimestampBuilder>(std::move(builder));
+  ColumnBuilder() : BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>(
+      std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(arrow::TimeUnit::NANO, "UTC"),
+          arrow::default_memory_pool())) {
   }
 
   void Append(const deephaven::dhcore::DateTime &value) {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Nanos())));
   }
-
-  void AppendNull() {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
-  }
-
-  std::shared_ptr<arrow::Array> Finish() {
-    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
-  }
-
-  std::string_view GetDeephavenServerTypeName() {
-    return DeephavenServerConstants::kDateTime;
-  }
-
-  std::shared_ptr<arrow::TimestampBuilder> builder_;
 };
 
 template<>
-struct ColumnBuilder<deephaven::dhcore::LocalDate> {
+struct ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::Date64Builder,
+    DeephavenServerConstants::kLocalDate> {
+  // using base = BuilderBase<arrow::Date64Builder, DeephavenServerConstants::kLocalDate>;
+
   // constructor with data type nanos
-  ColumnBuilder() {
-    arrow::Date64Builder builder;
-    builder_ = std::make_shared<arrow::Date64Builder>(std::move(builder));
+  ColumnBuilder() : BuilderBase<arrow::Date64Builder, DeephavenServerConstants::kLocalDate>(
+      std::make_shared<arrow::Date64Builder>()) {
+  }
+
+  void Append(const deephaven::dhcore::DateTime &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Nanos())));
+  }
+};
+
+template<>
+struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::Time64Builder,
+    DeephavenServerConstants::kLocalTime> {
+  ColumnBuilder() : BuilderBase<arrow::Time64Builder,DeephavenServerConstants::kLocalTime>(
+      std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
+  arrow::default_memory_pool())) {
+
   }
 
   void Append(const deephaven::dhcore::LocalDate &value) {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
-  }
-
-  void AppendNull() {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
-  }
-
-  std::shared_ptr<arrow::Array> Finish() {
-    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
-  }
-
-  std::string_view GetDeephavenServerTypeName() {
-    return DeephavenServerConstants::kLocalDate;
-  }
-
-  std::shared_ptr<arrow::Date64Builder> builder_;
-};
-
-template<>
-struct ColumnBuilder<deephaven::dhcore::LocalTime> {
-  // constructor with data type nanos
-  ColumnBuilder() {
-    auto data_type = arrow::time64(arrow::TimeUnit::NANO);
-    arrow::Time64Builder builder(std::move(data_type), arrow::default_memory_pool());
-    builder_ = std::make_shared<arrow::Time64Builder>(std::move(builder));
-  }
-
-  void Append(const deephaven::dhcore::LocalDate &value) {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
-  }
-
-  void AppendNull() {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
-  }
-
-  std::shared_ptr<arrow::Array> Finish() {
-    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
-  }
-
-  std::string_view GetDeephavenServerTypeName() {
-    return DeephavenServerConstants::kLocalDate;
   }
 
   std::shared_ptr<arrow::Time64Builder> builder_;
@@ -337,161 +312,4 @@ private:
 
   std::vector<ColumnInfo> column_infos_;
 };
-
-namespace internal {
-
-
-template<>
-struct TypeConverterTraits<deephaven::dhcore::DateTime> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return arrow::timestamp(arrow::TimeUnit::NANO, "UTC");
-  }
-  static arrow::TimestampBuilder GetBuilder() {
-    return arrow::TimestampBuilder(GetDataType(), arrow::default_memory_pool());
-  }
-  static int64_t Reinterpret(const deephaven::dhcore::DateTime &dt) {
-    return dt.Nanos();
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.time.ZonedDateTime";
-  }
-};
-
-template<>
-struct TypeConverterTraits<deephaven::dhcore::LocalDate> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return arrow::date64();
-  }
-  static arrow::Date64Builder GetBuilder() {
-    return arrow::Date64Builder();
-  }
-  static int64_t Reinterpret(const deephaven::dhcore::LocalDate &o) {
-    return o.Millis();
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.time.LocalDate";
-  }
-};
-
-template<>
-struct TypeConverterTraits<deephaven::dhcore::LocalTime> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return arrow::time64(arrow::TimeUnit::NANO);
-  }
-  static arrow::Time64Builder GetBuilder() {
-    return arrow::Time64Builder(GetDataType(), arrow::default_memory_pool());
-  }
-  static int64_t Reinterpret(const deephaven::dhcore::LocalTime &o) {
-    return o.Nanos();
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.time.LocalTime";
-  }
-};
-
-template<typename T>
-struct TypeConverterTraits<std::optional<T>> {
-  using inner_t = TypeConverterTraits<T>;
-  static auto GetDataType() {
-    return inner_t::GetDataType();
-  }
-  static auto GetBuilder() {
-    return inner_t::GetBuilder();
-  }
-  static auto Reinterpret(const T &o) {
-    return inner_t::Reinterpret(o);
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return TypeConverterTraits<T>::GetDeephavenTypeName();
-  }
-};
-
-template<arrow::TimeUnit::type UNIT>
-struct TypeConverterTraits<deephaven::client::utility::internal::InternalDateTime<UNIT>> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return arrow::timestamp(UNIT, "UTC");
-  }
-  static arrow::TimestampBuilder GetBuilder() {
-    return arrow::TimestampBuilder(GetDataType(), arrow::default_memory_pool());
-  }
-  static int64_t Reinterpret(const deephaven::client::utility::internal::InternalDateTime<UNIT> &o) {
-    return o.value_;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.time.ZonedDateTime";
-  }
-};
-
-template<arrow::TimeUnit::type UNIT>
-struct TypeConverterTraits<deephaven::client::utility::internal::InternalLocalTime<UNIT>> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return arrow::time64(UNIT);
-  }
-  static arrow::Time64Builder GetBuilder() {
-    return arrow::Time64Builder(GetDataType(), arrow::default_memory_pool());
-  }
-  static int64_t Reinterpret(const deephaven::client::utility::internal::InternalLocalTime<UNIT> &o) {
-    return o.value_;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.time.LocalTime";
-  }
-};
-
-template<typename T>
-TypeConverter TypeConverter::CreateNew(const std::vector<T> &values) {
-  using deephaven::client::utility::OkOrThrow;
-
-  typedef TypeConverterTraits<T> traits_t;
-
-  auto data_type = traits_t::GetDataType();
-  auto builder = traits_t::GetBuilder();
-
-  for (const auto &value : values) {
-    bool valid;
-    const auto *contained_value = TryGetContainedValue(&value, &valid);
-    if (valid) {
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Append(traits_t::Reinterpret(*contained_value))));
-    } else {
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendNull()));
-    }
-  }
-  auto builder_res = builder.Finish();
-  if (!builder_res.ok()) {
-    auto message = fmt::format("Error building array of type {}: {}",
-        traits_t::GetDeephavenTypeName(), builder_res.status().ToString());
-  }
-  auto array = builder_res.ValueUnsafe();
-  return TypeConverter(std::move(data_type), std::string(traits_t::GetDeephavenTypeName()),
-      std::move(array));
-}
-
-template<typename T, typename GetValue, typename IsNull>
-TypeConverter TypeConverter::CreateNew(const GetValue &get_value, const IsNull &is_null,
-    size_t size) {
-  using deephaven::client::utility::OkOrThrow;
-
-  typedef TypeConverterTraits<T> traits_t;
-
-  auto data_type = traits_t::GetDataType();
-  auto builder = traits_t::GetBuilder();
-
-  for (size_t i = 0; i != size; ++i) {
-    if (!is_null(i)) {
-       OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
-           builder.Append(traits_t::Reinterpret(get_value(i)))));
-    } else {
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendNull()));
-    }
-  }
-  auto builder_res = builder.Finish();
-  if (!builder_res.ok()) {
-    auto message = fmt::format("Error building array of type {}: {}",
-        traits_t::GetDeephavenTypeName(), builder_res.status().ToString());
-  }
-  auto array = builder_res.ValueUnsafe();
-  return TypeConverter(std::move(data_type), std::string(traits_t::GetDeephavenTypeName()),
-      std::move(array));
-}
-}  // namespace internal
 }  // namespace deephaven::client::utility
