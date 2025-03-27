@@ -102,7 +102,8 @@ std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
 }
 
 namespace internal {
-std::string_view ColumnBuilder<bool>::GetDeephavenServerTypeName() { return "java.lang.Boolean"; }
+const char DeephavenServerConstants::kBool[] = "java.lang.Boolean";
+const char DeephavenServerConstants::kChar16[] = "java.lang.Boolean";
 std::string_view ColumnBuilder<int8_t>::GetDeephavenServerTypeName() { return "byte"; }
 std::string_view ColumnBuilder<int16_t>::GetDeephavenServerTypeName() { return "short"; }
 std::string_view ColumnBuilder<int32_t>::GetDeephavenServerTypeName() { return "int"; }
