@@ -4,8 +4,6 @@
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/tests/test_util.h"
 
-using deephaven::client::TableHandleManager;
-using deephaven::client::TableHandle;
 using deephaven::client::utility::TableMaker;
 
 namespace deephaven::client::tests {
