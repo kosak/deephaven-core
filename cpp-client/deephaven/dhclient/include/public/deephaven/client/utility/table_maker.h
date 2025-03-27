@@ -164,7 +164,7 @@ struct ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::D
 template<>
 struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::Time64Builder,
     DeephavenServerConstants::kLocalTime> {
-  ColumnBuilder() : BuilderBase<arrow::Time64Builder,DeephavenServerConstants::kLocalTime>(
+  ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
       std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
   arrow::default_memory_pool())) {
 
@@ -173,26 +173,32 @@ struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::T
   void Append(const deephaven::dhcore::LocalDate &value) {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
   }
-
-  std::shared_ptr<arrow::Time64Builder> builder_;
 };
 
 template<arrow::TimeUnit::type UNIT>
-struct ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
-    DeephavenServerConstants::kLocalTime> {
-  ColumnBuilder() : BuilderBase<arrow::Time64Builder,DeephavenServerConstants::kLocalTime>(
-      std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
+struct ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::TimestampBuilder,
+    DeephavenServerConstants::kDateTime> {
+  ColumnBuilder() : BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>(
+      std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(UNIT, "UTC"),
           arrow::default_memory_pool())) {
-
   }
 
-  void Append(const deephaven::dhcore::LocalDate &value) {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
+  void Append(const InternalDateTime<UNIT> &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.value_)));
   }
-
-  std::shared_ptr<arrow::Time64Builder> builder_;
 };
 
+template<arrow::TimeUnit::type UNIT>
+struct ColumnBuilder<InternalLocalTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
+    DeephavenServerConstants::kLocalTime> {
+  ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
+      std::make_shared<arrow::Time64Builder>(arrow::time64(UNIT))) {
+  }
+
+  void Append(const InternalLocalTime<UNIT> &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.value_)));
+  }
+};
 
 template<typename T>
 class ColumnBuilder<std::optional<T>> {
