@@ -102,7 +102,21 @@ std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
 }
 
 namespace internal {
-std::string_view ColumnBuilder<char16_t>::GetDeephavenServerTypeName() { return "char"; }
+void ColumnBuilder<char16_t>::Append(char16_t value) {
+  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(static_cast<uint16_t>(value))));
+}
+void ColumnBuilder<char16_t>::AppendNull() {
+  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+}
+
+std::shared_ptr<arrow::Array> ColumnBuilder<char16_t>::Finish() {
+  return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+}
+
+std::string_view ColumnBuilder<char16_t>::GetDeephavenServerTypeName() {
+  return "char";
+}
+
 std::string_view ColumnBuilder<bool>::GetDeephavenServerTypeName() { return "java.lang.Boolean"; }
 std::string_view ColumnBuilder<int8_t>::GetDeephavenServerTypeName() { return "byte"; }
 std::string_view ColumnBuilder<int16_t>::GetDeephavenServerTypeName() { return "short"; }

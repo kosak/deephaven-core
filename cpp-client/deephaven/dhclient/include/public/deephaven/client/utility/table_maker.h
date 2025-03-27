@@ -36,34 +36,43 @@ struct ColumnBuilder {
   static_assert(!std::is_same_v<T, T>, "ColumnBuilder doesn't know how to work with this type");
 };
 
-template<>
-struct ColumnBuilder<char16_t> {
-  void Append(char16_t value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
+template<typename T, typename TArrowBuilder, const char *kDeephavenTypeName>
+struct SimpleBuilderBase {
+  void Append(const T &value) {
+    builder_->Append(value);
+  }
+  void AppendNull() {
+    builder_->AppendNull();
+  }
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+  std::string_view GetDeephavenServerTypeName() {
+    return kDeephavenTypeName;
+  }
 
-  std::shared_ptr<arrow::UInt16Builder> builder_;
+  std::shared_ptr<TArrowBuilder> builder_;
+};
+
+struct DeephavenServerConstants {
+  static const char kBool[];
+  static const char kChar16[];
+  static const char kInt8[];
 };
 
 template<>
-struct ColumnBuilder<bool> {
-  void Append(bool value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::BooleanBuilder> builder_;
+struct ColumnBuilder<bool> : public SimpleBuilderBase<bool, arrow::BooleanBuilder,
+    DeephavenServerConstants::kBool> {
 };
 
 template<>
-struct ColumnBuilder<int8_t> {
-  void Append(int8_t value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
+struct ColumnBuilder<char16_t> : public SimpleBuilderBase<char16_t, arrow::UInt16Builder,
+    DeephavenServerConstants::kChar16> {
+};
 
-  std::shared_ptr<arrow::Int8Builder> builder_;
+template<>
+struct ColumnBuilder<int8_t> : public SimpleBuilderBase<int8_t, arrow::Int8Builder,
+    DeephavenServerConstants::kInt8> {
 };
 
 template<>
