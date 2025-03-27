@@ -34,7 +34,6 @@ TEST_CASE("Join", "[join]") {
 
 TEST_CASE("Aj", "[join]") {
   auto tm = TableMakerForTests::Create();
-  auto q = arrow::timestamp(arrow::TimeUnit::NANO, "UTC");
 
   TableHandle trades;
   {
@@ -49,7 +48,7 @@ TEST_CASE("Aj", "[join]") {
     });
     table_maker.AddColumn<double>("Price", {2.5, 3.7, 3.0, 100.50, 110});
     table_maker.AddColumn<int32_t>("Size", {52, 14, 73, 11, 6});
-    trades = table_maker.MakeDeephavenTable(tm.Client().GetManager());
+    trades = table_maker.MakeTable(tm.Client().GetManager());
     // std::cout << trades.Stream(true) << '\n';
   }
 
@@ -68,7 +67,7 @@ TEST_CASE("Aj", "[join]") {
     table_maker.AddColumn<int32_t>("BidSize", {10, 20, 5, 13, 23});
     table_maker.AddColumn<double>("Ask", {2.5, 3.4, 105, 110, 111});
     table_maker.AddColumn<int32_t>("AskSize", {83, 33, 47, 15, 5});
-    quotes = table_maker.MakeDeephavenTable(tm.Client().GetManager());
+    quotes = table_maker.MakeTable(tm.Client().GetManager());
     // std::cout << quotes.Stream(true) << '\n';
   }
 
@@ -118,7 +117,7 @@ TEST_CASE("Raj", "[join]") {
     });
     table_maker.AddColumn<double>("Price", {2.5, 3.7, 3.0, 100.50, 110});
     table_maker.AddColumn<int32_t>("Size", {52, 14, 73, 11, 6});
-    trades = table_maker.MakeDeephavenTable(tm.Client().GetManager());
+    trades = table_maker.MakeTable(tm.Client().GetManager());
     // std::cout << trades.Stream(true) << '\n';
   }
 
@@ -137,7 +136,7 @@ TEST_CASE("Raj", "[join]") {
     table_maker.AddColumn<int32_t>("BidSize", {10, 20, 5, 13, 23});
     table_maker.AddColumn<double>("Ask", {2.5, 3.4, 105, 110, 111});
     table_maker.AddColumn<int32_t>("AskSize", {83, 33, 47, 15, 5});
-    quotes = table_maker.MakeDeephavenTable(tm.Client().GetManager());
+    quotes = table_maker.MakeTable(tm.Client().GetManager());
     // std::cout << quotes.Stream(true) << '\n';
   }
 
