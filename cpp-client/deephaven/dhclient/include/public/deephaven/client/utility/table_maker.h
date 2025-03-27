@@ -286,8 +286,8 @@ public:
     for (const auto &element : values) {
       cb.Append(element);
     }
-    auto array = cb.Finish();
-    FinishAddColumn(std::move(name), std::move(array));
+    auto [array, dh_type] = cb.Finish();
+    FinishAddColumn(std::move(name), std::move(array), std::move(dh_type));
   }
 
   template<typename T, typename GetValue, typename IsNull>
@@ -303,15 +303,22 @@ public:
   TableHandle MakeDeephavenTable(const TableHandleManager &manager) const;
 
   [[nodiscard]]
-  arrow::Table MakeArrowTable() const;
+  std::shared_ptr<arrow::Table> MakeArrowTable() const;
 
 private:
-  void FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> array);
+  void FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> data,
+      std::string deephaven_server_type_name);
+  std::shared_ptr<arrow::Schema> MakeSchema() const;
+  std::vector<std::shared_ptr<arrow::Array>> GetColumnsNotEmpty() const;
 
   struct ColumnInfo {
+    ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,
+        std::string deepaven_type, std::shared_ptr<arrow::Array> data);
+    ~ColumnInfo() = default;
+
     std::string name_;
     std::shared_ptr<arrow::DataType> arrow_type_;
-    std::string deepaven_type_;
+    std::string deepaven_server_type_name_;
     std::shared_ptr<arrow::Array> data_;
   };
 
@@ -627,28 +634,4 @@ TypeConverter TypeConverter::CreateNew(const GetValue &get_value, const IsNull &
       std::move(array));
 }
 }  // namespace internal
-
-template<typename T>
-void TableMaker::AddColumn(std::string name, const std::vector<T> &values) {
-  // Specifying the return type here in this way (rather than const T &)
-  // allows us to deal with std::vector<bool>, which is very special, and would
-  // otherwise cause a compiler error, because of the way it is specialized.
-  auto get_value = [&](size_t index) -> typename std::vector<T>::const_reference { return values[index]; };
-  auto is_null = [](size_t /*index*/) { return false; };
-  return AddColumn<T>(std::move(name), get_value, is_null, values.size());
-}
-
-template<typename T>
-void TableMaker::AddColumn(std::string name, const std::vector<std::optional<T>> &values) {
-  auto get_value = [&](size_t index) -> const T& { return *values[index]; };
-  auto is_null = [&](size_t index) { return !values[index].has_value(); };
-  return AddColumn<T>(std::move(name), get_value, is_null, values.size());
-}
-
-template<typename T, typename GetValue, typename IsNull>
-void TableMaker::AddColumn(std::string name, const GetValue &get_value, const IsNull &is_null,
-    size_t size) {
-  auto info = internal::TypeConverter::CreateNew<T>(get_value, is_null, size);
-  FinishAddColumn(std::move(name), std::move(info));
-}
 }  // namespace deephaven::client::utility
