@@ -41,7 +41,7 @@ struct BuilderBase {
   BuilderBase(std::shared_ptr<TArrowBuilder> builder) : builder_(std::move(builder)) {}
 
   void AppendNull() {
-    builder_->AppendNull();
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
   }
   std::shared_ptr<arrow::Array> Finish() {
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
@@ -289,7 +289,7 @@ public:
    * @return The TableHandle referencing the newly-created table.
    */
   [[nodiscard]]
-  TableHandle MakeDeephavenTable(const TableHandleManager &manager) const;
+  TableHandle MakeTable(const TableHandleManager &manager) const;
 
   [[nodiscard]]
   std::shared_ptr<arrow::Table> MakeArrowTable() const;

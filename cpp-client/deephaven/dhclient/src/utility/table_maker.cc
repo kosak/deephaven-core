@@ -38,7 +38,7 @@ void TableMaker::FinishAddColumn(std::string name, std::shared_ptr<arrow::Array>
       std::move(data));
 }
 
-TableHandle TableMaker::MakeDeephavenTable(const TableHandleManager &manager) const {
+TableHandle TableMaker::MakeTable(const TableHandleManager &manager) const {
   auto schema = MakeSchema();
 
   auto wrapper = manager.CreateFlightWrapper();
