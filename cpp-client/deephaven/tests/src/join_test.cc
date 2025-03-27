@@ -124,26 +124,20 @@ TEST_CASE("Raj", "[join]") {
 
   TableHandle quotes;
   {
-    std::vector<std::string> ticker_data = {"AAPL", "AAPL", "IBM", "IBM", "IBM"};
-    std::vector<DateTime> timestamp_data = {
+    TableMaker table_maker;
+    table_maker.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "IBM", "IBM", "IBM"});
+    table_maker.AddColumn<DateTime>("Timestamp",  {
         DateTime::Parse("2021-04-05T09:11:00-0500"),
         DateTime::Parse("2021-04-05T09:30:00-0500"),
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:30:00-0500"),
         DateTime::Parse("2021-04-05T17:00:00-0500")
-    };
-    std::vector<double> bid_data = {2.5, 3.4, 97, 102, 108};
-    std::vector<int32_t> bid_size_data = {10, 20, 5, 13, 23};
-    std::vector<double> ask_data = {2.5, 3.4, 105, 110, 111};
-    std::vector<int32_t> ask_size_data = {83, 33, 47, 15, 5};
-    TableMaker table_maker;
-    table_maker.AddColumn("Ticker", ticker_data);
-    table_maker.AddColumn("Timestamp", timestamp_data);
-    table_maker.AddColumn("Bid", bid_data);
-    table_maker.AddColumn("BidSize", bid_size_data);
-    table_maker.AddColumn("Ask", ask_data);
-    table_maker.AddColumn("AskSize", ask_size_data);
-    quotes = table_maker.MakeTable(tm.Client().GetManager());
+    });
+    table_maker.AddColumn<double>("Bid", {2.5, 3.4, 97, 102, 108});
+    table_maker.AddColumn<int32_t>("BidSize", {10, 20, 5, 13, 23});
+    table_maker.AddColumn<double>("Ask", {2.5, 3.4, 105, 110, 111});
+    table_maker.AddColumn<int32_t>("AskSize", {83, 33, 47, 15, 5});
+    quotes = table_maker.MakeDeephavenTable(tm.Client().GetManager());
     // std::cout << quotes.Stream(true) << '\n';
   }
 
@@ -152,35 +146,23 @@ TEST_CASE("Raj", "[join]") {
 
   // Expected data
   {
-    std::vector<std::string> ticker_data = {"AAPL", "AAPL", "AAPL", "IBM", "IBM"};
-    std::vector<DateTime> timestamp_data = {
+    TableMaker expected;
+    expected.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "AAPL", "IBM", "IBM"});
+    expected.AddColumn<DateTime>("Timestamp", {
         DateTime::Parse("2021-04-05T09:10:00-0500"),
         DateTime::Parse("2021-04-05T09:31:00-0500"),
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:30:00-0500")
-    };
-    for (const auto &ts : timestamp_data) {
-      fmt::print(std::cout, "{} - {}\n", ts, ts.Nanos());
+    });
+    expected.AddColumn<double>("Price", {2.5, 3.7, 3.0, 100.50, 110});
+    expected.AddColumn<int32_t>("Size", {52, 14, 73, 11, 6});
+    expected.AddColumn<std::optional<double>>("Bid", {2.5, {}, {}, 97, 102});
+    expected.AddColumn<std::optional<int32_t>>("BidSize", {10, {}, {}, 5, 13});
+    expected.AddColumn<std::optional<double>>("Ask", {2.5, {}, {}, 105, 110});
+    expected.AddColumn<std::optional<int32_t>>("AskSize", {83, {}, {}, 47, 15});
 
-    }
-    std::vector<double> price_data = {2.5, 3.7, 3.0, 100.50, 110};
-    std::vector<int32_t> size_data = {52, 14, 73, 11, 6};
-    std::vector<std::optional<double>> bid_data = {2.5, {}, {}, 97, 102};
-    std::vector<std::optional<int32_t>> bid_size_data = {10, {}, {}, 5, 13};
-    std::vector<std::optional<double>> ask_data = {2.5, {}, {}, 105, 110};
-    std::vector<std::optional<int32_t>> ask_size_data = {83, {}, {}, 47, 15};
-
-    CompareTable(
-        result,
-        "Ticker", ticker_data,
-        "Timestamp", timestamp_data,
-        "Price", price_data,
-        "Size", size_data,
-        "Bid", bid_data,
-        "BidSize", bid_size_data,
-        "Ask", ask_data,
-        "AskSize", ask_size_data);
+    TableComparerForTests::Compare(expected, result);
   }
 }
 }  // namespace deephaven::client::tests
