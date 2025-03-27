@@ -102,10 +102,17 @@ std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
 }
 
 namespace internal {
-TypeConverter::TypeConverter(std::shared_ptr<arrow::DataType> data_type,
-    std::string deephaven_type, std::shared_ptr<arrow::Array> column) :
-    dataType_(std::move(data_type)), deephavenType_(std::move(deephaven_type)),
-    column_(std::move(column)) {}
-    TypeConverter::~TypeConverter() = default;
+std::string_view ColumnBuilder<char16_t>::GetDeephavenServerTypeName() { return "char"; }
+std::string_view ColumnBuilder<bool>::GetDeephavenServerTypeName() { return "java.lang.Boolean"; }
+std::string_view ColumnBuilder<int8_t>::GetDeephavenServerTypeName() { return "byte"; }
+std::string_view ColumnBuilder<int16_t>::GetDeephavenServerTypeName() { return "short"; }
+std::string_view ColumnBuilder<int32_t>::GetDeephavenServerTypeName() { return "int"; }
+std::string_view ColumnBuilder<int64_t>::GetDeephavenServerTypeName() { return "long"; }
+std::string_view ColumnBuilder<float>::GetDeephavenServerTypeName() { return "float"; }
+std::string_view ColumnBuilder<double>::GetDeephavenServerTypeName() { return "double"; }
+std::string_view ColumnBuilder<std::string>::GetDeephavenServerTypeName() { return "java.lang.String"; }
+std::string_view ColumnBuilder<deephaven::dhcore::DateTime>::GetDeephavenServerTypeName() { return "java.time.ZonedDateTime"; }
+std::string_view ColumnBuilder<deephaven::dhcore::LocalDate>::GetDeephavenServerTypeName() { return "java.time.LocalDate"; }
+std::string_view ColumnBuilder<deephaven::dhcore::LocalTime>::GetDeephavenServerTypeName() { return "java.time.LocalTime"; }
 }  // namespace internal
 }  // namespace deephaven::client::utility

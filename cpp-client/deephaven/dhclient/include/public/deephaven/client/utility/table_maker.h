@@ -41,6 +41,7 @@ struct ColumnBuilder<char16_t> {
   void Append(char16_t value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::UInt16Builder> builder_;
 };
@@ -50,6 +51,7 @@ struct ColumnBuilder<bool> {
   void Append(bool value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::BooleanBuilder> builder_;
 };
@@ -59,6 +61,7 @@ struct ColumnBuilder<int8_t> {
   void Append(int8_t value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::Int8Builder> builder_;
 };
@@ -68,6 +71,7 @@ struct ColumnBuilder<int16_t> {
   void Append(int16_t value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::Int16Builder> builder_;
 };
@@ -77,6 +81,7 @@ struct ColumnBuilder<int32_t> {
   void Append(int32_t value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::Int32Builder> builder_;
 };
@@ -86,6 +91,7 @@ struct ColumnBuilder<int64_t> {
   void Append(int64_t value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::Int64Builder> builder_;
 };
@@ -95,6 +101,7 @@ struct ColumnBuilder<float> {
   void Append(float value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::FloatBuilder> builder_;
 };
@@ -104,6 +111,7 @@ struct ColumnBuilder<double> {
   void Append(double value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::DoubleBuilder> builder_;
 };
@@ -113,6 +121,7 @@ struct ColumnBuilder<std::string> {
   void Append(const std::string &value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::StringBuilder> builder_;
 };
@@ -122,6 +131,7 @@ struct ColumnBuilder<deephaven::dhcore::DateTime> {
   void Append(const deephaven::dhcore::DateTime &value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::TimestampBuilder> builder_;
 };
@@ -131,6 +141,7 @@ struct ColumnBuilder<deephaven::dhcore::LocalDate> {
   void Append(const deephaven::dhcore::LocalDate &value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::Date64Builder> builder_;
 };
@@ -140,6 +151,7 @@ struct ColumnBuilder<deephaven::dhcore::LocalTime> {
   void Append(const deephaven::dhcore::LocalTime &value);
   void AppendNull();
   std::shared_ptr<arrow::Array> Finish();
+  std::string_view GetDeephavenServerTypeName();
 
   std::shared_ptr<arrow::Time64Builder> builder_;
 };
@@ -162,6 +174,8 @@ public:
   std::shared_ptr<arrow::Array> Finish() {
     return inner_builder_.Finish();
   }
+
+  std::string_view GetDeephavenServerTypeName();
 
   ColumnBuilder<T> inner_builder_;
 };
@@ -189,62 +203,10 @@ public:
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
 
+  std::string_view GetDeephavenServerTypeName();
+
   ColumnBuilder<T> inner_builder_;
   std::shared_ptr<arrow::ListBuilder> builder_;
-};
-
-class TypeConverter {
-public:
-  template<typename T>
-  [[nodiscard]]
-  static TypeConverter CreateNew(const std::vector<T> &values);
-
-  template<typename T, typename GetValue, typename IsNull>
-  [[nodiscard]]
-  static TypeConverter CreateNew(const GetValue &get_value, const IsNull &is_null,
-      size_t size);
-
-  TypeConverter(std::shared_ptr<arrow::DataType> data_type, std::string deephaven_type,
-      std::shared_ptr<arrow::Array> column);
-  ~TypeConverter();
-
-  [[nodiscard]]
-  const std::shared_ptr<arrow::DataType> &DataType() const { return dataType_; }
-  [[nodiscard]]
-  std::shared_ptr<arrow::DataType> &DataType() { return dataType_; }
-
-  [[nodiscard]]
-  const std::string &DeephavenType() const { return deephavenType_; }
-  [[nodiscard]]
-  std::string &DeephavenType() { return deephavenType_; }
-
-  [[nodiscard]]
-  const std::shared_ptr<arrow::Array> &Column() const { return column_; }
-  [[nodiscard]]
-  std::shared_ptr<arrow::Array> &Column() { return column_; }
-
-private:
-  template<typename T>
-  [[nodiscard]]
-  static const T *TryGetContainedValue(const T *value, bool *valid) {
-    *valid = true;
-    return value;
-  }
-
-  template<typename T>
-  [[nodiscard]]
-  static const T *TryGetContainedValue(const std::optional<T> *value, bool *valid) {
-    if (!value->has_value()) {
-      *valid = false;
-      return nullptr;
-    }
-    *valid = true;
-    return &**value;
-  }
-
-  std::shared_ptr<arrow::DataType> dataType_;
-  std::string deephavenType_;
-  std::shared_ptr<arrow::Array> column_;
 };
 }  // namespace internal
 
@@ -326,160 +288,7 @@ private:
 };
 
 namespace internal {
-template<typename T>
-struct TypeConverterTraits {
-  // The below assert fires when this class is instantiated; i.e. when none of the specializations
-  // match. It needs to be written this way (with "is_same<T,T>") because for technical reasons it
-  // needs to be dependent on T, even if degenerately so.
-  static_assert(!std::is_same_v<T, T>, "TableMaker doesn't know how to work with this type");
-};
 
-// Implementation note: GetDeephavenTypeName() is better as a function rather than a constant,
-// because it helps us avoid the dllimport problem for using constants across libraries in Windows.
-
-template<>
-struct TypeConverterTraits<char16_t> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::UInt16Type>();
-  }
-  static arrow::UInt16Builder GetBuilder() {
-    return arrow::UInt16Builder();
-  }
-  static char16_t Reinterpret(char16_t o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "char";
-  }
-};
-
-template<>
-struct TypeConverterTraits<bool> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::BooleanType>();
-  }
-  static arrow::BooleanBuilder GetBuilder() {
-    return arrow::BooleanBuilder();
-  }
-  static bool Reinterpret(bool o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.lang.Boolean";
-  }
-};
-
-template<>
-struct TypeConverterTraits<int8_t> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::Int8Type>();
-  }
-  static arrow::Int8Builder GetBuilder() {
-    return arrow::Int8Builder();
-  }
-  static int8_t Reinterpret(int8_t o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "byte";
-  }
-};
-
-template<>
-struct TypeConverterTraits<int16_t> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::Int16Type>();
-  }
-  static arrow::Int16Builder GetBuilder() {
-    return arrow::Int16Builder();
-  }
-  static int16_t Reinterpret(int16_t o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "short";
-  }
-};
-
-template<>
-struct TypeConverterTraits<int32_t> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::Int32Type>();
-  }
-  static arrow::Int32Builder GetBuilder() {
-    return arrow::Int32Builder();
-  }
-  static int32_t Reinterpret(int32_t o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "int";
-  }
-};
-
-template<>
-struct TypeConverterTraits<int64_t> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::Int64Type>();
-  }
-  static arrow::Int64Builder GetBuilder() {
-    return arrow::Int64Builder();
-  }
-  static int64_t Reinterpret(int64_t o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "long";
-  }
-};
-
-template<>
-struct TypeConverterTraits<float> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::FloatType>();
-  }
-  static arrow::FloatBuilder GetBuilder() {
-    return arrow::FloatBuilder();
-  }
-  static float Reinterpret(float o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "float";
-  }
-};
-
-template<>
-struct TypeConverterTraits<double> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::DoubleType>();
-  }
-  static arrow::DoubleBuilder GetBuilder() {
-    return arrow::DoubleBuilder();
-  }
-  static double Reinterpret(double o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "double";
-  }
-};
-
-template<>
-struct TypeConverterTraits<std::string> {
-  static std::shared_ptr<arrow::DataType> GetDataType() {
-    return std::make_shared<arrow::StringType>();
-  }
-  static arrow::StringBuilder GetBuilder() {
-    return arrow::StringBuilder();
-  }
-  static const std::string &Reinterpret(const std::string &o) {
-    return o;
-  }
-  static std::string_view GetDeephavenTypeName() {
-    return "java.lang.String";
-  }
-};
 
 template<>
 struct TypeConverterTraits<deephaven::dhcore::DateTime> {
