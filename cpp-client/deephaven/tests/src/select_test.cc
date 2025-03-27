@@ -74,14 +74,11 @@ TEST_CASE("Support all types", "[select]") {
 TEST_CASE("Create / Update / fetch a Table", "[select]") {
   auto tm = TableMakerForTests::Create();
 
-  std::vector<int32_t> int_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  std::vector<double> double_data = {0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9};
-  std::vector<std::string> string_data = {"zero", "one", "two", "three", "four", "five", "six", "seven",
-      "eight", "nine"};
   TableMaker maker;
-  maker.AddColumn("IntValue", int_data);
-  maker.AddColumn("DoubleValue", double_data);
-  maker.AddColumn("StringValue", string_data);
+  maker.AddColumn<int32_t>("IntValue", {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+  maker.AddColumn<double>("DoubleValue", {0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9});
+  maker.AddColumn<std::string>("StringValue", {"zero", "one", "two", "three", "four", "five", "six", "seven",
+      "eight", "nine"});
   auto t = maker.MakeTable(tm.Client().GetManager());
   auto t2 = t.Update("Q2 = IntValue * 100");
   auto t3 = t2.Update("Q3 = Q2 + 10");
@@ -91,15 +88,11 @@ TEST_CASE("Create / Update / fetch a Table", "[select]") {
   std::vector<int32_t> q3_data = {10, 110, 210, 310, 410, 510, 610, 710, 810, 910};
   std::vector<int32_t> q4_data = {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
 
-  CompareTable(
-      t4,
-      "IntValue", int_data,
-      "DoubleValue", double_data,
-      "StringValue", string_data,
-      "Q2", q2_data,
-      "Q3", q3_data,
-      "Q4", q4_data
-  );
+  // Reuse the already-populated maker; add a few more columns
+  maker.AddColumn<int32_t>("Q2", {0, 100, 200, 300, 400, 500, 600, 700, 800, 900});
+  maker.AddColumn<int32_t>("Q3", {10, 110, 210, 310, 410, 510, 610, 710, 810, 910});
+  maker.AddColumn<int32_t>("Q4", {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000});
+  TableComparerForTests::Compare(maker, t4);
 }
 
 
