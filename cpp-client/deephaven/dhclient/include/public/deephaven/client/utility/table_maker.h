@@ -38,7 +38,7 @@ struct ColumnBuilder {
 
 template<typename TArrowBuilder, const char *kDeephavenTypeName>
 struct BuilderBase {
-  BuilderBase(std::shared_ptr<TArrowBuilder> builder) : builder_(std::move(builder)) {}
+  explicit BuilderBase(std::shared_ptr<TArrowBuilder> builder) : builder_(std::move(builder)) {}
 
   void AppendNull() {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
@@ -176,6 +176,23 @@ struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::T
 
   std::shared_ptr<arrow::Time64Builder> builder_;
 };
+
+template<arrow::TimeUnit::type UNIT>
+struct ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
+    DeephavenServerConstants::kLocalTime> {
+  ColumnBuilder() : BuilderBase<arrow::Time64Builder,DeephavenServerConstants::kLocalTime>(
+      std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
+          arrow::default_memory_pool())) {
+
+  }
+
+  void Append(const deephaven::dhcore::LocalDate &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
+  }
+
+  std::shared_ptr<arrow::Time64Builder> builder_;
+};
+
 
 template<typename T>
 class ColumnBuilder<std::optional<T>> {
