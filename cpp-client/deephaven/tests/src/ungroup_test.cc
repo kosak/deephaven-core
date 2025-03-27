@@ -17,19 +17,16 @@ TEST_CASE("Ungroup columns", "[ungroup]") {
   std::cout << by_table.Stream(true) << '\n';
   auto ungrouped = by_table.Ungroup("Close");
 
-  std::vector<std::string> ticker_data = {"AAPL"};
-  std::vector<std::string> close_data = {"[23.5,24.2,26.7]"};
-
   TableMaker expected1;
-  expected1.AddColumn("Ticker", ticker_data);
-  expected1.AddColumn("Close", close_data);
-  CompareTables(expected1, by_table);
+  expected1.AddColumn<std::string>("Ticker", {"AAPL"});
+  expected1.AddColumn<std::string>("Close", {"[23.5,24.2,26.7]"});
+  TableComparerForTests::Compare(expected1, by_table);
 
   std::vector<std::string> ug_ticker_data = {"AAPL", "AAPL", "AAPL"};
   std::vector<double> ug_close_data = {23.5, 24.2, 26.7};
   TableMaker expected2;
-  expected1.AddColumn("Ticker", ug_ticker_data);
-  expected1.AddColumn("Close", ug_close_data);
-  CompareTables(expected1, ungrouped);
+  expected1.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "AAPL"});
+  expected1.AddColumn<double>("Close", {23.5, 24.2, 26.7});
+  TableComparerForTests::Compare(expected2, ungrouped);
 }
 }  // namespace deephaven::client::tests

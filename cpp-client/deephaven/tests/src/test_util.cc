@@ -145,7 +145,7 @@ TableMakerForTests TableMakerForTests::Create() {
   maker.AddColumn(cn.Close(), cd.Close());
   maker.AddColumn(cn.Volume(), cd.Volume());
 
-  auto test_table = maker.MakeDeephavenTable(manager);
+  auto test_table = maker.MakeTable(manager);
   return TableMakerForTests(std::move(client), std::move(test_table), std::move(cn), std::move(cd));
 }
 
