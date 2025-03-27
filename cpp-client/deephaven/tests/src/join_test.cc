@@ -38,46 +38,36 @@ TEST_CASE("Aj", "[join]") {
 
   TableHandle trades;
   {
-    std::vector<std::string> ticker_data = {"AAPL", "AAPL", "AAPL", "IBM", "IBM"};
-    std::vector<DateTime> instant_data = {
+    TableMaker table_maker;
+    table_maker.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "AAPL", "IBM", "IBM"});
+    table_maker.AddColumn<DateTime>("Timestamp", {
         DateTime::Parse("2021-04-05T09:10:00-0500"),
         DateTime::Parse("2021-04-05T09:31:00-0500"),
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:30:00-0500")
-    };
-    std::vector<double> price_data = {2.5, 3.7, 3.0, 100.50, 110};
-    std::vector<int32_t> size_data = {52, 14, 73, 11, 6};
-    TableMaker table_maker;
-    table_maker.AddColumn("Ticker", ticker_data);
-    table_maker.AddColumn("Timestamp", instant_data);
-    table_maker.AddColumn("Price", price_data);
-    table_maker.AddColumn("Size", size_data);
+    });
+    table_maker.AddColumn<double>("Price", {2.5, 3.7, 3.0, 100.50, 110});
+    table_maker.AddColumn<int32_t>("Size", {52, 14, 73, 11, 6});
     trades = table_maker.MakeDeephavenTable(tm.Client().GetManager());
     // std::cout << trades.Stream(true) << '\n';
   }
 
   TableHandle quotes;
   {
-    std::vector<std::string> ticker_data = {"AAPL", "AAPL", "IBM", "IBM", "IBM"};
-    std::vector<DateTime> timestamp_data = {
+    TableMaker table_maker;
+    table_maker.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "IBM", "IBM", "IBM"});
+    table_maker.AddColumn<DateTime>("Timestamp", {
         DateTime::Parse("2021-04-05T09:11:00-0500"),
         DateTime::Parse("2021-04-05T09:30:00-0500"),
         DateTime::Parse("2021-04-05T16:00:00-0500"),
         DateTime::Parse("2021-04-05T16:30:00-0500"),
         DateTime::Parse("2021-04-05T17:00:00-0500")
-    };
-    std::vector<double> bid_data = {2.5, 3.4, 97, 102, 108};
-    std::vector<int32_t> bid_size_data = {10, 20, 5, 13, 23};
-    std::vector<double> ask_data = {2.5, 3.4, 105, 110, 111};
-    std::vector<int32_t> ask_size_data = {83, 33, 47, 15, 5};
-    TableMaker table_maker;
-    table_maker.AddColumn("Ticker", ticker_data);
-    table_maker.AddColumn("Timestamp", timestamp_data);
-    table_maker.AddColumn("Bid", bid_data);
-    table_maker.AddColumn("BidSize", bid_size_data);
-    table_maker.AddColumn("Ask", ask_data);
-    table_maker.AddColumn("AskSize", ask_size_data);
+    });
+    table_maker.AddColumn<double>("Bid", {2.5, 3.4, 97, 102, 108});
+    table_maker.AddColumn<int32_t>("BidSize", {10, 20, 5, 13, 23});
+    table_maker.AddColumn<double>("Ask", {2.5, 3.4, 105, 110, 111});
+    table_maker.AddColumn<int32_t>("AskSize", {83, 33, 47, 15, 5});
     quotes = table_maker.MakeDeephavenTable(tm.Client().GetManager());
     // std::cout << quotes.Stream(true) << '\n';
   }
@@ -118,11 +108,17 @@ TEST_CASE("Raj", "[join]") {
     std::vector<double> price_data = {2.5, 3.7, 3.0, 100.50, 110};
     std::vector<int32_t> size_data = {52, 14, 73, 11, 6};
     TableMaker table_maker;
-    table_maker.AddColumn("Ticker", ticker_data);
-    table_maker.AddColumn("Timestamp", instant_data);
-    table_maker.AddColumn("Price", price_data);
-    table_maker.AddColumn("Size", size_data);
-    trades = table_maker.MakeTable(tm.Client().GetManager());
+    table_maker.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "AAPL", "IBM", "IBM"});
+    table_maker.AddColumn<DateTime>("Timestamp", {
+        DateTime::Parse("2021-04-05T09:10:00-0500"),
+        DateTime::Parse("2021-04-05T09:31:00-0500"),
+        DateTime::Parse("2021-04-05T16:00:00-0500"),
+        DateTime::Parse("2021-04-05T16:00:00-0500"),
+        DateTime::Parse("2021-04-05T16:30:00-0500")
+    });
+    table_maker.AddColumn<double>("Price", {2.5, 3.7, 3.0, 100.50, 110});
+    table_maker.AddColumn<int32_t>("Size", {52, 14, 73, 11, 6});
+    trades = table_maker.MakeDeephavenTable(tm.Client().GetManager());
     // std::cout << trades.Stream(true) << '\n';
   }
 
