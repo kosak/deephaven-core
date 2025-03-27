@@ -142,6 +142,13 @@ private:
   ColumnDataForTests columnData_;
 };
 
+class TableComparerForTests {
+  using TableMaker = deephaven::client::utility::TableMaker;
+public:
+  static void Compare(const TableMaker &expected, const TableHandle &actual);
+  static void Compare(const arrow::Table &expected, const arrow::Table &actual);
+};
+
 namespace internal {
 void CompareTableHelper(int depth, const std::shared_ptr<arrow::Table> &table,
     const std::string &column_name, const std::shared_ptr<arrow::Array> &data);
