@@ -65,7 +65,7 @@ struct TypicalBuilderBase : public BuilderBase<TArrowBuilder, kDeephavenTypeName
   }
 
   void Append(const T &value) {
-    base::builder_->Append(value);
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(base::builder_->Append(value)));
   }
 };
 
