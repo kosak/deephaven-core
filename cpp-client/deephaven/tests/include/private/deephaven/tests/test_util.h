@@ -149,6 +149,7 @@ public:
   static void Compare(const arrow::Table &expected, const arrow::Table &actual);
 };
 
+#if 0
 namespace internal {
 void CompareTableHelper(int depth, const std::shared_ptr<arrow::Table> &table,
     const std::string &column_name, const std::shared_ptr<arrow::Array> &data);
@@ -170,7 +171,9 @@ void CompareTableRecurse(int depth, const std::shared_ptr<arrow::Table> &table,
 std::shared_ptr<arrow::Table> BasicValidate(const deephaven::client::TableHandle &table,
     int expected_columns);
 }  // namespace internal
+#endif
 
+#if 0
 template<typename... Args>
 void CompareTable(const deephaven::client::TableHandle &table, Args &&... args) {
   auto arrow_table = internal::BasicValidate(table, sizeof...(Args) / 2);
@@ -227,7 +230,10 @@ void CompareColumn(const deephaven::dhcore::clienttable::ClientTable &table,
     }
   }
 }
+#endif
 }  // namespace deephaven::client::tests
 
+#if 0
 template<typename T>
 struct fmt::formatter<deephaven::client::tests::OptionalAdapter<T>> : ostream_formatter {};
+#endif

@@ -46,7 +46,7 @@ struct BuilderBase {
   std::shared_ptr<arrow::Array> Finish() {
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
-  std::string_view GetDeephavenServerTypeName() {
+  const char *GetDeephavenServerTypeName() {
     return kDeephavenTypeName;
   }
 
@@ -196,7 +196,7 @@ public:
     return inner_builder_.Finish();
   }
 
-  std::string_view GetDeephavenServerTypeName() {
+  const char *GetDeephavenServerTypeName() {
     return inner_builder_.GetDeephavenServerTypeName();
   }
 
@@ -226,7 +226,7 @@ public:
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
 
-  std::string_view GetDeephavenServerTypeName() {
+  const char *GetDeephavenServerTypeName() {
     // TODO(kosak)
     return "something.list.something";
   }
@@ -274,8 +274,9 @@ public:
     for (const auto &element : values) {
       cb.Append(element);
     }
-    auto [array, dh_type] = cb.Finish();
-    FinishAddColumn(std::move(name), std::move(array), std::move(dh_type));
+    auto array = cb.Finish();
+    const auto *dh_type = cb.GetDeephavenServerTypeName();
+    FinishAddColumn(std::move(name), std::move(array), dh_type);
   }
 
   template<typename T, typename GetValue, typename IsNull>
