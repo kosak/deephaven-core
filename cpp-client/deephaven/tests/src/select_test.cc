@@ -68,21 +68,7 @@ TEST_CASE("Support all types", "[select]") {
 
   std::cout << t.Stream(true) << '\n';
 
-  CompareTable(
-      t,
-      "boolData", bool_data,
-      "charData", char_data,
-      "byteData", byte_data,
-      "shortData", short_data,
-      "intData", int_data,
-      "longData", long_data,
-      "floatData", float_data,
-      "doubleData", double_data,
-      "stringData", string_data,
-      "dateTimeData", date_time_data,
-      "localDateData", local_date_data,
-      "localTimeData", local_time_data
-  );
+  TableComparerForTests::Compare(maker, t);
 }
 
 TEST_CASE("Create / Update / fetch a Table", "[select]") {
