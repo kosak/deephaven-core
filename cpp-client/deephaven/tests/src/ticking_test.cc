@@ -229,18 +229,21 @@ public:
     local_dates[t2] = {};
     local_times[t2] = {};
 
-    CompareColumn(*current, "Chars", chars);
-    CompareColumn(*current, "Bytes", int8s);
-    CompareColumn(*current, "Shorts", int16s);
-    CompareColumn(*current, "Ints", int32s);
-    CompareColumn(*current, "Longs", int64s);
-    CompareColumn(*current, "Floats", floats);
-    CompareColumn(*current, "Doubles", doubles);
-    CompareColumn(*current, "Bools", bools);
-    CompareColumn(*current, "Strings", strings);
-    CompareColumn(*current, "DateTimes", date_times);
-    CompareColumn(*current, "LocalDates", local_dates);
-    CompareColumn(*current, "LocalTimes", local_times);
+    TableMaker expected;
+    expected.AddColumn("Chars", chars);
+    expected.AddColumn("Bytes", int8s);
+    expected.AddColumn("Shorts", int16s);
+    expected.AddColumn("Ints", int32s);
+    expected.AddColumn("Longs", int64s);
+    expected.AddColumn("Floats", floats);
+    expected.AddColumn("Doubles", doubles);
+    expected.AddColumn("Bools", bools);
+    expected.AddColumn("Strings", strings);
+    expected.AddColumn("DateTimes", date_times);
+    expected.AddColumn("LocalDates", local_dates);
+    expected.AddColumn("LocalTimes", local_times);
+
+    TableComparerForTests::Compare(expected, *current);
 
     NotifyDone();
   }

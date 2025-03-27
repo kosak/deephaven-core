@@ -192,7 +192,8 @@ template<arrow::TimeUnit::type UNIT>
 struct ColumnBuilder<InternalLocalTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
     DeephavenServerConstants::kLocalTime> {
   ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
-      std::make_shared<arrow::Time64Builder>(arrow::time64(UNIT))) {
+      std::make_shared<arrow::Time64Builder>(arrow::time64(UNIT),
+          arrow::default_memory_pool())) {
   }
 
   void Append(const InternalLocalTime<UNIT> &value) {
