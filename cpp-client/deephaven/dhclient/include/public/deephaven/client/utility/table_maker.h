@@ -36,11 +36,8 @@ struct ColumnBuilder {
   static_assert(!std::is_same_v<T, T>, "ColumnBuilder doesn't know how to work with this type");
 };
 
-template<typename T, typename TArrowBuilder, const char *kDeephavenTypeName>
-struct SimpleBuilderBase {
-  void Append(const T &value) {
-    builder_->Append(value);
-  }
+template<typename TArrowBuilder, const char *kDeephavenTypeName>
+struct BuilderBase {
   void AppendNull() {
     builder_->AppendNull();
   }
@@ -54,113 +51,153 @@ struct SimpleBuilderBase {
   std::shared_ptr<TArrowBuilder> builder_;
 };
 
+template<typename T, typename TArrowBuilder, const char *kDeephavenTypeName>
+struct BuilderBaseWithAppend : public BuilderBase<TArrowBuilder, kDeephavenTypeName> {
+  void Append(const T &value) {
+    builder_->Append(value);
+  }
+};
+
 struct DeephavenServerConstants {
   static const char kBool[];
   static const char kChar16[];
   static const char kInt8[];
+  static const char kInt16[];
+  static const char kInt32[];
+  static const char kInt64[];
+  static const char kFloat[];
+  static const char kDouble[];
+  static const char kString[];
+  static const char kDateTime[];
+  static const char kLocalDate[];
+  static const char kLocalTime[];
 };
 
 template<>
-struct ColumnBuilder<bool> : public SimpleBuilderBase<bool, arrow::BooleanBuilder,
+struct ColumnBuilder<bool> : public BuilderBaseWithAppend<bool,
+    arrow::BooleanBuilder,
     DeephavenServerConstants::kBool> {
 };
 
 template<>
-struct ColumnBuilder<char16_t> : public SimpleBuilderBase<char16_t, arrow::UInt16Builder,
+struct ColumnBuilder<char16_t> : public BuilderBaseWithAppend<char16_t, arrow::UInt16Builder,
     DeephavenServerConstants::kChar16> {
 };
 
 template<>
-struct ColumnBuilder<int8_t> : public SimpleBuilderBase<int8_t, arrow::Int8Builder,
+struct ColumnBuilder<int8_t> : public BuilderBaseWithAppend<int8_t, arrow::Int8Builder,
     DeephavenServerConstants::kInt8> {
 };
 
 template<>
-struct ColumnBuilder<int16_t> {
-  void Append(int16_t value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::Int16Builder> builder_;
+struct ColumnBuilder<int16_t> : public BuilderBaseWithAppend<int16_t, arrow::Int16Builder,
+    DeephavenServerConstants::kInt16> {
 };
 
 template<>
-struct ColumnBuilder<int32_t> {
-  void Append(int32_t value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::Int32Builder> builder_;
+struct ColumnBuilder<int32_t> : public BuilderBaseWithAppend<int32_t, arrow::Int32Builder,
+    DeephavenServerConstants::kInt32> {
 };
 
 template<>
-struct ColumnBuilder<int64_t> {
-  void Append(int64_t value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::Int64Builder> builder_;
+struct ColumnBuilder<int64_t> : public BuilderBaseWithAppend<int64_t, arrow::Int64Builder,
+    DeephavenServerConstants::kInt64> {
 };
 
 template<>
-struct ColumnBuilder<float> {
-  void Append(float value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::FloatBuilder> builder_;
+struct ColumnBuilder<float> : public BuilderBaseWithAppend<float, arrow::FloatBuilder,
+    DeephavenServerConstants::kFloat> {
 };
 
 template<>
-struct ColumnBuilder<double> {
-  void Append(double value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::DoubleBuilder> builder_;
+struct ColumnBuilder<double> : public BuilderBaseWithAppend<double, arrow::DoubleBuilder,
+    DeephavenServerConstants::kDouble> {
 };
 
 template<>
-struct ColumnBuilder<std::string> {
-  void Append(const std::string &value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
-
-  std::shared_ptr<arrow::StringBuilder> builder_;
+struct ColumnBuilder<std::string> : public BuilderBaseWithAppend<std::string, arrow::StringBuilder,
+    DeephavenServerConstants::kString> {
 };
 
 template<>
 struct ColumnBuilder<deephaven::dhcore::DateTime> {
-  void Append(const deephaven::dhcore::DateTime &value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
+  // constructor with data type nanos
+  ColumnBuilder() {
+    auto data_type = arrow::timestamp(arrow::TimeUnit::NANO, "UTC");
+    arrow::TimestampBuilder builder(std::move(data_type), arrow::default_memory_pool());
+    builder_ = std::make_shared<arrow::TimestampBuilder>(std::move(builder));
+  }
+
+  void Append(const deephaven::dhcore::DateTime &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Nanos())));
+  }
+
+  void AppendNull() {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+
+  std::string_view GetDeephavenServerTypeName() {
+    return DeephavenServerConstants::kDateTime;
+  }
 
   std::shared_ptr<arrow::TimestampBuilder> builder_;
 };
 
 template<>
 struct ColumnBuilder<deephaven::dhcore::LocalDate> {
-  void Append(const deephaven::dhcore::LocalDate &value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
+  // constructor with data type nanos
+  ColumnBuilder() {
+    arrow::Date64Builder builder;
+    builder_ = std::make_shared<arrow::Date64Builder>(std::move(builder));
+  }
+
+  void Append(const deephaven::dhcore::LocalDate &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
+  }
+
+  void AppendNull() {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+
+  std::string_view GetDeephavenServerTypeName() {
+    return DeephavenServerConstants::kLocalDate;
+  }
 
   std::shared_ptr<arrow::Date64Builder> builder_;
 };
 
 template<>
 struct ColumnBuilder<deephaven::dhcore::LocalTime> {
-  void Append(const deephaven::dhcore::LocalTime &value);
-  void AppendNull();
-  std::shared_ptr<arrow::Array> Finish();
-  std::string_view GetDeephavenServerTypeName();
+  // constructor with data type nanos
+  ColumnBuilder() {
+    auto data_type = arrow::time64(arrow::TimeUnit::NANO);
+    arrow::Time64Builder builder(std::move(data_type), arrow::default_memory_pool());
+    builder_ = std::make_shared<arrow::Time64Builder>(std::move(builder));
+  }
+
+  void Append(const deephaven::dhcore::LocalDate &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
+  }
+
+  void AppendNull() {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->AppendNull()));
+  }
+
+  std::shared_ptr<arrow::Array> Finish() {
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
+  }
+
+  std::string_view GetDeephavenServerTypeName() {
+    return DeephavenServerConstants::kLocalDate;
+  }
 
   std::shared_ptr<arrow::Time64Builder> builder_;
 };
@@ -184,7 +221,9 @@ public:
     return inner_builder_.Finish();
   }
 
-  std::string_view GetDeephavenServerTypeName();
+  std::string_view GetDeephavenServerTypeName() {
+    return inner_builder_.GetDeephavenServerTypeName();
+  }
 
   ColumnBuilder<T> inner_builder_;
 };
@@ -212,7 +251,10 @@ public:
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
 
-  std::string_view GetDeephavenServerTypeName();
+  std::string_view GetDeephavenServerTypeName() {
+    // TODO(kosak)
+    return "something.list.something";
+  }
 
   ColumnBuilder<T> inner_builder_;
   std::shared_ptr<arrow::ListBuilder> builder_;
