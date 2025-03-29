@@ -334,7 +334,9 @@ public:
 private:
   void FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> data,
       std::string deephaven_server_type_name);
+  [[nodiscard]]
   std::shared_ptr<arrow::Schema> MakeSchema() const;
+  [[nodiscard]]
   std::vector<std::shared_ptr<arrow::Array>> GetColumnsNotEmpty() const;
 
   struct ColumnInfo {

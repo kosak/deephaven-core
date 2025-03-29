@@ -4,17 +4,13 @@
 #include "deephaven/client/flight.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/client/utility/arrow_util.h"
-#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
 #include "arrow/array/builder_nested.h"
 
-using deephaven::dhcore::DeephavenConstants;
 using deephaven::dhcore::utility::MakeReservedVector;
 using deephaven::client::TableHandle;
-using deephaven::client::utility::OkOrThrow;
-using deephaven::client::utility::ValueOrThrow;
 
 #include <memory>
 
