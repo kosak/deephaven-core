@@ -4,6 +4,8 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <utility>
 
 #include <arrow/array.h>
 #include <arrow/record_batch.h>
@@ -341,8 +343,9 @@ private:
 
   struct ColumnInfo {
     ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,
-        std::string deepaven_type, std::shared_ptr<arrow::Array> data);
-    ~ColumnInfo() = default;
+        std::string deepaven_server_type_name, std::shared_ptr<arrow::Array> data);
+    ColumnInfo(ColumnInfo &&other) noexcept;
+    ~ColumnInfo();
 
     std::string name_;
     std::shared_ptr<arrow::DataType> arrow_type_;

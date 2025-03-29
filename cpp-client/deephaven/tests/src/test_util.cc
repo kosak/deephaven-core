@@ -169,6 +169,21 @@ TableMakerForTests::TableMakerForTests(TableMakerForTests &&) noexcept = default
 TableMakerForTests &TableMakerForTests::operator=(TableMakerForTests &&) noexcept = default;
 TableMakerForTests::~TableMakerForTests() = default;
 
+void TableComparerForTests::Compare(const TableMaker &expected, const TableHandle &actual) {
+  auto exp_as_arrow_table = expected.MakeArrowTable();
+  auto act_as_arrow_table = actual.ToArrowTable();
+  return Compare(*exp_as_arrow_table, *act_as_arrow_table);
+}
+
+void TableComparerForTests::Compare(const TableMaker &expected, const arrow::Table &actual) {
+  auto exp_as_arrow_table = expected.MakeArrowTable();
+  return Compare(*exp_as_arrow_table, actual);
+}
+
+void TableComparerForTests::Compare(const TableMaker &expected, const ClientTable &actual) {
+  throw std::runtime_error("TODO(kosak)");
+}
+
 void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::Table &actual) {
   if (expected.num_columns() != actual.num_columns()) {
     auto message = fmt::format("Expected {} columns, but Table actually has {} columns",
@@ -250,97 +265,5 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
       ++act_chunk_index;
     }
   }
-
-  // TODO(kosak): describe difference
-  throw std::runtime_error(DEEPHAVEN_LOCATION_STR("Some other difference"));
-
-
 }
-
-
-namespace internal {
-void CompareTableHelper(int depth, const std::shared_ptr<arrow::Table> &table,
-    const std::string &column_name, const std::shared_ptr<arrow::Array> &data) {
-  auto field = table->field(depth);
-  auto column = table->column(depth);
-
-  if (field->name() != column_name) {
-    auto message = fmt::format("Column {}: Expected column name {}, have {}", depth, column_name,
-        field->name());
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-  }
-
-  arrow::ChunkedArray chunked_data(data);
-  if (column->Equals(chunked_data)) {
-    return;
-  }
-
-  if (column->length() != chunked_data.length()) {
-    auto message = fmt::format("Column {}: Expected length {}, got {}", depth, chunked_data.length(),
-        column->length());
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-  }
-
-  if (!column->type()->Equals(chunked_data.type())) {
-    auto message = fmt::format("Column {}: Expected type {}, got {}", depth,
-        chunked_data.type()->ToString(), column->type()->ToString());
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-  }
-
-  int64_t element_index = 0;
-  int l_chunk_num = 0;
-  int r_chunk_num = 0;
-  int l_chunk_index = 0;
-  int r_chunk_index = 0;
-  while (element_index < column->length()) {
-    if (l_chunk_num >= column->num_chunks() || r_chunk_num >= chunked_data.num_chunks()) {
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR("Logic error"));
-    }
-    const auto &l_chunk = column->chunk(l_chunk_num);
-    if (l_chunk_index == l_chunk->length()) {
-      l_chunk_index = 0;
-      ++l_chunk_num;
-      continue;
-    }
-
-    const auto &r_chunk = chunked_data.chunk(r_chunk_num);
-    if (r_chunk_index == r_chunk->length()) {
-      r_chunk_index = 0;
-      ++r_chunk_num;
-      continue;
-    }
-
-    const auto l_item = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(l_chunk->GetScalar(l_chunk_index)));
-    const auto r_item = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(r_chunk->GetScalar(r_chunk_index)));
-
-    if (!l_item->Equals(*r_item)) {
-      auto message = fmt::format("Column {}: Columns differ at element {}: {} vs {}",
-          depth, element_index, l_item->ToString(), r_item->ToString());
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-    }
-
-    ++element_index;
-    ++l_chunk_index;
-    ++r_chunk_index;
-  }
-
-  // TODO(kosak): describe difference
-  throw std::runtime_error(DEEPHAVEN_LOCATION_STR("Some other difference"));
-}
-
-std::shared_ptr<arrow::Table> BasicValidate(const deephaven::client::TableHandle &table, int expected_columns) {
-  auto fsr = table.GetFlightStreamReader();
-  auto table_res = fsr->ToTable();
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(table_res));
-
-  auto &arrow_table = *table_res;
-  if (expected_columns != arrow_table->num_columns()) {
-    auto message = fmt::format("Expected {} columns, but Table actually has {} columns",
-        expected_columns, arrow_table->num_columns());
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-  }
-
-  return std::move(arrow_table);
-}
-}  // namespace internal
 }  // namespace deephaven::client::tests

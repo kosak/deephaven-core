@@ -2,20 +2,14 @@
  * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
  */
 #include <iostream>
+#include <string>
+#include <vector>
+
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/tests/test_util.h"
 #include "deephaven/client/client.h"
-#include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 
-using deephaven::client::TableHandle;
-using deephaven::client::Client;
-using deephaven::client::TableHandle;
-using deephaven::client::utility::TableMaker;
-using deephaven::dhcore::DateTime;
-using deephaven::dhcore::chunk::BooleanChunk;
-using deephaven::dhcore::chunk::ContainerBaseChunk;
-using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::container::RowSequence;
 
 namespace deephaven::client::tests {
