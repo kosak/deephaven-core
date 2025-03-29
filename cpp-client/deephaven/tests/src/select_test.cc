@@ -84,11 +84,7 @@ TEST_CASE("Create / Update / fetch a Table", "[select]") {
   auto t3 = t2.Update("Q3 = Q2 + 10");
   auto t4 = t3.Update("Q4 = Q2 + 100");
 
-  std::vector<int32_t> q2_data = {0, 100, 200, 300, 400, 500, 600, 700, 800, 900};
-  std::vector<int32_t> q3_data = {10, 110, 210, 310, 410, 510, 610, 710, 810, 910};
-  std::vector<int32_t> q4_data = {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
-
-  // Reuse the already-populated maker; add a few more columns
+  // Reuse the already-populated maker; keep the existing columns and add a few more.
   maker.AddColumn<int32_t>("Q2", {0, 100, 200, 300, 400, 500, 600, 700, 800, 900});
   maker.AddColumn<int32_t>("Q3", {10, 110, 210, 310, 410, 510, 610, 710, 810, 910});
   maker.AddColumn<int32_t>("Q4", {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000});
@@ -104,16 +100,12 @@ TEST_CASE("Select a few columns", "[select]") {
       .Select("Ticker", "Close", "Volume")
       .Head(2);
 
-  std::vector<std::string> ticker_data = {"AAPL", "AAPL"};
-  std::vector<double> close_data = {23.5, 24.2};
-  std::vector<int64_t> vol_data = {100000, 250000};
+  TableMaker expected;
+  expected.AddColumn<std::string>("Ticker", {"AAPL", "AAPL"});
+  expected.AddColumn<double>("Close", {23.5, 24.2});
+  expected.AddColumn<int64_t>("Volume", {100000, 250000});
 
-  CompareTable(
-      t1,
-      "Ticker", ticker_data,
-      "Close", close_data,
-      "Volume", vol_data
-  );
+  TableComparerForTests::Compare(expected, t1);
 }
 
 TEST_CASE("LastBy + Select", "[select]") {
@@ -125,16 +117,11 @@ TEST_CASE("LastBy + Select", "[select]") {
       .Select("Ticker", "Close", "Volume");
   std::cout << t1.Stream(true) << '\n';
 
-  std::vector<std::string> ticker_data = {"AAPL"};
-  std::vector<double> close_data = {26.7};
-  std::vector<int64_t> vol_data = {19000};
-
-  CompareTable(
-      t1,
-      "Ticker", ticker_data,
-      "Close", close_data,
-      "Volume", vol_data
-  );
+  TableMaker expected;
+  expected.AddColumn<std::string>("Ticker", {"AAPL"});
+  expected.AddColumn<double>("Close", {26.7});
+  expected.AddColumn<int64_t>("Volume", {19000});
+  TableComparerForTests::Compare(expected, t1);
 }
 
 TEST_CASE("New columns", "[select]") {
@@ -145,14 +132,10 @@ TEST_CASE("New columns", "[select]") {
   auto t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
       .Select("MV1 = Volume * Close", "V_plus_12 = Volume + 12");
 
-  std::vector<double> mv1_data = {2350000, 6050000, 507300};
-  std::vector<int64_t> mv2_data = {100012, 250012, 19012};
-
-  CompareTable(
-      t1,
-      "MV1", mv1_data,
-      "V_plus_12", mv2_data
-  );
+  TableMaker expected;
+  expected.AddColumn<double>("MV1", {2350000, 6050000, 507300});
+  expected.AddColumn<int64_t>("V_plus_12", {100012, 250012, 19012});
+  TableComparerForTests::Compare(expected, t1);
 }
 
 TEST_CASE("Drop columns", "[select]") {
@@ -171,14 +154,10 @@ TEST_CASE("Simple Where", "[select]") {
   auto t1 = updated.Where("ImportDate == `2017-11-01` && Ticker == `IBM`")
       .Select("Ticker", "Volume");
 
-  std::vector<std::string> ticker_data = {"IBM"};
-  std::vector<int64_t> vol_data = {138000};
-
-  CompareTable(
-      t1,
-      "Ticker", ticker_data,
-      "Volume", vol_data
-  );
+  TableMaker expected;
+  expected.AddColumn<std::string>("Ticker", {"IBM"});
+  expected.AddColumn<int64_t>("Volume", {138000});
+  TableComparerForTests::Compare(expected, t1);
 }
 
 TEST_CASE("Formula in the Where clause", "[select]") {
@@ -190,14 +169,10 @@ TEST_CASE("Formula in the Where clause", "[select]") {
       .Select("Ticker", "Volume");
   std::cout << t1.Stream(true) << '\n';
 
-  std::vector<std::string> ticker_data = {"AAPL", "AAPL", "AAPL"};
-  std::vector<int64_t> vol_data = {100000, 250000, 19000};
-
-  CompareTable(
-      t1,
-      "Ticker", ticker_data,
-      "Volume", vol_data
-  );
+  TableMaker expected;
+  expected.AddColumn<std::string>("Ticker", {"AAPL", "AAPL", "AAPL"});
+  expected.AddColumn<int64_t>("Volume", {100000, 250000, 19000});
+  TableComparerForTests::Compare(expected, t1);
 }
 
 TEST_CASE("Simple 'Where' with syntax error", "[select]") {
@@ -237,39 +212,28 @@ TEST_CASE("WhereIn", "[select]") {
 
   auto result = source.WhereIn(filter, {"Color = Colors"});
 
-  std::vector<std::string> letter_expected = {"A", "C", "B", "A"};
-  std::vector<std::optional<int32_t>> number_expected = { {}, 2, {}, 3};
-  std::vector<std::string> color_expected = {"red", "blue", "purple", "blue"};
-  std::vector<std::optional<int32_t>> code_expected = { 12, 13, {}, {}};
-
-  CompareTable(result,
-      "Letter", letter_expected,
-      "Number", number_expected,
-      "Color", color_expected,
-      "Code", code_expected);
+  TableMaker expected;
+  expected.AddColumn<std::string>("Letter", {"A", "C", "B", "A"});
+  expected.AddColumn<std::optional<int32_t>>("Number", { {}, 2, {}, 3});
+  expected.AddColumn<std::string>("Color", {"red", "blue", "purple", "blue"});
+  expected.AddColumn<std::optional<int32_t>>("Code", { 12, 13, {}, {}});
+  TableComparerForTests::Compare(expected, result);
 }
 
 TEST_CASE("LazyUpdate", "[select]") {
   auto tm = TableMakerForTests::Create();
 
-  std::vector<std::string> a_data = {"The", "At", "Is", "On"};
-  std::vector<int32_t> b_data = {1, 2, 3, 4};
-  std::vector<int32_t> c_data = {5, 2, 5, 5};
-  TableMaker source_maker;
-  source_maker.AddColumn("A", a_data);
-  source_maker.AddColumn("B", b_data);
-  source_maker.AddColumn("C", c_data);
-  auto source = source_maker.MakeTable(tm.Client().GetManager());
+  TableMaker maker;
+  maker.AddColumn<std::string>("A", {"The", "At", "Is", "On"});
+  maker.AddColumn<int32_t>("B", {1, 2, 3, 4});
+  maker.AddColumn<int32_t>("C", {5, 2, 5, 5});
+  auto source = maker.MakeTable(tm.Client().GetManager());
 
   auto result = source.LazyUpdate({"Y = sqrt(C)"});
 
-  std::vector<double> sqrt_data = {std::sqrt(5), std::sqrt(2), std::sqrt(5), std::sqrt(5)};
-
-  CompareTable(result,
-      "A", a_data,
-      "B", b_data,
-      "C", c_data,
-      "Y", sqrt_data);
+  // Reuse maker and add one more column.
+  maker.AddColumn<double>("Y", {std::sqrt(5), std::sqrt(2), std::sqrt(5), std::sqrt(5)});
+  TableComparerForTests::Compare(maker, result);
 }
 
 TEST_CASE("SelectDistinct", "[select]") {
@@ -287,8 +251,8 @@ TEST_CASE("SelectDistinct", "[select]") {
   std::cout << result.Stream(true) << '\n';
 
   std::vector<std::string> expected_data = {"apple", "orange", "plum", "grape"};
-
-  CompareTable(result,
-      "A", expected_data);
+  TableMaker expected;
+  expected.AddColumn<std::string>("A", {"apple", "orange", "plum", "grape"});
+  TableComparerForTests::Compare(expected, result);
 }
 }  // namespace deephaven::client::tests
