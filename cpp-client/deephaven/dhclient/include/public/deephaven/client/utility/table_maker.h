@@ -156,8 +156,8 @@ struct ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::D
       std::make_shared<arrow::Date64Builder>()) {
   }
 
-  void Append(const deephaven::dhcore::DateTime &value) {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Nanos())));
+  void Append(const deephaven::dhcore::LocalDate &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
   }
 };
 
@@ -170,8 +170,8 @@ struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::T
 
   }
 
-  void Append(const deephaven::dhcore::LocalDate &value) {
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Millis())));
+  void Append(const deephaven::dhcore::LocalTime &value) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append(value.Nanos())));
   }
 };
 
