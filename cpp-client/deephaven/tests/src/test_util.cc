@@ -177,7 +177,7 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
   }
 
   auto num_cols = expected.num_columns();
-  // Collect all field issues (if any) into a single exception
+  // Collect all type issues (if any) into a single exception
   std::vector<std::string> issues;
   for (int i = 0; i != num_cols; ++i) {
     const auto &exp = expected.field(i);
@@ -197,12 +197,62 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
   }
 
   if (!issues.empty()) {
-    throw std::runtime_error(fmt::to_string(separatedList(issues.begin(), issues.end())));
+    auto message = fmt::to_string(separatedList(issues.begin(), issues.end()));
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
 
-  
+  for (int i = 0; i != num_cols; ++i) {
+    const auto &exp = expected.column(i);
+    const auto &act = actual.column(i);
 
+    if (exp->length() != act->length()) {
+      auto message = fmt::format("Column {}: Expected length {}, actual length {}", i,
+          exp->length(), act->length());
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
 
+    int64_t element_index = 0;
+    int exp_chunk_num = 0;
+    int act_chunk_num = 0;
+    int exp_chunk_index = 0;
+    int act_chunk_index = 0;
+    while (element_index < exp->length()) {
+      if (exp_chunk_num >= exp->num_chunks() || act_chunk_num >= act->num_chunks()) {
+        throw std::runtime_error(DEEPHAVEN_LOCATION_STR("Logic error"));
+      }
+      const auto &exp_chunk = exp->chunk(exp_chunk_num);
+      if (exp_chunk_index == exp_chunk->length()) {
+        // Exhausted current chunk on "expected" side. Bump to next chunk and start over.
+        exp_chunk_index = 0;
+        ++exp_chunk_num;
+        continue;
+      }
+
+      const auto &act_chunk = act->chunk(act_chunk_num);
+      if (act_chunk_index == act_chunk->length()) {
+        // Exhausted current chunk on "actual" side. Bump to next chunk and start over.
+        act_chunk_index = 0;
+        ++act_chunk_num;
+        continue;
+      }
+
+      const auto exp_item = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(exp_chunk->GetScalar(exp_chunk_index)));
+      const auto act_item = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(act_chunk->GetScalar(act_chunk_index)));
+
+      if (!exp_item->Equals(*act_item)) {
+        auto message = fmt::format("Column {}: Columns differ at element {}: {} vs {}",
+            i, element_index, exp_item->ToString(), act_item->ToString());
+        throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+      }
+
+      ++element_index;
+      ++exp_chunk_index;
+      ++act_chunk_index;
+    }
+  }
+
+  // TODO(kosak): describe difference
+  throw std::runtime_error(DEEPHAVEN_LOCATION_STR("Some other difference"));
 
 
 }
