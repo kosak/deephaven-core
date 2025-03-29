@@ -3,9 +3,11 @@
  */
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <arrow/array.h>
 #include <arrow/record_batch.h>

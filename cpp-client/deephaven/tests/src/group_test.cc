@@ -55,7 +55,7 @@ TEST_CASE("Group a Table", "[group]") {
 
   // auto nr = grouped.NumRows();
   const auto &data0 = chunk.data()[0]->AsContainer<std::string>();
-  const auto &data1 = chunk.data()[1]->AsContainer<std::int32_t>();
+  const auto &data1 = chunk.data()[1]->AsContainer<std::string>();
 
   for (const auto &e : data0) {
     std::cout << "hello " << e << '\n';

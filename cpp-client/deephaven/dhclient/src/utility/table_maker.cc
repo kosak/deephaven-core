@@ -1,12 +1,21 @@
 /*
  * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
  */
-#include "deephaven/client/flight.h"
 #include "deephaven/client/utility/table_maker.h"
+
+#include <exception>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "deephaven/third_party/fmt/format.h"
+
+#include "deephaven/client/flight.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
+#include "arrow/array/array_base.h"
 #include "arrow/array/builder_nested.h"
 
 using deephaven::dhcore::utility::MakeReservedVector;
@@ -96,6 +105,13 @@ std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
 
   return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.Finish()));
 }
+
+TableMaker::ColumnInfo::ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,
+    std::string deepaven_server_type_name, std::shared_ptr<arrow::Array> data) :
+    name_(std::move(name)), arrow_type_(std::move(arrow_type)),
+    deepaven_server_type_name_(std::move(deepaven_server_type_name)), data_(std::move(data)) {}
+TableMaker::ColumnInfo::ColumnInfo(ColumnInfo &&other) noexcept = default;
+TableMaker::ColumnInfo::~ColumnInfo() = default;
 
 namespace internal {
 const char DeephavenServerConstants::kBool[] = "java.lang.Boolean";
