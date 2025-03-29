@@ -21,6 +21,7 @@
 #include "deephaven/client/client.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/chunk/chunk_traits.h"
+#include "deephaven/dhcore/clienttable/client_table.h"
 #include "deephaven/dhcore/utility/utility.h"
 
 namespace deephaven::client::tests {
@@ -144,9 +145,12 @@ private:
 
 class TableComparerForTests {
   using TableMaker = deephaven::client::utility::TableMaker;
+  using ClientTable = deephaven::dhcore::clienttable::ClientTable;
+
 public:
   static void Compare(const TableMaker &expected, const TableHandle &actual);
-  static void Compare(const arrow::Table &expected, const arrow::Table &actual);
+  static void Compare(const TableMaker &expected, const arrow::Table &actual);
+  static void Compare(const TableMaker &expected, const ClientTable &actual);
 };
 
 #if 0
