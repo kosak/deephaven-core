@@ -149,8 +149,9 @@ class TableComparerForTests {
 
 public:
   static void Compare(const TableMaker &expected, const TableHandle &actual);
-  static void Compare(const TableMaker &expected, const arrow::Table &actual);
   static void Compare(const TableMaker &expected, const ClientTable &actual);
+  static void Compare(const TableMaker &expected, const arrow::Table &actual);
+  static void Compare(const arrow::Table &expected, const arrow::Table &actual);
 };
 
 #if 0

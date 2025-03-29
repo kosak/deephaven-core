@@ -11,6 +11,7 @@
 
 using deephaven::client::TableHandle;
 using deephaven::client::utility::OkOrThrow;
+using deephaven::dhcore::utility::separatedList;
 using deephaven::client::utility::TableMaker;
 using deephaven::client::utility::ValueOrThrow;
 
@@ -167,6 +168,44 @@ TableMakerForTests::TableMakerForTests(TableMakerForTests::ClientType &&client,
 TableMakerForTests::TableMakerForTests(TableMakerForTests &&) noexcept = default;
 TableMakerForTests &TableMakerForTests::operator=(TableMakerForTests &&) noexcept = default;
 TableMakerForTests::~TableMakerForTests() = default;
+
+void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::Table &actual) {
+  if (expected.num_columns() != actual.num_columns()) {
+    auto message = fmt::format("Expected {} columns, but Table actually has {} columns",
+        expected.num_columns(), actual.num_columns());
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+  }
+
+  auto num_cols = expected.num_columns();
+  // Collect all field issues (if any) into a single exception
+  std::vector<std::string> issues;
+  for (int i = 0; i != num_cols; ++i) {
+    const auto &exp = expected.field(i);
+    const auto &act = actual.field(i);
+
+    if (exp->name() != act->name()) {
+      auto message = fmt::format("Column {}: Expected column name {}, have {}", i, exp->name(),
+          act->name());
+      issues.emplace_back(std::move(message));
+    }
+
+    if (!exp->type()->Equals(*act->type())) {
+      auto message = fmt::format("Column {}: Expected column type {}, have {}", i,
+          exp->type()->ToString(), act->type()->ToString());
+      issues.emplace_back(std::move(message));
+    }
+  }
+
+  if (!issues.empty()) {
+    throw std::runtime_error(fmt::to_string(separatedList(issues.begin(), issues.end())));
+  }
+
+  
+
+
+
+
+}
 
 
 namespace internal {
