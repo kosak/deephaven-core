@@ -299,13 +299,26 @@ public:
       cb.Append(element);
     }
     auto array = cb.Finish();
-    const auto *dh_type = cb.GetDeephavenServerTypeName();
+    const char *dh_type = cb.GetDeephavenServerTypeName();
     FinishAddColumn(std::move(name), std::move(array), dh_type);
   }
 
   template<typename T, typename GetValue, typename IsNull>
   void AddColumn(std::string name, const GetValue &get_value, const IsNull &is_null,
-      size_t size);
+      size_t size) {
+    internal::ColumnBuilder<T> cb;
+    for (size_t i = 0; i != size; ++i) {
+      if (!is_null(i)) {
+        const auto &value = get_value(i);
+        cb.Append(value);
+      } else {
+        cb.AppendNull();
+      }
+    }
+    auto array = cb.Finish();
+    const char *dh_type = cb.GetDeephavenServerTypeName();
+    FinishAddColumn(std::move(name), std::move(array), dh_type);
+  }
 
   /**
    * Make a table on the Deephaven server based on all the AddColumn calls you have made so far.
