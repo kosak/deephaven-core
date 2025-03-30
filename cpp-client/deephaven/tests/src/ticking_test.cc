@@ -1,12 +1,16 @@
 /*
  * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
  */
+#include <chrono>
 #include <condition_variable>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/tests/test_util.h"
 #include "deephaven/client/client.h"
+#include "deephaven/client/utility/table_maker.h"
+#include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/chunk/chunk_maker.h"
 #include "deephaven/dhcore/utility/utility.h"
 
@@ -276,6 +280,46 @@ TEST_CASE("Ticking Table: all the data is eventually present", "[ticking]") {
       .Sort(SortPair::Ascending("II"));
 
   auto callback = std::make_shared<WaitForPopulatedTableCallback>(target);
+  auto cookie = table.Subscribe(callback);
+
+  while (true) {
+    auto [done, eptr] = callback->WaitForUpdate();
+    if (done) {
+      break;
+    }
+    if (eptr != nullptr) {
+      std::rethrow_exception(eptr);
+    }
+  }
+
+  table.Unsubscribe(std::move(cookie));
+}
+
+class WaitForGroupedTableCallback final : public CommonBase {
+public:
+  explicit WaitForGroupedTableCallback(int64_t target) : target_(target) {}
+
+  void OnTick(deephaven::dhcore::ticking::TickingUpdate update) final {
+    const auto &current = update.Current();
+    std::cout << "=== The Full Table ===\n"
+        << current->Stream(true, true)
+        << '\n';
+  }
+
+private:
+  int64_t target_ = 0;
+};
+
+TEST_CASE("Ticking Table: Grouped data works", "[ticking]") {
+  const int64_t target = 10;
+  auto client = TableMakerForTests::CreateClient();
+  auto tm = client.GetManager();
+
+  auto table = tm.TimeTable("PT0:00:0.5")
+      .Select({"Mod2 = ii % 2", "II = (long)ii"})
+      .By("Mod2");
+
+  auto callback = std::make_shared<WaitForGroupedTableCallback>(target);
   auto cookie = table.Subscribe(callback);
 
   while (true) {
