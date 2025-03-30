@@ -13,11 +13,6 @@
 #include "deephaven/dhcore/container/row_sequence.h"
 
 using deephaven::client::utility::TableMaker;
-using deephaven::dhcore::chunk::BooleanChunk;
-using deephaven::dhcore::chunk::ContainerBaseChunk;
-using deephaven::dhcore::container::RowSequence;
-
-// https://deephaven.io/core/docs/how-to-guides/grouping-data/
 
 namespace deephaven::client::tests {
 TEST_CASE("Group a Table", "[group]") {

@@ -4,8 +4,12 @@
 #include "deephaven/tests/test_util.h"
 
 #include <cstdlib>
+#include <string>
+#include <vector>
+#include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/format.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
