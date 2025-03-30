@@ -58,31 +58,6 @@ TEST_CASE("Group a Table", "[group]") {
   expected.AddColumn<std::vector<int32_t>>("Calories", {
       {53, 48}, {51, 61}, {46, 57}
   });
-
   TableComparerForTests::Compare(expected, grouped);
-
-  auto ct1 = grouped.ToClientTable();
-  auto col2 = ct1->GetColumn(1);
-  auto chunk = ContainerBaseChunk::Create(50);
-  auto nulls = BooleanChunk::Create(50);
-  auto rs = RowSequence::CreateSequential(0, grouped.NumRows());
-  col2->FillChunk(*rs, &chunk, &nulls);
-
-
-
-  // auto nr = grouped.NumRows();
-  const auto &data0 = chunk.data()[0]->AsContainer<std::string>();
-  const auto &data1 = chunk.data()[1]->AsContainer<std::string>();
-
-  for (const auto &e : data0) {
-    std::cout << "hello " << e << '\n';
-  }
-
-  for (const auto &e : data1) {
-    std::cout << "hello " << e << '\n';
-  }
-
-
-  std::cout << "What is this\n";
 }
 }  // namespace deephaven::client::tests
