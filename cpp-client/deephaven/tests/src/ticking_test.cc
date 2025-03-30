@@ -310,7 +310,7 @@ private:
   int64_t target_ = 0;
 };
 
-TEST_CASE("Ticking Table: Grouped data works", "[ticking]") {
+TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   const int64_t target = 10;
   auto client = TableMakerForTests::CreateClient();
   auto tm = client.GetManager();
