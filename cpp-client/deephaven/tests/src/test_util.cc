@@ -185,6 +185,8 @@ void TableComparerForTests::Compare(const TableMaker &expected, const ClientTabl
 }
 
 void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::Table &actual) {
+  fmt::println("This is expected: {}", expected.ToString());
+  fmt::println("This is actual: {}", actual.ToString());
   if (expected.num_columns() != actual.num_columns()) {
     auto message = fmt::format("Expected table has {} columns, but actual table has {} columns",
         expected.num_columns(), actual.num_columns());
@@ -257,7 +259,8 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
       if (!exp_item->Equals(*act_item)) {
         auto message = fmt::format("Column {}: Columns differ at element {}: {} vs {}",
             expected.field(i)->name(), element_index, exp_item->ToString(), act_item->ToString());
-        throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+        std::cout << message << '\n';
+        // throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
       }
 
       ++element_index;

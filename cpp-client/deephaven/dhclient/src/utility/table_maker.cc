@@ -3,16 +3,15 @@
  */
 #include "deephaven/client/utility/table_maker.h"
 
-#include <exception>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "deephaven/third_party/fmt/format.h"
-
 #include "deephaven/client/flight.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/format.h"
 
 #include "arrow/array/array_base.h"

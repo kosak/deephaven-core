@@ -17,6 +17,8 @@ using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::ContainerBaseChunk;
 using deephaven::dhcore::container::RowSequence;
 
+// https://deephaven.io/core/docs/how-to-guides/grouping-data/
+
 namespace deephaven::client::tests {
 TEST_CASE("Group a Table", "[group]") {
   auto tm = TableMakerForTests::Create();
@@ -34,17 +36,30 @@ TEST_CASE("Group a Table", "[group]") {
       "Green", "Green", "Red-Green", "Orange-Green", "Yellow", "Yellow"
   });
   maker.AddColumn<int32_t>("Weight", {
-      // 102, 85, 79, 92, 78, 99
-      0, 0, 0, 1, 1, 1
+      102, 85, 79, 92, 78, 99
   });
   maker.AddColumn<int32_t>("Calories", {
       53, 48, 51, 61, 46, 57
   });
   auto t1 = maker.MakeTable(tm.Client().GetManager());
 
-  auto grouped = t1.By("Weight");
+  auto grouped = t1.By("Type");
 
   std::cout << grouped.Stream(true) << '\n';
+
+  TableMaker expected;
+  expected.AddColumn<std::string>("Type", {"Granny Smith", "Gala", "Golden Delicious"});
+  expected.AddColumn<std::vector<std::string>>("Color", {
+      {"Green", "Green"}, {"Red-Green", "Orange-Green"}, {"Yellow", "Yellow"}
+  });
+  expected.AddColumn<std::vector<int32_t>>("Weight", {
+      {102, 85}, {79, 92}, {78, 99}
+  });
+  expected.AddColumn<std::vector<int32_t>>("Calories", {
+      {53, 48}, {51, 61}, {46, 57}
+  });
+
+  TableComparerForTests::Compare(expected, grouped);
 
   auto ct1 = grouped.ToClientTable();
   auto col2 = ct1->GetColumn(1);
@@ -52,6 +67,8 @@ TEST_CASE("Group a Table", "[group]") {
   auto nulls = BooleanChunk::Create(50);
   auto rs = RowSequence::CreateSequential(0, grouped.NumRows());
   col2->FillChunk(*rs, &chunk, &nulls);
+
+
 
   // auto nr = grouped.NumRows();
   const auto &data0 = chunk.data()[0]->AsContainer<std::string>();

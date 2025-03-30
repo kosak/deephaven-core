@@ -240,9 +240,9 @@ public:
   }
 
   void Append(const std::vector<T> &entry) {
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
     for (const auto &element : entry) {
       inner_builder_.Append(element);
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
     }
   }
 
