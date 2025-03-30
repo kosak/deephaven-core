@@ -186,7 +186,7 @@ void TableComparerForTests::Compare(const TableMaker &expected, const ClientTabl
 
 void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::Table &actual) {
   if (expected.num_columns() != actual.num_columns()) {
-    auto message = fmt::format("Expected {} columns, but Table actually has {} columns",
+    auto message = fmt::format("Expected table has {} columns, but actual table has {} columns",
         expected.num_columns(), actual.num_columns());
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
@@ -199,13 +199,13 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
     const auto &act = actual.field(i);
 
     if (exp->name() != act->name()) {
-      auto message = fmt::format("Column {}: Expected column name {}, have {}", i, exp->name(),
+      auto message = fmt::format("Column {}: Expected column name {}, actual is {}", i, exp->name(),
           act->name());
       issues.emplace_back(std::move(message));
     }
 
     if (!exp->type()->Equals(*act->type())) {
-      auto message = fmt::format("Column {}: Expected column type {}, have {}", i,
+      auto message = fmt::format("Column {}: Expected column type {}, actual is {}", i,
           exp->type()->ToString(), act->type()->ToString());
       issues.emplace_back(std::move(message));
     }
@@ -221,8 +221,8 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
     const auto &act = actual.column(i);
 
     if (exp->length() != act->length()) {
-      auto message = fmt::format("Column {}: Expected length {}, actual length {}", i,
-          exp->length(), act->length());
+      auto message = fmt::format("Column {}: Expected length {}, actual length {}",
+          expected.field(i)->name(), exp->length(), act->length());
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
 
@@ -256,7 +256,7 @@ void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::T
 
       if (!exp_item->Equals(*act_item)) {
         auto message = fmt::format("Column {}: Columns differ at element {}: {} vs {}",
-            i, element_index, exp_item->ToString(), act_item->ToString());
+            expected.field(i)->name(), element_index, exp_item->ToString(), act_item->ToString());
         throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
       }
 
