@@ -26,8 +26,8 @@ TEST_CASE("Head and Tail", "[headtail]") {
   TableComparerForTests::Compare(expected_head, th);
 
   TableMaker expected_tail;
-  expected_head.AddColumn<std::string>("Ticker", {"ZNGA", "ZNGA"});
-  expected_head.AddColumn<std::int64_t>("Volume", {46123, 48300});
+  expected_tail.AddColumn<std::string>("Ticker", {"ZNGA", "ZNGA"});
+  expected_tail.AddColumn<std::int64_t>("Volume", {46123, 48300});
   TableComparerForTests::Compare(expected_tail, tt);
 }
 }  // namespace deephaven::client::tests

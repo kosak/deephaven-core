@@ -24,6 +24,7 @@ TEST_CASE("Sort demo Table", "[sort]") {
   TableMaker expected;
   expected.AddColumn<std::string>("Ticker", {"ZNGA", "ZNGA", "XYZZY", "XRX", "XRX"});
   expected.AddColumn<double>("Open", {541.2, 685.3, 92.3, 50.5, 83.1});
+  expected.AddColumn<int64_t>("Volume", {46123, 48300, 6060842, 87000, 345000});
   TableComparerForTests::Compare(expected, table1);
 }
 

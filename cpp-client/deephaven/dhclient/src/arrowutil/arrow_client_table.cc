@@ -142,6 +142,8 @@ public:
     return VisitHelper<int32_t, Int32Chunk>();
   }
 
+  // static_assert(false, "do all the visitors here");
+
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
     return VisitHelper<std::string, StringChunk>();
   }
