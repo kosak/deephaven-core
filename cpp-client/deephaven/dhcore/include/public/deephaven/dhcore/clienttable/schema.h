@@ -3,13 +3,14 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <vector>
 #include "deephaven/dhcore/types.h"
-#include "deephaven/dhcore/column/column_source.h"
-#include "deephaven/dhcore/container/row_sequence.h"
 
 namespace deephaven::dhcore::clienttable {
 /**

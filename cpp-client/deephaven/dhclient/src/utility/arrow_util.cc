@@ -15,6 +15,7 @@
 #include <arrow/status.h>
 #include <arrow/flight/types.h>
 #include <arrow/table.h>
+#include <arrow/type.h>
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
 #include "deephaven/dhcore/column/column_source.h"
@@ -261,9 +262,16 @@ std::shared_ptr<arrow::Table> ArrowUtil::MakeArrowTable(const ClientTable &clien
   return arrow::Table::Make(std::move(schema), arrays);
 }
 
-std::shared_ptr<arrow::Schema> MakeArrowSchema(
+std::shared_ptr<arrow::Schema> ArrowUtil::MakeArrowSchema(
     const deephaven::dhcore::clienttable::Schema &dh_schema) {
   arrow::SchemaBuilder builder;
-  arrow::Field field();
+  for (int32_t i = 0; i != dh_schema.NumCols(); ++i) {
+    const auto &name = dh_schema.Names()[i];
+    auto element_type = dh_schema.Types()[i];
+    auto arrow_type = GetArrowType(element_type);
+    auto field = std::make_shared<arrow::Field>(name, std::move(arrow_type));
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AddField(field)));
+  }
+  return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Finish()));
 }
 }  // namespace deephaven::client::utility

@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
@@ -40,6 +41,11 @@ public:
    */
   static std::optional<ElementTypeId::Enum> GetElementTypeId(const arrow::DataType &data_type,
       bool must_succeed);
+
+  /**
+   * Converts an ElementTypeId to an Arrow DataType.
+   */
+  static std::shared_ptr<arrow::DataType> GetArrowType(ElementTypeId::Enum element_type_id);
 
   /**
    * Convert an Arrow Schema into a Deephaven Schema
