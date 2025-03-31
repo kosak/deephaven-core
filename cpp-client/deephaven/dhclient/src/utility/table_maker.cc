@@ -125,5 +125,6 @@ const char DeephavenServerConstants::kString[] = "java.lang.String";
 const char DeephavenServerConstants::kDateTime[] = "java.time.ZonedDateTime";
 const char DeephavenServerConstants::kLocalDate[] = "java.time.LocalDate";
 const char DeephavenServerConstants::kLocalTime[] = "java.time.LocalTime";
+const char DeephavenServerConstants::kList[] = "what.goes.here";
 }  // namespace internal
 }  // namespace deephaven::client::utility

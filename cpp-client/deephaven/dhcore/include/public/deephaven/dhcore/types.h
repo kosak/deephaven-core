@@ -7,7 +7,8 @@
 #include <cmath>
 #include <cstdint>
 #include <ostream>
-#include "deephaven/dhcore/utility/utility.h"
+#include <string>
+#include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
 namespace deephaven::dhcore::container {

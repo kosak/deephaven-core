@@ -16,13 +16,14 @@
 #include <arrow/flight/types.h>
 #include <arrow/table.h>
 #include <arrow/type.h>
+#include <arrow/visitor.h>
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
-#include "deephaven/third_party/fmt/format.h"
+#include "deephaven/third_party/fmt/core.h"
 
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::Int32Chunk;
@@ -143,6 +144,32 @@ std::optional<ElementTypeId::Enum> ArrowUtil::GetElementTypeId(const arrow::Data
   auto message = fmt::format("Can't find Deephaven mapping for arrow data type {}",
       data_type.ToString());
   throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+}
+
+std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(ElementTypeId::Enum element_type_id) {
+  switch (element_type_id) {
+    case ElementTypeId::Enum::kChar: return std::make_shared<arrow::UInt16Type>();
+    case ElementTypeId::Enum::kInt8: return std::make_shared<arrow::Int8Type>();
+    case ElementTypeId::Enum::kInt16: return std::make_shared<arrow::Int16Type>();
+    case ElementTypeId::Enum::kInt32: return std::make_shared<arrow::Int32Type>();
+    case ElementTypeId::Enum::kInt64: return std::make_shared<arrow::Int64Type>();
+    case ElementTypeId::Enum::kFloat: return std::make_shared<arrow::FloatType>();
+    case ElementTypeId::Enum::kDouble: return std::make_shared<arrow::DoubleType>();
+    case ElementTypeId::Enum::kBool: return std::make_shared<arrow::BooleanType>();
+    case ElementTypeId::Enum::kString: return std::make_shared<arrow::StringType>();
+    case ElementTypeId::Enum::kTimestamp: return std::make_shared<arrow::TimestampType>(arrow::TimeUnit::NANO);
+    case ElementTypeId::Enum::kList: {
+      // TODO(kosak)
+      auto underlying = std::make_shared<arrow::Int32Type>();
+      return std::make_shared<arrow::ListType>(underlying);
+    }
+    case ElementTypeId::Enum::kLocalDate: return std::make_shared<arrow::Date64Type>();
+    case ElementTypeId::Enum::kLocalTime: return std::make_shared<arrow::Time64Type>(arrow::TimeUnit::NANO);
+    default: {
+      auto message = fmt::format("Unexpected element_type_id {}", static_cast<int>(element_type_id));
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+  }
 }
 
 std::shared_ptr<Schema> ArrowUtil::MakeDeephavenSchema(const arrow::Schema &schema) {
