@@ -86,6 +86,7 @@ struct DeephavenServerConstants {
   static const char kDateTime[];
   static const char kLocalDate[];
   static const char kLocalTime[];
+  static const char kList[];
 };
 
 template<>
@@ -255,8 +256,7 @@ public:
   }
 
   const char *GetDeephavenServerTypeName() {
-    // TODO(kosak)
-    return "something.list.something";
+    return DeephavenServerConstants::kList;
   }
 
   ColumnBuilder<T> inner_builder_;

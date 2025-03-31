@@ -3,13 +3,32 @@
  */
 #include "deephaven/client/utility/arrow_util.h"
 
-#include <ostream>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <optional>
+#include <utility>
+
+#include <arrow/array/builder_primitive.h>
 #include <arrow/status.h>
 #include <arrow/flight/types.h>
+#include <arrow/table.h>
+#include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
+#include "deephaven/dhcore/column/column_source.h"
+#include "deephaven/dhcore/container/row_sequence.h"
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/format.h"
 
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::clienttable::Schema;
+using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::column::ColumnSourceVisitor;
+using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::utility::MakeReservedVector;
 
@@ -135,5 +154,116 @@ std::shared_ptr<Schema> ArrowUtil::MakeDeephavenSchema(const arrow::Schema &sche
     types.push_back(*type_id);
   }
   return Schema::Create(std::move(names), std::move(types));
+}
+
+namespace {
+struct Visitor final : ColumnSourceVisitor {
+  explicit Visitor(size_t num_rows) : num_rows_(num_rows),
+    row_sequence_(RowSequence::CreateSequential(0, num_rows)),
+    null_flags_(BooleanChunk::Create(num_rows)) {
+  }
+
+  void Visit(const dhcore::column::CharColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::Int8ColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::Int16ColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::Int32ColumnSource &source) final {
+    auto values = Int32Chunk::Create(num_rows_);
+    source.FillChunk(*row_sequence_, &values, &null_flags_);
+    auto validity = MakeValidity();
+    arrow::Int32Builder builder;
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendValues(values.data(), num_rows_, validity.get())));
+    result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Finish()));
+  }
+
+  void Visit(const dhcore::column::Int64ColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::FloatColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::DoubleColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::BooleanColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::StringColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::DateTimeColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::LocalDateColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::LocalTimeColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  std::unique_ptr<uint8_t[]> MakeValidity() {
+    auto result = std::make_unique<uint8_t[]>(num_rows_);
+
+    for (size_t i = 0; i != num_rows_; ++i) {
+      // Invert
+      result[i] = null_flags_.data()[i] ? 0 : 1;
+    }
+
+    return result;
+  }
+
+  size_t num_rows_;
+  std::shared_ptr<RowSequence> row_sequence_;
+  BooleanChunk null_flags_;
+  std::shared_ptr<arrow::Array> result_;
+};
+}  // namespace
+
+std::shared_ptr<arrow::Array> ArrowUtil::MakeArrowArray(const ColumnSource &column_source,
+    size_t num_rows) {
+  Visitor visitor(num_rows);
+  column_source.AcceptVisitor(&visitor);
+  return std::move(visitor.result_);
+}
+
+std::shared_ptr<arrow::Table> ArrowUtil::MakeArrowTable(const ClientTable &client_table) {
+  auto ncols = client_table.NumColumns();
+  auto nrows = client_table.NumRows();
+  auto arrays = MakeReservedVector<std::shared_ptr<arrow::Array>>(ncols);
+
+  for (size_t i = 0; i != ncols; ++i) {
+    auto column_source = client_table.GetColumn(i);
+    auto arrow_array = MakeArrowArray(*column_source, nrows);
+    arrays.emplace_back(std::move(arrow_array));
+  }
+
+  auto schema = MakeArrowSchema(*client_table.Schema());
+
+  return arrow::Table::Make(std::move(schema), arrays);
+}
+
+std::shared_ptr<arrow::Schema> MakeArrowSchema(
+    const deephaven::dhcore::clienttable::Schema &dh_schema) {
+  arrow::SchemaBuilder builder;
+  arrow::Field field();
 }
 }  // namespace deephaven::client::utility

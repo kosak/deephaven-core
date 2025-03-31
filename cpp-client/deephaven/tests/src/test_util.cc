@@ -4,8 +4,12 @@
 #include "deephaven/tests/test_util.h"
 
 #include <cstdlib>
+#include <map>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
+#include "deephaven/client/client.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/utility/utility.h"
@@ -14,6 +18,7 @@
 #include "deephaven/third_party/fmt/ostream.h"
 
 using deephaven::client::TableHandle;
+using deephaven::client::utility::ArrowUtil;
 using deephaven::client::utility::OkOrThrow;
 using deephaven::dhcore::utility::separatedList;
 using deephaven::client::utility::TableMaker;
@@ -176,16 +181,18 @@ TableMakerForTests::~TableMakerForTests() = default;
 void TableComparerForTests::Compare(const TableMaker &expected, const TableHandle &actual) {
   auto exp_as_arrow_table = expected.MakeArrowTable();
   auto act_as_arrow_table = actual.ToArrowTable();
-  return Compare(*exp_as_arrow_table, *act_as_arrow_table);
+  Compare(*exp_as_arrow_table, *act_as_arrow_table);
 }
 
 void TableComparerForTests::Compare(const TableMaker &expected, const arrow::Table &actual) {
   auto exp_as_arrow_table = expected.MakeArrowTable();
-  return Compare(*exp_as_arrow_table, actual);
+  Compare(*exp_as_arrow_table, actual);
 }
 
 void TableComparerForTests::Compare(const TableMaker &expected, const ClientTable &actual) {
-  throw std::runtime_error("TODO(kosak)");
+  auto exp_as_arrow_table = expected.MakeArrowTable();
+  auto act_as_arrow_table = ArrowUtil::MakeArrowTable(actual);
+  Compare(*exp_as_arrow_table, *act_as_arrow_table);
 }
 
 void TableComparerForTests::Compare(const arrow::Table &expected, const arrow::Table &actual) {
