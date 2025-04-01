@@ -11,6 +11,7 @@
 #include <optional>
 #include <utility>
 
+#include <arrow/array/builder_binary.h>
 #include <arrow/array/builder_primitive.h>
 #include <arrow/status.h>
 #include <arrow/flight/types.h>
@@ -26,11 +27,24 @@
 #include "deephaven/third_party/fmt/core.h"
 
 using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::CharChunk;
+using deephaven::dhcore::chunk::DateTimeChunk;
+using deephaven::dhcore::chunk::DoubleChunk;
+using deephaven::dhcore::chunk::FloatChunk;
+using deephaven::dhcore::chunk::Int8Chunk;
+using deephaven::dhcore::chunk::Int16Chunk;
 using deephaven::dhcore::chunk::Int32Chunk;
+using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::LocalDateChunk;
+using deephaven::dhcore::chunk::LocalTimeChunk;
+using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::clienttable::Schema;
 using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::container::RowSequence;
+using deephaven::dhcore::DateTime;
+using deephaven::dhcore::LocalDate;
+using deephaven::dhcore::LocalTime;
 using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::utility::MakeReservedVector;
 
@@ -192,60 +206,102 @@ struct Visitor final : ColumnSourceVisitor {
   }
 
   void Visit(const dhcore::column::CharColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::UInt16Builder builder;
+    auto converter = [](char16_t ch) {
+      return static_cast<uint16_t>(ch);
+    };
+    CopyValuesWithConversion<CharChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::Int8ColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    CopyValues<Int8Chunk, arrow::Int8Builder>(source);
   }
 
   void Visit(const dhcore::column::Int16ColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    CopyValues<Int16Chunk, arrow::Int16Builder>(source);
   }
 
   void Visit(const dhcore::column::Int32ColumnSource &source) final {
-    auto values = Int32Chunk::Create(num_rows_);
-    source.FillChunk(*row_sequence_, &values, &null_flags_);
-    auto validity = MakeValidity();
-    arrow::Int32Builder builder;
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendValues(values.data(), num_rows_, validity.get())));
-    result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Finish()));
+    CopyValues<Int32Chunk, arrow::Int32Builder>(source);
   }
 
   void Visit(const dhcore::column::Int64ColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    CopyValues<Int64Chunk, arrow::Int64Builder>(source);
   }
 
   void Visit(const dhcore::column::FloatColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    CopyValues<FloatChunk, arrow::FloatBuilder>(source);
   }
 
   void Visit(const dhcore::column::DoubleColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    CopyValues<DoubleChunk, arrow::DoubleBuilder>(source);
   }
 
   void Visit(const dhcore::column::BooleanColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::BooleanBuilder builder;
+    auto converter = [](bool b) {
+      return static_cast<uint8_t>(b);
+    };
+    CopyValuesWithConversion<BooleanChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::StringColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::StringBuilder builder;
+    auto converter = [](const std::string &s) -> const std::string & {
+      return s;
+    };
+    CopyValuesWithConversion<StringChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::DateTimeColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::TimestampBuilder builder(arrow::timestamp(arrow::TimeUnit::NANO, "UTC"),
+        arrow::default_memory_pool());
+    auto converter = [](const DateTime &dt) {
+      return dt.Nanos();
+    };
+    CopyValuesWithConversion<DateTimeChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::LocalDateColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::Date64Builder builder;
+    auto converter = [](const LocalDate &ld) {
+      return ld.Millis();
+    };
+    CopyValuesWithConversion<LocalDateChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::LocalTimeColumnSource &source) final {
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::Time64Builder builder(arrow::time64(arrow::TimeUnit::NANO), arrow::default_memory_pool());
+    auto converter = [](const LocalTime &lt) {
+      return lt.Nanos();
+    };
+    CopyValuesWithConversion<LocalTimeChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+  }
+
+  template<typename TChunk, typename TBuilder, typename TColumnSource>
+  void CopyValues(const TColumnSource &source) {
+    auto values = TChunk::Create(num_rows_);
+    source.FillChunk(*row_sequence_, &values, &null_flags_);
+    auto validity = MakeValidity();
+    TBuilder builder;
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendValues(values.data(), num_rows_, validity.get())));
+    result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Finish()));
+  }
+
+  template<typename TChunk, typename TColumnSource, typename TBuilder, typename TConverter>
+  void CopyValuesWithConversion(const TColumnSource &source, TBuilder *builder,
+      const TConverter &converter) {
+    auto values = TChunk::Create(num_rows_);
+    source.FillChunk(*row_sequence_, &values, &null_flags_);
+    auto validity = MakeValidity();
+    for (const auto &value : values) {
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder->Append(converter(value))));
+    }
+    result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder->Finish()));
   }
 
   std::unique_ptr<uint8_t[]> MakeValidity() {
