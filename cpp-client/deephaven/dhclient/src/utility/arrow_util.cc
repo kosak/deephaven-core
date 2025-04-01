@@ -211,31 +211,31 @@ struct Visitor final : ColumnSourceVisitor {
     auto converter = [](char16_t ch) {
       return static_cast<uint16_t>(ch);
     };
-    CopyValuesWithConversion<CharChunk>(source, &builder, converter);
+    CopyValues<CharChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::Int8ColumnSource &source) final {
-    CopyValues<Int8Chunk, arrow::Int8Builder>(source);
+    SimpleCopyValues<Int16Chunk, arrow::Int32Builder>(source);
   }
 
   void Visit(const dhcore::column::Int16ColumnSource &source) final {
-    CopyValues<Int16Chunk, arrow::Int16Builder>(source);
+    SimpleCopyValues<Int16Chunk, arrow::Int32Builder>(source);
   }
 
   void Visit(const dhcore::column::Int32ColumnSource &source) final {
-    CopyValues<Int32Chunk, arrow::Int32Builder>(source);
+    SimpleCopyValues<Int32Chunk, arrow::Int32Builder>(source);
   }
 
   void Visit(const dhcore::column::Int64ColumnSource &source) final {
-    CopyValues<Int64Chunk, arrow::Int64Builder>(source);
+    SimpleCopyValues<Int64Chunk, arrow::Int64Builder>(source);
   }
 
   void Visit(const dhcore::column::FloatColumnSource &source) final {
-    CopyValues<FloatChunk, arrow::FloatBuilder>(source);
+    SimpleCopyValues<FloatChunk, arrow::FloatBuilder>(source);
   }
 
   void Visit(const dhcore::column::DoubleColumnSource &source) final {
-    CopyValues<DoubleChunk, arrow::DoubleBuilder>(source);
+    SimpleCopyValues<DoubleChunk, arrow::DoubleBuilder>(source);
   }
 
   void Visit(const dhcore::column::BooleanColumnSource &source) final {
@@ -243,7 +243,7 @@ struct Visitor final : ColumnSourceVisitor {
     auto converter = [](bool b) {
       return static_cast<uint8_t>(b);
     };
-    CopyValuesWithConversion<BooleanChunk>(source, &builder, converter);
+    CopyValues<BooleanChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::StringColumnSource &source) final {
@@ -251,7 +251,7 @@ struct Visitor final : ColumnSourceVisitor {
     auto converter = [](const std::string &s) -> const std::string & {
       return s;
     };
-    CopyValuesWithConversion<StringChunk>(source, &builder, converter);
+    CopyValues<StringChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::DateTimeColumnSource &source) final {
@@ -260,7 +260,7 @@ struct Visitor final : ColumnSourceVisitor {
     auto converter = [](const DateTime &dt) {
       return dt.Nanos();
     };
-    CopyValuesWithConversion<DateTimeChunk>(source, &builder, converter);
+    CopyValues<DateTimeChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::LocalDateColumnSource &source) final {
@@ -268,7 +268,7 @@ struct Visitor final : ColumnSourceVisitor {
     auto converter = [](const LocalDate &ld) {
       return ld.Millis();
     };
-    CopyValuesWithConversion<LocalDateChunk>(source, &builder, converter);
+    CopyValues<LocalDateChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::LocalTimeColumnSource &source) final {
@@ -276,7 +276,7 @@ struct Visitor final : ColumnSourceVisitor {
     auto converter = [](const LocalTime &lt) {
       return lt.Nanos();
     };
-    CopyValuesWithConversion<LocalTimeChunk>(source, &builder, converter);
+    CopyValues<LocalTimeChunk>(source, &builder, converter);
   }
 
   void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
@@ -284,36 +284,28 @@ struct Visitor final : ColumnSourceVisitor {
   }
 
   template<typename TChunk, typename TBuilder, typename TColumnSource>
-  void CopyValues(const TColumnSource &source) {
-    auto values = TChunk::Create(num_rows_);
-    source.FillChunk(*row_sequence_, &values, &null_flags_);
-    auto validity = MakeValidity();
+  void SimpleCopyValues(const TColumnSource &source) {
     TBuilder builder;
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AppendValues(values.data(), num_rows_, validity.get())));
-    result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Finish()));
+    using value_type = typename TChunk::value_type;
+    auto identity = [](value_type value) {
+      return value;
+    };
+    CopyValues<TChunk>(source, &builder, identity);
   }
 
-  template<typename TChunk, typename TColumnSource, typename TBuilder, typename TConverter>
-  void CopyValuesWithConversion(const TColumnSource &source, TBuilder *builder,
-      const TConverter &converter) {
-    auto values = TChunk::Create(num_rows_);
-    source.FillChunk(*row_sequence_, &values, &null_flags_);
-    auto validity = MakeValidity();
-    for (const auto &value : values) {
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder->Append(converter(value))));
+  template<typename TChunk, typename TBuilder, typename TColumnSource, typename TConverter>
+  void CopyValues(const TColumnSource &source, TBuilder *builder,
+      const TConverter converter) {
+    auto chunk = TChunk::Create(num_rows_);
+    source.FillChunk(*row_sequence_, &chunk, &null_flags_);
+    for (size_t i = 0; i != num_rows_; ++i) {
+      if (!null_flags_[i]) {
+        OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder->Append(converter(chunk.data()[i]))));
+      } else {
+        OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder->AppendNull()));
+      }
     }
     result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder->Finish()));
-  }
-
-  std::unique_ptr<uint8_t[]> MakeValidity() {
-    auto result = std::make_unique<uint8_t[]>(num_rows_);
-
-    for (size_t i = 0; i != num_rows_; ++i) {
-      // Invert
-      result[i] = null_flags_.data()[i] ? 0 : 1;
-    }
-
-    return result;
   }
 
   size_t num_rows_;
