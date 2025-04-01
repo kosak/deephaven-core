@@ -209,13 +209,7 @@ struct Visitor final : ColumnSourceVisitor {
   }
 
   void Visit(const dhcore::column::CharColumnSource &source) final {
-    auto src_chunk = PopulateChunk<CharChunk>(source);
-    auto dest_chunk = UInt16Chunk::Create(num_rows_);
-    for (size_t i = 0; i != num_rows_; ++i) {
-      dest_chunk[i] = static_cast<uint16_t>(src_chunk[i]);
-    }
-    arrow::UInt16Builder builder;
-    PopulateAndFinishBuilder(dest_chunk, &builder);
+    SimpleCopyValues<CharChunk, arrow::UInt16Builder>(source);
   }
 
   void Visit(const dhcore::column::Int8ColumnSource &source) final {
@@ -243,13 +237,7 @@ struct Visitor final : ColumnSourceVisitor {
   }
 
   void Visit(const dhcore::column::BooleanColumnSource &source) final {
-    auto src_chunk = PopulateChunk<BooleanChunk>(source);
-    auto dest_chunk = UInt8Chunk::Create(num_rows_);
-    for (size_t i = 0; i != num_rows_; ++i) {
-      dest_chunk[i] = static_cast<uint16_t>(src_chunk[i]);
-    }
-    arrow::UInt16Builder builder;
-    PopulateAndFinishBuilder(dest_chunk, &builder);
+    SimpleCopyValues<BooleanChunk, arrow::BooleanBuilder>(source);
   }
 
   void Visit(const dhcore::column::StringColumnSource &source) final {
