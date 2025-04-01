@@ -219,11 +219,11 @@ struct Visitor final : ColumnSourceVisitor {
   }
 
   void Visit(const dhcore::column::Int8ColumnSource &source) final {
-    SimpleCopyValues<Int16Chunk, arrow::Int32Builder>(source);
+    SimpleCopyValues<Int8Chunk, arrow::Int8Builder>(source);
   }
 
   void Visit(const dhcore::column::Int16ColumnSource &source) final {
-    SimpleCopyValues<Int16Chunk, arrow::Int32Builder>(source);
+    SimpleCopyValues<Int16Chunk, arrow::Int16Builder>(source);
   }
 
   void Visit(const dhcore::column::Int32ColumnSource &source) final {
@@ -278,7 +278,7 @@ struct Visitor final : ColumnSourceVisitor {
   }
 
   void Visit(const dhcore::column::LocalTimeColumnSource &source) final {
-    auto src_chunk = PopulateChunk<DateTimeChunk>(source);
+    auto src_chunk = PopulateChunk<LocalTimeChunk>(source);
     auto dest_chunk = Int64Chunk::Create(num_rows_);
     for (size_t i = 0; i != num_rows_; ++i) {
       dest_chunk[i] = src_chunk[i].Nanos();
