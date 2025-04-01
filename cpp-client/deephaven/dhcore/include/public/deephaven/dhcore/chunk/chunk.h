@@ -264,7 +264,15 @@ public:
   /**
    * Implements the visitor pattern.
    */
+  virtual void Visit(const UInt8Chunk &) = 0;
+  /**
+   * Implements the visitor pattern.
+   */
   virtual void Visit(const UInt16Chunk &) = 0;
+  /**
+   * Implements the visitor pattern.
+   */
+  virtual void Visit(const UInt32Chunk &) = 0;
   /**
    * Implements the visitor pattern.
    */
