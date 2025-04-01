@@ -171,7 +171,8 @@ std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(ElementTypeId::Enum ele
     case ElementTypeId::Enum::kDouble: return std::make_shared<arrow::DoubleType>();
     case ElementTypeId::Enum::kBool: return std::make_shared<arrow::BooleanType>();
     case ElementTypeId::Enum::kString: return std::make_shared<arrow::StringType>();
-    case ElementTypeId::Enum::kTimestamp: return std::make_shared<arrow::TimestampType>(arrow::TimeUnit::NANO);
+    case ElementTypeId::Enum::kTimestamp: return std::make_shared<arrow::TimestampType>(
+        arrow::TimeUnit::NANO, "UTC");
     case ElementTypeId::Enum::kList: {
       // TODO(kosak)
       auto underlying = std::make_shared<arrow::Int32Type>();

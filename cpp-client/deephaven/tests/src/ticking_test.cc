@@ -3,9 +3,12 @@
  */
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
+#include <stdexcept>
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/tests/test_util.h"
 #include "deephaven/client/client.h"
@@ -277,7 +280,8 @@ TEST_CASE("Ticking Table: all the data is eventually present", "[ticking]") {
           "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)II * 'PT1S')"
       })
       .LastBy("II")
-      .Sort(SortPair::Ascending("II"));
+      .Sort(SortPair::Ascending("II"))
+      .DropColumns({"II", "Timestamp"});
 
   auto callback = std::make_shared<WaitForPopulatedTableCallback>(target);
   auto cookie = table.Subscribe(callback);
