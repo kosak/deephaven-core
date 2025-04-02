@@ -7,6 +7,7 @@
 #include <arrow/scalar.h>
 #include <arrow/flight/client.h>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <future>
 #include <memory>

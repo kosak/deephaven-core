@@ -18,6 +18,7 @@
 #include <arrow/table.h>
 #include <arrow/type.h>
 #include <arrow/visitor.h>
+#include "deephaven/client/arrowutil/arrow_array_converter.h"
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
 #include "deephaven/dhcore/column/column_source.h"
@@ -26,6 +27,7 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/core.h"
 
+using deephaven::client::arrowutil::ArrowArrayConverter;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::CharChunk;
 using deephaven::dhcore::chunk::DateTimeChunk;
@@ -208,7 +210,8 @@ std::shared_ptr<arrow::Table> ArrowUtil::MakeArrowTable(const ClientTable &clien
 
   for (size_t i = 0; i != ncols; ++i) {
     auto column_source = client_table.GetColumn(i);
-    auto arrow_array = MakeArrowArray(*column_source, nrows);
+    auto arrow_array = ArrowArrayConverter::ColumnSourceToArray(
+        std::move(column_source), nrows);
     arrays.emplace_back(std::move(arrow_array));
   }
 

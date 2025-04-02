@@ -55,8 +55,6 @@ public:
   static std::shared_ptr<Schema> MakeDeephavenSchema(const arrow::Schema &schema);
 
   static std::shared_ptr<arrow::Table> MakeArrowTable(const ClientTable &client_table);
-  static std::shared_ptr<arrow::Array> MakeArrowArray(const ColumnSource &column_source,
-      size_t num_rows);
   static std::shared_ptr<arrow::Schema> MakeArrowSchema(
       const deephaven::dhcore::clienttable::Schema &dh_schema);
   };
