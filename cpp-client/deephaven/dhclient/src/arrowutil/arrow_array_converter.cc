@@ -4,18 +4,24 @@
 #include "deephaven/client/arrowutil/arrow_array_converter.h"
 
 #include <memory>
+#include <utility>
 #include <arrow/visitor.h>
 #include <arrow/array/array_base.h>
+#include <arrow/array/array_primitive.h>
+#include "deephaven/client/arrowutil/arrow_column_source.h"
+#include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/column/column_source.h"
+#include "deephaven/dhcore/utility/utility.h"
 
 namespace deephaven::client::arrowutil {
-
-using ColumnSource = deephaven::dhcore::column::ColumnSource;
+using deephaven::client::utility::OkOrThrow;
+using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::utility::VerboseCast;
 
 namespace {
 struct ArrayToColumnSourceVisitor final : public arrow::ArrayVisitor {
-  explicit ArrayToColumnSourceVisitor(const std::shared_ptr <arrow::Array> &array) : array_(
-      array) {}
+  explicit ArrayToColumnSourceVisitor(const std::shared_ptr<arrow::Array> &array) :
+    array_(array) {}
 
   arrow::Status Visit(const arrow::Int8Array &/*array*/) final {
     auto typed_array = std::dynamic_pointer_cast<arrow::Int8Array>(array_);
@@ -89,8 +95,8 @@ struct ArrayToColumnSourceVisitor final : public arrow::ArrayVisitor {
     return arrow::Status::OK();
   }
 
-  const std::shared_ptr <arrow::Array> &array_;
-  std::shared_ptr <ColumnSource> result_;
+  const std::shared_ptr<arrow::Array> &array_;
+  std::shared_ptr<ColumnSource> result_;
 };
 }  // namespace
 
@@ -112,10 +118,10 @@ std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(const arr
   return {std::move(v.result_), static_cast<size_t>(list_scalar_value->length())};
 }
 
-std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(const arrow::Array &array) {
+std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(
+    const std::shared_ptr<arrow::Array> &array) {
   ArrayToColumnSourceVisitor v(array);
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(list_scalar_value->Accept(&v)));
-  return {std::move(v.result_), static_cast<size_t>(list_scalar_value->length())};
+  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(array->Accept(&v)));
+  return std::move(v.result_);
 }
-
 }  // namespace deephaven::client::arrowutil
