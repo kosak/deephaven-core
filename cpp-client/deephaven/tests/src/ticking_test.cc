@@ -301,15 +301,23 @@ TEST_CASE("Ticking Table: all the data is eventually present", "[ticking]") {
 
 class WaitForGroupedTableCallback final : public CommonBase {
 public:
+  explicit WaitForGroupedTableCallback(size_t target) : target_(target) {}
+
   void OnTick(deephaven::dhcore::ticking::TickingUpdate update) final {
     const auto &current = update.Current();
     std::cout << "=== The Full Table ===\n"
         << current->Stream(true, true)
         << '\n';
-    if (update.Current()->NumRows() > 1) {
-      NotifyDone();
+    if (update.Current()->NumRows() < target_) {
+      // Not fully populated.
+      return;
     }
+
+    NotifyDone();
   }
+
+private:
+  size_t target_ = 0;
 };
 
 TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
@@ -317,10 +325,13 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   auto tm = client.GetManager();
 
   auto table = tm.TimeTable("PT0:00:0.5")
-      .Select({"Mod2 = ii % 2", "II = (long)ii"})
-      .By("Mod2");
+      .Select({"Mod3 = ii % 3",
+          "Chars = ii == 5 ? null : (char)(ii + 'a')"})
+      .By("Mod3");
 
-  auto callback = std::make_shared<WaitForGroupedTableCallback>();
+  constexpr const int kNumRows = 10;
+
+  auto callback = std::make_shared<WaitForGroupedTableCallback>(kNumRows);
   auto cookie = table.Subscribe(callback);
 
   while (true) {
