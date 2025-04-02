@@ -106,6 +106,10 @@ public:
         std::move(slices_), std::move(slice_nulls_), num_slices_);
   }
 
+  arrow::Status Visit(const arrow::UInt16Type &/*type*/) final {
+    return VisitHelper<char16_t, CharChunk>();
+  }
+
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
     return VisitHelper<int32_t, Int32Chunk>();
   }
