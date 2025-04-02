@@ -75,8 +75,12 @@ set(ALL_FILES
 
     src/arrowutil/arrow_client_table.cc
     src/arrowutil/arrow_column_source.cc
+    src/arrowutil/arrow_array_to_column_source.cc
+    src/arrowutil/column_source_to_arrow_array.cc
+    include/private/deephaven/client/arrowutil/arrow_array_converter.h
     include/private/deephaven/client/arrowutil/arrow_client_table.h
     include/private/deephaven/client/arrowutil/arrow_column_source.h
+    include/private/deephaven/client/arrowutil/arrow_table_converter.h
     include/private/deephaven/client/arrowutil/arrow_value_converter.h
     include/private/deephaven/client/arrowutil/arrow_visitors.h
 

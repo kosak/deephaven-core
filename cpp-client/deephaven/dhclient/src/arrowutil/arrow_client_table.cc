@@ -263,7 +263,7 @@ struct Visitor final : public arrow::TypeVisitor {
 
   /**
    * When the element is a list, we use recursion to extract the flattened elements of the list into
-   * a single column source. Then  we extract the data out of that column source into a single pair
+   * a single column source. Then e extract the data out of that column source into a single pair
    * of arrays (one for the flattened data, and one for the flattened null flags), and then we
    * reconstitute the 2D list structure as a ColumnSource<shared_ptr<ContainerBase>>, where the
    * shared_ptr<ContainerBase> has the appropriate dynamic type.
@@ -277,7 +277,7 @@ struct Visitor final : public arrow::TypeVisitor {
    *
    * It has 4 slices.
    * When it is flattened, it looks like [a, b, c, d, e, f, null, g]. There are 8 elements in the
-   * flattened data. Note: that troughout this discussion it will be important to recognize the
+   * flattened data. Note: that throughout this discussion it will be important to recognize the
    * difference between a slice that is null (the second slice, above), a slice that is empty
    * (the third slice above), and a slice that is not null but contains a null element (the fourth
    * element of the fourth slice above).
