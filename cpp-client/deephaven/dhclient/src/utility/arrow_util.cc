@@ -210,8 +210,7 @@ std::shared_ptr<arrow::Table> ArrowUtil::MakeArrowTable(const ClientTable &clien
 
   for (size_t i = 0; i != ncols; ++i) {
     auto column_source = client_table.GetColumn(i);
-    auto arrow_array = ArrowArrayConverter::ColumnSourceToArray(
-        std::move(column_source), nrows);
+    auto arrow_array = ArrowArrayConverter::ColumnSourceToArray(*column_source, nrows);
     arrays.emplace_back(std::move(arrow_array));
   }
 
