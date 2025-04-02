@@ -7,6 +7,9 @@
 #include <arrow/buffer.h>
 #include <arrow/scalar.h>
 #include <atomic>
+#include <cstddef>
+#include <memory>
+#include <vector>
 #include <grpc/support/log.h>
 #include "deephaven/client/arrowutil/arrow_column_source.h"
 #include "deephaven/client/server/server.h"
