@@ -14,6 +14,7 @@
 #include <arrow/array/array_base.h>
 #include <arrow/array/array_primitive.h>
 #include <arrow/scalar.h>
+#include <arrow/builder.h>
 #include "deephaven/client/arrowutil/arrow_column_source.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/chunk/chunk.h"
@@ -40,6 +41,8 @@ using deephaven::dhcore::chunk::Int8Chunk;
 using deephaven::dhcore::chunk::Int16Chunk;
 using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::LocalDateChunk;
+using deephaven::dhcore::chunk::LocalTimeChunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::chunk::UInt64Chunk;
 using deephaven::dhcore::column::BooleanColumnSource;
@@ -59,7 +62,6 @@ using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::utility::demangle;
 using deephaven::dhcore::utility::MakeReservedVector;
-using deephaven::dhcore::utility::VerboseCast;
 
 namespace {
 template<typename TArrowArray>

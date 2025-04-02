@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <arrow/type.h>
 #include "deephaven/dhcore/column/column_source.h"
