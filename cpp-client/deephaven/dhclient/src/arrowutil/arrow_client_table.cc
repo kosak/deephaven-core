@@ -116,10 +116,6 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
 
 
 
-std::shared_ptr<ColumnSource> MakeColumnSource(const arrow::ChunkedArray &chunked_array) {
-  Visitor visitor(chunked_array);
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(chunked_array.type()->Accept(&visitor)));
-  return std::move(visitor.result_);
-}
+
 }  // namespace
 }  // namespace deephaven::client::arrowutil
