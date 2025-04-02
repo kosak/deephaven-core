@@ -3,15 +3,19 @@
  */
 #include "deephaven/client/subscription/subscribe_thread.h"
 
-#include <arrow/array.h>
 #include <arrow/buffer.h>
 #include <arrow/scalar.h>
-#include <atomic>
 #include <cstddef>
+#include <exception>
 #include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <thread>
+#include <utility>
 #include <vector>
 #include <grpc/support/log.h>
 #include "deephaven/client/arrowutil/arrow_column_source.h"
+#include "deephaven/client/arrowutil/arrow_array_converter.h"
 #include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/client/utility/executor.h"
@@ -27,6 +31,7 @@ using deephaven::dhcore::ticking::TickingCallback;
 using deephaven::dhcore::utility::MakeReservedVector;
 using deephaven::dhcore::utility::separatedList;
 using deephaven::dhcore::utility::VerboseCast;
+using deephaven::client::arrowutil::ArrowArrayConverter;
 using deephaven::client::arrowutil::BooleanArrowColumnSource;
 using deephaven::client::arrowutil::CharArrowColumnSource;
 using deephaven::client::arrowutil::DateTimeArrowColumnSource;
@@ -225,6 +230,31 @@ void UpdateProcessor::RunUntilCancelled(std::shared_ptr<UpdateProcessor> self) {
   }
 }
 
+/**
+ * The columns coming back from Barrage are all wrapped in a list. This is done in order to
+ * satisfy an Arrow invariant that all the columns coming back in a message have the same length.
+ * In Barrage, in the modify case, the columns that come in may have different sizes. But we
+ * wrap them in an additional List container. So instead of sending e.g.
+ * IntArray[12 items], DoubleArray[5 items]
+ * Barrage will send
+ * List[1 item], List[1 item]
+ * where the sole element in the first item is the IntArray[12 items]
+ * and the sole element in the second item is the DoubleArray[5 items]
+ */
+std::shared_ptr<arrow::Array> UnwrapList(const arrow::Array &array) {
+  const auto *list_array = VerboseCast<const arrow::ListArray *>(DEEPHAVEN_LOCATION_EXPR(&array));
+
+  if (list_array->length() != 1) {
+    auto message = fmt::format("Expected array of length 1, got {}", array.length());
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+  }
+
+  const auto list_element = list_array->GetScalar(0).ValueOrDie();
+  const auto *list_scalar = VerboseCast<const arrow::ListScalar *>(
+      DEEPHAVEN_LOCATION_EXPR(list_element.get()));
+  return list_scalar->value;
+}
+
 void UpdateProcessor::RunForeverHelper() {
   // Reuse the chunk for efficiency.
   BarrageProcessor bp(schema_);
@@ -241,9 +271,10 @@ void UpdateProcessor::RunForeverHelper() {
     auto column_sources = MakeReservedVector<std::shared_ptr<ColumnSource>>(cols.size());
     auto sizes = MakeReservedVector<size_t>(cols.size());
     for (const auto &col : cols) {
-      auto css = ArrayToColumnSource(*col);
-      column_sources.push_back(std::move(css.columnSource_));
-      sizes.push_back(css.size_);
+      auto array = UnwrapList(*col);
+      sizes.push_back(array->length());
+      auto cs = ArrowArrayConverter::ArrayToColumnSource(std::move(array));
+      column_sources.push_back(std::move(cs));
     }
 
     const void *metadata = nullptr;

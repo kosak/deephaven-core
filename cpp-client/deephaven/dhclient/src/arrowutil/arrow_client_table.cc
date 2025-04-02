@@ -2,11 +2,13 @@
  * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
  */
 #include "deephaven/client/arrowutil/arrow_client_table.h"
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
+#include <arrow/table.h>
 #include "deephaven/client/arrowutil/arrow_array_converter.h"
 #include "deephaven/client/arrowutil/arrow_column_source.h"
 #include "deephaven/client/utility/arrow_util.h"

@@ -348,23 +348,7 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
 };
 }  // namespace
 
-//std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(const arrow::Array &array) {
-//  const auto *list_array = VerboseCast<const arrow::ListArray *>(DEEPHAVEN_LOCATION_EXPR(&array));
-//
-//  if (list_array->length() != 1) {
-//    auto message = fmt::format("Expected array of length 1, got {}", array.length());
-//    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-//  }
-//
-//  const auto list_element = list_array->GetScalar(0).ValueOrDie();
-//  const auto *list_scalar = VerboseCast<const arrow::ListScalar *>(
-//      DEEPHAVEN_LOCATION_EXPR(list_element.get()));
-//  const auto &list_scalar_value = list_scalar->value;
-//
-//  ArrayToColumnSourceVisitor v(list_scalar_value);
-//  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(list_scalar_value->Accept(&v)));
-//  return {std::move(v.result_), static_cast<size_t>(list_scalar_value->length())};
-//}
+
 
 std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(
     std::shared_ptr<arrow::Array> array) {
