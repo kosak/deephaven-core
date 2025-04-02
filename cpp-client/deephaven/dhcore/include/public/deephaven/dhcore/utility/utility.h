@@ -18,6 +18,11 @@
 #include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
+// Forward declaration
+namespace deephaven::dhcore::container {
+class ContainerBase;
+} // namespace deephaven::dhcore::container
+
 namespace deephaven::dhcore::utility {
 template<typename Dest, typename Src>
 inline Dest Bit_cast(const Src &item) {
@@ -251,6 +256,21 @@ TypeName(const T& t) {
 
 [[nodiscard]] std::string
 ObjectId(const std::string &class_short_name, void* this_ptr);
+
+class ElementRenderer {
+public:
+  template<typename T>
+  void Render(std::ostream &s, const T &item) const {
+    s << item;
+  }
+
+  void Render(std::ostream &s,
+      const std::shared_ptr<deephaven::dhcore::container::ContainerBase> &item) const;
+
+  void Render(std::ostream &s, const bool &item) const {
+    s << (item ? "true" : "false");
+  }
+};
 }  // namespace deephaven::dhcore::utility
 
 // Add the specialization for the DebugInfo formatter
@@ -258,4 +278,3 @@ template<> struct fmt::formatter<deephaven::dhcore::utility::DebugInfo> : fmt::o
 
 template<typename Iterator, typename Callback>
 struct fmt::formatter<deephaven::dhcore::utility::internal::SeparatedListAdaptor<Iterator, Callback>> : fmt::ostream_formatter {};
-

@@ -39,15 +39,18 @@ public:
   }
 
 protected:
+  virtual std::ostream &StreamTo(std::ostream &s) const = 0;
+
   size_t size_ = 0;
 
   friend std::ostream &operator<<(std::ostream &s, const ContainerBase &o) {
-    return s << "CONTAINERBASE";
+    return o.StreamTo(s);
   }
 };
 
 template<typename T>
-class Container : public ContainerBase {
+class Container final : public ContainerBase {
+  using ElementRenderer = deephaven::dhcore::utility::ElementRenderer;
   struct Private{};
 public:
   static std::shared_ptr<Container<T>> Create(std::shared_ptr<T[]> data,
@@ -76,6 +79,17 @@ public:
   }
 
 private:
+  std::ostream &StreamTo(std::ostream &s) const final {
+    ElementRenderer renderer;
+    s << '[';
+    const char *sep = "";
+    for (const auto &element : *this) {
+      s << sep << element;
+      sep = ",";
+    }
+    return s << ']';
+  }
+
   std::shared_ptr<T[]> data_;
   std::shared_ptr<bool[]> nulls_;
 };

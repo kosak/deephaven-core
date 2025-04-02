@@ -28,6 +28,7 @@ using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::container::RowSequenceIterator;
+using deephaven::dhcore::utility::ElementRenderer;
 using deephaven::dhcore::utility::MakeReservedVector;
 using deephaven::dhcore::utility::separatedList;
 using deephaven::dhcore::utility::SimpleOstringstream;
@@ -126,22 +127,6 @@ private:
   std::shared_ptr<uint64_t[]> data_;
   const uint64_t *begin_ = nullptr;
   const uint64_t *end_ = nullptr;
-};
-
-class ElementRenderer {
-public:
-  template<typename T>
-  void Render(std::ostream &s, const T &item) const {
-    s << item;
-  }
-
-  void Render(std::ostream &s, const std::shared_ptr<ContainerBase> &item) const {
-    s << *item;
-  }
-
-  void Render(std::ostream &s, const bool &item) const {
-    s << (item ? "true" : "false");
-  }
 };
 
 class ChunkElementStreamer final {

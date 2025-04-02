@@ -18,6 +18,7 @@ set(ALL_FILES
     src/column/column_source.cc
     src/column/column_source_helpers.cc
     src/column/column_source_utils.cc
+    src/container/container.cc
     src/container/row_sequence.cc
     src/immerutil/abstract_flex_vector.cc
     src/immerutil/immer_column_source.cc
@@ -105,7 +106,6 @@ set(ALL_FILES
 
     # we vendor the date library also but it's private to us, so we don't export its .h file
     third_party/date/include/date/date.h
-        src/container/container.cc
 )
 
 #
