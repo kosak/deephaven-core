@@ -3,18 +3,29 @@
  */
 #include "deephaven/dhcore/clienttable/client_table.h"
 
+#include <cstddef>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
 #include "deephaven/dhcore/chunk/chunk_maker.h"
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
+#include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/utility/utility.h"
-
-#include <optional>
 
 using deephaven::dhcore::chunk::AnyChunk;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::ChunkMaker;
 using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::container::RowSequenceIterator;
 using deephaven::dhcore::utility::MakeReservedVector;
@@ -117,9 +128,25 @@ private:
   const uint64_t *end_ = nullptr;
 };
 
-class ElementStreamer final {
+class ElementRenderer {
 public:
-  ElementStreamer(std::ostream &s, size_t index, bool null_flag, bool highlight) :
+  template<typename T>
+  void Render(std::ostream &s, const T &item) const {
+    s << item;
+  }
+
+  void Render(std::ostream &s, const std::shared_ptr<ContainerBase> &item) const {
+    s << *item;
+  }
+
+  void Render(std::ostream &s, const bool &item) const {
+    s << (item ? "true" : "false");
+  }
+};
+
+class ChunkElementStreamer final {
+public:
+  ChunkElementStreamer(std::ostream &s, size_t index, bool null_flag, bool highlight) :
       s_(s), index_(index), null_flag_(null_flag), highlight_(highlight) {}
 
   template<typename T>
@@ -131,7 +158,7 @@ public:
     if (null_flag_) {
       s_ << "null";
     } else {
-      Render(chunk.data()[index_]);
+      renderer_.Render(s_, chunk.data()[index_]);
     }
 
     if (highlight_) {
@@ -140,19 +167,11 @@ public:
   }
 
 private:
-  template<typename T>
-  void Render(const T &item) const {
-    s_ << item;
-  }
-
-  void Render(const bool &item) const {
-    s_ << (item ? "true" : "false");
-  }
-
   std::ostream &s_;
   size_t index_ = 0;
   bool null_flag_ = false;
   bool highlight_ = false;
+  ElementRenderer renderer_ = {};
 };
 
 struct RowSequenceState {
@@ -261,11 +280,11 @@ void PrintTableData(std::ostream &stream, const ClientTable &table,
         separator = "\t";
         auto null_flag = null_flag_chunks[i].data()[chunk_offset];
         auto highlight = highlight_cells && merger.IsCellPresent(i, chunk_offset);
-        ElementStreamer es(stream, chunk_offset, null_flag, highlight);
+        ChunkElementStreamer es(stream, chunk_offset, null_flag, highlight);
         data_chunks[i].Visit(es);
       }
 
-      stream << std::endl;
+      stream << '\n';
     }
   }
 }

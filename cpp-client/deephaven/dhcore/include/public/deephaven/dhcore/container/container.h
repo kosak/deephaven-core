@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <iostream>
 #include <utility>
 #include "deephaven/dhcore/utility/utility.h"
 
@@ -39,6 +40,10 @@ public:
 
 protected:
   size_t size_ = 0;
+
+  friend std::ostream &operator<<(std::ostream &s, const ContainerBase &o) {
+    return s << "CONTAINERBASE";
+  }
 };
 
 template<typename T>
