@@ -84,8 +84,9 @@ private:
     s << '[';
     const char *sep = "";
     for (const auto &element : *this) {
-      s << sep << element;
+      s << sep;
       sep = ",";
+      renderer.Render(s, element);
     }
     return s << ']';
   }
