@@ -106,13 +106,17 @@ public:
         std::move(slices_), std::move(slice_nulls_), num_slices_);
   }
 
-//  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-//    return VisitHelper<int32_t, Int32Chunk>();
-//  }
-//
-//  arrow::Status Visit(const arrow::StringType &/*type*/) final {
-//    return VisitHelper<std::string, StringChunk>();
-//  }
+  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
+    return VisitHelper<int32_t, Int32Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
+    return VisitHelper<int64_t, Int64Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::StringType &/*type*/) final {
+    return VisitHelper<std::string, StringChunk>();
+  }
 
 private:
   template<typename TElement, typename TChunk>

@@ -308,6 +308,7 @@ public:
     std::cout << "=== The Full Table ===\n"
         << current->Stream(true, true)
         << '\n';
+    NotifyDone();
   }
 
 private:

@@ -4,8 +4,9 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
-#include <optional>
+#include <utility>
 #include "deephaven/dhcore/utility/utility.h"
 
 namespace deephaven::dhcore::container {

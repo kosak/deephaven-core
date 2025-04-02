@@ -3,6 +3,11 @@
  */
 #pragma once
 
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/chunk/chunk_traits.h"
 #include "deephaven/dhcore/column/column_source.h"
