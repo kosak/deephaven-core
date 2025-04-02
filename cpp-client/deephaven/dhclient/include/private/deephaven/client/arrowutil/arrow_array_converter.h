@@ -1,8 +1,22 @@
-//
-// Created by kosak on 4/2/25.
-//
+/*
+ * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+ */
+#pragma once
 
-#ifndef DEEPHAVEN_ARROW_ARRAY_CONVERTER_H
-#define DEEPHAVEN_ARROW_ARRAY_CONVERTER_H
+#include <memory>
+#include <arrow/type.h>
+#include "deephaven/dhcore/column/column_source.h"
 
-#endif //DEEPHAVEN_ARROW_ARRAY_CONVERTER_H
+namespace deephaven::client::arrowutil {
+class ArrowArrayConverter {
+  /**
+   * Convenience using.
+   */
+  using ColumnSource = deephaven::dhcore::column::ColumnSource;
+public:
+  std::shared_ptr<ColumnSource> ArrayToColumnSource(const arrow::Array &array);
+
+  std::shared_ptr<arrow::Array> ColumnSourceToArray(const ColumnSource &column_source,
+      size_t num_rows);
+};
+}  // namespace deephaven::client::arrowutil
