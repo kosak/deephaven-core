@@ -5,8 +5,10 @@
 
 #include <arrow/buffer.h>
 #include <arrow/scalar.h>
+#include <arrow/flight/client.h>
 #include <cstddef>
 #include <exception>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
