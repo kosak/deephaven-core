@@ -5,15 +5,17 @@
 
 #include <chrono>
 #include <cstring>
+#include <cstdint>
 #include <cstdio>
+#include <exception>
+#include <stdexcept>
 #include <iostream>
-#include <memory>
 #include <optional>
 #include <string>
-#include <thread>
+#include <string_view>
 #include <typeinfo>
 #include <vector>
-#include "deephaven/third_party/fmt/format.h"
+#include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
 namespace deephaven::dhcore::utility {

@@ -15,7 +15,10 @@ class ArrowArrayConverter {
   using ColumnSource = deephaven::dhcore::column::ColumnSource;
 public:
   static std::shared_ptr<ColumnSource> ArrayToColumnSource(
-      const std::shared_ptr<arrow::Array> &array);
+      std::shared_ptr<arrow::Array> array);
+
+  static std::shared_ptr<ColumnSource> ChunkedArrayToColumnSource(
+      std::shared_ptr<arrow::ChunkedArray> chunked_array);
 
   static std::shared_ptr<arrow::Array> ColumnSourceToArray(const ColumnSource &column_source,
       size_t num_rows);

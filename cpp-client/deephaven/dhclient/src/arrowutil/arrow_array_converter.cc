@@ -3,22 +3,82 @@
  */
 #include "deephaven/client/arrowutil/arrow_array_converter.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
 #include <arrow/visitor.h>
 #include <arrow/array/array_base.h>
 #include <arrow/array/array_primitive.h>
+#include <arrow/scalar.h>
 #include "deephaven/client/arrowutil/arrow_column_source.h"
 #include "deephaven/client/utility/arrow_util.h"
+#include "deephaven/dhcore/chunk/chunk.h"
+#include "deephaven/dhcore/column/array_column_source.h"
 #include "deephaven/dhcore/column/column_source.h"
+#include "deephaven/dhcore/container/container.h"
+#include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/core.h"
 
 namespace deephaven::client::arrowutil {
 using deephaven::client::utility::OkOrThrow;
+using deephaven::client::utility::ValueOrThrow;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::Int32Chunk;
+using deephaven::dhcore::chunk::StringChunk;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::Chunk;
+using deephaven::dhcore::chunk::CharChunk;
+using deephaven::dhcore::chunk::DateTimeChunk;
+using deephaven::dhcore::chunk::FloatChunk;
+using deephaven::dhcore::chunk::DoubleChunk;
+using deephaven::dhcore::chunk::Int8Chunk;
+using deephaven::dhcore::chunk::Int16Chunk;
+using deephaven::dhcore::chunk::Int32Chunk;
+using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::StringChunk;
+using deephaven::dhcore::chunk::UInt64Chunk;
+using deephaven::dhcore::column::BooleanColumnSource;
+using deephaven::dhcore::column::CharColumnSource;
 using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::column::ContainerArrayColumnSource;
+using deephaven::dhcore::column::DoubleColumnSource;
+using deephaven::dhcore::column::FloatColumnSource;
+using deephaven::dhcore::column::Int8ColumnSource;
+using deephaven::dhcore::column::Int16ColumnSource;
+using deephaven::dhcore::column::Int32ColumnSource;
+using deephaven::dhcore::column::Int64ColumnSource;
+using deephaven::dhcore::column::ColumnSourceVisitor;
+using deephaven::dhcore::column::StringColumnSource;
+using deephaven::dhcore::container::Container;
+using deephaven::dhcore::container::ContainerBase;
+using deephaven::dhcore::container::RowSequence;
+using deephaven::dhcore::utility::demangle;
+using deephaven::dhcore::utility::MakeReservedVector;
 using deephaven::dhcore::utility::VerboseCast;
 
 namespace {
+template<typename TArrowArray>
+std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArray &chunked_array) {
+  auto downcasted = MakeReservedVector<std::shared_ptr<TArrowArray>>(chunked_array.num_chunks());
+  for (const auto &vec : chunked_array.chunks()) {
+    auto dest = std::dynamic_pointer_cast<TArrowArray>(vec);
+    if (dest == nullptr) {
+      const auto &deref_vec = *vec;
+      auto message = fmt::format("can't cast {} to {}",
+          demangle(typeid(deref_vec).name()),
+          demangle(typeid(TArrowArray).name()));
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+    downcasted.push_back(std::move(dest));
+  }
+  return downcasted;
+}
+
 class Reconstituter final : public arrow::TypeVisitor {
 public:
   Reconstituter(std::shared_ptr<ColumnSource> flattened_elements,
@@ -44,15 +104,13 @@ public:
         std::move(slices_), std::move(slice_nulls_), num_slices_);
   }
 
-  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    return VisitHelper<int32_t, Int32Chunk>();
-  }
-
-  // static_assert(false, "do all the visitors here");
-
-  arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    return VisitHelper<std::string, StringChunk>();
-  }
+//  arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
+//    return VisitHelper<int32_t, Int32Chunk>();
+//  }
+//
+//  arrow::Status Visit(const arrow::StringType &/*type*/) final {
+//    return VisitHelper<std::string, StringChunk>();
+//  }
 
 private:
   template<typename TElement, typename TChunk>
@@ -92,77 +150,77 @@ private:
 };
 
 struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
-  explicit ChunkedArrayToColumnSourceVisitor(const arrow::ChunkedArray &chunked_array) :
-    chunked_array_(chunked_array) {}
+  explicit ChunkedArrayToColumnSourceVisitor(std::shared_ptr<arrow::ChunkedArray> chunked_array) :
+    chunked_array_(std::move(chunked_array)) {}
 
   arrow::Status Visit(const arrow::UInt16Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::UInt16Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::UInt16Array>(*chunked_array_);
     result_ = CharArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int8Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::Int8Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::Int8Array>(*chunked_array_);
     result_ = Int8ArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int16Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::Int16Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::Int16Array>(*chunked_array_);
     result_ = Int16ArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::Int32Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::Int32Array>(*chunked_array_);
     result_ = Int32ArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::Int64Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::Int64Array>(*chunked_array_);
     result_ = Int64ArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::FloatType &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::FloatArray>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::FloatArray>(*chunked_array_);
     result_ = FloatArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::DoubleType &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::DoubleArray>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::DoubleArray>(*chunked_array_);
     result_ = DoubleArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::BooleanType &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::BooleanArray>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::BooleanArray>(*chunked_array_);
     result_ = BooleanArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::StringArray>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::StringArray>(*chunked_array_);
     result_ = StringArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::TimestampType &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::TimestampArray>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::TimestampArray>(*chunked_array_);
     result_ = DateTimeArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Date64Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::Date64Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::Date64Array>(*chunked_array_);
     result_ = LocalDateArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
-    auto arrays = DowncastChunks<arrow::Time64Array>(chunked_array_);
+    auto arrays = DowncastChunks<arrow::Time64Array>(*chunked_array_);
     result_ = LocalTimeArrowColumnSource::OfArrowArrayVec(std::move(arrays));
     return arrow::Status::OK();
   }
@@ -240,7 +298,7 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
    * done.
    */
   arrow::Status Visit(const arrow::ListType &type) final {
-    auto chunked_listarrays = DowncastChunks<arrow::ListArray>(chunked_array_);
+    auto chunked_listarrays = DowncastChunks<arrow::ListArray>(*chunked_array_);
 
     // 1. extract offsets
     // 2. use recursion to create a column set of values
@@ -257,7 +315,8 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
     }
     auto flattened_chunked_array = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(
         arrow::ChunkedArray::Make(std::move(flattened_chunks), type.value_type())));
-    auto flattened_elements = MakeColumnSource(*flattened_chunked_array);
+    auto flattened_elements =
+        ArrowArrayConverter::ChunkedArrayToColumnSource(std::move(flattened_chunked_array));
 
     // We have a single column source with all the flattened data in it. Now we have to
     // recover the offset, length, and nullness of each slice. This is unusually annoying because
@@ -284,39 +343,39 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
     return arrow::Status::OK();
   }
 
-  const arrow::ChunkedArray &chunked_array_;
+  std::shared_ptr<arrow::ChunkedArray> chunked_array_;
   std::shared_ptr<ColumnSource> result_;
 };
 }  // namespace
 
-std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(const arrow::Array &array) {
-  const auto *list_array = VerboseCast<const arrow::ListArray *>(DEEPHAVEN_LOCATION_EXPR(&array));
-
-  if (list_array->length() != 1) {
-    auto message = fmt::format("Expected array of length 1, got {}", array.length());
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-  }
-
-  const auto list_element = list_array->GetScalar(0).ValueOrDie();
-  const auto *list_scalar = VerboseCast<const arrow::ListScalar *>(
-      DEEPHAVEN_LOCATION_EXPR(list_element.get()));
-  const auto &list_scalar_value = list_scalar->value;
-
-  ArrayToColumnSourceVisitor v(list_scalar_value);
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(list_scalar_value->Accept(&v)));
-  return {std::move(v.result_), static_cast<size_t>(list_scalar_value->length())};
-}
+//std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(const arrow::Array &array) {
+//  const auto *list_array = VerboseCast<const arrow::ListArray *>(DEEPHAVEN_LOCATION_EXPR(&array));
+//
+//  if (list_array->length() != 1) {
+//    auto message = fmt::format("Expected array of length 1, got {}", array.length());
+//    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+//  }
+//
+//  const auto list_element = list_array->GetScalar(0).ValueOrDie();
+//  const auto *list_scalar = VerboseCast<const arrow::ListScalar *>(
+//      DEEPHAVEN_LOCATION_EXPR(list_element.get()));
+//  const auto &list_scalar_value = list_scalar->value;
+//
+//  ArrayToColumnSourceVisitor v(list_scalar_value);
+//  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(list_scalar_value->Accept(&v)));
+//  return {std::move(v.result_), static_cast<size_t>(list_scalar_value->length())};
+//}
 
 std::shared_ptr<ColumnSource> ArrowArrayConverter::ArrayToColumnSource(
-    const std::shared_ptr<arrow::Array> &array) {
-  ArrayToColumnSourceVisitor v(array);
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(array->Accept(&v)));
-  return std::move(v.result_);
+    std::shared_ptr<arrow::Array> array) {
+  auto chunked_array = std::make_shared<arrow::ChunkedArray>(std::move(array));
+  return ChunkedArrayToColumnSource(std::move(chunked_array));
 }
 
-std::shared_ptr<ColumnSource> MakeColumnSource(const arrow::ChunkedArray &chunked_array) {
-  Visitor visitor(chunked_array);
-  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(chunked_array.type()->Accept(&visitor)));
-  return std::move(visitor.result_);
+std::shared_ptr<ColumnSource> ArrowArrayConverter::ChunkedArrayToColumnSource(
+    std::shared_ptr<arrow::ChunkedArray> chunked_array) {
+  ChunkedArrayToColumnSourceVisitor v(std::move(chunked_array));
+  OkOrThrow(DEEPHAVEN_LOCATION_EXPR(v.chunked_array_->type()->Accept(&v)));
+  return std::move(v.result_);
 }
 }  // namespace deephaven::client::arrowutil
