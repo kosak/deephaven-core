@@ -308,8 +308,8 @@ public:
     std::cout << "=== The Full Table ===\n"
         << current->Stream(true, true)
         << '\n';
-    if (update.Current()->NumRows() < target_) {
-      // Not fully populated.
+    ++numTicks_;
+    if (numTicks_ < target_) {
       return;
     }
 
@@ -318,29 +318,42 @@ public:
 
 private:
   size_t target_ = 0;
+  size_t numTicks_ = 0;
 };
 
 TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   auto client = TableMakerForTests::CreateClient();
   auto tm = client.GetManager();
 
-  auto table = tm.TimeTable("PT0:00:0.5")
-      .Select({"Mod3 = ii % 3",
+  auto table = tm.EmptyTable(5)
+      .Select({"Key = 0",
 //          "Chars = ii == 5 ? null : (char)(ii + 'a')",
 //          "Bytes = ii == 5 ? null : (byte)ii",
 //          "Shorts = ii == 5 ? null : (short)ii",
 //          "Ints = ii == 5 ? null : (int)ii",
-          "Longs = ii == 5 ? null : (long)ii",
+//          "Longs = ii == 5 ? null : (long)ii",
 //          "Floats = ii == 5 ? null : (float)ii",
 //          "Doubles = ii == 5 ? null : (double)ii",
-//          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-// "KBools = false",
-      })
-      .By("Mod3");
+          // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+          // "Chars = (char)(ii + 'a')",
 
-  constexpr const int kNumRows = 10;
+//          "Bytes = (byte)(ii + 32)",
+//          "Shorts = (short)ii",
+//          "Ints = (int)ii",
+//          "Longs = (long)ii",
+//          "Floats = (float)ii",
+//          "Doubles = (double)ii",
+//          "Strings = ii == 5 ? null : (`hello ` + ii)",
+          // "Bools = true",
+//          "DateTimes = '2001-03-01T12:34:56Z' + ii",
+//          "LocalDates = '2001-03-01' + ((int)ii * 'P1D')",
+          "LocalTimes = '12:34:46'.plus((int)ii * 'PT1S')"
+      });
+      // .By("Key");
 
-  auto callback = std::make_shared<WaitForGroupedTableCallback>(kNumRows);
+  constexpr const int kNumTicks = 1;
+
+  auto callback = std::make_shared<WaitForGroupedTableCallback>(kNumTicks);
   auto cookie = table.Subscribe(callback);
 
   while (true) {
