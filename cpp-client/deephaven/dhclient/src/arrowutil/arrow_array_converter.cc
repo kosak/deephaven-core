@@ -29,9 +29,6 @@ namespace deephaven::client::arrowutil {
 using deephaven::client::utility::OkOrThrow;
 using deephaven::client::utility::ValueOrThrow;
 using deephaven::dhcore::chunk::BooleanChunk;
-using deephaven::dhcore::chunk::Int32Chunk;
-using deephaven::dhcore::chunk::StringChunk;
-using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::Chunk;
 using deephaven::dhcore::chunk::CharChunk;
 using deephaven::dhcore::chunk::DateTimeChunk;
@@ -110,12 +107,32 @@ public:
     return VisitHelper<char16_t, CharChunk>();
   }
 
+  arrow::Status Visit(const arrow::Int8Type &/*type*/) final {
+    return VisitHelper<int8_t, Int8Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::Int16Type &/*type*/) final {
+    return VisitHelper<int16_t, Int16Chunk>();
+  }
+
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
     return VisitHelper<int32_t, Int32Chunk>();
   }
 
   arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
     return VisitHelper<int64_t, Int64Chunk>();
+  }
+
+  arrow::Status Visit(const arrow::FloatType &/*type*/) final {
+    return VisitHelper<float, FloatChunk>();
+  }
+
+  arrow::Status Visit(const arrow::DoubleType &/*type*/) final {
+    return VisitHelper<double, DoubleChunk>();
+  }
+
+  arrow::Status Visit(const arrow::BooleanType &/*type*/) final {
+    return VisitHelper<bool, BooleanChunk>();
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {

@@ -326,7 +326,15 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
 
   auto table = tm.TimeTable("PT0:00:0.5")
       .Select({"Mod3 = ii % 3",
-          "Chars = ii == 5 ? null : (char)(ii + 'a')"})
+          "Chars = ii == 5 ? null : (char)(ii + 'a')",
+          "Bytes = ii == 5 ? null : (byte)ii",
+          "Shorts = ii == 5 ? null : (short)ii",
+          "Ints = ii == 5 ? null : (int)ii",
+          "Longs = ii == 5 ? null : (long)ii",
+          "Floats = ii == 5 ? null : (float)ii",
+          "Doubles = ii == 5 ? null : (double)ii",
+          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+      })
       .By("Mod3");
 
   constexpr const int kNumRows = 10;
