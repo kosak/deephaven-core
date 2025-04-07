@@ -348,8 +348,8 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
 //          "DateTimes = '2001-03-01T12:34:56Z' + ii",
 //          "LocalDates = '2001-03-01' + ((int)ii * 'P1D')",
           "LocalTimes = '12:34:46'.plus((int)ii * 'PT1S')"
-      });
-      // .By("Key");
+      })
+      .By("Key");
 
   constexpr const int kNumTicks = 1;
 
