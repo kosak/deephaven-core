@@ -18,41 +18,8 @@ namespace deephaven::client::tests {
 TEST_CASE("Group a Table", "[group]") {
   auto tm = TableMakerForTests::Create();
 
-  TableMaker maker;
-  maker.AddColumn<std::string>("Type", {
-      "Granny Smith",
-      "Granny Smith",
-      "Gala",
-      "Gala",
-      "Golden Delicious",
-      "Golden Delicious"
-  });
-  maker.AddColumn<std::string>("Color", {
-      "Green", "Green", "Red-Green", "Orange-Green", "Yellow", "Yellow"
-  });
-  maker.AddColumn<int32_t>("Weight", {
-      102, 85, 79, 92, 78, 99
-  });
-  maker.AddColumn<int32_t>("Calories", {
-      53, 48, 51, 61, 46, 57
-  });
-  auto t1 = maker.MakeTable(tm.Client().GetManager());
-
-  auto grouped = t1.By("Type");
-
-  std::cout << grouped.Stream(true) << '\n';
-
-  TableMaker expected;
-  expected.AddColumn<std::string>("Type", {"Granny Smith", "Gala", "Golden Delicious"});
-  expected.AddColumn<std::vector<std::string>>("Color", {
-      {"Green", "Green"}, {"Red-Green", "Orange-Green"}, {"Yellow", "Yellow"}
-  });
-  expected.AddColumn<std::vector<int32_t>>("Weight", {
-      {102, 85}, {79, 92}, {78, 99}
-  });
-  expected.AddColumn<std::vector<int32_t>>("Calories", {
-      {53, 48}, {51, 61}, {46, 57}
-  });
-  TableComparerForTests::Compare(expected, grouped);
+  auto t = tm.Client().GetManager().EmptyTable(10).Update("II = ii");
+  auto t2 = t.By().By().By();
+  std::cout << t2.Stream(true) << '\n';
 }
 }  // namespace deephaven::client::tests

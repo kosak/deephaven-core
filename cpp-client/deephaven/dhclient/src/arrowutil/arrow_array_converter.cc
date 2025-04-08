@@ -288,7 +288,8 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
    * flattened data. Note: that throughout this discussion it will be important to recognize the
    * difference between a slice that is null (the second slice, above), a slice that is empty
    * (the third slice above), and a slice that is not null but contains a null element (the fourth
-   * element of the fourth slice above).
+   * element of the fourth slice above). Empty slices and null slices don't take up any space in the
+   * flattened column source, but null leaf elements do.
    *
    * We use recursion to create the flattened data [a, b, c, d, e, f, null, g] as a ColumnSource
    * (of the appropriate dynamic type). This ColumnSource is only a very temporary holding area,
@@ -340,6 +341,9 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
    *
    * We provide these two arrays to ContainerArrayColumnSource::CreateFromArrays() and we are
    * done.
+   *
+   * TODO(kosak): This code probably does not work correctly for nested lists, i.e. a grouped
+   * table that is grouped again
    */
   arrow::Status Visit(const arrow::ListType &type) final {
     auto chunked_listarrays = DowncastChunks<arrow::ListArray>(*chunked_array_);
@@ -489,6 +493,8 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
 
   void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
     auto src_chunk = PopulateChunk<ContainerBaseChunk>(source);
+//    arrow::ListBuilder lb(nullptr, nullptr);
+//    src_chunk.
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
   }
 
