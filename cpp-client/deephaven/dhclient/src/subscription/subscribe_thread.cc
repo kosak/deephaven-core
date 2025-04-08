@@ -219,6 +219,7 @@ void UpdateProcessor::Cancel() {
   guard.unlock();
 
   fsr_->Cancel();
+  (void)fsw_->Close();
   thread_.join();
 }
 
