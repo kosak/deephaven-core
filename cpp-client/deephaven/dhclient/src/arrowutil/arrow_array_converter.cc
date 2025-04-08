@@ -22,6 +22,7 @@
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/core.h"
 
@@ -34,6 +35,7 @@ using deephaven::dhcore::LocalTime;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::Chunk;
 using deephaven::dhcore::chunk::CharChunk;
+using deephaven::dhcore::chunk::ContainerBaseChunk;
 using deephaven::dhcore::chunk::DateTimeChunk;
 using deephaven::dhcore::chunk::FloatChunk;
 using deephaven::dhcore::chunk::DoubleChunk;
@@ -486,6 +488,7 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
   }
 
   void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
+    auto src_chunk = PopulateChunk<ContainerBaseChunk>(source);
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
   }
 
