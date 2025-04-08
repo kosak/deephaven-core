@@ -325,8 +325,8 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   auto client = TableMakerForTests::CreateClient();
   auto tm = client.GetManager();
 
-  auto table = tm.EmptyTable(5)
-      .Select({"Key = 0",
+  auto table = tm.EmptyTable(10)
+      .Select({"Key = (ii % 3)",
 //          "Chars = ii == 5 ? null : (char)(ii + 'a')",
 //          "Bytes = ii == 5 ? null : (byte)ii",
 //          "Shorts = ii == 5 ? null : (short)ii",
@@ -334,20 +334,11 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
 //          "Longs = ii == 5 ? null : (long)ii",
 //          "Floats = ii == 5 ? null : (float)ii",
 //          "Doubles = ii == 5 ? null : (double)ii",
-          // "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-          // "Chars = (char)(ii + 'a')",
-
-//          "Bytes = (byte)(ii + 32)",
-//          "Shorts = (short)ii",
-//          "Ints = (int)ii",
-//          "Longs = (long)ii",
-//          "Floats = (float)ii",
-//          "Doubles = (double)ii",
+//          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
 //          "Strings = ii == 5 ? null : (`hello ` + ii)",
-          // "Bools = true",
-//          "DateTimes = '2001-03-01T12:34:56Z' + ii",
+          "DateTimes = '2001-03-01T12:34:56Z' + ii",
 //          "LocalDates = '2001-03-01' + ((int)ii * 'P1D')",
-          "LocalTimes = '12:34:46'.plus((int)ii * 'PT1S')"
+//          "LocalTimes = '12:34:46'.plus((int)ii * 'PT1S')"
       })
       .By("Key");
 
