@@ -326,7 +326,7 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   auto tm = client.GetManager();
 
   auto table = tm.EmptyTable(10)
-      .Select({"Key = (ii % 3)",
+      .Select({"Key = (ii % 10)",
 //          "Chars = ii == 5 ? null : (char)(ii + 'a')",
 //          "Bytes = ii == 5 ? null : (byte)ii",
 //          "Shorts = ii == 5 ? null : (short)ii",
@@ -335,10 +335,10 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
 //          "Floats = ii == 5 ? null : (float)ii",
 //          "Doubles = ii == 5 ? null : (double)ii",
 //          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-//          "Strings = ii == 5 ? null : (`hello ` + ii)",
-          "DateTimes = '2001-03-01T12:34:56Z' + ii",
-//          "LocalDates = '2001-03-01' + ((int)ii * 'P1D')",
-//          "LocalTimes = '12:34:46'.plus((int)ii * 'PT1S')"
+          "Strings = ii == 5 ? null : (`hello ` + ii)",
+          "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
+          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
+          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
       })
       .By("Key");
 

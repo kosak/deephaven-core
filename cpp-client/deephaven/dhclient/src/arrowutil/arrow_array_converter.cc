@@ -28,6 +28,9 @@
 namespace deephaven::client::arrowutil {
 using deephaven::client::utility::OkOrThrow;
 using deephaven::client::utility::ValueOrThrow;
+using deephaven::dhcore::DateTime;
+using deephaven::dhcore::LocalDate;
+using deephaven::dhcore::LocalTime;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::Chunk;
 using deephaven::dhcore::chunk::CharChunk;
@@ -137,6 +140,18 @@ public:
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
     return VisitHelper<std::string, StringChunk>();
+  }
+
+  arrow::Status Visit(const arrow::TimestampType &/*type*/) final {
+    return VisitHelper<DateTime, DateTimeChunk>();
+  }
+
+  arrow::Status Visit(const arrow::Date64Type &/*type*/) final {
+    return VisitHelper<LocalDate, LocalDateChunk>();
+  }
+
+  arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
+    return VisitHelper<LocalTime, LocalTimeChunk>();
   }
 
 private:
