@@ -3,6 +3,8 @@
  */
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -41,7 +43,8 @@ struct ColumnBuilder {
 };
 
 template<typename TArrowBuilder, const char *kDeephavenTypeName>
-struct BuilderBase {
+class BuilderBase {
+public:
   explicit BuilderBase(std::shared_ptr<TArrowBuilder> builder) : builder_(std::move(builder)) {}
 
   void AppendNull() {
@@ -54,16 +57,23 @@ struct BuilderBase {
     return kDeephavenTypeName;
   }
 
+  [[nodiscard]]
+  const std::shared_ptr<TArrowBuilder> &GetBuilder() const {
+    return builder_;
+  }
+
+protected:
   std::shared_ptr<TArrowBuilder> builder_;
 };
 
 template<typename T, typename TArrowBuilder, const char *kDeephavenTypeName>
-struct TypicalBuilderBase : public BuilderBase<TArrowBuilder, kDeephavenTypeName> {
+class TypicalBuilderBase : public BuilderBase<TArrowBuilder, kDeephavenTypeName> {
   /**
    * Convenience using.
    */
   using base = BuilderBase<TArrowBuilder, kDeephavenTypeName>;
 
+public:
   TypicalBuilderBase() : BuilderBase<TArrowBuilder, kDeephavenTypeName>(
       std::make_shared<TArrowBuilder>()) {
   }
@@ -90,56 +100,55 @@ struct DeephavenServerConstants {
 };
 
 template<>
-struct ColumnBuilder<bool> : public TypicalBuilderBase<bool,
+class ColumnBuilder<bool> : public TypicalBuilderBase<bool,
     arrow::BooleanBuilder,
     DeephavenServerConstants::kBool> {
 };
 
 template<>
-struct ColumnBuilder<char16_t> : public TypicalBuilderBase<char16_t, arrow::UInt16Builder,
+class ColumnBuilder<char16_t> : public TypicalBuilderBase<char16_t, arrow::UInt16Builder,
     DeephavenServerConstants::kChar16> {
 };
 
 template<>
-struct ColumnBuilder<int8_t> : public TypicalBuilderBase<int8_t, arrow::Int8Builder,
+class ColumnBuilder<int8_t> : public TypicalBuilderBase<int8_t, arrow::Int8Builder,
     DeephavenServerConstants::kInt8> {
 };
 
 template<>
-struct ColumnBuilder<int16_t> : public TypicalBuilderBase<int16_t, arrow::Int16Builder,
+class ColumnBuilder<int16_t> : public TypicalBuilderBase<int16_t, arrow::Int16Builder,
     DeephavenServerConstants::kInt16> {
 };
 
 template<>
-struct ColumnBuilder<int32_t> : public TypicalBuilderBase<int32_t, arrow::Int32Builder,
+class ColumnBuilder<int32_t> : public TypicalBuilderBase<int32_t, arrow::Int32Builder,
     DeephavenServerConstants::kInt32> {
 };
 
 template<>
-struct ColumnBuilder<int64_t> : public TypicalBuilderBase<int64_t, arrow::Int64Builder,
+class ColumnBuilder<int64_t> : public TypicalBuilderBase<int64_t, arrow::Int64Builder,
     DeephavenServerConstants::kInt64> {
 };
 
 template<>
-struct ColumnBuilder<float> : public TypicalBuilderBase<float, arrow::FloatBuilder,
+class ColumnBuilder<float> : public TypicalBuilderBase<float, arrow::FloatBuilder,
     DeephavenServerConstants::kFloat> {
 };
 
 template<>
-struct ColumnBuilder<double> : public TypicalBuilderBase<double, arrow::DoubleBuilder,
+class ColumnBuilder<double> : public TypicalBuilderBase<double, arrow::DoubleBuilder,
     DeephavenServerConstants::kDouble> {
 };
 
 template<>
-struct ColumnBuilder<std::string> : public TypicalBuilderBase<std::string, arrow::StringBuilder,
+class ColumnBuilder<std::string> : public TypicalBuilderBase<std::string, arrow::StringBuilder,
     DeephavenServerConstants::kString> {
 };
 
 template<>
-struct ColumnBuilder<deephaven::dhcore::DateTime> : public BuilderBase<arrow::TimestampBuilder,
+class ColumnBuilder<deephaven::dhcore::DateTime> : public BuilderBase<arrow::TimestampBuilder,
     DeephavenServerConstants::kDateTime> {
-  // using base = BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>;
-
+public:
   // constructor with data type nanos
   ColumnBuilder() : BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>(
       std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(arrow::TimeUnit::NANO, "UTC"),
@@ -152,10 +161,9 @@ struct ColumnBuilder<deephaven::dhcore::DateTime> : public BuilderBase<arrow::Ti
 };
 
 template<>
-struct ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::Date64Builder,
+class ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::Date64Builder,
     DeephavenServerConstants::kLocalDate> {
-  // using base = BuilderBase<arrow::Date64Builder, DeephavenServerConstants::kLocalDate>;
-
+public:
   // constructor with data type nanos
   ColumnBuilder() : BuilderBase<arrow::Date64Builder, DeephavenServerConstants::kLocalDate>(
       std::make_shared<arrow::Date64Builder>()) {
@@ -167,8 +175,9 @@ struct ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::D
 };
 
 template<>
-struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::Time64Builder,
+class ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::Time64Builder,
     DeephavenServerConstants::kLocalTime> {
+public:
   ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
       std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
   arrow::default_memory_pool())) {
@@ -181,8 +190,9 @@ struct ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::T
 };
 
 template<arrow::TimeUnit::type UNIT>
-struct ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::TimestampBuilder,
+class ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::TimestampBuilder,
     DeephavenServerConstants::kDateTime> {
+public:
   ColumnBuilder() : BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>(
       std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(UNIT, "UTC"),
           arrow::default_memory_pool())) {
@@ -194,8 +204,9 @@ struct ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::Timesta
 };
 
 template<arrow::TimeUnit::type UNIT>
-struct ColumnBuilder<InternalLocalTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
+class ColumnBuilder<InternalLocalTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
     DeephavenServerConstants::kLocalTime> {
+public:
   ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
       std::make_shared<arrow::Time64Builder>(arrow::time64(UNIT),
           arrow::default_memory_pool())) {
@@ -211,25 +222,30 @@ class ColumnBuilder<std::optional<T>> {
 public:
   void Append(const std::optional<T> &value) {
     if (!value.has_value()) {
-      inner_builder_.AppendNull();
+      wrapped_column_builder_.AppendNull();
     } else {
-      inner_builder_.Append(*value);
+      wrapped_column_builder_.Append(*value);
     }
   }
 
   void AppendNull() {
-    inner_builder_.AppendNull();
+    wrapped_column_builder_.AppendNull();
   }
 
   std::shared_ptr<arrow::Array> Finish() {
-    return inner_builder_.Finish();
+    return wrapped_column_builder_.Finish();
   }
 
   const char *GetDeephavenServerTypeName() {
-    return inner_builder_.GetDeephavenServerTypeName();
+    return wrapped_column_builder_.GetDeephavenServerTypeName();
   }
 
-  ColumnBuilder<T> inner_builder_;
+  const auto &GetBuilder() const {
+    return wrapped_column_builder_.GetBuilder();
+  }
+
+private:
+  ColumnBuilder<T> wrapped_column_builder_;
 };
 
 template<typename T>
@@ -237,13 +253,13 @@ class ColumnBuilder<std::vector<T>> {
 public:
   ColumnBuilder() :
       builder_(std::make_shared<arrow::ListBuilder>(arrow::default_memory_pool(),
-          inner_builder_.builder_)) {
+          nested_column_builder_.GetBuilder())) {
   }
 
   void Append(const std::vector<T> &entry) {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
     for (const auto &element : entry) {
-      inner_builder_.Append(element);
+      nested_column_builder_.Append(element);
     }
   }
 
@@ -258,8 +274,14 @@ public:
   const char *GetDeephavenServerTypeName() {
     return DeephavenServerConstants::kList;
   }
+  
+  [[nodiscard]]
+  const std::shared_ptr<arrow::ListBuilder> &GetBuilder() const {
+    return builder_;
+  }
 
-  ColumnBuilder<T> inner_builder_;
+private:
+  ColumnBuilder<T> nested_column_builder_;
   std::shared_ptr<arrow::ListBuilder> builder_;
 };
 }  // namespace internal

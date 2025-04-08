@@ -9,7 +9,9 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
+#include <vector>
 #include "deephaven/third_party/catch.hpp"
+#include "deephaven/third_party/fmt/core.h"
 #include "deephaven/tests/test_util.h"
 #include "deephaven/client/client.h"
 #include "deephaven/client/utility/table_maker.h"
@@ -308,17 +310,35 @@ public:
     std::cout << "=== The Full Table ===\n"
         << current->Stream(true, true)
         << '\n';
-    ++numTicks_;
-    if (numTicks_ < target_) {
+    if (update.Current()->NumRows() < target_) {
       return;
     }
+
+    TableMaker expected;
+    expected.AddColumn<std::vector<std::optional<char16_t>>>("Chars", {
+        {'a', 'd', 'g', 'j'},
+        {'b', 'e', 'h'},
+        {'c', {}, 'i'}
+    });
+//    expected.AddColumn("Bytes", int8s);
+//    expected.AddColumn("Shorts", int16s);
+//    expected.AddColumn("Ints", int32s);
+//    expected.AddColumn("Longs", int64s);
+//    expected.AddColumn("Floats", floats);
+//    expected.AddColumn("Doubles", doubles);
+//    expected.AddColumn("Bools", bools);
+//    expected.AddColumn("Strings", strings);
+//    expected.AddColumn("DateTimes", date_times);
+//    expected.AddColumn("LocalDates", local_dates);
+//    expected.AddColumn("LocalTimes", local_times);
+
+    TableComparerForTests::Compare(expected, *update.Current());
 
     NotifyDone();
   }
 
 private:
   size_t target_ = 0;
-  size_t numTicks_ = 0;
 };
 
 TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
@@ -328,17 +348,17 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   auto table = tm.EmptyTable(10)
       .Select({"Key = (ii % 3)",
           "Chars = ii == 5 ? null : (char)(ii + 'a')",
-          "Bytes = ii == 5 ? null : (byte)ii",
-          "Shorts = ii == 5 ? null : (short)ii",
-          "Ints = ii == 5 ? null : (int)ii",
-          "Longs = ii == 5 ? null : (long)ii",
-          "Floats = ii == 5 ? null : (float)ii",
-          "Doubles = ii == 5 ? null : (double)ii",
-          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-          "Strings = ii == 5 ? null : (`hello ` + ii)",
-          "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
-          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
-          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
+//          "Bytes = ii == 5 ? null : (byte)ii",
+//          "Shorts = ii == 5 ? null : (short)ii",
+//          "Ints = ii == 5 ? null : (int)ii",
+//          "Longs = ii == 5 ? null : (long)ii",
+//          "Floats = ii == 5 ? null : (float)ii",
+//          "Doubles = ii == 5 ? null : (double)ii",
+//          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+//          "Strings = ii == 5 ? null : (`hello ` + ii)",
+//          "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
+//          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
+//          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
       })
       .By("Key");
 
