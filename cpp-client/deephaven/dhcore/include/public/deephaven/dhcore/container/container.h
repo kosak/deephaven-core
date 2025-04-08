@@ -83,10 +83,15 @@ private:
     ElementRenderer renderer;
     s << '[';
     const char *sep = "";
-    for (const auto &element : *this) {
+    const auto sz = size();
+    for (size_t i = 0; i != sz; ++i) {
       s << sep;
       sep = ",";
-      renderer.Render(s, element);
+      if (nulls_[i]) {
+        s << "null";
+      } else {
+        renderer.Render(s, data_[i]);
+      }
     }
     return s << ']';
   }
