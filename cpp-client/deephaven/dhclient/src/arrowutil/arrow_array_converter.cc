@@ -62,6 +62,7 @@ using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::StringColumnSource;
 using deephaven::dhcore::container::Container;
 using deephaven::dhcore::container::ContainerBase;
+using deephaven::dhcore::container::ContainerVisitor;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::utility::demangle;
 using deephaven::dhcore::utility::MakeReservedVector;
@@ -503,6 +504,10 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
 
   struct InnerBuilderMaker : public ElementTypeVisitor {
     std::shared_ptr<arrow::ArrayBuilder> array_builder_;
+
+  };
+
+  struct ChunkAppender : public ContainerVisitor {
 
   };
 

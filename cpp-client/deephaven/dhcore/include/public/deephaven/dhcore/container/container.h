@@ -18,6 +18,12 @@ namespace deephaven::dhcore::container {
 template<typename T>
 class Container;
 
+class ContainerVisitor {
+public:
+  void Visit(const Container<char16_t> *);
+
+};
+
 class ContainerBase : public std::enable_shared_from_this<ContainerBase> {
 public:
   explicit ContainerBase(size_t size) : size_(size) {}
@@ -37,6 +43,8 @@ public:
   const Container<T> &AsContainer() const {
     return *deephaven::dhcore::utility::VerboseCast<const Container<T>*>(DEEPHAVEN_LOCATION_EXPR(this));
   }
+
+  virtual void AcceptVisitor(ContainerVisitor *visitor) const = 0;
 
 protected:
   virtual std::ostream &StreamTo(std::ostream &s) const = 0;
@@ -61,6 +69,10 @@ public:
 
   Container(Private, std::shared_ptr<T[]> &&data, std::shared_ptr<bool[]> &&nulls, size_t size) :
       ContainerBase(size), data_(std::move(data)), nulls_(std::move(nulls)) {}
+
+  void AcceptVisitor(ContainerVisitor *visitor) const final {
+    visitor->Visit(this);
+  }
 
   const T &operator[](size_t index) const {
     return data_[index];
