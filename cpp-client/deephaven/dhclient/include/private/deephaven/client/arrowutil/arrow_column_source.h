@@ -56,19 +56,21 @@ class GenericArrowColumnSource final : public TColumnSourceBase {
   using UInt64Chunk = deephaven::dhcore::chunk::UInt64Chunk;
 
 public:
-  static std::shared_ptr<GenericArrowColumnSource>
-  OfArrowArray(std::shared_ptr<TArrowArray> array) {
-    std::vector<std::shared_ptr<TArrowArray>> arrays{std::move(array)};
-    return OfArrowArrayVec(std::move(arrays));
-  }
+//  static std::shared_ptr<GenericArrowColumnSource>
+//  OfArrowArray(std::shared_ptr<TArrowArray> array) {
+//    std::vector<std::shared_ptr<TArrowArray>> arrays{std::move(array)};
+//    return OfArrowArrayVec(std::move(arrays));
+//  }
 
   static std::shared_ptr<GenericArrowColumnSource> OfArrowArrayVec(
+      const ElementType &element_type,
       std::vector<std::shared_ptr<TArrowArray>> arrays) {
-    return std::make_shared<GenericArrowColumnSource>(std::move(arrays));
+    return std::make_shared<GenericArrowColumnSource>(element_type, std::move(arrays));
   }
 
-  explicit GenericArrowColumnSource(std::vector<std::shared_ptr<TArrowArray>> arrays) :
-      arrays_(std::move(arrays)) {
+  explicit GenericArrowColumnSource(const ElementType &element_type,
+      std::vector<std::shared_ptr<TArrowArray>> arrays) :
+      element_type_(element_type), arrays_(std::move(arrays)) {
     time_nano_scale_factor_ = arrays_.empty() ? 1 : CalcTimeNanoScaleFactor(*arrays_.front());
   }
 
@@ -224,9 +226,12 @@ public:
   }
 
   [[nodiscard]]
-  const ElementType &GetElementType() const final;
+  const ElementType &GetElementType() const final {
+    return element_type_;
+  }
 
 private:
+  ElementType element_type_;
   std::vector<std::shared_ptr<TArrowArray>> arrays_;
   /**
    * This value is valid for Style == ArrowProcessingStyle::kTimestamp and
