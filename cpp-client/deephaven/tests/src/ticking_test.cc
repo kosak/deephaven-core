@@ -363,16 +363,19 @@ public:
         {"hello 2", {}, "hello 8"}
     });
     auto start = DateTime(2001, 3, 1, 12, 34, 56).Nanos();
-    auto from_nanos = [&start](int64_t offset) {
+    auto with_offset = [&start](int64_t offset) {
       return DateTime::FromNanos(start + offset);
     };
     expected.AddColumn<std::vector<std::optional<DateTime>>>("DateTimes", {
-        {from_nanos(0), from_nanos(3), from_nanos(6), from_nanos(9)},
-        {from_nanos(1), from_nanos(4), from_nanos(7)},
-        {from_nanos(2), {}, from_nanos(8)}
+        {with_offset(0), with_offset(3), with_offset(6), with_offset(9)},
+        {with_offset(1), with_offset(4), with_offset(7)},
+        {with_offset(2), {},             with_offset(8)}
     });
-//    expected.AddColumn("DateTimes", date_times);
-//    expected.AddColumn("LocalDates", local_dates);
+    expected.AddColumn<std::vector<std::optional<LocalDate>>>("LocalDates", {
+        {LocalDate::Of(2001, 3, 1), LocalDate::Of(2001, 3, 4), LocalDate::Of(2001, 3, 7), LocalDate::Of(2001, 3, 10)},
+        {LocalDate::Of(2001, 3, 2), LocalDate::Of(2001, 3, 5), LocalDate::Of(2001, 3, 8)},
+        {LocalDate::Of(2001, 3, 3), {}, LocalDate::Of(2001, 3, 9)},
+    });
 //    expected.AddColumn("LocalTimes", local_times);
 
     TableComparerForTests::Compare(expected, *update.Current());
@@ -400,7 +403,7 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
           "Bools = ii == 5 ? null : ((ii % 2) == 0)",
           "Strings = ii == 5 ? null : (`hello ` + ii)",
           "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
-//          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
+          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
 //          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
       })
       .By("Key");
