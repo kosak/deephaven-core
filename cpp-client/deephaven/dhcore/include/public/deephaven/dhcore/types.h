@@ -33,6 +33,16 @@ struct ElementTypeId {
   };
 };
 
+class ElementType {
+public:
+  uint32_t num_list_applications() const { return num_list_applications_; }
+  ElementTypeId element_type_id() const { return element_type_id_; }
+
+private:
+  uint32_t num_list_applications_;
+  ElementTypeId element_type_id_;
+};
+
 class DateTime;
 class LocalDate;
 class LocalTime;

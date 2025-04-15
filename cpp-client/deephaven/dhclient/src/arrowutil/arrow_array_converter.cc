@@ -493,11 +493,6 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
     PopulateAndFinishBuilder(dest_chunk, &builder);
   }
 
-  class ElementType {
-    uint32_t list_applications_;
-    ElementTypeId element_type_id_;
-  };
-
   class ElementTypeVisitor {
 
   };
