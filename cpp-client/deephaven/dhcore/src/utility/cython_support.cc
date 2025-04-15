@@ -3,8 +3,11 @@
  */
 #include "deephaven/dhcore/utility/cython_support.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <string>
-#include <vector>
+#include <utility>
 #include "deephaven/dhcore/clienttable/client_table.h"
 #include "deephaven/dhcore/clienttable/schema.h"
 #include "deephaven/dhcore/utility/utility.h"
