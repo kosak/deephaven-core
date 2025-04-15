@@ -495,95 +495,144 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
   }
 
 struct InnerBuilderMaker {
-    explicit InnerBuilderMaker(const ElementType &element_type) {
-      if (element_type.list_depth() != 1) {
-        auto message = fmt::format("Expected list_depth 1, got {}", element_type.list_depth());
-        throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-      }
-
-      switch (element_type.element_type_id()) {
-        case ElementTypeId::kChar: {
-          array_builder_ = std::make_shared<arrow::UInt16Builder>();
-          return;
-        }
-
-        case ElementTypeId::kInt8: {
-          array_builder_ = std::make_shared<arrow::Int8Builder>();
-          return;
-        }
-
-        case ElementTypeId::kInt16: {
-          array_builder_ = std::make_shared<arrow::Int16Builder>();
-          return;
-        }
-
-        case ElementTypeId::kInt32: {
-          array_builder_ = std::make_shared<arrow::Int32Builder>();
-          return;
-        }
-
-        case ElementTypeId::kInt64: {
-          array_builder_ = std::make_shared<arrow::Int64Builder>();
-          return;
-        }
-
-        case ElementTypeId::kFloat: {
-          array_builder_ = std::make_shared<arrow::FloatBuilder>();
-          return;
-        }
-
-        case ElementTypeId::kDouble: {
-          array_builder_ = std::make_shared<arrow::DoubleBuilder>();
-          return;
-        }
-
-        case ElementTypeId::kBool: {
-          array_builder_ = std::make_shared<arrow::BooleanBuilder>();
-          return;
-        }
-
-        case ElementTypeId::kString: {
-          array_builder_ = std::make_shared<arrow::StringBuilder>();
-          return;
-        }
-
-        case ElementTypeId::kTimestamp: {
-          // TODO(kosak): will we pass through non-nano units?
-          array_builder_ = std::make_shared<arrow::TimestampBuilder>(
-              arrow::timestamp(arrow::TimeUnit::NANO, "UTC"),
-              arrow::default_memory_pool());
-          return;
-        }
-
-        case ElementTypeId::kLocalDate: {
-          array_builder_ = std::make_shared<arrow::Date64Builder>();
-          return;
-        }
-
-        case ElementTypeId::kLocalTime: {
-          array_builder_ = std::make_shared<arrow::Time64Builder>(
-              arrow::time64(arrow::TimeUnit::NANO), arrow::default_memory_pool());
-          return;
-        }
-
-        case ElementTypeId::kList:
-        default: {
-          auto message = fmt::format("Programming error: elementTypeId {} not supported here",
-              static_cast<int>(element_type.element_type_id()));
-          throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-        }
-      }
+  explicit InnerBuilderMaker(const ElementType &element_type) {
+    if (element_type.list_depth() != 1) {
+      auto message = fmt::format("Expected list_depth 1, got {}", element_type.list_depth());
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
 
-    std::shared_ptr<arrow::ArrayBuilder> array_builder_;
-  };
+    switch (element_type.element_type_id()) {
+      case ElementTypeId::kChar: {
+        array_builder_ = std::make_shared<arrow::UInt16Builder>();
+        return;
+      }
+
+      case ElementTypeId::kInt8: {
+        array_builder_ = std::make_shared<arrow::Int8Builder>();
+        return;
+      }
+
+      case ElementTypeId::kInt16: {
+        array_builder_ = std::make_shared<arrow::Int16Builder>();
+        return;
+      }
+
+      case ElementTypeId::kInt32: {
+        array_builder_ = std::make_shared<arrow::Int32Builder>();
+        return;
+      }
+
+      case ElementTypeId::kInt64: {
+        array_builder_ = std::make_shared<arrow::Int64Builder>();
+        return;
+      }
+
+      case ElementTypeId::kFloat: {
+        array_builder_ = std::make_shared<arrow::FloatBuilder>();
+        return;
+      }
+
+      case ElementTypeId::kDouble: {
+        array_builder_ = std::make_shared<arrow::DoubleBuilder>();
+        return;
+      }
+
+      case ElementTypeId::kBool: {
+        array_builder_ = std::make_shared<arrow::BooleanBuilder>();
+        return;
+      }
+
+      case ElementTypeId::kString: {
+        array_builder_ = std::make_shared<arrow::StringBuilder>();
+        return;
+      }
+
+      case ElementTypeId::kTimestamp: {
+        // TODO(kosak): will we pass through non-nano units?
+        array_builder_ = std::make_shared<arrow::TimestampBuilder>(
+            arrow::timestamp(arrow::TimeUnit::NANO, "UTC"),
+            arrow::default_memory_pool());
+        return;
+      }
+
+      case ElementTypeId::kLocalDate: {
+        array_builder_ = std::make_shared<arrow::Date64Builder>();
+        return;
+      }
+
+      case ElementTypeId::kLocalTime: {
+        array_builder_ = std::make_shared<arrow::Time64Builder>(
+            arrow::time64(arrow::TimeUnit::NANO), arrow::default_memory_pool());
+        return;
+      }
+
+      case ElementTypeId::kList:
+      default: {
+        auto message = fmt::format("Programming error: elementTypeId {} not supported here",
+            static_cast<int>(element_type.element_type_id()));
+        throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+      }
+    }
+  }
+
+  std::shared_ptr<arrow::ArrayBuilder> array_builder_;
+};
 
   struct ChunkAppender final : public ContainerVisitor {
     explicit ChunkAppender(std::shared_ptr<arrow::ArrayBuilder> array_builder) :
       array_builder_(std::move(array_builder)) {}
 
     void Visit(const Container<char16_t> *container) final {
-      auto *typed_builder = deephaven::dhcore::utility::VerboseCast<arrow::UInt16Builder*>(
+      VisitHelper<arrow::UInt16Builder>(container);
+    }
+
+    void Visit(const Container<int8_t> *container) final {
+      VisitHelper<arrow::Int8Builder>(container);
+    }
+
+    void Visit(const Container<int16_t> *container) final {
+      VisitHelper<arrow::Int16Builder>(container);
+    }
+
+    void Visit(const Container<int32_t> *container) final {
+      VisitHelper<arrow::Int32Builder>(container);
+    }
+
+    void Visit(const Container<int64_t> *container) final {
+      VisitHelper<arrow::Int64Builder>(container);
+    }
+
+    void Visit(const Container<float> *container) final {
+      VisitHelper<arrow::FloatBuilder>(container);
+    }
+
+    void Visit(const Container<double> *container) final {
+      VisitHelper<arrow::DoubleBuilder>(container);
+    }
+
+    void Visit(const Container<bool> *container) final {
+      VisitHelper<arrow::BooleanBuilder>(container);
+    }
+
+    void Visit(const Container<std::string> *container) final {
+      VisitHelper<arrow::StringBuilder>(container);
+    }
+
+    void Visit(const Container<DateTime> *container) final {
+      VisitHelper<arrow::TimestampBuilder>(container);
+    }
+
+    void Visit(const Container<LocalDate> *container) final {
+      VisitHelper<arrow::Date64Builder>(container);
+    }
+
+    void Visit(const Container<LocalTime> *container) final {
+      VisitHelper<arrow::Time64Builder>(container);
+    }
+
+    template<typename TBuilder, typename TElement>
+    void VisitHelper(const Container<TElement> *container) {
+      auto *typed_builder = deephaven::dhcore::utility::VerboseCast<TBuilder*>(
           DEEPHAVEN_LOCATION_EXPR(array_builder_.get()));
       auto size = container->size();
       for (size_t i = 0; i != size; ++i) {

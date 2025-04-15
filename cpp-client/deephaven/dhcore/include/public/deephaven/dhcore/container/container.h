@@ -5,9 +5,12 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <iostream>
+#include <string>
 #include <utility>
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 
 namespace deephaven::dhcore::container {
@@ -19,9 +22,25 @@ template<typename T>
 class Container;
 
 class ContainerVisitor {
+protected:
+  using DateTime = deephaven::dhcore::DateTime;
+  using LocalDate = deephaven::dhcore::LocalDate;
+  using LocalTime = deephaven::dhcore::LocalTime;
+
 public:
   virtual ~ContainerVisitor() = default;
   virtual void Visit(const Container<char16_t> *) = 0;
+  virtual void Visit(const Container<int8_t> *) = 0;
+  virtual void Visit(const Container<int16_t> *) = 0;
+  virtual void Visit(const Container<int32_t> *) = 0;
+  virtual void Visit(const Container<int64_t> *) = 0;
+  virtual void Visit(const Container<float> *) = 0;
+  virtual void Visit(const Container<double> *) = 0;
+  virtual void Visit(const Container<bool> *) = 0;
+  virtual void Visit(const Container<std::string> *) = 0;
+  virtual void Visit(const Container<DateTime> *) = 0;
+  virtual void Visit(const Container<LocalDate> *) = 0;
+  virtual void Visit(const Container<LocalTime> *) = 0;
 };
 
 class ContainerBase : public std::enable_shared_from_this<ContainerBase> {
