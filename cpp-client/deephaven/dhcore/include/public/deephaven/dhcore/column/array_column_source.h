@@ -202,14 +202,14 @@ class GenericArrayColumnSource final : public deephaven::dhcore::column::Mutable
   using RowSequence = deephaven::dhcore::container::RowSequence;
 
 public:
-  static std::shared_ptr<GenericArrayColumnSource> Create() {
-    auto elements = std::make_unique<T[]>(0);
-    auto nulls = std::make_unique<T[]>(0);
-    return CreateFromArrays(std::move(elements), std::move(nulls), 0);
-  }
+//  static std::shared_ptr<GenericArrayColumnSource> Create() {
+//    auto elements = std::make_unique<T[]>(0);
+//    auto nulls = std::make_unique<T[]>(0);
+//    return CreateFromArrays(std::move(elements), std::move(nulls), 0);
+//  }
 
-  static std::shared_ptr<GenericArrayColumnSource> CreateFromArrays(std::unique_ptr<T[]> elements,
-      std::unique_ptr<bool[]> nulls, size_t size) {
+  static std::shared_ptr<GenericArrayColumnSource> CreateFromArrays(const ElementType &element_type,
+      std::unique_ptr<T[]> elements, std::unique_ptr<bool[]> nulls, size_t size) {
     return std::make_shared<GenericArrayColumnSource>(Private(), std::move(elements), std::move(nulls),
         size);
   }
@@ -242,13 +242,16 @@ public:
         &data_);
   }
 
-  const ElementType &GetElementType() const final;
+  const ElementType &GetElementType() const final {
+    return element_type;
+  }
 
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
     visitor->Visit(*this);
   }
 
 private:
+  ElementType element_type;
   internal::GenericBackingStore<T> data_;
 };
 
