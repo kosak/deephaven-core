@@ -2,13 +2,20 @@
  * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
  */
 #pragma once
-#include <string>
+#include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
 #include <arrow/array.h>
+#include <arrow/type.h>
 #include "deephaven/client/arrowutil/arrow_value_converter.h"
+#include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/chunk/chunk_traits.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/column_source_utils.h"
+#include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/types.h"
 
 namespace deephaven::client::arrowutil {

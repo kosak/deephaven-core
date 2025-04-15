@@ -2,7 +2,15 @@
  * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
  */
 #include "deephaven/client/arrowutil/arrow_column_source.h"
+
+#include <cstddef>
+#include <stdexcept>
+#include <arrow/type.h>
+#include <arrow/visitor.h>
+
 #include "deephaven/client/utility/arrow_util.h"
+#include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/core.h"
 
 using deephaven::client::utility::OkOrThrow;
 
