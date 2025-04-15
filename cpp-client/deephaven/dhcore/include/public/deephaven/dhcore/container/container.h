@@ -20,8 +20,8 @@ class Container;
 
 class ContainerVisitor {
 public:
-  void Visit(const Container<char16_t> *);
-
+  virtual ~ContainerVisitor() = default;
+  virtual void Visit(const Container<char16_t> *) = 0;
 };
 
 class ContainerBase : public std::enable_shared_from_this<ContainerBase> {

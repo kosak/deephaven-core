@@ -507,8 +507,21 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
 
   };
 
-  struct ChunkAppender : public ContainerVisitor {
+  struct ChunkAppender final : public ContainerVisitor {
+    void Visit(const Container<char16_t> *container) final {
+      auto *typed_builder = deephaven::dhcore::utility::VerboseCast<arrow::UInt16Builder*>(
+          DEEPHAVEN_LOCATION_EXPR(array_builder_.get()));
+      auto size = container->size();
+      for (size_t i = 0; i != size; ++i) {
+        if (container->IsNull(i)) {
+          OkOrThrow(DEEPHAVEN_LOCATION_EXPR(typed_builder->AppendNull()));
+        } else {
+          OkOrThrow(DEEPHAVEN_LOCATION_EXPR(typed_builder->Append((*container)[i])));
+        }
+      }
+    }
 
+    std::shared_ptr<arrow::ArrayBuilder> array_builder_;
   };
 
   void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
