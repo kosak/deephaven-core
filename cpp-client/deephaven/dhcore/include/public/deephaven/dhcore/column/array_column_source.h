@@ -210,12 +210,13 @@ public:
 
   static std::shared_ptr<GenericArrayColumnSource> CreateFromArrays(const ElementType &element_type,
       std::unique_ptr<T[]> elements, std::unique_ptr<bool[]> nulls, size_t size) {
-    return std::make_shared<GenericArrayColumnSource>(Private(), std::move(elements), std::move(nulls),
-        size);
+    return std::make_shared<GenericArrayColumnSource>(Private(), element_type, std::move(elements),
+        std::move(nulls), size);
   }
 
-  explicit GenericArrayColumnSource(Private, std::unique_ptr<T[]> elements,
-      std::unique_ptr<bool[]> nulls, size_t size) : data_(std::move(elements), std::move(nulls), size) {}
+  explicit GenericArrayColumnSource(Private, const ElementType &element_type,
+      std::unique_ptr<T[]> elements, std::unique_ptr<bool[]> nulls, size_t size) :
+      element_type_(element_type), data_(std::move(elements), std::move(nulls), size) {}
   ~GenericArrayColumnSource() final = default;
 
   void FillChunk(const RowSequence &rows, Chunk *dest, BooleanChunk *optional_dest_null_flags) const final {
@@ -242,8 +243,9 @@ public:
         &data_);
   }
 
+  [[nodiscard]]
   const ElementType &GetElementType() const final {
-    return element_type;
+    return element_type_;
   }
 
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
@@ -251,7 +253,7 @@ public:
   }
 
 private:
-  ElementType element_type;
+  ElementType element_type_;
   internal::GenericBackingStore<T> data_;
 };
 

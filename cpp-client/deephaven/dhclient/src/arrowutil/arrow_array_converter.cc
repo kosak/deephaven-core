@@ -86,8 +86,7 @@ std::vector<std::shared_ptr<TArrowArray>> DowncastChunks(const arrow::ChunkedArr
   return downcasted;
 }
 
-class Reconstituter final : public arrow::TypeVisitor {
-public:
+struct Reconstituter final : public arrow::TypeVisitor {
   Reconstituter(std::shared_ptr<ColumnSource> flattened_elements,
       std::unique_ptr<size_t[]> slice_lengths,
       std::unique_ptr<bool[]> slice_nulls,
@@ -106,62 +105,56 @@ public:
 
   ~Reconstituter() final = default;
 
-  std::shared_ptr<ContainerArrayColumnSource> MakeResult() {
-    return ContainerArrayColumnSource::CreateFromArrays(
-        std::move(slices_), std::move(slice_nulls_), num_slices_);
-  }
-
   arrow::Status Visit(const arrow::UInt16Type &/*type*/) final {
-    return VisitHelper<char16_t, CharChunk>();
+    return VisitHelper<char16_t, CharChunk>(ElementTypeId::kChar);
   }
 
   arrow::Status Visit(const arrow::Int8Type &/*type*/) final {
-    return VisitHelper<int8_t, Int8Chunk>();
+    return VisitHelper<int8_t, Int8Chunk>(ElementTypeId::kInt8);
   }
 
   arrow::Status Visit(const arrow::Int16Type &/*type*/) final {
-    return VisitHelper<int16_t, Int16Chunk>();
+    return VisitHelper<int16_t, Int16Chunk>(ElementTypeId::kInt16);
   }
 
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    return VisitHelper<int32_t, Int32Chunk>();
+    return VisitHelper<int32_t, Int32Chunk>(ElementTypeId::kInt32);
   }
 
   arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
-    return VisitHelper<int64_t, Int64Chunk>();
+    return VisitHelper<int64_t, Int64Chunk>(ElementTypeId::kInt64);
   }
 
   arrow::Status Visit(const arrow::FloatType &/*type*/) final {
-    return VisitHelper<float, FloatChunk>();
+    return VisitHelper<float, FloatChunk>(ElementTypeId::kFloat);
   }
 
   arrow::Status Visit(const arrow::DoubleType &/*type*/) final {
-    return VisitHelper<double, DoubleChunk>();
+    return VisitHelper<double, DoubleChunk>(ElementTypeId::kDouble);
   }
 
   arrow::Status Visit(const arrow::BooleanType &/*type*/) final {
-    return VisitHelper<bool, BooleanChunk>();
+    return VisitHelper<bool, BooleanChunk>(ElementTypeId::kBool);
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    return VisitHelper<std::string, StringChunk>();
+    return VisitHelper<std::string, StringChunk>(ElementTypeId::kString);
   }
 
   arrow::Status Visit(const arrow::TimestampType &/*type*/) final {
-    return VisitHelper<DateTime, DateTimeChunk>();
+    return VisitHelper<DateTime, DateTimeChunk>(ElementTypeId::kTimestamp);
   }
 
   arrow::Status Visit(const arrow::Date64Type &/*type*/) final {
-    return VisitHelper<LocalDate, LocalDateChunk>();
+    return VisitHelper<LocalDate, LocalDateChunk>(ElementTypeId::kLocalDate);
   }
 
   arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
-    return VisitHelper<LocalTime, LocalTimeChunk>();
+    return VisitHelper<LocalTime, LocalTimeChunk>(ElementTypeId::kLocalTime);
   }
 
-private:
   template<typename TElement, typename TChunk>
-  arrow::Status VisitHelper() {
+  arrow::Status VisitHelper(ElementTypeId::Enum element_type_id) {
     std::shared_ptr<TElement[]> flattened_data(new TElement[flattened_size_]);
     auto flattened_data_chunk = TChunk::CreateView(flattened_data.get(), flattened_size_);
     flattened_elements_->FillChunk(*rowSequence_, &flattened_data_chunk, &flattened_nulls_chunk_);
@@ -182,6 +175,11 @@ private:
       slices_[i] = std::move(slice);
       slice_offset += slice_size;
     }
+
+    auto element_type = ElementType::Of(element_type_id).WrapList();
+
+    result_ = ContainerArrayColumnSource::CreateFromArrays(element_type,
+        std::move(slices_), std::move(slice_nulls_), num_slices_);
     return arrow::Status::OK();
   }
 
@@ -194,6 +192,7 @@ private:
   BooleanChunk flattened_nulls_chunk_;
   std::shared_ptr<RowSequence> rowSequence_;
   std::unique_ptr<std::shared_ptr<ContainerBase>[]> slices_;
+  std::shared_ptr<ContainerArrayColumnSource> result_;
 };
 
 struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
@@ -274,7 +273,7 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
 
   /**
    * When the element is a list, we use recursion to extract the flattened elements of the list into
-   * a single column source. Then e extract the data out of that column source into a single pair
+   * a single column source. Then we extract the data out of that column source into a single pair
    * of arrays (one for the flattened data, and one for the flattened null flags), and then we
    * reconstitute the 2D list structure as a ColumnSource<shared_ptr<ContainerBase>>, where the
    * shared_ptr<ContainerBase> has the appropriate dynamic type.
@@ -390,7 +389,7 @@ struct ChunkedArrayToColumnSourceVisitor final : public arrow::TypeVisitor {
     Reconstituter reconstituter(std::move(flattened_elements), std::move(slice_lengths),
         std::move(slice_nulls), num_slices, flattened_size);
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(type.value_type()->Accept(&reconstituter)));
-    result_ = reconstituter.MakeResult();
+    result_ = std::move(reconstituter.result_);
     return arrow::Status::OK();
   }
 
