@@ -76,6 +76,13 @@ public:
    * Implement the Visitor pattern.
    */
   virtual void AcceptVisitor(ColumnSourceVisitor *visitor) const = 0;
+
+  /**
+   * Get the ElementType of the ColumnSource
+   * @return The ElementType of this ColumnSource
+   */
+  [[nodiscard]]
+  virtual ElementType GetElementType() const = 0;
 };
 
 /**

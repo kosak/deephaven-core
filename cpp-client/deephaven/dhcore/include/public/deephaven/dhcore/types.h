@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <memory>
 #include <ostream>
-#include <stdexcept>
 #include <string>
 #include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/ostream.h"
@@ -35,79 +34,19 @@ struct ElementTypeId {
 
 class ElementType {
 public:
-  uint32_t num_list_applications() const { return num_list_applications_; }
-  ElementTypeId element_type_id() const { return element_type_id_; }
+  [[nodiscard]]
+  uint32_t list_depth() const { return list_depth_; }
+  [[nodiscard]]
+  ElementTypeId::Enum element_type_id() const { return element_type_id_; }
 
 private:
-  uint32_t num_list_applications_;
-  ElementTypeId element_type_id_;
+  uint32_t list_depth_;
+  ElementTypeId::Enum element_type_id_;
 };
 
 class DateTime;
 class LocalDate;
 class LocalTime;
-
-template<typename T>
-void VisitElementTypeId(ElementTypeId::Enum type_id, T *visitor) {
-  switch (type_id) {
-    case ElementTypeId::kChar: {
-      visitor->template operator()<char16_t>();
-      break;
-    }
-    case ElementTypeId::kInt8: {
-      visitor->template operator()<int8_t>();
-      break;
-    }
-    case ElementTypeId::kInt16: {
-      visitor->template operator()<int16_t>();
-      break;
-    }
-    case ElementTypeId::kInt32: {
-      visitor->template operator()<int32_t>();
-      break;
-    }
-    case ElementTypeId::kInt64: {
-      visitor->template operator()<int64_t>();
-      break;
-    }
-    case ElementTypeId::kFloat: {
-      visitor->template operator()<float>();
-      break;
-    }
-    case ElementTypeId::kDouble: {
-      visitor->template operator()<double>();
-      break;
-    }
-    case ElementTypeId::kBool: {
-      visitor->template operator()<bool>();
-      break;
-    }
-    case ElementTypeId::kString: {
-      visitor->template operator()<std::string>();
-      break;
-    }
-    case ElementTypeId::kTimestamp: {
-      visitor->template operator()<deephaven::dhcore::DateTime>();
-      break;
-    }
-    case ElementTypeId::kLocalDate: {
-      visitor->template operator()<deephaven::dhcore::LocalDate>();
-      break;
-    }
-    case ElementTypeId::kLocalTime: {
-      visitor->template operator()<deephaven::dhcore::LocalTime>();
-      break;
-    }
-    case ElementTypeId::kList: {
-      visitor->template operator()<std::shared_ptr<deephaven::dhcore::container::ContainerBase>>();
-      break;
-    }
-    default: {
-      auto message = fmt::format("Unrecognized ElementTypeId {}", static_cast<int>(type_id));
-      throw std::runtime_error(message);
-    }
-  }
-}
 
 class DeephavenConstants {
 public:
