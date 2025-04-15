@@ -21,7 +21,6 @@ struct ElementTypeId {
   ElementTypeId() = delete;
 
   // We don't use "enum class" here because we can't figure out how to get it to work right with Cython.
-  // TODO(kosak): we are going to have to expand LIST to be a true nested type.
   enum Enum {
     kChar,
     kInt8, kInt16, kInt32, kInt64,
