@@ -9,6 +9,7 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/third_party/fmt/core.h"
@@ -361,13 +362,15 @@ public:
         {"hello 1", "hello 4", "hello 7"},
         {"hello 2", {}, "hello 8"}
     });
-//    expected.AddColumn("Shorts", int16s);
-//    expected.AddColumn("Ints", int32s);
-//    expected.AddColumn("Longs", int64s);
-//    expected.AddColumn("Floats", floats);
-//    expected.AddColumn("Doubles", doubles);
-//    expected.AddColumn("Bools", bools);
-//    expected.AddColumn("Strings", strings);
+    auto start = DateTime(2001, 3, 1, 12, 34, 56).Nanos();
+    auto from_nanos = [&start](int64_t offset) {
+      return DateTime::FromNanos(start + offset);
+    };
+    expected.AddColumn<std::vector<std::optional<DateTime>>>("DateTimes", {
+        {from_nanos(0), from_nanos(3), from_nanos(6), from_nanos(9)},
+        {from_nanos(1), from_nanos(4), from_nanos(7)},
+        {from_nanos(2), {}, from_nanos(8)}
+    });
 //    expected.AddColumn("DateTimes", date_times);
 //    expected.AddColumn("LocalDates", local_dates);
 //    expected.AddColumn("LocalTimes", local_times);
@@ -396,7 +399,7 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
           "Doubles = ii == 5 ? null : (double)ii",
           "Bools = ii == 5 ? null : ((ii % 2) == 0)",
           "Strings = ii == 5 ? null : (`hello ` + ii)",
-//          "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
+          "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
 //          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
 //          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
       })
