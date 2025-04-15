@@ -76,62 +76,66 @@ arrow::flight::FlightDescriptor ArrowUtil::ConvertTicketToFlightDescriptor(const
 namespace {
 struct ArrowToElementTypeId final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::Int8Type &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kInt8);
+    element_type_ = ElementType::Of(ElementTypeId::kInt8);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int16Type &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kInt16);
+    element_type_ = ElementType::Of(ElementTypeId::kInt16);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kInt32);
+    element_type_ = ElementType::Of(ElementTypeId::kInt32);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kInt64);
+    element_type_ = ElementType::Of(ElementTypeId::kInt64);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::FloatType &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kFloat);
+    element_type_ = ElementType::Of(ElementTypeId::kFloat);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::DoubleType &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kDouble);
+    element_type_ = ElementType::Of(ElementTypeId::kDouble);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::BooleanType &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kBool);
+    element_type_ = ElementType::Of(ElementTypeId::kBool);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::UInt16Type &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kChar);
+    element_type_ = ElementType::Of(ElementTypeId::kChar);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kString);
+    element_type_ = ElementType::Of(ElementTypeId::kString);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::TimestampType &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kTimestamp);
+    element_type_ = ElementType::Of(ElementTypeId::kTimestamp);
     return arrow::Status::OK();
   }
 
-  arrow::Status Visit(const arrow::ListType &/*type*/) final {
-    type_id_ = ElementTypeId::kList;
-    return arrow::Status::OK();
+  arrow::Status Visit(const arrow::ListType &list_type) final {
+    ArrowToElementTypeId inner;
+    auto result = list_type.value_type()->Accept(&inner);
+    if (result.ok()) {
+      element_type_ = inner.element_type_.WrapList();
+    }
+    return result;
   }
 
   arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
-    type_id_ = ElementType::Of(ElementTypeId::kLocalTime);
+    element_type_ = ElementType::Of(ElementTypeId::kLocalTime);
     return arrow::Status::OK();
   }
 
@@ -182,8 +186,10 @@ std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(const ElementType &elem
     case ElementTypeId::kString: return std::make_shared<arrow::StringType>();
     case ElementTypeId::kTimestamp: return std::make_shared<arrow::TimestampType>(
         arrow::TimeUnit::NANO, "UTC");
-    case ElementTypeId::Enum::kLocalDate: return std::make_shared<arrow::Date64Type>();
-    case ElementTypeId::Enum::kLocalTime: return std::make_shared<arrow::Time64Type>(arrow::TimeUnit::NANO);
+    case ElementTypeId::kLocalDate: return std::make_shared<arrow::Date64Type>();
+    case ElementTypeId::kLocalTime: return std::make_shared<arrow::Time64Type>(arrow::TimeUnit::NANO);
+
+    case ElementTypeId::kList:
     default: {
       auto message = fmt::format("Unexpected element_type_id {}", static_cast<int>(
           element_type.element_type_id()));

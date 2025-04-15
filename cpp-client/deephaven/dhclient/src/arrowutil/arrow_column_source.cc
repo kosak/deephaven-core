@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <arrow/array.h>
 #include <arrow/type.h>
 #include <arrow/visitor.h>
 

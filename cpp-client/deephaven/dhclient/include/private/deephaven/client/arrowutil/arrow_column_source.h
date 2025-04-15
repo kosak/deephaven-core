@@ -6,17 +6,15 @@
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
-#include <string>
 #include <vector>
-#include <arrow/array.h>
 #include <arrow/type.h>
-#include "deephaven/client/arrowutil/arrow_value_converter.h"
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/chunk/chunk_traits.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/column_source_utils.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/types.h"
+#include "deephaven/dhcore/utility/utility.h"
 
 namespace deephaven::client::arrowutil {
 namespace internal {
@@ -51,6 +49,7 @@ class GenericArrowColumnSource final : public TColumnSourceBase {
   using Chunk = deephaven::dhcore::chunk::Chunk;
   using ColumnSourceVisitor = deephaven::dhcore::column::ColumnSourceVisitor;
   using DateTime = deephaven::dhcore::DateTime;
+  using ElementType = deephaven::dhcore::ElementType;
   using LocalDate = deephaven::dhcore::LocalDate;
   using LocalTime = deephaven::dhcore::LocalTime;
   using RowSequence = deephaven::dhcore::container::RowSequence;
@@ -223,6 +222,9 @@ public:
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
     visitor->Visit(*this);
   }
+
+  [[nodiscard]]
+  const ElementType &GetElementType() const final;
 
 private:
   std::vector<std::shared_ptr<TArrowArray>> arrays_;

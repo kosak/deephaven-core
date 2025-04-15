@@ -34,11 +34,14 @@ struct ElementTypeId {
 
 class ElementType {
 public:
+  static ElementType Of(ElementTypeId::Enum element_type_id);
+
   [[nodiscard]]
   uint32_t list_depth() const { return list_depth_; }
   [[nodiscard]]
   ElementTypeId::Enum element_type_id() const { return element_type_id_; }
 
+  ElementType WrapList() const;
   ElementType UnwrapList() const;
 
 private:
