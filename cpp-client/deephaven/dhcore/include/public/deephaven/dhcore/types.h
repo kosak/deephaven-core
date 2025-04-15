@@ -34,19 +34,29 @@ struct ElementTypeId {
 
 class ElementType {
 public:
-  static ElementType Of(ElementTypeId::Enum element_type_id);
+  static ElementType Of(ElementTypeId::Enum element_type_id) {
+    return {0, element_type_id};
+  }
+
+  ElementType() = default;
+
+  ElementType(uint32_t list_depth, ElementTypeId::Enum element_type_id) :
+    list_depth_(list_depth), element_type_id_(element_type_id) {}
 
   [[nodiscard]]
-  uint32_t list_depth() const { return list_depth_; }
+  uint32_t ListDepth() const { return list_depth_; }
   [[nodiscard]]
-  ElementTypeId::Enum element_type_id() const { return element_type_id_; }
+  ElementTypeId::Enum Id() const { return element_type_id_; }
 
-  ElementType WrapList() const;
+  ElementType WrapList() const {
+    return {list_depth_ + 1, element_type_id_};
+  }
+
   ElementType UnwrapList() const;
 
 private:
-  uint32_t list_depth_;
-  ElementTypeId::Enum element_type_id_;
+  uint32_t list_depth_ = 0;
+  ElementTypeId::Enum element_type_id_ = ElementTypeId::kInt8;
 };
 
 class DateTime;

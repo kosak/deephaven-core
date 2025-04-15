@@ -496,12 +496,12 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
 
 struct InnerBuilderMaker {
   explicit InnerBuilderMaker(const ElementType &element_type) {
-    if (element_type.list_depth() != 1) {
-      auto message = fmt::format("Expected list_depth 1, got {}", element_type.list_depth());
+    if (element_type.ListDepth() != 1) {
+      auto message = fmt::format("Expected list_depth 1, got {}", element_type.ListDepth());
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
 
-    switch (element_type.element_type_id()) {
+    switch (element_type.Id()) {
       case ElementTypeId::kChar: {
         array_builder_ = std::make_shared<arrow::UInt16Builder>();
         return;
@@ -569,7 +569,7 @@ struct InnerBuilderMaker {
       case ElementTypeId::kList:
       default: {
         auto message = fmt::format("Programming error: elementTypeId {} not supported here",
-            static_cast<int>(element_type.element_type_id()));
+            static_cast<int>(element_type.Id()));
         throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
       }
     }

@@ -169,12 +169,12 @@ std::optional<ElementType> ArrowUtil::GetElementType(const arrow::DataType &data
 }
 
 std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(const ElementType &element_type) {
-  if (element_type.list_depth() > 0) {
+  if (element_type.ListDepth() > 0) {
     auto inner = GetArrowType(element_type.UnwrapList());
     return std::make_shared<arrow::ListType>(std::move(inner));
   }
 
-  switch (element_type.element_type_id()) {
+  switch (element_type.Id()) {
     case ElementTypeId::kChar: return std::make_shared<arrow::UInt16Type>();
     case ElementTypeId::kInt8: return std::make_shared<arrow::Int8Type>();
     case ElementTypeId::kInt16: return std::make_shared<arrow::Int16Type>();
@@ -191,8 +191,8 @@ std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(const ElementType &elem
 
     case ElementTypeId::kList:
     default: {
-      auto message = fmt::format("Unexpected element_type_id {}", static_cast<int>(
-          element_type.element_type_id()));
+      auto message = fmt::format("Unexpected element_type_id {}",
+          static_cast<int>(element_type.Id()));
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
   }

@@ -222,20 +222,20 @@ std::shared_ptr<RowSequence> MyTable::GetRowSequence() const {
 }
 
 std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType(const ElementType &element_type) {
-  if (element_type.list_depth() > 1) {
+  if (element_type.ListDepth() > 1) {
     auto message = fmt::format("Don't know how to make flex vectors with list depth {}",
-        element_type.list_depth());
+        element_type.ListDepth());
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
 
-  if (element_type.list_depth() == 1) {
+  if (element_type.ListDepth() == 1) {
     // return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(element_type);
     return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>();
   }
 
   // element_type.list_depth == 0
 
-  switch (element_type.element_type_id()) {
+  switch (element_type.Id()) {
     case ElementTypeId::kChar: {
       return std::make_unique<NumericAbstractFlexVector<char16_t>>();
     }
@@ -287,7 +287,7 @@ std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType(const ElementType
     case ElementTypeId::kList:
     default: {
       auto message = fmt::format("Programming error: elementTypeId {} not supported here",
-          static_cast<int>(element_type.element_type_id()));
+          static_cast<int>(element_type.Id()));
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
   }

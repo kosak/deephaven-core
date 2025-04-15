@@ -3,6 +3,7 @@
  */
 #include "deephaven/dhcore/utility/cython_support.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -10,6 +11,7 @@
 #include <utility>
 #include "deephaven/dhcore/clienttable/client_table.h"
 #include "deephaven/dhcore/clienttable/schema.h"
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/array_column_source.h"
