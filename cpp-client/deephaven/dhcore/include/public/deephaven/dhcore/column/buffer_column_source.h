@@ -10,6 +10,7 @@
 #include "deephaven/dhcore/chunk/chunk_traits.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/column_source_utils.h"
+#include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/types.h"
 
 namespace deephaven::dhcore::column {
@@ -67,16 +68,19 @@ class NumericBufferColumnSource final : public deephaven::dhcore::column::Numeri
   using RowSequence = deephaven::dhcore::container::RowSequence;
 
 public:
-  static std::shared_ptr<NumericBufferColumnSource> Create(const T *start, size_t size) {
-    return std::make_shared<NumericBufferColumnSource<T>>(Private(), start, size);
+  static std::shared_ptr<NumericBufferColumnSource> Create(const ElementType &element_type,
+      const T *start, size_t size) {
+    return std::make_shared<NumericBufferColumnSource<T>>(Private(), element_type, start, size);
   }
 
-  static std::shared_ptr<NumericBufferColumnSource> CreateUntyped(const void *start, size_t size) {
+  static std::shared_ptr<NumericBufferColumnSource> CreateUntyped(const ElementType &element_type,
+      const void *start, size_t size) {
     const auto *typed_start = static_cast<const T*>(start);
-    return Create(typed_start, size);
+    return Create(element_type, typed_start, size);
   }
 
-  NumericBufferColumnSource(Private, const T* start, size_t size) : data_(start, size) {}
+  NumericBufferColumnSource(Private, const ElementType &element_type,
+      const T* start, size_t size) : element_type_(element_type), data_(start, size) {}
   ~NumericBufferColumnSource() = default;
 
   void FillChunk(const RowSequence &rows, Chunk *dest, BooleanChunk *optional_null_flags) const final {
@@ -93,9 +97,12 @@ public:
     visitor->Visit(*this);
   }
 
-  const ElementType &GetElementType() const final;
+  const ElementType &GetElementType() const final {
+    return element_type_;
+  }
 
 private:
+  ElementType element_type_;
   internal::NumericBufferBackingStore<T> data_;
 };
 
