@@ -39,6 +39,8 @@ public:
   [[nodiscard]]
   ElementTypeId::Enum element_type_id() const { return element_type_id_; }
 
+  ElementType UnwrapList() const;
+
 private:
   uint32_t list_depth_;
   ElementTypeId::Enum element_type_id_;

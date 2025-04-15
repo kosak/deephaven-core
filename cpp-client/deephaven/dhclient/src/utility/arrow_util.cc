@@ -5,14 +5,13 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <optional>
 #include <utility>
 
-#include <arrow/array/builder_binary.h>
-#include <arrow/array/builder_primitive.h>
 #include <arrow/status.h>
 #include <arrow/flight/types.h>
 #include <arrow/table.h>
@@ -49,6 +48,7 @@ using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::DateTime;
 using deephaven::dhcore::LocalDate;
 using deephaven::dhcore::LocalTime;
+using deephaven::dhcore::ElementType;
 using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::utility::MakeReservedVector;
 
@@ -69,59 +69,59 @@ arrow::flight::FlightDescriptor ArrowUtil::ConvertTicketToFlightDescriptor(const
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
   uint32_t value;
-  memcpy(&value, ticket.data() + 1, sizeof(uint32_t));
+  std::memcpy(&value, ticket.data() + 1, sizeof(value));
   return arrow::flight::FlightDescriptor::Path({"export", std::to_string(value)});
 };
 
 namespace {
 struct ArrowToElementTypeId final : public arrow::TypeVisitor {
   arrow::Status Visit(const arrow::Int8Type &/*type*/) final {
-    type_id_ = ElementTypeId::kInt8;
+    type_id_ = ElementType::Of(ElementTypeId::kInt8);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int16Type &/*type*/) final {
-    type_id_ = ElementTypeId::kInt16;
+    type_id_ = ElementType::Of(ElementTypeId::kInt16);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int32Type &/*type*/) final {
-    type_id_ = ElementTypeId::kInt32;
+    type_id_ = ElementType::Of(ElementTypeId::kInt32);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::Int64Type &/*type*/) final {
-    type_id_ = ElementTypeId::kInt64;
+    type_id_ = ElementType::Of(ElementTypeId::kInt64);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::FloatType &/*type*/) final {
-    type_id_ = ElementTypeId::kFloat;
+    type_id_ = ElementType::Of(ElementTypeId::kFloat);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::DoubleType &/*type*/) final {
-    type_id_ = ElementTypeId::kDouble;
+    type_id_ = ElementType::Of(ElementTypeId::kDouble);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::BooleanType &/*type*/) final {
-    type_id_ = ElementTypeId::kBool;
+    type_id_ = ElementType::Of(ElementTypeId::kBool);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::UInt16Type &/*type*/) final {
-    type_id_ = ElementTypeId::kChar;
+    type_id_ = ElementType::Of(ElementTypeId::kChar);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::StringType &/*type*/) final {
-    type_id_ = ElementTypeId::kString;
+    type_id_ = ElementType::Of(ElementTypeId::kString);
     return arrow::Status::OK();
   }
 
   arrow::Status Visit(const arrow::TimestampType &/*type*/) final {
-    type_id_ = ElementTypeId::kTimestamp;
+    type_id_ = ElementType::Of(ElementTypeId::kTimestamp);
     return arrow::Status::OK();
   }
 
@@ -131,7 +131,7 @@ struct ArrowToElementTypeId final : public arrow::TypeVisitor {
   }
 
   arrow::Status Visit(const arrow::Time64Type &/*type*/) final {
-    type_id_ = ElementTypeId::kLocalTime;
+    type_id_ = ElementType::Of(ElementTypeId::kLocalTime);
     return arrow::Status::OK();
   }
 
@@ -141,20 +141,20 @@ struct ArrowToElementTypeId final : public arrow::TypeVisitor {
           type.ToString());
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
-    type_id_ = ElementTypeId::kLocalDate;
+    element_type_ = ElementType::Of(ElementTypeId::kLocalDate);
     return arrow::Status::OK();
   }
 
-  ElementTypeId::Enum type_id_ = ElementTypeId::kInt8;  // arbitrary initializer
+  ElementType element_type_;
 };
 }  // namespace
 
-std::optional<ElementTypeId::Enum> ArrowUtil::GetElementTypeId(const arrow::DataType &data_type,
+std::optional<ElementType> ArrowUtil::GetElementType(const arrow::DataType &data_type,
     bool must_succeed) {
   ArrowToElementTypeId visitor;
   auto result = data_type.Accept(&visitor);
   if (result.ok()) {
-    return visitor.type_id_;
+    return visitor.element_type_;
   }
   if (!must_succeed) {
     return {};
@@ -164,28 +164,29 @@ std::optional<ElementTypeId::Enum> ArrowUtil::GetElementTypeId(const arrow::Data
   throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
 }
 
-std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(ElementTypeId::Enum element_type_id) {
-  switch (element_type_id) {
-    case ElementTypeId::Enum::kChar: return std::make_shared<arrow::UInt16Type>();
-    case ElementTypeId::Enum::kInt8: return std::make_shared<arrow::Int8Type>();
-    case ElementTypeId::Enum::kInt16: return std::make_shared<arrow::Int16Type>();
-    case ElementTypeId::Enum::kInt32: return std::make_shared<arrow::Int32Type>();
-    case ElementTypeId::Enum::kInt64: return std::make_shared<arrow::Int64Type>();
-    case ElementTypeId::Enum::kFloat: return std::make_shared<arrow::FloatType>();
-    case ElementTypeId::Enum::kDouble: return std::make_shared<arrow::DoubleType>();
-    case ElementTypeId::Enum::kBool: return std::make_shared<arrow::BooleanType>();
-    case ElementTypeId::Enum::kString: return std::make_shared<arrow::StringType>();
-    case ElementTypeId::Enum::kTimestamp: return std::make_shared<arrow::TimestampType>(
+std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(const ElementType &element_type) {
+  if (element_type.list_depth() > 0) {
+    auto inner = GetArrowType(element_type.UnwrapList());
+    return std::make_shared<arrow::ListType>(std::move(inner));
+  }
+
+  switch (element_type.element_type_id()) {
+    case ElementTypeId::kChar: return std::make_shared<arrow::UInt16Type>();
+    case ElementTypeId::kInt8: return std::make_shared<arrow::Int8Type>();
+    case ElementTypeId::kInt16: return std::make_shared<arrow::Int16Type>();
+    case ElementTypeId::kInt32: return std::make_shared<arrow::Int32Type>();
+    case ElementTypeId::kInt64: return std::make_shared<arrow::Int64Type>();
+    case ElementTypeId::kFloat: return std::make_shared<arrow::FloatType>();
+    case ElementTypeId::kDouble: return std::make_shared<arrow::DoubleType>();
+    case ElementTypeId::kBool: return std::make_shared<arrow::BooleanType>();
+    case ElementTypeId::kString: return std::make_shared<arrow::StringType>();
+    case ElementTypeId::kTimestamp: return std::make_shared<arrow::TimestampType>(
         arrow::TimeUnit::NANO, "UTC");
-    case ElementTypeId::Enum::kList: {
-      // TODO(kosak)
-      auto underlying = std::make_shared<arrow::Int32Type>();
-      return std::make_shared<arrow::ListType>(underlying);
-    }
     case ElementTypeId::Enum::kLocalDate: return std::make_shared<arrow::Date64Type>();
     case ElementTypeId::Enum::kLocalTime: return std::make_shared<arrow::Time64Type>(arrow::TimeUnit::NANO);
     default: {
-      auto message = fmt::format("Unexpected element_type_id {}", static_cast<int>(element_type_id));
+      auto message = fmt::format("Unexpected element_type_id {}", static_cast<int>(
+          element_type.element_type_id()));
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
   }
@@ -194,9 +195,9 @@ std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(ElementTypeId::Enum ele
 std::shared_ptr<Schema> ArrowUtil::MakeDeephavenSchema(const arrow::Schema &schema) {
   const auto &fields = schema.fields();
   auto names = MakeReservedVector<std::string>(fields.size());
-  auto types = MakeReservedVector<ElementTypeId::Enum>(fields.size());
+  auto types = MakeReservedVector<ElementType>(fields.size());
   for (const auto &f: fields) {
-    auto type_id = ArrowUtil::GetElementTypeId(*f->type(), true);
+    auto type_id = ArrowUtil::GetElementType(*f->type(), true);
     names.push_back(f->name());
     types.push_back(*type_id);
   }
