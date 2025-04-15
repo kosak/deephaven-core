@@ -3,9 +3,9 @@
  */
 #pragma once
 
-#include <any>
+#include <cstdint>
+#include <memory>
 #include <string>
-#include <vector>
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/container/container.h"

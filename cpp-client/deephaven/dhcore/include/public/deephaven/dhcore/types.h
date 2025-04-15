@@ -6,7 +6,9 @@
 #include <limits>
 #include <cmath>
 #include <cstdint>
+#include <memory>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/ostream.h"
