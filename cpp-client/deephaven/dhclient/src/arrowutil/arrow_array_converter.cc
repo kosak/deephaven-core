@@ -569,7 +569,7 @@ struct InnerBuilderMaker {
         case ElementTypeId::kList:
         default: {
           auto message = fmt::format("Programming error: elementTypeId {} not supported here",
-              (int) element_type.element_type_id());
+              static_cast<int>(element_type.element_type_id()));
           throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
         }
       }

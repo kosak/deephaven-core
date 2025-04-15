@@ -219,28 +219,30 @@ public:
   ~GenericArrayColumnSource() final = default;
 
   void FillChunk(const RowSequence &rows, Chunk *dest, BooleanChunk *optional_dest_null_flags) const final {
-    typedef typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     ColumnSourceImpls::FillChunk<chunkType_t>(rows, dest, optional_dest_null_flags, data_);
   }
 
   void FillChunkUnordered(const UInt64Chunk &row_keys, Chunk *dest,
       BooleanChunk *optional_dest_null_flags) const final {
-    typedef typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     ColumnSourceImpls::FillChunkUnordered<chunkType_t>(row_keys, dest, optional_dest_null_flags, data_);
   }
 
   void FillFromChunk(const Chunk &src, const BooleanChunk *optional_src_null_flags,
       const RowSequence &rows) final {
-    typedef typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     ColumnSourceImpls::FillFromChunk<chunkType_t>(src, optional_src_null_flags, rows, &data_);
   }
 
   void FillFromChunkUnordered(const Chunk &src, const BooleanChunk *optional_src_null_flags,
       const UInt64Chunk &row_keys) final {
-    typedef typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     ColumnSourceImpls::FillFromChunkUnordered<chunkType_t>(src, optional_src_null_flags, row_keys,
         &data_);
   }
+
+  ElementType GetElementType() const final;
 
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
     visitor->Visit(*this);

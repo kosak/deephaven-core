@@ -3,7 +3,8 @@
  */
 #include "deephaven/dhcore/ticking/immer_table_state.h"
 
-#include <optional>
+#include <memory>
+#include <stdexcept>
 #include <utility>
 
 #include "deephaven/dhcore/chunk/chunk.h"
@@ -15,10 +16,9 @@
 #include "deephaven/dhcore/ticking/shift_processor.h"
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
-#include "deephaven/third_party/fmt/format.h"
+#include "deephaven/third_party/fmt/core.h"
 
 using deephaven::dhcore::ElementTypeId;
-using deephaven::dhcore::VisitElementTypeId;
 using deephaven::dhcore::chunk::AnyChunk;
 using deephaven::dhcore::chunk::Chunk;
 using deephaven::dhcore::chunk::ChunkVisitor;
@@ -218,6 +218,10 @@ std::shared_ptr<RowSequence> MyTable::GetRowSequence() const {
   return rb.Build();
 }
 
+std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType() {
+
+}
+
 struct FlexVectorFromTypeMaker final {
   template<typename T>
   void operator()() {
@@ -235,9 +239,8 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> MakeEmptyFlexVectorsFromSch
   auto ncols = schema.NumCols();
   auto result = MakeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
   for (auto type_id : schema.Types()) {
-    FlexVectorFromTypeMaker fvm;
-    VisitElementTypeId(type_id, &fvm);
-    result.push_back(std::move(fvm.result_));
+    auto fv = MakeFlexVectorFromType(type_id);
+    result.push_back(std::move(fv));
   }
   return result;
 }
