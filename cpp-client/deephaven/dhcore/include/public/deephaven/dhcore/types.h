@@ -27,7 +27,6 @@ struct ElementTypeId {
     kInt8, kInt16, kInt32, kInt64,
     kFloat, kDouble,
     kBool, kString, kTimestamp,
-    kList_UNUSED,
     kLocalDate, kLocalTime
   };
 };
@@ -48,10 +47,12 @@ public:
   [[nodiscard]]
   ElementTypeId::Enum Id() const { return element_type_id_; }
 
+  [[nodiscard]]
   ElementType WrapList() const {
     return {list_depth_ + 1, element_type_id_};
   }
 
+  [[nodiscard]]
   ElementType UnwrapList() const;
 
 private:

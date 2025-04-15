@@ -315,6 +315,7 @@ public:
     }
 
     TableMaker expected;
+    expected.AddColumn<int64_t>("Key", {0, 1, 2});
     expected.AddColumn<std::vector<std::optional<char16_t>>>("Chars", {
         {'a', 'd', 'g', 'j'},
         {'b', 'e', 'h'},
