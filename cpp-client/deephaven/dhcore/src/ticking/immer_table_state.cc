@@ -3,8 +3,11 @@
  */
 #include "deephaven/dhcore/ticking/immer_table_state.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "deephaven/dhcore/chunk/chunk.h"
@@ -218,27 +221,81 @@ std::shared_ptr<RowSequence> MyTable::GetRowSequence() const {
   return rb.Build();
 }
 
-std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType() {
-
-}
-
-struct FlexVectorFromTypeMaker final {
-  template<typename T>
-  void operator()() {
-    if constexpr(DeephavenTraits<T>::kIsNumeric) {
-      result_ = std::make_unique<NumericAbstractFlexVector<T>>();
-    } else {
-      result_ = std::make_unique<GenericAbstractFlexVector<T>>();
-    }
+std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType(const ElementType &element_type) {
+  if (element_type.list_depth() > 1) {
+    auto message = fmt::format("Don't know how to make flex vectors with list depth {}",
+        element_type.list_depth());
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
 
-  std::unique_ptr<AbstractFlexVectorBase> result_;
-};
+  if (element_type.list_depth() == 1) {
+    return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(element_type);
+  }
+
+  // element_type.list_depth == 0
+
+  switch (element_type.element_type_id()) {
+    case ElementTypeId::kChar: {
+      return std::make_unique<NumericAbstractFlexVector<char16_t>>();
+    }
+
+    case ElementTypeId::kInt8: {
+      return std::make_unique<NumericAbstractFlexVector<int8_t>>();
+    }
+
+    case ElementTypeId::kInt16: {
+      return std::make_unique<NumericAbstractFlexVector<int16_t>>();
+    }
+
+    case ElementTypeId::kInt32: {
+      return std::make_unique<NumericAbstractFlexVector<int32_t>>();
+    }
+
+    case ElementTypeId::kInt64: {
+      return std::make_unique<NumericAbstractFlexVector<int64_t>>();
+    }
+
+    case ElementTypeId::kFloat: {
+      return std::make_unique<NumericAbstractFlexVector<float>>();
+    }
+
+    case ElementTypeId::kDouble: {
+      return std::make_unique<NumericAbstractFlexVector<double>>();
+    }
+
+    case ElementTypeId::kBool: {
+      return std::make_unique<GenericAbstractFlexVector<bool>>();
+    }
+
+    case ElementTypeId::kString: {
+      return std::make_unique<GenericAbstractFlexVector<std::string>>();
+    }
+
+    case ElementTypeId::kTimestamp: {
+      return std::make_unique<GenericAbstractFlexVector<DateTime>>();
+    }
+
+    case ElementTypeId::kLocalDate: {
+      return std::make_unique<GenericAbstractFlexVector<LocalDate>>();
+    }
+
+    case ElementTypeId::kLocalTime: {
+      return std::make_unique<GenericAbstractFlexVector<LocalTime>>();
+    }
+
+    case ElementTypeId::kList:
+    default: {
+      auto message = fmt::format("Programming error: elementTypeId {} not supported here",
+          static_cast<int>(element_type.element_type_id()));
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+  }
+}
 
 std::vector<std::unique_ptr<AbstractFlexVectorBase>> MakeEmptyFlexVectorsFromSchema(const Schema &schema) {
   auto ncols = schema.NumCols();
   auto result = MakeReservedVector<std::unique_ptr<AbstractFlexVectorBase>>(ncols);
-  for (auto type_id : schema.Types()) {
+  for (const auto &type_id : schema.Types()) {
     auto fv = MakeFlexVectorFromType(type_id);
     result.push_back(std::move(fv));
   }

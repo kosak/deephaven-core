@@ -164,6 +164,8 @@ struct ImmerColumnSourceImpls {
 }  // namespace internal
 
 class ImmerColumnSource : public virtual deephaven::dhcore::column::ColumnSource {
+public:
+  const ElementType &GetElementType() const final;
 };
 
 template<typename T>
@@ -235,6 +237,8 @@ public:
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
     visitor->Visit(*this);
   }
+
+  const ElementType &GetElementType() const final;
 
 private:
   immer::flex_vector<T> data_;

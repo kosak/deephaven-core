@@ -82,7 +82,7 @@ public:
    * @return The ElementType of this ColumnSource
    */
   [[nodiscard]]
-  virtual ElementType GetElementType() const = 0;
+  virtual const ElementType &GetElementType() const = 0;
 };
 
 /**

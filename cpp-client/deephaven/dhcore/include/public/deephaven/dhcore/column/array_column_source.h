@@ -242,7 +242,7 @@ public:
         &data_);
   }
 
-  ElementType GetElementType() const final;
+  const ElementType &GetElementType() const final;
 
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
     visitor->Visit(*this);
