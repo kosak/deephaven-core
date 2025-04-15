@@ -376,7 +376,11 @@ public:
         {LocalDate::Of(2001, 3, 2), LocalDate::Of(2001, 3, 5), LocalDate::Of(2001, 3, 8)},
         {LocalDate::Of(2001, 3, 3), {}, LocalDate::Of(2001, 3, 9)},
     });
-//    expected.AddColumn("LocalTimes", local_times);
+    expected.AddColumn<std::vector<std::optional<LocalTime>>>("LocalTimes", {
+        {LocalTime::Of(12, 34, 46), LocalTime::Of(12, 34, 49), LocalTime::Of(12, 34, 52), LocalTime::Of(12, 34, 55)},
+        {LocalTime::Of(12, 34, 47), LocalTime::Of(12, 34, 50), LocalTime::Of(12, 34, 53)},
+        {LocalTime::Of(12, 34, 48), {}, LocalTime::Of(12, 34, 54)}
+    });
 
     TableComparerForTests::Compare(expected, *update.Current());
 
@@ -404,7 +408,7 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
           "Strings = ii == 5 ? null : (`hello ` + ii)",
           "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
           "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
-//          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
+          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
       })
       .By("Key");
 
