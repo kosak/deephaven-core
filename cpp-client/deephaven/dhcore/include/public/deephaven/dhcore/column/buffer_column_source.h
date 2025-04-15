@@ -3,7 +3,9 @@
  */
 #pragma once
 
-#include <numeric>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/chunk/chunk_traits.h"
 #include "deephaven/dhcore/column/column_source.h"
@@ -78,19 +80,20 @@ public:
   ~NumericBufferColumnSource() = default;
 
   void FillChunk(const RowSequence &rows, Chunk *dest, BooleanChunk *optional_null_flags) const final {
-    typedef typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     ColumnSourceImpls::FillChunk<chunkType_t>(rows, dest, optional_null_flags, data_);
   }
 
   void FillChunkUnordered(const UInt64Chunk &row_keys, Chunk *dest, BooleanChunk *optional_null_flags) const final {
-    typedef typename
-    deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     ColumnSourceImpls::FillChunkUnordered<chunkType_t>(row_keys, dest, optional_null_flags, data_);
   }
 
   void AcceptVisitor(ColumnSourceVisitor *visitor) const final {
     visitor->Visit(*this);
   }
+
+  const ElementType &GetElementType() const final;
 
 private:
   internal::NumericBufferBackingStore<T> data_;

@@ -3,7 +3,9 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <memory>
+#include <utility>
 #include <immer/flex_vector.hpp>
 #include <immer/flex_vector_transient.hpp>
 #include "deephaven/dhcore/chunk/chunk.h"

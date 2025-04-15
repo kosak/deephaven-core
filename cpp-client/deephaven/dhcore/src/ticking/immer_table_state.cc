@@ -229,7 +229,8 @@ std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType(const ElementType
   }
 
   if (element_type.list_depth() == 1) {
-    return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(element_type);
+    // return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(element_type);
+    return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>();
   }
 
   // element_type.list_depth == 0
