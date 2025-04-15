@@ -23,6 +23,8 @@
 #include "deephaven/client/server/server.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/client/utility/executor.h"
+#include "deephaven/dhcore/chunk/chunk.h"
+#include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/ticking/ticking.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/dhcore/ticking/barrage_processor.h"

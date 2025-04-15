@@ -583,55 +583,56 @@ struct InnerBuilderMaker {
       array_builder_(std::move(array_builder)) {}
 
     void Visit(const Container<char16_t> *container) final {
-      VisitHelper<arrow::UInt16Builder>(container);
+      VisitHelper<arrow::UInt16Builder>(container, [](char16_t x) { return x; });
     }
 
     void Visit(const Container<int8_t> *container) final {
-      VisitHelper<arrow::Int8Builder>(container);
+      VisitHelper<arrow::Int8Builder>(container, [](int8_t x) { return x; });
     }
 
     void Visit(const Container<int16_t> *container) final {
-      VisitHelper<arrow::Int16Builder>(container);
+      VisitHelper<arrow::Int16Builder>(container, [](int16_t x) { return x; });
     }
 
     void Visit(const Container<int32_t> *container) final {
-      VisitHelper<arrow::Int32Builder>(container);
+      VisitHelper<arrow::Int32Builder>(container, [](int32_t x) { return x; });
     }
 
     void Visit(const Container<int64_t> *container) final {
-      VisitHelper<arrow::Int64Builder>(container);
+      VisitHelper<arrow::Int64Builder>(container, [](int64_t x) { return x; });
     }
 
     void Visit(const Container<float> *container) final {
-      VisitHelper<arrow::FloatBuilder>(container);
+      VisitHelper<arrow::FloatBuilder>(container, [](float x) { return x; });
     }
 
     void Visit(const Container<double> *container) final {
-      VisitHelper<arrow::DoubleBuilder>(container);
+      VisitHelper<arrow::DoubleBuilder>(container, [](double x) { return x; });
     }
 
     void Visit(const Container<bool> *container) final {
-      VisitHelper<arrow::BooleanBuilder>(container);
+      VisitHelper<arrow::BooleanBuilder>(container, [](bool x) { return x; });
     }
 
     void Visit(const Container<std::string> *container) final {
-      VisitHelper<arrow::StringBuilder>(container);
+      VisitHelper<arrow::StringBuilder>(container,
+          [](const std::string &x) -> const std::string & { return x; });
     }
 
     void Visit(const Container<DateTime> *container) final {
-      VisitHelper<arrow::TimestampBuilder>(container);
+      VisitHelper<arrow::TimestampBuilder>(container, [](const DateTime &x) { return x.Nanos(); });
     }
 
     void Visit(const Container<LocalDate> *container) final {
-      VisitHelper<arrow::Date64Builder>(container);
+      VisitHelper<arrow::Date64Builder>(container, [](const LocalDate &x) { return x.Millis(); });
     }
 
     void Visit(const Container<LocalTime> *container) final {
-      VisitHelper<arrow::Time64Builder>(container);
+      VisitHelper<arrow::Time64Builder>(container, [](const LocalTime &x) { return x.Nanos(); });
     }
 
-    template<typename TBuilder, typename TElement>
-    void VisitHelper(const Container<TElement> *container) {
+    template<typename TBuilder, typename TElement, typename TConverter>
+    void VisitHelper(const Container<TElement> *container, const TConverter &converter) {
       auto *typed_builder = deephaven::dhcore::utility::VerboseCast<TBuilder*>(
           DEEPHAVEN_LOCATION_EXPR(array_builder_.get()));
       auto size = container->size();
@@ -639,7 +640,7 @@ struct InnerBuilderMaker {
         if (container->IsNull(i)) {
           OkOrThrow(DEEPHAVEN_LOCATION_EXPR(typed_builder->AppendNull()));
         } else {
-          OkOrThrow(DEEPHAVEN_LOCATION_EXPR(typed_builder->Append((*container)[i])));
+          OkOrThrow(DEEPHAVEN_LOCATION_EXPR(typed_builder->Append(converter((*container)[i]))));
         }
       }
     }
