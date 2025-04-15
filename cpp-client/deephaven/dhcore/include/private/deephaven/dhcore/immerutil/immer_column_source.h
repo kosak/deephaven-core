@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <memory>
 #include <utility>
 #include <immer/algorithm.hpp>
 #include <immer/flex_vector.hpp>
@@ -38,7 +39,7 @@ struct ImmerColumnSourceImpls {
     using deephaven::dhcore::chunk::TypeToChunk;
     using deephaven::dhcore::utility::TrueOrThrow;
     using deephaven::dhcore::utility::VerboseCast;
-    typedef typename TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename TypeToChunk<T>::type_t;
     auto *typed_dest = VerboseCast<chunkType_t *>(DEEPHAVEN_LOCATION_EXPR(dest_data));
 
     constexpr bool kTypeIsNumeric = deephaven::dhcore::DeephavenTraits<T>::kIsNumeric;

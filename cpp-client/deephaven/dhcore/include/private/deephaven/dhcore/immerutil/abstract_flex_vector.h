@@ -26,7 +26,7 @@ public:
       immer::flex_vector<T> *dest_data, immer::flex_vector<bool> *optional_dest_nulls) {
     auto chunk_data = AppendHelper(src, begin, end, optional_dest_nulls);
 
-    typedef typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t chunkType_t;
+    using chunkType_t = typename deephaven::dhcore::chunk::TypeToChunk<T>::type_t;
     auto *typed_chunk_data = deephaven::dhcore::utility::VerboseCast<const chunkType_t *>(
         DEEPHAVEN_LOCATION_EXPR(&chunk_data.Unwrap()));
     auto transient_data = dest_data->transient();
