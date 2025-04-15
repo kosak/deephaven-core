@@ -3,6 +3,7 @@
  */
 #include "deephaven/client/subscription/subscribe_thread.h"
 
+#include <arrow/array.h>
 #include <arrow/buffer.h>
 #include <arrow/scalar.h>
 #include <arrow/flight/client.h>
