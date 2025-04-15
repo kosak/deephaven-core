@@ -321,7 +321,11 @@ public:
         {'b', 'e', 'h'},
         {'c', {}, 'i'}
     });
-//    expected.AddColumn("Bytes", int8s);
+    expected.AddColumn<std::vector<std::optional<int8_t>>>("Bytes", {
+        {0, 3, 6, 9},
+        {1, 4, 7},
+        {2, {}, 8}
+    });
 //    expected.AddColumn("Shorts", int16s);
 //    expected.AddColumn("Ints", int32s);
 //    expected.AddColumn("Longs", int64s);
@@ -349,7 +353,7 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
   auto table = tm.EmptyTable(10)
       .Select({"Key = (ii % 3)",
           "Chars = ii == 5 ? null : (char)(ii + 'a')",
-//          "Bytes = ii == 5 ? null : (byte)ii",
+          "Bytes = ii == 5 ? null : (byte)ii",
 //          "Shorts = ii == 5 ? null : (short)ii",
 //          "Ints = ii == 5 ? null : (int)ii",
 //          "Longs = ii == 5 ? null : (long)ii",
