@@ -326,6 +326,41 @@ public:
         {1, 4, 7},
         {2, {}, 8}
     });
+    expected.AddColumn<std::vector<std::optional<int16_t>>>("Shorts", {
+        {0, 3, 6, 9},
+        {1, 4, 7},
+        {2, {}, 8}
+    });
+    expected.AddColumn<std::vector<std::optional<int32_t>>>("Ints", {
+        {0, 3, 6, 9},
+        {1, 4, 7},
+        {2, {}, 8}
+    });
+    expected.AddColumn<std::vector<std::optional<int64_t>>>("Longs", {
+        {0, 3, 6, 9},
+        {1, 4, 7},
+        {2, {}, 8}
+    });
+    expected.AddColumn<std::vector<std::optional<float>>>("Floats", {
+        {0, 3, 6, 9},
+        {1, 4, 7},
+        {2, {}, 8}
+    });
+    expected.AddColumn<std::vector<std::optional<double>>>("Doubles", {
+        {0, 3, 6, 9},
+        {1, 4, 7},
+        {2, {}, 8}
+    });
+    expected.AddColumn<std::vector<std::optional<bool>>>("Bools", {
+        {true, false, true, false},
+        {false, true, false},
+        {true, {}, true}
+    });
+    expected.AddColumn<std::vector<std::optional<std::string>>>("Strings", {
+        {"hello 0", "hello 3", "hello 6", "hello 9"},
+        {"hello 1", "hello 4", "hello 7"},
+        {"hello 2", {}, "hello 8"}
+    });
 //    expected.AddColumn("Shorts", int16s);
 //    expected.AddColumn("Ints", int32s);
 //    expected.AddColumn("Longs", int64s);
@@ -354,13 +389,13 @@ TEST_CASE("Ticking Table: Ticking grouped data", "[ticking]") {
       .Select({"Key = (ii % 3)",
           "Chars = ii == 5 ? null : (char)(ii + 'a')",
           "Bytes = ii == 5 ? null : (byte)ii",
-//          "Shorts = ii == 5 ? null : (short)ii",
-//          "Ints = ii == 5 ? null : (int)ii",
-//          "Longs = ii == 5 ? null : (long)ii",
-//          "Floats = ii == 5 ? null : (float)ii",
-//          "Doubles = ii == 5 ? null : (double)ii",
-//          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
-//          "Strings = ii == 5 ? null : (`hello ` + ii)",
+          "Shorts = ii == 5 ? null : (short)ii",
+          "Ints = ii == 5 ? null : (int)ii",
+          "Longs = ii == 5 ? null : (long)ii",
+          "Floats = ii == 5 ? null : (float)ii",
+          "Doubles = ii == 5 ? null : (double)ii",
+          "Bools = ii == 5 ? null : ((ii % 2) == 0)",
+          "Strings = ii == 5 ? null : (`hello ` + ii)",
 //          "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
 //          "LocalDates = ii == 5 ? null : '2001-03-01' + ((int)ii * 'P1D')",
 //          "LocalTimes = ii == 5 ? null : '12:34:46'.plus((int)ii * 'PT1S')"
