@@ -189,7 +189,6 @@ std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(const ElementType &elem
     case ElementTypeId::kLocalDate: return std::make_shared<arrow::Date64Type>();
     case ElementTypeId::kLocalTime: return std::make_shared<arrow::Time64Type>(arrow::TimeUnit::NANO);
 
-    case ElementTypeId::kList:
     default: {
       auto message = fmt::format("Unexpected element_type_id {}",
           static_cast<int>(element_type.Id()));

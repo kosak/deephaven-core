@@ -577,7 +577,6 @@ struct InnerBuilderMaker {
         return;
       }
 
-      case ElementTypeId::kList:
       default: {
         auto message = fmt::format("Programming error: elementTypeId {} not supported here",
             static_cast<int>(element_type.Id()));

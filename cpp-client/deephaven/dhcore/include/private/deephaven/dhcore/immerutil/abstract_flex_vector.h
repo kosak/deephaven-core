@@ -52,8 +52,8 @@ protected:
   using Chunk = deephaven::dhcore::chunk::Chunk;
   using ColumnSource = deephaven::dhcore::column::ColumnSource;
 public:
-  explicit AbstractFlexVectorBase(const ElementType &element_type);
-  virtual ~AbstractFlexVectorBase();
+  explicit AbstractFlexVectorBase(const ElementType &element_type) : element_type_(element_type) {}
+  virtual ~AbstractFlexVectorBase() = default;
 
   [[nodiscard]] virtual std::unique_ptr<AbstractFlexVectorBase> Take(size_t n) = 0;
   virtual void InPlaceDrop(size_t n) = 0;
