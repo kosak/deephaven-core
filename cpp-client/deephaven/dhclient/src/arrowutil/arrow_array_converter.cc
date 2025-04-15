@@ -30,6 +30,7 @@ namespace deephaven::client::arrowutil {
 using deephaven::client::utility::OkOrThrow;
 using deephaven::client::utility::ValueOrThrow;
 using deephaven::dhcore::DateTime;
+using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::LocalDate;
 using deephaven::dhcore::LocalTime;
 using deephaven::dhcore::chunk::BooleanChunk;
@@ -491,11 +492,40 @@ struct ColumnSourceToArrayVisitor final : ColumnSourceVisitor {
     PopulateAndFinishBuilder(dest_chunk, &builder);
   }
 
+  class ElementType {
+    uint32_t list_applications_;
+    ElementTypeId element_type_id_;
+  };
+
+  class ElementTypeVisitor {
+
+  };
+
+  struct InnerBuilderMaker : public ElementTypeVisitor {
+    std::shared_ptr<arrow::ArrayBuilder> array_builder_;
+
+  };
+
   void Visit(const dhcore::column::ContainerBaseColumnSource &source) final {
+    InnerBuilderMaker ibm;
+    source.GetElementType().AcceptVisitor(&ibm);
+
     auto src_chunk = PopulateChunk<ContainerBaseChunk>(source);
-//    arrow::ListBuilder lb(nullptr, nullptr);
-//    src_chunk.
-    throw std::runtime_error(DEEPHAVEN_LOCATION_STR("TODO(kosak)"));
+    arrow::ListBuilder lb(arrow::default_memory_pool(), ibm.array_builder_);
+
+    ChunkAppender ca(ibm.array_builder_);
+
+    for (const auto &container_base : src_chunk) {
+      if (container_base == nullptr) {
+        OkOrThrow(DEEPHAVEN_LOCATION_EXPR(lb.AppendNull()));
+        continue;
+      }
+
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(lb.Append()));
+      container_base->AcceptVisitor(&ca);
+    }
+
+    result_ = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(lb.Finish()));
   }
 
   template<typename TChunk, typename TBuilder, typename TColumnSource>
