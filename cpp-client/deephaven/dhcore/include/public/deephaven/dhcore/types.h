@@ -27,7 +27,7 @@ struct ElementTypeId {
     kInt8, kInt16, kInt32, kInt64,
     kFloat, kDouble,
     kBool, kString, kTimestamp,
-    kList,
+    kList_UNUSED,
     kLocalDate, kLocalTime
   };
 };

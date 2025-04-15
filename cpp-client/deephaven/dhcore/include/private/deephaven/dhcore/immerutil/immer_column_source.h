@@ -167,7 +167,14 @@ struct ImmerColumnSourceImpls {
 
 class ImmerColumnSource : public virtual deephaven::dhcore::column::ColumnSource {
 public:
-  const ElementType &GetElementType() const final;
+  explicit ImmerColumnSource(const ElementType &elementType) : element_type_(elementType) {}
+
+  const ElementType &GetElementType() const final {
+    return element_type_;
+  }
+
+protected:
+  ElementType element_type_;
 };
 
 template<typename T>
@@ -182,11 +189,13 @@ class NumericImmerColumnSource final : public ImmerColumnSource,
   using RowSequence = deephaven::dhcore::container::RowSequence;
 
 public:
-  static std::shared_ptr<NumericImmerColumnSource> Create(immer::flex_vector<T> data) {
-    return std::make_shared<NumericImmerColumnSource>(Private(), std::move(data));
+  static std::shared_ptr<NumericImmerColumnSource> Create(const ElementType &element_type,
+      immer::flex_vector<T> data) {
+    return std::make_shared<NumericImmerColumnSource>(Private(), element_type, std::move(data));
   }
 
-  explicit NumericImmerColumnSource(Private, immer::flex_vector<T> data) : data_(std::move(data)) {}
+  explicit NumericImmerColumnSource(Private, const ElementType &element_type,
+      immer::flex_vector<T> data) : ImmerColumnSource(element_type), data_(std::move(data)) {}
 
   ~NumericImmerColumnSource() final = default;
 
@@ -216,13 +225,15 @@ class GenericImmerColumnSource final : public ImmerColumnSource,
   struct Private {};
   using ColumnSourceVisitor = deephaven::dhcore::column::ColumnSourceVisitor;
 public:
-  static std::shared_ptr<GenericImmerColumnSource> Create(immer::flex_vector<T> data,
-      immer::flex_vector<bool> null_flags) {
-    return std::make_shared<GenericImmerColumnSource>(Private(), std::move(data), std::move(null_flags));
+  static std::shared_ptr<GenericImmerColumnSource> Create(const ElementType &element_type,
+      immer::flex_vector<T> data, immer::flex_vector<bool> null_flags) {
+    return std::make_shared<GenericImmerColumnSource>(Private(), element_type, std::move(data),
+        std::move(null_flags));
   }
 
-  GenericImmerColumnSource(Private, immer::flex_vector<T> &&data, immer::flex_vector<bool> &&null_flags) :
-      data_(std::move(data)), null_flags_(std::move(null_flags)) {}
+  GenericImmerColumnSource(Private, const ElementType &element_type,
+      immer::flex_vector<T> &&data, immer::flex_vector<bool> &&null_flags) :
+      ImmerColumnSource(element_type), data_(std::move(data)), null_flags_(std::move(null_flags)) {}
   ~GenericImmerColumnSource() final = default;
 
   void FillChunk(const RowSequence &rows, Chunk *dest, BooleanChunk *optional_dest_null_flags) const final {

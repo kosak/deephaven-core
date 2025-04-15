@@ -229,62 +229,60 @@ std::unique_ptr<AbstractFlexVectorBase> MakeFlexVectorFromType(const ElementType
   }
 
   if (element_type.ListDepth() == 1) {
-    // return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(element_type);
-    return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>();
+    return std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(element_type);
   }
 
   // element_type.list_depth == 0
 
   switch (element_type.Id()) {
     case ElementTypeId::kChar: {
-      return std::make_unique<NumericAbstractFlexVector<char16_t>>();
+      return std::make_unique<NumericAbstractFlexVector<char16_t>>(element_type);
     }
 
     case ElementTypeId::kInt8: {
-      return std::make_unique<NumericAbstractFlexVector<int8_t>>();
+      return std::make_unique<NumericAbstractFlexVector<int8_t>>(element_type);
     }
 
     case ElementTypeId::kInt16: {
-      return std::make_unique<NumericAbstractFlexVector<int16_t>>();
+      return std::make_unique<NumericAbstractFlexVector<int16_t>>(element_type);
     }
 
     case ElementTypeId::kInt32: {
-      return std::make_unique<NumericAbstractFlexVector<int32_t>>();
+      return std::make_unique<NumericAbstractFlexVector<int32_t>>(element_type);
     }
 
     case ElementTypeId::kInt64: {
-      return std::make_unique<NumericAbstractFlexVector<int64_t>>();
+      return std::make_unique<NumericAbstractFlexVector<int64_t>>(element_type);
     }
 
     case ElementTypeId::kFloat: {
-      return std::make_unique<NumericAbstractFlexVector<float>>();
+      return std::make_unique<NumericAbstractFlexVector<float>>(element_type);
     }
 
     case ElementTypeId::kDouble: {
-      return std::make_unique<NumericAbstractFlexVector<double>>();
+      return std::make_unique<NumericAbstractFlexVector<double>>(element_type);
     }
 
     case ElementTypeId::kBool: {
-      return std::make_unique<GenericAbstractFlexVector<bool>>();
+      return std::make_unique<GenericAbstractFlexVector<bool>>(element_type);
     }
 
     case ElementTypeId::kString: {
-      return std::make_unique<GenericAbstractFlexVector<std::string>>();
+      return std::make_unique<GenericAbstractFlexVector<std::string>>(element_type);
     }
 
     case ElementTypeId::kTimestamp: {
-      return std::make_unique<GenericAbstractFlexVector<DateTime>>();
+      return std::make_unique<GenericAbstractFlexVector<DateTime>>(element_type);
     }
 
     case ElementTypeId::kLocalDate: {
-      return std::make_unique<GenericAbstractFlexVector<LocalDate>>();
+      return std::make_unique<GenericAbstractFlexVector<LocalDate>>(element_type);
     }
 
     case ElementTypeId::kLocalTime: {
-      return std::make_unique<GenericAbstractFlexVector<LocalTime>>();
+      return std::make_unique<GenericAbstractFlexVector<LocalTime>>(element_type);
     }
 
-    case ElementTypeId::kList:
     default: {
       auto message = fmt::format("Programming error: elementTypeId {} not supported here",
           static_cast<int>(element_type.Id()));
@@ -305,55 +303,68 @@ std::vector<std::unique_ptr<AbstractFlexVectorBase>> MakeEmptyFlexVectorsFromSch
 
 struct FlexVectorFromSourceMaker final : public ColumnSourceVisitor {
   void Visit(const column::CharColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<char16_t>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<char16_t>>(
+        ElementType::Of(ElementTypeId::kChar));
   }
 
   void Visit(const column::Int8ColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<int8_t>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<int8_t>>(
+        ElementType::Of(ElementTypeId::kInt8));
   }
 
   void Visit(const column::Int16ColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<int16_t>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<int16_t>>(
+        ElementType::Of(ElementTypeId::kInt16));
   }
 
   void Visit(const column::Int32ColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<int32_t>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<int32_t>>(
+        ElementType::Of(ElementTypeId::kInt32));
   }
 
   void Visit(const column::Int64ColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<int64_t>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<int64_t>>(
+        ElementType::Of(ElementTypeId::kInt64));
   }
 
   void Visit(const column::FloatColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<float>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<float>>(
+        ElementType::Of(ElementTypeId::kFloat));
   }
 
   void Visit(const column::DoubleColumnSource &/*source*/) final {
-    result_ = std::make_unique<NumericAbstractFlexVector<double>>();
+    result_ = std::make_unique<NumericAbstractFlexVector<double>>(
+        ElementType::Of(ElementTypeId::kDouble));
   }
 
   void Visit(const column::BooleanColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<bool>>();
+    result_ = std::make_unique<GenericAbstractFlexVector<bool>>(
+        ElementType::Of(ElementTypeId::kBool));
   }
 
   void Visit(const column::StringColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<std::string>>();
+    result_ = std::make_unique<GenericAbstractFlexVector<std::string>>(
+        ElementType::Of(ElementTypeId::kString));
   }
 
   void Visit(const column::DateTimeColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<DateTime>>();
+    result_ = std::make_unique<GenericAbstractFlexVector<DateTime>>(
+        ElementType::Of(ElementTypeId::kTimestamp));
   }
 
   void Visit(const column::LocalDateColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<LocalDate>>();
+    result_ = std::make_unique<GenericAbstractFlexVector<LocalDate>>(
+        ElementType::Of(ElementTypeId::kLocalDate));
   }
 
   void Visit(const column::LocalTimeColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<LocalTime>>();
+    result_ = std::make_unique<GenericAbstractFlexVector<LocalTime>>(
+        ElementType::Of(ElementTypeId::kLocalTime));
   }
 
-  void Visit(const column::ContainerBaseColumnSource &/*source*/) final {
-    result_ = std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>();
+  void Visit(const column::ContainerBaseColumnSource &source) final {
+    result_ = std::make_unique<GenericAbstractFlexVector<std::shared_ptr<ContainerBase>>>(
+        source.GetElementType());
   }
 
   std::unique_ptr<AbstractFlexVectorBase> result_;
