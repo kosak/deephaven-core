@@ -42,6 +42,11 @@ public:
       bool must_succeed);
 
   /**
+   * Converts an ElementType to an Arrow DataType.
+   */
+  static std::shared_ptr<arrow::DataType> GetArrowType(const ElementType &element_type);
+
+  /**
    * Convert an Arrow Schema into a Deephaven Schema
    * @param schema The arrow Schema
    * @return a Deephaven Schema

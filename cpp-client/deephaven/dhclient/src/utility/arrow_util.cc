@@ -163,6 +163,35 @@ std::optional<ElementTypeId::Enum> ArrowUtil::GetElementTypeId(const arrow::Data
   throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
 }
 
+std::shared_ptr<arrow::DataType> ArrowUtil::GetArrowType(const ElementType &element_type) {
+  if (element_type.ListDepth() > 0) {
+    auto inner = GetArrowType(element_type.UnwrapList());
+    return std::make_shared<arrow::ListType>(std::move(inner));
+  }
+
+  switch (element_type.Id()) {
+    case ElementTypeId::kChar: return std::make_shared<arrow::UInt16Type>();
+    case ElementTypeId::kInt8: return std::make_shared<arrow::Int8Type>();
+    case ElementTypeId::kInt16: return std::make_shared<arrow::Int16Type>();
+    case ElementTypeId::kInt32: return std::make_shared<arrow::Int32Type>();
+    case ElementTypeId::kInt64: return std::make_shared<arrow::Int64Type>();
+    case ElementTypeId::kFloat: return std::make_shared<arrow::FloatType>();
+    case ElementTypeId::kDouble: return std::make_shared<arrow::DoubleType>();
+    case ElementTypeId::kBool: return std::make_shared<arrow::BooleanType>();
+    case ElementTypeId::kString: return std::make_shared<arrow::StringType>();
+    case ElementTypeId::kTimestamp: return std::make_shared<arrow::TimestampType>(
+        arrow::TimeUnit::NANO, "UTC");
+    case ElementTypeId::kLocalDate: return std::make_shared<arrow::Date64Type>();
+    case ElementTypeId::kLocalTime: return std::make_shared<arrow::Time64Type>(arrow::TimeUnit::NANO);
+
+    default: {
+      auto message = fmt::format("Unexpected element_type_id {}",
+          static_cast<int>(element_type.Id()));
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+  }
+}
+
 std::shared_ptr<Schema> ArrowUtil::MakeDeephavenSchema(const arrow::Schema &schema) {
   const auto &fields = schema.fields();
   auto names = MakeReservedVector<std::string>(fields.size());
