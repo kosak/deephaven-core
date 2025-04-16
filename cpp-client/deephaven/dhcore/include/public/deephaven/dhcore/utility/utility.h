@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <typeinfo>
+#include <type_traits>
 #include <vector>
 #include "deephaven/third_party/fmt/core.h"
 #include "deephaven/third_party/fmt/ostream.h"
@@ -100,7 +101,7 @@ std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator, C
 }
 
 template<typename T>
-void defaultCallback(std::ostream &s, const T &item) {
+void DefaultCallback(std::ostream &s, const T &item) {
   s << item;
 }
 }  // namespace internal
@@ -109,7 +110,7 @@ template<typename Iterator>
 auto separatedList(Iterator begin, Iterator end, const char *separator = ", ") {
   return internal::SeparatedListAdaptor<Iterator, void (*)(std::ostream &s,
       const std::remove_reference_t<decltype(*std::declval<Iterator>())> &)>(
-      begin, end, separator, &internal::defaultCallback);
+      begin, end, separator, &internal::DefaultCallback);
 }
 
 template<typename Iterator, typename Callback>
