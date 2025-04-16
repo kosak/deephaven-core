@@ -44,7 +44,7 @@ public:
   /**
    * Converts an ElementType to an Arrow DataType.
    */
-  static std::shared_ptr<arrow::DataType> GetArrowType(const ElementType &element_type);
+  static std::shared_ptr<arrow::DataType> GetArrowType(ElementTypeId::Enum element_type_id);
 
   /**
    * Convert an Arrow Schema into a Deephaven Schema
