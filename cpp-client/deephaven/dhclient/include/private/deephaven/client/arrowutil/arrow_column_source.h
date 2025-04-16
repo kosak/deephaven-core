@@ -64,7 +64,6 @@ public:
 
   explicit GenericArrowColumnSource(std::vector<std::shared_ptr<TArrowArray>> arrays) :
       arrays_(std::move(arrays)) {
-    time_nano_scale_factor_ = arrays_.empty() ? 1 : CalcTimeNanoScaleFactor(*arrays_.front());
   }
 
   ~GenericArrowColumnSource() final = default;
