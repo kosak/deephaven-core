@@ -47,7 +47,6 @@ public:
    * @return a Deephaven Schema
    */
   static std::shared_ptr<Schema> MakeDeephavenSchema(const arrow::Schema &schema);
-};
 
   static std::shared_ptr<arrow::Table> MakeArrowTable(const ClientTable &client_table);
   static std::shared_ptr<arrow::Schema> MakeArrowSchema(
