@@ -3,13 +3,51 @@
  */
 #include "deephaven/client/utility/arrow_util.h"
 
-#include <ostream>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <optional>
+#include <utility>
+
 #include <arrow/status.h>
 #include <arrow/flight/types.h>
+#include <arrow/table.h>
+#include <arrow/type.h>
+#include <arrow/visitor.h>
+#include "deephaven/client/arrowutil/arrow_array_converter.h"
+#include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/clienttable/schema.h"
+#include "deephaven/dhcore/column/column_source.h"
+#include "deephaven/dhcore/container/row_sequence.h"
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
+#include "deephaven/third_party/fmt/core.h"
 
+using deephaven::client::arrowutil::ArrowArrayConverter;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::CharChunk;
+using deephaven::dhcore::chunk::DateTimeChunk;
+using deephaven::dhcore::chunk::DoubleChunk;
+using deephaven::dhcore::chunk::FloatChunk;
+using deephaven::dhcore::chunk::Int8Chunk;
+using deephaven::dhcore::chunk::Int16Chunk;
+using deephaven::dhcore::chunk::Int32Chunk;
+using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::LocalDateChunk;
+using deephaven::dhcore::chunk::LocalTimeChunk;
+using deephaven::dhcore::chunk::StringChunk;
+using deephaven::dhcore::chunk::UInt8Chunk;
+using deephaven::dhcore::chunk::UInt16Chunk;
 using deephaven::dhcore::clienttable::Schema;
+using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::column::ColumnSourceVisitor;
+using deephaven::dhcore::container::RowSequence;
+using deephaven::dhcore::DateTime;
+using deephaven::dhcore::LocalDate;
+using deephaven::dhcore::LocalTime;
 using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::utility::MakeReservedVector;
 
