@@ -253,3 +253,7 @@ ObjectId(const std::string &class_short_name, void* this_ptr);
 
 // Add the specialization for the DebugInfo formatter
 template<> struct fmt::formatter<deephaven::dhcore::utility::DebugInfo> : fmt::ostream_formatter {};
+
+template<typename Iterator>
+struct fmt::formatter<deephaven::dhcore::utility::internal::SeparatedListAdaptor<Iterator, void (*)(std::ostream &s,
+    const std::remove_reference_t<decltype(*std::declval<Iterator>())> &)>> : fmt::ostream_formatter {};
