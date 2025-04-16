@@ -136,4 +136,32 @@ std::shared_ptr<Schema> ArrowUtil::MakeDeephavenSchema(const arrow::Schema &sche
   }
   return Schema::Create(std::move(names), std::move(types));
 }
+std::shared_ptr<arrow::Table> ArrowUtil::MakeArrowTable(const ClientTable &client_table) {
+  auto ncols = client_table.NumColumns();
+  auto nrows = client_table.NumRows();
+  auto arrays = MakeReservedVector<std::shared_ptr<arrow::Array>>(ncols);
+
+  for (size_t i = 0; i != ncols; ++i) {
+    auto column_source = client_table.GetColumn(i);
+    auto arrow_array = ArrowArrayConverter::ColumnSourceToArray(*column_source, nrows);
+    arrays.emplace_back(std::move(arrow_array));
+  }
+
+  auto schema = MakeArrowSchema(*client_table.Schema());
+
+  return arrow::Table::Make(std::move(schema), arrays);
+}
+
+std::shared_ptr<arrow::Schema> ArrowUtil::MakeArrowSchema(
+    const deephaven::dhcore::clienttable::Schema &dh_schema) {
+  arrow::SchemaBuilder builder;
+  for (int32_t i = 0; i != dh_schema.NumCols(); ++i) {
+    const auto &name = dh_schema.Names()[i];
+    auto element_type = dh_schema.Types()[i];
+    auto arrow_type = GetArrowType(element_type);
+    auto field = std::make_shared<arrow::Field>(name, std::move(arrow_type));
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.AddField(field)));
+  }
+  return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder.Finish()));
+}
 }  // namespace deephaven::client::utility
