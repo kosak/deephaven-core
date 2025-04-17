@@ -57,12 +57,6 @@ class GenericArrowColumnSource final : public TColumnSourceBase {
   using UInt64Chunk = deephaven::dhcore::chunk::UInt64Chunk;
 
 public:
-//  static std::shared_ptr<GenericArrowColumnSource>
-//  OfArrowArray(std::shared_ptr<TArrowArray> array) {
-//    std::vector<std::shared_ptr<TArrowArray>> arrays{std::move(array)};
-//    return OfArrowArrayVec(std::move(arrays));
-//  }
-
   static std::shared_ptr<GenericArrowColumnSource> OfArrowArrayVec(
       const ElementType &element_type,
       std::vector<std::shared_ptr<TArrowArray>> arrays) {
