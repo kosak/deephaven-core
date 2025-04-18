@@ -63,7 +63,7 @@ public:
   }
 
   std::tuple<std::string, std::optional<std::string>> GetDeephavenMetadata() {
-    return { deephaven_type_name_, {}};
+    return { kDeephavenTypeName, {}};
   }
 
   [[nodiscard]]
@@ -116,55 +116,55 @@ struct DeephavenMetadataConstants {
 template<>
 class ColumnBuilder<bool> : public TypicalBuilderBase<bool,
     arrow::BooleanBuilder,
-    DeephavenServerConstants::kBool> {
+    DeephavenMetadataConstants::Types::kBool> {
 };
 
 template<>
 class ColumnBuilder<char16_t> : public TypicalBuilderBase<char16_t, arrow::UInt16Builder,
-    DeephavenServerConstants::kChar16> {
+    DeephavenMetadataConstants::Types::kChar16> {
 };
 
 template<>
 class ColumnBuilder<int8_t> : public TypicalBuilderBase<int8_t, arrow::Int8Builder,
-    DeephavenServerConstants::kInt8> {
+    DeephavenMetadataConstants::Types::kInt8> {
 };
 
 template<>
 class ColumnBuilder<int16_t> : public TypicalBuilderBase<int16_t, arrow::Int16Builder,
-    DeephavenServerConstants::kInt16> {
+    DeephavenMetadataConstants::Types::kInt16> {
 };
 
 template<>
 class ColumnBuilder<int32_t> : public TypicalBuilderBase<int32_t, arrow::Int32Builder,
-    DeephavenServerConstants::kInt32> {
+    DeephavenMetadataConstants::Types::kInt32> {
 };
 
 template<>
 class ColumnBuilder<int64_t> : public TypicalBuilderBase<int64_t, arrow::Int64Builder,
-    DeephavenServerConstants::kInt64> {
+    DeephavenMetadataConstants::Types::kInt64> {
 };
 
 template<>
 class ColumnBuilder<float> : public TypicalBuilderBase<float, arrow::FloatBuilder,
-    DeephavenServerConstants::kFloat> {
+    DeephavenMetadataConstants::Types::kFloat> {
 };
 
 template<>
 class ColumnBuilder<double> : public TypicalBuilderBase<double, arrow::DoubleBuilder,
-    DeephavenServerConstants::kDouble> {
+    DeephavenMetadataConstants::Types::kDouble> {
 };
 
 template<>
 class ColumnBuilder<std::string> : public TypicalBuilderBase<std::string, arrow::StringBuilder,
-    DeephavenServerConstants::kString> {
+    DeephavenMetadataConstants::Types::kString> {
 };
 
 template<>
 class ColumnBuilder<deephaven::dhcore::DateTime> : public BuilderBase<arrow::TimestampBuilder,
-    DeephavenServerConstants::kDateTime> {
+    DeephavenMetadataConstants::Types::kDateTime> {
 public:
   // constructor with data type nanos
-  ColumnBuilder() : BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>(
+  ColumnBuilder() : BuilderBase(
       std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(arrow::TimeUnit::NANO, "UTC"),
           arrow::default_memory_pool())) {
   }
@@ -176,11 +176,10 @@ public:
 
 template<>
 class ColumnBuilder<deephaven::dhcore::LocalDate> : public BuilderBase<arrow::Date64Builder,
-    DeephavenServerConstants::kLocalDate> {
+    DeephavenMetadataConstants::Types::kLocalDate> {
 public:
   // constructor with data type nanos
-  ColumnBuilder() : BuilderBase<arrow::Date64Builder, DeephavenServerConstants::kLocalDate>(
-      std::make_shared<arrow::Date64Builder>()) {
+  ColumnBuilder() : BuilderBase(std::make_shared<arrow::Date64Builder>()) {
   }
 
   void Append(const deephaven::dhcore::LocalDate &value) {
@@ -190,11 +189,10 @@ public:
 
 template<>
 class ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::Time64Builder,
-    DeephavenServerConstants::kLocalTime> {
+    DeephavenMetadataConstants::Types::kLocalTime> {
 public:
-  ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
-      std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
-  arrow::default_memory_pool())) {
+  ColumnBuilder() : BuilderBase(std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
+      arrow::default_memory_pool())) {
 
   }
 
@@ -205,10 +203,9 @@ public:
 
 template<arrow::TimeUnit::type UNIT>
 class ColumnBuilder<InternalDateTime<UNIT>> : public BuilderBase<arrow::TimestampBuilder,
-    DeephavenServerConstants::kDateTime> {
+    DeephavenMetadataConstants::Types::kDateTime> {
 public:
-  ColumnBuilder() : BuilderBase<arrow::TimestampBuilder, DeephavenServerConstants::kDateTime>(
-      std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(UNIT, "UTC"),
+  ColumnBuilder() : BuilderBase(std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(UNIT, "UTC"),
           arrow::default_memory_pool())) {
   }
 
@@ -219,10 +216,9 @@ public:
 
 template<arrow::TimeUnit::type UNIT>
 class ColumnBuilder<InternalLocalTime<UNIT>> : public BuilderBase<arrow::Time64Builder,
-    DeephavenServerConstants::kLocalTime> {
+    DeephavenMetadataConstants::Types::kLocalTime> {
 public:
-  ColumnBuilder() : BuilderBase<arrow::Time64Builder, DeephavenServerConstants::kLocalTime>(
-      std::make_shared<arrow::Time64Builder>(arrow::time64(UNIT),
+  ColumnBuilder() : BuilderBase(std::make_shared<arrow::Time64Builder>(arrow::time64(UNIT),
           arrow::default_memory_pool())) {
   }
 
