@@ -13,6 +13,7 @@
 #include "deephaven/third_party/catch.hpp"
 #include "deephaven/tests/test_util.h"
 
+using Catch::Matchers::StartsWith;
 using deephaven::client::utility::TableMaker;
 using deephaven::dhcore::DeephavenConstants;
 using deephaven::dhcore::DateTime;
@@ -20,6 +21,16 @@ using deephaven::dhcore::LocalDate;
 using deephaven::dhcore::LocalTime;
 
 namespace deephaven::client::tests {
+
+// Test schema validation
+TEST_CASE("Schema validation", "[newtable]") {
+  TableMaker maker;
+  maker.AddColumn<bool>("Bools", { false, true, false, false, true });
+  // Inconsistent number of rows
+  maker.AddColumn<int32_t>("Ints", { 0, 1, 2, 3 });
+
+  REQUIRE_THROWS_WITH(maker.MakeArrowTable(), StartsWith("Column sizes not consistent"));
+}
 
 // Make tables out of scalar types and see if they successfully round-trip.
 TEST_CASE("Scalar Types", "[newtable]") {
@@ -61,6 +72,7 @@ TEST_CASE("Scalar Types", "[newtable]") {
   TableComparerForTests::Compare(maker, dh_table);
 }
 
+// Make tables out of list types and see if they successfully round-trip.
 TEST_CASE("List Types", "[newtable]") {
   auto tm = TableMakerForTests::Create();
 
