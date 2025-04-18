@@ -48,7 +48,7 @@ TEST_CASE("Scalar Types", "[newtable]") {
       { {}, LocalDate(), LocalDate::FromMillis(-86'400'000), LocalDate::FromMillis(86'400'000),
           LocalDate::Of(2020, 3, 1), LocalDate::Of(1900, 5, 5) });
   maker.AddColumn<std::optional<LocalTime>>("LocalTimes",
-      { {}, LocalTime(), LocalTime::FromNanos(-1), LocalTime::FromNanos(1),
+      { {}, LocalTime(), LocalTime::FromNanos(1), LocalTime::FromNanos(10'000'000'000),
           LocalTime::Of(12, 34, 56), LocalTime::Of(11, 22, 33) });
 
   auto dh_table = maker.MakeTable(tm.Client().GetManager());
