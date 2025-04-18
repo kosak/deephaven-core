@@ -302,8 +302,12 @@ private:
  * std::vector<T2> data2 = { ... };
  * tm.AddColumn("col1", data1);
  * tm.AddColumn("col2", data2);
+ * tm.AddColumn<T3>("col3", {elt_1, elt_2, elt_3});  // youi can also inline the data like this
+ * // option 1: make an Arrow table in local memory
  * auto arrow_table = tm.MakeArrowTable();
- * auto table_handle = tm.MakeDeephavenTable(const TableHandleManager &manager);
+ * // option 2: make the table on the Deephaven server and get a TableHandle to it
+ * TableHandleManager manager = ...;
+ * auto table_handle = tm.MakeTable(manager);
  * @endcode
  */
 class TableMaker {
