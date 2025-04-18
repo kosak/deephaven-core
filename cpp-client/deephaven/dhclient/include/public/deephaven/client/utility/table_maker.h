@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -60,8 +61,9 @@ public:
   std::shared_ptr<arrow::Array> Finish() {
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
-  const char *GetDeephavenServerTypeName() {
-    return kDeephavenTypeName;
+
+  std::tuple<std::string, std::optional<std::string>> GetDeephavenMetadata() {
+    return { deephaven_type_name_, {}};
   }
 
   [[nodiscard]]
@@ -90,20 +92,25 @@ public:
   }
 };
 
-struct DeephavenServerConstants {
-  static const char kBool[];
-  static const char kChar16[];
-  static const char kInt8[];
-  static const char kInt16[];
-  static const char kInt32[];
-  static const char kInt64[];
-  static const char kFloat[];
-  static const char kDouble[];
-  static const char kString[];
-  static const char kDateTime[];
-  static const char kLocalDate[];
-  static const char kLocalTime[];
-  static const char kList[];
+struct DeephavenMetadataConstants {
+  struct Keys {
+
+  };
+
+  struct Types {
+    static const char kBool[];
+    static const char kChar16[];
+    static const char kInt8[];
+    static const char kInt16[];
+    static const char kInt32[];
+    static const char kInt64[];
+    static const char kFloat[];
+    static const char kDouble[];
+    static const char kString[];
+    static const char kDateTime[];
+    static const char kLocalDate[];
+    static const char kLocalTime[];
+  };
 };
 
 template<>
@@ -378,13 +385,14 @@ private:
 
   struct ColumnInfo {
     ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,
-        std::string deepaven_server_type_name, std::shared_ptr<arrow::Array> data);
+        std::shared_ptr<arrow::KeyValueMetadata> arrow_metadata,
+        std::shared_ptr<arrow::Array> data);
     ColumnInfo(ColumnInfo &&other) noexcept;
     ~ColumnInfo();
 
     std::string name_;
     std::shared_ptr<arrow::DataType> arrow_type_;
-    std::string deepaven_server_type_name_;
+    std::shared_ptr<arrow::KeyValueMetadata> arrow_metadata_;
     std::shared_ptr<arrow::Array> data_;
   };
 
