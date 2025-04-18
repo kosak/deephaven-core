@@ -94,7 +94,8 @@ public:
 
 struct DeephavenMetadataConstants {
   struct Keys {
-
+    static const char kType[];
+    static const char kComponentType[];
   };
 
   struct Types {
@@ -193,7 +194,6 @@ class ColumnBuilder<deephaven::dhcore::LocalTime> : public BuilderBase<arrow::Ti
 public:
   ColumnBuilder() : BuilderBase(std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO),
       arrow::default_memory_pool())) {
-
   }
 
   void Append(const deephaven::dhcore::LocalTime &value) {
@@ -268,7 +268,7 @@ public:
 
   void Append(const std::vector<T> &entry) {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Append()));
-    for (const auto &element : entry) {
+    for (const auto &element: entry) {
       nested_column_builder_.Append(element);
     }
   }
@@ -281,10 +281,14 @@ public:
     return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(builder_->Finish()));
   }
 
-  const char *GetDeephavenServerTypeName() {
-    return DeephavenServerConstants::kList;
+  std::tuple<std::string, std::optional<std::string>> GetDeephavenMetadata() {
+    auto [nested_type, nested_component_type_unused] = nested_column_builder_.GetDeephavenMetadata();
+    (void)nested_component_type_unused;
+
+    auto nested_type_as_array = nested_type + "[]";
+    return {std::move(nested_type_as_array), std::move(nested_type)};
   }
-  
+
   [[nodiscard]]
   const std::shared_ptr<arrow::ListBuilder> &GetBuilder() const {
     return builder_;
@@ -339,8 +343,9 @@ public:
       cb.Append(element);
     }
     auto array = cb.Finish();
-    const char *dh_type = cb.GetDeephavenServerTypeName();
-    FinishAddColumn(std::move(name), std::move(array), dh_type);
+    auto [type_name, component_type_name] = cb.GetDeephavenMetadata();
+    FinishAddColumn(std::move(name), std::move(array), std::move(type_name),
+        std::move(component_type_name));
   }
 
   template<typename T, typename GetValue, typename IsNull>
@@ -356,8 +361,9 @@ public:
       }
     }
     auto array = cb.Finish();
-    const char *dh_type = cb.GetDeephavenServerTypeName();
-    FinishAddColumn(std::move(name), std::move(array), dh_type);
+    auto [type_name, component_type_name] = cb.GetDeephavenMetadata();
+    FinishAddColumn(std::move(name), std::move(array), std::move(type_name),
+        std::move(component_type_name));
   }
 
   /**
@@ -373,7 +379,8 @@ public:
 
 private:
   void FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> data,
-      std::string deephaven_server_type_name);
+      std::string deephaven_metadata_type_name,
+      std::optional<std::string> deephaven_metadata_component_type_name);
   [[nodiscard]]
   std::shared_ptr<arrow::Schema> MakeSchema() const;
   [[nodiscard]]
