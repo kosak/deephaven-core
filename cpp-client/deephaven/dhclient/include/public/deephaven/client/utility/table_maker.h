@@ -385,6 +385,7 @@ private:
   std::shared_ptr<arrow::Schema> MakeSchema() const;
   [[nodiscard]]
   std::vector<std::shared_ptr<arrow::Array>> GetColumnsNotEmpty() const;
+  void ValidateSchema() const;
 
   struct ColumnInfo {
     ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,

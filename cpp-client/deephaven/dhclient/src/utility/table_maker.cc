@@ -3,6 +3,7 @@
  */
 #include "deephaven/client/utility/table_maker.h"
 
+#include <cstddef>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -36,15 +37,6 @@ TableMaker::~TableMaker() = default;
 void TableMaker::FinishAddColumn(std::string name, std::shared_ptr<arrow::Array> data,
     std::string deephaven_metadata_type_name,
     std::optional<std::string> deephaven_metadata_component_type_name) {
-  if (!column_infos_.empty()) {
-    auto num_rows = column_infos_.back().data_->length();
-    if (data->length() != num_rows) {
-      auto message = fmt::format("Column sizes not consistent: expected {}, have {}", num_rows,
-          data->length());
-      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-    }
-  }
-
   auto kv_metadata = std::make_shared<arrow::KeyValueMetadata>();
   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
     kv_metadata->Set(DeephavenMetadataConstants::Keys::kType, std::move(deephaven_metadata_type_name))));
@@ -107,6 +99,8 @@ std::vector<std::shared_ptr<arrow::Array>> TableMaker::GetColumnsNotEmpty() cons
 }
 
 std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
+  ValidateSchema();
+
   arrow::SchemaBuilder sb;
   for (const auto &info : column_infos_) {
     auto field = std::make_shared<arrow::Field>(info.name_, info.arrow_type_, true,
@@ -115,6 +109,22 @@ std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
   }
 
   return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.Finish()));
+}
+
+void TableMaker::ValidateSchema() const {
+  if (column_infos_.empty()) {
+    return;
+  }
+
+  auto num_rows = column_infos_.front().data_->length();
+  for (size_t i = 1; i != column_infos_.size(); ++i) {
+    const auto &ci = column_infos_[i];
+    if (ci.data_->length() != num_rows) {
+      auto message = fmt::format("Column sizes not consistent: column 0 has size {}, but column {} has size {}",
+          num_rows, i, ci.data_->length());
+      throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+    }
+  }
 }
 
 TableMaker::ColumnInfo::ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,
