@@ -8,14 +8,19 @@
 #include <utility>
 #include <vector>
 
+#include <arrow/buffer.h>
+#include <arrow/record_batch.h>
+#include <arrow/flight/client.h>
+#include <arrow/type.h>
+#include <arrow/util/key_value_metadata.h>
+
+#include "deephaven/client/client.h"
 #include "deephaven/client/flight.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/core.h"
-#include "deephaven/third_party/fmt/format.h"
 
 #include "arrow/array/array_base.h"
-#include "arrow/array/builder_nested.h"
 
 using deephaven::dhcore::utility::MakeReservedVector;
 using deephaven::client::TableHandle;
@@ -80,7 +85,7 @@ std::shared_ptr<arrow::Table> TableMaker::MakeArrowTable() const {
 }
 
 std::vector<std::shared_ptr<arrow::Array>> TableMaker::GetColumnsNotEmpty() const {
-  std::vector<std::shared_ptr<arrow::Array>> result;
+  auto result = MakeReservedVector<std::shared_ptr<arrow::Array>>(column_infos_.size());
   for (const auto &info : column_infos_) {
     result.emplace_back(info.data_);
   }
