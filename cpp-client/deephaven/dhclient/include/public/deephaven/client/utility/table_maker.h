@@ -11,8 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include <arrow/array.h>
-#include <arrow/record_batch.h>
 #include <arrow/scalar.h>
 #include <arrow/type.h>
 #include <arrow/table.h>
@@ -22,23 +20,32 @@
 #include <arrow/array/builder_binary.h>
 #include <arrow/array/builder_nested.h>
 #include <arrow/array/builder_primitive.h>
-#include <arrow/util/key_value_metadata.h>
 
 #include "deephaven/client/client.h"
 #include "deephaven/client/utility/arrow_util.h"
 #include "deephaven/client/utility/internal_types.h"
-#include "deephaven/client/utility/misc_types.h"
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
-#include "deephaven/third_party/fmt/format.h"
 
 namespace deephaven::client::utility {
 namespace internal {
 template<typename T>
 struct ColumnBuilder {
-  // The below assert fires when this class is instantiated; i.e. when none of the specializations
-  // match. It needs to be written this way (with "is_same<T,T>") because for technical reasons it
-  // needs to be dependent on T, even if degenerately so.
+  // The legitimate usages of ColumnBuilder<T> are all template specializations, which are defined
+  // later in this same file. The definition provided here is the "fallback" definition in case none
+  // of the specializations match. For ColumnBuilder, it is always a programming error to
+  // instantiate this fallback definition, because it means the programmer is trying to make a
+  // ColumnBuilder for an unsupported type T. To prevent this from happening, we would like to put
+  // the effect of a static_assert(false) here so that the compilation fails. However, using
+  // literally "static_assert(false)" does not work because it causes the compilation to fail
+  // unconditionally, regardless of T. In a sense such a static_assert is evaluated by the compiler
+  // too early. What is needed is a static_assert that is only evaluated by the compiler "if we
+  // get here", i.e. if T does not match one of the specializations. The trick we use is to observe
+  // that in C++ an expression that does not depend on T is evaluated by the compiler when the class
+  // is defined, but an expression that *does* depend on T is evaluated only when the class is
+  // instantiated on T. So, we need a compile-time expression that (1) depends on T and (2)
+  // evaluates to false. One convenient expression that has this property is "T does not equal T",
+  // which, expressed as type_traits, is !std::is_same_v<T, T>.
   static_assert(!std::is_same_v<T, T>, "ColumnBuilder doesn't know how to work with this type");
 };
 
