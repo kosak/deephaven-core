@@ -70,8 +70,16 @@ TEST_CASE("List Types", "[newtable]") {
       { { false, true } }, // a non-null list
       { { false, true, {} } } // a non-null list with a null entry
   });
-//  maker.AddColumn<std::optional<char16_t>>("Chars",
-//      { {}, 0, 'a', u'ᐾ', DeephavenConstants::kMinChar, DeephavenConstants::kMaxChar });
+  maker.AddColumn<std::optional<std::vector<std::optional<char16_t>>>>("Chars", {
+      {}, // a null list
+      { { 'a', u'ᐾ' } }, // a non-null list
+      { { 'a', u'ᐾ', {} } } // a non-null list with a null entry
+  });
+  maker.AddColumn<std::optional<std::vector<std::optional<int8_t>>>>("Bytes", {
+      {}, // a null list
+      { { 0, 35 } }, // a non-null list
+      { { 0, 35, {} } } // a non-null list with a null entry
+  });
 //  maker.AddColumn<std::optional<int8_t>>("Bytes",
 //      { {}, 0, 1, -1, DeephavenConstants::kMinByte, DeephavenConstants::kMaxByte });
 //  maker.AddColumn<std::optional<int16_t>>("Shorts",
