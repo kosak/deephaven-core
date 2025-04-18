@@ -246,8 +246,8 @@ public:
     return wrapped_column_builder_.Finish();
   }
 
-  const char *GetDeephavenServerTypeName() {
-    return wrapped_column_builder_.GetDeephavenServerTypeName();
+  std::tuple<std::string, std::optional<std::string>> GetDeephavenMetadata() {
+    return wrapped_column_builder_.GetDeephavenMetadata();
   }
 
   const auto &GetBuilder() const {
