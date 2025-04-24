@@ -641,31 +641,23 @@ cdef class ElementType:
 
 # A class representing the relationship between a Deephaven type and a PyArrow type.
 cdef class _NewEquivalentTypes:
-    dh_type: ElementType
+    dh_type: CElementType
     pa_type: pa.DataType
 
     @staticmethod
-    cdef create(CElementType dh_type, pa_type: pa.DataType):
-        result = _NewEquivalentTypes()
-        result.dh_type = ElementType.Of(dh_type)
-        result.pa_type = pa_type
-        return result
-
-    @staticmethod
-    def create2(dh_type: ElementType, pa_type: pa.DataType):
+    cdef create(dh_type : CElementType, pa_type: pa.DataType):
         result = _NewEquivalentTypes()
         result.dh_type = dh_type
         result.pa_type = pa_type
         return result
 
-
     def wrap_list(self):
-        wrapped_dh_type = self.dh_type.wrap_list()
+        wrapped_dh_type = self.dh_type.WrapList()
         wrapped_pa_type = pa.list_(self.pa_type)
-        return _NewEquivalentTypes.create2(wrapped_dh_type, wrapped_pa_type)
+        return _NewEquivalentTypes.create(wrapped_dh_type, wrapped_pa_type)
 
     def __str__(self):
-        return f"[dh_type={self.dh_type}, pa_type={self.pa_type}]"
+        return f"[dh_type_id={self.dh_type.Id()}, pa_type={self.pa_type}]"
 
     def __repr__(self):
         return self.__str__()
