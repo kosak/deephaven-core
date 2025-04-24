@@ -627,46 +627,46 @@ cdef class ElementType:
     cdef CElementType element_type
 
     @staticmethod
-    cdef Of(element_type : ElementTypeId):
+    cdef Of(element_type : CElementType):
         result = ElementType()
-        result.element_type = CElementType.Of(element_type)
+        result.element_type = element_type
+        return result
 
+    def wrap_list(self):
+        return ElementType.Of(self.element_type.WrapList())
+
+
+# A class representing the relationship between a Deephaven type and a PyArrow type.
+cdef class _NewEquivalentTypes:
+    dh_type: ElementType
+    pa_type: pa.DataType
+
+    @staticmethod
+    cdef create(CElementType dh_type, pa_type: pa.DataType):
+        result = _NewEquivalentTypes()
+        result.dh_type = ElementType.Of(dh_type)
+        result.pa_type = pa_type
+        return result
 
 cdef _make_new_equivalent_types():
-    cdef ets = [
-        ElementType.Of(ElementTypeId.kChar),
-        ElementType.Of(ElementTypeId.kInt8),
-        ElementType.Of(ElementTypeId.kInt16),
-        ElementType.Of(ElementTypeId.kInt32),
-        ElementType.Of(ElementTypeId.kInt64),
-        ElementType.Of(ElementTypeId.kFloat),
-        ElementType.Of(ElementTypeId.kDouble),
-        ElementType.Of(ElementTypeId.kBool),
-        ElementType.Of(ElementTypeId.kString),
-        ElementType.Of(ElementTypeId.kTimestamp),
-        ElementType.Of(ElementTypeId.kLocalDate),
-        ElementType.Of(ElementTypeId.kLocalTime)
-    ]
-
-    pas = [
-        pa.int8(),
-        pa.int16(),
-        pa.int32(),
-        pa.int64(),
-        pa.float32(),
-        pa.float64(),
-        pa.bool_(),
-        pa.string(),
-        pa.timestamp("ns", "UTC"),
-        pa.date64(),
-        pa.time64("ns")
-    ]
-
     # make the known scalar types
-    scalars = [_EquivalentTypes.create(elt[0], elt[1]) for elt in zip(ets, pas)]
-    # make the known list types (one level of wrapping around the scalar types)
-    lists = [_EquivalentTypes.create(elt[0].WrapList(), pa.list_(elt[1])) for elt in zip(ets, pas)]
+    cdef scalars = [
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kChar), pa.uint16()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kInt8), pa.int8()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kInt16), pa.int16()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kInt32), pa.int32()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kInt64), pa.int64()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kFloat), pa.float32()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kDouble), pa.float64()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kBool), pa.bool_()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kString), pa.string()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kTimestamp), pa.timestamp("ns", "UTC")),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kLocalDate), pa.date64()),
+        _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kLocalTime), pa.time64("ns"))
+    ]
 
+    # make the known list types (one level of wrapping around the scalar types)
+    cdef lists = [et.wrap_list() for et in scalars]
     return scalars + lists
 
 cdef _new_equivalent_types = _make_new_equivalent_types()
