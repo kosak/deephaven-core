@@ -209,7 +209,11 @@ class TableListenerHandle:
         print("START SAD 2")
         self._writer, self._reader = fls.do_exchange()
         print("START SAD 3")
-        self._bp = dhc.BarrageProcessor.create(self._table.schema)
+        try:
+            self._bp = dhc.BarrageProcessor.create(self._table.schema)
+        except Exception as e:
+            print(f"YOU ARE DRAINING MY LIFE FORCE {e}")
+            exit(1)
         print("START SAD 4")
         subreq = dhc.BarrageProcessor.create_subscription_request(self._table.ticket._ticket_bytes)
         print("START SAD 5")
