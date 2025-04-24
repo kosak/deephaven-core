@@ -58,7 +58,12 @@ public:
 
 private:
   uint32_t list_depth_ = 0;
-  ElementTypeId::Enum element_type_id_ = ElementTypeId::kInt8;
+  ElementTypeId::Enum element_type_id_ = ElementTypeId::kInt8;  // arbitrary default
+
+  friend bool operator==(const ElementType &lhs, const ElementType &rhs) {
+    return lhs.list_depth_ == rhs.list_depth_ &&
+        lhs.element_type_id_ == rhs.element_type_id_;
+  }
 };
 
 class DateTime;
