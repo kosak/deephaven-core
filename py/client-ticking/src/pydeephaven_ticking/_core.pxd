@@ -145,8 +145,9 @@ cdef extern from "deephaven/dhcore/types.h" namespace "deephaven::dhcore":
         @staticmethod
         CElementType Of(ElementTypeId element_type_id)
 
-        CElementType WrapList()
-
+        CElementType WrapList() const
+        uint32_t ListDepth() const
+        ElementTypeId Id() const
 
     cdef cppclass CDateTime "deephaven::dhcore::DateTime":
         pass
