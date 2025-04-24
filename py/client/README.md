@@ -6,10 +6,11 @@ Deephaven Python Client is a Python package created by Deephaven Data Labs. It i
 ## `venv`
 
 It's recommended to install in a Python virtual environment (venv). Use a command like the
-below to create a venv.
+below to create a venv. Then, activate the venv.
 
 ``` shell
 python3 -m venv ~/py/dhenv
+source ~/py/dhenv/bin/activate
 ```
 
 ## Source Directory
