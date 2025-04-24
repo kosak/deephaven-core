@@ -648,6 +648,25 @@ cdef class _NewEquivalentTypes:
         result.pa_type = pa_type
         return result
 
+    @staticmethod
+    def create2(dh_type: ElementType, pa_type: pa.DataType):
+        result = _NewEquivalentTypes()
+        result.dh_type = dh_type
+        result.pa_type = pa_type
+        return result
+
+
+    def wrap_list(self):
+        wrapped_dh_type = self.dh_type.wrap_list()
+        wrapped_pa_type = pa.list_(self.pa_type)
+        return _NewEquivalentTypes.create2(wrapped_dh_type, wrapped_pa_type)
+
+    def __str__(self):
+        return f"[dh_type={self.dh_type}, pa_type={self.pa_type}]"
+
+    def __repr__(self):
+        return self.__str__()
+
 cdef _make_new_equivalent_types():
     # make the known scalar types
     cdef scalars = [
@@ -664,6 +683,10 @@ cdef _make_new_equivalent_types():
         _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kLocalDate), pa.date64()),
         _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kLocalTime), pa.time64("ns"))
     ]
+
+    print(f"hi scalars {scalars}")
+    print(f"hi scalars[0] {scalars[0]}")
+    print(f"hi scalars[0].__str__ {scalars[0].__str__()}")
 
     # make the known list types (one level of wrapping around the scalar types)
     cdef lists = [et.wrap_list() for et in scalars]
@@ -683,7 +706,7 @@ cdef _dh_type_to_pa_type(dh_type: ElementTypeId):
 
 # Converts a PyArrow type into the corresponding PyArrow type.
 cdef ElementTypeId _pa_type_to_dh_type(pa_type: pa.DataType) except *:
-    print(f"Hi, new ets are {_new_equivalent_types}")
+    print(f"goodbye, new ets are {_new_equivalent_types}")
     for et_python in _equivalentTypes:
         et = <_EquivalentTypes>et_python
         if et.pa_type == pa_type:
