@@ -22,9 +22,10 @@ It is assumed that you have the repository checked out at the location specified
 `${DHROOT}`
 
 ```
-cd ~/dhsrc  # or another directory you choose
-git clone https://github.com/deephaven/deephaven-core.git
-export DHROOT=`pwd`/deephaven-core
+$ cd ~/dhsrc  # or another directory you choose
+$ git clone https://github.com/deephaven/deephaven-core.git
+$ cd deephaven-core
+$ export DHROOT=`pwd`
 ```
 
 ## Change to the py/client directory inside the deephaven-core repository
