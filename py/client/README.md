@@ -18,9 +18,18 @@ source ~/py/dhenv/bin/activate
 ### From the deephaven-core repository root
 (clone from https://github.com/deephaven/deephaven-core)
 
+It is assumed that you have the repository checked out at the location specified by
+`${DHROOT}`
+
+```
+cd ~/dhsrc  # or another directory you choose
+git clone https://github.com/deephaven/deephaven-core.git
+export DHROOT=`pwd`/deephaven-core
+```
+
 ## Change to the py/client directory inside the deephaven-core repository
 ``` shell
-$ cd py/client
+$ cd $DHROOT/py/client
 ```
 
 ## Dev environment setup
