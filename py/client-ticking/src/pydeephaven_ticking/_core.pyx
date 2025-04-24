@@ -596,22 +596,6 @@ cdef class BarrageProcessor:
             return TickingUpdate.create(deref(result))
         return None
 
-cdef class ElementType:
-    cdef CElementType element_type
-
-    @staticmethod
-    cdef Of(element_type : CElementType):
-        result = ElementType()
-        result.element_type = element_type
-        return result
-
-    def wrap_list(self):
-        return ElementType.Of(self.element_type.WrapList())
-
-    def __str__(self):
-        return f"[element_type_id={self.element_type.Id()}, list_depth={self.element_type.ListDepth()}]"
-
-
 # A class representing the relationship between a Deephaven type and a PyArrow type.
 cdef class _NewEquivalentTypes:
     dh_type: CElementType
