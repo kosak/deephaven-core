@@ -152,6 +152,8 @@ cdef extern from "deephaven/dhcore/types.h" namespace "deephaven::dhcore":
         uint32_t ListDepth() const
         ElementTypeId Id() const
 
+        string ToString() const
+
     cdef extern bool operator==(const CElementType &lhs, const CElementType &rhs)
 
     cdef cppclass CDateTime "deephaven::dhcore::DateTime":

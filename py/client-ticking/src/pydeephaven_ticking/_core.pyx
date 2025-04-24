@@ -648,13 +648,13 @@ cdef _new_equivalent_types = _make_new_equivalent_types()
 
 # Converts a Deephaven type into the corresponding PyArrow type.
 cdef _dh_type_to_pa_type(dh_type: CElementType):
-    print(f"Hi converting {dh_type.Id()} depth {dh_type.ListDepth()}")
+    print(f"Hi converting {dh_type.ToString()}")
     for et_python in _new_equivalent_types:
         et = <_NewEquivalentTypes>et_python
         if et.dh_type == dh_type:
             print(f"zamboni sad returning {et.pa_type}")
             return et.pa_type
-    raise RuntimeError(f"Can't convert Deephaven type {<int>dh_type} to pyarrow type type")
+    raise RuntimeError(f"Can't convert Deephaven type {dh_type.ToString()} to pyarrow type type")
 
 # Converts a PyArrow type into the corresponding PyArrow type.
 cdef CElementType _pa_type_to_dh_type(pa_type: pa.DataType) except *:

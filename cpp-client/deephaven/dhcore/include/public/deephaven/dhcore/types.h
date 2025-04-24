@@ -56,6 +56,8 @@ public:
   [[nodiscard]]
   ElementType UnwrapList() const;
 
+  std::string ToString() const;
+
 private:
   uint32_t list_depth_ = 0;
   ElementTypeId::Enum element_type_id_ = ElementTypeId::kInt8;  // arbitrary default
@@ -64,6 +66,8 @@ private:
     return lhs.list_depth_ == rhs.list_depth_ &&
         lhs.element_type_id_ == rhs.element_type_id_;
   }
+
+  friend std::ostream &operator<<(std::ostream &s, const ElementType &o);
 };
 
 class DateTime;
