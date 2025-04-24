@@ -82,6 +82,9 @@ cdef extern from "deephaven/dhcore/clienttable/schema.h" namespace "deephaven::d
         @staticmethod
         shared_ptr[CSchema] Create(const vector[string] &names, const vector[ElementTypeId] &types)
 
+        @staticmethod
+        shared_ptr[CSchema] Create(const vector[string] &names, const vector[CElementType] &types)
+
         CSchema()
 
         const vector[string] &Names()

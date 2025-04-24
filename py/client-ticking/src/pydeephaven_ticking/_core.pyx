@@ -513,14 +513,14 @@ cdef shared_ptr[CSchema] _pyarrow_schema_to_deephaven_schema(src: pa.Schema) exc
 
     print("p2p2p 2")
     cdef vector[string] names
-    cdef vector[ElementTypeId] types
+    cdef vector[CElementType] types
 
     print("p2p2p 3")
     for i in range(len(src.names)):
         print("p2p2p 4")
         name = src.names[i].encode()
         print(f"name is {name}")
-        print(f"type is {src.types[i]}");
+        print(f"type is {src.types[i]}")
         dh_type = _pa_type_to_dh_type(src.types[i])
         print("p2p2p 5")
         names.push_back(name)
@@ -708,10 +708,10 @@ cdef _dh_type_to_pa_type(dh_type: ElementTypeId):
     raise RuntimeError(f"Can't convert Deephaven type {<int>dh_type} to pyarrow type type")
 
 # Converts a PyArrow type into the corresponding PyArrow type.
-cdef ElementTypeId _pa_type_to_dh_type(pa_type: pa.DataType) except *:
+cdef CElementType _pa_type_to_dh_type(pa_type: pa.DataType) except *:
     print(f"goodbye, new ets are {_new_equivalent_types}")
-    for et_python in _equivalentTypes:
-        et = <_EquivalentTypes>et_python
+    for et_python in _new_equivalent_types:
+        et = <_NewEquivalentTypes>et_python
         if et.pa_type == pa_type:
             return et.dh_type
     print("No cookie for you... I'm raising a Python exception which is my right")        
