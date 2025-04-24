@@ -249,7 +249,9 @@ cdef class ColumnSource:
         cdef CGenericChunk[bool] *null_flags_ptr = &boolean_chunk
         arrow_type: pa.DataType
 
+        print("Hi...getting element_type_id")
         element_type_id = CCythonSupport.GetElementTypeId(deref(self.column_source))
+        print(f"got {element_type_id}")
         if element_type_id == ElementTypeId.kChar:
             dest_data = np.zeros(size, np.uint16)
             self._fill_char_chunk(rows, dest_data, null_flags_ptr)
@@ -505,18 +507,26 @@ cdef shared_ptr[CColumnSource] _convert_underlying_int64_to_column_source(
 
 # This method converts a PyArrow Schema object to a C++ Schema object.
 cdef shared_ptr[CSchema] _pyarrow_schema_to_deephaven_schema(src: pa.Schema) except *:
+    print("p2p2p 1")
     if len(src.names) != len(src.types):
         raise RuntimeError("Unexpected: schema lengths are inconsistent")
 
+    print("p2p2p 2")
     cdef vector[string] names
     cdef vector[ElementTypeId] types
 
+    print("p2p2p 3")
     for i in range(len(src.names)):
+        print("p2p2p 4")
         name = src.names[i].encode()
+        print(f"name is {name}")
+        print(f"type is {src.types[i]}");
         dh_type = _pa_type_to_dh_type(src.types[i])
+        print("p2p2p 5")
         names.push_back(name)
         types.push_back(dh_type)
 
+    print("p2p2p 6")
     return CSchema.Create(names, types)
 
 # Code to support processing of Barrage messages. The reason this is somewhat complicated is because there is a
@@ -540,9 +550,13 @@ cdef class BarrageProcessor:
 
     @staticmethod
     def create(pa_schema: pa.Schema) -> BarrageProcessor:
+        print("create stupid 1")
         dh_schema = _pyarrow_schema_to_deephaven_schema(pa_schema)
+        print("create stupid 2")
         result = BarrageProcessor()
+        print("create stupid 3")
         result._barrage_processor = CBarrageProcessor(move(dh_schema))
+        print("create stupid 4")
         return result
 
     # The Python code that drives the Arrow interaction does not know how to interpret the metadata message
@@ -611,9 +625,11 @@ cdef _equivalentTypes = [
 
 # Converts a Deephaven type (an enum) into the corresponding PyArrow type.
 cdef _dh_type_to_pa_type(dh_type: ElementTypeId):
+    print(f"Hi converting {dh_type}")
     for et_python in _equivalentTypes:
         et = <_EquivalentTypes>et_python
         if et.dh_type == dh_type:
+            print(f"zamboni sad returning {et.pa_type}")
             return et.pa_type
     raise RuntimeError(f"Can't convert Deephaven type {<int>dh_type} to pyarrow type type")
 
@@ -623,4 +639,5 @@ cdef ElementTypeId _pa_type_to_dh_type(pa_type: pa.DataType) except *:
         et = <_EquivalentTypes>et_python
         if et.pa_type == pa_type:
             return et.dh_type
+    print("No cookie for you... I'm raising a Python exception which is my right")        
     raise RuntimeError(f"Can't convert pyarrow type {pa_type} to Deephaven type")

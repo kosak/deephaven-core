@@ -35,12 +35,15 @@ class TickingListsTestCase(unittest.TestCase):
         print("HELLO2")
         session.bind_table(name="all_types_table", table=table)
         print(table.to_arrow())
-
+        print("DO YOU EVEN GET HERE 1")
         listener_handle = dh.listen(table, self.handle_update)
+        print("DO YOU EVEN GET HERE 2")
         listener_handle.start()
+        print("DO YOU EVEN GET HERE 3")
 
         timed_out = False
         try:
+            print("DO YOU EVEN GET HERE 4")
             _ = self.queue.get(block = True, timeout = 10)
         except queue.Empty:
             timed_out = True
@@ -55,11 +58,11 @@ class TickingListsTestCase(unittest.TestCase):
             self.fail("Test timed out")
 
     def handle_update(self, update):
+        print("NOW WHAT")
         added = update.added()
         if len(added) == 0:
             return
 
-        print("NOW WHAT")
         expected_char_data = []
         expected_byte_data = []
         expected_short_data = []

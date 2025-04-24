@@ -204,14 +204,21 @@ class TableListenerHandle:
         """Subscribes to changes on the table referenced in the constructor. When changes happen, the
         TableListener passed into the constructor will be invoked."""
 
+        print("START SAD 1")
         fls = self._table.session.flight_service
+        print("START SAD 2")
         self._writer, self._reader = fls.do_exchange()
+        print("START SAD 3")
         self._bp = dhc.BarrageProcessor.create(self._table.schema)
+        print("START SAD 4")
         subreq = dhc.BarrageProcessor.create_subscription_request(self._table.ticket._ticket_bytes)
+        print("START SAD 5")
         self._writer.write_metadata(subreq)
+        print("START SAD 6")
 
         self._thread = threading.Thread(target=self._process_data)
         self._thread.start()
+        print("START SAD 7")
 
     def stop(self) -> None:
         """Cancels the subscription to the table and stops the service thread. By the time this method returns, the
@@ -235,9 +242,12 @@ class TableListenerHandle:
 
         try:
             while not self._cancelled:
+                print("STUPID 0")
                 data, metadata = self._reader.read_chunk()
                 ticking_update = self._bp.process_next_chunk(data.columns, metadata)
+                print("STUPID 1")
                 if ticking_update is not None:
+                    print("STUPID 2")
                     table_update = TableUpdate(ticking_update)
                     self._listener.on_update(table_update)
         except StopIteration:
