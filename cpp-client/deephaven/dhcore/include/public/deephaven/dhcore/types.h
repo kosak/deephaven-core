@@ -12,6 +12,7 @@
 #include <string_view>
 #include <type_traits>
 #include "deephaven/third_party/fmt/core.h"
+#include "deephaven/third_party/fmt/format.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
 namespace deephaven::dhcore::container {
@@ -56,7 +57,10 @@ public:
   [[nodiscard]]
   ElementType UnwrapList() const;
 
-  std::string ToString() const;
+  [[nodiscard]]
+  std::string ToString() const {
+    return fmt::to_string(*this);
+  }
 
 private:
   uint32_t list_depth_ = 0;
@@ -574,3 +578,4 @@ private:
 template<> struct fmt::formatter<deephaven::dhcore::DateTime> : ostream_formatter {};
 template<> struct fmt::formatter<deephaven::dhcore::LocalDate> : ostream_formatter {};
 template<> struct fmt::formatter<deephaven::dhcore::LocalTime> : ostream_formatter {};
+template<> struct fmt::formatter<deephaven::dhcore::ElementType> : ostream_formatter {};

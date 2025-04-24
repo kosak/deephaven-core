@@ -614,7 +614,7 @@ cdef class _NewEquivalentTypes:
         return _NewEquivalentTypes.create(wrapped_dh_type, wrapped_pa_type)
 
     def __str__(self):
-        return f"[dh_type_id={self.dh_type.Id()}, pa_type={self.pa_type}]"
+        return f"[dh_type_id={self.dh_type.ToString()}, pa_type={self.pa_type}]"
 
     def __repr__(self):
         return self.__str__()
@@ -662,6 +662,7 @@ cdef CElementType _pa_type_to_dh_type(pa_type: pa.DataType) except *:
     for et_python in _new_equivalent_types:
         et = <_NewEquivalentTypes>et_python
         if et.pa_type == pa_type:
+            print(f"zowie returning {et.dh_type}")
             return et.dh_type
     print("No cookie for you... I'm raising a Python exception which is my right")        
     raise RuntimeError(f"Can't convert pyarrow type {pa_type} to Deephaven type")
