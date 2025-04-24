@@ -626,6 +626,12 @@ cdef _equivalentTypes = [
 cdef class ElementType:
     cdef CElementType element_type
 
+    @staticmethod
+    cdef Of(element_type : ElementTypeId):
+        result = ElementType()
+        result.element_type = CElementType.Of(element_type)
+
+
 cdef _make_new_equivalent_types():
     cdef ets = [
         ElementType.Of(ElementTypeId.kChar),
