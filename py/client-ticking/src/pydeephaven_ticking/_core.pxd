@@ -88,7 +88,7 @@ cdef extern from "deephaven/dhcore/clienttable/schema.h" namespace "deephaven::d
         CSchema()
 
         const vector[string] &Names()
-        const vector[ElementTypeId] &Types()
+        const vector[CElementType] &ElementTypes()
 
 cdef extern from "deephaven/dhcore/ticking/ticking.h" namespace "deephaven::dhcore::ticking":
     cdef cppclass CTickingUpdate "deephaven::dhcore::ticking::TickingUpdate":
@@ -151,6 +151,8 @@ cdef extern from "deephaven/dhcore/types.h" namespace "deephaven::dhcore":
         CElementType WrapList() const
         uint32_t ListDepth() const
         ElementTypeId Id() const
+
+    cdef extern bool operator==(const CElementType &lhs, const CElementType &rhs)
 
     cdef cppclass CDateTime "deephaven::dhcore::DateTime":
         pass

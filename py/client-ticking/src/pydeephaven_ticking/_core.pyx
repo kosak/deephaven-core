@@ -160,7 +160,7 @@ cdef class Schema:
     @staticmethod
     cdef Schema create_from_c_schema(shared_ptr[CSchema] schema):
         c_names = deref(schema).Names()
-        c_types = deref(schema).Types()
+        c_types = deref(schema).ElementTypes()
         names: [str] = []
         types: [pa.DataType] = []
         cdef size_t i
@@ -596,33 +596,6 @@ cdef class BarrageProcessor:
             return TickingUpdate.create(deref(result))
         return None
 
-# A class representing the relationship between a Deephaven type and a PyArrow type.
-cdef class _EquivalentTypes:
-    cdef ElementTypeId dh_type
-    pa_type: pa.DataType
-
-    @staticmethod
-    cdef create(ElementTypeId dh_type, pa_type: pa.DataType):
-        result = _EquivalentTypes()
-        result.dh_type = dh_type
-        result.pa_type = pa_type
-        return result
-
-cdef _equivalentTypes = [
-    _EquivalentTypes.create(ElementTypeId.kChar, pa.uint16()),
-    _EquivalentTypes.create(ElementTypeId.kInt8, pa.int8()),
-    _EquivalentTypes.create(ElementTypeId.kInt16, pa.int16()),
-    _EquivalentTypes.create(ElementTypeId.kInt32, pa.int32()),
-    _EquivalentTypes.create(ElementTypeId.kInt64, pa.int64()),
-    _EquivalentTypes.create(ElementTypeId.kFloat, pa.float32()),
-    _EquivalentTypes.create(ElementTypeId.kDouble, pa.float64()),
-    _EquivalentTypes.create(ElementTypeId.kBool, pa.bool_()),
-    _EquivalentTypes.create(ElementTypeId.kString, pa.string()),
-    _EquivalentTypes.create(ElementTypeId.kTimestamp, pa.timestamp("ns", "UTC")),
-    _EquivalentTypes.create(ElementTypeId.kLocalDate, pa.date64()),
-    _EquivalentTypes.create(ElementTypeId.kLocalTime, pa.time64("ns"))
-]
-
 cdef class ElementType:
     cdef CElementType element_type
 
@@ -689,11 +662,11 @@ cdef _make_new_equivalent_types():
 
 cdef _new_equivalent_types = _make_new_equivalent_types()
 
-# Converts a Deephaven type (an enum) into the corresponding PyArrow type.
-cdef _dh_type_to_pa_type(dh_type: ElementTypeId):
-    print(f"Hi converting {dh_type}")
-    for et_python in _equivalentTypes:
-        et = <_EquivalentTypes>et_python
+# Converts a Deephaven type into the corresponding PyArrow type.
+cdef _dh_type_to_pa_type(dh_type: CElementType):
+    print(f"Hi converting {dh_type.Id()} depth {dh_type.ListDepth()}")
+    for et_python in _new_equivalent_types:
+        et = <_NewEquivalentTypes>et_python
         if et.dh_type == dh_type:
             print(f"zamboni sad returning {et.pa_type}")
             return et.pa_type
