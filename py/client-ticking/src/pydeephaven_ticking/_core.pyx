@@ -662,7 +662,7 @@ cdef CElementType _pa_type_to_dh_type(pa_type: pa.DataType) except *:
     for et_python in _new_equivalent_types:
         et = <_NewEquivalentTypes>et_python
         if et.pa_type == pa_type:
-            print(f"zowie returning {et.dh_type}")
+            print(f"zowie returning {et.dh_type.ToString()}")
             return et.dh_type
     print("No cookie for you... I'm raising a Python exception which is my right")        
     raise RuntimeError(f"Can't convert pyarrow type {pa_type} to Deephaven type")
