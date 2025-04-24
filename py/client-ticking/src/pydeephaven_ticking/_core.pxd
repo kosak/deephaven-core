@@ -141,6 +141,13 @@ cdef extern from "deephaven/dhcore/types.h" namespace "deephaven::dhcore":
         kLocalDate "deephaven::dhcore::ElementTypeId::kLocalDate"
         kLocalTime "deephaven::dhcore::ElementTypeId::kLocalTime"
 
+    cdef cppclass CElementType "deephaven::dhcore::ElementType":
+        @staticmethod
+        CElementType Of(ElementTypeId element_type_id)
+
+        CElementType WrapList()
+
+
     cdef cppclass CDateTime "deephaven::dhcore::DateTime":
         pass
 

@@ -12,7 +12,7 @@ from cython.operator cimport dereference as deref
 from pydeephaven_ticking._core cimport char16_t
 from pydeephaven_ticking._core cimport CColumnSource, CGenericChunk, CRowSequence, CSchema, CClientTable
 from pydeephaven_ticking._core cimport CHumanReadableElementTypeName, CHumanReadableStaticTypeName
-from pydeephaven_ticking._core cimport CCythonSupport, ElementTypeId, CDateTime
+from pydeephaven_ticking._core cimport CCythonSupport, ElementTypeId, CElementType, CDateTime
 from pydeephaven_ticking._core cimport CTickingUpdate, CBarrageProcessor, CNumericBufferColumnSource
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t, uint16_t, uint32_t, uint64_t
 from libcpp cimport bool
@@ -623,6 +623,48 @@ cdef _equivalentTypes = [
     _EquivalentTypes.create(ElementTypeId.kLocalTime, pa.time64("ns"))
 ]
 
+cdef class ElementType:
+    cdef CElementType element_type
+
+cdef _make_new_equivalent_types():
+    cdef ets = [
+        ElementType.Of(ElementTypeId.kChar),
+        ElementType.Of(ElementTypeId.kInt8),
+        ElementType.Of(ElementTypeId.kInt16),
+        ElementType.Of(ElementTypeId.kInt32),
+        ElementType.Of(ElementTypeId.kInt64),
+        ElementType.Of(ElementTypeId.kFloat),
+        ElementType.Of(ElementTypeId.kDouble),
+        ElementType.Of(ElementTypeId.kBool),
+        ElementType.Of(ElementTypeId.kString),
+        ElementType.Of(ElementTypeId.kTimestamp),
+        ElementType.Of(ElementTypeId.kLocalDate),
+        ElementType.Of(ElementTypeId.kLocalTime)
+    ]
+
+    pas = [
+        pa.int8(),
+        pa.int16(),
+        pa.int32(),
+        pa.int64(),
+        pa.float32(),
+        pa.float64(),
+        pa.bool_(),
+        pa.string(),
+        pa.timestamp("ns", "UTC"),
+        pa.date64(),
+        pa.time64("ns")
+    ]
+
+    # make the known scalar types
+    scalars = [_EquivalentTypes.create(elt[0], elt[1]) for elt in zip(ets, pas)]
+    # make the known list types (one level of wrapping around the scalar types)
+    lists = [_EquivalentTypes.create(elt[0].WrapList(), pa.list_(elt[1])) for elt in zip(ets, pas)]
+
+    return scalars + lists
+
+cdef _new_equivalent_types = _make_new_equivalent_types()
+
 # Converts a Deephaven type (an enum) into the corresponding PyArrow type.
 cdef _dh_type_to_pa_type(dh_type: ElementTypeId):
     print(f"Hi converting {dh_type}")
@@ -635,6 +677,7 @@ cdef _dh_type_to_pa_type(dh_type: ElementTypeId):
 
 # Converts a PyArrow type into the corresponding PyArrow type.
 cdef ElementTypeId _pa_type_to_dh_type(pa_type: pa.DataType) except *:
+    print(f"Hi, new ets are {_new_equivalent_types}")
     for et_python in _equivalentTypes:
         et = <_EquivalentTypes>et_python
         if et.pa_type == pa_type:
