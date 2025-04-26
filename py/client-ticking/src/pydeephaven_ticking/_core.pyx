@@ -378,7 +378,7 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
 
     print(f"HI IT IS SUPER ZAMBONI TIME. What's your type? {array.type}")
 
-    if array.type.is_list:
+    if pa.types.is_list(array.type):
         # The incoming data is a list<T>. This can be viewed as flattened data structures
         # for values and lengths. We use recursion to get those values and lengths as
         # separate column sources, then use a special entry point to combine those two
