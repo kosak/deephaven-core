@@ -374,8 +374,6 @@ cdef class ColumnSource:
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.Array) except *:
-    cdef shared_ptr[CColumnSource] temp
-
     print(f"HI IT IS SUPER ZAMBONI TIME. What's your type? {array.type}")
 
     if pa.types.is_list(array.type):
@@ -385,8 +383,10 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
         # column sources into a ContainerColumnSource
         values_cs = _convert_arrow_array_to_column_source(array.values)
         lengths_cs = _convert_arrow_array_to_column_source(array.value_lengths())
-        print("THIS IS EXCITING AND TREACHEROUS")
-        return temp
+        print("THIS (was) EXCITING AND TREACHEROUS")
+        return CCythonSupport.CreateContainerColumnSource(
+            values_cs, len(array.values),
+            lengths_cs, len(array.value_lengths()))
     if isinstance(array, pa.lib.StringArray):
         return _convert_arrow_string_array_to_column_source(cast(pa.lib.StringArray, array))
     if isinstance(array, pa.lib.BooleanArray):

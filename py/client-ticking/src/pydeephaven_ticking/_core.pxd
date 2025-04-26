@@ -189,6 +189,11 @@ cdef extern from "deephaven/dhcore/utility/cython_support.h" namespace "deephave
             const uint8_t *validityBegin, const uint8_t *validityEnd, size_t numElements)
 
         @staticmethod
+        shared_ptr[CColumnSource] CreateContainerColumnSource(
+                shared_ptr[CColumnSource] data, size_t data_size,
+                shared_ptr[CColumnSource] lengths, size_t lengths_size)
+
+        @staticmethod
         ElementTypeId GetElementTypeId(const CColumnSource &columnSource)
 
 cdef extern from "deephaven/dhcore/ticking/barrage_processor.h" namespace "deephaven::dhcore::ticking":
