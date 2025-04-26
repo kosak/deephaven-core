@@ -18,7 +18,8 @@ class ColumnSourceVisitor;
 /**
  * Abstract class for providing read access to Deephaven column data.
  */
-class ColumnSource {
+class
+ColumnSource {
 public:
   /**
    * Alias.
