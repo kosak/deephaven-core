@@ -18,13 +18,13 @@
 namespace deephaven::dhcore::container {
 class ContainerUtil {
   using ColumnSource = deephaven::dhcore::column::ColumnSource;
+  using ContainerArrayColumnSource = deephaven::dhcore::column::ContainerArrayColumnSource;
 public:
   template<typename TElement, typename TChunk>
-  static std::shared_ptr<ColumnSource> Inflate(const ElementType &element_type,
+  static std::shared_ptr<ContainerArrayColumnSource> Inflate(const ElementType &element_type,
       const ColumnSource &flattened_elements, size_t flattened_size,
       const std::vector<std::optional<size_t>> &slice_lengths) {
     using deephaven::dhcore::chunk::BooleanChunk;
-    using deephaven::dhcore::column::ContainerArrayColumnSource;
     using deephaven::dhcore::container::Container;
     using deephaven::dhcore::ElementType;
 
