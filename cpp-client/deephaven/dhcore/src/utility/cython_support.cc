@@ -7,25 +7,39 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/array_column_source.h"
+#include "deephaven/dhcore/container/container_util.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 
 using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::DateTimeChunk;
+using deephaven::dhcore::chunk::DoubleChunk;
+using deephaven::dhcore::chunk::FloatChunk;
 using deephaven::dhcore::chunk::Int8Chunk;
+using deephaven::dhcore::chunk::Int16Chunk;
+using deephaven::dhcore::chunk::Int32Chunk;
+using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::LocalDateChunk;
+using deephaven::dhcore::chunk::LocalTimeChunk;
+using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::column::BooleanArrayColumnSource;
 using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
+using deephaven::dhcore::column::ContainerArrayColumnSource;
 using deephaven::dhcore::column::DateTimeArrayColumnSource;
 using deephaven::dhcore::column::LocalDateArrayColumnSource;
 using deephaven::dhcore::column::LocalTimeArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
+using deephaven::dhcore::container::ContainerUtil;
 using deephaven::dhcore::container::RowSequence;
 
 namespace deephaven::dhcore::utility {
@@ -117,26 +131,69 @@ ElementTypeId::Enum CythonSupport::GetElementTypeId(const ColumnSource &column_s
 
 namespace {
 struct CreateContainerVisitor final : ColumnSourceVisitor {
-  void Visit(const column::Int8ColumnSource &source) final {
-    std::shared_ptr<int8_t[]> data(new int8_t[data_size_]);
-    std::shared_ptr<bool[]> data_nulls(new bool[data_size_]);
-
-    auto data_chunk = Int8Chunk::CreateView(data.get(), data_size_);
-    auto data_null_chunk = BooleanChunk::CreateView(data_nulls.get(), data_size_);
-    auto rows = RowSequence::CreateSequential(0, data_size_);
-    source.FillChunk(*rows, &data_chunk, &data_null_chunk);
-
-
-
-
-
+  void Visit(const column::CharColumnSource &source) override {
+    VisitHelper<char16_t, CharChunk>(ElementTypeId::kChar);
   }
 
+  void Visit(const column::Int8ColumnSource &source) override {
+    VisitHelper<int8_t, Int8Chunk>(ElementTypeId::kInt8);
+  }
+
+  void Visit(const column::Int16ColumnSource &source) override {
+    VisitHelper<int16_t, Int16Chunk>(ElementTypeId::kInt16);
+  }
+
+  void Visit(const column::Int32ColumnSource &source) override {
+    VisitHelper<int32_t, Int32Chunk>(ElementTypeId::kInt32);
+  }
+
+  void Visit(const column::Int64ColumnSource &source) override {
+    VisitHelper<int64_t, Int64Chunk>(ElementTypeId::kInt64);
+  }
+
+  void Visit(const column::FloatColumnSource &source) override {
+    VisitHelper<float, FloatChunk>(ElementTypeId::kFloat);
+  }
+
+  void Visit(const column::DoubleColumnSource &source) override {
+    VisitHelper<double, DoubleChunk>(ElementTypeId::kDouble);
+  }
+
+  void Visit(const column::BooleanColumnSource &source) override {
+    VisitHelper<bool, BooleanChunk>(ElementTypeId::kBool);
+  }
+
+  void Visit(const column::StringColumnSource &source) override {
+    VisitHelper<std::string, StringChunk>(ElementTypeId::kString);
+  }
+
+  void Visit(const column::DateTimeColumnSource &source) override {
+    VisitHelper<DateTime, DateTimeChunk>(ElementTypeId::kTimestamp);
+  }
+
+  void Visit(const column::LocalDateColumnSource &source) override {
+    VisitHelper<LocalDate, LocalDateChunk>(ElementTypeId::kLocalDate);
+  }
+
+  void Visit(const column::LocalTimeColumnSource &source) override {
+    VisitHelper<LocalTime, LocalTimeChunk>(ElementTypeId::kLocalTime);
+  }
+
+  void Visit(const column::ContainerBaseColumnSource &source) final {
+    const char *message = "Nested containers are not supported";
+    throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
+  }
+
+  template<typename TElement, typename TChunk>
+  void VisitHelper(ElementTypeId::Enum element_type_id) {
+    result_ = ContainerUtil::Inflate<TElement, TChunk>(ElementType::Of(element_type_id),
+        *data_, data_size_, slice_lengths_);
+  }
+
+  std::shared_ptr<ColumnSource> data_;
   size_t data_size_ = 0;
-  const int32_t *lengths_ = nullptr;
-  size_t lengths_size_ = 0;
-
-
+  std::vector<std::optional<size_t>> slice_lengths_;
+  std::shared_ptr<ContainerArrayColumnSource> result_;
 };
 }  // namespace
 
