@@ -155,5 +155,14 @@ TEST_CASE("TestInflation", "[cython]") {
     std::move(slice_lengths_cs), slice_lengths_size);
 
   auto actual_vector = ContainerColumnSourceToVector<std::string>(*actual, slice_lengths_size);
+
+  std::vector<std::optional<std::vector<std::optional<std::string>>>> expected_vector = {
+    { { "a", "b", "c"} },
+    {},
+    { {} },
+    { {"d", "e", "f", {}, "g" }},
+  };
+
+  CHECK(expected_vector == actual_vector);
 }
 }  // namespace deephaven::client::tests
