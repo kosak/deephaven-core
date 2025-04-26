@@ -37,6 +37,7 @@ using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::ContainerArrayColumnSource;
 using deephaven::dhcore::column::DateTimeArrayColumnSource;
+using deephaven::dhcore::column::Int32ColumnSource;
 using deephaven::dhcore::column::LocalDateArrayColumnSource;
 using deephaven::dhcore::column::LocalTimeArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
@@ -132,6 +133,11 @@ ElementTypeId::Enum CythonSupport::GetElementTypeId(const ColumnSource &column_s
 
 namespace {
 struct CreateContainerVisitor final : ColumnSourceVisitor {
+  CreateContainerVisitor(std::shared_ptr<ColumnSource> data, size_t data_size,
+    std::vector<std::optional<size_t>> slice_lengths) : data_(std::move(data)),
+    data_size_(data_size), slice_lengths_(std::move(slice_lengths)) {}
+  ~CreateContainerVisitor() final = default;
+
   void Visit(const column::CharColumnSource &source) final {
     VisitHelper<char16_t, CharChunk>(ElementTypeId::kChar);
   }
@@ -201,12 +207,26 @@ struct CreateContainerVisitor final : ColumnSourceVisitor {
 std::shared_ptr<ColumnSource>
 CythonSupport::CreateContainerColumnSource(std::shared_ptr<ColumnSource> data, size_t data_size,
     std::shared_ptr<ColumnSource> lengths, size_t lengths_size) {
-  // assume that lengths has underlying type int32
-  // do a visitor for the data
-  // which
-  // makes a chunk
 
+  // Change the representation of the 'lengths' ColumnSource into vector<optional<int32_t>>. This is slightly laborious
+  const auto *typed_lengths = VerboseCast<const Int32ColumnSource*>(DEEPHAVEN_LOCATION_EXPR(lengths.get()));
+  auto row_sequence = RowSequence::CreateSequential(0, lengths_size);
+  auto lengths_data = Int32Chunk::Create(lengths_size);
+  auto lengths_nulls = BooleanChunk::Create(lengths_size);
+  typed_lengths->FillChunk(*row_sequence, &lengths_data, &lengths_nulls);
 
+  auto lengths_vec = MakeReservedVector<std::optional<std::int32_t>>(lengths_size);
+  for (size_t i = 0; i != lengths_size; ++i) {
+    if (lengths_nulls[i]) {
+      lengths_vec.emplace_back();
+    } else {
+      lengths_vec.emplace_back(lengths_data[i]);
+    }
+  }
+
+  CreateContainerVisitor visitor(std::move(data), data_size, std::move(lengths_vec));
+  visitor.data_->AcceptVisitor(&visitor);
+  return std::move(visitor.result_);
 }
 
 namespace {

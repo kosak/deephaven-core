@@ -26,8 +26,8 @@ public:
   static std::shared_ptr<ColumnSource> CreateLocalTimeColumnSource(const int64_t *data_begin, const int64_t *data_end,
       const uint8_t *validity_begin, const uint8_t *validity_end, size_t num_elements);
   static std::shared_ptr<ColumnSource> CreateContainerColumnSource(
-      std::shared_ptr<ColumnSource> data, std::shared_ptr<ColumnSource> lengths,
-      size_t num_elements);
+      std::shared_ptr<ColumnSource> data, size_t data_size,
+      std::shared_ptr<ColumnSource> lengths, size_t lengths_size);
 
   /**
    * For backwards compatibility. Will be removed when Cython is updated.
