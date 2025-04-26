@@ -3,7 +3,9 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -252,6 +254,13 @@ private:
   ElementType element_type_;
   internal::GenericBackingStore<T> data_;
 };
+
+using Int8ArrayColumnSource = GenericArrayColumnSource<int8_t>;
+using Int16ArrayColumnSource = GenericArrayColumnSource<int16_t>;
+using Int32ArrayColumnSource = GenericArrayColumnSource<int32_t>;
+using Int64ArrayColumnSource = GenericArrayColumnSource<int64_t>;
+using FloatArrayColumnSource = GenericArrayColumnSource<float>;
+using DoubleArrayColumnSource = GenericArrayColumnSource<double>;
 
 using BooleanArrayColumnSource = GenericArrayColumnSource<bool>;
 using StringArrayColumnSource = GenericArrayColumnSource<std::string>;
