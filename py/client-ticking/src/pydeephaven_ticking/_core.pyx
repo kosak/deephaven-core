@@ -374,6 +374,19 @@ cdef class ColumnSource:
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.Array) except *:
+    cdef shared_ptr[CColumnSource] temp
+
+    print(f"HI IT IS SUPER ZAMBONI TIME. What's your type? {array.type}")
+
+    if array.type.is_list:
+        # The incoming data is a list<T>. This can be viewed as flattened data structures
+        # for values and lengths. We use recursion to get those values and lengths as
+        # separate column sources, then use a special entry point to combine those two
+        # column sources into a ContainerColumnSource
+        values_cs = _convert_arrow_array_to_column_source(array.values)
+        lengths_cs = _convert_arrow_array_to_column_source(array.value_lengths())
+        print("THIS IS EXCITING AND TREACHEROUS")
+        return temp
     if isinstance(array, pa.lib.StringArray):
         return _convert_arrow_string_array_to_column_source(cast(pa.lib.StringArray, array))
     if isinstance(array, pa.lib.BooleanArray):
@@ -394,7 +407,6 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
     cdef const void *address = <const void *><intptr_t>databuf.address
     cdef size_t total_size = databuf.size
 
-    # not sure I'm supposed to look inside pa.lib, but that's the only place I can find DoubleArray
     cdef shared_ptr[CColumnSource] result
     if isinstance(array, pa.lib.UInt16Array):
         assign_shared_ptr(result, CNumericBufferColumnSource[char16_t].CreateUntyped(address, total_size // 2))
