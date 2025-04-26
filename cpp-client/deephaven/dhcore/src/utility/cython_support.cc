@@ -10,17 +10,23 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/array_column_source.h"
+#include "deephaven/dhcore/container/row_sequence.h"
 
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::Int8Chunk;
 using deephaven::dhcore::column::BooleanArrayColumnSource;
 using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::DateTimeArrayColumnSource;
 using deephaven::dhcore::column::LocalDateArrayColumnSource;
 using deephaven::dhcore::column::LocalTimeArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
+using deephaven::dhcore::container::RowSequence;
 
 namespace deephaven::dhcore::utility {
 namespace {
@@ -107,6 +113,42 @@ ElementTypeId::Enum CythonSupport::GetElementTypeId(const ColumnSource &column_s
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
   return element_type.Id();
+}
+
+namespace {
+struct CreateContainerVisitor final : ColumnSourceVisitor {
+  void Visit(const column::Int8ColumnSource &source) final {
+    std::shared_ptr<int8_t[]> data(new int8_t[data_size_]);
+    std::shared_ptr<bool[]> data_nulls(new bool[data_size_]);
+
+    auto data_chunk = Int8Chunk::CreateView(data.get(), data_size_);
+    auto data_null_chunk = BooleanChunk::CreateView(data_nulls.get(), data_size_);
+    auto rows = RowSequence::CreateSequential(0, data_size_);
+    source.FillChunk(*rows, &data_chunk, &data_null_chunk);
+
+
+
+
+
+  }
+
+  size_t data_size_ = 0;
+  const int32_t *lengths_ = nullptr;
+  size_t lengths_size_ = 0;
+
+
+};
+}  // namespace
+
+std::shared_ptr<ColumnSource>
+CythonSupport::CreateContainerColumnSource(std::shared_ptr<ColumnSource> data, size_t data_size,
+    std::shared_ptr<ColumnSource> lengths, size_t lengths_size) {
+  // assume that lengths has underlying type int32
+  // do a visitor for the data
+  // which
+  // makes a chunk
+
+
 }
 
 namespace {
