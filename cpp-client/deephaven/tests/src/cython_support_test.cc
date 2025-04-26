@@ -61,6 +61,8 @@ TEST_CASE("TestInflation", "[cython]") {
   //   [] # empty list
   //   [4, 5, null, 7]
 
+  auto temp = dhcore::column::NumericArrayColumnSource<int32_t>::Create();
+
 
 
 

@@ -142,6 +142,7 @@ private:
 template<typename T>
 class NumericArrayColumnSource final : public deephaven::dhcore::column::MutableNumericColumnSource<T>,
     std::enable_shared_from_this<NumericArrayColumnSource<T>> {
+
   struct Private {
   };
   using BooleanChunk = deephaven::dhcore::chunk::BooleanChunk;
