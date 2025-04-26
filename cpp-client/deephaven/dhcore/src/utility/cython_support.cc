@@ -21,6 +21,7 @@
 #include "deephaven/dhcore/container/row_sequence.h"
 
 using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::CharChunk;
 using deephaven::dhcore::chunk::DateTimeChunk;
 using deephaven::dhcore::chunk::DoubleChunk;
 using deephaven::dhcore::chunk::FloatChunk;
@@ -131,51 +132,51 @@ ElementTypeId::Enum CythonSupport::GetElementTypeId(const ColumnSource &column_s
 
 namespace {
 struct CreateContainerVisitor final : ColumnSourceVisitor {
-  void Visit(const column::CharColumnSource &source) override {
+  void Visit(const column::CharColumnSource &source) final {
     VisitHelper<char16_t, CharChunk>(ElementTypeId::kChar);
   }
 
-  void Visit(const column::Int8ColumnSource &source) override {
+  void Visit(const column::Int8ColumnSource &source) final {
     VisitHelper<int8_t, Int8Chunk>(ElementTypeId::kInt8);
   }
 
-  void Visit(const column::Int16ColumnSource &source) override {
+  void Visit(const column::Int16ColumnSource &source) final {
     VisitHelper<int16_t, Int16Chunk>(ElementTypeId::kInt16);
   }
 
-  void Visit(const column::Int32ColumnSource &source) override {
+  void Visit(const column::Int32ColumnSource &source) final {
     VisitHelper<int32_t, Int32Chunk>(ElementTypeId::kInt32);
   }
 
-  void Visit(const column::Int64ColumnSource &source) override {
+  void Visit(const column::Int64ColumnSource &source) final {
     VisitHelper<int64_t, Int64Chunk>(ElementTypeId::kInt64);
   }
 
-  void Visit(const column::FloatColumnSource &source) override {
+  void Visit(const column::FloatColumnSource &source) final {
     VisitHelper<float, FloatChunk>(ElementTypeId::kFloat);
   }
 
-  void Visit(const column::DoubleColumnSource &source) override {
+  void Visit(const column::DoubleColumnSource &source) final {
     VisitHelper<double, DoubleChunk>(ElementTypeId::kDouble);
   }
 
-  void Visit(const column::BooleanColumnSource &source) override {
+  void Visit(const column::BooleanColumnSource &source) final {
     VisitHelper<bool, BooleanChunk>(ElementTypeId::kBool);
   }
 
-  void Visit(const column::StringColumnSource &source) override {
+  void Visit(const column::StringColumnSource &source) final {
     VisitHelper<std::string, StringChunk>(ElementTypeId::kString);
   }
 
-  void Visit(const column::DateTimeColumnSource &source) override {
+  void Visit(const column::DateTimeColumnSource &source) final {
     VisitHelper<DateTime, DateTimeChunk>(ElementTypeId::kTimestamp);
   }
 
-  void Visit(const column::LocalDateColumnSource &source) override {
+  void Visit(const column::LocalDateColumnSource &source) final {
     VisitHelper<LocalDate, LocalDateChunk>(ElementTypeId::kLocalDate);
   }
 
-  void Visit(const column::LocalTimeColumnSource &source) override {
+  void Visit(const column::LocalTimeColumnSource &source) final {
     VisitHelper<LocalTime, LocalTimeChunk>(ElementTypeId::kLocalTime);
   }
 
