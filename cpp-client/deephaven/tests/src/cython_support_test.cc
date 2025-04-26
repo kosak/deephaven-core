@@ -13,19 +13,25 @@
 #include "deephaven/dhcore/chunk/chunk.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/array_column_source.h"
+#include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/utility/cython_support.h"
 #include "deephaven/third_party/catch.hpp"
 
 using deephaven::client::utility::TableMaker;
+using deephaven::dhcore::chunk::BooleanChunk;
+using deephaven::dhcore::chunk::ContainerBaseChunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::Int32ArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
+using deephaven::dhcore::container::Container;
+using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::ElementType;
 using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::utility::CythonSupport;
+using deephaven::dhcore::utility::VerboseCast;
 using deephaven::dhcore::chunk::StringChunk;
 
 namespace deephaven::client::tests {
@@ -83,6 +89,41 @@ std::shared_ptr<ColumnSource> VectorToColumnSource(const ElementType &element_ty
     std::move(null_flags), vec.size());
 }
 
+template<typename TElement>
+std::vector<std::optional<TElement>> ContainerBaseToVector(const ContainerBase *container_base) {
+  auto result = dhcore::utility::MakeReservedVector<std::optional<TElement>>(container_base->size());
+
+  const auto *typed_container = VerboseCast<const Container<TElement>*>(DEEPHAVEN_LOCATION_EXPR(container_base));
+
+  for (size_t i = 0; i != typed_container->size(); ++i) {
+    if (!typed_container->IsNull(i)) {
+      result.emplace_back((*typed_container)[i]);
+    } else {
+      result.emplace_back();
+    }
+  }
+
+  return result;
+}
+
+template<typename TElement>
+std::vector<std::optional<std::vector<std::optional<TElement>>>>
+ContainerColumnSourceToVector(const ColumnSource &cs, size_t num_slices) {
+  auto chunk_data = ContainerBaseChunk::Create(num_slices);
+  auto chunk_nulls = BooleanChunk::Create(num_slices);
+  auto row_sequence = RowSequence::CreateSequential(0, num_slices);
+  cs.FillChunk(*row_sequence, &chunk_data, &chunk_nulls);
+
+  auto result = dhcore::utility::MakeReservedVector<std::optional<std::vector<std::optional<TElement>>>>(num_slices);
+  for (size_t i = 0; i != num_slices; ++i) {
+    if (chunk_nulls[i]) {
+      result.emplace_back();
+    } else {
+      result.emplace_back(ContainerBaseToVector<TElement>(chunk_data[i].get()));
+    }
+  }
+  return result;
+}
 }  // namespace
 
 TEST_CASE("TestInflation", "[cython]") {
@@ -99,7 +140,7 @@ TEST_CASE("TestInflation", "[cython]") {
   };
 
   std::vector<std::optional<int32_t>> slice_lengths = {
-    3, {}, 0, 4
+    3, {}, 0, 5
   };
 
   auto elements_size = elements.size();
@@ -110,15 +151,9 @@ TEST_CASE("TestInflation", "[cython]") {
   auto slice_lengths_cs = VectorToColumnSource<Int32ArrayColumnSource>(
     ElementType::Of(ElementTypeId::kInt32), std::move(slice_lengths));
 
-  // auto elements_cs = StringArrayColumnSource::CreateFromArrays(
-  //   ElementType::Of(ElementTypeId::kString), std::move(elements_data), std::move(elements_nulls),
-  //      elements_size);
-  //
-  // auto slice_lengths_cs = Int32ArrayColumnSource::CreateFromArrays(
-  //   ElementType::Of(ElementTypeId::kInt32), std::move(slice_lengths_data), std::move(slice_lengths_nulls),
-  //      slice_lengths_size);
-
   auto actual = CythonSupport::CreateContainerColumnSource(std::move(elements_cs), elements_size,
     std::move(slice_lengths_cs), slice_lengths_size);
+
+  auto actual_vector = ContainerColumnSourceToVector<std::string>(*actual, slice_lengths_size);
 }
 }  // namespace deephaven::client::tests
