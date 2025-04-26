@@ -11,16 +11,16 @@
 #include <vector>
 #include "deephaven/client/utility/table_maker.h"
 #include "deephaven/dhcore/chunk/chunk.h"
+#include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/array_column_source.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/utility/cython_support.h"
-
-#include "../../dhclient/include/private/deephaven/client/arrowutil/arrow_column_source.h"
 #include "deephaven/third_party/catch.hpp"
 
 using deephaven::client::utility::TableMaker;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::column::ColumnSource;
+using deephaven::dhcore::column::Int32ArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
 using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::ElementType;
