@@ -414,9 +414,17 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
         # for values and lengths. We use recursion to get those values and lengths as
         # separate column sources, then use a special entry point to combine those two
         # column sources into a ContainerColumnSource
+        print(f"List processing world: Let's turn a good source into a bad result: {array.values}")
         values_cs = _convert_arrow_array_to_column_source(array.values)
-        lengths_cs = _convert_arrow_array_to_column_source(array.value_lengths())
-        print("THIS (was) EXCITING AND TREACHEROUS")
+        print("here's a bad result (or maybe it's actually good. What is bad? What is good?)")
+        print(f"{CCythonSupport.WhatADump(deref(values_cs), len(array.values))}")
+
+        hell_on_earth = array.value_lengths()
+        print(f"Here's another good source {hell_on_earth}")
+        lengths_cs = _convert_arrow_array_to_column_source(hell_on_earth)
+        print("here's another bad result")
+        print(f"{CCythonSupport.WhatADump(deref(lengths_cs), len(hell_on_earth))}")
+       
         return CCythonSupport.SlicesToColumnSource(
             deref(values_cs), len(array.values),
             deref(lengths_cs), len(array.value_lengths()))
