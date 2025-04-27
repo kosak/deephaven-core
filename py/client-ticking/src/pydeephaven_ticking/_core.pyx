@@ -249,7 +249,6 @@ cdef class ColumnSource:
         cdef CGenericChunk[bool] *null_flags_ptr = &boolean_chunk
 
         element_type = deref(self.column_source).GetElementType()
-        print(f"Hi...just got element_type {element_type.ToString()}")
 
         if element_type.ListDepth() > 1:
             raise RuntimeError(f"Can't handle ListDepth() of {element_type.ListDepth()}")
@@ -258,7 +257,6 @@ cdef class ColumnSource:
             return self._process_list(rows, null_flags, null_flags_ptr)
 
         element_type_id = element_type.Id()
-        print(f"got {element_type_id}")
         if element_type_id == ElementTypeId.kChar:
             dest_data = np.zeros(size, np.uint16)
             self._fill_char_chunk(rows, dest_data, null_flags_ptr)
@@ -368,63 +366,47 @@ cdef class ColumnSource:
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
 
     cdef _process_list(self, rows: RowSequence, null_flags, CGenericChunk[bool] *null_flags_ptr):
-        print("THERE ARE DICE MISSING")
         size = rows.size
         container_chunk = CGenericChunk[shared_ptr[CContainerBase]].Create(size)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &container_chunk, null_flags_ptr)
 
-        print(f"Let's just say {container_chunk.Size()} and {deref(null_flags_ptr).Size()}")
-
-        print(f"Let's review what we have: {CCythonSupport.WhatADump(deref(self.column_source), rows.size)}")
-
         dest_data = []
         for i in range(container_chunk.Size()):
-            print(f"MEGA-Processing MEGA-element {i}")
             container_base = container_chunk[i]
             is_null = deref(null_flags_ptr)[i]
             slice_size = deref(container_base).size()
-            print(f"This sad 'container' has size {slice_size}")
-            print(f"likewise its nullness is {is_null}")
             container_as_ccs = CCythonSupport.ContainerToColumnSource(container_base)
             slice_cs = ColumnSource.create(container_as_ccs)
             slice_rows = CRowSequence.CreateSequential(0, slice_size)
-            zamboni5 = slice_cs.get_chunk(RowSequence.create(slice_rows))
-            print(f"zamboni5 is {zamboni5}")
-            print(f"zamboni5.type is {zamboni5.type}")
-            dest_data.append(zamboni5)
+            this_slice = slice_cs.get_chunk(RowSequence.create(slice_rows))
+            dest_data.append(this_slice)
 
-        print(f"Look... now we have {dest_data}")
         element_type = deref(self.column_source).GetElementType()
         arrow_type = _dh_type_to_pa_type(element_type)
         result = pa.array(dest_data, type=arrow_type, mask=null_flags)
-        print(f"Returning {result}")
         return result
 
 
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
 cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.Array) except *:
-    print(f"HI IT IS SUPER ZAMBONI TIME. What's your type? {array.type}")
-
     if pa.types.is_list(array.type):
         # The incoming data is a list<T>. This can be viewed as flattened data structures
         # for values and lengths. We use recursion to get those values and lengths as
         # separate column sources, then use a special entry point to combine those two
         # column sources into a ContainerColumnSource
-        print(f"List processing world: Let's turn a good source into a bad result: {array.values}")
         values_cs = _convert_arrow_array_to_column_source(array.values)
-        print("here's a bad result (or maybe it's actually good. What is bad? What is good?)")
-        print(f"{CCythonSupport.WhatADump(deref(values_cs), len(array.values))}")
 
-        hell_on_earth = array.value_lengths()
-        print(f"Here's another good source {hell_on_earth}")
-        lengths_cs = _convert_arrow_array_to_column_source(hell_on_earth)
-        print("here's another bad result")
-        print(f"{CCythonSupport.WhatADump(deref(lengths_cs), len(hell_on_earth))}")
+        # Important: the column source returned is a NumericBufferColumnSource which is only
+        # valid as long as the underlying storage is valid. So we need to keep the storage
+        # in a separate variable like this. TODO(kosak) make this less fragile.
+        value_lengths = array.value_lengths()
+        lengths_cs = _convert_arrow_array_to_column_source(value_lengths)
        
         return CCythonSupport.SlicesToColumnSource(
             deref(values_cs), len(array.values),
-            deref(lengths_cs), len(array.value_lengths()))
+            deref(lengths_cs), len(value_lengths))
+
     if isinstance(array, pa.lib.StringArray):
         return _convert_arrow_string_array_to_column_source(cast(pa.lib.StringArray, array))
     if isinstance(array, pa.lib.BooleanArray):
@@ -557,26 +539,18 @@ cdef shared_ptr[CColumnSource] _convert_underlying_int64_to_column_source(
 
 # This method converts a PyArrow Schema object to a C++ Schema object.
 cdef shared_ptr[CSchema] _pyarrow_schema_to_deephaven_schema(src: pa.Schema) except *:
-    print("p2p2p 1")
     if len(src.names) != len(src.types):
         raise RuntimeError("Unexpected: schema lengths are inconsistent")
 
-    print("p2p2p 2")
     cdef vector[string] names
     cdef vector[CElementType] types
 
-    print("p2p2p 3")
     for i in range(len(src.names)):
-        print("p2p2p 4")
         name = src.names[i].encode()
-        print(f"name is {name}")
-        print(f"type is {src.types[i]}")
         dh_type = _pa_type_to_dh_type(src.types[i])
-        print("p2p2p 5")
         names.push_back(name)
         types.push_back(dh_type)
 
-    print("p2p2p 6")
     return CSchema.Create(names, types)
 
 # Code to support processing of Barrage messages. The reason this is somewhat complicated is because there is a
@@ -600,13 +574,9 @@ cdef class BarrageProcessor:
 
     @staticmethod
     def create(pa_schema: pa.Schema) -> BarrageProcessor:
-        print("create stupid 1")
         dh_schema = _pyarrow_schema_to_deephaven_schema(pa_schema)
-        print("create stupid 2")
         result = BarrageProcessor()
-        print("create stupid 3")
         result._barrage_processor = CBarrageProcessor(move(dh_schema))
-        print("create stupid 4")
         return result
 
     # The Python code that drives the Arrow interaction does not know how to interpret the metadata message
@@ -629,16 +599,11 @@ cdef class BarrageProcessor:
         cdef vector[shared_ptr[CColumnSource]] column_sources
         cdef vector[size_t] sizes
         for source in sources:
-            print(f"Let's do a bad job of processing {source}. Here we go")
             # source is a ListArray of length 1
             values = source.values
-            print(f"values is {values}")
-            print(f"len(values) is {len(values)}")
             cs = _convert_arrow_array_to_column_source(values)
             column_sources.push_back(cs)
             sizes.push_back(len(values))
-
-            print(f"PNC: just cooked up {CCythonSupport.WhatADump(deref(cs), len(values))}")
 
         cdef const void *mdptr = NULL
         cdef size_t mdsize = 0
@@ -691,10 +656,6 @@ cdef _make_new_equivalent_types():
         _NewEquivalentTypes.create(CElementType.Of(ElementTypeId.kLocalTime), pa.time64("ns"))
     ]
 
-    print(f"hi scalars {scalars}")
-    print(f"hi scalars[0] {scalars[0]}")
-    print(f"hi scalars[0].__str__ {scalars[0].__str__()}")
-
     # make the known list types (one level of wrapping around the scalar types)
     cdef lists = [et.wrap_list() for et in scalars]
     return scalars + lists
@@ -703,21 +664,16 @@ cdef _new_equivalent_types = _make_new_equivalent_types()
 
 # Converts a Deephaven type into the corresponding PyArrow type.
 cdef _dh_type_to_pa_type(dh_type: CElementType):
-    print(f"Hi converting {dh_type.ToString()}")
     for et_python in _new_equivalent_types:
         et = <_NewEquivalentTypes>et_python
         if et.dh_type == dh_type:
-            print(f"zamboni sad returning {et.pa_type}")
             return et.pa_type
     raise RuntimeError(f"Can't convert Deephaven type {dh_type.ToString()} to pyarrow type type")
 
 # Converts a PyArrow type into the corresponding PyArrow type.
 cdef CElementType _pa_type_to_dh_type(pa_type: pa.DataType) except *:
-    print(f"goodbye, new ets are {_new_equivalent_types}")
     for et_python in _new_equivalent_types:
         et = <_NewEquivalentTypes>et_python
         if et.pa_type == pa_type:
-            print(f"zowie returning {et.dh_type.ToString()}")
             return et.dh_type
-    print("No cookie for you... I'm raising a Python exception which is my right")        
     raise RuntimeError(f"Can't convert pyarrow type {pa_type} to Deephaven type")
