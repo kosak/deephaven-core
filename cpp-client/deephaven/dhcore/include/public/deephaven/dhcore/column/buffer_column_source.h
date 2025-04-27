@@ -183,7 +183,7 @@ private:
 
 // Convenience usings
 using CharBufferColumnSource = NumericBufferColumnSource<char16_t>;
-using Int8BufferColumnSource =NumericBufferColumnSource<int16_t>;
+using Int8BufferColumnSource = NumericBufferColumnSource<int16_t>;
 using Int32BufferColumnSource = NumericBufferColumnSource<int32_t>;
 using Int64BufferColumnSource = NumericBufferColumnSource<int64_t>;
 using FloatBufferColumnSource = NumericBufferColumnSource<float>;
