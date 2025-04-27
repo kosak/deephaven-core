@@ -40,6 +40,7 @@ cdef extern from "deephaven/dhcore/chunk/chunk.h" namespace "deephaven::dhcore::
     cdef cppclass CChunk "deephaven::dhcore::chunk::Chunk":
         CChunk()
         CChunk(CChunk other)
+        size_t Size() const
 
     cdef cppclass CGenericChunk "deephaven::dhcore::chunk::GenericChunk" [T] (CChunk):
         @staticmethod
@@ -49,6 +50,10 @@ cdef extern from "deephaven/dhcore/chunk/chunk.h" namespace "deephaven::dhcore::
         CGenericChunk[T] CreateView(T *data, size_t size)
 
         const T *data()
+
+cdef extern from "deephaven/dhcore/container/container.h" namespace "deephaven::dhcore::container":
+    cdef cppclass CContainerBase "deephaven::dhcore::container::ContainerBase":
+        size_t size() const
 
 cdef extern from "deephaven/dhcore/container/row_sequence.h" namespace "deephaven::dhcore::container":
     cdef cppclass CRowSequence "deephaven::dhcore::container::RowSequence":

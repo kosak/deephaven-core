@@ -10,7 +10,7 @@ import pyarrow as pa
 from pydeephaven_ticking._core cimport assign_shared_ptr
 from cython.operator cimport dereference as deref
 from pydeephaven_ticking._core cimport char16_t
-from pydeephaven_ticking._core cimport CColumnSource, CGenericChunk, CRowSequence, CSchema, CClientTable
+from pydeephaven_ticking._core cimport CColumnSource, CContainerBase, CGenericChunk, CRowSequence, CSchema, CClientTable
 from pydeephaven_ticking._core cimport CHumanReadableElementTypeName, CHumanReadableStaticTypeName
 from pydeephaven_ticking._core cimport CCythonSupport, ElementTypeId, CElementType, CDateTime
 from pydeephaven_ticking._core cimport CTickingUpdate, CBarrageProcessor, CNumericBufferColumnSource
@@ -256,7 +256,7 @@ cdef class ColumnSource:
             raise RuntimeError(f"Can't handle ListDepth() of {element_type.ListDepth()}")
 
         if element_type.ListDepth() == 1:
-            raise RuntimeError(f"Can't (yet) handle ListDepth() of {element_type.ListDepth()}")
+            (dest_data, arrow_type) = self._process_list(rows, null_flags, null_flags_ptr)
 
         element_type_id = element_type.Id()
         print(f"got {element_type_id}")
@@ -378,6 +378,15 @@ cdef class ColumnSource:
         rsSize = rows.size
         dest_chunk = CGenericChunk[CLocalTime].CreateView(<CLocalTime*>&dest_data[0], rsSize)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &dest_chunk, null_flags_ptr)
+
+    cdef _process_list(self, rows: RowSequence, null_flags, CGenericChunk[bool] *null_flags_ptr):
+        print("THERE ARE DICE MISSING")
+        size = rows.size
+        container_chunk = CGenericChunk[shared_ptr[CContainerBase]].Create(size)
+        deref(self.column_source).FillChunk(deref(rows.row_sequence), &container_chunk, null_flags_ptr)
+
+        print(f"Let's just say {container_chunk.Size()} and {deref(null_flags_ptr).Size()} ")
+        raise RuntimeError("the red wagon (lantern)")
 
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
