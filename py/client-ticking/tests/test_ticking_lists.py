@@ -8,6 +8,7 @@ import pyarrow as pa
 import pydeephaven as dh
 import datetime as dt
 import queue
+from collections import defaultdict
 from typing import List
 
 class TickingListsTestCase(unittest.TestCase):
@@ -18,7 +19,7 @@ class TickingListsTestCase(unittest.TestCase):
         session = dh.Session()
         table = session.empty_table(size = 10).update(
             formulas = [
-            "Key = (ii % 10)",    
+            "Key = (ii % 3)",    
             "Chars = ii == 5 ? null : (char)('a' + ii)",
             "Bytes = ii == 5 ? null : (byte)(ii)",
             "Shorts = ii == 5 ? null : (short)(ii)",
@@ -31,7 +32,7 @@ class TickingListsTestCase(unittest.TestCase):
             "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
             "LocalDates = ii == 5 ? null : '2001-03-01' + (i * 'P1D')",
             "LocalTimes = ii == 5 ? null : '12:34:56.000'.plus(ii * 'PT1S')"
-                ]).select(["Key", "Ints"]).group_by("Key")
+                ]).group_by("Key")
         print("HELLO2")
         session.bind_table(name="all_types_table", table=table)
         print(table.to_arrow())
@@ -63,18 +64,18 @@ class TickingListsTestCase(unittest.TestCase):
         if len(added) == 0:
             return
 
-        expected_char_data = []
-        expected_byte_data = []
-        expected_short_data = []
-        expected_int_data = []
-        expected_long_data = []
-        expected_float_data = []
-        expected_double_data = []
-        expected_bool_data = []
-        expected_string_data = []
-        expected_date_time_data = []
-        expected_local_date_data = []
-        expected_local_time_data = []
+        expected_char_data = defaultdict(list)
+        expected_byte_data = defaultdict(list)
+        expected_short_data = defaultdict(list)
+        expected_int_data = defaultdict(list)
+        expected_long_data = defaultdict(list)
+        expected_float_data = defaultdict(list)
+        expected_double_data = defaultdict(list)
+        expected_bool_data = defaultdict(list)
+        expected_string_data = defaultdict(list)
+        expected_date_time_data = defaultdict(list)
+        expected_local_date_data = defaultdict(list)
+        expected_local_time_data = defaultdict(list)
 
         date_time_base = pa.scalar(dt.datetime(2001, 3, 1, 12, 34, 56), type=pa.timestamp("ns", tz="UTC"))
         date_time_nanos = date_time_base.value
@@ -83,43 +84,46 @@ class TickingListsTestCase(unittest.TestCase):
         local_time_base = dt.datetime(2001, 1, 1, 12, 34, 56)
 
         for i in range(10):
-            expected_char_data.append(ord('a') + i)
-            expected_byte_data.append(i)
-            expected_short_data.append(i)
-            expected_int_data.append(i)
-            expected_long_data.append(i)
-            expected_float_data.append(i)
-            expected_double_data.append(i)
-            expected_bool_data.append((i % 2) == 0)
-            expected_string_data.append(f"hello {i}")
-            expected_date_time_data.append(date_time_nanos + i)
-            expected_local_date_data.append(dt.datetime(2001, 3, 1) + dt.timedelta(days = i))
-            expected_local_time_data.append((local_time_base + dt.timedelta(seconds = i)).time())
-        expected_char_data[5] = None
-        expected_byte_data[5] = None
-        expected_short_data[5] = None
-        expected_int_data[5] = None
-        expected_long_data[5] = None
-        expected_float_data[5] = None
-        expected_double_data[5] = None
-        expected_bool_data[5] = None
-        expected_string_data[5] = None
-        expected_date_time_data[5] = None
-        expected_local_date_data[5] = None
-        expected_local_time_data[5] = None
-
-        expected_chars = pa.array(expected_char_data, pa.uint16())
-        expected_bytes = pa.array(expected_byte_data, pa.int8())
-        expected_shorts = pa.array(expected_short_data, pa.int16())
-        expected_ints = pa.array(expected_int_data, pa.int32())
-        expected_longs = pa.array(expected_long_data, pa.int64())
-        expected_floats = pa.array(expected_float_data, pa.float32())
-        expected_doubles = pa.array(expected_double_data, pa.float64())
-        expected_bools = pa.array(expected_bool_data, pa.bool_())
-        expected_strings = pa.array(expected_string_data, pa.string())
-        expected_date_times = pa.array(expected_date_time_data, pa.timestamp("ns", tz="UTC"))
-        expected_local_dates = pa.array(expected_local_date_data, pa.date64())
-        expected_local_times = pa.array(expected_local_time_data, pa.time64("ns"))
+            key = i % 3
+            if i != 5:
+                expected_char_data[key].append(ord('a') + i)
+                expected_byte_data[key].append(i)
+                expected_short_data[key].append(i)
+                expected_int_data[key].append(i)
+                expected_long_data[key].append(i)
+                expected_float_data[key].append(i)
+                expected_double_data[key].append(i)
+                expected_bool_data[key].append((i % 2) == 0)
+                expected_string_data[key].append(f"hello {i}")
+                expected_date_time_data[key].append(date_time_nanos + i)
+                expected_local_date_data[key].append(dt.datetime(2001, 3, 1) + dt.timedelta(days = i))
+                expected_local_time_data[key].append((local_time_base + dt.timedelta(seconds = i)).time())
+            else:
+                expected_char_data[key].append(None)
+                expected_byte_data[key].append(None)
+                expected_short_data[key].append(None)
+                expected_int_data[key].append(None)
+                expected_long_data[key].append(None)
+                expected_float_data[key].append(None)
+                expected_double_data[key].append(None)
+                expected_bool_data[key].append(None)
+                expected_string_data[key].append(None)
+                expected_date_time_data[key].append(None)
+                expected_local_date_data[key].append(None)
+                expected_local_time_data[key].append(None)
+                
+        expected_chars = pa.array(expected_char_data.values(), pa.list_(pa.uint16()))
+        expected_bytes = pa.array(expected_byte_data.values(), pa.list_(pa.int8()))
+        expected_shorts = pa.array(expected_short_data.values(), pa.list_(pa.int16()))
+        expected_ints = pa.array(expected_int_data.values(), pa.list_(pa.int32()))
+        expected_longs = pa.array(expected_long_data.values(), pa.list_(pa.int64()))
+        expected_floats = pa.array(expected_float_data.values(), pa.list_(pa.float32()))
+        expected_doubles = pa.array(expected_double_data.values(), pa.list_(pa.float64()))
+        expected_bools = pa.array(expected_bool_data.values(), pa.list_(pa.bool_()))
+        expected_strings = pa.array(expected_string_data.values(), pa.list_(pa.string()))
+        expected_date_times = pa.array(expected_date_time_data.values(), pa.list_(pa.timestamp("ns", tz="UTC")))
+        expected_local_dates = pa.array(expected_local_date_data.values(), pa.list_(pa.date64()))
+        expected_local_times = pa.array(expected_local_time_data.values(), pa.list_(pa.time64("ns")))
 
         self.validate("Chars", expected_chars, added)
         self.validate("Bytes", expected_bytes, added)
