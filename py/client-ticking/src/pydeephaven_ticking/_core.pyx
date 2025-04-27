@@ -391,11 +391,12 @@ cdef class ColumnSource:
             print(f"MEGA-Processing MEGA-element {i}")
             container_base = container_chunk[i]
             is_null = deref(null_flags_ptr)[i]
-            print(f"This sad 'container' has size {deref(container_base).size()}")
+            slice_size = deref(container_base).size()
+            print(f"This sad 'container' has size {slice_size}")
             print(f"likewise its nullness is {is_null}")
             container_as_ccs = CCythonSupport.ContainerToColumnSource(container_base)
             cs = ColumnSource.create(container_as_ccs)
-            these_rows = CRowSequence::CreateSequential(0, slice_size)
+            these_rows = CRowSequence.CreateSequential(0, slice_size)
             zamboni5 = cs.get_chunk(RowSequence.create(these_rows))
             print(f"zamboni5 is {zamboni5}")
 
