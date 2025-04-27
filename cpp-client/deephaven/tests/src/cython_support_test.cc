@@ -171,7 +171,7 @@ void zambonidump(const std::vector<std::optional<T>> &vec) {
 }  // namespace
 
 // Testing the entry point CythonSupport::SlicesToColumnSource
-TEST_CASE("TestSlicesToColumnSource", "[cython]") {
+TEST_CASE("SlicesToColumnSource", "[cython]") {
   // Input: [a, b, c, d, e, f, null, g]
   // Lengths: 3, null, 0, 4
   // Expected output:
@@ -212,7 +212,7 @@ TEST_CASE("TestSlicesToColumnSource", "[cython]") {
 }
 
 // Testing the entry point CythonSupport::ContainerToColumnSource
-TEST_CASE("TestContainerToColumnSource", "[cython]") {
+TEST_CASE("ContainerToColumnSource", "[cython]") {
   // Input: [d, e, f, null, g]
   std::vector<std::optional<std::string>> expected_vector = {
     "d", "e", "f", {}, "g"
@@ -229,5 +229,40 @@ TEST_CASE("TestContainerToColumnSource", "[cython]") {
   CHECK(expected_vector == actual_vector);
   zambonidump(expected_vector);
   zambonidump(actual_vector);
+}
+
+// Testing the entry point CythonSupport::ColumnSourceToString
+TEST_CASE("ColumnSourceToString", "[cython]") {
+  // Input: [a, b, c, d, e, f, null, g]
+  // Lengths: 3, null, 0, 4
+  // Expected output:
+  //   [a, b, c]
+  //   null  # null list
+  //   [] # empty list
+  //   [d, e, null, g]
+
+  std::vector<std::optional<std::string>> elements = {
+    "a", "b", "c", "d", "e", "f", {}, "g"
+  };
+
+  std::vector<std::optional<int32_t>> slice_lengths = {
+    3, {}, 0, 5
+  };
+
+  auto elements_size = elements.size();
+  auto slice_lengths_size = slice_lengths.size();
+
+  auto elements_cs = VectorToColumnSource<StringArrayColumnSource>(
+    ElementType::Of(ElementTypeId::kString), std::move(elements));
+  auto slice_lengths_cs = VectorToColumnSource<Int32ArrayColumnSource>(
+    ElementType::Of(ElementTypeId::kInt32), std::move(slice_lengths));
+
+  auto actual_cs = CythonSupport::SlicesToColumnSource(*elements_cs, elements_size,
+    *slice_lengths_cs, slice_lengths_size);
+
+  auto actual_string = CythonSupport::ColumnSourceToString(*actual_cs, slice_lengths_size);
+
+  const char *expected = "[[a,b,c],null,[],[d,e,f,null,g]]";
+  CHECK(expected == actual_string);
 }
 }  // namespace deephaven::client::tests

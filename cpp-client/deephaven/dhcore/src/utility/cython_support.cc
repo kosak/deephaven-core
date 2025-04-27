@@ -384,10 +384,10 @@ struct ContainerPrinter final : public ContainerVisitor {
     *output_ << "SIZE " << container->size() << ':';
     for (size_t i = 0; i != container->size(); ++i) {
       if (i != 0) {
-        *output_ << ", ";
+        *output_ << ',';
       }
       if (container->IsNull(i)) {
-        *output_ << "(null)";
+        *output_ << "null";
       } else {
         *output_ << (*container)[i];
       }
@@ -454,17 +454,17 @@ struct ColumnSourcePrinter final : public ColumnSourceVisitor {
     auto data = GenericChunk<std::shared_ptr<ContainerBase>>::Create(size_);
     auto nulls = BooleanChunk::Create(size_);
     cs.FillChunk(*rs, &data, &nulls);
-    *output_ << "[\n";
+    *output_ << '[';
     for (size_t i = 0; i != size_; ++i) {
       if (nulls[i]) {
-        *output_ << "(null)\n";
+        *output_ << "null\n";
       } else {
         const auto &cb = data[i];
         ContainerPrinter container_printer(output_);
         cb->AcceptVisitor(&container_printer);
       }
     }
-    *output_ << "]";
+    *output_ << ']';
   }
 
   template<typename TElement>
