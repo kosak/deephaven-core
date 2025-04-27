@@ -41,10 +41,21 @@ using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::ContainerArrayColumnSource;
 using deephaven::dhcore::column::ContainerColumnSource;
 using deephaven::dhcore::column::DateTimeArrayColumnSource;
+using deephaven::dhcore::column::BooleanContainerColumnSource;
+using deephaven::dhcore::column::DoubleContainerColumnSource;
+using deephaven::dhcore::column::FloatContainerColumnSource;
+using deephaven::dhcore::column::Int8ContainerColumnSource;
+using deephaven::dhcore::column::Int16ContainerColumnSource;
+using deephaven::dhcore::column::Int32ContainerColumnSource;
+using deephaven::dhcore::column::Int64ContainerColumnSource;
 using deephaven::dhcore::column::Int32ColumnSource;
 using deephaven::dhcore::column::LocalDateArrayColumnSource;
 using deephaven::dhcore::column::LocalTimeArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
+using deephaven::dhcore::column::DateTimeContainerColumnSource;
+using deephaven::dhcore::column::LocalDateContainerColumnSource;
+using deephaven::dhcore::column::LocalTimeContainerColumnSource;
+using deephaven::dhcore::column::StringContainerColumnSource;
 using deephaven::dhcore::container::Container;
 using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::ContainerUtil;
@@ -237,52 +248,52 @@ struct ContainerToColumnSourceVisitor final : public ContainerVisitor {
   }
 
   void Visit(const container::Container<int8_t> *) final {
-    VisitHelper<int8_t, column::Int8ContainerColumnSource>(ElementTypeId::kInt8);
+    VisitHelper<int8_t, Int8ContainerColumnSource>(ElementTypeId::kInt8);
   }
 
   void Visit(const container::Container<int16_t> *) final {
-    VisitHelper<int16_t, column::Int16ContainerColumnSource>(ElementTypeId::kInt16);
+    VisitHelper<int16_t, Int16ContainerColumnSource>(ElementTypeId::kInt16);
   }
 
   void Visit(const container::Container<int32_t> *) final {
-    VisitHelper<int32_t, column::Int32ContainerColumnSource>(ElementTypeId::kInt32);
+    VisitHelper<int32_t, Int32ContainerColumnSource>(ElementTypeId::kInt32);
   }
 
   void Visit(const container::Container<int64_t> *) final {
-    VisitHelper<int64_t, column::Int64ContainerColumnSource>(ElementTypeId::kInt64);
+    VisitHelper<int64_t, Int64ContainerColumnSource>(ElementTypeId::kInt64);
   }
 
   void Visit(const container::Container<float> *) final {
-    VisitHelper<float, column::FloatContainerColumnSource>(ElementTypeId::kFloat);
+    VisitHelper<float, FloatContainerColumnSource>(ElementTypeId::kFloat);
   }
 
   void Visit(const container::Container<double> *) final {
-    VisitHelper<double, column::DoubleContainerColumnSource>(ElementTypeId::kDouble);
+    VisitHelper<double, DoubleContainerColumnSource>(ElementTypeId::kDouble);
   }
 
   void Visit(const container::Container<bool> *) final {
-    VisitHelper<bool, column::BooleanContainerColumnSource>(ElementTypeId::kBool);
+    VisitHelper<bool, BooleanContainerColumnSource>(ElementTypeId::kBool);
   }
 
   void Visit(const container::Container<std::string> *) final {
-    VisitHelper<std::string, column::StringContainerColumnSource>(ElementTypeId::kString);
+    VisitHelper<std::string, StringContainerColumnSource>(ElementTypeId::kString);
   }
 
   void Visit(const container::Container<DateTime> *) final {
-    VisitHelper<DateTime, column::DateTimeContainerColumnSource>(ElementTypeId::kTimestamp);
+    VisitHelper<DateTime, DateTimeContainerColumnSource>(ElementTypeId::kTimestamp);
   }
 
   void Visit(const container::Container<LocalDate> *) final {
-    VisitHelper<LocalDate, column::LocalDateContainerColumnSource>(ElementTypeId::kLocalDate);
+    VisitHelper<LocalDate, LocalDateContainerColumnSource>(ElementTypeId::kLocalDate);
   }
 
   void Visit(const container::Container<LocalTime> *) final {
-    VisitHelper<LocalTime, column::LocalTimeContainerColumnSource>(ElementTypeId::kLocalTime);
+    VisitHelper<LocalTime, LocalTimeContainerColumnSource>(ElementTypeId::kLocalTime);
   }
 
   template<typename TElement, typename TColumnSource>
   void VisitHelper(ElementTypeId::Enum element_type_id) {
-    auto typed_container_base = VerboseSharedPtrCast<TColumnSource>(DEEPHAVEN_LOCATION_EXPR(container_base_));
+    auto typed_container_base = VerboseSharedPtrCast<Container<TElement>>(DEEPHAVEN_LOCATION_EXPR(container_base_));
 
     result_ = TColumnSource::Create(ElementType::Of(element_type_id),
       std::move(typed_container_base));

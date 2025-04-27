@@ -151,8 +151,8 @@ TEST_CASE("TestInflation", "[cython]") {
   auto slice_lengths_cs = VectorToColumnSource<Int32ArrayColumnSource>(
     ElementType::Of(ElementTypeId::kInt32), std::move(slice_lengths));
 
-  auto actual = CythonSupport::CreateContainerColumnSource(std::move(elements_cs), elements_size,
-    std::move(slice_lengths_cs), slice_lengths_size);
+  auto actual = CythonSupport::SlicesToColumnSource(*elements_cs, elements_size,
+    *slice_lengths_cs, slice_lengths_size);
 
   auto actual_vector = ContainerColumnSourceToVector<std::string>(*actual, slice_lengths_size);
 

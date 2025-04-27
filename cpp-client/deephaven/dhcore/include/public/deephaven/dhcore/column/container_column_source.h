@@ -36,7 +36,9 @@ class ContainerColumnSource final : public TBase<T>,
 
 public:
   static std::shared_ptr<ContainerColumnSource> Create(const ElementType &element_type,
-    std::shared_ptr<Container<T>> container);
+    std::shared_ptr<Container<T>> container) {
+    return std::make_shared<ContainerColumnSource>(Private(), element_type, std::move(container));
+  }
 
   explicit ContainerColumnSource(Private, const ElementType &element_type,
     std::shared_ptr<Container<T>> container) : element_type_(element_type),
@@ -48,7 +50,7 @@ public:
     using deephaven::dhcore::utility::VerboseCast;
     size_t dest_index = 0;
     const auto *data = container_->data();
-    auto *typed_dest = VerboseCast<chunkType_t*>(dest);
+    auto *typed_dest = VerboseCast<chunkType_t*>(DEEPHAVEN_LOCATION_EXPR(dest));
     rows.ForEachInterval([&](uint64_t begin_key, uint64_t end_key) {
       for (auto current = begin_key; current != end_key; ++current) {
         if (container_->IsNull(current)) {
@@ -56,7 +58,7 @@ public:
             (*optional_dest_null_flags)[dest_index] = true;
           }
         } else {
-          typed_dest[dest_index] = data[current];
+          (*typed_dest)[dest_index] = data[current];
         }
       }
     });

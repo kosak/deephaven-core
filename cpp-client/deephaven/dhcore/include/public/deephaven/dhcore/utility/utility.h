@@ -179,7 +179,7 @@ std::shared_ptr<DEST> VerboseSharedPtrCast(const DebugInfo &debug_info, std::sha
   if (typed_ptr != nullptr) {
     return typed_ptr;
   }
-  typedef decltype(*std::declval<DEST>()) destType_t;
+  typedef decltype(std::declval<DEST>()) destType_t;
   auto message = fmt::format("{}: Expected type {}. Got type {}",
       debug_info,
       demangle(typeid(destType_t).name()),

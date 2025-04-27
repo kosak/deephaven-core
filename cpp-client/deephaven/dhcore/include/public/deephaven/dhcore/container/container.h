@@ -103,12 +103,16 @@ public:
     return nulls_[index];
   }
 
-  const T *begin() const {
+  const T *data() const {
     return data_.get();
   }
 
+  const T *begin() const {
+    return data();
+  }
+
   const T *end() const {
-    return begin() + size();
+    return data() + size();
   }
 
 private:
