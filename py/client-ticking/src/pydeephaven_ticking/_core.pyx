@@ -624,11 +624,16 @@ cdef class BarrageProcessor:
         cdef vector[shared_ptr[CColumnSource]] column_sources
         cdef vector[size_t] sizes
         for source in sources:
+            print(f"Let's do a bad job of processing {source}. Here we go")
             # source is a ListArray of length 1
             values = source.values
+            print(f"values is {values}")
+            print(f"len(values) is {len(values)}")
             cs = _convert_arrow_array_to_column_source(values)
             column_sources.push_back(cs)
             sizes.push_back(len(values))
+
+            print(f"PNC: just cooked up {CCythonSupport.WhatADump(deref(cs), len(values))}")
 
         cdef const void *mdptr = NULL
         cdef size_t mdsize = 0

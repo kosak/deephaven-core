@@ -380,7 +380,7 @@ struct ZamboniPain final : public ContainerVisitor {
 
   template<typename T>
   void VisitHelper(const Container<T> *container) {
-    *output_ << "SIZE " << container->size() << '\n';
+    *output_ << "SIZE " << container->size() << ':';
     for (size_t i = 0; i != container->size(); ++i) {
       if (i != 0) {
         *output_ << ", ";
