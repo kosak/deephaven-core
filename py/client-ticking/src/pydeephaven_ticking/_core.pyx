@@ -247,7 +247,6 @@ cdef class ColumnSource:
         cdef bool[::1] null_flags_view = null_flags
         boolean_chunk = CGenericChunk[bool].CreateView(&null_flags_view[0], size)
         cdef CGenericChunk[bool] *null_flags_ptr = &boolean_chunk
-        arrow_type: pa.DataType
 
         element_type = deref(self.column_source).GetElementType()
         print(f"Hi...just got element_type {element_type.ToString()}")
@@ -256,64 +255,53 @@ cdef class ColumnSource:
             raise RuntimeError(f"Can't handle ListDepth() of {element_type.ListDepth()}")
 
         if element_type.ListDepth() == 1:
-            (dest_data, arrow_type) = self._process_list(rows, null_flags, null_flags_ptr)
+            return self._process_list(rows, null_flags, null_flags_ptr)
 
         element_type_id = element_type.Id()
         print(f"got {element_type_id}")
         if element_type_id == ElementTypeId.kChar:
             dest_data = np.zeros(size, np.uint16)
             self._fill_char_chunk(rows, dest_data, null_flags_ptr)
-            arrow_type = pa.uint16()
         elif element_type_id == ElementTypeId.kInt8:
             dest_data = np.zeros(size, np.int8)
             self._fill_primitive_chunk[int8_t](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.int8()
         elif element_type_id == ElementTypeId.kInt16:
             dest_data = np.zeros(size, np.int16)
             self._fill_primitive_chunk[int16_t](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.int16()
         elif element_type_id == ElementTypeId.kInt32:
             dest_data = np.zeros(size, np.int32)
             self._fill_primitive_chunk[int32_t](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.int32()
         elif element_type_id == ElementTypeId.kInt64:
             dest_data = np.zeros(size, np.int64)
             self._fill_primitive_chunk[int64_t](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.int64()
         elif element_type_id == ElementTypeId.kFloat:
             dest_data = np.zeros(size, np.float32)
             self._fill_primitive_chunk[float](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.float32()
         elif element_type_id == ElementTypeId.kDouble:
             dest_data = np.zeros(size, np.float64)
             self._fill_primitive_chunk[double](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.float64()
         elif element_type_id == ElementTypeId.kBool:
             dest_data = np.zeros(size, np.bool_)
             self._fill_primitive_chunk[bool](rows, dest_data, null_flags_ptr)
-            arrow_type = pa.bool_()
         elif element_type_id == ElementTypeId.kString:
             dest_data = np.zeros(size, object)
             self._fill_string_chunk(rows, dest_data, null_flags_ptr)
-            arrow_type = pa.string()
         elif element_type_id == ElementTypeId.kTimestamp:
             dest_data = np.zeros(size, dtype="datetime64[ns]")
             dest_data_as_int64 = dest_data.view(dtype=np.int64)
             self._fill_timestamp_chunk(rows, dest_data_as_int64, null_flags_ptr)
-            arrow_type = pa.timestamp("ns", tz="UTC")
         elif element_type_id == ElementTypeId.kLocalDate:
             dest_data = np.zeros(size, dtype=np.int64)
             dest_data_as_int64 = dest_data.view(dtype=np.int64)
             self._fill_localdate_chunk(rows, dest_data_as_int64, null_flags_ptr)
-            arrow_type = pa.date64()
         elif element_type_id == ElementTypeId.kLocalTime:
             dest_data = np.zeros(size, dtype=np.int64)
             dest_data_as_int64 = dest_data.view(dtype=np.int64)
             self._fill_localtime_chunk(rows, dest_data_as_int64, null_flags_ptr)
-            arrow_type = pa.time64("ns")
         else:
            raise RuntimeError(f"Unexpected ElementTypeId {<int>element_type_id}")
 
+        arrow_type = _dh_type_to_pa_type(element_type)
         return pa.array(dest_data, type=arrow_type, mask=null_flags)
 
     # fill_chunk helper method for any of the primitive data types.
@@ -389,6 +377,7 @@ cdef class ColumnSource:
 
         print(f"Let's review what we have: {CCythonSupport.WhatADump(deref(self.column_source), rows.size)}")
 
+        dest_data = []
         for i in range(container_chunk.Size()):
             print(f"MEGA-Processing MEGA-element {i}")
             container_base = container_chunk[i]
@@ -402,8 +391,15 @@ cdef class ColumnSource:
             zamboni5 = slice_cs.get_chunk(RowSequence.create(slice_rows))
             print(f"zamboni5 is {zamboni5}")
             print(f"zamboni5.type is {zamboni5.type}")
+            dest_data.append(zamboni5)
 
-        raise RuntimeError("the red wagon (lantern)")
+        print(f"Look... now we have {dest_data}")
+        element_type = deref(self.column_source).GetElementType()
+        arrow_type = _dh_type_to_pa_type(element_type)
+        result = pa.array(dest_data, type=arrow_type, mask=null_flags)
+        print(f"Returning {result}")
+        return result
+
 
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the
 # memory used, so it is only valid as long as the original Arrow array is valid.
