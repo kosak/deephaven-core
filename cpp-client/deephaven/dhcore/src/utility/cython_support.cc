@@ -42,6 +42,18 @@ using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::ContainerArrayColumnSource;
 using deephaven::dhcore::column::ContainerColumnSource;
+using deephaven::dhcore::column::CharColumnSource;
+using deephaven::dhcore::column::Int8ColumnSource;
+using deephaven::dhcore::column::Int16ColumnSource;
+using deephaven::dhcore::column::Int64ColumnSource;
+using deephaven::dhcore::column::FloatColumnSource;
+using deephaven::dhcore::column::DoubleColumnSource;
+using deephaven::dhcore::column::BooleanColumnSource;
+using deephaven::dhcore::column::StringColumnSource;
+using deephaven::dhcore::column::DateTimeColumnSource;
+using deephaven::dhcore::column::LocalDateColumnSource;
+using deephaven::dhcore::column::LocalTimeColumnSource;
+using deephaven::dhcore::column::ContainerBaseColumnSource;
 using deephaven::dhcore::column::DateTimeArrayColumnSource;
 using deephaven::dhcore::column::BooleanContainerColumnSource;
 using deephaven::dhcore::column::DoubleContainerColumnSource;
@@ -315,63 +327,143 @@ CythonSupport::ContainerToColumnSource(std::shared_ptr<ContainerBase> data) {
 }
 
 namespace {
+struct ZamboniPain final : public ContainerVisitor {
+  explicit ZamboniPain(std::stringstream *output) : output_(output) {}
+
+  void Visit(const Container<char16_t> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<int8_t> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<int16_t> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<int32_t> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<int64_t> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<float> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<double> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<bool> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<std::string> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<DateTime> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<LocalDate> *container) final {
+    VisitHelper(container);
+  }
+
+  void Visit(const Container<LocalTime> *container) final {
+    VisitHelper(container);
+  }
+
+  template<typename T>
+  void VisitHelper(const Container<T> *container) {
+    *output_ << "SIZE " << container->size() << '\n';
+    for (size_t i = 0; i != container->size(); ++i) {
+      if (i != 0) {
+        *output_ << ", ";
+      }
+      if (container->IsNull(i)) {
+        *output_ << "(null)";
+      } else {
+        *output_ << (*container)[i];
+      }
+    }
+  }
+
+  std::stringstream *output_ = nullptr;
+};
+
+
 struct ColumnSourcePrinter final : public ColumnSourceVisitor {
   explicit ColumnSourcePrinter(size_t size) : size_(size) {}
 
-  void Visit(const column::CharColumnSource &cs) final {
+  void Visit(const CharColumnSource &cs) final {
     VisitHelper<char16_t>(cs);
   }
 
-  void Visit(const column::Int8ColumnSource &) final {
-    OperationSad();
+  void Visit(const Int8ColumnSource &cs) final {
+    VisitHelper<int8_t>(cs);
   }
 
-  void Visit(const column::Int16ColumnSource &) final {
-    OperationSad();
+  void Visit(const Int16ColumnSource &cs) final {
+    VisitHelper<int16_t>(cs);
   }
 
-  void Visit(const Int32ColumnSource &) final {
-    OperationSad();
+  void Visit(const Int32ColumnSource &cs) final {
+    VisitHelper<int32_t>(cs);
   }
 
-  void Visit(const column::Int64ColumnSource &) final {
-    OperationSad();
+  void Visit(const Int64ColumnSource &cs) final {
+    VisitHelper<int64_t>(cs);
   }
 
-  void Visit(const column::FloatColumnSource &) final {
-    OperationSad();
+  void Visit(const FloatColumnSource &cs) final {
+    VisitHelper<float>(cs);
   }
 
-  void Visit(const column::DoubleColumnSource &) final {
-    OperationSad();
+  void Visit(const DoubleColumnSource &cs) final {
+    VisitHelper<double>(cs);
   }
 
-  void Visit(const column::BooleanColumnSource &) final {
-    OperationSad();
+  void Visit(const BooleanColumnSource &cs) final {
+    VisitHelper<bool>(cs);
   }
 
-  void Visit(const column::StringColumnSource &) final {
-    OperationSad();
+  void Visit(const StringColumnSource &cs) final {
+    VisitHelper<std::string>(cs);
   }
 
-  void Visit(const column::DateTimeColumnSource &) final {
-    OperationSad();
+  void Visit(const DateTimeColumnSource &cs) final {
+    VisitHelper<DateTime>(cs);
   }
 
-  void Visit(const column::LocalDateColumnSource &) final {
-    OperationSad();
+  void Visit(const LocalDateColumnSource &cs) final {
+    VisitHelper<LocalDate>(cs);
   }
 
-  void Visit(const column::LocalTimeColumnSource &) final {
-    OperationSad();
+  void Visit(const LocalTimeColumnSource &cs) final {
+    VisitHelper<LocalTime>(cs);
   }
 
-  void Visit(const column::ContainerBaseColumnSource &) final {
-    OperationSad();
-  }
-
-  void OperationSad() {
-    output_ << "OPERATION SAD";
+  void Visit(const ContainerBaseColumnSource &cs) final {
+    auto rs = RowSequence::CreateSequential(0, size_);
+    auto data = GenericChunk<std::shared_ptr<ContainerBase>>::Create(size_);
+    auto nulls = BooleanChunk::Create(size_);
+    cs.FillChunk(*rs, &data, &nulls);
+    output_ << "[\n";
+    for (size_t i = 0; i != size_; ++i) {
+      if (nulls[i]) {
+        output_ << "(null)\n";
+      } else {
+        const auto &cb = data[i];
+        ZamboniPain zambonipain(&output_);
+        cb->AcceptVisitor(&zambonipain);
+      }
+    }
+    output_ << "]";
   }
 
   template<typename TElement>
