@@ -381,7 +381,7 @@ struct ContainerPrinter final : public ContainerVisitor {
 
   template<typename T>
   void VisitHelper(const Container<T> *container) {
-    *output_ << "SIZE " << container->size() << ':';
+    *output_ << '[';
     for (size_t i = 0; i != container->size(); ++i) {
       if (i != 0) {
         *output_ << ',';
@@ -392,6 +392,7 @@ struct ContainerPrinter final : public ContainerVisitor {
         *output_ << (*container)[i];
       }
     }
+    *output_ << ']';
   }
 
   std::ostream *output_ = nullptr;
@@ -456,8 +457,11 @@ struct ColumnSourcePrinter final : public ColumnSourceVisitor {
     cs.FillChunk(*rs, &data, &nulls);
     *output_ << '[';
     for (size_t i = 0; i != size_; ++i) {
+      if (i != 0) {
+        *output_ << ',';
+      }
       if (nulls[i]) {
-        *output_ << "null\n";
+        *output_ << "null";
       } else {
         const auto &cb = data[i];
         ContainerPrinter container_printer(output_);
