@@ -123,7 +123,7 @@ struct TypeToElementType<deephaven::dhcore::LocalTime> {
 }  // namespace internal
 
 template<typename T>
-class NumericBufferColumnSource final : public deephaven::dhcore::column::NumericColumnSource<T>,
+class NumericBufferColumnSource final : public deephaven::dhcore::column::GenericColumnSource<T>,
     std::enable_shared_from_this<NumericBufferColumnSource<T>> {
   struct Private {
   };

@@ -99,9 +99,9 @@ private:
 }  // namespace internal
 
 
-template<typename T, template<typename> typename TBase>
-class GenericArrayColumnSource final : public TBase<T>,
-public std::enable_shared_from_this<GenericArrayColumnSource<T, TBase>> {
+template<typename T>
+class GenericArrayColumnSource final : public MutableGenericColumnSource<T>,
+  public std::enable_shared_from_this<GenericArrayColumnSource<T>> {
   struct Private {
   };
   using BooleanChunk = deephaven::dhcore::chunk::BooleanChunk;
@@ -161,18 +161,18 @@ private:
   internal::GenericBackingStore<T> data_;
 };
 
-using Int8ArrayColumnSource = GenericArrayColumnSource<int8_t, MutableNumericColumnSource>;
-using Int16ArrayColumnSource = GenericArrayColumnSource<int16_t, MutableNumericColumnSource>;
-using Int32ArrayColumnSource = GenericArrayColumnSource<int32_t, MutableNumericColumnSource>;
-using Int64ArrayColumnSource = GenericArrayColumnSource<int64_t, MutableNumericColumnSource>;
-using FloatArrayColumnSource = GenericArrayColumnSource<float, MutableNumericColumnSource>;
-using DoubleArrayColumnSource = GenericArrayColumnSource<double, MutableNumericColumnSource>;
+using Int8ArrayColumnSource = GenericArrayColumnSource<int8_t>;
+using Int16ArrayColumnSource = GenericArrayColumnSource<int16_t>;
+using Int32ArrayColumnSource = GenericArrayColumnSource<int32_t>;
+using Int64ArrayColumnSource = GenericArrayColumnSource<int64_t>;
+using FloatArrayColumnSource = GenericArrayColumnSource<float>;
+using DoubleArrayColumnSource = GenericArrayColumnSource<double>;
 
-using BooleanArrayColumnSource = GenericArrayColumnSource<bool, MutableGenericColumnSource>;
-using StringArrayColumnSource = GenericArrayColumnSource<std::string, MutableGenericColumnSource>;
-using DateTimeArrayColumnSource = GenericArrayColumnSource<DateTime, MutableGenericColumnSource>;
-using LocalDateArrayColumnSource = GenericArrayColumnSource<LocalDate, MutableGenericColumnSource>;
-using LocalTimeArrayColumnSource = GenericArrayColumnSource<LocalTime, MutableGenericColumnSource>;
+using BooleanArrayColumnSource = GenericArrayColumnSource<bool>;
+using StringArrayColumnSource = GenericArrayColumnSource<std::string>;
+using DateTimeArrayColumnSource = GenericArrayColumnSource<DateTime>;
+using LocalDateArrayColumnSource = GenericArrayColumnSource<LocalDate>;
+using LocalTimeArrayColumnSource = GenericArrayColumnSource<LocalTime>;
 using ContainerArrayColumnSource =
-    GenericArrayColumnSource<std::shared_ptr<deephaven::dhcore::container::ContainerBase>, MutableGenericColumnSource>;
+    GenericArrayColumnSource<std::shared_ptr<deephaven::dhcore::container::ContainerBase>>;
 }  // namespace deephaven::dhcore::column

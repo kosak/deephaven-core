@@ -18,9 +18,9 @@
 #include "deephaven/dhcore/types.h"
 
 namespace deephaven::dhcore::column {
-template<typename T, template<typename> typename TBase>
-class ContainerColumnSource final : public TBase<T>,
-  public std::enable_shared_from_this<ContainerColumnSource<T, TBase>> {
+template<typename T>
+class ContainerColumnSource final : public GenericColumnSource<T>,
+  public std::enable_shared_from_this<ContainerColumnSource<T>> {
   struct Private {
   };
   using BooleanChunk = deephaven::dhcore::chunk::BooleanChunk;
@@ -85,17 +85,17 @@ private:
   std::shared_ptr<Container<T>> container_;
 };
 
-using CharContainerColumnSource = ContainerColumnSource<char16_t, NumericColumnSource>;
-using Int8ContainerColumnSource = ContainerColumnSource<int8_t, NumericColumnSource>;
-using Int16ContainerColumnSource = ContainerColumnSource<int16_t, NumericColumnSource>;
-using Int32ContainerColumnSource = ContainerColumnSource<int32_t, NumericColumnSource>;
-using Int64ContainerColumnSource = ContainerColumnSource<int64_t, NumericColumnSource>;
-using FloatContainerColumnSource = ContainerColumnSource<float, NumericColumnSource>;
-using DoubleContainerColumnSource = ContainerColumnSource<double, NumericColumnSource>;
+using CharContainerColumnSource = ContainerColumnSource<char16_t>;
+using Int8ContainerColumnSource = ContainerColumnSource<int8_t>;
+using Int16ContainerColumnSource = ContainerColumnSource<int16_t>;
+using Int32ContainerColumnSource = ContainerColumnSource<int32_t>;
+using Int64ContainerColumnSource = ContainerColumnSource<int64_t>;
+using FloatContainerColumnSource = ContainerColumnSource<float>;
+using DoubleContainerColumnSource = ContainerColumnSource<double>;
 
-using BooleanContainerColumnSource = ContainerColumnSource<bool, GenericColumnSource>;
-using StringContainerColumnSource = ContainerColumnSource<std::string, GenericColumnSource>;
-using DateTimeContainerColumnSource = ContainerColumnSource<DateTime, GenericColumnSource>;
-using LocalDateContainerColumnSource = ContainerColumnSource<LocalDate, GenericColumnSource>;
-using LocalTimeContainerColumnSource = ContainerColumnSource<LocalTime, GenericColumnSource>;
+using BooleanContainerColumnSource = ContainerColumnSource<bool>;
+using StringContainerColumnSource = ContainerColumnSource<std::string>;
+using DateTimeContainerColumnSource = ContainerColumnSource<DateTime>;
+using LocalDateContainerColumnSource = ContainerColumnSource<LocalDate>;
+using LocalTimeContainerColumnSource = ContainerColumnSource<LocalTime>;
 }  // namespace deephaven::dhcore::column
