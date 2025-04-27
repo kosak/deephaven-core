@@ -401,6 +401,7 @@ cdef class ColumnSource:
             slice_rows = CRowSequence.CreateSequential(0, slice_size)
             zamboni5 = slice_cs.get_chunk(RowSequence.create(slice_rows))
             print(f"zamboni5 is {zamboni5}")
+            print(f"zamboni5.type is {zamboni5.type}")
 
         raise RuntimeError("the red wagon (lantern)")
 
