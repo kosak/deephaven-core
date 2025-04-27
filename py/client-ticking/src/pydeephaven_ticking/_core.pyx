@@ -387,6 +387,8 @@ cdef class ColumnSource:
 
         print(f"Let's just say {container_chunk.Size()} and {deref(null_flags_ptr).Size()}")
 
+        print(f"Let's review what we have: {CCythonSupport.WhatADump(deref(self.column_source), rows.size)}")
+
         for i in range(container_chunk.Size()):
             print(f"MEGA-Processing MEGA-element {i}")
             container_base = container_chunk[i]
@@ -395,9 +397,9 @@ cdef class ColumnSource:
             print(f"This sad 'container' has size {slice_size}")
             print(f"likewise its nullness is {is_null}")
             container_as_ccs = CCythonSupport.ContainerToColumnSource(container_base)
-            cs = ColumnSource.create(container_as_ccs)
-            these_rows = CRowSequence.CreateSequential(0, slice_size)
-            zamboni5 = cs.get_chunk(RowSequence.create(these_rows))
+            slice_cs = ColumnSource.create(container_as_ccs)
+            slice_rows = CRowSequence.CreateSequential(0, slice_size)
+            zamboni5 = slice_cs.get_chunk(RowSequence.create(slice_rows))
             print(f"zamboni5 is {zamboni5}")
 
         raise RuntimeError("the red wagon (lantern)")

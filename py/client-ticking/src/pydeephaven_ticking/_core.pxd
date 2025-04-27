@@ -208,6 +208,9 @@ cdef extern from "deephaven/dhcore/utility/cython_support.h" namespace "deephave
         @staticmethod
         shared_ptr[CColumnSource] ContainerToColumnSource(shared_ptr[CContainerBase] data)
 
+        @staticmethod
+        string WhatADump(const CColumnSource &data, size_t size)
+
 cdef extern from "deephaven/dhcore/ticking/barrage_processor.h" namespace "deephaven::dhcore::ticking":
     cdef cppclass CBarrageProcessor "deephaven::dhcore::ticking::BarrageProcessor":
         @staticmethod

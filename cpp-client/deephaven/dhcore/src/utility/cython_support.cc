@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,6 +32,7 @@ using deephaven::dhcore::chunk::Int8Chunk;
 using deephaven::dhcore::chunk::Int16Chunk;
 using deephaven::dhcore::chunk::Int32Chunk;
 using deephaven::dhcore::chunk::Int64Chunk;
+using deephaven::dhcore::chunk::GenericChunk;
 using deephaven::dhcore::chunk::LocalDateChunk;
 using deephaven::dhcore::chunk::LocalTimeChunk;
 using deephaven::dhcore::chunk::StringChunk;
@@ -310,6 +312,96 @@ CythonSupport::ContainerToColumnSource(std::shared_ptr<ContainerBase> data) {
   ContainerToColumnSourceVisitor visitor(std::move(data));
   visitor.container_base_->AcceptVisitor(&visitor);
   return std::move(visitor.result_);
+}
+
+namespace {
+struct ColumnSourcePrinter final : public ColumnSourceVisitor {
+  explicit ColumnSourcePrinter(size_t size) : size_(size) {}
+
+  void Visit(const column::CharColumnSource &cs) final {
+    VisitHelper<char16_t>(cs);
+  }
+
+  void Visit(const column::Int8ColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::Int16ColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const Int32ColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::Int64ColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::FloatColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::DoubleColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::BooleanColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::StringColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::DateTimeColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::LocalDateColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::LocalTimeColumnSource &) final {
+    OperationSad();
+  }
+
+  void Visit(const column::ContainerBaseColumnSource &) final {
+    OperationSad();
+  }
+
+  void OperationSad() {
+    output_ << "OPERATION SAD";
+  }
+
+  template<typename TElement>
+  void VisitHelper(const ColumnSource &cs) {
+    auto rs = RowSequence::CreateSequential(0, size_);
+    auto data = GenericChunk<TElement>::Create(size_);
+    auto nulls = BooleanChunk::Create(size_);
+    cs.FillChunk(*rs, &data, &nulls);
+
+    for (size_t i = 0; i != size_; ++i) {
+      if (i != 0) {
+        output_ << '\n';
+      }
+      if (nulls[i]) {
+        output_ << "(null)";
+      } else {
+        output_ << data[i];
+      }
+    }
+  }
+
+  size_t size_ = 0;
+  std::stringstream output_;
+};
+}
+
+std::string CythonSupport::WhatADump(const ColumnSource &cs, size_t size) {
+  ColumnSourcePrinter visitor(size);
+  cs.AcceptVisitor(&visitor);
+  return visitor.output_.str();
 }
 
 namespace {

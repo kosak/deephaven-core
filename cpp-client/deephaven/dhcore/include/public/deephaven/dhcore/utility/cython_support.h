@@ -32,5 +32,7 @@ public:
       const ColumnSource &lengths, size_t lengths_size);
 
   static std::shared_ptr<ColumnSource> ContainerToColumnSource(std::shared_ptr<ContainerBase> data);
+
+  static std::string WhatADump(const ColumnSource &cs, size_t size);
 };
 }  // namespace deephaven::dhcore::utility
