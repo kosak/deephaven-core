@@ -249,8 +249,8 @@ cdef class ColumnSource:
         cdef CGenericChunk[bool] *null_flags_ptr = &boolean_chunk
         arrow_type: pa.DataType
 
-        print("Hi...getting element_type")
         element_type = deref(self.column_source).GetElementType()
+        print(f"Hi...just got element_type {element_type.ToString()}")
 
         if element_type.ListDepth() > 1:
             raise RuntimeError(f"Can't handle ListDepth() of {element_type.ListDepth()}")
