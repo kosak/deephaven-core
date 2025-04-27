@@ -53,13 +53,14 @@ public:
     auto *typed_dest = VerboseCast<chunkType_t*>(DEEPHAVEN_LOCATION_EXPR(dest));
     rows.ForEachInterval([&](uint64_t begin_key, uint64_t end_key) {
       for (auto current = begin_key; current != end_key; ++current) {
-        if (container_->IsNull(current)) {
-          if (optional_dest_null_flags != nullptr) {
-            (*optional_dest_null_flags)[dest_index] = true;
-          }
-        } else {
+        auto is_null = container_->IsNull(current);
+        if (!is_null) {
           (*typed_dest)[dest_index] = data[current];
         }
+        if (optional_dest_null_flags != nullptr) {
+          (*optional_dest_null_flags)[dest_index] = is_null;
+        }
+        ++dest_index;
       }
     });
   }

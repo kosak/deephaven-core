@@ -15,12 +15,16 @@
 #include "deephaven/dhcore/column/array_column_source.h"
 #include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
+#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/utility/cython_support.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/catch.hpp"
+#include "deephaven/third_party/fmt/ostream.h"
+#include "deephaven/third_party/fmt/ranges.h"
 
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::ContainerBaseChunk;
+using deephaven::dhcore::chunk::GenericChunk;
 using deephaven::dhcore::chunk::Int64Chunk;
 using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::Int32ArrayColumnSource;
@@ -31,11 +35,12 @@ using deephaven::dhcore::container::RowSequence;
 using deephaven::dhcore::ElementType;
 using deephaven::dhcore::ElementTypeId;
 using deephaven::dhcore::utility::CythonSupport;
+using deephaven::dhcore::utility::MakeReservedVector;
 using deephaven::dhcore::utility::VerboseCast;
 using deephaven::dhcore::chunk::StringChunk;
 
 namespace deephaven::client::tests {
-TEST_CASE("CreateStringColumnsSource", "[cython]") {
+TEST_CASE("CreateStringColumnSource", "[cython]") {
   // hello, NULL, Deephaven, abc
   // We do these as constexpr so our test won't even compile unless we get the basics right
   constexpr const char *kText = "helloDeephavenabc";
@@ -68,8 +73,8 @@ TEST_CASE("CreateStringColumnsSource", "[cython]") {
 }
 
 namespace {
-template<typename TArrayColumnSource, typename TElement>
-std::shared_ptr<ColumnSource> VectorToColumnSource(const ElementType &element_type,
+template<typename TElement>
+std::pair<std::unique_ptr<TElement[]>, std::unique_ptr<bool[]>> VectorToArrays(
   std::vector<std::optional<TElement>> vec) {
   auto elements = std::make_unique<TElement[]>(vec.size());
   auto null_flags = std::make_unique<bool[]>(vec.size());
@@ -77,7 +82,7 @@ std::shared_ptr<ColumnSource> VectorToColumnSource(const ElementType &element_ty
   for (size_t i = 0; i != vec.size(); ++i) {
     auto &elt = vec[i];
     if (elt.has_value()) {
-      elements[i] = elt.value();
+      elements[i] = std::move(elt.value());
       null_flags[i] = false;
     } else {
       elements[i] = TElement();
@@ -85,8 +90,35 @@ std::shared_ptr<ColumnSource> VectorToColumnSource(const ElementType &element_ty
     }
   }
 
+  return std::make_pair(std::move(elements), std::move(null_flags));
+}
+
+template<typename TArrayColumnSource, typename TElement>
+std::shared_ptr<ColumnSource> VectorToColumnSource(const ElementType &element_type,
+  std::vector<std::optional<TElement>> vec) {
+  auto vec_size = vec.size();
+  auto [elements, null_flags] = VectorToArrays(std::move(vec));
+
   return TArrayColumnSource::CreateFromArrays(element_type, std::move(elements),
-    std::move(null_flags), vec.size());
+    std::move(null_flags), vec_size);
+}
+
+template<typename TElement>
+std::vector<std::optional<TElement>> ColumnSourceToVector(const ColumnSource &column_source, size_t size) {
+  auto rs = RowSequence::CreateSequential(0, size);
+  auto data = GenericChunk<TElement>::Create(size);
+  auto null_flags = dhcore::chunk::BooleanChunk::Create(size);
+  column_source.FillChunk(*rs, &data, &null_flags);
+
+  auto result = MakeReservedVector<std::optional<TElement>>(size);
+  for (size_t i = 0; i != size; ++i) {
+    if (null_flags[i]) {
+      result.emplace_back();
+    } else {
+      result.emplace_back(std::move(data[i]));
+    }
+  }
+  return result;
 }
 
 template<typename TElement>
@@ -124,9 +156,22 @@ ContainerColumnSourceToVector(const ColumnSource &cs, size_t num_slices) {
   }
   return result;
 }
+
+template<typename T>
+void zambonidump(const std::vector<std::optional<T>> &vec) {
+  std::cout << "HATE\n";
+  for (const auto &elt : vec) {
+    if (elt.has_value()) {
+      std::cout << *elt << '\n';
+    } else {
+      std::cout << "NONE\n";
+    }
+  }
+}
 }  // namespace
 
-TEST_CASE("TestInflation", "[cython]") {
+// Testing the entry point CythonSupport::SlicesToColumnSource
+TEST_CASE("TestSlicesToColumnSource", "[cython]") {
   // Input: [a, b, c, d, e, f, null, g]
   // Lengths: 3, null, 0, 4
   // Expected output:
@@ -164,5 +209,25 @@ TEST_CASE("TestInflation", "[cython]") {
   };
 
   CHECK(expected_vector == actual_vector);
+}
+
+// Testing the entry point CythonSupport::ContainerToColumnSource
+TEST_CASE("TestContainerToColumnSource", "[cython]") {
+  // Input: [d, e, f, null, g]
+  std::vector<std::optional<std::string>> expected_vector = {
+    "d", "e", "f", {}, "g"
+  };
+
+  auto [data, nulls] = VectorToArrays(expected_vector);
+
+  auto container = Container<std::string>::Create(std::move(data), std::move(nulls),
+    expected_vector.size());
+  auto cs = CythonSupport::ContainerToColumnSource(std::move(container));
+
+  auto actual_vector = ColumnSourceToVector<std::string>(*cs, expected_vector.size());
+
+  CHECK(expected_vector == actual_vector);
+  zambonidump(expected_vector);
+  zambonidump(actual_vector);
 }
 }  // namespace deephaven::client::tests

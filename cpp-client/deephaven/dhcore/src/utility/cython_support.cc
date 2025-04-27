@@ -312,7 +312,6 @@ CythonSupport::ContainerToColumnSource(std::shared_ptr<ContainerBase> data) {
   return std::move(visitor.result_);
 }
 
-
 namespace {
 void PopulateArrayFromPackedData(const uint8_t *src, bool *dest, size_t num_elements, bool invert) {
   if (src == nullptr) {
