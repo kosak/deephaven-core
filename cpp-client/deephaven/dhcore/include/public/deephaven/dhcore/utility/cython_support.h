@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
-#include "deephaven/dhcore/types.h"
 #include "deephaven/dhcore/column/column_source.h"
 
 namespace deephaven::dhcore::utility {
@@ -28,10 +27,5 @@ public:
   static std::shared_ptr<ColumnSource> CreateContainerColumnSource(
       std::shared_ptr<ColumnSource> data, size_t data_size,
       std::shared_ptr<ColumnSource> lengths, size_t lengths_size);
-
-  /**
-   * For backwards compatibility. Will be removed when Cython is updated.
-   */
-  static ElementTypeId::Enum GetElementTypeId(const ColumnSource &column_source);
 };
 }  // namespace deephaven::dhcore::utility

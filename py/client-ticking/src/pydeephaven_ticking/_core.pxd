@@ -119,6 +119,7 @@ cdef extern from "deephaven/dhcore/column/column_source.h" namespace "deephaven:
     cdef cppclass CColumnSource "deephaven::dhcore::column::ColumnSource":
         void FillChunk(const CRowSequence &rows, CChunk *destData,
             CGenericChunk[bool] *optionalDestNullFlags) except +
+        CElementType GetElementType() const
 
 cdef extern from "deephaven/dhcore/column/column_source_helpers.h" namespace "deephaven::dhcore::column":
     cdef cppclass CHumanReadableElementTypeName "deephaven::dhcore::column::HumanReadableElementTypeName":
@@ -192,9 +193,6 @@ cdef extern from "deephaven/dhcore/utility/cython_support.h" namespace "deephave
         shared_ptr[CColumnSource] CreateContainerColumnSource(
                 shared_ptr[CColumnSource] data, size_t data_size,
                 shared_ptr[CColumnSource] lengths, size_t lengths_size)
-
-        @staticmethod
-        ElementTypeId GetElementTypeId(const CColumnSource &columnSource)
 
 cdef extern from "deephaven/dhcore/ticking/barrage_processor.h" namespace "deephaven::dhcore::ticking":
     cdef cppclass CBarrageProcessor "deephaven::dhcore::ticking::BarrageProcessor":

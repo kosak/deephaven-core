@@ -249,8 +249,16 @@ cdef class ColumnSource:
         cdef CGenericChunk[bool] *null_flags_ptr = &boolean_chunk
         arrow_type: pa.DataType
 
-        print("Hi...getting element_type_id")
-        element_type_id = CCythonSupport.GetElementTypeId(deref(self.column_source))
+        print("Hi...getting element_type")
+        element_type = deref(self.column_source).GetElementType()
+
+        if element_type.ListDepth() > 1:
+            raise RuntimeError(f"Can't handle ListDepth() of {element_type.ListDepth()}")
+
+        if element_type.ListDepth() == 1:
+            raise RuntimeError(f"Can't (yet) handle ListDepth() of {element_type.ListDepth()}")
+
+        element_type_id = element_type.Id()
         print(f"got {element_type_id}")
         if element_type_id == ElementTypeId.kChar:
             dest_data = np.zeros(size, np.uint16)
