@@ -16,9 +16,9 @@
 #include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 #include "deephaven/dhcore/utility/cython_support.h"
+#include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/catch.hpp"
 
-using deephaven::client::utility::TableMaker;
 using deephaven::dhcore::chunk::BooleanChunk;
 using deephaven::dhcore::chunk::ContainerBaseChunk;
 using deephaven::dhcore::chunk::Int64Chunk;
