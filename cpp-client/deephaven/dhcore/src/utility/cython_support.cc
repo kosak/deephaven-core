@@ -17,6 +17,8 @@
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/column/array_column_source.h"
+#include "deephaven/dhcore/column/container_column_source.h"
+#include "deephaven/dhcore/container/container.h"
 #include "deephaven/dhcore/container/container_util.h"
 #include "deephaven/dhcore/container/row_sequence.h"
 
@@ -33,15 +35,20 @@ using deephaven::dhcore::chunk::LocalDateChunk;
 using deephaven::dhcore::chunk::LocalTimeChunk;
 using deephaven::dhcore::chunk::StringChunk;
 using deephaven::dhcore::column::BooleanArrayColumnSource;
+using deephaven::dhcore::column::CharContainerColumnSource;
 using deephaven::dhcore::column::ColumnSource;
 using deephaven::dhcore::column::ColumnSourceVisitor;
 using deephaven::dhcore::column::ContainerArrayColumnSource;
+using deephaven::dhcore::column::ContainerColumnSource;
 using deephaven::dhcore::column::DateTimeArrayColumnSource;
 using deephaven::dhcore::column::Int32ColumnSource;
 using deephaven::dhcore::column::LocalDateArrayColumnSource;
 using deephaven::dhcore::column::LocalTimeArrayColumnSource;
 using deephaven::dhcore::column::StringArrayColumnSource;
+using deephaven::dhcore::container::Container;
+using deephaven::dhcore::container::ContainerBase;
 using deephaven::dhcore::container::ContainerUtil;
+using deephaven::dhcore::container::ContainerVisitor;
 using deephaven::dhcore::container::RowSequence;
 
 namespace deephaven::dhcore::utility {
@@ -124,8 +131,8 @@ CythonSupport::CreateLocalTimeColumnSource(const int64_t *data_begin, const int6
 
 namespace {
 struct CreateContainerVisitor final : ColumnSourceVisitor {
-  CreateContainerVisitor(std::shared_ptr<ColumnSource> data, size_t data_size,
-    std::vector<std::optional<size_t>> slice_lengths) : data_(std::move(data)),
+  CreateContainerVisitor(const ColumnSource *data, size_t data_size,
+    std::vector<std::optional<size_t>> slice_lengths) : data_(data),
     data_size_(data_size), slice_lengths_(std::move(slice_lengths)) {}
   ~CreateContainerVisitor() final = default;
 
@@ -188,7 +195,7 @@ struct CreateContainerVisitor final : ColumnSourceVisitor {
         *data_, data_size_, slice_lengths_);
   }
 
-  std::shared_ptr<ColumnSource> data_;
+  const ColumnSource *data_ = nullptr;
   size_t data_size_ = 0;
   std::vector<std::optional<size_t>> slice_lengths_;
   std::shared_ptr<ContainerArrayColumnSource> result_;
@@ -196,11 +203,11 @@ struct CreateContainerVisitor final : ColumnSourceVisitor {
 }  // namespace
 
 std::shared_ptr<ColumnSource>
-CythonSupport::CreateContainerColumnSource(std::shared_ptr<ColumnSource> data, size_t data_size,
-    std::shared_ptr<ColumnSource> lengths, size_t lengths_size) {
+CythonSupport::SlicesToColumnSource(const ColumnSource &data, size_t data_size,
+    const ColumnSource &lengths, size_t lengths_size) {
 
   // Change the representation of the 'lengths' ColumnSource into vector<optional<int32_t>>. This is slightly laborious
-  const auto *typed_lengths = VerboseCast<const Int32ColumnSource*>(DEEPHAVEN_LOCATION_EXPR(lengths.get()));
+  const auto *typed_lengths = VerboseCast<const Int32ColumnSource*>(DEEPHAVEN_LOCATION_EXPR(&lengths));
   auto row_sequence = RowSequence::CreateSequential(0, lengths_size);
   auto lengths_data = Int32Chunk::Create(lengths_size);
   auto lengths_nulls = BooleanChunk::Create(lengths_size);
@@ -215,10 +222,85 @@ CythonSupport::CreateContainerColumnSource(std::shared_ptr<ColumnSource> data, s
     }
   }
 
-  CreateContainerVisitor visitor(std::move(data), data_size, std::move(lengths_vec));
+  CreateContainerVisitor visitor(&data, data_size, std::move(lengths_vec));
   visitor.data_->AcceptVisitor(&visitor);
   return std::move(visitor.result_);
 }
+
+namespace {
+struct ContainerToColumnSourceVisitor final : public ContainerVisitor {
+  explicit ContainerToColumnSourceVisitor(std::shared_ptr<ContainerBase> container_base) :
+      container_base_(std::move(container_base)) {}
+
+  void Visit(const Container<char16_t> *) final {
+    VisitHelper<char16_t, CharContainerColumnSource>(ElementTypeId::kChar);
+  }
+
+  void Visit(const container::Container<int8_t> *) final {
+    VisitHelper<int8_t, column::Int8ContainerColumnSource>(ElementTypeId::kInt8);
+  }
+
+  void Visit(const container::Container<int16_t> *) final {
+    VisitHelper<int16_t, column::Int16ContainerColumnSource>(ElementTypeId::kInt16);
+  }
+
+  void Visit(const container::Container<int32_t> *) final {
+    VisitHelper<int32_t, column::Int32ContainerColumnSource>(ElementTypeId::kInt32);
+  }
+
+  void Visit(const container::Container<int64_t> *) final {
+    VisitHelper<int64_t, column::Int64ContainerColumnSource>(ElementTypeId::kInt64);
+  }
+
+  void Visit(const container::Container<float> *) final {
+    VisitHelper<float, column::FloatContainerColumnSource>(ElementTypeId::kFloat);
+  }
+
+  void Visit(const container::Container<double> *) final {
+    VisitHelper<double, column::DoubleContainerColumnSource>(ElementTypeId::kDouble);
+  }
+
+  void Visit(const container::Container<bool> *) final {
+    VisitHelper<bool, column::BooleanContainerColumnSource>(ElementTypeId::kBool);
+  }
+
+  void Visit(const container::Container<std::string> *) final {
+    VisitHelper<std::string, column::StringContainerColumnSource>(ElementTypeId::kString);
+  }
+
+  void Visit(const container::Container<DateTime> *) final {
+    VisitHelper<DateTime, column::DateTimeContainerColumnSource>(ElementTypeId::kTimestamp);
+  }
+
+  void Visit(const container::Container<LocalDate> *) final {
+    VisitHelper<LocalDate, column::LocalDateContainerColumnSource>(ElementTypeId::kLocalDate);
+  }
+
+  void Visit(const container::Container<LocalTime> *) final {
+    VisitHelper<LocalTime, column::LocalTimeContainerColumnSource>(ElementTypeId::kLocalTime);
+  }
+
+  template<typename TElement, typename TColumnSource>
+  void VisitHelper(ElementTypeId::Enum element_type_id) {
+    auto typed_container_base = VerboseSharedPtrCast<TColumnSource>(DEEPHAVEN_LOCATION_EXPR(container_base_));
+
+    result_ = TColumnSource::Create(ElementType::Of(element_type_id),
+      std::move(typed_container_base));
+  }
+
+  std::shared_ptr<ContainerBase> container_base_;
+  std::shared_ptr<ColumnSource> result_;
+};
+}  // namespace
+
+
+std::shared_ptr<ColumnSource>
+CythonSupport::ContainerToColumnSource(std::shared_ptr<ContainerBase> data) {
+  ContainerToColumnSourceVisitor visitor(std::move(data));
+  visitor.container_base_->AcceptVisitor(&visitor);
+  return std::move(visitor.result_);
+}
+
 
 namespace {
 void PopulateArrayFromPackedData(const uint8_t *src, bool *dest, size_t num_elements, bool invert) {

@@ -60,8 +60,6 @@ public:
         }
       }
     });
-
-    ColumnSourceImpls::FillChunk<chunkType_t>(rows, dest, optional_dest_null_flags, data_);
   }
 
   void FillChunkUnordered(const UInt64Chunk &row_keys, Chunk *dest,
@@ -84,6 +82,7 @@ private:
   std::shared_ptr<Container<T>> container_;
 };
 
+using CharContainerColumnSource = ContainerColumnSource<char16_t, NumericColumnSource>;
 using Int8ContainerColumnSource = ContainerColumnSource<int8_t, NumericColumnSource>;
 using Int16ContainerColumnSource = ContainerColumnSource<int16_t, NumericColumnSource>;
 using Int32ContainerColumnSource = ContainerColumnSource<int32_t, NumericColumnSource>;

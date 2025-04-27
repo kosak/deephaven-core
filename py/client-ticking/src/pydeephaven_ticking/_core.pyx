@@ -390,6 +390,10 @@ cdef class ColumnSource:
         for i in range(container_chunk.Size()):
             print(f"MEGA-Processing MEGA-element {i}")
             container_base = container_chunk[i]
+            container_as_ccs = CCythonSupport.MakeContainerColumnSource(container_base)
+            cs = ColumnSource(container_as_ccs)
+            zamboni5 = cs.get_chunk(rows)
+            print(f"zamboni5 is {zamboni5}")
 
         raise RuntimeError("the red wagon (lantern)")
 
