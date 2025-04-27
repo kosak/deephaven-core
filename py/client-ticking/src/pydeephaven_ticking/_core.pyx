@@ -390,9 +390,13 @@ cdef class ColumnSource:
         for i in range(container_chunk.Size()):
             print(f"MEGA-Processing MEGA-element {i}")
             container_base = container_chunk[i]
-            container_as_ccs = CCythonSupport.MakeContainerColumnSource(container_base)
-            cs = ColumnSource(container_as_ccs)
-            zamboni5 = cs.get_chunk(rows)
+            is_null = deref(null_flags_ptr)[i]
+            print(f"This sad 'container' has size {deref(container_base).size()}")
+            print(f"likewise its nullness is {is_null}")
+            container_as_ccs = CCythonSupport.ContainerToColumnSource(container_base)
+            cs = ColumnSource.create(container_as_ccs)
+            these_rows = CRowSequence::CreateSequential(0, slice_size)
+            zamboni5 = cs.get_chunk(RowSequence.create(these_rows))
             print(f"zamboni5 is {zamboni5}")
 
         raise RuntimeError("the red wagon (lantern)")
@@ -410,9 +414,9 @@ cdef shared_ptr[CColumnSource] _convert_arrow_array_to_column_source(array: pa.A
         values_cs = _convert_arrow_array_to_column_source(array.values)
         lengths_cs = _convert_arrow_array_to_column_source(array.value_lengths())
         print("THIS (was) EXCITING AND TREACHEROUS")
-        return CCythonSupport.CreateContainerColumnSource(
-            values_cs, len(array.values),
-            lengths_cs, len(array.value_lengths()))
+        return CCythonSupport.SlicesToColumnSource(
+            deref(values_cs), len(array.values),
+            deref(lengths_cs), len(array.value_lengths()))
     if isinstance(array, pa.lib.StringArray):
         return _convert_arrow_string_array_to_column_source(cast(pa.lib.StringArray, array))
     if isinstance(array, pa.lib.BooleanArray):

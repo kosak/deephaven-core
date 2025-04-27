@@ -18,7 +18,7 @@ class TickingListsTestCase(unittest.TestCase):
         session = dh.Session()
         table = session.empty_table(size = 10).update(
             formulas = [
-            "Key = (ii % 3)",    
+            "Key = (ii % 10)",    
             "Chars = ii == 5 ? null : (char)('a' + ii)",
             "Bytes = ii == 5 ? null : (byte)(ii)",
             "Shorts = ii == 5 ? null : (short)(ii)",
@@ -31,7 +31,7 @@ class TickingListsTestCase(unittest.TestCase):
             "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii",
             "LocalDates = ii == 5 ? null : '2001-03-01' + (i * 'P1D')",
             "LocalTimes = ii == 5 ? null : '12:34:56.000'.plus(ii * 'PT1S')"
-                ]).group_by("Key")
+                ]).select(["Key", "Ints"]).group_by("Key")
         print("HELLO2")
         session.bind_table(name="all_types_table", table=table)
         print(table.to_arrow())

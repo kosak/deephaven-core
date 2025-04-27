@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
 #
-from libc.stdint cimport int8_t, uint8_t, int32_t, int64_t, uint32_t
+from libc.stdint cimport int8_t, uint8_t, int32_t, int64_t, uint32_t, uint64_t
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.string cimport string
@@ -60,6 +60,9 @@ cdef extern from "deephaven/dhcore/container/container.h" namespace "deephaven::
 
 cdef extern from "deephaven/dhcore/container/row_sequence.h" namespace "deephaven::dhcore::container":
     cdef cppclass CRowSequence "deephaven::dhcore::container::RowSequence":
+        @staticmethod
+        shared_ptr[CRowSequence] CreateSequential(uint64_t begin, uint64_t end)
+
         CRowSequence()
         CRowSequence(CRowSequence other)
 
@@ -198,9 +201,12 @@ cdef extern from "deephaven/dhcore/utility/cython_support.h" namespace "deephave
             const uint8_t *validityBegin, const uint8_t *validityEnd, size_t numElements)
 
         @staticmethod
-        shared_ptr[CColumnSource] CreateContainerColumnSource(
-                shared_ptr[CColumnSource] data, size_t data_size,
-                shared_ptr[CColumnSource] lengths, size_t lengths_size)
+        shared_ptr[CColumnSource] SlicesToColumnSource(
+                const CColumnSource &data, size_t data_size,
+                const CColumnSource &lengths, size_t lengths_size)
+
+        @staticmethod
+        shared_ptr[CColumnSource] ContainerToColumnSource(shared_ptr[CContainerBase] data)
 
 cdef extern from "deephaven/dhcore/ticking/barrage_processor.h" namespace "deephaven::dhcore::ticking":
     cdef cppclass CBarrageProcessor "deephaven::dhcore::ticking::BarrageProcessor":
