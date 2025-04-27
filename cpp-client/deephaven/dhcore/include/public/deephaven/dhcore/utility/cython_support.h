@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
+#include <string>
 #include "deephaven/dhcore/column/column_source.h"
 #include "deephaven/dhcore/container/container.h"
 
@@ -33,6 +34,6 @@ public:
 
   static std::shared_ptr<ColumnSource> ContainerToColumnSource(std::shared_ptr<ContainerBase> data);
 
-  static std::string WhatADump(const ColumnSource &cs, size_t size);
+  static std::string ColumnSourceToString(const ColumnSource &cs, size_t size);
 };
 }  // namespace deephaven::dhcore::utility

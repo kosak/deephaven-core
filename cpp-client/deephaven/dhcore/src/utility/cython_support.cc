@@ -49,6 +49,7 @@ using deephaven::dhcore::column::Int64ColumnSource;
 using deephaven::dhcore::column::FloatColumnSource;
 using deephaven::dhcore::column::DoubleColumnSource;
 using deephaven::dhcore::column::BooleanColumnSource;
+using deephaven::dhcore::column::GenericColumnSource;
 using deephaven::dhcore::column::StringColumnSource;
 using deephaven::dhcore::column::DateTimeColumnSource;
 using deephaven::dhcore::column::LocalDateColumnSource;
@@ -327,8 +328,8 @@ CythonSupport::ContainerToColumnSource(std::shared_ptr<ContainerBase> data) {
 }
 
 namespace {
-struct ZamboniPain final : public ContainerVisitor {
-  explicit ZamboniPain(std::stringstream *output) : output_(output) {}
+struct ContainerPrinter final : public ContainerVisitor {
+  explicit ContainerPrinter(std::ostream *output) : output_(output) {}
 
   void Visit(const Container<char16_t> *container) final {
     VisitHelper(container);
@@ -393,59 +394,59 @@ struct ZamboniPain final : public ContainerVisitor {
     }
   }
 
-  std::stringstream *output_ = nullptr;
+  std::ostream *output_ = nullptr;
 };
 
-
 struct ColumnSourcePrinter final : public ColumnSourceVisitor {
-  explicit ColumnSourcePrinter(size_t size) : size_(size) {}
+  explicit ColumnSourcePrinter(size_t size, std::ostream *output) : size_(size),
+    output_(output) {}
 
   void Visit(const CharColumnSource &cs) final {
-    VisitHelper<char16_t>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const Int8ColumnSource &cs) final {
-    VisitHelper<int8_t>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const Int16ColumnSource &cs) final {
-    VisitHelper<int16_t>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const Int32ColumnSource &cs) final {
-    VisitHelper<int32_t>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const Int64ColumnSource &cs) final {
-    VisitHelper<int64_t>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const FloatColumnSource &cs) final {
-    VisitHelper<float>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const DoubleColumnSource &cs) final {
-    VisitHelper<double>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const BooleanColumnSource &cs) final {
-    VisitHelper<bool>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const StringColumnSource &cs) final {
-    VisitHelper<std::string>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const DateTimeColumnSource &cs) final {
-    VisitHelper<DateTime>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const LocalDateColumnSource &cs) final {
-    VisitHelper<LocalDate>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const LocalTimeColumnSource &cs) final {
-    VisitHelper<LocalTime>(cs);
+    VisitHelper(cs);
   }
 
   void Visit(const ContainerBaseColumnSource &cs) final {
@@ -453,21 +454,21 @@ struct ColumnSourcePrinter final : public ColumnSourceVisitor {
     auto data = GenericChunk<std::shared_ptr<ContainerBase>>::Create(size_);
     auto nulls = BooleanChunk::Create(size_);
     cs.FillChunk(*rs, &data, &nulls);
-    output_ << "[\n";
+    *output_ << "[\n";
     for (size_t i = 0; i != size_; ++i) {
       if (nulls[i]) {
-        output_ << "(null)\n";
+        *output_ << "(null)\n";
       } else {
         const auto &cb = data[i];
-        ZamboniPain zambonipain(&output_);
-        cb->AcceptVisitor(&zambonipain);
+        ContainerPrinter container_printer(output_);
+        cb->AcceptVisitor(&container_printer);
       }
     }
-    output_ << "]";
+    *output_ << "]";
   }
 
   template<typename TElement>
-  void VisitHelper(const ColumnSource &cs) {
+  void VisitHelper(const GenericColumnSource<TElement> &cs) {
     auto rs = RowSequence::CreateSequential(0, size_);
     auto data = GenericChunk<TElement>::Create(size_);
     auto nulls = BooleanChunk::Create(size_);
@@ -475,25 +476,26 @@ struct ColumnSourcePrinter final : public ColumnSourceVisitor {
 
     for (size_t i = 0; i != size_; ++i) {
       if (i != 0) {
-        output_ << '\n';
+        *output_ << '\n';
       }
       if (nulls[i]) {
-        output_ << "(null)";
+        *output_ << "(null)";
       } else {
-        output_ << data[i];
+        *output_ << data[i];
       }
     }
   }
 
   size_t size_ = 0;
-  std::stringstream output_;
+  std::ostream *output_ = nullptr;
 };
 }
 
-std::string CythonSupport::WhatADump(const ColumnSource &cs, size_t size) {
-  ColumnSourcePrinter visitor(size);
+std::string CythonSupport::ColumnSourceToString(const ColumnSource &cs, size_t size) {
+  SimpleOstringstream output;
+  ColumnSourcePrinter visitor(size, &output);
   cs.AcceptVisitor(&visitor);
-  return visitor.output_.str();
+  return std::move(output.str());
 }
 
 namespace {
