@@ -385,7 +385,12 @@ cdef class ColumnSource:
         container_chunk = CGenericChunk[shared_ptr[CContainerBase]].Create(size)
         deref(self.column_source).FillChunk(deref(rows.row_sequence), &container_chunk, null_flags_ptr)
 
-        print(f"Let's just say {container_chunk.Size()} and {deref(null_flags_ptr).Size()} ")
+        print(f"Let's just say {container_chunk.Size()} and {deref(null_flags_ptr).Size()}")
+
+        for i in range(container_chunk.Size()):
+            print(f"MEGA-Processing MEGA-element {i}")
+            container_base = container_chunk[i]
+
         raise RuntimeError("the red wagon (lantern)")
 
 # Converts an Arrow array to a C++ ColumnSource of the right type. The created column source does not own the

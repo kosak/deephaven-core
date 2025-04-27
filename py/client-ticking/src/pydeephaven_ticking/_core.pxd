@@ -51,6 +51,9 @@ cdef extern from "deephaven/dhcore/chunk/chunk.h" namespace "deephaven::dhcore::
 
         const T *data()
 
+        const T operator[](size_t index)
+
+
 cdef extern from "deephaven/dhcore/container/container.h" namespace "deephaven::dhcore::container":
     cdef cppclass CContainerBase "deephaven::dhcore::container::ContainerBase":
         size_t size() const
