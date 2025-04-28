@@ -5,6 +5,7 @@
 
 #include <limits>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <ostream>
@@ -20,7 +21,8 @@ class ContainerBase;
 }  // namespace deephaven::dhcore::container
 
 namespace deephaven::dhcore {
-struct ElementTypeId {
+class ElementTypeId {
+public:
   ElementTypeId() = delete;
 
   // We don't use "enum class" here because we can't figure out how to get it to work right with Cython.
@@ -31,6 +33,13 @@ struct ElementTypeId {
     kBool, kString, kTimestamp,
     kLocalDate, kLocalTime
   };
+
+  static constexpr size_t kEnumSize = 12;
+
+  static const char *ToString(Enum id);
+
+private:
+  static const char *kHumanReadableConstants[kEnumSize];
 };
 
 class ElementType {
