@@ -73,6 +73,17 @@ ElementType ElementType::UnwrapList() const {
   return {list_depth_ - 1, element_type_id_};
 }
 
+std::ostream &operator<<(std::ostream &s, const ElementType &o) {
+  for (uint32_t i = 0; i != o.list_depth_; ++i) {
+    s << "list<";
+  }
+  s << "type " << o.element_type_id_;
+  for (uint32_t i = 0; i != o.list_depth_; ++i) {
+    s << ">";
+  }
+  return s;
+}
+
 DateTime DateTime::Parse(std::string_view iso_8601_timestamp) {
   // Special handling for "Z" timezone
   const char *format_to_use = (!iso_8601_timestamp.empty() && iso_8601_timestamp.back() == 'Z')

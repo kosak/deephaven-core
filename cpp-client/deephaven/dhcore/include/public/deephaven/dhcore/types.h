@@ -12,6 +12,7 @@
 #include <string_view>
 #include <type_traits>
 #include "deephaven/third_party/fmt/core.h"
+#include "deephaven/third_party/fmt/format.h"
 #include "deephaven/third_party/fmt/ostream.h"
 
 namespace deephaven::dhcore::container {
@@ -56,9 +57,21 @@ public:
   [[nodiscard]]
   ElementType UnwrapList() const;
 
+  [[nodiscard]]
+  std::string ToString() const {
+    return fmt::to_string(*this);
+  }
+
 private:
   uint32_t list_depth_ = 0;
-  ElementTypeId::Enum element_type_id_ = ElementTypeId::kInt8;
+  ElementTypeId::Enum element_type_id_ = ElementTypeId::kInt8;  // arbitrary default
+
+  friend bool operator==(const ElementType &lhs, const ElementType &rhs) {
+    return lhs.list_depth_ == rhs.list_depth_ &&
+        lhs.element_type_id_ == rhs.element_type_id_;
+  }
+
+  friend std::ostream &operator<<(std::ostream &s, const ElementType &o);
 };
 
 class DateTime;
@@ -565,3 +578,4 @@ private:
 template<> struct fmt::formatter<deephaven::dhcore::DateTime> : ostream_formatter {};
 template<> struct fmt::formatter<deephaven::dhcore::LocalDate> : ostream_formatter {};
 template<> struct fmt::formatter<deephaven::dhcore::LocalTime> : ostream_formatter {};
+template<> struct fmt::formatter<deephaven::dhcore::ElementType> : ostream_formatter {};
