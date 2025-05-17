@@ -16,10 +16,10 @@ public class StateManager {
   private readonly ReferenceCountingDict<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly ReferenceCountingDict<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
   private readonly ReferenceCountingDict<TableQuad, ITableProviderBase> _tableProviders = new();
-  private readonly ReferenceCountingDict<EndpointId, PersistentQueryDictProvider> _persistentQueryDictProviders = new();
-  private readonly ReferenceCountingDict<(EndpointId, PqName), PersistentQueryInfoProvider> _persistentQueryInfoProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, PqDictProvider> _persistentQueryDictProviders = new();
+  private readonly ReferenceCountingDict<(EndpointId, PqName), PqInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
-  private readonly ReferenceCountingDict<EndpointId, SubscriptionProvider> _subscriptionProviders = new();
+  private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
@@ -65,14 +65,14 @@ public class StateManager {
 
   public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
     IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
-    var candidate = new PersistentQueryDictProvider(this, endpointId);
+    var candidate = new PqDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
   public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
     IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     var key = (endpointId, pqName);
-    var candidate = new PersistentQueryInfoProvider(this, endpointId, pqName);
+    var candidate = new PqInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
@@ -84,7 +84,7 @@ public class StateManager {
 
   public IDisposable SubscribeToSubscription(EndpointId endpointId,
     IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
-    var candidate = new SubscriptionProvider(this, endpointId);
+    var candidate = new PqSubscriptionProvider(this, endpointId);
     return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }
 

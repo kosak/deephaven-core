@@ -8,8 +8,9 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
-internal class SnapshotOperation : IExcelObservable,
-  IValueObserver<StatusOr<RefCounted<TableHandle>>> {
+internal class SnapshotOperation : 
+  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
+  IValueObservable<StatusOr<object?[,]>> {
   private const string UnsetTableData = "[No data]";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;

@@ -6,7 +6,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class SubscriptionProvider :
+internal class PqSubscriptionProvider :
   IValueObserver<StatusOr<RefCounted<SessionManager>>>,
   IValueObservable<StatusOr<RefCounted<Subscription>>>,
   IDisposable {
@@ -20,7 +20,7 @@ internal class SubscriptionProvider :
   private readonly ObserverContainer<StatusOr<RefCounted<Subscription>>> _observers = new();
   private StatusOr<RefCounted<Subscription>> _subscription = UnsetSubText;
 
-  public SubscriptionProvider(StateManager stateManager, EndpointId endpointId) {
+  public PqSubscriptionProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
   }
