@@ -8,7 +8,7 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Operations;
 
 internal class SnapshotOperation : 
-  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
+  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   IValueObservable<StatusOr<object?[,]>> {
   private const string UnsetTableData = "[No data]";
   private readonly TableQuad _tableQuad;
