@@ -8,16 +8,17 @@ using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
-internal class SubscribeOperation : IExcelObservable,
+internal class SubscribeOperation : 
   IValueObserver<StatusOr<RefCounted<TableHandle>>>,
-  IObserver<TickingUpdate> {
+  IValueObservable<StatusOr<object?[,]>> {
   private const string UnsetTableData = "[No data]";
   private const string UnsetTickingSubscription = "[no ticking subscription]";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _backgroundTokenSource = new();
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IDisposable? _upstreamDisposer = null;
   private StatusOr<RefCounted<IDisposable>> _tickingSubscription = UnsetTickingSubscription;
@@ -27,22 +28,22 @@ internal class SubscribeOperation : IExcelObservable,
     _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
-    _freshness = new(_sync);
   }
 
-  public IDisposable Subscribe(IExcelObserver observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<Object?[,]>> observer,
+    CancellationToken token) {
     lock (_sync) {
-      var wrappedObserver = new ExcelObserverWrapper(observer);
-      _observers.AddAndNotify(wrappedObserver, _rendered, out var isFirst);
+      _observers.AddAndNotify(observer, token, _rendered, out var isFirst);
 
       if (isFirst) {
         if (_tableQuad.EndpointId != null) {
           _stateManager.EnsureConfig(_tableQuad.EndpointId);
         }
-        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
+        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this,
+          _upstreamTokenSource.Token);
       }
 
-      return ActionAsDisposable.Create(() => RemoveObserver(wrappedObserver));
+      return ActionAsDisposable.Create(() => RemoveObserver(observer));
     }
   }
 
@@ -53,14 +54,24 @@ internal class SubscribeOperation : IExcelObservable,
         return;
       }
 
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamDisposer);
       StatusOrUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle) {
+  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle,
+    CancellationToken token) {
     lock (_sync) {
-      var token = _freshness.Refresh();
+      if (token.IsCancellationRequested) {
+        return;
+      }
+
+      _backgroundTokenSource.Cancel();
+      _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
+
       StatusOrUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
 
       if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
@@ -72,20 +83,21 @@ internal class SubscribeOperation : IExcelObservable,
       StatusOrUtil.ReplaceAndNotify(ref _rendered, message, _observers);
 
       var thShare = th.Share();
+      var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         using var cleanup = thShare;
-        SubscribeInBackground(thShare, token);
+        SubscribeInBackground(thShare, backgroundToken);
       });
     }
   }
 
   private void SubscribeInBackground(RefCounted<TableHandle> tableHandle,
-    FreshnessToken token) {
+    CancellationToken token) {
     RefCounted<IDisposable>? subRef = null;
     StatusOr<RefCounted<IDisposable>> result;
     try {
-      var fobs = new ObserverFreshnessFilter<TickingUpdate>(this, token);
-      var disposer = tableHandle.Value.Subscribe(fobs);
+      var sobs = new SubscriptionObserver(this, zamboniToken, 666);
+      var disposer = tableHandle.Value.Subscribe(sobs);
       // Hang on to the disposer, with a dependency on the tableHandle
       subRef = RefCounted.Acquire(disposer, tableHandle);
       result = subRef;
@@ -96,7 +108,7 @@ internal class SubscribeOperation : IExcelObservable,
     using var cleanup = subRef;
 
     lock (_sync) {
-      if (!token.IsCurrent) {
+      if (token.IsCancellationRequested) {
         return;
       }
       StatusOrUtil.Replace(ref _tickingSubscription, result);

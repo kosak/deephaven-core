@@ -4,7 +4,6 @@ using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
-using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
@@ -16,7 +15,8 @@ internal class SnapshotOperation :
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private StatusOr<object?[,]> _rendered = UnsetTableData;
@@ -25,21 +25,20 @@ internal class SnapshotOperation :
     _tableQuad = tableQuad;
     _wantHeaders = wantHeaders;
     _stateManager = stateManager;
-    _freshness = new(_sync);
   }
 
-  public IDisposable Subscribe(IExcelObserver observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<Object?[,]>> observer) {
     lock (_sync) {
-      var wrappedObserver = new ExcelObserverWrapper(observer);
-      _observers.AddAndNotify(wrappedObserver, _rendered, out var isFirst);
+      _observers.AddAndNotify(observer, _rendered, out var isFirst);
 
       if (isFirst) {
         if (_tableQuad.EndpointId != null) {
           _stateManager.EnsureConfig(_tableQuad.EndpointId);
         }
-        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, this);
+        var cvo = CancelableValueObserver(this, _sync, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, cvo);
       }
-      return ActionAsDisposable.Create(() => RemoveObserver(wrappedObserver));
+      return ActionAsDisposable.Create(() => RemoveObserver(observer));
     }
   }
 
@@ -50,15 +49,23 @@ internal class SnapshotOperation :
         return;
       }
 
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamDisposer);
       StatusOrUtil.Replace(ref _rendered, "[Disposed]");
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle) {
+  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle,
+    CancellationToken token) {
     lock (_sync) {
-      // Invalidate any outstanding background work
-      var token = _freshness.Refresh();
+      if (token.IsCancellationRequested) {
+        return;
+      }
+
+      _backgroundTokenSource.Cancel();
+      _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _rendered, status, _observers);
@@ -68,15 +75,16 @@ internal class SnapshotOperation :
       StatusOrUtil.ReplaceAndNotify(ref _rendered, "[Rendering]", _observers);
 
       var thShare = th.Share();
+      var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         using var cleanup = thShare;
-        OnNextBackground(thShare, token);
+        OnNextBackground(thShare, backgroundToken);
       });
     }
   }
 
   private void OnNextBackground(RefCounted<TableHandle> tableHandle,
-    FreshnessToken token) {
+    CancellationToken token) {
     StatusOr<object?[,]> newResult;
     try {
       // This is a server call that may take some time.
@@ -87,7 +95,7 @@ internal class SnapshotOperation :
     }
 
     lock (_sync) {
-      if (!token.IsCurrent) {
+      if (token.IsCancellationRequested) {
         return;
       }
       StatusOrUtil.ReplaceAndNotify(ref _rendered, newResult, _observers);
