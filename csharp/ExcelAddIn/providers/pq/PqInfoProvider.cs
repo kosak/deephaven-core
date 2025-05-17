@@ -5,7 +5,7 @@ using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class PersistentQueryInfoProvider :
+internal class PqInfoProvider :
   IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
   IValueObservable<StatusOr<PersistentQueryInfoMessage>>,
   IDisposable {
@@ -31,7 +31,7 @@ internal class PersistentQueryInfoProvider :
   /// </summary>
   private PersistentQueryInfoMessage? _lastMessage = new();
 
-  public PersistentQueryInfoProvider(StateManager stateManager,
+  public PqInfoProvider(StateManager stateManager,
     EndpointId endpointId, PqName pqName) {
     _stateManager = stateManager;
     _endpointId = endpointId;

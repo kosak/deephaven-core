@@ -6,7 +6,7 @@ using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal class PersistentQueryDictProvider :
+internal class PqDictProvider :
   IValueObserver<StatusOr<RefCounted<Subscription>>>,
   IValueObservable<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
   IDisposable {
@@ -21,7 +21,7 @@ internal class PersistentQueryDictProvider :
   private readonly ObserverContainer<StatusOr<SharableDict<PersistentQueryInfoMessage>>> _observers = new();
   private StatusOr<SharableDict<PersistentQueryInfoMessage>> _dict = UnsetDictText;
 
-  public PersistentQueryDictProvider(StateManager stateManager, EndpointId endpointId) {
+  public PqDictProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
     _freshness = new(_sync);
