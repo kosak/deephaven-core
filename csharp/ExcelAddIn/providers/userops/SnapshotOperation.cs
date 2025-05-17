@@ -1,5 +1,4 @@
-﻿using Deephaven.ExcelAddIn.ExcelDna;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
@@ -35,8 +34,8 @@ internal class SnapshotOperation :
         if (_tableQuad.EndpointId != null) {
           _stateManager.EnsureConfig(_tableQuad.EndpointId);
         }
-        var cvo = CancelableValueObserver(this, _sync, _upstreamTokenSource.Token);
-        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, cvo);
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, voc);
       }
       return ActionAsDisposable.Create(() => RemoveObserver(observer));
     }

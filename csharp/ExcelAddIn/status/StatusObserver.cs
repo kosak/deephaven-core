@@ -11,3 +11,18 @@ public interface IValueObserverWithCancel<in T> {
 public interface IValueObservable<out T> {
   IDisposable Subscribe(IValueObserver<T> observer);
 }
+
+public class ValueObserverWithCancelWrapper {
+  public static IValueObserver<T> Create<T>(IValueObserverWithCancel<T> wrapped,
+    CancellationToken token) {
+    return new ValueObserverWithCancelWrapper<T>(wrapped, token);
+  }
+}
+
+public class ValueObserverWithCancelWrapper<T>(IValueObserverWithCancel<T> wrapped,
+  CancellationToken token) : IValueObserver<T> {
+
+  public void OnNext(T value) {
+    wrapped.OnNext(value, token);
+  }
+}
