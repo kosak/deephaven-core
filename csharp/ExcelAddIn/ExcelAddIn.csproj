@@ -21,6 +21,9 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\client\ManagedClient\ManagedClient.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="operations\" />
+	</ItemGroup>
 
 	<PropertyGroup>
 		<ExcelDnaCreate32BitAddIn>false</ExcelDnaCreate32BitAddIn>
