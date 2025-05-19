@@ -18,7 +18,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class FilteredTableProvider :
   IValueObserver<StatusOr<RefCounted<TableHandle>>>,
   // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
-  // IDisposable
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Filtered Table]";
 
@@ -65,6 +64,7 @@ internal class FilteredTableProvider :
 
   public void Dispose() {
     lock (_sync) {
+      blah666;
       if (!_isDisposed.TrySet()) {
         return;
       }

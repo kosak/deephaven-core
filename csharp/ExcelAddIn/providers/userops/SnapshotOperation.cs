@@ -52,7 +52,7 @@ internal class SnapshotOperation :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _rendered, "[Disposed]");
+      StatusOrUtil.Replace(ref _rendered, UnsetTableData);
     }
   }
 

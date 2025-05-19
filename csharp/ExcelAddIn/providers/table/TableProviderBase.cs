@@ -3,5 +3,4 @@ using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
-internal interface ITableProviderBase : IValueObservable<StatusOr<RefCounted<TableHandle>>>,
-  IDisposable;
+internal interface ITableProviderBase : IValueObservable<StatusOr<RefCounted<TableHandle>>>;
