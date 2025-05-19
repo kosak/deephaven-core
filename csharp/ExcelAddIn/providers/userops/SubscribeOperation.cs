@@ -1,13 +1,13 @@
 ﻿using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Operations;
 
-internal class SubscribeOperation : 
+internal class SubscribeOperation :
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
+  IObserverWithCancel<TickingUpdate>,
   IValueObservable<StatusOr<object?[,]>> {
   private const string UnsetTableData = "[No data]";
   private const string UnsetTickingSubscription = "[no ticking subscription]";
@@ -93,12 +93,12 @@ internal class SubscribeOperation :
     RefCounted<IDisposable>? subRef = null;
     StatusOr<RefCounted<IDisposable>> result;
 
-    TickingUpdateObserver tuo;
+    IObserver<TickingUpdate> tuo;
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
       }
-      tuo = new TickingUpdateObserver(this, _upstreamTokenSource.Token);
+      tuo = ObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
     }
 
     try {
@@ -120,39 +120,40 @@ internal class SubscribeOperation :
     }
   }
 
-  private class TickingUpdateObserver : IObserver<TickingUpdate> {
-    private readonly SubscribeOperation _owner;
-    private readonly CancellationToken _token;
-
-    public TickingUpdateObserver(SubscribeOperation owner, CancellationToken token) {
-      _owner = owner;
-      _token = token;
-    }
-
-    public void OnNext(TickingUpdate update) {
-      lock (_owner._sync) {
-        StatusOr<object?[,]> results;
-        try {
-          // When we fix the subscription API we will do this on a separate thread
-          results = Renderer.Render(update.Current, _owner._wantHeaders);
-          StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
-        } catch (Exception e) {
-          results = e.Message;
-        }
+  public void OnNext(TickingUpdate update, CancellationToken token) {
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
+      }
+      StatusOr<object?[,]> results;
+      try {
+        // TODO(kosak): fix the subscription API to do an Immer-like sharing
+        // data structure, then render this on a separate thread rather than blocking
+        // the callback thread while you render.
+        results = Renderer.Render(update.Current, _wantHeaders);
         StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+      } catch (Exception e) {
+        results = e.Message;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
     }
+  }
 
-    public void OnError(Exception ex) {
-      lock (_sync) {
-        StatusOrUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
+  public void OnError(Exception ex, CancellationToken token) {
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
     }
+  }
 
-    public void OnCompleted() {
-      lock (_sync) {
-        StatusOrUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
+  public void OnCompleted(CancellationToken token) {
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
     }
   }
 }
