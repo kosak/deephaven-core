@@ -1,10 +1,9 @@
 ﻿using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
-namespace Deephaven.ExcelAddIn.Operations;
+namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SnapshotOperation : 
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,

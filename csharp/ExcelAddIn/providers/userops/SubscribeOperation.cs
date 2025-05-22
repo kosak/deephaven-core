@@ -3,7 +3,7 @@ using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
-namespace Deephaven.ExcelAddIn.Operations;
+namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SubscribeOperation :
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,

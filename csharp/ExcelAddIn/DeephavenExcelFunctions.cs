@@ -2,7 +2,7 @@
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Operations;
+using Deephaven.ExcelAddIn.Providers;
 using ExcelDna.Integration;
 
 namespace Deephaven.ExcelAddIn;
@@ -50,7 +50,10 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
-    ExcelObservableSource eos = () => new SnapshotOperation(tq, wh, StateManager);
+    ExcelObservableSource eos = () => {
+      var op = new SnapshotOperation(tq, wh, StateManager);
+      return new ExcelOperation(op);
+    };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
@@ -62,7 +65,10 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
-    ExcelObservableSource eos = () => new SubscribeOperation(tq, wh, StateManager);
+    ExcelObservableSource eos = () => {
+      var op = new SubscribeOperation(tq, wh, StateManager);
+      return new ExcelOperation(op);
+    };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
