@@ -3,15 +3,15 @@ using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CorePlusClientProvider :
-  IValueObserver<StatusOr<RefCounted<SessionManager>>>,
-  IValueObserver<StatusOr<PersistentQueryInfoMessage>>,
-  IValueObservable<StatusOr<RefCounted<DndClient>>>,
-  IDisposable {
+  IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
+  IValueObserverWithCancel<StatusOr<PersistentQueryInfoMessage>>,
+  IValueObservable<StatusOr<RefCounted<DndClient>>> {
   private const string UnsetClientText = "[No Core+ Client]";
   private const string UnsetSessionManagerText = "[No Session Manager]";
   private const string UnsetPqInfoText = "[No PQ Info]";
@@ -19,9 +19,8 @@ internal class CorePlusClientProvider :
   private readonly EndpointId _endpointId;
   private readonly PqName _pqName;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
-  private readonly Latch _subscribeDone = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _sessionManagerDisposer = null;
   private IDisposable? _pqInfoDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<DndClient>>> _observers = new();
@@ -34,7 +33,6 @@ internal class CorePlusClientProvider :
     _stateManager = stateManager;
     _endpointId = endpointId;
     _pqName = pqName;
-    _freshness = new(_sync);
   }
 
   /// <summary>
@@ -42,38 +40,46 @@ internal class CorePlusClientProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out _);
-      if (_subscribeDone.TrySet()) {
-        _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
-        _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, this);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out var isFirst);
+
+      if (isFirst) {
+        var voc1 = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<SessionManager>>>(
+          this, _upstreamTokenSource.Token);
+        var voc2 = ValueObserverWithCancelWrapper.Create<StatusOr<PersistentQueryInfoMessage>>(
+          this, _upstreamTokenSource.Token);
+
+        _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, voc1);
+        _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, voc2);
       }
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _sessionManagerDisposer);
       Utility.ClearAndDispose(ref _pqInfoDisposer);
 
       // Release our Deephaven resource asynchronously.
-      StatusOrUtil.Replace(ref _sessionManager, "[Disposed]");
-      _pqInfo = "[Disposed]";
-      StatusOrUtil.Replace(ref _client, "[Disposed]");
+      StatusOrUtil.Replace(ref _sessionManager, UnsetSessionManagerText);
+      StatusOrUtil.Replace(ref _pqInfo, UnsetPqInfoText);
+      StatusOrUtil.Replace(ref _client, UnsetClientText);
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager) {
+  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager,
+    CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
       StatusOrUtil.Replace(ref _sessionManager, sessionManager);
@@ -81,9 +87,10 @@ internal class CorePlusClientProvider :
     }
   }
 
-  public void OnNext(StatusOr<PersistentQueryInfoMessage> pqInfo) {
+  public void OnNext(StatusOr<PersistentQueryInfoMessage> pqInfo,
+    CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
       _pqInfo = pqInfo;
@@ -93,7 +100,8 @@ internal class CorePlusClientProvider :
 
   private void UpdateStateLocked() {
     // Invalidate any background work that might be running.
-    var token = _freshness.Refresh();
+    _backgroundTokenSource.Cancel();
+    _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
     // Do we have a session and a PQInfo?
     if (!_sessionManager.GetValueOrStatus(out var sm, out var status) || 
@@ -109,15 +117,18 @@ internal class CorePlusClientProvider :
       return;
     }
 
+    // RefCounted item gets acquired on this thread.
     var smShared = sm.Share();
+    var backgroundToken = _backgroundTokenSource.Token;
     Background.Run(() => {
+      // RefCounted item gets released on this thread.
       using var cleanup = smShared;
-      UpdateStateInBackground(smShared, pq, token);
+      UpdateStateInBackground(smShared, pq, backgroundToken);
     });
   }
 
   private void UpdateStateInBackground(RefCounted<SessionManager> sm,
-    PersistentQueryInfoMessage pq, FreshnessToken token) {
+    PersistentQueryInfoMessage pq, CancellationToken token) {
     RefCounted<DndClient>? newRef = null;
     StatusOr<RefCounted<DndClient>> newState;
     try {
@@ -131,7 +142,7 @@ internal class CorePlusClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (!token.IsCurrent) {
+      if (token.IsCancellationRequested) {
         return;
       }
       StatusOrUtil.ReplaceAndNotify(ref _client, newState, _observers);

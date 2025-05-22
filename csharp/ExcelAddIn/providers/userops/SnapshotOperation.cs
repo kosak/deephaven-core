@@ -74,9 +74,11 @@ internal class SnapshotOperation :
 
       StatusOrUtil.ReplaceAndNotify(ref _rendered, "[Rendering]", _observers);
 
+      // RefCounted item gets acquired on this thread.
       var thShare = th.Share();
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
+        // RefCounted item gets released on this thread.
         using var cleanup = thShare;
         OnNextBackground(thShare, backgroundToken);
       });
