@@ -16,7 +16,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  * the resulting filtered TableHandle (or error) to my observers.
  */
 internal class FilteredTableProvider :
-  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
+  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Filtered Table]";
@@ -27,9 +27,8 @@ internal class FilteredTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshnessSource;
-  private readonly Latch _subscribeDone = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
@@ -41,46 +40,46 @@ internal class FilteredTableProvider :
     _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
-    _freshnessSource = new(_sync);
   }
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle, out _);
-      if (_subscribeDone.TrySet()) {
-        // Subscribe to parent at the first-ever subscribe
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle,
+        out var isFirst);
+      if (isFirst) {
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
-        Debug.WriteLine($"FilteredTableProvider is subscribing to TableHandle with {tq}");
-        _upstreamDisposer = _stateManager.SubscribeToTable(tq, this);
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToTable(tq, voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      blah666;
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _filteredTableHandle, "[Disposed");
+      StatusOrUtil.Replace(ref _filteredTableHandle, UnsetTableHandleText);
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle) {
+  public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
 
-      // Invalidate any outstanding background work
-      var token = _freshnessSource.Refresh();
+      // Invalidate any background work that might be running.
+      _backgroundTokenSource.Cancel();
+      _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!parentHandle.GetValueOrStatus(out var ph, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
@@ -88,16 +87,20 @@ internal class FilteredTableProvider :
       }
 
       StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, "Filtering", _observers);
+
+      // RefCounted item gets acquired on this thread.
       var phShare = ph.Share();
+      var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
+        // RefCounted item gets released on this thread.
         using var cleanup = phShare;
-        OnNextBackground(phShare, token);
+        OnNextBackground(phShare, backgroundToken);
       });
     }
   }
 
   private void OnNextBackground(RefCounted<TableHandle> parentHandle,
-    FreshnessToken token) {
+    CancellationToken token) {
     RefCounted<TableHandle>? newRef = null;
     StatusOr<RefCounted<TableHandle>> newResult;
     try {
@@ -115,9 +118,10 @@ internal class FilteredTableProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (token.IsCurrent) {
-        StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
+      if (token.IsCancellationRequested) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
     }
   }
 }
