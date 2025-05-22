@@ -7,15 +7,13 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PqSubscriptionProvider :
-  IValueObserver<StatusOr<RefCounted<SessionManager>>>,
-  IValueObservable<StatusOr<RefCounted<Subscription>>>,
-  IDisposable {
+  IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
+  IValueObservable<StatusOr<RefCounted<Subscription>>> {
   private const string UnsetSubText = "[No Subscription]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly Latch _isSubscribed = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<Subscription>>> _observers = new();
   private StatusOr<RefCounted<Subscription>> _subscription = UnsetSubText;
@@ -27,8 +25,9 @@ internal class PqSubscriptionProvider :
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _subscription, out _);
-      if (_isSubscribed.TrySet()) {
+      _observers.AddAndNotify(observer, _subscription, out var isFirst);
+
+      if (isFirst) {
         _upstreamDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
       }
     }
