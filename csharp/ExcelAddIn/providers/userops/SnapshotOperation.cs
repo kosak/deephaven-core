@@ -37,8 +37,9 @@ internal class SnapshotOperation :
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
         _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, voc);
       }
-      return ActionAsDisposable.Create(() => RemoveObserver(observer));
     }
+
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<object?[,]>> observer) {

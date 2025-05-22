@@ -47,8 +47,9 @@ internal class PqInfoProvider :
         _upstreamDisposer = _stateManager.SubscribeToPersistentQueryDict(
           _endpointId, voc);
       }
-      return ActionAsDisposable.Create(() => RemoveObserver(observer));
     }
+
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {

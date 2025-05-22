@@ -28,7 +28,8 @@ internal class PqSubscriptionProvider :
       _observers.AddAndNotify(observer, _subscription, out var isFirst);
 
       if (isFirst) {
-        _upstreamDisposer = _stateManager.SubscribeToSessionManager(_endpointId, this);
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToSessionManager(_endpointId, voc);
       }
     }
 
@@ -37,23 +38,23 @@ internal class PqSubscriptionProvider :
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
     lock (_sync) {
-      _observers.Remove(observer, out _);
-    }
-  }
-
-  public void Dispose() {
-    lock (_sync) {
-      if (_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _subscription, "[Disposing]");
+      StatusOrUtil.Replace(ref _subscription, UnsetSubText);
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager) {
+  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager,
+    CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
       if (!sessionManager.GetValueOrStatus(out var smRef, out var status)) {

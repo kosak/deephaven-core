@@ -14,16 +14,14 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// corresponding SessionManager object. Otherwise we notify an error.
 /// </summary>
 internal class SessionManagerProvider :
-  IValueObserver<StatusOr<EndpointConfigBase>>,
-  IValueObservable<StatusOr<RefCounted<SessionManager>>>,
-  IDisposable {
+  IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
+  IValueObservable<StatusOr<RefCounted<SessionManager>>> {
   private const string UnsetSessionManagerText = "[No SessionManager]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
-  private readonly Latch _isSubscribed = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<SessionManager>>> _observers = new();
   private StatusOr<RefCounted<SessionManager>> _session = UnsetSessionManagerText;
@@ -31,7 +29,6 @@ internal class SessionManagerProvider :
   public SessionManagerProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _freshness = new(_sync);
   }
 
   /// <summary>
@@ -39,38 +36,41 @@ internal class SessionManagerProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _session, out _);
-      if (_isSubscribed.TrySet()) {
-        _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+      _observers.AddAndNotify(observer, _session, out var isFirst);
+
+      if (isFirst) {
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _session, "[Disposed]");
+      StatusOrUtil.Replace(ref _session, UnsetSessionManagerText);
     }
   }
 
-  public void OnNext(StatusOr<EndpointConfigBase> credentials) {
+  public void OnNext(StatusOr<EndpointConfigBase> credentials, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
 
-      // Suppress background messages that might come in after this point.
-      var token = _freshness.Refresh();
+      // Invalidate any background work that might be running.
+      _backgroundTokenSource.Cancel();
+      _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _session, status, _observers);
@@ -91,13 +91,14 @@ internal class SessionManagerProvider :
         },
         corePlus => {
           StatusOrUtil.ReplaceAndNotify(ref _session, "Trying to connect", _observers);
-          Background.Run(() => OnNextBackground(corePlus, token));
+          var backgroundToken = _backgroundTokenSource.Token;
+          Background.Run(() => OnNextBackground(corePlus, backgroundToken));
           return Unit.Instance;
         });
     }
   }
 
-  private void OnNextBackground(CorePlusEndpointConfig config, FreshnessToken token) {
+  private void OnNextBackground(CorePlusEndpointConfig config, CancellationToken token) {
     RefCounted<SessionManager>? smRef = null;
     StatusOr<RefCounted<SessionManager>> result;
     try {
@@ -110,9 +111,10 @@ internal class SessionManagerProvider :
     using var cleanup = smRef;
 
     lock (_sync) {
-      if (!_isDisposed.Value && token.IsCurrent) {
-        StatusOrUtil.ReplaceAndNotify(ref _session, result, _observers);
+      if (token.IsCancellationRequested) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _session, result, _observers);
     }
   }
 }
