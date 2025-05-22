@@ -149,7 +149,7 @@ public class StateManager {
     // Now make a dispose action, which needs to
     // 1. If called more than once, do nothing on subsequent calls
     // 2. If the reference count hits zero, remove from the dictionary
-    // 3. Call "disposer" to unsubscribe the observable
+    // 3. Call disposer.Dispose()
 
     var isDisposed = false;
     return ActionAsDisposable.Create(() => {
