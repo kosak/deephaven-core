@@ -58,6 +58,7 @@ internal class ExcelOperation :
         var whichError = status.IsState ?
           ExcelError.ExcelErrorNA : ExcelError.ExcelErrorGettingData;
         _rendered = new object[,] { { whichError } };
+        var text = status.Text;
       } else {
         _rendered = d;
       }
