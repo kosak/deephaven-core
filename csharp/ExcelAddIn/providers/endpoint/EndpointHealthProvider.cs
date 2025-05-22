@@ -17,25 +17,23 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// Observes the EndpointConfig. When a valid EndpointConfig is received, observes
 /// the appropriate CoreClientProvider or CorePlusSessionProvider.
 /// When those things provide responses, translate them to ConnectionHealth messages.
-/// We use StatusOr&lt; ConnectionHealth & gt; . A healthy connection sends a StatusOr
+/// We use StatusOr&lt;ConnectionHealth&gt; . A healthy connection sends a StatusOr
 /// with value set to ConnectionHealth (this is an object without any members). On the
 /// other hand, an unhealthy connection sends a StatusOr with the status text sent to
 /// whatever status text was received from upstream.
 /// </summary>
 internal class EndpointHealthProvider :
-  IValueObserver<StatusOr<EndpointConfigBase>>,
-  IValueObserver<StatusOr<RefCounted<Client>>>,
-  IValueObserver<StatusOr<RefCounted<SessionManager>>>,
-  IValueObservable<StatusOr<EndpointHealth>>,
-  IDisposable {
+  IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
+  IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
+  IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
+  IValueObservable<StatusOr<EndpointHealth>> {
   private const string UnsetHealthString = "[No Config]";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
-  private readonly Latch _isSubscribed = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _clientOrSessionTokenSource = new();
   private IDisposable? _upstreamConfigDisposer = null;
   private IDisposable? _upstreamClientOrSessionDisposer = null;
   private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
@@ -44,7 +42,6 @@ internal class EndpointHealthProvider :
   public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _freshness = new(_sync);
   }
 
   /// <summary>
@@ -52,38 +49,44 @@ internal class EndpointHealthProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<EndpointHealth>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out _);
-      if (_isSubscribed.TrySet()) {
-        _upstreamConfigDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out var isFirst);
+
+      if (isFirst) {
+        var voc = ValueObserverWithCancelWrapper.Create<StatusOr<EndpointConfigBase>>(
+          this, _upstreamTokenSource.Token);
+        _upstreamConfigDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<EndpointHealth>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamConfigDisposer);
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
-      StatusOrUtil.Replace(ref _endpointHealth, "[Disposed]");
+      StatusOrUtil.Replace(ref _endpointHealth, UnsetHealthString);
     }
   }
 
-  public void OnNext(StatusOr<EndpointConfigBase> credentials) {
+  public void OnNext(StatusOr<EndpointConfigBase> credentials, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
 
-      var token = _freshness.Refresh();
+      // Invalidate inflight clientOrSession messages and unsubscribe
+      _clientOrSessionTokenSource.Cancel();
+      _clientOrSessionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+        _upstreamTokenSource.Token);
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
 
       if (!credentials.GetValueOrStatus(out var creds, out var status)) {
@@ -95,35 +98,37 @@ internal class EndpointHealthProvider :
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
+
       _upstreamClientOrSessionDisposer = creds.AcceptVisitor<IDisposable?>(
         (EmptyEndpointConfig _) => {
           StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, UnsetHealthString, _observers);
           return null;
         },
         (CoreEndpointConfig _) => {
-          var fobs = new ValueObserverFreshnessFilter<StatusOr<RefCounted<Client>>>(
-            this, token);
-          return _stateManager.SubscribeToCoreClient(_endpointId, fobs);
+          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<Client>>>(
+            this, _upstreamTokenSource.Token);
+          return _stateManager.SubscribeToCoreClient(_endpointId, voc);
         },
         (CorePlusEndpointConfig _) => {
-          var fobs = new ValueObserverFreshnessFilter<StatusOr<RefCounted<SessionManager>>>(
-            this, token);
-          return _stateManager.SubscribeToSessionManager(_endpointId, fobs);
+          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<SessionManager>>>(
+            this, _upstreamTokenSource.Token);
+          return _stateManager.SubscribeToSessionManager(_endpointId, voc);
         });
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<Client>> client) {
-    OnNextHelper(client);
+  public void OnNext(StatusOr<RefCounted<Client>> client, CancellationToken token) {
+    OnNextHelper(client, token);
   }
 
-  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager) {
-    OnNextHelper(sessionManager);
+  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager,
+    CancellationToken token) {
+    OnNextHelper(sessionManager, token);
   }
 
-  private void OnNextHelper<T>(StatusOr<T> statusOr) {
+  private void OnNextHelper<T>(StatusOr<T> statusOr, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
       StatusOr<EndpointHealth> result;
