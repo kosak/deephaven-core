@@ -31,7 +31,7 @@ internal class EndpointConfigDialogState :
   private readonly EndpointDialogViewModel _cvm;
   private readonly EndpointId? _whitelistId;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
+  private CancellationTokenSource _backgroundToken = new();
   private SharableDict<EndpointConfigBase> _endpointDict;
   private IDisposable? _disposer;
 
@@ -44,7 +44,6 @@ internal class EndpointConfigDialogState :
     _configDialog = configDialog;
     _cvm = cvm;
     _whitelistId = whitelistId;
-    _freshness = new(_sync);
     _disposer = stateManager.SubscribeToEndpointDict(this);
   }
 
@@ -94,13 +93,18 @@ internal class EndpointConfigDialogState :
       return;
     }
 
+    _backgroundToken.Cancel();
+    _backgroundToken = new CancellationTokenSource();
+
     _configDialog.SetTestResultsBox("Checking credentials");
+
     // Check credentials on its own thread
-    var token = _freshness.Refresh();
+    var token = _backgroundToken.Token;
     Background.Run(() => TestCredentialsBackground(newCreds, token));
   }
 
-  private void TestCredentialsBackground(PopulatedEndpointConfig config, FreshnessToken token) {
+  private void TestCredentialsBackground(PopulatedEndpointConfig config,
+    CancellationToken token) {
     var state = "OK";
     try {
       // This operation might take some time.
@@ -112,9 +116,12 @@ internal class EndpointConfigDialogState :
       state = ex.Message;
     }
 
-    token.InvokeUnderLockIfCurrent(() => {
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
+      }
       _configDialog.SetTestResultsBox(state);
-    });
+    }
   }
 
   private void ShowMessageBox(string error) {

@@ -3,7 +3,7 @@ using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Factories;
-using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
@@ -15,7 +15,8 @@ namespace Deephaven.ExcelAddIn.Managers;
 /// This should not be confused with EndpointManagerDialogRowManager, which is the
 /// Manager for the EndpointManagerDialogRow.
 /// </summary>
-internal class EndpointManagerDialogManager : IValueObserver<SharableDict<EndpointConfigBase>>,
+internal class EndpointManagerDialogManager :
+  IValueObserverWithCancel<SharableDict<EndpointConfigBase>>,
   IDisposable {
   public static EndpointManagerDialogManager Create(StateManager stateManager,
     EndpointManagerDialog cmDialog) {
