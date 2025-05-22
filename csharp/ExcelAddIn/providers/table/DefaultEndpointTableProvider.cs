@@ -12,10 +12,9 @@ namespace Deephaven.ExcelAddIn.Providers;
  * TableHandles or status messages, forward those to my observers.
  */
 internal class DefaultEndpointTableProvider :
-  IValueObserver<StatusOr<EndpointId>>,
-  IValueObserver<StatusOr<RefCounted<TableHandle>>>,
-  // IValueObserver<StatusOr<TableHandle>>,
-  // IDisposable,
+  IValueObserverWithCancel<StatusOr<EndpointId>>,
+  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
+  // IValueObservable<StatusOr<RefCounted<TableHandle>>>
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Default Connection]";
 
@@ -24,11 +23,10 @@ internal class DefaultEndpointTableProvider :
   private readonly string _tableName;
   private readonly string _condition;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
-  private readonly Latch _subscribeDone = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _endpointTokenSource = new();
+  private CancellationTokenSource _tableHandleTokenSource = new();
   private IDisposable? _endpointSubscriptionDisposer = null;
-  private IDisposable? _upstreamSubscriptionDisposer = null;
+  private IDisposable? _tableHandleSubscriptionDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
@@ -38,61 +36,70 @@ internal class DefaultEndpointTableProvider :
     _pqName = pqName;
     _tableName = tableName;
     _condition = condition;
-    _freshness = new(_sync);
   }
 
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out _);
-      if (_subscribeDone.TrySet()) {
-        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpoint(this);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out var isFirst);
+
+      if (isFirst) {
+        var voc = ValueObserverWithCancelWrapper.Create<StatusOr<EndpointId>>(
+          this, _endpointTokenSource.Token);
+        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpoint(voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _endpointTokenSource.Cancel();
+      _endpointTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
-      Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
+      Utility.ClearAndDispose(ref _tableHandleSubscriptionDisposer);
       StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
     }
   }
 
-  public void OnNext(StatusOr<EndpointId> endpointId) {
+  public void OnNext(StatusOr<EndpointId> endpointId, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
-      // Unsubscribe from old upstream
-      Utility.ClearAndDispose(ref _upstreamSubscriptionDisposer);
+
+      // Invalidate any inflight TableHandle notifications
+      _tableHandleTokenSource.Cancel();
+      _tableHandleTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+        _endpointTokenSource.Token);
+
+      // Unsubscribe from old upstream TableHandle
+      Utility.ClearAndDispose(ref _tableHandleSubscriptionDisposer);
       // Suppress any notifications from the old subscription, which will now be stale
-      var token = _freshness.Refresh();
 
       if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
         return;
       }
 
-      // Subscribe to a new upstream
+      // Subscribe to a new upstream TableProvide
       var tq = new TableQuad(ep, _pqName, _tableName, _condition);
-      var fobs = new ValueObserverFreshnessFilter<StatusOr<RefCounted<TableHandle>>>(
-        this, token);
-      _upstreamSubscriptionDisposer = _stateManager.SubscribeToTable(tq, fobs);
+      var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<TableHandle>>>(
+        this, _tableHandleTokenSource.Token);
+      _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, voc);
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> value) {
+  public void OnNext(StatusOr<RefCounted<TableHandle>> value,
+    CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
       StatusOrUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);
