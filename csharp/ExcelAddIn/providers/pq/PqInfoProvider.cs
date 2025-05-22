@@ -6,24 +6,24 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PqInfoProvider :
-  IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
-  IValueObservable<StatusOr<PersistentQueryInfoMessage>>,
-  IDisposable {
+  IValueObserverWithCancel<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
+  IValueObservable<StatusOr<PersistentQueryInfoMessage>> {
   private const string UnsetPqText = "[No Persistent Query]";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly PqName _pqName;
   private readonly object _sync = new();
-  private readonly Latch _isSubscribed = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<PersistentQueryInfoMessage>> _observers = new();
   private StatusOr<PersistentQueryInfoMessage> _infoMessage = UnsetPqText;
+
   /// <summary>
   /// Cached value of the last named lookup. Is only a hint so it's ok if it is some garbage value.
   /// </summary>
   private Int64 _keyHint = -1;
+
   private SharableDict<PersistentQueryInfoMessage> _prevDict = SharableDict<PersistentQueryInfoMessage>.Empty;
 
   /// <summary>
@@ -40,33 +40,36 @@ internal class PqInfoProvider :
 
   public IDisposable Subscribe(IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _infoMessage, out _);
-      if (_isSubscribed.TrySet()) {
-        _upstreamDisposer = _stateManager.SubscribeToPersistentQueryDict(
-          _endpointId, this);
-      }
-    }
+      _observers.AddAndNotify(observer, _infoMessage, out var isFirst);
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
+      if (isFirst) {
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToPersistentQueryDict(
+          _endpointId, voc);
       }
-    });
+      return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    }
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _infoMessage, "[Disposing]");
+      StatusOrUtil.Replace(ref _infoMessage, UnsetPqText);
     }
   }
 
-  public void OnNext(StatusOr<SharableDict<PersistentQueryInfoMessage>> dict) {
+  public void OnNext(StatusOr<SharableDict<PersistentQueryInfoMessage>> dict,
+    CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
 
@@ -88,7 +91,8 @@ internal class PqInfoProvider :
         var combined = added.Concat(modified);
         var kvp = combined.FirstOrDefault(kvp => kvp.Value.Config.Name == _pqName.Name);
 
-        // Save the keyhint for next time (it will either be an accurate hint or a zero)
+        // Save the keyhint for next time (it will either be an accurate hint or a zero).
+        // Incorrect hints are not a problem.
         _keyHint = kvp.Key;
         message = kvp.Value;
       }
