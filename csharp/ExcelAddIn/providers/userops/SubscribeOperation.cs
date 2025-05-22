@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using System;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -76,8 +77,8 @@ internal class SubscribeOperation :
         return;
       }
 
-      var message = $"Subscribing to \"{_tableQuad.TableName}\"";
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, message, _observers);
+      var progress = StatusOr<object?[,]>.OfProgress($"Subscribing to \"{_tableQuad.TableName}\"");
+      StatusOrUtil.ReplaceAndNotify(ref _rendered, progress, _observers);
 
       var thShare = th.Share();
       var backgroundToken = _backgroundTokenSource.Token;

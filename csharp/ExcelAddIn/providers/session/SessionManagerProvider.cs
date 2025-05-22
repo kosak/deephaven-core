@@ -90,7 +90,8 @@ internal class SessionManagerProvider :
           return Unit.Instance;
         },
         corePlus => {
-          StatusOrUtil.ReplaceAndNotify(ref _session, "Trying to connect", _observers);
+          var progress = StatusOr<RefCounted<SessionManager>>.OfProgress("Trying to connect");
+          StatusOrUtil.ReplaceAndNotify(ref _session, progress, _observers);
           var backgroundToken = _backgroundTokenSource.Token;
           Background.Run(() => OnNextBackground(corePlus, backgroundToken));
           return Unit.Instance;
