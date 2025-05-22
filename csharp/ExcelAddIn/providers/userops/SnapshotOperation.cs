@@ -26,7 +26,7 @@ internal class SnapshotOperation :
     _stateManager = stateManager;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<Object?[,]>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _rendered, out var isFirst);
 
@@ -41,9 +41,9 @@ internal class SnapshotOperation :
     }
   }
 
-  private void RemoveObserver(IValueObserver<StatusOr<object?[,]>> wrappedObserver) {
+  private void RemoveObserver(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
-      _observers.Remove(wrappedObserver, out var wasLast);
+      _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
         return;
       }
@@ -63,6 +63,7 @@ internal class SnapshotOperation :
         return;
       }
 
+      // Invalidate any background work that might be running.
       _backgroundTokenSource.Cancel();
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 

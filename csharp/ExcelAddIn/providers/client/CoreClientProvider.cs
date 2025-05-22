@@ -14,16 +14,14 @@ namespace Deephaven.ExcelAddIn.Providers;
  * corresponding Client object. Otherwise we notify an error.
  */
 internal class CoreClientProvider :
-  IValueObserver<StatusOr<EndpointConfigBase>>,
-  IValueObservable<StatusOr<RefCounted<Client>>>,
-  IDisposable {
+  IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
+  IValueObservable<StatusOr<RefCounted<Client>>> {
   private const string UnsetClientText = "[No Community Core Client]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly FreshnessTokenSource _freshness;
-  private readonly Latch _subscribeDone = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
+  private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<Client>>> _observers = new();
   private StatusOr<RefCounted<Client>> _client = UnsetClientText;
@@ -31,7 +29,6 @@ internal class CoreClientProvider :
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
     _endpointId = endpointId;
-    _freshness = new(_sync);
   }
 
   /// <summary>
@@ -39,38 +36,41 @@ internal class CoreClientProvider :
   /// </summary>
   public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out _);
-      if (_subscribeDone.TrySet()) {
-        // Subscribe to parent at the first-ever subscribe
-        _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, this);
+      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out var isFirst);
+
+      if (isFirst) {
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamDisposer = _stateManager.SubscribeToEndpointConfig(_endpointId, voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _client, "[Disposing]");
+      StatusOrUtil.Replace(ref _client, UnsetClientText);
     }
   }
 
-  public void OnNext(StatusOr<EndpointConfigBase> config) {
+  public void OnNext(StatusOr<EndpointConfigBase> config, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
 
       // Invalidate any background work that might be running.
-      var token = _freshness.Refresh();
+      _backgroundTokenSource.Cancel();
+      _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!config.GetValueOrStatus(out var ecb, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _client, status, _observers);
@@ -84,7 +84,8 @@ internal class CoreClientProvider :
         },
         core => {
           StatusOrUtil.ReplaceAndNotify(ref _client, "Trying to connect", _observers);
-          Background.Run(() => OnNextBackground(core, token));
+          var backgroundToken = _backgroundTokenSource.Token;
+          Background.Run(() => OnNextBackground(core, backgroundToken));
           return Unit.Instance;  // have to return something
         },
         corePlus => {
@@ -96,7 +97,7 @@ internal class CoreClientProvider :
     }
   }
 
-  private void OnNextBackground(CoreEndpointConfig config, FreshnessToken token) {
+  private void OnNextBackground(CoreEndpointConfig config, CancellationToken token) {
     RefCounted<Client>? newRef = null;
     StatusOr<RefCounted<Client>> result;
     try {
@@ -109,9 +110,10 @@ internal class CoreClientProvider :
     using var cleanup = newRef;
 
     lock (_sync) {
-      if (token.IsCurrent) {
-        StatusOrUtil.ReplaceAndNotify(ref _client, result, _observers);
+      if (token.IsCancellationRequested) {
+        return;
       }
+      StatusOrUtil.ReplaceAndNotify(ref _client, result, _observers);
     }
   }
 }

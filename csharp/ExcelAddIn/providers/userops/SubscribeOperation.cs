@@ -28,7 +28,7 @@ internal class SubscribeOperation :
     _stateManager = stateManager;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<Object?[,]>> observer) {
+  public IDisposable Subscribe(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _rendered, out var isFirst);
 
@@ -44,7 +44,7 @@ internal class SubscribeOperation :
     }
   }
 
-  private void RemoveObserver(IValueObserver<StatusOr<Object?[,]>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
