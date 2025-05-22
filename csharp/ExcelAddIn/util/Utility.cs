@@ -29,11 +29,10 @@ internal static class Utility {
   }
 
   public static T Exchange<T>(ref T location, T value) {
-    var result = location;
+    var oldValue = location;
     location = value;
-    return result;
+    return oldValue;
   }
-
 }
 
 public class Unit {

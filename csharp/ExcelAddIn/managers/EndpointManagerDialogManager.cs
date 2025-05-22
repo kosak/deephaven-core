@@ -16,7 +16,7 @@ namespace Deephaven.ExcelAddIn.Managers;
 /// Manager for the EndpointManagerDialogRow.
 /// </summary>
 internal class EndpointManagerDialogManager :
-  IValueObserverWithCancel<SharableDict<EndpointConfigBase>>,
+  IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
   public static EndpointManagerDialogManager Create(StateManager stateManager,
     EndpointManagerDialog cmDialog) {
@@ -33,7 +33,7 @@ internal class EndpointManagerDialogManager :
 
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
-  private readonly Latch _isDisposed = new();
+  private bool _isDisposed = false;
   private readonly EndpointManagerDialog _cmDialog;
   private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
   private readonly Dictionary<EndpointManagerDialogRow, EndpointManagerDialogRowManager> _rowToManager = new();
@@ -47,9 +47,10 @@ internal class EndpointManagerDialogManager :
 
   public void OnNext(SharableDict<EndpointConfigBase> dict) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (_isDisposed) {
         return;
       }
+
       // If there are modifies in the dict, we ignore them.
       // Modifies are handled by the existing EndpointManagerDialogRowManager for that row.
       var (adds, removes, modifies) = _prevDict.CalcDifference(dict);
@@ -85,9 +86,10 @@ internal class EndpointManagerDialogManager :
 
   public void Dispose() {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      if (Utility.Exchange(ref _isDisposed, true)) {
         return;
       }
+
       var temp = _rowToManager.Values.ToArray();
       _idToRow.Clear();
       _rowToManager.Clear();

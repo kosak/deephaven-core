@@ -137,16 +137,10 @@ public class StateManager {
     ReferenceCountingDict<TKey, TObservable> dict,
     TKey key, TObservable candidateObservable, IValueObserver<T> observer)
     where TKey : notnull
-    where TObservable : IValueObservable<T>, IDisposable {
+    where TObservable : IValueObservable<T> {
     TObservable actualObservable;
-    bool candidateAdded;
     lock (_sync) {
-      candidateAdded = dict.AddOrIncrement(key, candidateObservable, out actualObservable);
-    }
-
-    if (!candidateAdded) {
-      // If we didn't use 'candidateObservable', dispose it
-      candidateObservable.Dispose();
+      _ = dict.AddOrIncrement(key, candidateObservable, out actualObservable);
     }
 
     // Subscribe the observer to the (new or existing) observable
@@ -154,27 +148,21 @@ public class StateManager {
 
     // Now make a dispose action, which needs to
     // 1. If called more than once, do nothing on subsequent calls
-    // 2. Otherwise, call "disposer" to unsubscribe the observable
-    // 3. If the reference count hits zero, remove from the dictionary and dispse the observable
+    // 2. If the reference count hits zero, remove from the dictionary
+    // 3. Call "disposer" to unsubscribe the observable
 
-    var isDisposed = new Latch();
+    var isDisposed = false;
     return ActionAsDisposable.Create(() => {
-      if (!isDisposed.TrySet()) {
-        return;
-      }
-
       // Decrement or remove entry from dictionary
-      bool observableRemoved;
       lock (_sync) {
-        observableRemoved = dict.DecrementOrRemove(key);
+        if (Utility.Exchange(ref isDisposed, true)) {
+          return;
+        }
+        _ = dict.DecrementOrRemove(key);
       }
 
       // Unsubscribe the observer from the observable
       disposer.Dispose();
-      if (observableRemoved) {
-        // If this was the last Observer to be removed, dispose the Observable
-        actualObservable.Dispose();
-      }
     });
   }
 }
