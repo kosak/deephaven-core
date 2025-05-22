@@ -1,20 +1,17 @@
-﻿using System.Diagnostics;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class EndpointConfigProvider :
-  IValueObserver<SharableDict<EndpointConfigBase>>,
-  IValueObservable<StatusOr<EndpointConfigBase>>,
-  IDisposable {
+  IValueObserverWithCancel<SharableDict<EndpointConfigBase>>,
+  IValueObservable<StatusOr<EndpointConfigBase>> {
   private const string UnsetCredentialsString = "[No Config]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
-  private readonly Latch _needsSubscription = new();
-  private readonly Latch _isDisposed = new();
+  private CancellationTokenSource _upstreamTokenSource = new();
   private IDisposable? _upstreamSubscription = null;
   private Int64 _keyHint = -1;
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
@@ -29,33 +26,34 @@ internal class EndpointConfigProvider :
 
   public IDisposable Subscribe(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _credentials, out _);
+      _observers.AddAndNotify(observer, _credentials, out var isFirst);
 
-      if (_needsSubscription.TrySet()) {
-        _upstreamSubscription = _stateManager.SubscribeToEndpointDict(this);
+      if (isFirst) {
+        var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
+        _upstreamSubscription = _stateManager.SubscribeToEndpointDict(voc);
       }
     }
-
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ActionAsDisposable.Create(() => RemoveObserver(observer));
   }
 
-  public void Dispose() {
+  private void RemoveObserver(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      if (!_isDisposed.TrySet()) {
+      _observers.Remove(observer, out var wasLast);
+      if (!wasLast) {
         return;
       }
+
+      _upstreamTokenSource.Cancel();
+      _upstreamTokenSource = new CancellationTokenSource();
+
       Utility.ClearAndDispose(ref _upstreamSubscription);
-      StatusOrUtil.Replace(ref _credentials, "[Disposed]");
+      StatusOrUtil.Replace(ref _credentials, UnsetCredentialsString);
     }
   }
 
-  public void OnNext(SharableDict<EndpointConfigBase> dict) {
+  public void OnNext(SharableDict<EndpointConfigBase> dict, CancellationToken token) {
     lock (_sync) {
-      if (_isDisposed.Value) {
+      if (token.IsCancellationRequested) {
         return;
       }
 
@@ -68,7 +66,8 @@ internal class EndpointConfigProvider :
         var combined = added.Concat(modified);
         var kvp = combined.FirstOrDefault(kvp => kvp.Value.Id.Equals(_endpointId));
 
-        // Save the keyhint for next time (it will either be an accurate hint or a zero)
+        // Save the keyhint for next time (it will either be an accurate hint or a zero,
+        // and it's ok if the hint is wrong).
         _keyHint = kvp.Key;
         config = kvp.Value;
       }
