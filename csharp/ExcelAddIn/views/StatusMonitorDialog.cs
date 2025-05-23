@@ -7,7 +7,7 @@ namespace ExcelAddIn.views {
     public StatusMonitorDialog() {
       InitializeComponent();
 
-      _bindingSource.DataSource = typeof(EndpointManagerDialogRow);
+      _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
       dataGridView1.DataSource = _bindingSource;
 
       var nubbinRow = new StatusMonitorDialogRow(1234);

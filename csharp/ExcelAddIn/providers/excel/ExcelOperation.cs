@@ -2,21 +2,27 @@
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
-using System.Xml;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class ExcelOperation :
   IValueObserverWithCancel<StatusOr<object?[,]>>,
   IExcelObservable {
+  private static Int64 _nextFreeId = 0;
+
+  private readonly Int64 _uniqueId;
+  private readonly string _description;
   private readonly IValueObservable<StatusOr<object?[,]>> _upstream;
+  private readonly ZamboniStatusMonitor _statusMonitor = new();
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private readonly ObserverContainer<object?[,]> _observers = new();
   private IDisposable? _upstreamDisposer = null;
   private object?[,] _rendered = { { ExcelError.ExcelErrorNA } };
 
-  public ExcelOperation(IValueObservable<StatusOr<object?[,]>> upstream) {
+  public ExcelOperation(string description, IValueObservable<StatusOr<object?[,]>> upstream) {
+    _uniqueId = Interlocked.Increment(ref _nextFreeId);
+    _description = description;
     _upstream = upstream;
   }
 
@@ -71,3 +77,15 @@ internal class ExcelOperation :
     }
   }
 }
+
+public class ZamboniStatusMonitor {
+  public void ClearStatus(Int64 id) {
+
+  }
+
+  public void SetStatus(Int64 id, string description, string message, bool serious) {
+
+  }
+
+}
+

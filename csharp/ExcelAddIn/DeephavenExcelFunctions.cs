@@ -47,12 +47,15 @@ public static class DeephavenExcelFunctions {
       return errorText;
     }
 
+    // For the StatusMonitor
+    var description = MakeDescription("DEEPHAVEN_SNAPSHOT", tableDescriptor, filter, wantHeaders);
+
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => {
       var op = new SnapshotOperation(tq, wh, StateManager);
-      return new ExcelOperation(op);
+      return new ExcelOperation(description, op);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
@@ -62,12 +65,16 @@ public static class DeephavenExcelFunctions {
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out string errorText)) {
       return errorText;
     }
+
+    // For the StatusMonitor
+    var description = MakeDescription("DEEPHAVEN_SUBSCRIBE", tableDescriptor, filter, wantHeaders);
+
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => {
       var op = new SubscribeOperation(tq, wh, StateManager);
-      return new ExcelOperation(op);
+      return new ExcelOperation(description, op);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
@@ -93,5 +100,16 @@ public static class DeephavenExcelFunctions {
 
     tableQuadResult = new TableQuad(tt.EndpointId, tt.PqName, tt.TableName, condition);
     return true;
+  }
+
+  private static string MakeDescription(string function, string tableDescriptor, object filter, object wantHeaders) {
+    var args = new List<string> { $"\"{tableDescriptor}\"" };
+    if (filter is not ExcelMissing) {
+      args.Add(filter.ToString()!);
+    }
+    if (wantHeaders is not ExcelMissing) {
+      args.Add(wantHeaders.ToString()!);
+    }
+    return $"{function}({string.Join(',', args)})";
   }
 }

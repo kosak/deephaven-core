@@ -11,6 +11,10 @@ public sealed class StatusMonitorDialogRow(Int64 id) : INotifyPropertyChanged {
   private string _function = "N/A";
   private bool _severity = false;
 
+  public Int64 CalcId() {
+    return id;
+  }
+
   public string Function {
     get => _function;
     set {
