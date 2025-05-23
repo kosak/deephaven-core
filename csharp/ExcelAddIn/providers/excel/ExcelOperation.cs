@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Status;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
+using System.Xml;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -40,6 +41,8 @@ internal class ExcelOperation :
         return;
       }
 
+      _statusMonitor.ClearStatus(_uniqueId);
+
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
 
@@ -58,9 +61,10 @@ internal class ExcelOperation :
         var whichError = status.IsState ?
           ExcelError.ExcelErrorNA : ExcelError.ExcelErrorGettingData;
         _rendered = new object[,] { { whichError } };
-        var text = status.Text;
+        _statusMonitor.SetStatus(_uniqueId, _description, status.Text, status.IsState);
       } else {
         _rendered = d;
+        _statusMonitor.ClearStatus(_uniqueId);
       }
 
       _observers.OnNext(_rendered);

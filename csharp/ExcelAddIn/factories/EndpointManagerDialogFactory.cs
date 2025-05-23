@@ -1,5 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Managers;
 using Deephaven.ExcelAddIn.Views;
+using ExcelAddIn.views;
 
 namespace Deephaven.ExcelAddIn.Factories;
 
@@ -11,6 +12,11 @@ internal static class EndpointManagerDialogFactory {
       cmDialog.Closed += (_, _) => dm.Dispose();
       // Blocks forever (in this dedicated thread) until the form is closed.
       cmDialog.ShowDialog(); 
+    });
+
+    Background.Run(() => {
+      var qqDialog = new StatusMonitorDialog();
+      qqDialog.ShowDialog();
     });
   }
 }

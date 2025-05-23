@@ -4,7 +4,6 @@ using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Status;
-using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 using ExcelAddIn.views;
 

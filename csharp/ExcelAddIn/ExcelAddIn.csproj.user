@@ -11,5 +11,8 @@
     <Compile Update="views\DeephavenMessageBox.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="views\StatusMonitorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 </Project>
