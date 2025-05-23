@@ -3,25 +3,24 @@ using System.Runtime.CompilerServices;
 
 namespace Deephaven.ExcelAddIn.Viewmodels;
 
-public sealed class StatusMonitorDialogRow(Int64 id) : INotifyPropertyChanged {
+public sealed class StatusMonitorDialogRow(Int64 id, string function) : INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
-  /// <summary>
-  /// Make a placeholder EmptyConfig based on our id.
-  /// </summary>
-  private string _function = "N/A";
+  private string _status = "N/A";
   private bool _severity = false;
 
   public Int64 CalcId() {
     return id;
   }
 
-  public string Function {
-    get => _function;
+  public string Function => function;
+
+  public string Status {
+    get => _status;
     set {
-      if (_function == value) {
+      if (_status == value) {
         return;
       }
-      _function = value;
+      _status = value;
       OnPropertyChanged();
     }
   }

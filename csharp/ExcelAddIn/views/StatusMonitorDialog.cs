@@ -10,8 +10,8 @@ namespace ExcelAddIn.views {
       _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
       dataGridView1.DataSource = _bindingSource;
 
-      var nubbinRow = new StatusMonitorDialogRow(1234);
-      nubbinRow.Function = "hello";
+      var nubbinRow = new StatusMonitorDialogRow(1234, "how many");
+      nubbinRow.Status = "hello";
       nubbinRow.Severity = true;
       _bindingSource.Add(nubbinRow);
     }
