@@ -1,5 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.Viewmodels;
+using ExcelAddIn.gui.endpointmanager;
 
 namespace Deephaven.ExcelAddIn.Views;
 

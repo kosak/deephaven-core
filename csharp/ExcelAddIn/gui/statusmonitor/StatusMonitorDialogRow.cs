@@ -1,14 +1,14 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Deephaven.ExcelAddIn.Viewmodels;
+namespace Deephaven.ExcelAddIn.Gui;
 
-public sealed class StatusMonitorDialogRow(Int64 id, string function) : INotifyPropertyChanged {
+public sealed class StatusMonitorDialogRow(long id, string function) : INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
   private string _status = "N/A";
   private bool _severity = false;
 
-  public Int64 CalcId() {
+  public long CalcId() {
     return id;
   }
 

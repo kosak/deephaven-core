@@ -2,16 +2,16 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
-    <Compile Update="views\EndpointManagerDialog.cs">
+    <Compile Update="gui\endpointmanager\EndpointManagerDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="views\ConfigDialog.cs">
+    <Compile Update="gui\config\ConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="views\DeephavenMessageBox.cs">
+    <Compile Update="gui\messagebox\DeephavenMessageBox.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="views\StatusMonitorDialog.cs">
+    <Compile Update="gui\statusmonitor\StatusMonitorDialog.cs">
       <SubType>Form</SubType>
     </Compile>
   </ItemGroup>

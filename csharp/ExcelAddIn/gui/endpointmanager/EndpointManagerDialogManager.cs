@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.Views;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.ViewModels;
+using ExcelAddIn.gui.config;
+using Deephaven.ExcelAddIn;
 
-namespace Deephaven.ExcelAddIn.Managers;
+namespace ExcelAddIn.gui.endpointmanager;
 
 /// <summary>
 /// How to parse the name: this is the Manager for the EndpointManagerDialog.

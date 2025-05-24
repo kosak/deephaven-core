@@ -1,5 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.ViewModels;
+using ExcelAddIn.gui.config;
 
 namespace Deephaven.ExcelAddIn.Views {
   public partial class ConfigDialog : Form {

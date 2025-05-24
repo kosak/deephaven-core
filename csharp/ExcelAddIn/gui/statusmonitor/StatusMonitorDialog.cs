@@ -1,6 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Viewmodels;
-
-namespace Deephaven.ExcelAddIn.Views {
+﻿namespace Deephaven.ExcelAddIn.Gui {
   public partial class StatusMonitorDialog : Form {
     private readonly BindingSource _bindingSource = new();
 

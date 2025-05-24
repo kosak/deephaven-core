@@ -1,4 +1,5 @@
-﻿namespace Deephaven.ExcelAddIn.Views {
+﻿namespace Deephaven.ExcelAddIn.Gui {
+
   partial class StatusMonitorDialog {
     /// <summary>
     /// Required designer variable.
