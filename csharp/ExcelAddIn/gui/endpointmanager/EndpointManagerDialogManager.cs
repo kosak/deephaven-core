@@ -20,11 +20,6 @@ internal class EndpointManagerDialogManager :
       // Blocks forever (in this dedicated thread) until the form is closed.
       cmDialog.ShowDialog();
     });
-
-    Background.Run(() => {
-      var qqDialog = new StatusMonitorDialog();
-      qqDialog.ShowDialog();
-    });
   }
 
   private static EndpointManagerDialogManager Create(StateManager stateManager,

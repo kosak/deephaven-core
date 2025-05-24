@@ -7,11 +7,27 @@ namespace Deephaven.ExcelAddIn.Gui;
 public class StatusMonitorDialogManager : 
     IValueObserver<SharableDict<OpStatus>>,
     IDisposable {
+  public static void CreateAndShow(StateManager stateManager) {
+    Background.Run(() => {
+      var smDialog = new EndpointManagerDialog();
+      var sm = Create(stateManager, smDialog);
+      smDialog.Closed += (_, _) => sm.Dispose();
+      // Blocks forever (in this dedicated thread) until the form is closed.
+      smDialog.ShowDialog();
+    });
+  }
+
+  private static StatusMonitorDialogManager Create(StateManager stateManager,
+    StatusMonitorDialog smDialog) {
+    var result = new StatusMonitorDialogManager(stateManager, smDialog);
+    result._upstreamSubsription = stateManager.SubscribeToEndpointDict(result);
+    return result;
+  }
 
   private readonly object _sync = new();
   private bool _isDisposed = false;
-  private readonly EndpointManagerDialog _cmDialog;
-
+  private readonly StatusMonitorDialog _smDialog;
+  private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
 
   public void OnNext(SharableDict<OpStatus> dict) {
     lock (_sync) {
