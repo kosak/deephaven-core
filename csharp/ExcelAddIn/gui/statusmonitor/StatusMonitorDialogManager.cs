@@ -9,7 +9,7 @@ public class StatusMonitorDialogManager :
     IDisposable {
   public static void CreateAndShow(StateManager stateManager) {
     Background.Run(() => {
-      var smDialog = new EndpointManagerDialog();
+      var smDialog = new StatusMonitorDialog();
       var sm = Create(stateManager, smDialog);
       smDialog.Closed += (_, _) => sm.Dispose();
       // Blocks forever (in this dedicated thread) until the form is closed.
@@ -20,7 +20,7 @@ public class StatusMonitorDialogManager :
   private static StatusMonitorDialogManager Create(StateManager stateManager,
     StatusMonitorDialog smDialog) {
     var result = new StatusMonitorDialogManager(stateManager, smDialog);
-    result._upstreamSubsription = stateManager.SubscribeToEndpointDict(result);
+    result._upstreamSubsription = stateManager.SubscribeToStatusDict(result);
     return result;
   }
 
@@ -35,6 +35,16 @@ public class StatusMonitorDialogManager :
   public StatusMonitorDialogManager(StateManager stateManager, StatusMonitorDialog smDialog) {
     _stateManager = stateManager;
     _smDialog = smDialog;
+  }
+
+  public void Dispose() {
+    lock (_sync) {
+      if (Utility.Exchange(ref _isDisposed, true)) {
+        return;
+      }
+
+      Utility.ClearAndDispose(ref _upstreamSubsription);
+    }
   }
 
   public void OnNext(SharableDict<OpStatus> dict) {
