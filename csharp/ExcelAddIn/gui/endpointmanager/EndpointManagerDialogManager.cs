@@ -12,7 +12,22 @@ namespace Deephaven.ExcelAddIn.Gui;
 internal class EndpointManagerDialogManager :
   IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
-  public static EndpointManagerDialogManager Create(StateManager stateManager,
+  public static void CreateAndShow(StateManager stateManager) {
+    Background.Run(() => {
+      var cmDialog = new EndpointManagerDialog();
+      var dm = Create(stateManager, cmDialog);
+      cmDialog.Closed += (_, _) => dm.Dispose();
+      // Blocks forever (in this dedicated thread) until the form is closed.
+      cmDialog.ShowDialog();
+    });
+
+    Background.Run(() => {
+      var qqDialog = new StatusMonitorDialog();
+      qqDialog.ShowDialog();
+    });
+  }
+
+  private static EndpointManagerDialogManager Create(StateManager stateManager,
     EndpointManagerDialog cmDialog) {
     var result = new EndpointManagerDialogManager(stateManager, cmDialog);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
