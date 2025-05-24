@@ -1,38 +1,65 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Deephaven.ExcelAddIn.Models;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-public sealed class StatusMonitorDialogRow(long id, string function) : INotifyPropertyChanged {
+public sealed class StatusMonitorDialogRow : INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
-  private string _status = "N/A";
-  private bool _severity = false;
 
-  public long CalcId() {
-    return id;
+  private readonly object _sync = new();
+  private OpStatus _opStatus;
+
+  public StatusMonitorDialogRow(OpStatus opStatus) {
+    _opStatus = opStatus;
   }
 
-  public string Function => function;
+  public string Function => _opStatus.HumanReadableFunction;
 
   public string Status {
-    get => _status;
-    set {
-      if (_status == value) {
-        return;
+    get {
+      if (_opStatus.Status.GetValueOrStatus(out _, out var status)) {
+        return "OK";
       }
-      _status = value;
-      OnPropertyChanged();
+      return status.Text;
     }
   }
 
-  public bool Severity {
-    get => _severity;
-    set {
-      if (_severity == value) {
-        return;
+  public enum SeverityMonster {
+    Green,
+    Yellow,
+    Red
+  }
+
+  public SeverityMonster Severity {
+    get {
+      if (_opStatus.Status.GetValueOrStatus(out _, out var status)) {
+        return SeverityMonster.Green;
       }
-      _severity = value;
-      OnPropertyChanged();
+      return status.IsFixed ? SeverityMonster.Red : SeverityMonster.Yellow;
+    }
+  }
+
+  public void SetValue(OpStatus newStatus) {
+    // We do extra work to avoid sending unnecessary PropertyChanged events.
+    // Not sure this is necessary.
+    var tempRow = new StatusMonitorDialogRow(newStatus);
+    var funcChanged = Function != tempRow.Function;
+    var statusChanged = Status != tempRow.Status;
+    var severityChanged = Severity != tempRow.Severity;
+
+    lock (_sync) {
+      _opStatus = newStatus;
+    }
+
+    if (funcChanged) {
+      OnPropertyChanged(nameof(Function));
+    }
+    if (statusChanged) {
+      OnPropertyChanged(nameof(Status));
+    }
+    if (severityChanged) {
+      OnPropertyChanged(nameof(Severity));
     }
   }
 

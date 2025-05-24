@@ -29,6 +29,7 @@ public class StatusMonitorDialogManager :
   private bool _isDisposed = false;
   private readonly StatusMonitorDialog _smDialog;
   private readonly Dictionary<Int64, StatusMonitorDialogRow> _idToRow = new();
+  private IDisposable? _upstreamSubsription = null;
   private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
 
   public StatusMonitorDialogManager(StateManager stateManager, StatusMonitorDialog smDialog) {
@@ -50,12 +51,12 @@ public class StatusMonitorDialogManager :
       Debug.WriteLine($"dict is {dict}");
       Debug.WriteLine($"These are your adds: {adds}");
       Debug.WriteLine($"These are your removes: {removes}");
-      Debug.WriteLine($"These are your modified: {modifies}");
+      Debug.WriteLine($"These are your modifies: {modifies}");
 
       _prevDict = dict;
 
       foreach (var kvp in adds) {
-        var row = new StatusMonitorDialogRow(kvp.Key, kvp.Value.HumanReadableFunction);
+        var row = new StatusMonitorDialogRow(kvp.Value);
         _idToRow.Add(kvp.Key, row);
         _smDialog.AddRow(row);
       }
@@ -73,7 +74,7 @@ public class StatusMonitorDialogManager :
           continue;
         }
 
-        row.Status = "whatever 666";
+        row.SetValue(kvp.Value);
       }
     }
   }
