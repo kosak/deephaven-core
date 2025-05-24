@@ -15,6 +15,11 @@ public static class DeephavenExcelFunctions {
     EndpointManagerDialogManager.CreateAndShow(StateManager);
   }
 
+  [ExcelCommand(MenuName = "Deephaven", MenuText = "Status Monitor")]
+  public static void ShowStatusDialog() {
+    StatusMonitorDialogManager.CreateAndShow(StateManager);
+  }
+
   [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]
   public static void AddKosakConnection() {
     var id = new EndpointId("con1");
@@ -55,7 +60,7 @@ public static class DeephavenExcelFunctions {
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => {
       var op = new SnapshotOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, op);
+      return new ExcelOperation(description, op, StateManager);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
@@ -74,7 +79,7 @@ public static class DeephavenExcelFunctions {
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => {
       var op = new SubscribeOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, op);
+      return new ExcelOperation(description, op, StateManager);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }

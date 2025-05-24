@@ -101,12 +101,6 @@ public class StateManager {
     return _endpointDictProvider.Subscribe(observer);
   }
 
-  public IDisposable SubscribeToStatusDict(
-    IValueObserver<SharableDict<OpStatus>> observer) {
-    return _statusDictProvider.Subscribe(observer);
-  }
-
-
   public void SetConfig(EndpointConfigBase config) {
     lock (_sync) {
       _endpointDictProvider.AddOrReplace(config);
@@ -137,6 +131,19 @@ public class StateManager {
         cp.Resend();
       }
     }
+  }
+
+  public IDisposable SubscribeToStatusDict(
+    IValueObserver<SharableDict<OpStatus>> observer) {
+    return _statusDictProvider.Subscribe(observer);
+  }
+
+  public void SetOpStatus(Int64 id, OpStatus status) {
+    _statusDictProvider.Add(id, status);
+  }
+
+  public void RemoveOpStatus(Int64 id) {
+    _statusDictProvider.Remove(id);
   }
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(
