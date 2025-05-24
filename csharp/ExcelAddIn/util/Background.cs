@@ -1,6 +1,6 @@
 ﻿using Deephaven.ManagedClient;
 
-namespace Deephaven.ExcelAddIn;
+namespace Deephaven.ExcelAddIn.Util;
 
 internal static class Background {
   public static void Run(Action action) {

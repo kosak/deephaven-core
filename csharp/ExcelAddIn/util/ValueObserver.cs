@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ExcelAddIn.Status;
+﻿namespace Deephaven.ExcelAddIn.Util;
 
 /// <summary>
 /// Provides a simplified IObserver-style interface. Normal IObservers can signal

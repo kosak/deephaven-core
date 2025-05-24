@@ -1,9 +1,9 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
-namespace Deephaven.ExcelAddIn.Providers;
+namespace ExcelAddIn.Providers;
 
-internal class EndpointDictProvider :
+internal class OpStatusDictProvider :
   IValueObservable<SharableDict<EndpointConfigBase>> {
   private readonly object _sync = new();
   private readonly ObserverContainer<SharableDict<EndpointConfigBase>> _observers = new();

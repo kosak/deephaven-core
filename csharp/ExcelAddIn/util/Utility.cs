@@ -11,7 +11,7 @@ global using IDateTimeColumnSource = Deephaven.ManagedClient.IColumnSource<Syste
 global using IDateOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.DateOnly>;
 global using ITimeOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.TimeOnly>;
 
-namespace Deephaven.ExcelAddIn;
+namespace Deephaven.ExcelAddIn.Util;
 
 internal static class Utility {
   public const string VersionString = "Version 1.0.0-snapshot";

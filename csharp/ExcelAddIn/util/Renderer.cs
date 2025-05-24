@@ -1,5 +1,4 @@
 ﻿using Deephaven.ManagedClient;
-using System.Drawing;
 
 namespace Deephaven.ExcelAddIn.Util;
 

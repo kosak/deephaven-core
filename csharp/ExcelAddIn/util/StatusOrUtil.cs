@@ -1,7 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Providers;
-using Deephaven.ExcelAddIn.Util;
-
-namespace Deephaven.ExcelAddIn.Status;
+﻿namespace Deephaven.ExcelAddIn.Util;
 
 /// <summary>
 /// This is a set of utility functions for working with StatusOr&lt;T&gt;.

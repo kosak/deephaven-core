@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ExcelAddIn;
+﻿namespace Deephaven.ExcelAddIn.Util;
 
 internal class RefCountedImpl<T> where T : class, IDisposable {
   private long _refCount = 1;

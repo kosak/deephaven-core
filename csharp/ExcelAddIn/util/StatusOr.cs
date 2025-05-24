@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Deephaven.ExcelAddIn.Status;
+namespace Deephaven.ExcelAddIn.Util;
 
 public sealed record Status(string Text, bool IsState) {
   public static Status OfProgress(string text) => new Status(text, false);

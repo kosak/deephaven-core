@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ExcelAddIn.Status;
+﻿namespace Deephaven.ExcelAddIn.Util;
 
 /// <summary>
 /// Provides a variant of <c>IObserver&lt;T&gt;</c> that also takes a

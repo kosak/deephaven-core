@@ -1,7 +1,7 @@
 ﻿using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
-using Deephaven.ExcelAddIn.Status;
+using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Viewmodels;
 using Deephaven.ExcelAddIn.ViewModels;
 
