@@ -5,7 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Gui;
 
 internal static class ConfigDialogFactory {
-  public static void CreateAndShow(StateManager stateManager, EndpointDialogViewModel cvm,
+  public static void CreateAndShow(StateManager stateManager, ConfigDialogViewModel cvm,
     EndpointId? whitelistId) {
     Background.Run(() => {
       var cd = new ConfigDialog(cvm);
@@ -26,7 +26,7 @@ internal class EndpointConfigDialogState :
   IDisposable {
   private readonly StateManager _stateManager;
   private readonly ConfigDialog _configDialog;
-  private readonly EndpointDialogViewModel _cvm;
+  private readonly ConfigDialogViewModel _cvm;
   private readonly EndpointId? _whitelistId;
   private readonly object _sync = new();
   private CancellationTokenSource _backgroundToken = new();
@@ -36,7 +36,7 @@ internal class EndpointConfigDialogState :
   public EndpointConfigDialogState(
     StateManager stateManager,
     ConfigDialog configDialog,
-    EndpointDialogViewModel cvm,
+    ConfigDialogViewModel cvm,
     EndpointId? whitelistId) {
     _stateManager = stateManager;
     _configDialog = configDialog;

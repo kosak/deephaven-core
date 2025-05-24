@@ -96,7 +96,7 @@ internal class EndpointManagerDialogManager :
   }
 
   void OnNewButtonClicked() {
-    var cvm = EndpointDialogViewModel.OfEmpty();
+    var cvm = ConfigDialogViewModel.OfEmpty();
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, null);
   }
 

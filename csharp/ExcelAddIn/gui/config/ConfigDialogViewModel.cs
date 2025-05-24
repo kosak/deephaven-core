@@ -6,13 +6,13 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
-  public static EndpointDialogViewModel OfEmpty() {
-    return new EndpointDialogViewModel();
+public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
+  public static ConfigDialogViewModel OfEmpty() {
+    return new ConfigDialogViewModel();
   }
 
-  public static EndpointDialogViewModel OfConfig(EndpointConfigBase config) {
-    var result = new EndpointDialogViewModel {
+  public static ConfigDialogViewModel OfConfig(EndpointConfigBase config) {
+    var result = new ConfigDialogViewModel {
       Id = config.Id.Id
     };
     _ = config.AcceptVisitor(
