@@ -1,7 +1,7 @@
 ﻿using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.ViewModels;
 
-namespace ExcelAddIn.views {
+namespace Deephaven.ExcelAddIn.Views {
   public partial class ConfigDialog : Form {
     public event Action? OnSetCredentialsButtonClicked = null;
     public event Action? OnTestCredentialsButtonClicked = null;

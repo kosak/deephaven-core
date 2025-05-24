@@ -1,6 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Managers;
+using Deephaven.ExcelAddIn.Util;
 using Deephaven.ExcelAddIn.Views;
-using ExcelAddIn.views;
 
 namespace Deephaven.ExcelAddIn.Factories;
 

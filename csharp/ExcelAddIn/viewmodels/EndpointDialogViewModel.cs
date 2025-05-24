@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.ViewModels;
 
