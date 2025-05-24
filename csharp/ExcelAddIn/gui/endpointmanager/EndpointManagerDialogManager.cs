@@ -49,6 +49,23 @@ internal class EndpointManagerDialogManager :
     _cmDialog = cmDialog;
   }
 
+  public void Dispose() {
+    lock (_sync) {
+      if (Utility.Exchange(ref _isDisposed, true)) {
+        return;
+      }
+
+      var temp = _rowToManager.Values.ToArray();
+      _idToRow.Clear();
+      _rowToManager.Clear();
+
+      Utility.ClearAndDispose(ref _upstreamSubsription);
+      foreach (var disposable in temp) {
+        disposable.Dispose();
+      }
+    }
+  }
+
   public void OnNext(SharableDict<EndpointConfigBase> dict) {
     lock (_sync) {
       if (_isDisposed) {
@@ -84,23 +101,6 @@ internal class EndpointManagerDialogManager :
 
         _cmDialog.RemoveRow(rowToDelete);
         rowManager.Dispose();
-      }
-    }
-  }
-
-  public void Dispose() {
-    lock (_sync) {
-      if (Utility.Exchange(ref _isDisposed, true)) {
-        return;
-      }
-
-      var temp = _rowToManager.Values.ToArray();
-      _idToRow.Clear();
-      _rowToManager.Clear();
-
-      Utility.ClearAndDispose(ref _upstreamSubsription);
-      foreach (var disposable in temp) {
-        disposable.Dispose();
       }
     }
   }

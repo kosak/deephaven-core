@@ -12,7 +12,7 @@ public static class DeephavenExcelFunctions {
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
   public static void ShowConnectionsDialog() {
-    EndpointManagerDialogFactory.CreateAndShow(StateManager);
+    EndpointManagerDialogManager.CreateAndShow(StateManager);
   }
 
   [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]

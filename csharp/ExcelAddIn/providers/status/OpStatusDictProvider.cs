@@ -1,7 +1,7 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
-namespace ExcelAddIn.Providers;
+namespace Deephaven.ExcelAddIn.Providers;
 
 internal class OpStatusDictProvider :
   IValueObservable<SharableDict<OpStatus>> {

@@ -22,6 +22,7 @@ public class StateManager {
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
+  private readonly OpStatusDictProvider _statusDictProvider = new();
 
   public IDisposable SubscribeToCoreClient(EndpointId endpointId,
     IValueObserver<StatusOr<RefCounted<Client>>> observer) {
@@ -99,6 +100,12 @@ public class StateManager {
     IValueObserver<SharableDict<EndpointConfigBase>> observer) {
     return _endpointDictProvider.Subscribe(observer);
   }
+
+  public IDisposable SubscribeToStatusDict(
+    IValueObserver<SharableDict<OpStatus>> observer) {
+    return _statusDictProvider.Subscribe(observer);
+  }
+
 
   public void SetConfig(EndpointConfigBase config) {
     lock (_sync) {
