@@ -82,7 +82,7 @@ internal class CoreClientProvider :
           return Unit.Instance;  // have to return something
         },
         core => {
-          var progress = StatusOr<RefCounted<Client>>.OfProgress("Trying to connect");
+          var progress = StatusOr<RefCounted<Client>>.OfTransient("Trying to connect");
           StatusOrUtil.ReplaceAndNotify(ref _client, progress, _observers);
           var backgroundToken = _backgroundTokenSource.Token;
           Background.Run(() => OnNextBackground(core, backgroundToken));

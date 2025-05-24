@@ -2,9 +2,9 @@
 
 namespace Deephaven.ExcelAddIn.Util;
 
-public sealed record Status(string Text, bool IsState) {
-  public static Status OfProgress(string text) => new Status(text, false);
-  public static Status OfState(string text) => new Status(text, true);
+public sealed record Status(string Text, bool IsFixed) {
+  public static Status OfTransient(string text) => new Status(text, false);
+  public static Status OfFixed(string text) => new Status(text, true);
 }
 
 public sealed class StatusOr<T> {
@@ -16,19 +16,19 @@ public sealed class StatusOr<T> {
   }
 
   public static implicit operator StatusOr<T>(string status) {
-    return OfState(status);
+    return OfFixed(status);
   }
 
   public static implicit operator StatusOr<T>(T value) {
     return OfValue(value);
   }
 
-  public static StatusOr<T> OfProgress(string progress) {
-    return new StatusOr<T>(Status.OfProgress(progress), default);
+  public static StatusOr<T> OfTransient(string progress) {
+    return new StatusOr<T>(Status.OfTransient(progress), default);
   }
 
-  public static StatusOr<T> OfState(string state) {
-    return new StatusOr<T>(Status.OfState(state), default);
+  public static StatusOr<T> OfFixed(string state) {
+    return new StatusOr<T>(Status.OfFixed(state), default);
   }
 
   public static StatusOr<T> OfValue(T value) {

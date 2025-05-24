@@ -12,4 +12,4 @@ public record PqName(string Name) {
   public override string ToString() => Name;
 }
 
-public record OpStatus(string HumanReadableFunction, Status Status);
+public record OpStatus(string HumanReadableFunction, StatusOr<Unit> Status);

@@ -75,7 +75,7 @@ internal class SubscribeOperation :
         return;
       }
 
-      var progress = StatusOr<object?[,]>.OfProgress($"Subscribing to \"{_tableQuad.TableName}\"");
+      var progress = StatusOr<object?[,]>.OfTransient($"Subscribing to \"{_tableQuad.TableName}\"");
       StatusOrUtil.ReplaceAndNotify(ref _rendered, progress, _observers);
 
       var thShare = th.Share();

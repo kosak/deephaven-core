@@ -84,7 +84,7 @@ internal class FilteredTableProvider :
         return;
       }
 
-      var progress = StatusOr<RefCounted<TableHandle>>.OfProgress("Filtering");
+      var progress = StatusOr<RefCounted<TableHandle>>.OfTransient("Filtering");
       StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, progress, _observers);
 
       // RefCounted item gets acquired on this thread.

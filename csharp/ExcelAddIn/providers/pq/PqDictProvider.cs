@@ -67,7 +67,7 @@ internal class PqDictProvider :
         return;
       }
 
-      var progress = StatusOr<SharableDict<PersistentQueryInfoMessage>>.OfProgress(
+      var progress = StatusOr<SharableDict<PersistentQueryInfoMessage>>.OfTransient(
         "[Processing Subscriptions]");
       StatusOrUtil.ReplaceAndNotify(ref _dict, progress, _observers);
       // RefCounted item gets acquired on this thread.

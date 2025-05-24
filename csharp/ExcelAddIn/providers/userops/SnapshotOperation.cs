@@ -71,7 +71,7 @@ internal class SnapshotOperation :
         return;
       }
 
-      var progress = StatusOr<object?[,]>.OfProgress("[Rendering]");
+      var progress = StatusOr<object?[,]>.OfTransient("[Rendering]");
       StatusOrUtil.ReplaceAndNotify(ref _rendered, progress, _observers);
 
       // RefCounted item gets acquired on this thread.

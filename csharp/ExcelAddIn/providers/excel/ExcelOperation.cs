@@ -63,10 +63,10 @@ internal class ExcelOperation :
 
       if (!data.GetValueOrStatus(out var d, out var status)) {
         // store the status in the mega table
-        var whichError = status.IsState ?
+        var whichError = status.IsFixed ?
           ExcelError.ExcelErrorNA : ExcelError.ExcelErrorGettingData;
         _rendered = new object[,] { { whichError } };
-        _statusMonitor.SetStatus(_uniqueId, _description, status.Text, status.IsState);
+        _statusMonitor.SetStatus(_uniqueId, _description, status.Text, status.IsFixed);
       } else {
         _rendered = d;
         _statusMonitor.ClearStatus(_uniqueId);
