@@ -24,10 +24,17 @@ public class StatusMonitorDialogManager :
     return result;
   }
 
+  private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private readonly StatusMonitorDialog _smDialog;
+  private readonly Dictionary<Int64, StatusMonitorDialogRow> _idToRow = new();
   private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
+
+  public StatusMonitorDialogManager(StateManager stateManager, StatusMonitorDialog smDialog) {
+    _stateManager = stateManager;
+    _smDialog = smDialog;
+  }
 
   public void OnNext(SharableDict<OpStatus> dict) {
     lock (_sync) {
@@ -47,23 +54,26 @@ public class StatusMonitorDialogManager :
 
       _prevDict = dict;
 
-      foreach (var item in adds.Values) {
-        var endpointId = item.Id;
-        var row = new EndpointManagerDialogRow(endpointId.Id);
-        var statusRowManager = EndpointManagerDialogRowManager.Create(row, endpointId, _stateManager);
-        _rowToManager.Add(row, statusRowManager);
-        _idToRow.Add(endpointId, row);
-        _cmDialog.AddRow(row);
+      foreach (var kvp in adds) {
+        var row = new StatusMonitorDialogRow(kvp.Key, kvp.Value.HumanReadableFunction);
+        _idToRow.Add(kvp.Key, row);
+        _smDialog.AddRow(row);
       }
 
-      foreach (var item in removes.Values) {
-        if (!_idToRow.Remove(item.Id, out var rowToDelete) ||
-            !_rowToManager.Remove(rowToDelete, out var rowManager)) {
+      foreach (var kvp in removes) {
+        if (!_idToRow.Remove(kvp.Key, out var row)) {
           continue;
         }
 
-        _cmDialog.RemoveRow(rowToDelete);
-        rowManager.Dispose();
+        _smDialog.RemoveRow(row);
+      }
+
+      foreach (var kvp in modifies) {
+        if (!_idToRow.Remove(kvp.Key, out var row)) {
+          continue;
+        }
+
+        row.Status = "whatever 666";
       }
     }
   }
