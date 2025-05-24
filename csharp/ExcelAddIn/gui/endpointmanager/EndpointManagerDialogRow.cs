@@ -2,7 +2,7 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
-namespace ExcelAddIn.gui.endpointmanager;
+namespace Deephaven.ExcelAddIn.Gui;
 
 public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged {
 

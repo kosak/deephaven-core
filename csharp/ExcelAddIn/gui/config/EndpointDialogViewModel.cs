@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 
-namespace ExcelAddIn.gui.config;
+namespace Deephaven.ExcelAddIn.Gui;
 
 public sealed class EndpointDialogViewModel : INotifyPropertyChanged {
   public static EndpointDialogViewModel OfEmpty() {

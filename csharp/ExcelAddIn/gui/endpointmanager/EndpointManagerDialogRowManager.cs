@@ -1,11 +1,7 @@
-﻿using Deephaven.ExcelAddIn;
-using Deephaven.ExcelAddIn.Factories;
-using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Providers;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using ExcelAddIn.gui.config;
 
-namespace ExcelAddIn.gui.endpointmanager;
+namespace Deephaven.ExcelAddIn.Gui;
 
 /// <summary>
 /// How to parse the name: this is the Manager for the EndpointManagerDialogRow.

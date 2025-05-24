@@ -1,7 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Util;
-using ExcelAddIn.gui.endpointmanager;
 
-namespace Deephaven.ExcelAddIn.Views;
+namespace Deephaven.ExcelAddIn.Gui;
 
 using SelectedRowsAction = Action<EndpointManagerDialogRow[]>;
 

@@ -1,9 +1,8 @@
-﻿using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Factories;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.Views;
-using ExcelAddIn.gui.config;
 
-namespace Deephaven.ExcelAddIn.Factories;
+namespace Deephaven.ExcelAddIn.Gui;
 
 internal static class ConfigDialogFactory {
   public static void CreateAndShow(StateManager stateManager, EndpointDialogViewModel cvm,

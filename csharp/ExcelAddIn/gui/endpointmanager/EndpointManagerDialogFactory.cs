@@ -1,9 +1,6 @@
-﻿using Deephaven.ExcelAddIn.Gui;
-using Deephaven.ExcelAddIn.Util;
-using Deephaven.ExcelAddIn.Views;
-using ExcelAddIn.gui.endpointmanager;
+﻿using Deephaven.ExcelAddIn.Util;
 
-namespace Deephaven.ExcelAddIn.Factories;
+namespace Deephaven.ExcelAddIn.Gui;
 
 internal static class EndpointManagerDialogFactory {
   public static void CreateAndShow(StateManager stateManager) {

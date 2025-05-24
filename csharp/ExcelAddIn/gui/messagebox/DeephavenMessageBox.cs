@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Deephaven.ExcelAddIn.Views {
+namespace Deephaven.ExcelAddIn.Gui {
   public partial class DeephavenMessageBox : Form {
     public DeephavenMessageBox(string caption, string text, bool cancelVisible) {
       InitializeComponent();

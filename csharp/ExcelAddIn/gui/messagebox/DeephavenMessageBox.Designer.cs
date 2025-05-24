@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ExcelAddIn.Views {
+﻿namespace Deephaven.ExcelAddIn.Gui {
   partial class DeephavenMessageBox {
     /// <summary>
     /// Required designer variable.

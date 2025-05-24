@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Deephaven.ExcelAddIn.ExcelDna;
-using Deephaven.ExcelAddIn.Factories;
+using Deephaven.ExcelAddIn.Gui;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using ExcelDna.Integration;
