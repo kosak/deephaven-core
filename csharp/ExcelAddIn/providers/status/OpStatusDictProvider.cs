@@ -4,14 +4,12 @@ using Deephaven.ExcelAddIn.Util;
 namespace ExcelAddIn.Providers;
 
 internal class OpStatusDictProvider :
-  IValueObservable<SharableDict<EndpointConfigBase>> {
+  IValueObservable<SharableDict<OpStatus>> {
   private readonly object _sync = new();
-  private readonly ObserverContainer<SharableDict<EndpointConfigBase>> _observers = new();
-  private SharableDict<EndpointConfigBase> _dict = new();
-  private readonly Dictionary<EndpointId, Int64> _idToKey = new();
-  private Int64 _nextFreeId = 0;
+  private readonly ObserverContainer<SharableDict<OpStatus>> _observers = new();
+  private SharableDict<OpStatus> _dict = new();
 
-  public IDisposable Subscribe(IValueObserver<SharableDict<EndpointConfigBase>> observer) {
+  public IDisposable Subscribe(IValueObserver<SharableDict<OpStatus>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
     }
@@ -23,41 +21,17 @@ internal class OpStatusDictProvider :
     });
   }
 
-  public bool TryAdd(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, false);
-  }
-
-  public bool AddOrReplace(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, true);
-  }
-
-  private bool TryAddOrMaybeReplace(EndpointConfigBase config, bool permitReplace) {
+  public void Add(Int64 key, OpStatus value) {
     lock (_sync) {
-      var inserted = false;
-      if (!_idToKey.TryGetValue(config.Id, out var key)) {
-        // Key does not exist, so allocate one.
-        key = _nextFreeId++;
-        _idToKey[config.Id] = key;
-        inserted = true;
-      }
-      if (!inserted && !permitReplace) {
-        return false;
-      }
-      _dict = _dict.With(key, config);
+      _dict = _dict.With(key, value);
       _observers.OnNext(_dict);
-      return inserted;
     }
   }
 
-
-  public bool TryRemove(EndpointId endpointId) {
+  public void Remove(Int64 key) {
     lock (_sync) {
-      if (!_idToKey.Remove(endpointId, out var removedKey)) {
-        return false;
-      }
-      _dict = _dict.Without(removedKey);
+      _dict = _dict.Without(key);
       _observers.OnNext(_dict);
-      return true;
     }
   }
 }

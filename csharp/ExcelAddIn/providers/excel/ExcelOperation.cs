@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.ExcelDna;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
 
@@ -10,7 +11,7 @@ internal class ExcelOperation :
   private static Int64 _nextFreeId = 0;
 
   private readonly Int64 _uniqueId;
-  private readonly string _description;
+  private readonly string _humanReadableFunction;
   private readonly IValueObservable<StatusOr<object?[,]>> _upstream;
   private readonly ZamboniStatusMonitor _statusMonitor = new();
   private readonly object _sync = new();
@@ -19,9 +20,9 @@ internal class ExcelOperation :
   private IDisposable? _upstreamDisposer = null;
   private object?[,] _rendered = { { ExcelError.ExcelErrorNA } };
 
-  public ExcelOperation(string description, IValueObservable<StatusOr<object?[,]>> upstream) {
+  public ExcelOperation(string humanReadableFunction, IValueObservable<StatusOr<object?[,]>> upstream) {
     _uniqueId = Interlocked.Increment(ref _nextFreeId);
-    _description = description;
+    _humanReadableFunction = humanReadableFunction;
     _upstream = upstream;
   }
 
@@ -46,7 +47,7 @@ internal class ExcelOperation :
         return;
       }
 
-      _statusMonitor.ClearStatus(_uniqueId);
+      _statusMonitor.Remove(_uniqueId);
 
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
@@ -61,28 +62,31 @@ internal class ExcelOperation :
         return;
       }
 
+      StatusOr<Unit> opStatusToUse;
+
       if (!data.GetValueOrStatus(out var d, out var status)) {
         // store the status in the mega table
         var whichError = status.IsFixed ?
           ExcelError.ExcelErrorNA : ExcelError.ExcelErrorGettingData;
         _rendered = new object[,] { { whichError } };
-        _statusMonitor.SetStatus(_uniqueId, _description, status.Text, status.IsFixed);
+        opStatusToUse = status;
       } else {
         _rendered = d;
-        _statusMonitor.ClearStatus(_uniqueId);
+        opStatusToUse = Unit.Instance;
       }
 
       _observers.OnNext(_rendered);
+      _statusMonitor.Add(_uniqueId, opStatusToUse);
     }
   }
 }
 
 public class ZamboniStatusMonitor {
-  public void ClearStatus(Int64 id) {
+  public void Remove(Int64 id) {
 
   }
 
-  public void SetStatus(Int64 id, string description, string message, bool serious) {
+  public void Add(Int64 id, StatusOr<Unit> status) {
 
   }
 
