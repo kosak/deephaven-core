@@ -1,4 +1,5 @@
-﻿using Deephaven.DheClient.Controller;
+﻿using System.Diagnostics;
+using Deephaven.DheClient.Controller;
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
@@ -150,6 +151,7 @@ public class StateManager {
 
   public IDisposable SubscribeToRetry(TableTriple key,
     IValueObserver<RetryPlaceholder> observer) {
+    Debug.WriteLine($"Someone wants to watch for retries at {key}");
     var candidate = new RetryProvider();
     return SubscribeHelper(_retryProviders, key, candidate, observer);
   }
