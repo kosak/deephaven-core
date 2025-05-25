@@ -12,7 +12,7 @@ internal class ExcelOperation :
   private static Int64 _nextFreeId = 0;
 
   private readonly string _humanReadableFunction;
-  private readonly TableTriple _retryKey;
+  private readonly TableTriple _tableTriple;
   private readonly IValueObservable<StatusOr<object?[,]>> _upstream;
   private readonly StateManager _stateManager;
   private readonly Int64 _uniqueId;
@@ -23,11 +23,11 @@ internal class ExcelOperation :
   private object?[,] _rendered = { { ExcelError.ExcelErrorNA } };
 
   public ExcelOperation(string humanReadableFunction,
-    TableTriple retryKey,
+    TableTriple tableTriple,
     IValueObservable<StatusOr<object?[,]>> upstream,
     StateManager stateManager) {
     _humanReadableFunction = humanReadableFunction;
-    _retryKey = retryKey;
+    _tableTriple = tableTriple;
     _upstream = upstream;
     _stateManager = stateManager;
     _uniqueId = Interlocked.Increment(ref _nextFreeId);

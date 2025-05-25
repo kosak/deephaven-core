@@ -21,7 +21,7 @@ public class StateManager {
   private readonly ReferenceCountingDict<(EndpointId, PqName), PqInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
-  private readonly ReferenceCountingDict<TableTriple, RetryProvider> _retryProviders = new();
+  private readonly ReferenceCountingDict<RetryKey, RetryProvider> _retryProviders = new();
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
@@ -149,14 +149,14 @@ public class StateManager {
     _statusDictProvider.Remove(id);
   }
 
-  public IDisposable SubscribeToRetry(TableTriple key,
+  public IDisposable SubscribeToRetry(RetryKey key,
     IValueObserver<RetryPlaceholder> observer) {
     Debug.WriteLine($"Someone wants to watch for retries at {key}");
     var candidate = new RetryProvider();
     return SubscribeHelper(_retryProviders, key, candidate, observer);
   }
 
-  public bool TryNotifyRetry(TableTriple key) {
+  public bool TryNotifyRetry(RetryKey key) {
     RetryProvider? provider;
     lock (_sync) {
       if (!_retryProviders.TryGetValue(key, out provider)) {

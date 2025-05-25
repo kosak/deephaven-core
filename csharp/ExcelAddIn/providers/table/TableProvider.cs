@@ -52,7 +52,7 @@ internal class TableProvider :
             this, _upstreamTokenSource.Token);
           _upstreamDisposer = _stateManager.SubscribeToCoreClient(_endpointId, voc);
         }
-        var key = new TableTriple(_endpointId, _pqName, _tableName);
+        var key = new RetryKey(_endpointId, _pqName, _tableName);
         var rtvoc = ValueObserverWithCancelWrapper.Create<RetryPlaceholder>(
           this, _upstreamTokenSource.Token);
         _retryDisposer = _stateManager.SubscribeToRetry(key, rtvoc);
