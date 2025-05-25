@@ -1,16 +1,14 @@
 ﻿namespace Deephaven.ExcelAddIn.Util;
 
-internal class RefCountedImpl<T> where T : class, IDisposable {
+internal class SharedCountImpl {
   private long _refCount = 1;
-  private readonly T _value;
   private readonly RefCounted[] _dependencies;
 
-  internal RefCountedImpl(T value, RefCounted[] dependencies) {
-    _value = value;
+  public SharedCountImpl(RefCounted[] dependencies) {
     _dependencies = dependencies;
   }
 
-  internal void Increment() {
+  public void Increment() {
     var result = Interlocked.Increment(ref _refCount);
     if (result < 2) {
       // Incremented from 0 to 1, or from some negative number.
@@ -18,68 +16,83 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
     }
   }
 
-  internal void Decrement() {
+  public void DecrementAndMaybeDispose(IDisposable value) {
     var result = Interlocked.Decrement(ref _refCount);
     if (result > 0) {
       return;
     }
     if (result < 0) {
       // Decremented a zero or negative number.
-      throw new Exception($"Bad state: {result}");
+      throw new Exception($"Bad state: decremented too many times: {result}");
     }
 
     // Dispose the value first, then its dependencies
-    _value.Dispose();
+    value.Dispose();
     for (var i = 0; i != _dependencies.Length; i++) {
       _dependencies[i].Dispose();
-    }
-  }
-
-  internal T Value {
-    get {
-      if (Interlocked.Read(ref _refCount) <= 0) {
-        throw new Exception($"Bad state: {_refCount}");
-      }
-      return _value;
     }
   }
 }
 
 public abstract class RefCounted : IDisposable {
-  protected bool IsDisposed = false;
+  private protected SharedCountImpl? _sharedCount;
 
-  public static RefCounted<T> Acquire<T>(T value, params RefCounted[] dependencies)
+  private protected RefCounted(SharedCountImpl sharedCount) {
+    _sharedCount = sharedCount;
+  }
+
+  internal static RefCounted<T> Acquire<T>(T value, params RefCounted[] dependencies)
     where T : class, IDisposable {
-    return RefCounted<T>.Acquire(value, dependencies);
+    var impl = new SharedCountImpl(dependencies);
+    return new RefCounted<T>(value, impl);
   }
 
   public abstract void Dispose();
   public abstract RefCounted Share();
+
+  private protected SharedCountImpl SharedCount {
+    get {
+      CheckDisposed();
+      return _sharedCount!;
+    }
+  }
+
+  protected void CheckDisposed() {
+    if (_sharedCount == null) {
+      throw new Exception("Accessing disposed object");
+    }
+  }
+
 }
 
 public sealed class RefCounted<T> : RefCounted where T : class, IDisposable {
-  public static RefCounted<T> Acquire(T value, params RefCounted[] dependencies) {
-    var impl = new RefCountedImpl<T>(value, dependencies);
-    return new RefCounted<T>(impl);
+  internal static RefCounted<T> CastFrom<TChild>(RefCounted<TChild> child)
+        where TChild : class, IDisposable, T {
+    var sc = child.SharedCount;
+    sc.Increment();
+    return new RefCounted<T>(child.Value, sc);
   }
 
-  private readonly RefCountedImpl<T> _impl;
+  private readonly T _value;
 
-  private RefCounted(RefCountedImpl<T> impl) {
-    _impl = impl;
+  internal RefCounted(T value, SharedCountImpl impl) : base(impl) {
+    _value = value;
   }
 
   public override void Dispose() {
-    if (Utility.Exchange(ref IsDisposed, true)) {
-      return;
-    }
-    _impl.Decrement();
+    var temp = Utility.Exchange(ref _sharedCount, null);
+    temp?.DecrementAndMaybeDispose(Value);
   }
 
-  public T Value => _impl.Value;
+  public T Value {
+    get {
+      CheckDisposed();
+      return _value;
+    }
+  }
 
   public override RefCounted<T> Share() {
-    _impl.Increment();
-    return new RefCounted<T>(_impl);
+    SharedCount.Increment();
+    return new RefCounted<T>(Value, SharedCount);
   }
 }

@@ -13,3 +13,5 @@ public record PqName(string Name) {
 }
 
 public record OpStatus(string HumanReadableFunction, StatusOr<Unit> Status);
+
+public record RetryPlaceholder;

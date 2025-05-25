@@ -87,10 +87,7 @@ internal class TableProvider :
       // Awkward work to turn RefCounted<DnClient> into RefCounted<Client>
       StatusOr<RefCounted<Client>> temp;
       if (client.GetValueOrStatus(out var dndClient, out var status)) {
-        throw new Exception("No, this still doesn't work");
-        throw new Exception("you can't steal the value and give it a different refcount");
-        throw new Exception("you need a true means of sharing the original refcount");
-        temp = RefCounted<Client>.Acquire(dndClient.Value, dndClient.Share());
+        temp = RefCounted<Client>.CastFrom(dndClient);
       } else {
         temp = status;
       }
