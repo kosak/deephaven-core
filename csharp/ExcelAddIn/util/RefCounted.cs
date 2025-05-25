@@ -40,7 +40,7 @@ internal class RefCountedImpl<T> where T : class, IDisposable {
       if (Interlocked.Read(ref _refCount) <= 0) {
         throw new Exception($"Bad state: {_refCount}");
       }
-      return _value!;
+      return _value;
     }
   }
 }

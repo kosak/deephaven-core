@@ -20,7 +20,7 @@ internal static class StatusOrUtil {
   /// to share that RefCounted item, and stores the resultant StatusOr. Otherwise,
   /// just stores newValue. The rationale here is that StatusOr acts like an
   /// immutable type unless it contains an IDisposable or a RefCounted, in which
-  /// case it is special.
+  /// case it participates in the RefCounted protocol.
   /// </summary>
   public static void Replace<T>(ref StatusOr<T> dest, StatusOr<T> src) {
     if (dest.GetValueOrStatus(out var dv, out _) && dv is RefCounted destRc) {

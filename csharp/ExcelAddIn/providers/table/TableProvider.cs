@@ -2,32 +2,20 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Auth;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 /// <summary>
-/// This class has two functions, depending on whether the persistentQueryId is set.
-/// If it is set, the class assumes that this is an Enterprise Core Plus table, and
-/// follows that workflow.
-/// 
-/// Otherwise, if it is not set, the class assumes that this is a Community Core table,
-/// and follows that workflow.
-/// 
-/// The job of this class is to subscribe to a PersistentQueryMapper with the key
-/// (endpoint, pqName). Then, as that PQ mapper provider provides me with PqIds
-/// with TableHandles (or status messages), process them.
-/// If the message received was a status message, then forward it to my observers.
-/// If it was a PqId, then [TODO]
-/// 
-/// If it was a TableHandle, then filter it by "condition" in the background, and provide
-/// the resulting filtered TableHandle (or error) to my observers.
 /// </summary>
 internal class TableProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
   IValueObserverWithCancel<StatusOr<RefCounted<DndClient>>>,
+  IValueObserverWithCancel<RetryPlaceholder>,
   // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Table]";
+  private const string UnsetClientText = "[No Client]";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -37,8 +25,10 @@ internal class TableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
+  private IDisposable? _retryDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
+  private StatusOr<RefCounted<Client>> _cachedClient = UnsetClientText;
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName) {
@@ -62,6 +52,9 @@ internal class TableProvider :
             this, _upstreamTokenSource.Token);
           _upstreamDisposer = _stateManager.SubscribeToCoreClient(_endpointId, voc);
         }
+        var rtvoc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<Client>>>(
+          this, _upstreamTokenSource.Token);
+        _retryDisposer = _stateManager.SubscribeToRetry(_endpointId, _pqName, _tableName, rtvoc);
       }
     }
 
@@ -79,20 +72,56 @@ internal class TableProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
+      Utility.ClearAndDispose(ref _retryDisposer);
       StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
+      StatusOrUtil.Replace(ref _cachedClient, UnsetClientText);
+    }
+  }
+
+  public void OnNext(StatusOr<RefCounted<DndClient>> client, CancellationToken token) {
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
+      }
+
+      // Awkward work to turn RefCounted<DnClient> into RefCounted<Client>
+      StatusOr<RefCounted<Client>> temp;
+      if (client.GetValueOrStatus(out var dndClient, out var status)) {
+        throw new Exception("No, this still doesn't work");
+        throw new Exception("you can't steal the value and give it a different refcount");
+        throw new Exception("you need a true means of sharing the original refcount");
+        temp = RefCounted<Client>.Acquire(dndClient.Value, dndClient.Share());
+      } else {
+        temp = status;
+      }
+      StatusOrUtil.Replace(ref _cachedClient, temp);
+      OnNextHelper(temp, token);
+    }
+  }
+
+  public void OnNext(RetryPlaceholder _, CancellationToken token) {
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
+      }
+      OnNextHelper(_cachedClient, token);
     }
   }
 
   public void OnNext(StatusOr<RefCounted<Client>> client, CancellationToken token) {
-    OnNextHelper(client, token);
+    lock (_sync) {
+      if (token.IsCancellationRequested) {
+        return;
+      }
+
+      // Keep a cached copy of Client (needed for Retry)
+      StatusOrUtil.Replace(ref _cachedClient, client);
+
+      OnNextHelper(client, token);
+    }
   }
 
-  public void OnNext(StatusOr<RefCounted<DndClient>> client, CancellationToken token) {
-    OnNextHelper(client, token);
-  }
-
-  private void OnNextHelper<T>(StatusOr<RefCounted<T>> client, CancellationToken token)
-    where T : Client {
+  private void OnNextHelper(StatusOr<RefCounted<Client>> client, CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
@@ -121,8 +150,7 @@ internal class TableProvider :
     }
   }
 
-  private void OnNextBackground<T>(RefCounted<T> client, CancellationToken token)
-    where T : Client {
+  private void OnNextBackground(RefCounted<Client> client, CancellationToken token) {
     RefCounted<TableHandle>? newRef = null;
     StatusOr<RefCounted<TableHandle>> newState;
     try {
