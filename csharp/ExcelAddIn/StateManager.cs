@@ -146,6 +146,11 @@ public class StateManager {
     _statusDictProvider.Remove(id);
   }
 
+  public IDisposable SubscribeToRetry(EndpointId id, PqName? pqName, string tableName,
+    IValueObserver<RetryPlaceholder> observer) {
+    return _retryProvider.Subscribe(observer);
+  }
+
   private IDisposable SubscribeHelper<TKey, TObservable, T>(
     ReferenceCountingDict<TKey, TObservable> dict,
     TKey key, TObservable candidateObservable, IValueObserver<T> observer)
