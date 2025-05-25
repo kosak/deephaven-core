@@ -25,6 +25,9 @@
     /// </summary>
     private void InitializeComponent() {
       dataGridView1 = new DataGridView();
+      statusLabel = new Label();
+      versionLabel = new Label();
+      retryButton = new Button();
       ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
       SuspendLayout();
       // 
@@ -39,20 +42,57 @@
       dataGridView1.Size = new Size(996, 513);
       dataGridView1.TabIndex = 0;
       // 
+      // statusLabel
+      // 
+      statusLabel.AutoSize = true;
+      statusLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+      statusLabel.Location = new Point(39, 18);
+      statusLabel.Name = "statusLabel";
+      statusLabel.Size = new Size(78, 32);
+      statusLabel.TabIndex = 1;
+      statusLabel.Text = "Status";
+      // 
+      // versionLabel
+      // 
+      versionLabel.AutoSize = true;
+      versionLabel.Location = new Point(12, 627);
+      versionLabel.Name = "versionLabel";
+      versionLabel.Size = new Size(79, 25);
+      versionLabel.TabIndex = 7;
+      versionLabel.Text = "(version)";
+      // 
+      // retryButton
+      // 
+      retryButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+      retryButton.Location = new Point(907, 605);
+      retryButton.Name = "retryButton";
+      retryButton.Size = new Size(128, 34);
+      retryButton.TabIndex = 8;
+      retryButton.Text = "Retry";
+      retryButton.UseVisualStyleBackColor = true;
+      retryButton.Click += retryButton_Click;
+      // 
       // StatusMonitorDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(1086, 661);
+      Controls.Add(retryButton);
+      Controls.Add(versionLabel);
+      Controls.Add(statusLabel);
       Controls.Add(dataGridView1);
       Name = "StatusMonitorDialog";
       Text = "StatusMonitorDialog";
       ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
       ResumeLayout(false);
+      PerformLayout();
     }
 
     #endregion
 
     private DataGridView dataGridView1;
+    private Label statusLabel;
+    private Label versionLabel;
+    private Button retryButton;
   }
 }

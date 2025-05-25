@@ -41,18 +41,18 @@
       dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
       dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
       dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-      dataGridView1.Location = new Point(68, 83);
+      dataGridView1.Location = new Point(41, 83);
       dataGridView1.Name = "dataGridView1";
       dataGridView1.ReadOnly = true;
       dataGridView1.RowHeadersWidth = 62;
       dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-      dataGridView1.Size = new Size(979, 454);
+      dataGridView1.Size = new Size(1006, 498);
       dataGridView1.TabIndex = 0;
       // 
       // newButton
       // 
       newButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      newButton.Location = new Point(919, 560);
+      newButton.Location = new Point(919, 604);
       newButton.Name = "newButton";
       newButton.Size = new Size(128, 34);
       newButton.TabIndex = 5;
@@ -64,7 +64,7 @@
       // 
       connectionsLabel.AutoSize = true;
       connectionsLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      connectionsLabel.Location = new Point(68, 33);
+      connectionsLabel.Location = new Point(41, 33);
       connectionsLabel.Name = "connectionsLabel";
       connectionsLabel.Size = new Size(147, 32);
       connectionsLabel.TabIndex = 2;
@@ -73,7 +73,7 @@
       // editButton
       // 
       editButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      editButton.Location = new Point(776, 560);
+      editButton.Location = new Point(776, 604);
       editButton.Name = "editButton";
       editButton.Size = new Size(112, 34);
       editButton.TabIndex = 4;
@@ -84,7 +84,7 @@
       // deleteButton
       // 
       deleteButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      deleteButton.Location = new Point(339, 560);
+      deleteButton.Location = new Point(339, 604);
       deleteButton.Name = "deleteButton";
       deleteButton.Size = new Size(112, 34);
       deleteButton.TabIndex = 1;
@@ -95,7 +95,7 @@
       // reconnectButton
       // 
       reconnectButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      reconnectButton.Location = new Point(636, 560);
+      reconnectButton.Location = new Point(636, 604);
       reconnectButton.Name = "reconnectButton";
       reconnectButton.Size = new Size(112, 34);
       reconnectButton.TabIndex = 3;
@@ -106,7 +106,7 @@
       // makeDefaultButton
       // 
       makeDefaultButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      makeDefaultButton.Location = new Point(473, 560);
+      makeDefaultButton.Location = new Point(473, 604);
       makeDefaultButton.Name = "makeDefaultButton";
       makeDefaultButton.Size = new Size(139, 34);
       makeDefaultButton.TabIndex = 2;
@@ -119,15 +119,15 @@
       versionLabel.AutoSize = true;
       versionLabel.Location = new Point(12, 581);
       versionLabel.Name = "versionLabel";
-      versionLabel.Size = new Size(59, 25);
+      versionLabel.Size = new Size(79, 25);
       versionLabel.TabIndex = 6;
-      versionLabel.Text = "label1";
+      versionLabel.Text = "(version)";
       // 
-      // ConnectionManagerDialog
+      // EndpointManagerDialog
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(1115, 615);
+      ClientSize = new Size(1115, 659);
       Controls.Add(versionLabel);
       Controls.Add(makeDefaultButton);
       Controls.Add(reconnectButton);

@@ -105,12 +105,12 @@ internal class EndpointManagerDialogManager :
     }
   }
 
-  void OnNewButtonClicked() {
+  private void OnNewButtonClicked() {
     var cvm = ConfigDialogViewModel.OfEmpty();
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, null);
   }
 
-  void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
     var failures = new List<string>();
     lock (_sync) {
       var managers = rows.Where(_rowToManager.ContainsKey)
@@ -135,7 +135,7 @@ internal class EndpointManagerDialogManager :
     });
   }
 
-  void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {
     lock (_sync) {
       foreach (var row in rows) {
         if (!_rowToManager.TryGetValue(row, out var manager)) {
@@ -151,7 +151,7 @@ internal class EndpointManagerDialogManager :
   /// tries to do the reasonable thing.
   /// </summary>
   /// <param name="rows"></param>
-  void OnMakeDefaultButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnMakeDefaultButtonClicked(EndpointManagerDialogRow[] rows) {
     lock (_sync) {
       if (rows.Length == 0) {
         // If no rows are selected, do nothing.
@@ -168,7 +168,7 @@ internal class EndpointManagerDialogManager :
     }
   }
 
-  void OnEditButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnEditButtonClicked(EndpointManagerDialogRow[] rows) {
     lock (_sync) {
       foreach (var row in rows) {
         if (!_rowToManager.TryGetValue(row, out var manager)) {

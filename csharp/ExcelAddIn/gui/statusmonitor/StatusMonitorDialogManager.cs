@@ -1,6 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
-using System.Diagnostics;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
@@ -35,11 +34,13 @@ public class StatusMonitorDialogManager :
 
   private static StatusMonitorDialogManager Create(StateManager stateManager,
     StatusMonitorDialog smDialog) {
-    var result = new StatusMonitorDialogManager(smDialog);
+    var result = new StatusMonitorDialogManager(stateManager, smDialog);
     result._upstreamSubsription = stateManager.SubscribeToStatusDict(result);
+    smDialog.OnRetryButtonClicked += result.OnRetryButtonClicked;
     return result;
   }
 
+  private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private readonly StatusMonitorDialog _smDialog;
@@ -47,7 +48,8 @@ public class StatusMonitorDialogManager :
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
 
-  public StatusMonitorDialogManager(StatusMonitorDialog smDialog) {
+  public StatusMonitorDialogManager(StateManager stateManager, StatusMonitorDialog smDialog) {
+    _stateManager = stateManager;
     _smDialog = smDialog;
   }
 
@@ -93,6 +95,14 @@ public class StatusMonitorDialogManager :
         }
 
         row.SetValue(kvp.Value);
+      }
+    }
+  }
+
+  private void OnRetryButtonClicked(StatusMonitorDialogRow[] rows) {
+    lock (_sync) {
+      foreach (var row in rows) {
+        _stateManager.TryNotifyRetry(row.OpStatus.RetryKey);
       }
     }
   }

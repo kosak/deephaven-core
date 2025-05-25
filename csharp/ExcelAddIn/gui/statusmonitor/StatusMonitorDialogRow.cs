@@ -25,6 +25,9 @@ public sealed class StatusMonitorDialogRow : INotifyPropertyChanged {
     }
   }
 
+  [Browsable(false)]
+  public OpStatus OpStatus => _opStatus;
+
   public void SetValue(OpStatus newStatus) {
     // We do extra work to avoid sending unnecessary PropertyChanged events.
     // Not sure this is necessary.

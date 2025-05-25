@@ -58,9 +58,10 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
+    var retryKey = new TableTriple(tq.EndpointId, tq.PqName, tq.TableName);
     ExcelObservableSource eos = () => {
       var op = new SnapshotOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, op, StateManager);
+      return new ExcelOperation(description, retryKey, op, StateManager);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
@@ -77,9 +78,10 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
+    var retryKey = new TableTriple(tq.EndpointId, tq.PqName, tq.TableName);
     ExcelObservableSource eos = () => {
       var op = new SubscribeOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, op, StateManager);
+      return new ExcelOperation(description, retryKey, op, StateManager);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
