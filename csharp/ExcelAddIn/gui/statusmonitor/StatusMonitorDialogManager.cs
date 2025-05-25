@@ -71,12 +71,6 @@ public class StatusMonitorDialogManager :
       // Modifies are handled by the existing EndpointManagerDialogRowManager for that row.
       var (adds, removes, modifies) = _prevDict.CalcDifference(dict);
 
-      Debug.WriteLine($"_prevDict was {_prevDict}");
-      Debug.WriteLine($"dict is {dict}");
-      Debug.WriteLine($"These are your adds: {adds}");
-      Debug.WriteLine($"These are your removes: {removes}");
-      Debug.WriteLine($"These are your modifies: {modifies}");
-
       _prevDict = dict;
 
       foreach (var kvp in adds) {
