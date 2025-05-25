@@ -25,28 +25,12 @@ public sealed class StatusMonitorDialogRow : INotifyPropertyChanged {
     }
   }
 
-  public enum SeverityMonster {
-    Green,
-    Yellow,
-    Red
-  }
-
-  public SeverityMonster Severity {
-    get {
-      if (_opStatus.Status.GetValueOrStatus(out _, out var status)) {
-        return SeverityMonster.Green;
-      }
-      return status.IsFixed ? SeverityMonster.Red : SeverityMonster.Yellow;
-    }
-  }
-
   public void SetValue(OpStatus newStatus) {
     // We do extra work to avoid sending unnecessary PropertyChanged events.
     // Not sure this is necessary.
     var tempRow = new StatusMonitorDialogRow(newStatus);
     var funcChanged = Function != tempRow.Function;
     var statusChanged = Status != tempRow.Status;
-    var severityChanged = Severity != tempRow.Severity;
 
     lock (_sync) {
       _opStatus = newStatus;
@@ -57,9 +41,6 @@ public sealed class StatusMonitorDialogRow : INotifyPropertyChanged {
     }
     if (statusChanged) {
       OnPropertyChanged(nameof(Status));
-    }
-    if (severityChanged) {
-      OnPropertyChanged(nameof(Severity));
     }
   }
 

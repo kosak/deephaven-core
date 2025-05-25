@@ -12,6 +12,15 @@ public class StatusMonitorDialogManager :
   /// </summary>
   private static long _numOpenDialogs = 0;
 
+  public static void EnsureDialogShown(StateManager stateManager) {
+    // Increment the variable temporarily to avoid a race
+    var temp = Interlocked.Increment(ref _numOpenDialogs);
+    if (temp == 1) {
+      CreateAndShow(stateManager);
+    }
+    Interlocked.Decrement(ref _numOpenDialogs);
+  }
+
   public static void CreateAndShow(StateManager stateManager) {
     Interlocked.Increment(ref _numOpenDialogs);
     Background.Run(() => {
@@ -24,23 +33,13 @@ public class StatusMonitorDialogManager :
     });
   }
 
-  public static void EnsureDialogShown(StateManager stateManager) {
-    // Increment the variable temporarily to avoid a race
-    var temp = Interlocked.Increment(ref _numOpenDialogs);
-    if (temp == 1) {
-      CreateAndShow(stateManager);
-    }
-    Interlocked.Decrement(ref _numOpenDialogs);
-  }
-
   private static StatusMonitorDialogManager Create(StateManager stateManager,
     StatusMonitorDialog smDialog) {
-    var result = new StatusMonitorDialogManager(stateManager, smDialog);
+    var result = new StatusMonitorDialogManager(smDialog);
     result._upstreamSubsription = stateManager.SubscribeToStatusDict(result);
     return result;
   }
 
-  private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private readonly StatusMonitorDialog _smDialog;
@@ -48,8 +47,7 @@ public class StatusMonitorDialogManager :
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
 
-  public StatusMonitorDialogManager(StateManager stateManager, StatusMonitorDialog smDialog) {
-    _stateManager = stateManager;
+  public StatusMonitorDialogManager(StatusMonitorDialog smDialog) {
     _smDialog = smDialog;
   }
 
