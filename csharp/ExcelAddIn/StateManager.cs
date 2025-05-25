@@ -150,8 +150,19 @@ public class StateManager {
 
   public IDisposable SubscribeToRetry(TableTriple key,
     IValueObserver<RetryPlaceholder> observer) {
-    var candidate = new RetryProvider(this, key);
+    var candidate = new RetryProvider();
     return SubscribeHelper(_retryProviders, key, candidate, observer);
+  }
+
+  public bool TryNotifyRetry(TableTriple key) {
+    RetryProvider? provider;
+    lock (_sync) {
+      if (!_retryProviders.TryGetValue(key, out provider)) {
+        return false;
+      }
+    }
+    provider.Notify();
+    return true;
   }
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(

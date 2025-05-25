@@ -52,9 +52,10 @@ internal class TableProvider :
             this, _upstreamTokenSource.Token);
           _upstreamDisposer = _stateManager.SubscribeToCoreClient(_endpointId, voc);
         }
+        var key = new TableTriple(_endpointId, _pqName, _tableName);
         var rtvoc = ValueObserverWithCancelWrapper.Create<RetryPlaceholder>(
           this, _upstreamTokenSource.Token);
-        _retryDisposer = _stateManager.SubscribeToRetry(_endpointId, _pqName, _tableName, rtvoc);
+        _retryDisposer = _stateManager.SubscribeToRetry(key, rtvoc);
       }
     }
 
@@ -85,23 +86,20 @@ internal class TableProvider :
       }
 
       // Awkward work to turn RefCounted<DnClient> into RefCounted<Client>
-      StatusOr<RefCounted<Client>> temp;
+      RefCounted<Client>? newRef = null;
+      StatusOr<RefCounted<Client>> newState;
       if (client.GetValueOrStatus(out var dndClient, out var status)) {
-        temp = RefCounted<Client>.CastFrom(dndClient);
+        newRef = RefCounted<Client>.CastAndShare(dndClient);
+        newState = newRef;
       } else {
-        temp = status;
+        newState = status;
       }
-      StatusOrUtil.Replace(ref _cachedClient, temp);
-      OnNextHelper(temp, token);
-    }
-  }
 
-  public void OnNext(RetryPlaceholder _, CancellationToken token) {
-    lock (_sync) {
-      if (token.IsCancellationRequested) {
-        return;
-      }
-      OnNextHelper(_cachedClient, token);
+      using var cleanup = newRef;
+
+      // Update _cachedClient.
+      StatusOrUtil.Replace(ref _cachedClient, newState);
+      OnNextHelper();
     }
   }
 
@@ -111,25 +109,31 @@ internal class TableProvider :
         return;
       }
 
-      // Keep a cached copy of Client (needed for Retry)
+      // Update _cachedClient.
       StatusOrUtil.Replace(ref _cachedClient, client);
 
-      OnNextHelper(client, token);
+      OnNextHelper();
     }
   }
 
-  private void OnNextHelper(StatusOr<RefCounted<Client>> client, CancellationToken token) {
+  public void OnNext(RetryPlaceholder _, CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
       }
+      // Use existing _cachedClient.
+      OnNextHelper();
+    }
+  }
 
+  private void OnNextHelper() {
+    lock (_sync) {
       // Invalidate any background work that might be running.
       _backgroundTokenSource.Cancel();
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       // Suppress responses from stale background workers.
-      if (!client.GetValueOrStatus(out var cliRef, out var status)) {
+      if (!_cachedClient.GetValueOrStatus(out var cliRef, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
         return;
       }

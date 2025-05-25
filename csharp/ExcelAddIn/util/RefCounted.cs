@@ -66,7 +66,7 @@ public abstract class RefCounted : IDisposable {
 }
 
 public sealed class RefCounted<T> : RefCounted where T : class, IDisposable {
-  internal static RefCounted<T> CastFrom<TChild>(RefCounted<TChild> child)
+  internal static RefCounted<T> CastAndShare<TChild>(RefCounted<TChild> child)
         where TChild : class, IDisposable, T {
     var sc = child.SharedCount;
     sc.Increment();
