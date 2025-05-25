@@ -7,14 +7,30 @@ namespace Deephaven.ExcelAddIn.Gui;
 public class StatusMonitorDialogManager : 
     IValueObserver<SharableDict<OpStatus>>,
     IDisposable {
+  /// <summary>
+  /// Used by EnsureDialogShown to make sure at least one dialog is visible
+  /// </summary>
+  private static long _numOpenDialogs = 0;
+
   public static void CreateAndShow(StateManager stateManager) {
+    Interlocked.Increment(ref _numOpenDialogs);
     Background.Run(() => {
       var smDialog = new StatusMonitorDialog();
       var sm = Create(stateManager, smDialog);
       smDialog.Closed += (_, _) => sm.Dispose();
       // Blocks forever (in this dedicated thread) until the form is closed.
       smDialog.ShowDialog();
+      Interlocked.Decrement(ref _numOpenDialogs);
     });
+  }
+
+  public static void EnsureDialogShown(StateManager stateManager) {
+    // Increment the variable temporarily to avoid a race
+    var temp = Interlocked.Increment(ref _numOpenDialogs);
+    if (temp == 1) {
+      CreateAndShow(stateManager);
+    }
+    Interlocked.Decrement(ref _numOpenDialogs);
   }
 
   private static StatusMonitorDialogManager Create(StateManager stateManager,
@@ -80,7 +96,7 @@ public class StatusMonitorDialogManager :
       }
 
       foreach (var kvp in modifies) {
-        if (!_idToRow.Remove(kvp.Key, out var row)) {
+        if (!_idToRow.TryGetValue(kvp.Key, out var row)) {
           continue;
         }
 

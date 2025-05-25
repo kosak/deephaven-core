@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.ExcelDna;
+using Deephaven.ExcelAddIn.Gui;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
@@ -60,6 +61,7 @@ internal class ExcelOperation :
   }
 
   public void OnNext(StatusOr<object?[,]> data, CancellationToken token) {
+    var wantToEnsureStatusMonitorVisible = false;
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
@@ -73,14 +75,22 @@ internal class ExcelOperation :
           ExcelError.ExcelErrorNA : ExcelError.ExcelErrorGettingData;
         _rendered = new object[,] { { whichError } };
         sorUnit = status;
+        wantToEnsureStatusMonitorVisible = status.IsFixed;
       } else {
         _rendered = d;
         sorUnit = Unit.Instance;
       }
 
+
       _observers.OnNext(_rendered);
       var opStatus = new OpStatus(_humanReadableFunction, sorUnit);
       _stateManager.SetOpStatus(_uniqueId, opStatus);
+    }
+
+    // If there was a status message, and it was fixed (rather than just transient)
+    // then we will want to ensure that at least one StatusDialog is visible.
+    if (wantToEnsureStatusMonitorVisible) {
+      StatusMonitorDialogManager.EnsureDialogShown(_stateManager);
     }
   }
 }

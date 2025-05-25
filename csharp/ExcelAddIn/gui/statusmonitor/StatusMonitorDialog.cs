@@ -1,7 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Util;
-
-namespace Deephaven.ExcelAddIn.Gui {
+﻿namespace Deephaven.ExcelAddIn.Gui {
   public partial class StatusMonitorDialog : Form {
     private readonly BindingSource _bindingSource = new();
 
@@ -10,10 +7,6 @@ namespace Deephaven.ExcelAddIn.Gui {
 
       _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
       dataGridView1.DataSource = _bindingSource;
-
-      var opStatus = new OpStatus("func()", StatusOr<Unit>.OfTransient("processing"));
-      var nubbinRow = new StatusMonitorDialogRow(opStatus);
-      _bindingSource.Add(nubbinRow);
     }
 
     public void AddRow(StatusMonitorDialogRow row) {
