@@ -5,6 +5,7 @@ using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
+using System.Net;
 
 namespace Deephaven.ExcelAddIn;
 
@@ -19,6 +20,7 @@ public class StateManager {
   private readonly ReferenceCountingDict<(EndpointId, PqName), PqInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
+  private readonly ReferenceCountingDict<TableTriple, RetryProvider> _retryProviders = new();
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
@@ -146,9 +148,10 @@ public class StateManager {
     _statusDictProvider.Remove(id);
   }
 
-  public IDisposable SubscribeToRetry(EndpointId id, PqName? pqName, string tableName,
+  public IDisposable SubscribeToRetry(TableTriple key,
     IValueObserver<RetryPlaceholder> observer) {
-    return _retryProvider.Subscribe(observer);
+    var candidate = new RetryProvider(this, key);
+    return SubscribeHelper(_retryProviders, key, candidate, observer);
   }
 
   private IDisposable SubscribeHelper<TKey, TObservable, T>(
