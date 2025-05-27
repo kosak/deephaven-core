@@ -136,7 +136,7 @@ public class ControllerClient : IDisposable {
         Cookie = ByteString.CopyFrom(_synced.AuthCookie)
       };
     }
-    Console.WriteLine("heartbeat sent a ping");
+    // TODO(kosak): catch exception here
     _ = _controllerApi.ping(req);
   }
 }

@@ -80,8 +80,8 @@ public class AuthClient : IDisposable {
     _authApi = authApi;
     var keepalive = new Timer(RefreshCookie);
     _synced = new SyncedFields(cookie, keepalive);
-    var dueTime = CalcDueTime(cookieDeadlineTimeMillis);
-    keepalive.Change(dueTime, Timeout.InfiniteTimeSpan);
+    var delayTime = CalcDelayTime(cookieDeadlineTimeMillis);
+    keepalive.Change(delayTime, Timeout.InfiniteTimeSpan);
   }
 
   public void Dispose() {
