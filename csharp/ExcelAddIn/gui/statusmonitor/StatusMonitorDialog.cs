@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.Gui;
+﻿using Deephaven.ExcelAddIn.Util;
+
+namespace Deephaven.ExcelAddIn.Gui;
 
 using SelectedRowsAction = Action<StatusMonitorDialogRow[]>;
 
@@ -12,6 +14,12 @@ public partial class StatusMonitorDialog : Form {
 
     _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
     dataGridView1.DataSource = _bindingSource;
+
+    // Retry button is initially disabled
+    retryButton.Enabled = false;
+
+    // Set the version label
+    versionLabel.Text = Utility.VersionString;
   }
 
   public void AddRow(StatusMonitorDialogRow row) {
@@ -44,5 +52,10 @@ public partial class StatusMonitorDialog : Form {
       result.Add((StatusMonitorDialogRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
+  }
+
+  private void dataGridView1_SelectionChanged(object sender, EventArgs e) {
+    var someRowsSelected = dataGridView1.SelectedRows.Count != 0;
+    retryButton.Enabled = someRowsSelected;
   }
 }

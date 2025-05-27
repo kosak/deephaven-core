@@ -96,7 +96,7 @@ public class StateManager {
   }
 
   public void SetDefaultEndpoint(EndpointId? defaultEndpointId) {
-    _defaultEndpointProvider.Set(defaultEndpointId);
+    _defaultEndpointProvider.SetValue(defaultEndpointId);
   }
 
   public IDisposable SubscribeToEndpointDict(
@@ -156,9 +156,18 @@ public class StateManager {
     return SubscribeHelper(_retryProviders, key, candidate, observer);
   }
 
-  public bool TryNotifyRetry(RetryKey key) {
+  public bool TryNotifyRetry(TableTriple retryTriple) {
     RetryProvider? provider;
     lock (_sync) {
+      EndpointId? endpointToUse = retryTriple.EndpointId;
+      if (endpointToUse == null) {
+        endpointToUse = _defaultEndpointProvider.Value;
+        if (endpointToUse == null) {
+          return false;
+        }
+      }
+
+      var key = new RetryKey(endpointToUse, retryTriple.PqName, retryTriple.TableName);
       if (!_retryProviders.TryGetValue(key, out provider)) {
         return false;
       }

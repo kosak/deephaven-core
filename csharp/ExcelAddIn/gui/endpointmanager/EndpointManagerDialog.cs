@@ -19,6 +19,11 @@ public partial class EndpointManagerDialog : Form {
     _bindingSource.DataSource = typeof(EndpointManagerDialogRow);
     dataGridView1.DataSource = _bindingSource;
     versionLabel.Text = Utility.VersionString;
+
+    deleteButton.Enabled = false;
+    reconnectButton.Enabled = false;
+    editButton.Enabled = false;
+    makeDefaultButton.Enabled = false;
   }
 
   public void AddRow(EndpointManagerDialogRow row) {
@@ -70,5 +75,17 @@ public partial class EndpointManagerDialog : Form {
       result.Add((EndpointManagerDialogRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
+  }
+
+  private void dataGridView1_SelectionChanged(object sender, EventArgs e) {
+    var numRowsSelected = dataGridView1.SelectedRows.Count;
+    var someRowsSelected = numRowsSelected != 0;
+    var oneRowSelected = numRowsSelected == 1;
+
+    deleteButton.Enabled = someRowsSelected;
+    reconnectButton.Enabled = someRowsSelected;
+    editButton.Enabled = someRowsSelected;
+
+    makeDefaultButton.Enabled = oneRowSelected;
   }
 }

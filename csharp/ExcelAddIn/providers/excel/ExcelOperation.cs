@@ -84,9 +84,8 @@ internal class ExcelOperation :
         sorUnit = Unit.Instance;
       }
 
-
       _observers.OnNext(_rendered);
-      var opStatus = new OpStatus(_humanReadableFunction, _retryKey, sorUnit);
+      var opStatus = new OpStatus(_humanReadableFunction, _tableTriple, sorUnit);
       _stateManager.SetOpStatus(_uniqueId, opStatus);
     }
 

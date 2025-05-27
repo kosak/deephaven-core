@@ -48,6 +48,7 @@
       dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
       dataGridView1.Size = new Size(1006, 498);
       dataGridView1.TabIndex = 0;
+      dataGridView1.SelectionChanged += dataGridView1_SelectionChanged;
       // 
       // newButton
       // 

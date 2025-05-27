@@ -102,7 +102,7 @@ public class StatusMonitorDialogManager :
   private void OnRetryButtonClicked(StatusMonitorDialogRow[] rows) {
     lock (_sync) {
       foreach (var row in rows) {
-        _stateManager.TryNotifyRetry(row.OpStatus.RetryKey);
+        _stateManager.TryNotifyRetry(row.OpStatus.RetryTriple);
       }
     }
   }

@@ -12,7 +12,7 @@ public record PqName(string Name) {
   public override string ToString() => Name;
 }
 
-public record OpStatus(string HumanReadableFunction, RetryKey RetryKey,
+public record OpStatus(string HumanReadableFunction, TableTriple RetryTriple,
   StatusOr<Unit> Status);
 
 public record RetryPlaceholder;

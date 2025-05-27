@@ -10,12 +10,12 @@ namespace Deephaven.ExcelAddIn;
 public static class DeephavenExcelFunctions {
   private static readonly StateManager StateManager = new();
 
-  [ExcelCommand(MenuName = "Deephaven", MenuText = "Connections")]
+  [ExcelCommand(MenuName = "Deephaven", MenuText = "&Connections")]
   public static void ShowConnectionsDialog() {
     EndpointManagerDialogManager.CreateAndShow(StateManager);
   }
 
-  [ExcelCommand(MenuName = "Deephaven", MenuText = "Status Monitor")]
+  [ExcelCommand(MenuName = "Deephaven", MenuText = "&Status Monitor")]
   public static void ShowStatusDialog() {
     StatusMonitorDialogManager.CreateAndShow(StateManager);
   }

@@ -21,7 +21,15 @@ internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> 
     });
   }
 
-  public void Set(EndpointId? endpointId) {
+  public EndpointId? Value {
+    get {
+      lock (_sync) {
+        return _endpointId.GetValueOrStatus(out var value, out _) ? value : null;
+      }
+    }
+  }
+
+  public void SetValue(EndpointId? endpointId) {
     lock (_sync) {
       if (endpointId == null) {
         StatusOrUtil.ReplaceAndNotify(ref _endpointId, UnsetEndpointText, _observers);

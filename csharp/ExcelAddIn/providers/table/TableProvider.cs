@@ -2,7 +2,6 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
-using Io.Deephaven.Proto.Auth;
 
 namespace Deephaven.ExcelAddIn.Providers;
 

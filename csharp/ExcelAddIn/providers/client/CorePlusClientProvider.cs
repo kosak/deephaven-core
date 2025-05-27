@@ -109,6 +109,11 @@ internal class CorePlusClientProvider :
       return;
     }
 
+    if (pq.State == null) {
+      StatusOrUtil.ReplaceAndNotify(ref _client, "PQ is in unknown state", _observers);
+      return;
+    }
+
     // Is our PQInfo in the running state?
     if (!ControllerClient.IsRunning(pq.State.Status)) {
       StatusOrUtil.ReplaceAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
