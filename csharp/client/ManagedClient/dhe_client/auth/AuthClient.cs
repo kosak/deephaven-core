@@ -120,15 +120,18 @@ public class AuthClient : IDisposable {
     }
 
     var resp = _authApi.refreshCookie(req);
-    var dueTime = CalcDueTime(resp.CookieDeadlineTimeMillis);
+    var delayTime = CalcDelayTime(resp.CookieDeadlineTimeMillis);
 
     lock (_synced.SyncRoot) {
-      _synced.Cookie = resp.Cookie.ToByteArray();
-      _synced.Keepalive.Change(dueTime, Timeout.InfiniteTimeSpan);
+      // Empty Cookie means reuse same cookie with new deadline.
+      if (resp.Cookie.Length != 0) {
+        _synced.Cookie = resp.Cookie.ToByteArray();
+      }
+      _synced.Keepalive.Change(delayTime, Timeout.InfiniteTimeSpan);
     }
   }
 
-  private static TimeSpan CalcDueTime(long cookieDeadlineTimeMillis) {
+  private static TimeSpan CalcDelayTime(long cookieDeadlineTimeMillis) {
     var deadline = DateTimeOffset.FromUnixTimeMilliseconds(cookieDeadlineTimeMillis);
     var delayMillis = (int)(Math.Max(0,
       (deadline - DateTimeOffset.Now).TotalMilliseconds) / 2);
