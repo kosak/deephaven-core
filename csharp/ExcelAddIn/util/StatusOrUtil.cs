@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ExcelAddIn.Util;
+﻿using Deephaven.ExcelAddIn.Observable;
+
+namespace Deephaven.ExcelAddIn.Util;
 
 /// <summary>
 /// This is a set of utility functions for working with StatusOr&lt;T&gt;.

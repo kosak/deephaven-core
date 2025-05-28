@@ -7,6 +7,7 @@ using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
 using System.Net;
+using Deephaven.ExcelAddIn.Observable;
 
 namespace Deephaven.ExcelAddIn;
 

@@ -1,5 +1,6 @@
 ﻿using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -23,7 +24,7 @@ internal class TableProvider :
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
-  private IDisposable? _upstreamDisposer = null;
+  private IObservableCallbacks? _upstreamCallbacks = null;
   private IDisposable? _retryDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
@@ -37,7 +38,7 @@ internal class TableProvider :
     _tableName = tableName;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out var isFirst);
 
@@ -45,11 +46,11 @@ internal class TableProvider :
         if (_pqName != null) {
           var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<DndClient>>>(
             this, _upstreamTokenSource.Token);
-          _upstreamDisposer = _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, voc);
+          _upstreamCallbacks = _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, voc);
         } else {
           var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<Client>>>(
             this, _upstreamTokenSource.Token);
-          _upstreamDisposer = _stateManager.SubscribeToCoreClient(_endpointId, voc);
+          _upstreamCallbacks = _stateManager.SubscribeToCoreClient(_endpointId, voc);
         }
         var key = new RetryKey(_endpointId, _pqName, _tableName);
         var rtvoc = ValueObserverWithCancelWrapper.Create<RetryPlaceholder>(
@@ -58,7 +59,19 @@ internal class TableProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    lock (_sync) {
+      if (!_cachedClient.GetValueOrStatus(out _, out _)) {
+        // Parent is in error state, so propagate retry to parent.
+        _upstreamCallbacks.Retry();
+      } else {
+        // Parent is in healthy state, so retry here.
+        OnNextHelper();
+      }
+    }
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
