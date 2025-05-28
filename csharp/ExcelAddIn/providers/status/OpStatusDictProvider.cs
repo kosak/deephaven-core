@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -9,7 +10,7 @@ internal class OpStatusDictProvider :
   private readonly ObserverContainer<SharableDict<OpStatus>> _observers = new();
   private SharableDict<OpStatus> _dict = new();
 
-  public IDisposable Subscribe(IValueObserver<SharableDict<OpStatus>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<SharableDict<OpStatus>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
     }

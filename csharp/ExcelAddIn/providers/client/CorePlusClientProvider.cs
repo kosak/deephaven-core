@@ -55,6 +55,21 @@ internal class CorePlusClientProvider :
     return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
   }
 
+  private void Retry() {
+    lock (_sync) {
+      if (_sessionManager.GetValueOrStatus(out _, out _)) {
+        // SessionManager parent is in error state, so propagate retry to it
+        _sessionManagerCallbacks.Retry();
+      } else if (_pqInfo.GetValueOrStatus(out _, out _)) {
+        // PQInfo Parent is in error state, so propagate retry to it (as a practical matter,
+        // PqInfo will just ignore this Retry attempt, but that's not our problem)
+        _pqInfoCallbacks.Retry();
+      } else {
+        UpdateStateLocked();
+      }
+    }
+  }
+
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
