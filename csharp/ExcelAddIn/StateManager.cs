@@ -22,38 +22,37 @@ public class StateManager {
   private readonly ReferenceCountingDict<(EndpointId, PqName), PqInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
-  private readonly ReferenceCountingDict<RetryKey, RetryProvider> _retryProviders = new();
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
   private readonly EndpointDictProvider _endpointDictProvider = new();
   private readonly OpStatusDictProvider _statusDictProvider = new();
 
-  public IDisposable SubscribeToCoreClient(EndpointId endpointId,
+  public IObservableCallbacks SubscribeToCoreClient(EndpointId endpointId,
     IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
+  public IObservableCallbacks SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
     IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     var key = (endpointId, pqName);
     var candidate = new CorePlusClientProvider(this, endpointId, pqName);
     return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToEndpointConfig(EndpointId endpointId,
+  public IObservableCallbacks SubscribeToEndpointConfig(EndpointId endpointId,
     IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     var candidate = new EndpointConfigProvider(this, endpointId);
     return SubscribeHelper(_endpointConfigProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToEndpointHealth(EndpointId endpointId,
+  public IObservableCallbacks SubscribeToEndpointHealth(EndpointId endpointId,
     IValueObserver<StatusOr<EndpointHealth>> observer) {
     var candidate = new EndpointHealthProvider(this, endpointId);
     return SubscribeHelper(_endpointHealthProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToTable(TableQuad key,
+  public IObservableCallbacks SubscribeToTable(TableQuad key,
     IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     ITableProviderBase candidate;
     if (key.EndpointId == null) {
@@ -67,32 +66,32 @@ public class StateManager {
     return SubscribeHelper(_tableProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToPersistentQueryDict(EndpointId endpointId,
+  public IObservableCallbacks SubscribeToPersistentQueryDict(EndpointId endpointId,
     IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
     var candidate = new PqDictProvider(this, endpointId);
     return SubscribeHelper(_persistentQueryDictProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
+  public IObservableCallbacks SubscribeToPersistentQueryInfo(EndpointId endpointId, PqName pqName,
     IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     var key = (endpointId, pqName);
     var candidate = new PqInfoProvider(this, endpointId, pqName);
     return SubscribeHelper(_persistentQueryInfoProviders, key, candidate, observer);
   }
 
-  public IDisposable SubscribeToSessionManager(EndpointId endpointId,
+  public IObservableCallbacks SubscribeToSessionManager(EndpointId endpointId,
     IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToSubscription(EndpointId endpointId,
+  public IObservableCallbacks SubscribeToSubscription(EndpointId endpointId,
     IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
     var candidate = new PqSubscriptionProvider(this, endpointId);
     return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }
 
-  public IDisposable SubscribeToDefaultEndpoint(IValueObserver<StatusOr<EndpointId>> observer) {
+  public IObservableCallbacks SubscribeToDefaultEndpoint(IValueObserver<StatusOr<EndpointId>> observer) {
     return _defaultEndpointProvider.Subscribe(observer);
   }
 
@@ -100,7 +99,7 @@ public class StateManager {
     _defaultEndpointProvider.SetValue(defaultEndpointId);
   }
 
-  public IDisposable SubscribeToEndpointDict(
+  public IObservableCallbacks SubscribeToEndpointDict(
     IValueObserver<SharableDict<EndpointConfigBase>> observer) {
     return _endpointDictProvider.Subscribe(observer);
   }
@@ -137,7 +136,7 @@ public class StateManager {
     }
   }
 
-  public IDisposable SubscribeToStatusDict(
+  public IObservableCallbacks SubscribeToStatusDict(
     IValueObserver<SharableDict<OpStatus>> observer) {
     return _statusDictProvider.Subscribe(observer);
   }
@@ -150,34 +149,7 @@ public class StateManager {
     _statusDictProvider.Remove(id);
   }
 
-  public IDisposable SubscribeToRetry(RetryKey key,
-    IValueObserver<RetryPlaceholder> observer) {
-    Debug.WriteLine($"Someone wants to watch for retries at {key}");
-    var candidate = new RetryProvider();
-    return SubscribeHelper(_retryProviders, key, candidate, observer);
-  }
-
-  public bool TryNotifyRetry(TableTriple retryTriple) {
-    RetryProvider? provider;
-    lock (_sync) {
-      EndpointId? endpointToUse = retryTriple.EndpointId;
-      if (endpointToUse == null) {
-        endpointToUse = _defaultEndpointProvider.Value;
-        if (endpointToUse == null) {
-          return false;
-        }
-      }
-
-      var key = new RetryKey(endpointToUse, retryTriple.PqName, retryTriple.TableName);
-      if (!_retryProviders.TryGetValue(key, out provider)) {
-        return false;
-      }
-    }
-    provider.Notify();
-    return true;
-  }
-
-  private IDisposable SubscribeHelper<TKey, TObservable, T>(
+  private IObservableCallbacks SubscribeHelper<TKey, TObservable, T>(
     ReferenceCountingDict<TKey, TObservable> dict,
     TKey key, TObservable candidateObservable, IValueObserver<T> observer)
     where TKey : notnull
@@ -188,7 +160,7 @@ public class StateManager {
     }
 
     // Subscribe the observer to the (new or existing) observable
-    var disposer = actualObservable.Subscribe(observer);
+    var callbacks = actualObservable.Subscribe(observer);
 
     // Now make a dispose action, which needs to
     // 1. If called more than once, do nothing on subsequent calls
@@ -196,7 +168,8 @@ public class StateManager {
     // 3. Call disposer.Dispose()
 
     var isDisposed = false;
-    return ActionAsDisposable.Create(() => {
+
+    void DoDispose() {
       // Decrement or remove entry from dictionary
       lock (_sync) {
         if (Utility.Exchange(ref isDisposed, true)) {
@@ -206,7 +179,9 @@ public class StateManager {
       }
 
       // Unsubscribe the observer from the observable
-      disposer.Dispose();
-    });
+      callbacks.Dispose();
+    }
+
+    return ObservableCallbacks.Create(callbacks.Retry, DoDispose);
   }
 }

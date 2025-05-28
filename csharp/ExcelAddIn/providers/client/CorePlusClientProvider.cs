@@ -1,6 +1,7 @@
 ﻿using Deephaven.DheClient.Controller;
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Io.Deephaven.Proto.Controller;
 
@@ -36,7 +37,7 @@ internal class CorePlusClientProvider :
   /// <summary>
   /// Subscribe to Enterprise Core+ client changes
   /// </summary>
-  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     lock (_sync) {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out var isFirst);
 
@@ -51,7 +52,7 @@ internal class CorePlusClientProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
