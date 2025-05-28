@@ -20,8 +20,8 @@ internal class CorePlusClientProvider :
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
-  private IDisposable? _sessionManagerDisposer = null;
-  private IDisposable? _pqInfoDisposer = null;
+  private IObservableCallbacks? _sessionManagerCallbacks = null;
+  private IObservableCallbacks? _pqInfoCallbacks = null;
   private readonly ObserverContainer<StatusOr<RefCounted<DndClient>>> _observers = new();
   private StatusOr<RefCounted<SessionManager>> _sessionManager = UnsetSessionManagerText;
   private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
@@ -47,8 +47,8 @@ internal class CorePlusClientProvider :
         var voc2 = ValueObserverWithCancelWrapper.Create<StatusOr<PersistentQueryInfoMessage>>(
           this, _upstreamTokenSource.Token);
 
-        _sessionManagerDisposer = _stateManager.SubscribeToSessionManager(_endpointId, voc1);
-        _pqInfoDisposer = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, voc2);
+        _sessionManagerCallbacks = _stateManager.SubscribeToSessionManager(_endpointId, voc1);
+        _pqInfoCallbacks = _stateManager.SubscribeToPersistentQueryInfo(_endpointId, _pqName, voc2);
       }
     }
 
@@ -59,11 +59,11 @@ internal class CorePlusClientProvider :
     lock (_sync) {
       if (_sessionManager.GetValueOrStatus(out _, out _)) {
         // SessionManager parent is in error state, so propagate retry to it
-        _sessionManagerCallbacks.Retry();
+        _sessionManagerCallbacks?.Retry();
       } else if (_pqInfo.GetValueOrStatus(out _, out _)) {
         // PQInfo Parent is in error state, so propagate retry to it (as a practical matter,
         // PqInfo will just ignore this Retry attempt, but that's not our problem)
-        _pqInfoCallbacks.Retry();
+        _pqInfoCallbacks?.Retry();
       } else {
         UpdateStateLocked();
       }
@@ -80,8 +80,8 @@ internal class CorePlusClientProvider :
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
 
-      Utility.ClearAndDispose(ref _sessionManagerDisposer);
-      Utility.ClearAndDispose(ref _pqInfoDisposer);
+      Utility.ClearAndDispose(ref _sessionManagerCallbacks);
+      Utility.ClearAndDispose(ref _pqInfoCallbacks);
 
       // Release our Deephaven resource asynchronously.
       StatusOrUtil.Replace(ref _sessionManager, UnsetSessionManagerText);
