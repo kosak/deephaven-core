@@ -1,5 +1,6 @@
 ﻿using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -46,7 +47,7 @@ internal class EndpointHealthProvider :
   /// <summary>
   /// Subscribe to connection health changes
   /// </summary>
-  public IDisposable Subscribe(IValueObserver<StatusOr<EndpointHealth>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<EndpointHealth>> observer) {
     lock (_sync) {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out var isFirst);
 
@@ -57,7 +58,11 @@ internal class EndpointHealthProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // Nothing to do for Retry.
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<EndpointHealth>> observer) {

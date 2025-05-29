@@ -1,6 +1,7 @@
 ﻿using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Gui;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using ExcelDna.Integration;
 

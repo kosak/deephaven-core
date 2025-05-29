@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -23,7 +24,7 @@ internal class EndpointConfigProvider :
     _endpointId = endpointId;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _credentials, out var isFirst);
 
@@ -32,7 +33,11 @@ internal class EndpointConfigProvider :
         _upstreamSubscription = _stateManager.SubscribeToEndpointDict(voc);
       }
     }
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // Nothing to do for Retry.
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
