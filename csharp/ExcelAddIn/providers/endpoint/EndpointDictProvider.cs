@@ -1,5 +1,8 @@
-﻿using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.DheClient.Session;
+using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -11,16 +14,22 @@ internal class EndpointDictProvider :
   private readonly Dictionary<EndpointId, Int64> _idToKey = new();
   private Int64 _nextFreeId = 0;
 
-  public IDisposable Subscribe(IValueObserver<SharableDict<EndpointConfigBase>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<SharableDict<EndpointConfigBase>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _dict, out _);
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // Do nothing.
+  }
+
+  private void RemoveObserver(IValueObserver<SharableDict<EndpointConfigBase>> observer) {
+    lock (_sync) {
+      _observers.Remove(observer, out _);
+    }
   }
 
   public bool TryAdd(EndpointConfigBase config) {

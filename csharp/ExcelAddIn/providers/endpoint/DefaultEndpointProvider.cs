@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -9,16 +10,22 @@ internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> 
   private readonly ObserverContainer<StatusOr<EndpointId>> _observers = new();
   private StatusOr<EndpointId> _endpointId = UnsetEndpointText;
   
-  public IDisposable Subscribe(IValueObserver<StatusOr<EndpointId>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<EndpointId>> observer) {
     lock (_sync) {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointId, out _);
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // Do nothing.
+  }
+
+  private void RemoveObserver(IValueObserver<StatusOr<EndpointId>> observer) {
+    lock (_sync) {
+      _observers.Remove(observer, out _);
+    }
   }
 
   public EndpointId? Value {
