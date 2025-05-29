@@ -1,6 +1,7 @@
 ﻿using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -15,6 +16,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SessionManagerProvider :
   IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
   IValueObservable<StatusOr<RefCounted<SessionManager>>> {
+  private const string UnsetCredentialsText = "[No Credentials]";
   private const string UnsetSessionManagerText = "[No SessionManager]";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -22,6 +24,7 @@ internal class SessionManagerProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
+  private StatusOr<EndpointConfigBase> _cachedCredentials = UnsetCredentialsText;
   private readonly ObserverContainer<StatusOr<RefCounted<SessionManager>>> _observers = new();
   private StatusOr<RefCounted<SessionManager>> _session = UnsetSessionManagerText;
 
@@ -33,7 +36,7 @@ internal class SessionManagerProvider :
   /// <summary>
   /// Subscribe to session changes
   /// </summary>
-  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _session, out var isFirst);
 
@@ -43,7 +46,11 @@ internal class SessionManagerProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    OnNextHelper();
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
@@ -67,11 +74,18 @@ internal class SessionManagerProvider :
         return;
       }
 
+      _cachedCredentials = credentials;
+      OnNextHelper();
+    }
+  }
+
+  private void OnNextHelper() {
+    lock (_sync) {
       // Invalidate any background work that might be running.
       _backgroundTokenSource.Cancel();
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
-      if (!credentials.GetValueOrStatus(out var cbase, out var status)) {
+      if (!_cachedCredentials.GetValueOrStatus(out var cbase, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _session, status, _observers);
         return;
       }
@@ -82,7 +96,7 @@ internal class SessionManagerProvider :
           StatusOrUtil.ReplaceAndNotify(ref _session, message, _observers);
           return Unit.Instance;
         },
-        core => { 
+        core => {
           // We are a CorePlus entity but we are getting credentials for core.
           StatusOrUtil.ReplaceAndNotify(ref _session,
             "Persistent Queries are not supported in Community Core", _observers);

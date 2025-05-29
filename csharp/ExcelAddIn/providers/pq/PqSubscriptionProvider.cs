@@ -1,6 +1,7 @@
 ﻿using Deephaven.DheClient.Controller;
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Providers;
@@ -22,7 +23,7 @@ internal class PqSubscriptionProvider :
     _endpointId = endpointId;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _subscription, out var isFirst);
 
@@ -32,7 +33,12 @@ internal class PqSubscriptionProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // For now, do nothing with Retry.
+    // TODO(kosak): think about whether there is anything appropriate to do for Retry.
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
