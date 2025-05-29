@@ -72,6 +72,7 @@ internal class CoreClientProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
+      StatusOrUtil.Replace(ref _cachedConfig, UnsetConfigText);
       StatusOrUtil.Replace(ref _client, UnsetClientText);
     }
   }
@@ -82,7 +83,7 @@ internal class CoreClientProvider :
         return;
       }
 
-      _cachedConfig = config;
+      StatusOrUtil.Replace(ref _cachedConfig, config);
       OnNextHelper();
     }
   }

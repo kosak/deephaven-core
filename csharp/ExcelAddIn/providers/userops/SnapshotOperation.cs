@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -7,6 +8,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SnapshotOperation : 
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   IValueObservable<StatusOr<object?[,]>> {
+  private const string UnsetTableHandle = "[No TableHandle]";
   private const string UnsetTableData = "[No data]";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
@@ -14,7 +16,8 @@ internal class SnapshotOperation :
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
-  private IDisposable? _upstreamDisposer = null;
+  private IObservableCallbacks? _upstreamCallbacks = null;
+  private StatusOr<RefCounted<TableHandle>> _cachedTableHandle = UnsetTableHandle;
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private StatusOr<object?[,]> _rendered = UnsetTableData;
 
@@ -24,7 +27,7 @@ internal class SnapshotOperation :
     _stateManager = stateManager;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<object?[,]>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
       _observers.AddAndNotify(observer, _rendered, out var isFirst);
 
@@ -33,11 +36,21 @@ internal class SnapshotOperation :
           _stateManager.EnsureConfig(_tableQuad.EndpointId);
         }
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
-        _upstreamDisposer = _stateManager.SubscribeToTable(_tableQuad, voc);
+        _upstreamCallbacks = _stateManager.SubscribeToTable(_tableQuad, voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    lock (_sync) {
+      if (!_cachedTableHandle.GetValueOrStatus(out _, out _)) {
+        _upstreamCallbacks?.Retry();
+      } else {
+        OnNextHelper();
+      }
+    }
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<object?[,]>> observer) {
@@ -50,7 +63,8 @@ internal class SnapshotOperation :
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
 
-      Utility.ClearAndDispose(ref _upstreamDisposer);
+      Utility.ClearAndDispose(ref _upstreamCallbacks);
+      StatusOrUtil.Replace(ref _cachedTableHandle, UnsetTableHandle);
       StatusOrUtil.Replace(ref _rendered, UnsetTableData);
     }
   }
@@ -62,11 +76,18 @@ internal class SnapshotOperation :
         return;
       }
 
+      StatusOrUtil.Replace(ref _cachedTableHandle, tableHandle);
+      OnNextHelper();
+    }
+  }
+
+  private void OnNextHelper() {
+    lock (_sync) {
       // Invalidate any background work that might be running.
       _backgroundTokenSource.Cancel();
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
-      if (!tableHandle.GetValueOrStatus(out var th, out var status)) {
+      if (!_cachedTableHandle.GetValueOrStatus(out var th, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _rendered, status, _observers);
         return;
       }

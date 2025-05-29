@@ -64,6 +64,7 @@ internal class SessionManagerProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
+      StatusOrUtil.Replace(ref _cachedCredentials, UnsetCredentialsText);
       StatusOrUtil.Replace(ref _session, UnsetSessionManagerText);
     }
   }
@@ -74,7 +75,7 @@ internal class SessionManagerProvider :
         return;
       }
 
-      _cachedCredentials = credentials;
+      StatusOrUtil.Replace(ref _cachedCredentials, credentials);
       OnNextHelper();
     }
   }

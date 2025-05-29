@@ -107,7 +107,7 @@ internal class CorePlusClientProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      _pqInfo = pqInfo;
+      StatusOrUtil.Replace(ref _pqInfo, pqInfo);
       UpdateStateLocked();
     }
   }

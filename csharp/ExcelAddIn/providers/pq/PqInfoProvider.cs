@@ -53,8 +53,7 @@ internal class PqInfoProvider :
   }
 
   private void Retry() {
-    // For now, do nothing with Retry.
-    // TODO(kosak): think about whether there is anything appropriate to do for Retry.
+    // Do nothing
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {

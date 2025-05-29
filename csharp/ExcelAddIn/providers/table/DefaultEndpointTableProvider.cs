@@ -1,4 +1,5 @@
 ﻿using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 
@@ -37,7 +38,7 @@ internal class DefaultEndpointTableProvider :
     _condition = condition;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out var isFirst);
 
@@ -48,7 +49,11 @@ internal class DefaultEndpointTableProvider :
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // Nothing to do.
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
