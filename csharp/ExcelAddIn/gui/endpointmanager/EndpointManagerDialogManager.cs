@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
+using ExcelAddIn.gui.controlpanel;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
@@ -21,6 +22,15 @@ internal class EndpointManagerDialogManager :
       // Blocks forever (in this dedicated thread) until the form is closed.
       cmDialog.ShowDialog();
     });
+
+    Background.Run(() => {
+      var cpDialog = new ControlPanel();
+      // var dm = Create(stateManager, cmDialog);
+      // cmDialog.Closed += (_, _) => dm.Dispose();
+      // // Blocks forever (in this dedicated thread) until the form is closed.
+      cpDialog.ShowDialog();
+    });
+
   }
 
   private static EndpointManagerDialogManager Create(StateManager stateManager,
