@@ -1,38 +1,19 @@
-﻿using System.Diagnostics;
-using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-/// <summary>
-/// How to parse the name: this is the Manager for the EndpointManagerDialog.
-/// This should not be confused with EndpointManagerDialogRowManager, which is the
-/// Manager for the EndpointManagerDialogRow.
-/// </summary>
-internal class EndpointManagerDialogManager :
+internal class EndpointManager :
   IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
-  public static void CreateAndShow(StateManager stateManager) {
-    Background.Run(() => {
-      var cmDialog = new EndpointManagerDialog();
-      var dm = Create(stateManager, cmDialog);
-      cmDialog.Closed += (_, _) => dm.Dispose();
-      // Blocks forever (in this dedicated thread) until the form is closed.
-      cmDialog.ShowDialog();
-    });
-
-    Background.Run(() => {
-      var cpDialog = new ControlPanel();
-      // var dm = Create(stateManager, cmDialog);
-      // cmDialog.Closed += (_, _) => dm.Dispose();
-      // // Blocks forever (in this dedicated thread) until the form is closed.
-      cpDialog.ShowDialog();
-    });
-
-  }
-
-  private static EndpointManagerDialogManager Create(StateManager stateManager,
+  private static EndpointManager Create(StateManager stateManager,
     EndpointManagerDialog cmDialog) {
     var result = new EndpointManagerDialogManager(stateManager, cmDialog);
     cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;

@@ -1,4 +1,4 @@
-﻿namespace ExcelAddIn.gui.controlpanel {
+﻿namespace Deephaven.ExcelAddIn.Gui {
   partial class ControlPanel {
     /// <summary>
     /// Required designer variable.

@@ -1,7 +1,6 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
-using ExcelAddIn.gui.controlpanel;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
@@ -36,6 +35,26 @@ internal class ControlPanelManager :
     });
   }
 
+  private static EndpointManagerDialogManager Create(StateManager stateManager,
+    ControlPanel cpDialog) {
+    var result = new ControlPanelManager(stateManager, cpDialog);
+
+    var dep = cpDialog.Endpoint;
+    var rep = cpDialog.Endpoint;
+
+    dep.OnNewButtonClicked += result.OnNewButtonClicked;
+    dep.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
+    dep.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
+    dep.OnMakeDefaultButtonClicked += result.OnMakeDefaultButtonClicked;
+    dep.OnEditButtonClicked += result.OnEditButtonClicked;
+
+    result._upstreamSubsription = stateManager.SubscribeToEndpointDict(result);
+    return result;
+  }
+
 
 }
 
+public class ControlPanelEndpointManager {
+
+}
