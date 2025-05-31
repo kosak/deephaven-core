@@ -1,5 +1,6 @@
 ﻿namespace Deephaven.ExcelAddIn.Gui;
 
+
 public partial class ControlPanel {
   public partial class StatusElements {
     private readonly ControlPanel _owner;

@@ -1,4 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Gui;
+﻿namespace Deephaven.ExcelAddIn.Gui;
 
 public partial class ControlPanel {
   public partial class EndpointElements {

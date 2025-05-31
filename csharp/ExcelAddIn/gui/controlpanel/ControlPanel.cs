@@ -16,6 +16,8 @@ public partial class ControlPanel : Form {
 
   }
 
+  public partial class Sad123;
+
   public partial class EndpointElements;
   public partial class StatusElements;
 }
