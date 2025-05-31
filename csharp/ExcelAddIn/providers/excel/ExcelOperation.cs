@@ -93,6 +93,7 @@ internal class ExcelOperation :
     // then we will want to ensure that at least one StatusDialog is visible.
     if (wantToEnsureStatusMonitorVisible) {
       StatusMonitorDialogManager.EnsureDialogShown(_stateManager);
+      ControlPanelManager.EnsureDialogShown(_stateManager);
     }
   }
 
