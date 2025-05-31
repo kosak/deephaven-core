@@ -4,10 +4,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-internal class ControlPanelManager :
-  IValueObserver<SharableDict<EndpointConfigBase>>,
-  IValueObserver<SharableDict<OpStatus>>,
-  IDisposable {
+internal class ControlPanelManager : IDisposable {
   /// <summary>
   /// Used by EnsureShown to make sure at least one dialog is visible
   /// </summary>
@@ -35,26 +32,11 @@ internal class ControlPanelManager :
     });
   }
 
-  private static EndpointManagerDialogManager Create(StateManager stateManager,
+  private static ControlPanelManager Create(StateManager stateManager,
     ControlPanel cpDialog) {
-    var result = new ControlPanelManager(stateManager, cpDialog);
-
-    var dep = cpDialog.Endpoint;
-    var rep = cpDialog.Endpoint;
-
-    dep.OnNewButtonClicked += result.OnNewButtonClicked;
-    dep.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
-    dep.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
-    dep.OnMakeDefaultButtonClicked += result.OnMakeDefaultButtonClicked;
-    dep.OnEditButtonClicked += result.OnEditButtonClicked;
-
-    result._upstreamSubsription = stateManager.SubscribeToEndpointDict(result);
+    var em = EndpointManager.Create(stateManager, cpDialog.Endpoint);
+    var sm = StatusManager.Create(stateManager, cpDialog.Status);
+    var result = new ControlPanelManager(stateManager, cpDialog, em, sm);
     return result;
   }
-
-
-}
-
-public class ControlPanelEndpointManager {
-
 }

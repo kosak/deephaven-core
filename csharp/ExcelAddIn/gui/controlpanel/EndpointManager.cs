@@ -1,26 +1,20 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
 internal class EndpointManager :
   IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
-  private static EndpointManager Create(StateManager stateManager,
-    EndpointManagerDialog cmDialog) {
-    var result = new EndpointManagerDialogManager(stateManager, cmDialog);
-    cmDialog.OnNewButtonClicked += result.OnNewButtonClicked;
-    cmDialog.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
-    cmDialog.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
-    cmDialog.OnMakeDefaultButtonClicked += result.OnMakeDefaultButtonClicked;
-    cmDialog.OnEditButtonClicked += result.OnEditButtonClicked;
+  public static EndpointManager Create(StateManager stateManager,
+    ControlPanel.EndpointElements endpointElements) {
+    var result = new EndpointManager(stateManager, endpointElements);
+    endpointElements.OnNewButtonClicked += result.OnNewButtonClicked;
+    endpointElements.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
+    endpointElements.OnReconnectButtonClicked += result.OnReconnectButtonClicked;
+    endpointElements.OnMakeDefaultButtonClicked += result.OnMakeDefaultButtonClicked;
+    endpointElements.OnEditButtonClicked += result.OnEditButtonClicked;
 
     result._upstreamSubsription = stateManager.SubscribeToEndpointDict(result);
     return result;
@@ -29,15 +23,16 @@ internal class EndpointManager :
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private bool _isDisposed = false;
-  private readonly EndpointManagerDialog _cmDialog;
+  private readonly ControlPanel.EndpointElements _endpointElements;
   private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
   private readonly Dictionary<EndpointManagerDialogRow, EndpointManagerDialogRowManager> _rowToManager = new();
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
 
-  public EndpointManagerDialogManager(StateManager stateManager, EndpointManagerDialog cmDialog) {
+  private EndpointManager(StateManager stateManager,
+    ControlPanel.EndpointElements endpointElements) {
     _stateManager = stateManager;
-    _cmDialog = cmDialog;
+    _endpointElements = endpointElements;
   }
 
   public void Dispose() {
@@ -67,12 +62,6 @@ internal class EndpointManager :
       // Modifies are handled by the existing EndpointManagerDialogRowManager for that row.
       var (adds, removes, modifies) = _prevDict.CalcDifference(dict);
 
-      Debug.WriteLine($"_prevDict was {_prevDict}");
-      Debug.WriteLine($"dict is {dict}");
-      Debug.WriteLine($"These are your adds: {adds}");
-      Debug.WriteLine($"These are your removes: {removes}");
-      Debug.WriteLine($"These are your modified: {modifies}");
-
       _prevDict = dict;
 
       foreach (var item in adds.Values) {
@@ -81,7 +70,7 @@ internal class EndpointManager :
         var statusRowManager = EndpointManagerDialogRowManager.Create(row, endpointId, _stateManager);
         _rowToManager.Add(row, statusRowManager);
         _idToRow.Add(endpointId, row);
-        _cmDialog.AddRow(row);
+        _endpointElements.AddRow(row);
       }
 
       foreach (var item in removes.Values) {
@@ -90,7 +79,7 @@ internal class EndpointManager :
           continue;
         }
 
-        _cmDialog.RemoveRow(rowToDelete);
+        _endpointElements.RemoveRow(rowToDelete);
         rowManager.Dispose();
       }
     }

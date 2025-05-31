@@ -1,23 +1,15 @@
 ﻿using Deephaven.ExcelAddIn.Util;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-
 public partial class ControlPanel : Form {
-  public readonly EndpointElements Endpoint = new();
-  public readonly StatusElements Status = new();
+  public readonly EndpointElements Endpoint;
+  public readonly StatusElements Status;
 
   public ControlPanel() {
     InitializeComponent();
+    Endpoint = new(this);
+    Status = new(this);
 
     // Set the version label
     versionLabel.Text = Utility.VersionString;
