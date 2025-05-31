@@ -109,9 +109,9 @@ internal class EndpointManager :
     }
     var failureText = string.Join(Environment.NewLine, failures);
     const string caption = "Couldn't delete some selections";
-    _cmDialog.BeginInvoke(() => {
+    _endpointElements.Owner.BeginInvoke(() => {
       var mbox = new DeephavenMessageBox(caption, failureText, false);
-      _ = mbox.ShowDialog(_cmDialog);
+      _ = mbox.ShowDialog(_endpointElements.Owner);
     });
   }
 

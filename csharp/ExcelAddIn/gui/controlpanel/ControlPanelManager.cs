@@ -1,6 +1,4 @@
-﻿using Deephaven.ExcelAddIn.Models;
-using Deephaven.ExcelAddIn.Observable;
-using Deephaven.ExcelAddIn.Util;
+﻿using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
@@ -36,7 +34,21 @@ internal class ControlPanelManager : IDisposable {
     ControlPanel cpDialog) {
     var em = EndpointManager.Create(stateManager, cpDialog.Endpoint);
     var sm = StatusManager.Create(stateManager, cpDialog.Status);
-    var result = new ControlPanelManager(stateManager, cpDialog, em, sm);
+    var result = new ControlPanelManager(em, sm);
     return result;
+  }
+
+  private readonly EndpointManager _endpointManager;
+  private readonly StatusManager _statusManager;
+
+  private ControlPanelManager(EndpointManager endpointManager,
+    StatusManager statusManager) {
+    _endpointManager = endpointManager;
+    _statusManager = statusManager;
+  }
+
+  public void Dispose() {
+    _endpointManager.Dispose();
+    _statusManager.Dispose();
   }
 }
