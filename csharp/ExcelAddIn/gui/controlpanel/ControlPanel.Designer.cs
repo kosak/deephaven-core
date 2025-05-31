@@ -212,7 +212,6 @@
     private Label versionLabel;
     private Label statusLabel;
     private Label connectionsLabel;
-    private Button newButton;
     public DataGridView endpointDataGrid;
     public Button deleteButton;
     public Button reconnectButton;
@@ -220,5 +219,6 @@
     public Button editButton;
     public Button retryButton;
     public DataGridView statusDataGrid;
+    public Button newButton;
   }
 }

@@ -15,11 +15,21 @@ public class EndpointElements {
 
     _bindingSource.DataSource = typeof(EndpointManagerDialogRow);
     Owner.endpointDataGrid.DataSource = _bindingSource;
+    Owner.endpointDataGrid.SelectionChanged += endpointDataGrid_SelectionChanged;
 
     Owner.deleteButton.Enabled = false;
+    Owner.deleteButton.Click += deleteButton_Click;
+
     Owner.reconnectButton.Enabled = false;
+    Owner.reconnectButton.Click += reconnectButton_Click;
+
     Owner.editButton.Enabled = false;
+    Owner.editButton.Click += editButton_Click;
+
     Owner.makeDefaultButton.Enabled = false;
+    Owner.makeDefaultButton.Click += makeDefaultButton_Click;
+
+    Owner.newButton.Click += newButton_Click;
   }
 
   public void AddRow(EndpointManagerDialogRow row) {
@@ -39,26 +49,26 @@ public class EndpointElements {
     _bindingSource.Remove(row);
   }
 
-  private void newButton_Click(object sender, EventArgs e) {
+  private void newButton_Click(object? sender, EventArgs e) {
     OnNewButtonClicked?.Invoke();
   }
 
-  private void reconnectButton_Click(object sender, EventArgs e) {
+  private void reconnectButton_Click(object? sender, EventArgs e) {
     var selections = GetSelectedRows();
     OnReconnectButtonClicked?.Invoke(selections);
   }
 
-  private void editButton_Click(object sender, EventArgs e) {
+  private void editButton_Click(object? sender, EventArgs e) {
     var selections = GetSelectedRows();
     OnEditButtonClicked?.Invoke(selections);
   }
 
-  private void deleteButton_Click(object sender, EventArgs e) {
+  private void deleteButton_Click(object? sender, EventArgs e) {
     var selections = GetSelectedRows();
     OnDeleteButtonClicked?.Invoke(selections);
   }
 
-  private void makeDefaultButton_Click(object sender, EventArgs e) {
+  private void makeDefaultButton_Click(object? sender, EventArgs e) {
     var selections = GetSelectedRows();
     OnMakeDefaultButtonClicked?.Invoke(selections);
   }
@@ -73,7 +83,7 @@ public class EndpointElements {
     return result.ToArray();
   }
 
-  private void dataGridView1_SelectionChanged(object sender, EventArgs e) {
+  private void endpointDataGrid_SelectionChanged(object? sender, EventArgs e) {
     var numRowsSelected = Owner.endpointDataGrid.SelectedRows.Count;
     var someRowsSelected = numRowsSelected != 0;
     var oneRowSelected = numRowsSelected == 1;
