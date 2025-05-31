@@ -5,6 +5,9 @@
     <Compile Update="gui\controlpanel\ControlPanel.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="gui\controlpanel\StatusElements.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="gui\endpointmanager\EndpointManagerDialog.cs">
       <SubType>Form</SubType>
     </Compile>
