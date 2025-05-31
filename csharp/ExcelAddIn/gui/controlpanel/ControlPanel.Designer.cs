@@ -209,16 +209,16 @@
     #endregion
 
     private SplitContainer splitContainer1;
-    private Button retryButton;
     private Label versionLabel;
     private Label statusLabel;
-    private DataGridView statusDataGrid;
-    private Button makeDefaultButton;
-    private Button reconnectButton;
-    private Button deleteButton;
-    private Button editButton;
     private Label connectionsLabel;
     private Button newButton;
-    private DataGridView endpointDataGrid;
+    public DataGridView endpointDataGrid;
+    public Button deleteButton;
+    public Button reconnectButton;
+    public Button makeDefaultButton;
+    public Button editButton;
+    public Button retryButton;
+    public DataGridView statusDataGrid;
   }
 }

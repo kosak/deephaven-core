@@ -15,9 +15,4 @@ public partial class ControlPanel : Form {
     versionLabel.Text = Utility.VersionString;
 
   }
-
-  public partial class Sad123;
-
-  public partial class EndpointElements;
-  public partial class StatusElements;
 }

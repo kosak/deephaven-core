@@ -8,7 +8,7 @@ public class StatusManager : IValueObserver<SharableDict<OpStatus>>,
     IDisposable {
 
   public static StatusManager Create(StateManager stateManager,
-    ControlPanel.StatusElements statusElements) {
+    StatusElements statusElements) {
     var result = new StatusManager(stateManager, statusElements);
     result._upstreamSubsription = stateManager.SubscribeToStatusDict(result);
     statusElements.OnRetryButtonClicked += result.OnRetryButtonClicked;
@@ -18,12 +18,12 @@ public class StatusManager : IValueObserver<SharableDict<OpStatus>>,
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private bool _isDisposed = false;
-  private readonly ControlPanel.StatusElements _statusElements;
+  private readonly StatusElements _statusElements;
   private readonly Dictionary<Int64, StatusMonitorDialogRow> _idToRow = new();
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
 
-  private StatusManager(StateManager stateManager, ControlPanel.StatusElements statusElements) {
+  private StatusManager(StateManager stateManager, StatusElements statusElements) {
     _stateManager = stateManager;
     _statusElements = statusElements;
   }

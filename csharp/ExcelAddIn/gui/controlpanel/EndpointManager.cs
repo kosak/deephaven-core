@@ -8,7 +8,7 @@ internal class EndpointManager :
   IValueObserver<SharableDict<EndpointConfigBase>>,
   IDisposable {
   public static EndpointManager Create(StateManager stateManager,
-    ControlPanel.EndpointElements endpointElements) {
+    EndpointElements endpointElements) {
     var result = new EndpointManager(stateManager, endpointElements);
     endpointElements.OnNewButtonClicked += result.OnNewButtonClicked;
     endpointElements.OnDeleteButtonClicked += result.OnDeleteButtonClicked;
@@ -23,14 +23,14 @@ internal class EndpointManager :
   private readonly StateManager _stateManager;
   private readonly object _sync = new();
   private bool _isDisposed = false;
-  private readonly ControlPanel.EndpointElements _endpointElements;
+  private readonly EndpointElements _endpointElements;
   private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
   private readonly Dictionary<EndpointManagerDialogRow, EndpointManagerDialogRowManager> _rowToManager = new();
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
 
   private EndpointManager(StateManager stateManager,
-    ControlPanel.EndpointElements endpointElements) {
+    EndpointElements endpointElements) {
     _stateManager = stateManager;
     _endpointElements = endpointElements;
   }
