@@ -25,8 +25,8 @@ internal class DefaultEndpointTableProvider :
   private readonly object _sync = new();
   private CancellationTokenSource _endpointTokenSource = new();
   private CancellationTokenSource _tableHandleTokenSource = new();
-  private IDisposable? _endpointSubscriptionDisposer = null;
-  private IDisposable? _tableHandleSubscriptionDisposer = null;
+  private IObservableCallbacks? _endpointSubscriptionCallbacks = null;
+  private IObservableCallbacks? _tableHandleSubscriptionCallbacks = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
 
@@ -45,7 +45,7 @@ internal class DefaultEndpointTableProvider :
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create<StatusOr<EndpointId>>(
           this, _endpointTokenSource.Token);
-        _endpointSubscriptionDisposer = _stateManager.SubscribeToDefaultEndpoint(voc);
+        _endpointSubscriptionCallbacks = _stateManager.SubscribeToDefaultEndpoint(voc);
       }
     }
 
@@ -53,7 +53,9 @@ internal class DefaultEndpointTableProvider :
   }
 
   private void Retry() {
-    // Nothing to do.
+    lock (_sync) {
+      _tableHandleSubscriptionCallbacks?.Retry();
+    }
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
@@ -66,8 +68,8 @@ internal class DefaultEndpointTableProvider :
       _endpointTokenSource.Cancel();
       _endpointTokenSource = new CancellationTokenSource();
 
-      Utility.ClearAndDispose(ref _endpointSubscriptionDisposer);
-      Utility.ClearAndDispose(ref _tableHandleSubscriptionDisposer);
+      Utility.ClearAndDispose(ref _endpointSubscriptionCallbacks);
+      Utility.ClearAndDispose(ref _tableHandleSubscriptionCallbacks);
       StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
     }
   }
@@ -84,7 +86,7 @@ internal class DefaultEndpointTableProvider :
         _endpointTokenSource.Token);
 
       // Unsubscribe from old upstream TableHandle
-      Utility.ClearAndDispose(ref _tableHandleSubscriptionDisposer);
+      Utility.ClearAndDispose(ref _tableHandleSubscriptionCallbacks);
       // Suppress any notifications from the old subscription, which will now be stale
 
       if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
@@ -92,11 +94,11 @@ internal class DefaultEndpointTableProvider :
         return;
       }
 
-      // Subscribe to a new upstream TableProvide
+      // Subscribe to a new upstream TableProvider
       var tq = new TableQuad(ep, _pqName, _tableName, _condition);
       var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<TableHandle>>>(
         this, _tableHandleTokenSource.Token);
-      _tableHandleSubscriptionDisposer = _stateManager.SubscribeToTable(tq, voc);
+      _tableHandleSubscriptionCallbacks = _stateManager.SubscribeToTable(tq, voc);
     }
   }
 

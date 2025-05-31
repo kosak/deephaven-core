@@ -1,6 +1,8 @@
-﻿using Deephaven.ExcelAddIn.Models;
+﻿using Deephaven.DheClient.Session;
+using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -15,11 +17,17 @@ internal class OpStatusDictProvider :
       _observers.AddAndNotify(observer, _dict, out _);
     }
 
-    return ActionAsDisposable.Create(() => {
-      lock (_sync) {
-        _observers.Remove(observer, out _);
-      }
-    });
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    // Do nothing
+  }
+
+  private void RemoveObserver(IValueObserver<SharableDict<OpStatus>> observer) {
+    lock (_sync) {
+      _observers.Remove(observer, out _);
+    }
   }
 
   public void Add(Int64 key, OpStatus value) {

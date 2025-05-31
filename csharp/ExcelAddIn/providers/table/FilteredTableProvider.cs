@@ -28,7 +28,7 @@ internal class FilteredTableProvider :
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
-  private IDisposable? _upstreamDisposer = null;
+  private IObservableCallbacks? _upstreamCallbacks = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
 
@@ -41,18 +41,29 @@ internal class FilteredTableProvider :
     _condition = condition;
   }
 
-  public IDisposable Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
       StatusOrUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle,
         out var isFirst);
       if (isFirst) {
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
-        _upstreamDisposer = _stateManager.SubscribeToTable(tq, voc);
+        _upstreamCallbacks = _stateManager.SubscribeToTable(tq, voc);
       }
     }
 
-    return ActionAsDisposable.Create(() => RemoveObserver(observer));
+    return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
+  }
+
+  private void Retry() {
+    lock (_sync) {
+      // if parent has an error, then retry parent
+      // otherwise if this has an error, then retry this
+      // otherwise (if neither has an error), then retry parent, on the logic that the user
+      // is doing a refresh of a healthy table because they feel like it.
+      xyz();
+      _upstreamCallbacks?.Retry();
+    }
   }
 
   private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
@@ -65,7 +76,7 @@ internal class FilteredTableProvider :
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
 
-      Utility.ClearAndDispose(ref _upstreamDisposer);
+      Utility.ClearAndDispose(ref _upstreamCallbacks);
       StatusOrUtil.Replace(ref _filteredTableHandle, UnsetTableHandleText);
     }
   }
