@@ -11,7 +11,6 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
   IValueObserverWithCancel<StatusOr<RefCounted<DndClient>>>,
-  IValueObserverWithCancel<RetryPlaceholder>,
   // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
   ITableProviderBase {
   private const string UnsetTableHandleText = "[No Table]";
@@ -25,7 +24,6 @@ internal class TableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private IDisposable? _retryDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
   private StatusOr<RefCounted<Client>> _cachedClient = UnsetClientText;
@@ -52,10 +50,6 @@ internal class TableProvider :
             this, _upstreamTokenSource.Token);
           _upstreamCallbacks = _stateManager.SubscribeToCoreClient(_endpointId, voc);
         }
-        var key = new RetryKey(_endpointId, _pqName, _tableName);
-        var rtvoc = ValueObserverWithCancelWrapper.Create<RetryPlaceholder>(
-          this, _upstreamTokenSource.Token);
-        _retryDisposer = _stateManager.SubscribeToRetry(key, rtvoc);
       }
     }
 
@@ -66,7 +60,7 @@ internal class TableProvider :
     lock (_sync) {
       if (!_cachedClient.GetValueOrStatus(out _, out _)) {
         // Parent is in error state, so propagate retry to parent.
-        _upstreamCallbacks.Retry();
+        _upstreamCallbacks?.Retry();
       } else {
         // Parent is in healthy state, so retry here.
         OnNextHelper();
@@ -84,8 +78,7 @@ internal class TableProvider :
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
 
-      Utility.ClearAndDispose(ref _upstreamDisposer);
-      Utility.ClearAndDispose(ref _retryDisposer);
+      Utility.ClearAndDispose(ref _upstreamCallbacks);
       StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
       StatusOrUtil.Replace(ref _cachedClient, UnsetClientText);
     }
@@ -124,16 +117,6 @@ internal class TableProvider :
       // Update _cachedClient.
       StatusOrUtil.Replace(ref _cachedClient, client);
 
-      OnNextHelper();
-    }
-  }
-
-  public void OnNext(RetryPlaceholder _, CancellationToken token) {
-    lock (_sync) {
-      if (token.IsCancellationRequested) {
-        return;
-      }
-      // Use existing _cachedClient.
       OnNextHelper();
     }
   }
