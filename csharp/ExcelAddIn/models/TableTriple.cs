@@ -41,8 +41,3 @@ public record TableQuad(
   PqName? PqName,
   string TableName,
   string Condition);
-
-public record RetryKey(
-  EndpointId EndpointId,
-  PqName? PqName,
-  string TableName);

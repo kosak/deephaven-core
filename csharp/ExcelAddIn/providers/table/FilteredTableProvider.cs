@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
+using Io.Deephaven.Proto.Auth;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
@@ -18,6 +19,7 @@ internal class FilteredTableProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
   ITableProviderBase {
+  private const string UnsetParentText = "[No Parent Table]";
   private const string UnsetTableHandleText = "[No Filtered Table]";
 
   private readonly StateManager _stateManager;
@@ -29,6 +31,7 @@ internal class FilteredTableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
+  private StatusOr<RefCounted<TableHandle>> _cachedParentHandle = UnsetParentText;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
 
@@ -61,7 +64,17 @@ internal class FilteredTableProvider :
       // otherwise if this has an error, then retry this
       // otherwise (if neither has an error), then retry parent, on the logic that the user
       // is doing a refresh of a healthy table because they feel like it.
-      xyz();
+
+      if (!_cachedParentHandle.GetValueOrStatus(out _, out _)) {
+        _upstreamCallbacks?.Retry();
+        return;
+      }
+
+      if (!_filteredTableHandle.GetValueOrStatus(out _, out _)) {
+        OnNextHelper();
+        return;
+      }
+
       _upstreamCallbacks?.Retry();
     }
   }
@@ -77,6 +90,7 @@ internal class FilteredTableProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
+      StatusOrUtil.Replace(ref _cachedParentHandle, UnsetParentText);
       StatusOrUtil.Replace(ref _filteredTableHandle, UnsetTableHandleText);
     }
   }
@@ -87,11 +101,18 @@ internal class FilteredTableProvider :
         return;
       }
 
+      StatusOrUtil.Replace(ref _cachedParentHandle, parentHandle);
+      OnNextHelper();
+    }
+  }
+
+  private void OnNextHelper() {
+    lock (_sync) {
       // Invalidate any background work that might be running.
       _backgroundTokenSource.Cancel();
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
-      if (!parentHandle.GetValueOrStatus(out var ph, out var status)) {
+      if (!_cachedParentHandle.GetValueOrStatus(out var ph, out var status)) {
         StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
         return;
       }
