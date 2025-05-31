@@ -101,10 +101,12 @@ public class StatusMonitorDialogManager :
   }
 
   private void OnRetryButtonClicked(StatusMonitorDialogRow[] rows) {
+    Action[] actions;
     lock (_sync) {
-      foreach (var row in rows) {
-        _stateManager.TryNotifyRetry(row.OpStatus.RetryTriple);
-      }
+      actions = rows.Select(row => row.OpStatus.RetryAction).ToArray();
+    }
+    foreach (var action in actions) {
+      action.Invoke();
     }
   }
 }

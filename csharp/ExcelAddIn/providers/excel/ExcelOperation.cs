@@ -20,7 +20,7 @@ internal class ExcelOperation :
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private readonly ObserverContainer<object?[,]> _observers = new();
-  private IDisposable? _upstreamDisposer = null;
+  private IObservableCallbacks? _upstreamCallbacks = null;
   private object?[,] _rendered = { { ExcelError.ExcelErrorNA } };
 
   public ExcelOperation(string humanReadableFunction,
@@ -41,7 +41,7 @@ internal class ExcelOperation :
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
-        _upstreamDisposer = _upstream.Subscribe(voc);
+        _upstreamCallbacks = _upstream.Subscribe(voc);
       }
 
       return ActionAsDisposable.Create(() => RemoveObserver(wrapped));
@@ -60,7 +60,7 @@ internal class ExcelOperation :
       _upstreamTokenSource.Cancel();
       _upstreamTokenSource = new CancellationTokenSource();
 
-      Utility.ClearAndDispose(ref _upstreamDisposer);
+      Utility.ClearAndDispose(ref _upstreamCallbacks);
     }
   }
 
@@ -85,7 +85,7 @@ internal class ExcelOperation :
       }
 
       _observers.OnNext(_rendered);
-      var opStatus = new OpStatus(_humanReadableFunction, _tableTriple, sorUnit);
+      var opStatus = new OpStatus(_humanReadableFunction, sorUnit, OnUserRetry);
       _stateManager.SetOpStatus(_uniqueId, opStatus);
     }
 
@@ -93,6 +93,12 @@ internal class ExcelOperation :
     // then we will want to ensure that at least one StatusDialog is visible.
     if (wantToEnsureStatusMonitorVisible) {
       StatusMonitorDialogManager.EnsureDialogShown(_stateManager);
+    }
+  }
+
+  private void OnUserRetry() {
+    lock (_sync) {
+      _upstreamCallbacks?.Retry();
     }
   }
 }

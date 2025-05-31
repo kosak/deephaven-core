@@ -12,5 +12,5 @@ public record PqName(string Name) {
   public override string ToString() => Name;
 }
 
-public record OpStatus(string HumanReadableFunction, TableTriple RetryTriple,
-  StatusOr<Unit> Status);
+public record OpStatus(string HumanReadableFunction, StatusOr<Unit> Status,
+  Action RetryAction);
