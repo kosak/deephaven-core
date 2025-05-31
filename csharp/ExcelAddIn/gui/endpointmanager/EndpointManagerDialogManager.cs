@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Deephaven.ExcelAddIn.Models;
+using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Gui;
