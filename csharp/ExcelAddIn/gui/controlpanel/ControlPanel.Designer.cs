@@ -24,24 +24,23 @@
     /// </summary>
     private void InitializeComponent() {
       splitContainer1 = new SplitContainer();
-      retryButton = new Button();
-      versionLabel = new Label();
-      statusLabel = new Label();
-      dataGridView1 = new DataGridView();
-      label1 = new Label();
       makeDefaultButton = new Button();
       reconnectButton = new Button();
       deleteButton = new Button();
       editButton = new Button();
       connectionsLabel = new Label();
       newButton = new Button();
-      dataGridView2 = new DataGridView();
+      endpointDataGrid = new DataGridView();
+      retryButton = new Button();
+      versionLabel = new Label();
+      statusLabel = new Label();
+      statusDataGrid = new DataGridView();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
       splitContainer1.Panel1.SuspendLayout();
       splitContainer1.Panel2.SuspendLayout();
       splitContainer1.SuspendLayout();
-      ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)dataGridView2).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)endpointDataGrid).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)statusDataGrid).BeginInit();
       SuspendLayout();
       // 
       // splitContainer1
@@ -53,75 +52,23 @@
       // 
       // splitContainer1.Panel1
       // 
-      splitContainer1.Panel1.Controls.Add(label1);
       splitContainer1.Panel1.Controls.Add(makeDefaultButton);
       splitContainer1.Panel1.Controls.Add(reconnectButton);
       splitContainer1.Panel1.Controls.Add(deleteButton);
       splitContainer1.Panel1.Controls.Add(editButton);
       splitContainer1.Panel1.Controls.Add(connectionsLabel);
       splitContainer1.Panel1.Controls.Add(newButton);
-      splitContainer1.Panel1.Controls.Add(dataGridView2);
+      splitContainer1.Panel1.Controls.Add(endpointDataGrid);
       // 
       // splitContainer1.Panel2
       // 
       splitContainer1.Panel2.Controls.Add(retryButton);
       splitContainer1.Panel2.Controls.Add(versionLabel);
       splitContainer1.Panel2.Controls.Add(statusLabel);
-      splitContainer1.Panel2.Controls.Add(dataGridView1);
+      splitContainer1.Panel2.Controls.Add(statusDataGrid);
       splitContainer1.Size = new Size(1221, 1282);
       splitContainer1.SplitterDistance = 620;
       splitContainer1.TabIndex = 0;
-      // 
-      // retryButton
-      // 
-      retryButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      retryButton.Location = new Point(994, 599);
-      retryButton.Name = "retryButton";
-      retryButton.Size = new Size(128, 34);
-      retryButton.TabIndex = 12;
-      retryButton.Text = "Retry";
-      retryButton.UseVisualStyleBackColor = true;
-      // 
-      // versionLabel
-      // 
-      versionLabel.AutoSize = true;
-      versionLabel.Location = new Point(99, 621);
-      versionLabel.Name = "versionLabel";
-      versionLabel.Size = new Size(79, 25);
-      versionLabel.TabIndex = 11;
-      versionLabel.Text = "(version)";
-      // 
-      // statusLabel
-      // 
-      statusLabel.AutoSize = true;
-      statusLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      statusLabel.Location = new Point(126, 12);
-      statusLabel.Name = "statusLabel";
-      statusLabel.Size = new Size(78, 32);
-      statusLabel.TabIndex = 10;
-      statusLabel.Text = "Status";
-      // 
-      // dataGridView1
-      // 
-      dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-      dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-      dataGridView1.Location = new Point(126, 67);
-      dataGridView1.Name = "dataGridView1";
-      dataGridView1.ReadOnly = true;
-      dataGridView1.RowHeadersWidth = 62;
-      dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-      dataGridView1.Size = new Size(996, 513);
-      dataGridView1.TabIndex = 9;
-      // 
-      // label1
-      // 
-      label1.AutoSize = true;
-      label1.Location = new Point(93, 556);
-      label1.Name = "label1";
-      label1.Size = new Size(79, 25);
-      label1.TabIndex = 14;
-      label1.Text = "(version)";
       // 
       // makeDefaultButton
       // 
@@ -183,20 +130,62 @@
       newButton.Text = "New...";
       newButton.UseVisualStyleBackColor = true;
       // 
-      // dataGridView2
+      // endpointDataGrid
       // 
-      dataGridView2.AllowUserToAddRows = false;
-      dataGridView2.AllowUserToDeleteRows = false;
-      dataGridView2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-      dataGridView2.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-      dataGridView2.Location = new Point(122, 58);
-      dataGridView2.Name = "dataGridView2";
-      dataGridView2.ReadOnly = true;
-      dataGridView2.RowHeadersWidth = 62;
-      dataGridView2.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-      dataGridView2.Size = new Size(1006, 498);
-      dataGridView2.TabIndex = 7;
+      endpointDataGrid.AllowUserToAddRows = false;
+      endpointDataGrid.AllowUserToDeleteRows = false;
+      endpointDataGrid.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      endpointDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+      endpointDataGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+      endpointDataGrid.Location = new Point(141, 55);
+      endpointDataGrid.Name = "endpointDataGrid";
+      endpointDataGrid.ReadOnly = true;
+      endpointDataGrid.RowHeadersWidth = 62;
+      endpointDataGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+      endpointDataGrid.Size = new Size(1006, 498);
+      endpointDataGrid.TabIndex = 7;
+      // 
+      // retryButton
+      // 
+      retryButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+      retryButton.Location = new Point(994, 599);
+      retryButton.Name = "retryButton";
+      retryButton.Size = new Size(128, 34);
+      retryButton.TabIndex = 12;
+      retryButton.Text = "Retry";
+      retryButton.UseVisualStyleBackColor = true;
+      // 
+      // versionLabel
+      // 
+      versionLabel.AutoSize = true;
+      versionLabel.Location = new Point(99, 621);
+      versionLabel.Name = "versionLabel";
+      versionLabel.Size = new Size(79, 25);
+      versionLabel.TabIndex = 11;
+      versionLabel.Text = "(version)";
+      // 
+      // statusLabel
+      // 
+      statusLabel.AutoSize = true;
+      statusLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+      statusLabel.Location = new Point(126, 12);
+      statusLabel.Name = "statusLabel";
+      statusLabel.Size = new Size(78, 32);
+      statusLabel.TabIndex = 10;
+      statusLabel.Text = "Status";
+      // 
+      // statusDataGrid
+      // 
+      statusDataGrid.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      statusDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+      statusDataGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+      statusDataGrid.Location = new Point(132, 80);
+      statusDataGrid.Name = "statusDataGrid";
+      statusDataGrid.ReadOnly = true;
+      statusDataGrid.RowHeadersWidth = 62;
+      statusDataGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+      statusDataGrid.Size = new Size(996, 513);
+      statusDataGrid.TabIndex = 9;
       // 
       // ControlPanel
       // 
@@ -212,8 +201,8 @@
       splitContainer1.Panel2.PerformLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
       splitContainer1.ResumeLayout(false);
-      ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
-      ((System.ComponentModel.ISupportInitialize)dataGridView2).EndInit();
+      ((System.ComponentModel.ISupportInitialize)endpointDataGrid).EndInit();
+      ((System.ComponentModel.ISupportInitialize)statusDataGrid).EndInit();
       ResumeLayout(false);
     }
 
@@ -223,14 +212,13 @@
     private Button retryButton;
     private Label versionLabel;
     private Label statusLabel;
-    private DataGridView dataGridView1;
-    private Label label1;
+    private DataGridView statusDataGrid;
     private Button makeDefaultButton;
     private Button reconnectButton;
     private Button deleteButton;
     private Button editButton;
     private Label connectionsLabel;
     private Button newButton;
-    private DataGridView dataGridView2;
+    private DataGridView endpointDataGrid;
   }
 }
