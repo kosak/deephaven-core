@@ -6,7 +6,7 @@ namespace Deephaven.ExcelAddIn.ExcelDna;
 internal class ExcelDnaHelpers {
   public static bool TryInterpretAs<T>(object value, T defaultValue, out T result) {
     result = defaultValue;
-    if (value is ExcelMissing) {
+    if (value is ExcelMissing or ExcelEmpty) {
       return true;
     }
 

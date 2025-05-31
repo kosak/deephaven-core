@@ -99,7 +99,6 @@ public static class DeephavenExcelFunctions {
       return false;
     }
 
-
     if (!ExcelDnaHelpers.TryInterpretAs(wantHeaders, false, out wantHeadersResult)) {
       errorText = "Can't interpret WANT_HEADERS argument";
       return false;
@@ -109,14 +108,25 @@ public static class DeephavenExcelFunctions {
     return true;
   }
 
-  private static string MakeDescription(string function, string tableDescriptor, object filter, object wantHeaders) {
+  private static string MakeDescription(string function, string tableDescriptor, object filter,
+    object wantHeaders) {
     var args = new List<string> { $"\"{tableDescriptor}\"" };
-    if (filter is not ExcelMissing) {
-      args.Add(filter.ToString()!);
+
+    var filterMissing = filter is ExcelMissing or ExcelEmpty;
+    var wantHeadersMissing = wantHeaders is ExcelMissing or ExcelEmpty;
+
+    args.Add(filterMissing ? "" : $"\"{filter}\"");
+    args.Add(wantHeadersMissing ? "" : wantHeaders.ToString()!);
+
+    // Now trim. A little wasteful but simple.
+    if (wantHeadersMissing) {
+      args.RemoveAt(args.Count - 1);
+
+      if (filterMissing) {
+        args.RemoveAt(args.Count - 1);
+      }
     }
-    if (wantHeaders is not ExcelMissing) {
-      args.Add(wantHeaders.ToString()!);
-    }
+
     return $"{function}({string.Join(',', args)})";
   }
 }
