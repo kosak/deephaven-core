@@ -8,8 +8,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SnapshotOperation : 
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   IValueObservable<StatusOr<object?[,]>> {
-  private const string UnsetTableHandle = "[No TableHandle]";
-  private const string UnsetTableData = "[No data]";
+  private const string UnsetTableHandle = "No TableHandle";
+  private const string UnsetTableData = "No table data";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
@@ -89,7 +89,7 @@ internal class SnapshotOperation :
         return;
       }
 
-      var progress = StatusOr<object?[,]>.OfTransient("[Rendering]");
+      var progress = StatusOr<object?[,]>.OfTransient("Rendering");
       _rendered.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.

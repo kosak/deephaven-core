@@ -8,8 +8,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableHeadersOperation :
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   IValueObservable<StatusOr<object?[,]>> {
-  private const string UnsetTableHandle = "[No TableHandle]";
-  private const string UnsetTableData = "[No headers]";
+  private const string UnsetTableHandle = "No TableHandle";
+  private const string UnsetTableData = "No headers";
   private readonly TableTriple _tableTriple;
   private readonly StateManager _stateManager;
   private readonly object _sync = new();

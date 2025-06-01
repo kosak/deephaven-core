@@ -17,7 +17,7 @@ public class StateManager {
   private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
   private readonly ReferenceCountingDict<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly ReferenceCountingDict<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
-  private readonly ReferenceCountingDict<TableQuad, ITableProviderBase> _tableProviders = new();
+  private readonly ReferenceCountingDict<TableQuad, IValueObservable<StatusOr<RefCounted<TableHandle>>>> _tableProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqDictProvider> _persistentQueryDictProviders = new();
   private readonly ReferenceCountingDict<(EndpointId, PqName), PqInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
@@ -54,7 +54,7 @@ public class StateManager {
 
   public IObservableCallbacks SubscribeToTable(TableQuad key,
     IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
-    ITableProviderBase candidate;
+    IValueObservable<StatusOr<RefCounted<TableHandle>>> candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
     } else if (key.Condition.Length != 0) {

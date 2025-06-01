@@ -10,9 +10,9 @@ internal class SubscribeOperation :
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
   IObserverWithCancel<TickingUpdate>,
   IValueObservable<StatusOr<object?[,]>> {
-  private const string UnsetTableHandle = "[No TableHandle]";
-  private const string UnsetTableData = "[No data]";
-  private const string UnsetTickingSubscription = "[no ticking subscription]";
+  private const string UnsetTableHandle = "No TableHandle";
+  private const string UnsetTableData = "No data";
+  private const string UnsetTickingSubscription = "No ticking subscription";
   private readonly TableQuad _tableQuad;
   private readonly bool _wantHeaders;
   private readonly StateManager _stateManager;
