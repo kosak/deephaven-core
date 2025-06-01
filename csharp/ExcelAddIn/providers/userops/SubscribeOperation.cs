@@ -49,11 +49,9 @@ internal class SubscribeOperation :
 
   private void Retry() {
     lock (_sync) {
-      if (!_cachedTableHandle.GetValueOrStatus(out _, out _)) {
-        _upstreamCallbacks?.Retry();
-      } else {
-        OnNextHelper();
-      }
+      // Ask the parent to Retry, regardless of whether our cached TableHandle is
+      // healthy or in an error state.
+      _upstreamCallbacks?.Retry();
     }
   }
 
