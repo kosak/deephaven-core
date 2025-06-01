@@ -17,9 +17,9 @@ internal class SnapshotOperation :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private StatusOr<RefCounted<TableHandle>> _cachedTableHandle = UnsetTableHandle;
+  private readonly StatusOrHolder<RefCounted<TableHandle>> _cachedTableHandle = new(UnsetTableHandle);
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
-  private StatusOr<object?[,]> _rendered = UnsetTableData;
+  private readonly StatusOrHolder<object?[,]> _rendered = new(UnsetTableData);
 
   public SnapshotOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
@@ -29,7 +29,7 @@ internal class SnapshotOperation :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _rendered, out var isFirst);
+      _rendered.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         if (_tableQuad.EndpointId != null) {
@@ -62,8 +62,8 @@ internal class SnapshotOperation :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
-      StatusOrUtil.Replace(ref _cachedTableHandle, UnsetTableHandle);
-      StatusOrUtil.Replace(ref _rendered, UnsetTableData);
+      _cachedTableHandle.Replace(UnsetTableHandle);
+      _rendered.Replace(UnsetTableData);
     }
   }
 
@@ -73,8 +73,7 @@ internal class SnapshotOperation :
       if (token.IsCancellationRequested) {
         return;
       }
-
-      StatusOrUtil.Replace(ref _cachedTableHandle, tableHandle);
+      _cachedTableHandle.Replace(tableHandle);
       OnNextHelper();
     }
   }
@@ -86,12 +85,12 @@ internal class SnapshotOperation :
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!_cachedTableHandle.GetValueOrStatus(out var th, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _rendered, status, _observers);
+        _rendered.ReplaceAndNotify(status, _observers);
         return;
       }
 
       var progress = StatusOr<object?[,]>.OfTransient("[Rendering]");
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, progress, _observers);
+      _rendered.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.
       var thShare = th.Share();
@@ -119,7 +118,7 @@ internal class SnapshotOperation :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, newResult, _observers);
+      _rendered.ReplaceAndNotify(newResult, _observers);
     }
   }
 }

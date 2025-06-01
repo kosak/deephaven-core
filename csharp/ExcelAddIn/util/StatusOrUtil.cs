@@ -1,20 +1,24 @@
-﻿using Deephaven.ExcelAddIn.Observable;
+﻿using System.Diagnostics.CodeAnalysis;
+using Deephaven.ExcelAddIn.Observable;
 
 namespace Deephaven.ExcelAddIn.Util;
 
-/// <summary>
-/// This is a set of utility functions for working with StatusOr&lt;T&gt;.
-/// The reason this exists at all is because, for consistency, we would like
-/// to use the same set of helper functions for StatusOr&lt;T&gt; and
-/// StatusOr&lt;RefCounted&lt;T&gt;&gt;
-/// In the latter case we need to do special work to dispose, share, and manage
-/// the lifetime of the RefCounted item.
-/// Implementation note: you *can* do this with generics, e.g. by having
-/// two Replace overloads, one taking StatusOr&lt;T&gt; and one taking
-/// StatusOr&lt;RefCounted&lt;T&gt;&gt;, but I'm a little worried about
-/// the danger of managing to accidentally call the former when you meant the latter.
-/// </summary>
-internal static class StatusOrUtil {
+public class StatusOrHolder<T> {
+  private StatusOr<T> _value;
+
+  public StatusOrHolder(string state) {
+    _value = StatusOr<T>.OfFixed(state);
+  }
+
+  /// <summary>
+  /// Convenience
+  /// </summary>
+  public bool GetValueOrStatus(
+    [NotNullWhen(true)] out T? value,
+    [NotNullWhen(false)] out Status? status) {
+    return _value.GetValueOrStatus(out value, out status);
+  }
+
   /// <summary>
   /// First discards the old value of dest (which will dispose it if it contains
   /// a value, and that value is a RefCounted type).
@@ -24,36 +28,35 @@ internal static class StatusOrUtil {
   /// immutable type unless it contains an IDisposable or a RefCounted, in which
   /// case it participates in the RefCounted protocol.
   /// </summary>
-  public static void Replace<T>(ref StatusOr<T> dest, StatusOr<T> src) {
-    if (dest.GetValueOrStatus(out var dv, out _) && dv is RefCounted destRc) {
+  public void Replace(StatusOr<T> newValue) {
+    if (_value.GetValueOrStatus(out var dv, out _) && dv is RefCounted destRc) {
       Background.InvokeDispose(destRc);
     }
 
-    if (src.GetValueOrStatus(out var sv, out _) && sv is RefCounted srcSc) {
-      dest = (T)(object)srcSc.Share();
+    if (newValue.GetValueOrStatus(out var sv, out _) && sv is RefCounted srcSc) {
+      _value = (T)(object)srcSc.Share();
     } else {
       // For other cases (status-containing, or value containing but not RefCounted)
       // you can treat the StatusOr as an freely-copyable value type.
-      dest = src;
+      _value = newValue;
     }
   }
 
-  public static void ReplaceAndNotify<T>(ref StatusOr<T> dest,
-    StatusOr<T> newValue, ObserverContainer<StatusOr<T>> observers) {
-    Replace(ref dest, newValue);
-    observers.OnNext(dest);
-    EnqueueKeepAlive(observers, dest);
+  public void ReplaceAndNotify(StatusOr<T> newValue,
+    ObserverContainer<StatusOr<T>> observers) {
+    Replace(newValue);
+    observers.OnNext(newValue);
+    EnqueueKeepAlive(observers);
   }
 
-  public static void AddObserverAndNotify<T>(ObserverContainer<StatusOr<T>> observers,
-    IValueObserver<StatusOr<T>> observer, StatusOr<T> item, out bool isFirst) {
-    observers.AddAndNotify(observer, item, out isFirst);
-    EnqueueKeepAlive(observers, item);
+  public void AddObserverAndNotify(ObserverContainer<StatusOr<T>> observers,
+    IValueObserver<StatusOr<T>> observer, out bool isFirst) {
+    observers.AddAndNotify(observer, _value, out isFirst);
+    EnqueueKeepAlive(observers);
   }
 
-  private static void EnqueueKeepAlive<T>(ObserverContainer<StatusOr<T>> observers,
-    StatusOr<T> item) {
-    if (!item.GetValueOrStatus(out var value, out _) || value is not RefCounted rc) {
+  private void EnqueueKeepAlive(ObserverContainer<StatusOr<T>> observers) {
+    if (!_value.GetValueOrStatus(out var value, out _) || value is not RefCounted rc) {
       return;
     }
     // If item contains a value, and if that value is a RefCounted type, then
