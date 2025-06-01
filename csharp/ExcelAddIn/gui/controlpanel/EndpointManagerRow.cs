@@ -4,7 +4,7 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-public sealed class EndpointManagerDialogRow(string id) : INotifyPropertyChanged {
+public sealed class EndpointManagerRow(string id) : INotifyPropertyChanged {
 
   public event PropertyChangedEventHandler? PropertyChanged;
 

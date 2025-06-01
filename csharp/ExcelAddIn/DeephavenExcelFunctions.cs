@@ -20,10 +20,11 @@ public static class DeephavenExcelFunctions {
     StatusMonitorDialogManager.CreateAndShow(StateManager);
   }
 
+#if DEEPHAVEN_TESTING
   [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]
-  public static void AddKosakConnection() {
-    var id = new EndpointId("con1");
-    var config = EndpointConfigBase.OfCore(id, "10.0.4.109:10000");
+  public static void AddTestingConnections() {
+    var id1 = new EndpointId("con1");
+    var config1 = EndpointConfigBase.OfCore(id1, "10.0.4.109:10000");
     StateManager.SetConfig(config);
   }
 
@@ -31,20 +32,21 @@ public static class DeephavenExcelFunctions {
   // ExcelReference? refCaller = XlCall.Excel(XlCall.xlfCaller) as ExcelReference;
   // and then
 
-  // [ExcelFunction(IsThreadSafe = false)]
-  // public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
-  //   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
-  //   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
-  //   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
-  //
-  //   // Add the comment
-  //   cell.AddComment(commentText);
-  // }
+// [ExcelFunction(IsThreadSafe = false)]
+// public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
+//   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
+//   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
+//   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
+//
+//   // Add the comment
+//   cell.AddComment(commentText);
+// }
 
   [ExcelFunction(Description = "Test function", IsThreadSafe = true)]
   public static object DEEPHAVEN_TEST() {
     return ExcelError.ExcelErrorNull;
   }
+#endif
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {

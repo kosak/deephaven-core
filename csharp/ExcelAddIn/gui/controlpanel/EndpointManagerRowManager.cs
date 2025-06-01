@@ -5,32 +5,30 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Gui;
 
 /// <summary>
-/// How to parse the name: this is the Manager for the EndpointManagerDialogRow.
-/// This should not be confused with EndpointManagerDialogManager, which is the
-/// Manager for the EndpointManagerDialog.
+/// How to parse the name: this is the Manager for the EndpointManagerRow.
 /// </summary>
-public sealed class EndpointManagerDialogRowManager :
+public sealed class EndpointManagerRowManager :
   IValueObserver<StatusOr<EndpointConfigBase>>,
   IValueObserver<StatusOr<EndpointHealth>>,
   IValueObserver<StatusOr<EndpointId>>,
   IDisposable {
 
-  public static EndpointManagerDialogRowManager Create(EndpointManagerDialogRow row,
+  public static EndpointManagerRowManager Create(EndpointManagerRow row,
     EndpointId endpointId, StateManager stateManager) {
-    var result = new EndpointManagerDialogRowManager(row, endpointId, stateManager);
+    var result = new EndpointManagerRowManager(row, endpointId, stateManager);
     result.Resubscribe();
     return result;
   }
 
   private readonly object _sync = new();
-  private readonly EndpointManagerDialogRow _row;
+  private readonly EndpointManagerRow _row;
   public readonly EndpointId EndpointId;
   private readonly StateManager _stateManager;
   private IDisposable? _healthDisposable;
   private IDisposable? _configDisposable;
   private IDisposable? _defaultEndpointDisposable;
 
-  private EndpointManagerDialogRowManager(EndpointManagerDialogRow row, EndpointId endpointId,
+  private EndpointManagerRowManager(EndpointManagerRow row, EndpointId endpointId,
     StateManager stateManager) {
     _row = row;
     EndpointId = endpointId;

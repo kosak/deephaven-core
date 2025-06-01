@@ -3,17 +3,17 @@
 public class EndpointElements {
   public readonly ControlPanel Owner;
   public event Action? OnNewButtonClicked;
-  public event Action<EndpointManagerDialogRow[]>? OnDeleteButtonClicked;
-  public event Action<EndpointManagerDialogRow[]>? OnReconnectButtonClicked;
-  public event Action<EndpointManagerDialogRow[]>? OnMakeDefaultButtonClicked;
-  public event Action<EndpointManagerDialogRow[]>? OnEditButtonClicked;
+  public event Action<EndpointManagerRow[]>? OnDeleteButtonClicked;
+  public event Action<EndpointManagerRow[]>? OnReconnectButtonClicked;
+  public event Action<EndpointManagerRow[]>? OnMakeDefaultButtonClicked;
+  public event Action<EndpointManagerRow[]>? OnEditButtonClicked;
 
   private readonly BindingSource _bindingSource = new();
 
   public EndpointElements(ControlPanel owner) {
     Owner = owner;
 
-    _bindingSource.DataSource = typeof(EndpointManagerDialogRow);
+    _bindingSource.DataSource = typeof(EndpointManagerRow);
     Owner.endpointDataGrid.DataSource = _bindingSource;
     Owner.endpointDataGrid.SelectionChanged += endpointDataGrid_SelectionChanged;
 
@@ -32,7 +32,7 @@ public class EndpointElements {
     Owner.newButton.Click += newButton_Click;
   }
 
-  public void AddRow(EndpointManagerDialogRow row) {
+  public void AddRow(EndpointManagerRow row) {
     if (Owner.InvokeRequired) {
       Owner.Invoke(() => AddRow(row));
       return;
@@ -41,7 +41,7 @@ public class EndpointElements {
     Owner.endpointDataGrid.ClearSelection();
   }
 
-  public void RemoveRow(EndpointManagerDialogRow row) {
+  public void RemoveRow(EndpointManagerRow row) {
     if (Owner.InvokeRequired) {
       Owner.Invoke(() => RemoveRow(row));
       return;
@@ -73,12 +73,12 @@ public class EndpointElements {
     OnMakeDefaultButtonClicked?.Invoke(selections);
   }
 
-  private EndpointManagerDialogRow[] GetSelectedRows() {
-    var result = new List<EndpointManagerDialogRow>();
+  private EndpointManagerRow[] GetSelectedRows() {
+    var result = new List<EndpointManagerRow>();
     var sr = Owner.endpointDataGrid.SelectedRows;
     var count = sr.Count;
     for (var i = 0; i != count; ++i) {
-      result.Add((EndpointManagerDialogRow)sr[i].DataBoundItem);
+      result.Add((EndpointManagerRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
   }

@@ -49,8 +49,8 @@ internal class EndpointManagerDialogManager :
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private readonly EndpointManagerDialog _cmDialog;
-  private readonly Dictionary<EndpointId, EndpointManagerDialogRow> _idToRow = new();
-  private readonly Dictionary<EndpointManagerDialogRow, EndpointManagerDialogRowManager> _rowToManager = new();
+  private readonly Dictionary<EndpointId, EndpointManagerRow> _idToRow = new();
+  private readonly Dictionary<EndpointManagerRow, EndpointManagerRowManager> _rowToManager = new();
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
 
@@ -96,8 +96,8 @@ internal class EndpointManagerDialogManager :
 
       foreach (var item in adds.Values) {
         var endpointId = item.Id;
-        var row = new EndpointManagerDialogRow(endpointId.Id);
-        var statusRowManager = EndpointManagerDialogRowManager.Create(row, endpointId, _stateManager);
+        var row = new EndpointManagerRow(endpointId.Id);
+        var statusRowManager = EndpointManagerRowManager.Create(row, endpointId, _stateManager);
         _rowToManager.Add(row, statusRowManager);
         _idToRow.Add(endpointId, row);
         _cmDialog.AddRow(row);
@@ -120,7 +120,7 @@ internal class EndpointManagerDialogManager :
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, null);
   }
 
-  private void OnDeleteButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnDeleteButtonClicked(EndpointManagerRow[] rows) {
     var failures = new List<string>();
     lock (_sync) {
       var managers = rows.Where(_rowToManager.ContainsKey)
@@ -145,7 +145,7 @@ internal class EndpointManagerDialogManager :
     });
   }
 
-  private void OnReconnectButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnReconnectButtonClicked(EndpointManagerRow[] rows) {
     lock (_sync) {
       foreach (var row in rows) {
         if (!_rowToManager.TryGetValue(row, out var manager)) {
@@ -161,7 +161,7 @@ internal class EndpointManagerDialogManager :
   /// tries to do the reasonable thing.
   /// </summary>
   /// <param name="rows"></param>
-  private void OnMakeDefaultButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnMakeDefaultButtonClicked(EndpointManagerRow[] rows) {
     lock (_sync) {
       if (rows.Length == 0) {
         // If no rows are selected, do nothing.
@@ -178,7 +178,7 @@ internal class EndpointManagerDialogManager :
     }
   }
 
-  private void OnEditButtonClicked(EndpointManagerDialogRow[] rows) {
+  private void OnEditButtonClicked(EndpointManagerRow[] rows) {
     lock (_sync) {
       foreach (var row in rows) {
         if (!_rowToManager.TryGetValue(row, out var manager)) {

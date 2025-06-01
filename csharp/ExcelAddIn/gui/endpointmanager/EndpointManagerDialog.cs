@@ -2,7 +2,7 @@
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-using SelectedRowsAction = Action<EndpointManagerDialogRow[]>;
+using SelectedRowsAction = Action<EndpointManagerRow[]>;
 
 public partial class EndpointManagerDialog : Form {
   public event Action? OnNewButtonClicked;
@@ -16,7 +16,7 @@ public partial class EndpointManagerDialog : Form {
   public EndpointManagerDialog() {
     InitializeComponent();
 
-    _bindingSource.DataSource = typeof(EndpointManagerDialogRow);
+    _bindingSource.DataSource = typeof(EndpointManagerRow);
     dataGridView1.DataSource = _bindingSource;
     versionLabel.Text = Utility.VersionString;
 
@@ -26,7 +26,7 @@ public partial class EndpointManagerDialog : Form {
     makeDefaultButton.Enabled = false;
   }
 
-  public void AddRow(EndpointManagerDialogRow row) {
+  public void AddRow(EndpointManagerRow row) {
     if (InvokeRequired) {
       Invoke(() => AddRow(row));
       return;
@@ -35,7 +35,7 @@ public partial class EndpointManagerDialog : Form {
     dataGridView1.ClearSelection();
   }
 
-  public void RemoveRow(EndpointManagerDialogRow row) {
+  public void RemoveRow(EndpointManagerRow row) {
     if (InvokeRequired) {
       Invoke(() => RemoveRow(row));
       return;
@@ -67,12 +67,12 @@ public partial class EndpointManagerDialog : Form {
     OnMakeDefaultButtonClicked?.Invoke(selections);
   }
 
-  private EndpointManagerDialogRow[] GetSelectedRows() {
-    var result = new List<EndpointManagerDialogRow>();
+  private EndpointManagerRow[] GetSelectedRows() {
+    var result = new List<EndpointManagerRow>();
     var sr = dataGridView1.SelectedRows;
     var count = sr.Count;
     for (var i = 0; i != count; ++i) {
-      result.Add((EndpointManagerDialogRow)sr[i].DataBoundItem);
+      result.Add((EndpointManagerRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
   }
