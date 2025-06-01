@@ -23,9 +23,9 @@ internal class CorePlusClientProvider :
   private IObservableCallbacks? _sessionManagerCallbacks = null;
   private IObservableCallbacks? _pqInfoCallbacks = null;
   private readonly ObserverContainer<StatusOr<RefCounted<DndClient>>> _observers = new();
-  private StatusOr<RefCounted<SessionManager>> _sessionManager = UnsetSessionManagerText;
-  private StatusOr<PersistentQueryInfoMessage> _pqInfo = UnsetPqInfoText;
-  private StatusOr<RefCounted<DndClient>> _client = UnsetClientText;
+  private readonly StatusOrHolder<RefCounted<SessionManager>> _sessionManager = new(UnsetSessionManagerText);
+  private readonly StatusOrHolder<PersistentQueryInfoMessage> _pqInfo = new(UnsetPqInfoText);
+  private readonly StatusOrHolder<RefCounted<DndClient>> _client = new(UnsetClientText);
 
   public CorePlusClientProvider(StateManager stateManager, EndpointId endpointId,
     PqName pqName) {
@@ -39,7 +39,7 @@ internal class CorePlusClientProvider :
   /// </summary>
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out var isFirst);
+      _client.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc1 = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<SessionManager>>>(
@@ -84,9 +84,9 @@ internal class CorePlusClientProvider :
       Utility.ClearAndDispose(ref _pqInfoCallbacks);
 
       // Release our Deephaven resource asynchronously.
-      StatusOrUtil.Replace(ref _sessionManager, UnsetSessionManagerText);
-      StatusOrUtil.Replace(ref _pqInfo, UnsetPqInfoText);
-      StatusOrUtil.Replace(ref _client, UnsetClientText);
+      _sessionManager.Replace(UnsetSessionManagerText);
+      _pqInfo.Replace(UnsetPqInfoText);
+      _client.Replace(UnsetClientText);
     }
   }
 
@@ -96,7 +96,7 @@ internal class CorePlusClientProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.Replace(ref _sessionManager, sessionManager);
+      _sessionManager.Replace(sessionManager);
       UpdateStateLocked();
     }
   }
@@ -107,7 +107,7 @@ internal class CorePlusClientProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.Replace(ref _pqInfo, pqInfo);
+      _pqInfo.Replace(pqInfo);
       UpdateStateLocked();
     }
   }
@@ -121,18 +121,18 @@ internal class CorePlusClientProvider :
     if (!_sessionManager.GetValueOrStatus(out var sm, out var status) || 
         !_pqInfo.GetValueOrStatus(out var pq, out status)) {
       // No, transmit error status
-      StatusOrUtil.ReplaceAndNotify(ref _client, status, _observers);
+      _client.ReplaceAndNotify(status, _observers);
       return;
     }
 
     if (pq.State == null) {
-      StatusOrUtil.ReplaceAndNotify(ref _client, "PQ is in unknown state", _observers);
+      _client.ReplaceAndNotify("PQ is in unknown state", _observers);
       return;
     }
 
     // Is our PQInfo in the running state?
     if (!ControllerClient.IsRunning(pq.State.Status)) {
-      StatusOrUtil.ReplaceAndNotify(ref _client, $"PQ is in state {pq.State.Status}", _observers);
+      _client.ReplaceAndNotify($"PQ is in state {pq.State.Status}", _observers);
       return;
     }
 
@@ -164,7 +164,7 @@ internal class CorePlusClientProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _client, newState, _observers);
+      _client.ReplaceAndNotify(newState, _observers);
     }
   }
 }
