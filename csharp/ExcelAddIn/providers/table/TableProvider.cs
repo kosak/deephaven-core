@@ -25,8 +25,8 @@ internal class TableProvider :
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
-  private StatusOr<RefCounted<Client>> _cachedClient = UnsetClientText;
+  private readonly StatusOrHolder<RefCounted<TableHandle>> _tableHandle = new(UnsetTableHandleText);
+  private readonly StatusOrHolder<RefCounted<Client>> _cachedClient = new(UnsetClientText);
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName) {
@@ -38,7 +38,7 @@ internal class TableProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out var isFirst);
+      _tableHandle.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         if (_pqName != null) {
@@ -79,8 +79,8 @@ internal class TableProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
-      StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
-      StatusOrUtil.Replace(ref _cachedClient, UnsetClientText);
+      _tableHandle.Replace(UnsetTableHandleText);
+      _cachedClient.Replace(UnsetClientText);
     }
   }
 
@@ -102,8 +102,7 @@ internal class TableProvider :
 
       using var cleanup = newRef;
 
-      // Update _cachedClient.
-      StatusOrUtil.Replace(ref _cachedClient, newState);
+      _cachedClient.Replace(newState);
       OnNextHelper();
     }
   }
@@ -114,8 +113,7 @@ internal class TableProvider :
         return;
       }
 
-      // Update _cachedClient.
-      StatusOrUtil.Replace(ref _cachedClient, client);
+      _cachedClient.Replace(client);
 
       OnNextHelper();
     }
@@ -129,12 +127,12 @@ internal class TableProvider :
 
       // Suppress responses from stale background workers.
       if (!_cachedClient.GetValueOrStatus(out var cliRef, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
+        _tableHandle.ReplaceAndNotify(status, _observers);
         return;
       }
 
       var progress = StatusOr<RefCounted<TableHandle>>.OfTransient("Fetching Table");
-      StatusOrUtil.ReplaceAndNotify(ref _tableHandle, progress, _observers);
+      _tableHandle.ReplaceAndNotify(progress, _observers);
       // RefCounted item gets acquired on this thread.
       var clientShare = cliRef.Share();
       var backgroundToken = _backgroundTokenSource.Token;
@@ -163,7 +161,7 @@ internal class TableProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _tableHandle, newState, _observers);
+      _tableHandle.ReplaceAndNotify(newState, _observers);
     }
   }
 }

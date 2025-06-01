@@ -21,9 +21,9 @@ internal class SubscribeOperation :
   private CancellationTokenSource _backgroundTokenSource = new();
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private StatusOr<RefCounted<TableHandle>> _cachedTableHandle = UnsetTableHandle;
-  private StatusOr<RefCounted<IDisposable>> _tickingSubscription = UnsetTickingSubscription;
-  private StatusOr<object?[,]> _rendered = UnsetTableData;
+  private readonly StatusOrHolder<RefCounted<TableHandle>> _cachedTableHandle = new(UnsetTableHandle);
+  private readonly StatusOrHolder<RefCounted<IDisposable>> _tickingSubscription = new(UnsetTickingSubscription);
+  private readonly StatusOrHolder<object?[,]> _rendered = new(UnsetTableData);
 
   public SubscribeOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
     _tableQuad = tableQuad;
@@ -33,7 +33,7 @@ internal class SubscribeOperation :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<object?[,]>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _rendered, out var isFirst);
+      _rendered.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         if (_tableQuad.EndpointId != null) {
@@ -66,8 +66,8 @@ internal class SubscribeOperation :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
-      StatusOrUtil.Replace(ref _cachedTableHandle, UnsetTableHandle);
-      StatusOrUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
+      _cachedTableHandle.Replace(UnsetTableHandle);
+      _tickingSubscription.Replace(UnsetTickingSubscription);
     }
   }
 
@@ -78,7 +78,7 @@ internal class SubscribeOperation :
         return;
       }
 
-      StatusOrUtil.Replace(ref _cachedTableHandle, tableHandle);
+      _cachedTableHandle.Replace(tableHandle);
       OnNextHelper();
     }
   }
@@ -88,15 +88,15 @@ internal class SubscribeOperation :
       _backgroundTokenSource.Cancel();
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
-      StatusOrUtil.Replace(ref _tickingSubscription, UnsetTickingSubscription);
+      _tickingSubscription.Replace(UnsetTickingSubscription);
 
       if (!_cachedTableHandle.GetValueOrStatus(out var th, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _rendered, status, _observers);
+        _rendered.ReplaceAndNotify(status, _observers);
         return;
       }
 
       var progress = StatusOr<object?[,]>.OfTransient($"Subscribing to \"{_tableQuad.TableName}\"");
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, progress, _observers);
+      _rendered.ReplaceAndNotify(progress, _observers);
 
       var thShare = th.Share();
       var backgroundToken = _backgroundTokenSource.Token;
@@ -135,7 +135,7 @@ internal class SubscribeOperation :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.Replace(ref _tickingSubscription, result);
+      _tickingSubscription.Replace(result);
     }
   }
 
@@ -150,11 +150,11 @@ internal class SubscribeOperation :
         // data structure, then render this on a separate thread rather than blocking
         // the callback thread while you render.
         results = Renderer.Render(update.Current, _wantHeaders);
-        StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+        _rendered.ReplaceAndNotify(results, _observers);
       } catch (Exception e) {
         results = e.Message;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, results, _observers);
+      _rendered.ReplaceAndNotify(results, _observers);
     }
   }
 
@@ -163,7 +163,7 @@ internal class SubscribeOperation :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, ex.Message, _observers);
+      _rendered.ReplaceAndNotify(ex.Message, _observers);
     }
   }
 
@@ -172,7 +172,7 @@ internal class SubscribeOperation :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _rendered, "Subscription closed", _observers);
+      _rendered.ReplaceAndNotify("Subscription closed", _observers);
     }
   }
 }

@@ -31,9 +31,9 @@ internal class FilteredTableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private StatusOr<RefCounted<TableHandle>> _cachedParentHandle = UnsetParentText;
+  private readonly StatusOrHolder<RefCounted<TableHandle>> _cachedParentHandle = new(UnsetParentText);
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _filteredTableHandle = UnsetTableHandleText;
+  private readonly StatusOrHolder<RefCounted<TableHandle>> _filteredTableHandle = new(UnsetTableHandleText);
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName, string condition) {
@@ -46,8 +46,7 @@ internal class FilteredTableProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _filteredTableHandle,
-        out var isFirst);
+      _filteredTableHandle.AddObserverAndNotify(_observers, observer, out var isFirst);
       if (isFirst) {
         var tq = new TableQuad(_endpointId, _pqName, _tableName, "");
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -90,8 +89,8 @@ internal class FilteredTableProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
-      StatusOrUtil.Replace(ref _cachedParentHandle, UnsetParentText);
-      StatusOrUtil.Replace(ref _filteredTableHandle, UnsetTableHandleText);
+      _cachedParentHandle.Replace(UnsetParentText);
+      _filteredTableHandle.Replace(UnsetTableHandleText);
     }
   }
 
@@ -101,7 +100,7 @@ internal class FilteredTableProvider :
         return;
       }
 
-      StatusOrUtil.Replace(ref _cachedParentHandle, parentHandle);
+      _cachedParentHandle.Replace(parentHandle);
       OnNextHelper();
     }
   }
@@ -113,12 +112,12 @@ internal class FilteredTableProvider :
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!_cachedParentHandle.GetValueOrStatus(out var ph, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, status, _observers);
+        _filteredTableHandle.ReplaceAndNotify(status, _observers);
         return;
       }
 
       var progress = StatusOr<RefCounted<TableHandle>>.OfTransient("Filtering");
-      StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, progress, _observers);
+      _filteredTableHandle.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.
       var phShare = ph.Share();
@@ -153,7 +152,7 @@ internal class FilteredTableProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _filteredTableHandle, newResult, _observers);
+      _filteredTableHandle.ReplaceAndNotify(newResult, _observers);
     }
   }
 }
