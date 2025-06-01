@@ -24,9 +24,9 @@ internal class SessionManagerProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
-  private StatusOr<EndpointConfigBase> _cachedCredentials = UnsetCredentialsText;
+  private StatusOrHolder<EndpointConfigBase> _cachedCredentials = new(UnsetCredentialsText);
   private readonly ObserverContainer<StatusOr<RefCounted<SessionManager>>> _observers = new();
-  private StatusOr<RefCounted<SessionManager>> _session = UnsetSessionManagerText;
+  private readonly StatusOrHolder<RefCounted<SessionManager>> _session = new(UnsetSessionManagerText);
 
   public SessionManagerProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -38,7 +38,7 @@ internal class SessionManagerProvider :
   /// </summary>
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _session, out var isFirst);
+      _session.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -64,8 +64,8 @@ internal class SessionManagerProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _cachedCredentials, UnsetCredentialsText);
-      StatusOrUtil.Replace(ref _session, UnsetSessionManagerText);
+      _cachedCredentials.Replace(UnsetCredentialsText);
+      _session.Replace(UnsetSessionManagerText);
     }
   }
 
@@ -75,7 +75,7 @@ internal class SessionManagerProvider :
         return;
       }
 
-      StatusOrUtil.Replace(ref _cachedCredentials, credentials);
+      _cachedCredentials.Replace(credentials);
       OnNextHelper();
     }
   }
@@ -87,25 +87,25 @@ internal class SessionManagerProvider :
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!_cachedCredentials.GetValueOrStatus(out var cbase, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _session, status, _observers);
+        _session.ReplaceAndNotify(status, _observers);
         return;
       }
 
       _ = cbase.AcceptVisitor(
         empty => {
           var message = $"Config for {empty.Id} is empty";
-          StatusOrUtil.ReplaceAndNotify(ref _session, message, _observers);
+          _session.ReplaceAndNotify(message, _observers);
           return Unit.Instance;
         },
         core => {
           // We are a CorePlus entity but we are getting credentials for core.
-          StatusOrUtil.ReplaceAndNotify(ref _session,
-            "Persistent Queries are not supported in Community Core", _observers);
+          _session.ReplaceAndNotify("Persistent Queries are not supported in Community Core",
+            _observers);
           return Unit.Instance;
         },
         corePlus => {
           var progress = StatusOr<RefCounted<SessionManager>>.OfTransient("Trying to connect");
-          StatusOrUtil.ReplaceAndNotify(ref _session, progress, _observers);
+          _session.ReplaceAndNotify(progress, _observers);
           var backgroundToken = _backgroundTokenSource.Token;
           Background.Run(() => OnNextBackground(corePlus, backgroundToken));
           return Unit.Instance;
@@ -129,7 +129,7 @@ internal class SessionManagerProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _session, result, _observers);
+      _session.ReplaceAndNotify(result, _observers);
     }
   }
 }

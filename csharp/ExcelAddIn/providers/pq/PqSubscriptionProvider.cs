@@ -16,7 +16,7 @@ internal class PqSubscriptionProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<RefCounted<Subscription>>> _observers = new();
-  private StatusOr<RefCounted<Subscription>> _subscription = UnsetSubText;
+  private readonly StatusOrHolder<RefCounted<Subscription>> _subscription = new(UnsetSubText);
 
   public PqSubscriptionProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -25,7 +25,7 @@ internal class PqSubscriptionProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _subscription, out var isFirst);
+      _subscription.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -51,7 +51,7 @@ internal class PqSubscriptionProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _subscription, UnsetSubText);
+      _subscription.Replace(UnsetSubText);
     }
   }
 
@@ -62,7 +62,7 @@ internal class PqSubscriptionProvider :
         return;
       }
       if (!sessionManager.GetValueOrStatus(out var smRef, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _subscription, status, _observers);
+        _subscription.ReplaceAndNotify(status, _observers);
         return;
       }
 
@@ -71,7 +71,7 @@ internal class PqSubscriptionProvider :
       var sub = smRef.Value.Subscribe();
       // The subscription is stored as a ref with a dependency on a SessionManager
       using var subRef = RefCounted.Acquire(sub, smRef);
-      StatusOrUtil.ReplaceAndNotify(ref _subscription, subRef, _observers);
+      _subscription.ReplaceAndNotify(subRef, _observers);
     }
   }
 }

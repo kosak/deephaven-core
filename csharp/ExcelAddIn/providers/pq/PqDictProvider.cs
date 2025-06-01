@@ -17,7 +17,7 @@ internal class PqDictProvider :
   private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<SharableDict<PersistentQueryInfoMessage>>> _observers = new();
-  private StatusOr<SharableDict<PersistentQueryInfoMessage>> _dict = UnsetDictText;
+  private readonly StatusOrHolder<SharableDict<PersistentQueryInfoMessage>> _dict = new(UnsetDictText);
 
   public PqDictProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -53,7 +53,7 @@ internal class PqDictProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _dict, UnsetDictText);
+      _dict.Replace(UnsetDictText);
     }
   }
 
@@ -68,13 +68,13 @@ internal class PqDictProvider :
       _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
       if (!subscription.GetValueOrStatus(out var sub, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _dict, status, _observers);
+        _dict.ReplaceAndNotify(status, _observers);
         return;
       }
 
       var progress = StatusOr<SharableDict<PersistentQueryInfoMessage>>.OfTransient(
         "[Processing Subscriptions]");
-      StatusOrUtil.ReplaceAndNotify(ref _dict, progress, _observers);
+      _dict.ReplaceAndNotify(progress, _observers);
       // RefCounted item gets acquired on this thread.
       var subShare = sub.Share();
       var backgroundToken = _backgroundTokenSource.Token;
@@ -105,7 +105,7 @@ internal class PqDictProvider :
           // Exit this long-running thread.
           return;
         }
-        StatusOrUtil.ReplaceAndNotify(ref _dict, newDict, _observers);
+        _dict.ReplaceAndNotify(newDict, _observers);
         if (wantExit) {
           // Exit this long-running thread.
           return;

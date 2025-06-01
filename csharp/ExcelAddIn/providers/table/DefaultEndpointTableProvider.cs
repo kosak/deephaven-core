@@ -28,7 +28,7 @@ internal class DefaultEndpointTableProvider :
   private IObservableCallbacks? _endpointSubscriptionCallbacks = null;
   private IObservableCallbacks? _tableHandleSubscriptionCallbacks = null;
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
-  private StatusOr<RefCounted<TableHandle>> _tableHandle = UnsetTableHandleText;
+  private readonly StatusOrHolder<RefCounted<TableHandle>> _tableHandle = new(UnsetTableHandleText);
 
   public DefaultEndpointTableProvider(StateManager stateManager,
     PqName? pqName, string tableName, string condition) {
@@ -40,7 +40,7 @@ internal class DefaultEndpointTableProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _tableHandle, out var isFirst);
+      _tableHandle.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create<StatusOr<EndpointId>>(
@@ -70,7 +70,7 @@ internal class DefaultEndpointTableProvider :
 
       Utility.ClearAndDispose(ref _endpointSubscriptionCallbacks);
       Utility.ClearAndDispose(ref _tableHandleSubscriptionCallbacks);
-      StatusOrUtil.Replace(ref _tableHandle, UnsetTableHandleText);
+      _tableHandle.Replace(UnsetTableHandleText);
     }
   }
 
@@ -90,7 +90,7 @@ internal class DefaultEndpointTableProvider :
       // Suppress any notifications from the old subscription, which will now be stale
 
       if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _tableHandle, status, _observers);
+        _tableHandle.ReplaceAndNotify(status, _observers);
         return;
       }
 
@@ -108,7 +108,7 @@ internal class DefaultEndpointTableProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _tableHandle, value, _observers);
+      _tableHandle.ReplaceAndNotify(value, _observers);
     }
   }
 }

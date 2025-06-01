@@ -17,7 +17,7 @@ internal class PqInfoProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly ObserverContainer<StatusOr<PersistentQueryInfoMessage>> _observers = new();
-  private StatusOr<PersistentQueryInfoMessage> _infoMessage = UnsetPqText;
+  private readonly StatusOrHolder<PersistentQueryInfoMessage> _infoMessage = new(UnsetPqText);
 
   /// <summary>
   /// Cached value of the last named lookup. Is only a hint so it's ok if it is some garbage value.
@@ -40,7 +40,7 @@ internal class PqInfoProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<PersistentQueryInfoMessage>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _infoMessage, out var isFirst);
+      _infoMessage.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -67,7 +67,7 @@ internal class PqInfoProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamDisposer);
-      StatusOrUtil.Replace(ref _infoMessage, UnsetPqText);
+      _infoMessage.Replace(UnsetPqText);
     }
   }
 
@@ -83,7 +83,7 @@ internal class PqInfoProvider :
         // A unique message that will not be equal to anything else and
         // therefore won't mislead the debouncer.
         _lastMessage = new();
-        StatusOrUtil.ReplaceAndNotify(ref _infoMessage, status, _observers);
+        _infoMessage.ReplaceAndNotify(status, _observers);
         return;
       }
 
@@ -109,11 +109,11 @@ internal class PqInfoProvider :
       _lastMessage = message;
 
       if (message == null) {
-        StatusOrUtil.ReplaceAndNotify(ref _infoMessage, $"PQ \"{_pqName}\" not found", _observers);
+        _infoMessage.ReplaceAndNotify($"PQ \"{_pqName}\" not found", _observers);
         return;
       }
 
-      StatusOrUtil.ReplaceAndNotify(ref _infoMessage, message, _observers);
+      _infoMessage.ReplaceAndNotify(message, _observers);
     }
   }
 }
