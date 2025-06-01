@@ -159,7 +159,7 @@
       // 
       versionLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
       versionLabel.AutoSize = true;
-      versionLabel.Location = new Point(21, 444);
+      versionLabel.Location = new Point(12, 479);
       versionLabel.Name = "versionLabel";
       versionLabel.Size = new Size(79, 25);
       versionLabel.TabIndex = 11;

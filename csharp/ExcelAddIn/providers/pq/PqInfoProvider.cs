@@ -8,7 +8,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class PqInfoProvider :
   IValueObserverWithCancel<StatusOr<SharableDict<PersistentQueryInfoMessage>>>,
   IValueObservable<StatusOr<PersistentQueryInfoMessage>> {
-  private const string UnsetPqText = "[No Persistent Query]";
+  private const string UnsetPqText = "No Persistent Query";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;

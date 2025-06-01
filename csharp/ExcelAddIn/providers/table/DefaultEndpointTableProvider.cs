@@ -14,9 +14,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class DefaultEndpointTableProvider :
   IValueObserverWithCancel<StatusOr<EndpointId>>,
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
-  // IValueObservable<StatusOr<RefCounted<TableHandle>>>
-  ITableProviderBase {
-  private const string UnsetTableHandleText = "[No Default Connection]";
+  IValueObservable<StatusOr<RefCounted<TableHandle>>> {
+  private const string UnsetTableHandleText = "No Default Endpoint TableHandle";
 
   private readonly StateManager _stateManager;
   private readonly PqName? _pqName;

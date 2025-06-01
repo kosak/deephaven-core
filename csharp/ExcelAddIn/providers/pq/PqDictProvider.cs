@@ -9,7 +9,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class PqDictProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<Subscription>>>,
   IValueObservable<StatusOr<SharableDict<PersistentQueryInfoMessage>>> {
-  private const string UnsetDictText = "[No PQ Dict]";
+  private const string UnsetDictText = "No PQ Dict";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
@@ -26,7 +26,7 @@ internal class PqDictProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<SharableDict<PersistentQueryInfoMessage>>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _dict, out var isFirst);
+      _dict.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -73,7 +73,7 @@ internal class PqDictProvider :
       }
 
       var progress = StatusOr<SharableDict<PersistentQueryInfoMessage>>.OfTransient(
-        "[Processing Subscriptions]");
+        "Processing Subscriptions");
       _dict.ReplaceAndNotify(progress, _observers);
       // RefCounted item gets acquired on this thread.
       var subShare = sub.Share();

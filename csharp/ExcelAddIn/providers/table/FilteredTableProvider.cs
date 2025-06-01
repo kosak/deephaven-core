@@ -17,10 +17,9 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class FilteredTableProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
-  // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
-  ITableProviderBase {
-  private const string UnsetParentText = "[No Parent Table]";
-  private const string UnsetTableHandleText = "[No Filtered Table]";
+  IValueObservable<StatusOr<RefCounted<TableHandle>>> {
+  private const string UnsetParentText = "No Parent TableHandle";
+  private const string UnsetTableHandleText = "No Filtered TableHandle";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;

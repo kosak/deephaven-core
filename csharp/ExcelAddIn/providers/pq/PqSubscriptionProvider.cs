@@ -9,7 +9,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class PqSubscriptionProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
   IValueObservable<StatusOr<RefCounted<Subscription>>> {
-  private const string UnsetSubText = "[No Subscription]";
+  private const string UnsetSubText = "No Subscription";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();

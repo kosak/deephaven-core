@@ -1,5 +1,4 @@
-﻿using Deephaven.DheClient.Session;
-using Deephaven.ExcelAddIn.Factories;
+﻿using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
@@ -17,17 +16,17 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class CoreClientProvider :
   IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
   IValueObservable<StatusOr<RefCounted<Client>>> {
-  private const string UnsetConfigText = "[No Config]";
-  private const string UnsetClientText = "[No Community Core Client]";
+  private const string UnsetConfigText = "No Config";
+  private const string UnsetClientText = "No Community Core Client";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private StatusOrHolder<EndpointConfigBase> _cachedConfig = new(UnsetConfigText);
+  private readonly StatusOrHolder<EndpointConfigBase> _cachedConfig = new(UnsetConfigText);
   private readonly ObserverContainer<StatusOr<RefCounted<Client>>> _observers = new();
-  private StatusOrHolder<RefCounted<Client>> _client = new(UnsetClientText);
+  private readonly StatusOrHolder<RefCounted<Client>> _client = new(UnsetClientText);
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -100,7 +99,8 @@ internal class CoreClientProvider :
 
     _ = ecb.AcceptVisitor(
       empty => {
-        _client.ReplaceAndNotify(UnsetClientText, _observers);
+        var message = $"Need Community Core Config for {empty.Id}";
+        _client.ReplaceAndNotify(message, _observers);
         return Unit.Instance;  // have to return something
       },
       core => {

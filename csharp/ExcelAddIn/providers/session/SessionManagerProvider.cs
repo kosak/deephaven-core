@@ -16,15 +16,15 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class SessionManagerProvider :
   IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
   IValueObservable<StatusOr<RefCounted<SessionManager>>> {
-  private const string UnsetCredentialsText = "[No Credentials]";
-  private const string UnsetSessionManagerText = "[No SessionManager]";
+  private const string UnsetCredentialsText = "No Credentials";
+  private const string UnsetSessionManagerText = "No SessionManager";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
-  private StatusOrHolder<EndpointConfigBase> _cachedCredentials = new(UnsetCredentialsText);
+  private readonly StatusOrHolder<EndpointConfigBase> _cachedCredentials = new(UnsetCredentialsText);
   private readonly ObserverContainer<StatusOr<RefCounted<SessionManager>>> _observers = new();
   private readonly StatusOrHolder<RefCounted<SessionManager>> _session = new(UnsetSessionManagerText);
 
@@ -93,7 +93,7 @@ internal class SessionManagerProvider :
 
       _ = cbase.AcceptVisitor(
         empty => {
-          var message = $"Config for {empty.Id} is empty";
+          var message = $"Need Enterprise Config for {empty.Id}";
           _session.ReplaceAndNotify(message, _observers);
           return Unit.Instance;
         },

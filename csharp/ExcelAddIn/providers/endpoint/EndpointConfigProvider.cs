@@ -7,7 +7,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class EndpointConfigProvider :
   IValueObserverWithCancel<SharableDict<EndpointConfigBase>>,
   IValueObservable<StatusOr<EndpointConfigBase>> {
-  private const string UnsetCredentialsString = "[No Config]";
+  private const string UnsetCredentialsString = "No config";
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
   private readonly object _sync = new();

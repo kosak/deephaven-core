@@ -11,10 +11,9 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class TableProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
   IValueObserverWithCancel<StatusOr<RefCounted<DndClient>>>,
-  // IValueObservable<StatusOr<RefCounted<TableHandle>>>,
-  ITableProviderBase {
-  private const string UnsetTableHandleText = "[No Table]";
-  private const string UnsetClientText = "[No Client]";
+  IValueObservable<StatusOr<RefCounted<TableHandle>>> {
+  private const string UnsetTableHandleText = "No TableHandle";
+  private const string UnsetClientText = "No Client";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -24,9 +23,9 @@ internal class TableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
+  private readonly StatusOrHolder<RefCounted<Client>> _cachedClient = new(UnsetClientText);
   private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
   private readonly StatusOrHolder<RefCounted<TableHandle>> _tableHandle = new(UnsetTableHandleText);
-  private readonly StatusOrHolder<RefCounted<Client>> _cachedClient = new(UnsetClientText);
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName) {

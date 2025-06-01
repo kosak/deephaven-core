@@ -5,7 +5,7 @@ using Deephaven.ExcelAddIn.Util;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> {
-  private const string UnsetEndpointText = "[No endpoint]";
+  private const string UnsetEndpointText = "No endpoint";
   private readonly object _sync = new();
   private readonly ObserverContainer<StatusOr<EndpointId>> _observers = new();
   private readonly StatusOrHolder<EndpointId> _endpointId = new(UnsetEndpointText);

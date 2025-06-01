@@ -27,7 +27,7 @@ internal class EndpointHealthProvider :
   IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
   IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
   IValueObservable<StatusOr<EndpointHealth>> {
-  private const string UnsetHealthString = "[No Config]";
+  private const string UnsetHealthString = "Unknown health";
 
   private readonly StateManager _stateManager;
   private readonly EndpointId _endpointId;
@@ -98,14 +98,14 @@ internal class EndpointHealthProvider :
         return;
       }
 
-      _endpointHealth.ReplaceAndNotify("[Unknown]", _observers);
+      _endpointHealth.ReplaceAndNotify(UnsetHealthString, _observers);
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
 
       _upstreamClientOrSessionDisposer = creds.AcceptVisitor<IDisposable?>(
         (EmptyEndpointConfig _) => {
-          _endpointHealth.ReplaceAndNotify(UnsetHealthString, _observers);
+          _endpointHealth.ReplaceAndNotify("Endpoint is empty", _observers);
           return null;
         },
         (CoreEndpointConfig _) => {
