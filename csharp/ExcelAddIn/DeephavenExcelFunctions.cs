@@ -48,8 +48,8 @@ public static class DeephavenExcelFunctions {
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
-    if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out var errorText)) {
-      return errorText;
+    if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out _)) {
+      return ExcelError.ExcelErrorValue;
     }
 
     // For the StatusMonitor
@@ -58,18 +58,17 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
-    var retryKey = new TableTriple(tq.EndpointId, tq.PqName, tq.TableName);
     ExcelObservableSource eos = () => {
       var op = new SnapshotOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, retryKey, op, StateManager);
+      return new ExcelOperation(description, op, StateManager);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
   [ExcelFunction(Description = "Subscribes to a table", IsThreadSafe = true)]
   public static object DEEPHAVEN_SUBSCRIBE(string tableDescriptor, object filter, object wantHeaders) {
-    if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out string errorText)) {
-      return errorText;
+    if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out _)) {
+      return ExcelError.ExcelErrorValue;
     }
 
     // For the StatusMonitor
@@ -78,10 +77,29 @@ public static class DeephavenExcelFunctions {
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
-    var retryKey = new TableTriple(tq.EndpointId, tq.PqName, tq.TableName);
     ExcelObservableSource eos = () => {
       var op = new SubscribeOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, retryKey, op, StateManager);
+      return new ExcelOperation(description, op, StateManager);
+    };
+    return ExcelAsyncUtil.Observe(functionName, parms, eos);
+  }
+
+
+  [ExcelFunction(Description = "Gets table headers", IsThreadSafe = true)]
+  public static object DEEPHAVEN_HEADERS(string tableDescriptor) {
+    if (!TableTriple.TryParse(tableDescriptor, out var tt, out _)) {
+      return ExcelError.ExcelErrorValue;
+    }
+
+    // For the StatusMonitor
+    var description = $"DEEPHAVEN_HEADERS(\"${tableDescriptor}\")";
+
+    // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
+    const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_HEADERS";
+    var parms = new[] { tableDescriptor };
+    ExcelObservableSource eos = () => {
+      var op = new TableHeadersOperation(tt, StateManager);
+      return new ExcelOperation(description, op, StateManager);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
