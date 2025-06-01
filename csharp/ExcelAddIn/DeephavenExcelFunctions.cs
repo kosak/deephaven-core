@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿#define DEEPHAVEN_TESTING
+
+using System.Diagnostics.CodeAnalysis;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Gui;
 using Deephaven.ExcelAddIn.Models;
@@ -16,26 +18,32 @@ public static class DeephavenExcelFunctions {
   }
 
 #if DEEPHAVEN_TESTING
-  [ExcelCommand(MenuName = "Debug", MenuText = "kosak Core local")]
+  [ExcelCommand(MenuName = "Debug", MenuText = "kosak testing")]
   public static void AddTestingConnections() {
     var id1 = new EndpointId("con1");
     var config1 = EndpointConfigBase.OfCore(id1, "10.0.4.109:10000");
-    StateManager.SetConfig(config);
+    StateManager.SetConfig(config1);
+
+    var id2 = new EndpointId("con2");
+    var config2 = EndpointConfigBase.OfCorePlus(id2,
+      "https://kosak-rc-the-og.int.illumon.com:8123/iris/connection.json",
+      "iris", "iris", "iris", true);
+    StateManager.SetConfig(config2);
   }
 
   // See if this works to set note or comment
   // ExcelReference? refCaller = XlCall.Excel(XlCall.xlfCaller) as ExcelReference;
   // and then
 
-// [ExcelFunction(IsThreadSafe = false)]
-// public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
-//   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
-//   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
-//   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
-//
-//   // Add the comment
-//   cell.AddComment(commentText);
-// }
+  // [ExcelFunction(IsThreadSafe = false)]
+  // public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
+  //   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
+  //   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
+  //   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
+  //
+  //   // Add the comment
+  //   cell.AddComment(commentText);
+  // }
 
   [ExcelFunction(Description = "Test function", IsThreadSafe = true)]
   public static object DEEPHAVEN_TEST() {
