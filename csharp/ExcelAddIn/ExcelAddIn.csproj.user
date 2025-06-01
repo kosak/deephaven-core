@@ -5,16 +5,10 @@
     <Compile Update="gui\controlpanel\ControlPanel.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="gui\endpointmanager\EndpointManagerDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Update="gui\config\ConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="gui\messagebox\DeephavenMessageBox.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="gui\statusmonitor\StatusMonitorDialog.cs">
       <SubType>Form</SubType>
     </Compile>
   </ItemGroup>
