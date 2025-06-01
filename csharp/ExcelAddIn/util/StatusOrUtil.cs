@@ -42,6 +42,11 @@ public class StatusOrHolder<T> {
     }
   }
 
+  public void Notify(ObserverContainer<StatusOr<T>> observers) {
+    observers.OnNext(_value);
+    EnqueueKeepAlive(observers);
+  }
+
   public void ReplaceAndNotify(StatusOr<T> newValue,
     ObserverContainer<StatusOr<T>> observers) {
     Replace(newValue);

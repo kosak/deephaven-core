@@ -17,7 +17,7 @@ internal class EndpointConfigProvider :
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
   private EndpointConfigBase? _prevConfig = null;
   private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
-  private StatusOr<EndpointConfigBase> _credentials = UnsetCredentialsString;
+  private StatusOrHolder<EndpointConfigBase> _credentials = new(UnsetCredentialsString);
 
   public EndpointConfigProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -26,7 +26,7 @@ internal class EndpointConfigProvider :
 
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<EndpointConfigBase>> observer) {
     lock (_sync) {
-      _observers.AddAndNotify(observer, _credentials, out var isFirst);
+      _credentials.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -51,7 +51,7 @@ internal class EndpointConfigProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamSubscription);
-      StatusOrUtil.Replace(ref _credentials, UnsetCredentialsString);
+      _credentials.Replace(UnsetCredentialsString);
     }
   }
 
@@ -84,18 +84,18 @@ internal class EndpointConfigProvider :
       _prevConfig = config;
       
       if (config == null) {
-        StatusOrUtil.ReplaceAndNotify(ref _credentials, UnsetCredentialsString, _observers);
+        _credentials.ReplaceAndNotify(UnsetCredentialsString, _observers);
         return;
       }
 
       var value = StatusOr<EndpointConfigBase>.OfValue(config);
-      StatusOrUtil.ReplaceAndNotify(ref _credentials, value, _observers);
+      _credentials.ReplaceAndNotify(value, _observers);
     }
   }
 
   public void Resend() {
     lock (_sync) {
-      _observers.OnNext(_credentials);
+      _credentials.Notify(_observers);
     }
   }
 }

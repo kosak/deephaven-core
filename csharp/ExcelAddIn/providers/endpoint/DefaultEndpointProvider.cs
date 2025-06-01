@@ -8,11 +8,11 @@ internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> 
   private const string UnsetEndpointText = "[No endpoint]";
   private readonly object _sync = new();
   private readonly ObserverContainer<StatusOr<EndpointId>> _observers = new();
-  private StatusOr<EndpointId> _endpointId = UnsetEndpointText;
+  private readonly StatusOrHolder<EndpointId> _endpointId = new(UnsetEndpointText);
   
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<EndpointId>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointId, out _);
+      _endpointId.AddObserverAndNotify(_observers, observer, out _);
     }
 
     return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
@@ -39,9 +39,9 @@ internal class DefaultEndpointProvider : IValueObservable<StatusOr<EndpointId>> 
   public void SetValue(EndpointId? endpointId) {
     lock (_sync) {
       if (endpointId == null) {
-        StatusOrUtil.ReplaceAndNotify(ref _endpointId, UnsetEndpointText, _observers);
+        _endpointId.ReplaceAndNotify(UnsetEndpointText, _observers);
       } else {
-        StatusOrUtil.ReplaceAndNotify(ref _endpointId, endpointId, _observers);
+        _endpointId.ReplaceAndNotify(endpointId, _observers);
       }
     }
   }
