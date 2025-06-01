@@ -92,7 +92,7 @@ public static class DeephavenExcelFunctions {
     }
 
     // For the StatusMonitor
-    var description = $"DEEPHAVEN_HEADERS(\"${tableDescriptor}\")";
+    var description = $"DEEPHAVEN_HEADERS(\"{tableDescriptor}\")";
 
     // These two are used by ExcelDNA to share results for identical invocations. The functionName is arbitary but unique.
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_HEADERS";

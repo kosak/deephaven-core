@@ -47,6 +47,17 @@ internal static class Renderer {
     return result;
   }
 
+  public static object?[,] RenderHeaders(IClientTable table) {
+    var numCols = table.NumCols;
+    var result = new object?[1, numCols];
+
+    var fields = table.Schema.FieldsList;
+    for (var colIndex = 0; colIndex != numCols; ++colIndex) {
+      result[0, colIndex] = fields[colIndex].Name;
+    }
+    return result;
+  }
+
   private class AdaptorMaker(int size) :
     IColumnSourceVisitor<ICharColumnSource>,
     IColumnSourceVisitor<IByteColumnSource>,
