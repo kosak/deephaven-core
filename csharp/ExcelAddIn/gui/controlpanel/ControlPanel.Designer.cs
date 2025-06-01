@@ -66,14 +66,14 @@
       splitContainer1.Panel2.Controls.Add(versionLabel);
       splitContainer1.Panel2.Controls.Add(statusLabel);
       splitContainer1.Panel2.Controls.Add(statusDataGrid);
-      splitContainer1.Size = new Size(1221, 1282);
-      splitContainer1.SplitterDistance = 620;
+      splitContainer1.Size = new Size(1066, 973);
+      splitContainer1.SplitterDistance = 456;
       splitContainer1.TabIndex = 0;
       // 
       // makeDefaultButton
       // 
       makeDefaultButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      makeDefaultButton.Location = new Point(554, 579);
+      makeDefaultButton.Location = new Point(440, 401);
       makeDefaultButton.Name = "makeDefaultButton";
       makeDefaultButton.Size = new Size(139, 34);
       makeDefaultButton.TabIndex = 9;
@@ -83,7 +83,7 @@
       // reconnectButton
       // 
       reconnectButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      reconnectButton.Location = new Point(717, 579);
+      reconnectButton.Location = new Point(603, 401);
       reconnectButton.Name = "reconnectButton";
       reconnectButton.Size = new Size(112, 34);
       reconnectButton.TabIndex = 11;
@@ -93,7 +93,7 @@
       // deleteButton
       // 
       deleteButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      deleteButton.Location = new Point(420, 579);
+      deleteButton.Location = new Point(306, 401);
       deleteButton.Name = "deleteButton";
       deleteButton.Size = new Size(112, 34);
       deleteButton.TabIndex = 8;
@@ -103,7 +103,7 @@
       // editButton
       // 
       editButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      editButton.Location = new Point(857, 579);
+      editButton.Location = new Point(743, 401);
       editButton.Name = "editButton";
       editButton.Size = new Size(112, 34);
       editButton.TabIndex = 12;
@@ -114,7 +114,7 @@
       // 
       connectionsLabel.AutoSize = true;
       connectionsLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      connectionsLabel.Location = new Point(122, 8);
+      connectionsLabel.Location = new Point(397, 9);
       connectionsLabel.Name = "connectionsLabel";
       connectionsLabel.Size = new Size(147, 32);
       connectionsLabel.TabIndex = 10;
@@ -123,7 +123,7 @@
       // newButton
       // 
       newButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      newButton.Location = new Point(1000, 579);
+      newButton.Location = new Point(886, 401);
       newButton.Name = "newButton";
       newButton.Size = new Size(128, 34);
       newButton.TabIndex = 13;
@@ -137,18 +137,18 @@
       endpointDataGrid.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
       endpointDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
       endpointDataGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-      endpointDataGrid.Location = new Point(141, 55);
+      endpointDataGrid.Location = new Point(21, 59);
       endpointDataGrid.Name = "endpointDataGrid";
       endpointDataGrid.ReadOnly = true;
       endpointDataGrid.RowHeadersWidth = 62;
       endpointDataGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-      endpointDataGrid.Size = new Size(1006, 498);
+      endpointDataGrid.Size = new Size(992, 316);
       endpointDataGrid.TabIndex = 7;
       // 
       // retryButton
       // 
       retryButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      retryButton.Location = new Point(994, 599);
+      retryButton.Location = new Point(885, 426);
       retryButton.Name = "retryButton";
       retryButton.Size = new Size(128, 34);
       retryButton.TabIndex = 12;
@@ -159,7 +159,7 @@
       // 
       versionLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
       versionLabel.AutoSize = true;
-      versionLabel.Location = new Point(99, 621);
+      versionLabel.Location = new Point(21, 444);
       versionLabel.Name = "versionLabel";
       versionLabel.Size = new Size(79, 25);
       versionLabel.TabIndex = 11;
@@ -169,30 +169,31 @@
       // 
       statusLabel.AutoSize = true;
       statusLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      statusLabel.Location = new Point(126, 12);
+      statusLabel.Location = new Point(434, 24);
       statusLabel.Name = "statusLabel";
       statusLabel.Size = new Size(78, 32);
       statusLabel.TabIndex = 10;
       statusLabel.Text = "Status";
+      statusLabel.TextAlign = ContentAlignment.TopCenter;
       // 
       // statusDataGrid
       // 
       statusDataGrid.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
       statusDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
       statusDataGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-      statusDataGrid.Location = new Point(132, 80);
+      statusDataGrid.Location = new Point(21, 72);
       statusDataGrid.Name = "statusDataGrid";
       statusDataGrid.ReadOnly = true;
       statusDataGrid.RowHeadersWidth = 62;
       statusDataGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-      statusDataGrid.Size = new Size(996, 513);
+      statusDataGrid.Size = new Size(993, 338);
       statusDataGrid.TabIndex = 9;
       // 
       // ControlPanel
       // 
       AutoScaleDimensions = new SizeF(10F, 25F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(1221, 1282);
+      ClientSize = new Size(1066, 973);
       Controls.Add(splitContainer1);
       Name = "ControlPanel";
       Text = "ControlPanel";
