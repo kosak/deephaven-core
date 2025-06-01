@@ -25,9 +25,9 @@ internal class CoreClientProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private StatusOr<EndpointConfigBase> _cachedConfig = UnsetConfigText;
+  private StatusOrHolder<EndpointConfigBase> _cachedConfig = new(UnsetConfigText);
   private readonly ObserverContainer<StatusOr<RefCounted<Client>>> _observers = new();
-  private StatusOr<RefCounted<Client>> _client = UnsetClientText;
+  private StatusOrHolder<RefCounted<Client>> _client = new(UnsetClientText);
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -39,7 +39,7 @@ internal class CoreClientProvider :
   /// </summary>
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _client, out var isFirst);
+      _client.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create(this, _upstreamTokenSource.Token);
@@ -72,8 +72,8 @@ internal class CoreClientProvider :
       _upstreamTokenSource = new CancellationTokenSource();
 
       Utility.ClearAndDispose(ref _upstreamCallbacks);
-      StatusOrUtil.Replace(ref _cachedConfig, UnsetConfigText);
-      StatusOrUtil.Replace(ref _client, UnsetClientText);
+      _cachedConfig.Replace(UnsetConfigText);
+      _client.Replace(UnsetClientText);
     }
   }
 
@@ -83,7 +83,7 @@ internal class CoreClientProvider :
         return;
       }
 
-      StatusOrUtil.Replace(ref _cachedConfig, config);
+      _cachedConfig.Replace(config);
       OnNextHelper();
     }
   }
@@ -94,26 +94,25 @@ internal class CoreClientProvider :
     _backgroundTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_upstreamTokenSource.Token);
 
     if (!_cachedConfig.GetValueOrStatus(out var ecb, out var status)) {
-      StatusOrUtil.ReplaceAndNotify(ref _client, status, _observers);
+      _client.ReplaceAndNotify(status, _observers);
       return;
     }
 
     _ = ecb.AcceptVisitor(
       empty => {
-        StatusOrUtil.ReplaceAndNotify(ref _client, UnsetClientText, _observers);
+        _client.ReplaceAndNotify(UnsetClientText, _observers);
         return Unit.Instance;  // have to return something
       },
       core => {
         var progress = StatusOr<RefCounted<Client>>.OfTransient("Trying to connect");
-        StatusOrUtil.ReplaceAndNotify(ref _client, progress, _observers);
+        _client.ReplaceAndNotify(progress, _observers);
         var backgroundToken = _backgroundTokenSource.Token;
         Background.Run(() => OnNextBackground(core, backgroundToken));
         return Unit.Instance;  // have to return something
       },
       corePlus => {
         // Error: we are a Core entity but we are getting credentials for CorePlus
-        StatusOrUtil.ReplaceAndNotify(ref _client,
-          "Enterprise Core+ requires a PQ to be specified", _observers);
+        _client.ReplaceAndNotify("Enterprise Core+ requires a PQ to be specified", _observers);
         return Unit.Instance;  // have to return something
       });
   }
@@ -134,7 +133,7 @@ internal class CoreClientProvider :
       if (token.IsCancellationRequested) {
         return;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _client, result, _observers);
+      _client.ReplaceAndNotify(result, _observers);
     }
   }
 }
