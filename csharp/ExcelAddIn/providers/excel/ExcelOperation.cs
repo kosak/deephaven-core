@@ -89,7 +89,6 @@ internal class ExcelOperation :
     // If there was a status message, and it was fixed (rather than just transient)
     // then we will want to ensure that at least one StatusDialog is visible.
     if (wantToEnsureStatusMonitorVisible) {
-      StatusMonitorDialogManager.EnsureDialogShown(_stateManager);
       ControlPanelManager.EnsureDialogShown(_stateManager);
     }
   }
