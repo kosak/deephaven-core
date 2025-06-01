@@ -9,9 +9,11 @@ public class StatusElements {
     _owner = owner;
     _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
     _owner.statusDataGrid.DataSource = _bindingSource;
+    _owner.statusDataGrid.SelectionChanged += statusDataGrid_SelectionChanged;
 
     // Retry button is initially disabled
     _owner.retryButton.Enabled = false;
+    _owner.retryButton.Click += retryButton_Click;
   }
 
   public void AddRow(StatusMonitorDialogRow row) {
@@ -31,7 +33,7 @@ public class StatusElements {
     _bindingSource.Remove(row);
   }
 
-  private void retryButton_Click(object sender, EventArgs e) {
+  private void retryButton_Click(object? sender, EventArgs e) {
     var selections = GetSelectedRows();
     OnRetryButtonClicked?.Invoke(selections);
   }
@@ -46,7 +48,7 @@ public class StatusElements {
     return result.ToArray();
   }
 
-  private void dataGridView1_SelectionChanged(object sender, EventArgs e) {
+  private void statusDataGrid_SelectionChanged(object? sender, EventArgs e) {
     var someRowsSelected = _owner.statusDataGrid.SelectedRows.Count != 0;
     _owner.retryButton.Enabled = someRowsSelected;
   }

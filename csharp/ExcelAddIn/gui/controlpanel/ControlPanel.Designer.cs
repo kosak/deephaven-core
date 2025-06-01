@@ -157,6 +157,7 @@
       // 
       // versionLabel
       // 
+      versionLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
       versionLabel.AutoSize = true;
       versionLabel.Location = new Point(99, 621);
       versionLabel.Name = "versionLabel";
