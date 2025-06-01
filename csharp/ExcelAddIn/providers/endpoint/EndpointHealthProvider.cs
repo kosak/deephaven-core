@@ -37,7 +37,7 @@ internal class EndpointHealthProvider :
   private IDisposable? _upstreamConfigDisposer = null;
   private IDisposable? _upstreamClientOrSessionDisposer = null;
   private readonly ObserverContainer<StatusOr<EndpointHealth>> _observers = new();
-  private StatusOr<EndpointHealth> _endpointHealth = UnsetHealthString;
+  private readonly StatusOrHolder<EndpointHealth> _endpointHealth = new(UnsetHealthString);
 
   public EndpointHealthProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -49,7 +49,7 @@ internal class EndpointHealthProvider :
   /// </summary>
   public IObservableCallbacks Subscribe(IValueObserver<StatusOr<EndpointHealth>> observer) {
     lock (_sync) {
-      StatusOrUtil.AddObserverAndNotify(_observers, observer, _endpointHealth, out var isFirst);
+      _endpointHealth.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         var voc = ValueObserverWithCancelWrapper.Create<StatusOr<EndpointConfigBase>>(
@@ -77,7 +77,7 @@ internal class EndpointHealthProvider :
 
       Utility.ClearAndDispose(ref _upstreamConfigDisposer);
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
-      StatusOrUtil.Replace(ref _endpointHealth, UnsetHealthString);
+      _endpointHealth.Replace(UnsetHealthString);
     }
   }
 
@@ -94,18 +94,18 @@ internal class EndpointHealthProvider :
       Utility.ClearAndDispose(ref _upstreamClientOrSessionDisposer);
 
       if (!credentials.GetValueOrStatus(out var creds, out var status)) {
-        StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, status, _observers);
+        _endpointHealth.ReplaceAndNotify(status, _observers);
         return;
       }
 
-      StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, "[Unknown]", _observers);
+      _endpointHealth.ReplaceAndNotify("[Unknown]", _observers);
 
       // Upstream has core or corePlus value. Use the visitor to figure 
       // out which one and subscribe to it.
 
       _upstreamClientOrSessionDisposer = creds.AcceptVisitor<IDisposable?>(
         (EmptyEndpointConfig _) => {
-          StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, UnsetHealthString, _observers);
+          _endpointHealth.ReplaceAndNotify(UnsetHealthString, _observers);
           return null;
         },
         (CoreEndpointConfig _) => {
@@ -141,7 +141,7 @@ internal class EndpointHealthProvider :
       } else {
         result = status;
       }
-      StatusOrUtil.ReplaceAndNotify(ref _endpointHealth, result, _observers);
+      _endpointHealth.ReplaceAndNotify(result, _observers);
     }
   }
 }

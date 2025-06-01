@@ -17,7 +17,7 @@ internal class EndpointConfigProvider :
   private SharableDict<EndpointConfigBase> _prevDict = SharableDict<EndpointConfigBase>.Empty;
   private EndpointConfigBase? _prevConfig = null;
   private readonly ObserverContainer<StatusOr<EndpointConfigBase>> _observers = new();
-  private StatusOrHolder<EndpointConfigBase> _credentials = new(UnsetCredentialsString);
+  private readonly StatusOrHolder<EndpointConfigBase> _credentials = new(UnsetCredentialsString);
 
   public EndpointConfigProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
