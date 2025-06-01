@@ -3,11 +3,11 @@
 public class StatusElements {
   private readonly ControlPanel _owner;
   private readonly BindingSource _bindingSource = new();
-  public event Action<StatusMonitorDialogRow[]>? OnRetryButtonClicked;
+  public event Action<StatusMonitorRow[]>? OnRetryButtonClicked;
 
   public StatusElements(ControlPanel owner) {
     _owner = owner;
-    _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
+    _bindingSource.DataSource = typeof(StatusMonitorRow);
     _owner.statusDataGrid.DataSource = _bindingSource;
     _owner.statusDataGrid.SelectionChanged += statusDataGrid_SelectionChanged;
 
@@ -16,7 +16,7 @@ public class StatusElements {
     _owner.retryButton.Click += retryButton_Click;
   }
 
-  public void AddRow(StatusMonitorDialogRow row) {
+  public void AddRow(StatusMonitorRow row) {
     if (_owner.InvokeRequired) {
       _owner.Invoke(() => AddRow(row));
       return;
@@ -25,7 +25,7 @@ public class StatusElements {
     _owner.statusDataGrid.ClearSelection();
   }
 
-  public void RemoveRow(StatusMonitorDialogRow row) {
+  public void RemoveRow(StatusMonitorRow row) {
     if (_owner.InvokeRequired) {
       _owner.Invoke(() => RemoveRow(row));
       return;
@@ -38,12 +38,12 @@ public class StatusElements {
     OnRetryButtonClicked?.Invoke(selections);
   }
 
-  private StatusMonitorDialogRow[] GetSelectedRows() {
-    var result = new List<StatusMonitorDialogRow>();
+  private StatusMonitorRow[] GetSelectedRows() {
+    var result = new List<StatusMonitorRow>();
     var sr = _owner.statusDataGrid.SelectedRows;
     var count = sr.Count;
     for (var i = 0; i != count; ++i) {
-      result.Add((StatusMonitorDialogRow)sr[i].DataBoundItem);
+      result.Add((StatusMonitorRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
   }

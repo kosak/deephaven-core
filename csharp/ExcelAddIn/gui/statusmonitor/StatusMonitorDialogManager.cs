@@ -45,7 +45,7 @@ public class StatusMonitorDialogManager :
   private readonly object _sync = new();
   private bool _isDisposed = false;
   private readonly StatusMonitorDialog _smDialog;
-  private readonly Dictionary<Int64, StatusMonitorDialogRow> _idToRow = new();
+  private readonly Dictionary<Int64, StatusMonitorRow> _idToRow = new();
   private IDisposable? _upstreamSubsription = null;
   private SharableDict<OpStatus> _prevDict = SharableDict<OpStatus>.Empty;
 
@@ -77,7 +77,7 @@ public class StatusMonitorDialogManager :
       _prevDict = dict;
 
       foreach (var kvp in adds) {
-        var row = new StatusMonitorDialogRow(kvp.Value);
+        var row = new StatusMonitorRow(kvp.Value);
         _idToRow.Add(kvp.Key, row);
         _smDialog.AddRow(row);
       }
@@ -100,7 +100,7 @@ public class StatusMonitorDialogManager :
     }
   }
 
-  private void OnRetryButtonClicked(StatusMonitorDialogRow[] rows) {
+  private void OnRetryButtonClicked(StatusMonitorRow[] rows) {
     Action[] actions;
     lock (_sync) {
       actions = rows.Select(row => row.OpStatus.RetryAction).ToArray();

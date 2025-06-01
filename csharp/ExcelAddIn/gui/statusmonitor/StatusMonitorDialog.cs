@@ -2,7 +2,7 @@
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-using SelectedRowsAction = Action<StatusMonitorDialogRow[]>;
+using SelectedRowsAction = Action<StatusMonitorRow[]>;
 
 public partial class StatusMonitorDialog : Form {
   public event SelectedRowsAction? OnRetryButtonClicked;
@@ -12,7 +12,7 @@ public partial class StatusMonitorDialog : Form {
   public StatusMonitorDialog() {
     InitializeComponent();
 
-    _bindingSource.DataSource = typeof(StatusMonitorDialogRow);
+    _bindingSource.DataSource = typeof(StatusMonitorRow);
     dataGridView1.DataSource = _bindingSource;
 
     // Retry button is initially disabled
@@ -22,7 +22,7 @@ public partial class StatusMonitorDialog : Form {
     versionLabel.Text = Utility.VersionString;
   }
 
-  public void AddRow(StatusMonitorDialogRow row) {
+  public void AddRow(StatusMonitorRow row) {
     if (InvokeRequired) {
       Invoke(() => AddRow(row));
       return;
@@ -31,7 +31,7 @@ public partial class StatusMonitorDialog : Form {
     dataGridView1.ClearSelection();
   }
 
-  public void RemoveRow(StatusMonitorDialogRow row) {
+  public void RemoveRow(StatusMonitorRow row) {
     if (InvokeRequired) {
       Invoke(() => RemoveRow(row));
       return;
@@ -44,12 +44,12 @@ public partial class StatusMonitorDialog : Form {
     OnRetryButtonClicked?.Invoke(selections);
   }
 
-  private StatusMonitorDialogRow[] GetSelectedRows() {
-    var result = new List<StatusMonitorDialogRow>();
+  private StatusMonitorRow[] GetSelectedRows() {
+    var result = new List<StatusMonitorRow>();
     var sr = dataGridView1.SelectedRows;
     var count = sr.Count;
     for (var i = 0; i != count; ++i) {
-      result.Add((StatusMonitorDialogRow)sr[i].DataBoundItem);
+      result.Add((StatusMonitorRow)sr[i].DataBoundItem);
     }
     return result.ToArray();
   }

@@ -114,7 +114,7 @@
       // 
       connectionsLabel.AutoSize = true;
       connectionsLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      connectionsLabel.Location = new Point(22, 24);
+      connectionsLabel.Location = new Point(22, 9);
       connectionsLabel.Name = "connectionsLabel";
       connectionsLabel.Size = new Size(147, 32);
       connectionsLabel.TabIndex = 10;
@@ -169,7 +169,7 @@
       // 
       statusLabel.AutoSize = true;
       statusLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      statusLabel.Location = new Point(22, 37);
+      statusLabel.Location = new Point(22, 10);
       statusLabel.Name = "statusLabel";
       statusLabel.Size = new Size(78, 32);
       statusLabel.TabIndex = 10;

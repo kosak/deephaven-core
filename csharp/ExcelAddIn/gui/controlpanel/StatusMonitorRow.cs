@@ -4,13 +4,13 @@ using Deephaven.ExcelAddIn.Models;
 
 namespace Deephaven.ExcelAddIn.Gui;
 
-public sealed class StatusMonitorDialogRow : INotifyPropertyChanged {
+public sealed class StatusMonitorRow : INotifyPropertyChanged {
   public event PropertyChangedEventHandler? PropertyChanged;
 
   private readonly object _sync = new();
   private OpStatus _opStatus;
 
-  public StatusMonitorDialogRow(OpStatus opStatus) {
+  public StatusMonitorRow(OpStatus opStatus) {
     _opStatus = opStatus;
   }
 
@@ -31,7 +31,7 @@ public sealed class StatusMonitorDialogRow : INotifyPropertyChanged {
   public void SetValue(OpStatus newStatus) {
     // We do extra work to avoid sending unnecessary PropertyChanged events.
     // Not sure this is necessary.
-    var tempRow = new StatusMonitorDialogRow(newStatus);
+    var tempRow = new StatusMonitorRow(newStatus);
     var funcChanged = Function != tempRow.Function;
     var statusChanged = Status != tempRow.Status;
 
