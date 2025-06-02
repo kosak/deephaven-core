@@ -17,7 +17,7 @@ public class StateManager {
   private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
   private readonly ReferenceCountingDict<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
   private readonly ReferenceCountingDict<EndpointId, EndpointHealthProvider> _endpointHealthProviders = new();
-  private readonly ReferenceCountingDict<TableQuad, IValueObservable<StatusOr<RefCounted<TableHandle>>>> _tableProviders = new();
+  private readonly ReferenceCountingDict<TableQuad, IValueObservable<StatusOr<TableHandle>>> _tableProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqDictProvider> _persistentQueryDictProviders = new();
   private readonly ReferenceCountingDict<(EndpointId, PqName), PqInfoProvider> _persistentQueryInfoProviders = new();
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
@@ -86,7 +86,7 @@ public class StateManager {
   }
 
   public IObservableCallbacks SubscribeToSubscription(EndpointId endpointId,
-    IValueObserver<StatusOr<RefCounted<Subscription>>> observer) {
+    IValueObserver<StatusOr<Subscription>> observer) {
     var candidate = new PqSubscriptionProvider(this, endpointId);
     return SubscribeHelper(_subscriptionProviders, endpointId, candidate, observer);
   }
