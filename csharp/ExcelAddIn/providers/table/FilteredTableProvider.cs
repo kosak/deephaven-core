@@ -16,8 +16,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  * the resulting filtered TableHandle (or error) to my observers.
  */
 internal class FilteredTableProvider :
-  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
-  IValueObservable<StatusOr<RefCounted<TableHandle>>> {
+  IValueObserverWithCancel<StatusOr<TableHandle>>,
+  IValueObservable<StatusOr<TableHandle>> {
   private const string UnsetParentText = "No Parent TableHandle";
   private const string UnsetTableHandleText = "No Filtered TableHandle";
 
@@ -30,9 +30,9 @@ internal class FilteredTableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private readonly StatusOrHolder<RefCounted<TableHandle>> _cachedParentHandle = new(UnsetParentText);
-  private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
-  private readonly StatusOrHolder<RefCounted<TableHandle>> _filteredTableHandle = new(UnsetTableHandleText);
+  private readonly StatusOrHolder<TableHandle> _cachedParentHandle = new(UnsetParentText);
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private readonly StatusOrHolder<TableHandle> _filteredTableHandle = new(UnsetTableHandleText);
 
   public FilteredTableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName, string condition) {
@@ -43,7 +43,7 @@ internal class FilteredTableProvider :
     _condition = condition;
   }
 
-  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _filteredTableHandle.AddObserverAndNotify(_observers, observer, out var isFirst);
       if (isFirst) {
@@ -77,7 +77,7 @@ internal class FilteredTableProvider :
     }
   }
 
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
@@ -93,7 +93,7 @@ internal class FilteredTableProvider :
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> parentHandle, CancellationToken token) {
+  public void OnNext(StatusOr<TableHandle> parentHandle, CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
@@ -115,43 +115,42 @@ internal class FilteredTableProvider :
         return;
       }
 
-      var progress = StatusOr<RefCounted<TableHandle>>.OfTransient("Filtering");
+      var progress = StatusOr<TableHandle>.OfTransient("Filtering");
       _filteredTableHandle.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.
-      var phShare = ph.Share();
+      var sharedDisposer = Repository.Share(ph);
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         // RefCounted item gets released on this thread.
-        using var cleanup = phShare;
-        OnNextBackground(phShare, backgroundToken);
+        using var cleanup = sharedDisposer;
+        OnNextBackground(ph, backgroundToken);
       });
     }
   }
 
-  private void OnNextBackground(RefCounted<TableHandle> parentHandle,
-    CancellationToken token) {
-    RefCounted<TableHandle>? newRef = null;
-    StatusOr<RefCounted<TableHandle>> newResult;
+  private void OnNextBackground(TableHandle parentHandle, CancellationToken token) {
+    IDisposable? sharedDisposer = null;
+    StatusOr<TableHandle> result;
     try {
       // This is a server call that may take some time.
-      var childHandle = parentHandle.Value.Where(_condition);
+      var childHandle = parentHandle.Where(_condition);
       // The child handle takes a dependency on the parent handle, not because
       // TableHandles have a dependency on each other, but because the parent handle
       // has a transitive dependency on the Client or DndClient, and that's what
       // we need to keep alive while we're alive.
-      newRef = RefCounted.Acquire(childHandle, parentHandle);
-      newResult = newRef;
+      sharedDisposer = Repository.Register(childHandle, parentHandle);
+      result = childHandle;
     } catch (Exception ex) {
-      newResult = ex.Message;
+      result = ex.Message;
     }
-    using var cleanup = newRef;
+    using var cleanup = sharedDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
       }
-      _filteredTableHandle.ReplaceAndNotify(newResult, _observers);
+      _filteredTableHandle.ReplaceAndNotify(result, _observers);
     }
   }
 }
