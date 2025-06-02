@@ -132,6 +132,7 @@ internal class TableProvider :
 
       var progress = StatusOr<RefCounted<TableHandle>>.OfTransient("Fetching Table");
       _tableHandle.ReplaceAndNotify(progress, _observers);
+
       // RefCounted item gets acquired on this thread.
       var clientShare = cliRef.Share();
       var backgroundToken = _backgroundTokenSource.Token;
