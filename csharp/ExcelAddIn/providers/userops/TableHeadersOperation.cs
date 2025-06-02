@@ -6,7 +6,7 @@ using Deephaven.ManagedClient;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class TableHeadersOperation :
-  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
+  IValueObserverWithCancel<StatusOr<TableHandle>>,
   IValueObservable<StatusOr<object?[,]>> {
   private const string UnsetTableHandle = "No TableHandle";
   private const string UnsetTableData = "No headers";
@@ -16,7 +16,7 @@ internal class TableHeadersOperation :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private readonly StatusOrHolder<RefCounted<TableHandle>> _cachedTableHandle = new(UnsetTableHandle);
+  private readonly StatusOrHolder<TableHandle> _cachedTableHandle = new(UnsetTableHandle);
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private readonly StatusOrHolder<object?[,]> _rendered = new(UnsetTableData);
 
@@ -67,7 +67,7 @@ internal class TableHeadersOperation :
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle,
+  public void OnNext(StatusOr<TableHandle> tableHandle,
     CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
@@ -94,22 +94,21 @@ internal class TableHeadersOperation :
       _rendered.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.
-      var thShare = th.Share();
+      var sharedDisposer = Repository.Share(th);
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         // RefCounted item gets released on this thread.
-        using var cleanup = thShare;
-        OnNextBackground(thShare, backgroundToken);
+        using var cleanup = sharedDisposer;
+        OnNextBackground(th, backgroundToken);
       });
     }
   }
 
-  private void OnNextBackground(RefCounted<TableHandle> tableHandle,
-    CancellationToken token) {
+  private void OnNextBackground(TableHandle tableHandle, CancellationToken token) {
     StatusOr<object?[,]> newResult;
     try {
       // This is a server call that may take some time.
-      using var ct = tableHandle.Value.ToClientTable();
+      using var ct = tableHandle.ToClientTable();
       newResult = Renderer.RenderHeaders(ct);
     } catch (Exception ex) {
       newResult = ex.Message;
