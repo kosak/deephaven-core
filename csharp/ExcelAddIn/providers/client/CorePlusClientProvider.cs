@@ -57,10 +57,10 @@ internal class CorePlusClientProvider :
 
   private void Retry() {
     lock (_sync) {
-      if (_sessionManager.GetValueOrStatus(out _, out _)) {
+      if (!_sessionManager.GetValueOrStatus(out _, out _)) {
         // SessionManager parent is in error state, so propagate retry to it
         _sessionManagerCallbacks?.Retry();
-      } else if (_pqInfo.GetValueOrStatus(out _, out _)) {
+      } else if (!_pqInfo.GetValueOrStatus(out _, out _)) {
         // PQInfo Parent is in error state, so propagate retry to it (as a practical matter,
         // PqInfo will just ignore this Retry attempt, but that's not our problem)
         _pqInfoCallbacks?.Retry();

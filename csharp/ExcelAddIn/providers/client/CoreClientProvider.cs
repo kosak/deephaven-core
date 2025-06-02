@@ -51,7 +51,7 @@ internal class CoreClientProvider :
 
   private void Retry() {
     lock (_sync) {
-      if (_cachedConfig.GetValueOrStatus(out _, out _)) {
+      if (!_cachedConfig.GetValueOrStatus(out _, out _)) {
         // Config parent is in error state, so propagate retry to it
         _upstreamCallbacks?.Retry();
       } else {

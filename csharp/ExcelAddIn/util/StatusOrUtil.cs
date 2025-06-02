@@ -30,6 +30,9 @@ public class StatusOrHolder<T> {
   /// </summary>
   public void Replace(StatusOr<T> newValue) {
     if (_value.GetValueOrStatus(out var dv, out _) && dv is RefCounted destRc) {
+      if (ReferenceEquals(dv, newValue)) {
+        return;
+      }
       Background.InvokeDispose(destRc);
     }
 
