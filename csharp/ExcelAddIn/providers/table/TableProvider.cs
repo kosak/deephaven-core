@@ -123,11 +123,11 @@ internal class TableProvider :
       _tableHandle.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.
-      var shareDisposer = Repository.Share(cliRef);
+      var sharedDisposer = Repository.Share(cliRef);
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         // RefCounted item gets released on this thread.
-        using var cleanup = shareDisposer;
+        using var cleanup = sharedDisposer;
         OnNextBackground(cliRef, backgroundToken);
       });
     }

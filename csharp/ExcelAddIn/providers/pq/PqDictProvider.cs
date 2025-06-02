@@ -7,7 +7,7 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class PqDictProvider :
-  IValueObserverWithCancel<StatusOr<RefCounted<Subscription>>>,
+  IValueObserverWithCancel<StatusOr<Subscription>>,
   IValueObservable<StatusOr<SharableDict<PersistentQueryInfoMessage>>> {
   private const string UnsetDictText = "No PQ Dict";
   private readonly StateManager _stateManager;
@@ -57,7 +57,7 @@ internal class PqDictProvider :
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<Subscription>> subscription, CancellationToken token) {
+  public void OnNext(StatusOr<Subscription> subscription, CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
@@ -76,20 +76,19 @@ internal class PqDictProvider :
         "Processing Subscriptions");
       _dict.ReplaceAndNotify(progress, _observers);
       // RefCounted item gets acquired on this thread.
-      var subShare = sub.Share();
+      var sharedDisposer = Repository.Share(sub);
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         // RefCounted item gets released on this thread.
-        using var cleanup = subShare;
-        ProcessSubscriptionStream(subShare, backgroundToken);
+        using var cleanup = sharedDisposer;
+        ProcessSubscriptionStream(sub, backgroundToken);
       });
     }
   }
 
-  private void ProcessSubscriptionStream(RefCounted<Subscription> subRef, CancellationToken token) {
+  private void ProcessSubscriptionStream(Subscription sub, CancellationToken token) {
     Int64 version = -1;
     var wantExit = false;
-    var sub = subRef.Value;
     while (true) {
       StatusOr<SharableDict<PersistentQueryInfoMessage>> newDict;
       if (sub.Next(version) && sub.Current(out version, out var dict)) {
