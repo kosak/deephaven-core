@@ -53,8 +53,8 @@ public class StateManager {
   }
 
   public IObservableCallbacks SubscribeToTable(TableQuad key,
-    IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
-    IValueObservable<StatusOr<RefCounted<TableHandle>>> candidate;
+    IValueObserver<StatusOr<TableHandle>> observer) {
+    IValueObservable<StatusOr<TableHandle>> candidate;
     if (key.EndpointId == null) {
       candidate = new DefaultEndpointTableProvider(this, key.PqName, key.TableName, key.Condition);
     } else if (key.Condition.Length != 0) {

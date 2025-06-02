@@ -13,8 +13,8 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class DefaultEndpointTableProvider :
   IValueObserverWithCancel<StatusOr<EndpointId>>,
-  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
-  IValueObservable<StatusOr<RefCounted<TableHandle>>> {
+  IValueObserverWithCancel<StatusOr<TableHandle>>,
+  IValueObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "No Default Endpoint TableHandle";
 
   private readonly StateManager _stateManager;
@@ -26,8 +26,8 @@ internal class DefaultEndpointTableProvider :
   private CancellationTokenSource _tableHandleTokenSource = new();
   private IObservableCallbacks? _endpointSubscriptionCallbacks = null;
   private IObservableCallbacks? _tableHandleSubscriptionCallbacks = null;
-  private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
-  private readonly StatusOrHolder<RefCounted<TableHandle>> _tableHandle = new(UnsetTableHandleText);
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private readonly StatusOrHolder<TableHandle> _tableHandle = new(UnsetTableHandleText);
 
   public DefaultEndpointTableProvider(StateManager stateManager,
     PqName? pqName, string tableName, string condition) {
@@ -37,7 +37,7 @@ internal class DefaultEndpointTableProvider :
     _condition = condition;
   }
 
-  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _tableHandle.AddObserverAndNotify(_observers, observer, out var isFirst);
 
@@ -57,7 +57,7 @@ internal class DefaultEndpointTableProvider :
     }
   }
 
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
@@ -86,7 +86,6 @@ internal class DefaultEndpointTableProvider :
 
       // Unsubscribe from old upstream TableHandle
       Utility.ClearAndDispose(ref _tableHandleSubscriptionCallbacks);
-      // Suppress any notifications from the old subscription, which will now be stale
 
       if (!endpointId.GetValueOrStatus(out var ep, out var status)) {
         _tableHandle.ReplaceAndNotify(status, _observers);
@@ -95,13 +94,13 @@ internal class DefaultEndpointTableProvider :
 
       // Subscribe to a new upstream TableProvider
       var tq = new TableQuad(ep, _pqName, _tableName, _condition);
-      var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<TableHandle>>>(
+      var voc = ValueObserverWithCancelWrapper.Create<StatusOr<TableHandle>>(
         this, _tableHandleTokenSource.Token);
       _tableHandleSubscriptionCallbacks = _stateManager.SubscribeToTable(tq, voc);
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> value,
+  public void OnNext(StatusOr<TableHandle> value,
     CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
