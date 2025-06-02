@@ -24,8 +24,8 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// </summary>
 internal class EndpointHealthProvider :
   IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
-  IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
-  IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
+  IValueObserverWithCancel<StatusOr<Client>>,
+  IValueObserverWithCancel<StatusOr<SessionManager>>,
   IValueObservable<StatusOr<EndpointHealth>> {
   private const string UnsetHealthString = "Unknown health";
 
@@ -109,23 +109,23 @@ internal class EndpointHealthProvider :
           return null;
         },
         (CoreEndpointConfig _) => {
-          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<Client>>>(
+          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<Client>>(
             this, _upstreamTokenSource.Token);
           return _stateManager.SubscribeToCoreClient(_endpointId, voc);
         },
         (CorePlusEndpointConfig _) => {
-          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<SessionManager>>>(
+          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<SessionManager>>(
             this, _upstreamTokenSource.Token);
           return _stateManager.SubscribeToSessionManager(_endpointId, voc);
         });
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<Client>> client, CancellationToken token) {
+  public void OnNext(StatusOr<Client> client, CancellationToken token) {
     OnNextHelper(client, token);
   }
 
-  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager,
+  public void OnNext(StatusOr<SessionManager> sessionManager,
     CancellationToken token) {
     OnNextHelper(sessionManager, token);
   }
