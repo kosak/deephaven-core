@@ -154,19 +154,3 @@ internal class TableProvider :
     }
   }
 }
-
-public class Repository {
-  class Moo : IDisposable {
-    public void Dispose() {
-
-    }
-  }
-  public static IDisposable Register(IDisposable o, params IDisposable[] dependencies) {
-    return new Moo();
-
-  }
-
-  public static IDisposable Share(IDisposable o) {
-
-  }
-}
