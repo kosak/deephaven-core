@@ -15,7 +15,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// </summary>
 internal class SessionManagerProvider :
   IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
-  IValueObservable<StatusOr<RefCounted<SessionManager>>> {
+  IValueObservable<StatusOr<SessionManager>> {
   private const string UnsetCredentialsText = "No Credentials";
   private const string UnsetSessionManagerText = "No SessionManager";
   private readonly StateManager _stateManager;
@@ -25,8 +25,8 @@ internal class SessionManagerProvider :
   private CancellationTokenSource _backgroundTokenSource = new();
   private IDisposable? _upstreamDisposer = null;
   private readonly StatusOrHolder<EndpointConfigBase> _cachedCredentials = new(UnsetCredentialsText);
-  private readonly ObserverContainer<StatusOr<RefCounted<SessionManager>>> _observers = new();
-  private readonly StatusOrHolder<RefCounted<SessionManager>> _session = new(UnsetSessionManagerText);
+  private readonly ObserverContainer<StatusOr<SessionManager>> _observers = new();
+  private readonly StatusOrHolder<SessionManager> _session = new(UnsetSessionManagerText);
 
   public SessionManagerProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -36,7 +36,7 @@ internal class SessionManagerProvider :
   /// <summary>
   /// Subscribe to session changes
   /// </summary>
-  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<SessionManager>> observer) {
     lock (_sync) {
       _session.AddObserverAndNotify(_observers, observer, out var isFirst);
 
@@ -53,7 +53,7 @@ internal class SessionManagerProvider :
     OnNextHelper();
   }
 
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<SessionManager>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
@@ -104,8 +104,9 @@ internal class SessionManagerProvider :
           return Unit.Instance;
         },
         corePlus => {
-          var progress = StatusOr<RefCounted<SessionManager>>.OfTransient("Trying to connect");
+          var progress = StatusOr<SessionManager>.OfTransient("Trying to connect");
           _session.ReplaceAndNotify(progress, _observers);
+
           var backgroundToken = _backgroundTokenSource.Token;
           Background.Run(() => OnNextBackground(corePlus, backgroundToken));
           return Unit.Instance;
@@ -114,16 +115,16 @@ internal class SessionManagerProvider :
   }
 
   private void OnNextBackground(CorePlusEndpointConfig config, CancellationToken token) {
-    RefCounted<SessionManager>? smRef = null;
-    StatusOr<RefCounted<SessionManager>> result;
+    IDisposable? sharedDisposer = null;
+    StatusOr<SessionManager> result;
     try {
       var sm = EndpointFactory.ConnectToCorePlus(config);
-      smRef = RefCounted.Acquire(sm);
-      result = smRef;
+      sharedDisposer = Repository.Register(sm);
+      result = sm;
     } catch (Exception ex) {
       result = ex.Message;
     }
-    using var cleanup = smRef;
+    using var cleanup = sharedDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {
