@@ -80,7 +80,7 @@ public class StateManager {
   }
 
   public IObservableCallbacks SubscribeToSessionManager(EndpointId endpointId,
-    IValueObserver<StatusOr<RefCounted<SessionManager>>> observer) {
+    IValueObserver<StatusOr<SessionManager>> observer) {
     var candidate = new SessionManagerProvider(this, endpointId);
     return SubscribeHelper(_sessionManagerProviders, endpointId, candidate, observer);
   }

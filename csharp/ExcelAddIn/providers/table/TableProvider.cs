@@ -134,17 +134,17 @@ internal class TableProvider :
   }
 
   private void OnNextBackground(Client client, CancellationToken token) {
-    IDisposable? shareDisposer = null;
+    IDisposable? sharedDisposer = null;
     StatusOr<TableHandle> result;
     try {
       var th = client.Manager.FetchTable(_tableName);
       // Keep a dependency on client
-      shareDisposer = Repository.Register(th, client);
+      sharedDisposer = Repository.Register(th, client);
       result = th;
     } catch (Exception ex) {
       result = ex.Message;
     }
-    using var cleanup = shareDisposer;
+    using var cleanup = sharedDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {

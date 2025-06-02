@@ -8,9 +8,9 @@ using Io.Deephaven.Proto.Controller;
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class CorePlusClientProvider :
-  IValueObserverWithCancel<StatusOr<RefCounted<SessionManager>>>,
+  IValueObserverWithCancel<StatusOr<SessionManager>>,
   IValueObserverWithCancel<StatusOr<PersistentQueryInfoMessage>>,
-  IValueObservable<StatusOr<RefCounted<DndClient>>> {
+  IValueObservable<StatusOr<DndClient>> {
   private const string UnsetClientText = "No Core+ Client";
   private const string UnsetSessionManagerText = "No Session Manager";
   private const string UnsetPqInfoText = "No PQ Info";
@@ -22,10 +22,10 @@ internal class CorePlusClientProvider :
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _sessionManagerCallbacks = null;
   private IObservableCallbacks? _pqInfoCallbacks = null;
-  private readonly ObserverContainer<StatusOr<RefCounted<DndClient>>> _observers = new();
-  private readonly StatusOrHolder<RefCounted<SessionManager>> _sessionManager = new(UnsetSessionManagerText);
+  private readonly ObserverContainer<StatusOr<DndClient>> _observers = new();
+  private readonly StatusOrHolder<SessionManager> _sessionManager = new(UnsetSessionManagerText);
   private readonly StatusOrHolder<PersistentQueryInfoMessage> _pqInfo = new(UnsetPqInfoText);
-  private readonly StatusOrHolder<RefCounted<DndClient>> _client = new(UnsetClientText);
+  private readonly StatusOrHolder<DndClient> _client = new(UnsetClientText);
 
   public CorePlusClientProvider(StateManager stateManager, EndpointId endpointId,
     PqName pqName) {
@@ -37,12 +37,12 @@ internal class CorePlusClientProvider :
   /// <summary>
   /// Subscribe to Enterprise Core+ client changes
   /// </summary>
-  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<DndClient>> observer) {
     lock (_sync) {
       _client.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
-        var voc1 = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<SessionManager>>>(
+        var voc1 = ValueObserverWithCancelWrapper.Create<StatusOr<SessionManager>>(
           this, _upstreamTokenSource.Token);
         var voc2 = ValueObserverWithCancelWrapper.Create<StatusOr<PersistentQueryInfoMessage>>(
           this, _upstreamTokenSource.Token);
@@ -70,7 +70,7 @@ internal class CorePlusClientProvider :
     }
   }
 
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<DndClient>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
@@ -90,7 +90,7 @@ internal class CorePlusClientProvider :
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<SessionManager>> sessionManager,
+  public void OnNext(StatusOr<SessionManager> sessionManager,
     CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
@@ -137,34 +137,34 @@ internal class CorePlusClientProvider :
     }
 
     // RefCounted item gets acquired on this thread.
-    var smShared = sm.Share();
+    var sharedDisposer = Repository.Share(sm);
     var backgroundToken = _backgroundTokenSource.Token;
     Background.Run(() => {
       // RefCounted item gets released on this thread.
-      using var cleanup = smShared;
-      UpdateStateInBackground(smShared, pq, backgroundToken);
+      using var cleanup = sharedDisposer;
+      UpdateStateInBackground(sm, pq, backgroundToken);
     });
   }
 
-  private void UpdateStateInBackground(RefCounted<SessionManager> sm,
+  private void UpdateStateInBackground(SessionManager sm,
     PersistentQueryInfoMessage pq, CancellationToken token) {
-    RefCounted<DndClient>? newRef = null;
-    StatusOr<RefCounted<DndClient>> newState;
+    IDisposable? sharedDisposer = null;
+    StatusOr<DndClient> result;
     try {
-      var client = sm.Value.ConnectToPqById(pq.State.Serial, false);
+      var client = sm.ConnectToPqById(pq.State.Serial, false);
       // Our value is the client, with a dependency on the SessionManager
-      newRef = RefCounted.Acquire(client, sm);
-      newState = newRef;
+      sharedDisposer = Repository.Register(client, sm);
+      result = client;
     } catch (Exception ex) {
-      newState = ex.Message;
+      result = ex.Message;
     }
-    using var cleanup = newRef;
+    using var cleanup = sharedDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
       }
-      _client.ReplaceAndNotify(newState, _observers);
+      _client.ReplaceAndNotify(result, _observers);
     }
   }
 }

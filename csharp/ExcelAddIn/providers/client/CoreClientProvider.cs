@@ -49,6 +49,17 @@ internal class CoreClientProvider :
     return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
   }
 
+  private void Retry() {
+    lock (_sync) {
+      if (!_cachedConfig.GetValueOrStatus(out _, out _)) {
+        // Config parent is in error state, so propagate retry to it
+        _upstreamCallbacks?.Retry();
+      } else {
+        OnNextHelper();
+      }
+    }
+  }
+
   private void RemoveObserver(IValueObserver<StatusOr<Client>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
@@ -62,17 +73,6 @@ internal class CoreClientProvider :
       Utility.ClearAndDispose(ref _upstreamCallbacks);
       _cachedConfig.Replace(UnsetConfigText);
       _client.Replace(UnsetClientText);
-    }
-  }
-
-  private void Retry() {
-    lock (_sync) {
-      if (!_cachedConfig.GetValueOrStatus(out _, out _)) {
-        // Config parent is in error state, so propagate retry to it
-        _upstreamCallbacks?.Retry();
-      } else {
-        OnNextHelper();
-      }
     }
   }
 
