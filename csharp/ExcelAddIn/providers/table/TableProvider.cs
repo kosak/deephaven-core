@@ -144,18 +144,18 @@ internal class TableProvider :
     }
   }
 
-  private void OnNextBackground(RefCounted<Client> client, CancellationToken token) {
-    RefCounted<TableHandle>? newRef = null;
-    StatusOr<RefCounted<TableHandle>> newState;
+  private void OnNextBackground(Client client, CancellationToken token) {
+    IDisposable? disposer = null;
+    StatusOr<TableHandle> newState;
     try {
-      var th = client.Value.Manager.FetchTable(_tableName);
+      var th = client.Manager.FetchTable(_tableName);
       // Keep a dependency on client
-      newRef = RefCounted.Acquire(th, client);
-      newState = newRef;
+      disposer = Repository.Register(th, client);
+      newState = th;
     } catch (Exception ex) {
       newState = ex.Message;
     }
-    using var cleanup = newRef;
+    using var cleanup = disposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {
@@ -163,5 +163,11 @@ internal class TableProvider :
       }
       _tableHandle.ReplaceAndNotify(newState, _observers);
     }
+  }
+}
+
+public class Repository {
+  public static IDisposable Register(object o, params object[] dependencies) {
+
   }
 }
