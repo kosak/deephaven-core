@@ -54,7 +54,7 @@ public class StatusOrHolder<T> {
   }
 
   private void EnqueueKeepAlive(ObserverContainer<StatusOr<T>> observers) {
-    // We are, so we need to reshare it
+    // If we are not holding a sharable value, then there is nothing to enqueue.
     if (!_value.GetValueOrStatus(out var value, out _) || value is not IDisposable disp) {
       return;
     }
