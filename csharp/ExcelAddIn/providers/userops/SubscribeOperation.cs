@@ -2,12 +2,11 @@
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
 internal class SubscribeOperation :
-  IValueObserverWithCancel<StatusOr<RefCounted<TableHandle>>>,
+  IValueObserverWithCancel<StatusOr<TableHandle>>,
   IObserverWithCancel<TickingUpdate>,
   IValueObservable<StatusOr<object?[,]>> {
   private const string UnsetTableHandle = "No TableHandle";
@@ -21,8 +20,8 @@ internal class SubscribeOperation :
   private CancellationTokenSource _backgroundTokenSource = new();
   private readonly ObserverContainer<StatusOr<object?[,]>> _observers = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private readonly StatusOrHolder<RefCounted<TableHandle>> _cachedTableHandle = new(UnsetTableHandle);
-  private readonly StatusOrHolder<RefCounted<IDisposable>> _tickingSubscription = new(UnsetTickingSubscription);
+  private readonly StatusOrHolder<TableHandle> _cachedTableHandle = new(UnsetTableHandle);
+  private readonly StatusOrHolder<IDisposable> _tickingSubscription = new(UnsetTickingSubscription);
   private readonly StatusOrHolder<object?[,]> _rendered = new(UnsetTableData);
 
   public SubscribeOperation(TableQuad tableQuad, bool wantHeaders, StateManager stateManager) {
@@ -71,7 +70,7 @@ internal class SubscribeOperation :
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<TableHandle>> tableHandle,
+  public void OnNext(StatusOr<TableHandle> tableHandle,
     CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
@@ -98,19 +97,20 @@ internal class SubscribeOperation :
       var progress = StatusOr<object?[,]>.OfTransient($"Subscribing to \"{_tableQuad.TableName}\"");
       _rendered.ReplaceAndNotify(progress, _observers);
 
-      var thShare = th.Share();
+      // RefCounted item gets acquired on this thread.
+      var sharedDisposer = Repository.Share(th);
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
-        using var cleanup = thShare;
-        SubscribeInBackground(thShare, backgroundToken);
+        // RefCounted item gets released on this thread.
+        using var cleanup = sharedDisposer;
+        SubscribeInBackground(th, backgroundToken);
       });
     }
   }
 
-  private void SubscribeInBackground(RefCounted<TableHandle> tableHandle,
-    CancellationToken token) {
-    RefCounted<IDisposable>? subRef = null;
-    StatusOr<RefCounted<IDisposable>> result;
+  private void SubscribeInBackground(TableHandle tableHandle, CancellationToken token) {
+    IDisposable? sharedDisposer = null;
+    StatusOr<IDisposable> result;
 
     IObserver<TickingUpdate> tuo;
     lock (_sync) {
@@ -121,15 +121,15 @@ internal class SubscribeOperation :
     }
 
     try {
-      var disposer = tableHandle.Value.Subscribe(tuo);
+      var subDisposer = tableHandle.Subscribe(tuo);
       // Hang on to the disposer, with a dependency on the tableHandle
-      subRef = RefCounted.Acquire(disposer, tableHandle);
-      result = subRef;
+      sharedDisposer = Repository.Register(subDisposer, tableHandle);
+      result = StatusOr<IDisposable>.OfValue(subDisposer);
     } catch (Exception ex) {
       result = ex.Message;
     }
 
-    using var cleanup = subRef;
+    using var cleanup = sharedDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {
