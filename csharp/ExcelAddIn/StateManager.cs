@@ -28,13 +28,13 @@ public class StateManager {
   private readonly OpStatusDictProvider _statusDictProvider = new();
 
   public IObservableCallbacks SubscribeToCoreClient(EndpointId endpointId,
-    IValueObserver<StatusOr<RefCounted<Client>>> observer) {
+    IValueObserver<StatusOr<Client>> observer) {
     var candidate = new CoreClientProvider(this, endpointId);
     return SubscribeHelper(_coreClientProviders, endpointId, candidate, observer);
   }
 
   public IObservableCallbacks SubscribeToCorePlusClient(EndpointId endpointId, PqName pqName,
-    IValueObserver<StatusOr<RefCounted<DndClient>>> observer) {
+    IValueObserver<StatusOr<DndClient>> observer) {
     var key = (endpointId, pqName);
     var candidate = new CorePlusClientProvider(this, endpointId, pqName);
     return SubscribeHelper(_corePlusClientProviders, key, candidate, observer);

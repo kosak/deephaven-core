@@ -15,7 +15,7 @@ namespace Deephaven.ExcelAddIn.Providers;
  */
 internal class CoreClientProvider :
   IValueObserverWithCancel<StatusOr<EndpointConfigBase>>,
-  IValueObservable<StatusOr<RefCounted<Client>>> {
+  IValueObservable<StatusOr<Client>> {
   private const string UnsetConfigText = "No Config";
   private const string UnsetClientText = "No Community Core Client";
   private readonly StateManager _stateManager;
@@ -25,8 +25,8 @@ internal class CoreClientProvider :
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
   private readonly StatusOrHolder<EndpointConfigBase> _cachedConfig = new(UnsetConfigText);
-  private readonly ObserverContainer<StatusOr<RefCounted<Client>>> _observers = new();
-  private readonly StatusOrHolder<RefCounted<Client>> _client = new(UnsetClientText);
+  private readonly ObserverContainer<StatusOr<Client>> _observers = new();
+  private readonly StatusOrHolder<Client> _client = new(UnsetClientText);
 
   public CoreClientProvider(StateManager stateManager, EndpointId endpointId) {
     _stateManager = stateManager;
@@ -36,7 +36,7 @@ internal class CoreClientProvider :
   /// <summary>
   /// Subscribe to Core client changes
   /// </summary>
-  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<Client>> observer) {
     lock (_sync) {
       _client.AddObserverAndNotify(_observers, observer, out var isFirst);
 
@@ -49,18 +49,7 @@ internal class CoreClientProvider :
     return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
   }
 
-  private void Retry() {
-    lock (_sync) {
-      if (!_cachedConfig.GetValueOrStatus(out _, out _)) {
-        // Config parent is in error state, so propagate retry to it
-        _upstreamCallbacks?.Retry();
-      } else {
-        OnNextHelper();
-      }
-    }
-  }
-
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<Client>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<Client>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
@@ -73,6 +62,17 @@ internal class CoreClientProvider :
       Utility.ClearAndDispose(ref _upstreamCallbacks);
       _cachedConfig.Replace(UnsetConfigText);
       _client.Replace(UnsetClientText);
+    }
+  }
+
+  private void Retry() {
+    lock (_sync) {
+      if (!_cachedConfig.GetValueOrStatus(out _, out _)) {
+        // Config parent is in error state, so propagate retry to it
+        _upstreamCallbacks?.Retry();
+      } else {
+        OnNextHelper();
+      }
     }
   }
 
@@ -104,7 +104,7 @@ internal class CoreClientProvider :
         return Unit.Instance;  // have to return something
       },
       core => {
-        var progress = StatusOr<RefCounted<Client>>.OfTransient("Trying to connect");
+        var progress = StatusOr<Client>.OfTransient("Trying to connect");
         _client.ReplaceAndNotify(progress, _observers);
         var backgroundToken = _backgroundTokenSource.Token;
         Background.Run(() => OnNextBackground(core, backgroundToken));
@@ -118,16 +118,16 @@ internal class CoreClientProvider :
   }
 
   private void OnNextBackground(CoreEndpointConfig config, CancellationToken token) {
-    RefCounted<Client>? newRef = null;
-    StatusOr<RefCounted<Client>> result;
+    IDisposable? shareDisposer = null;
+    StatusOr<Client> result;
     try {
       var client = EndpointFactory.ConnectToCore(config);
-      newRef = RefCounted.Acquire(client);
-      result = newRef;
+      shareDisposer = Repository.Register(client);
+      result = client;
     } catch (Exception ex) {
       result = ex.Message;
     }
-    using var cleanup = newRef;
+    using var cleanup = shareDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {

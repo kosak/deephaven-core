@@ -9,9 +9,9 @@ namespace Deephaven.ExcelAddIn.Providers;
 /// <summary>
 /// </summary>
 internal class TableProvider :
-  IValueObserverWithCancel<StatusOr<RefCounted<Client>>>,
-  IValueObserverWithCancel<StatusOr<RefCounted<DndClient>>>,
-  IValueObservable<StatusOr<RefCounted<TableHandle>>> {
+  IValueObserverWithCancel<StatusOr<Client>>,
+  IValueObserverWithCancel<StatusOr<DndClient>>,
+  IValueObservable<StatusOr<TableHandle>> {
   private const string UnsetTableHandleText = "No TableHandle";
   private const string UnsetClientText = "No Client";
 
@@ -23,9 +23,9 @@ internal class TableProvider :
   private CancellationTokenSource _upstreamTokenSource = new();
   private CancellationTokenSource _backgroundTokenSource = new();
   private IObservableCallbacks? _upstreamCallbacks = null;
-  private readonly StatusOrHolder<RefCounted<Client>> _cachedClient = new(UnsetClientText);
-  private readonly ObserverContainer<StatusOr<RefCounted<TableHandle>>> _observers = new();
-  private readonly StatusOrHolder<RefCounted<TableHandle>> _tableHandle = new(UnsetTableHandleText);
+  private readonly StatusOrHolder<Client> _cachedClient = new(UnsetClientText);
+  private readonly ObserverContainer<StatusOr<TableHandle>> _observers = new();
+  private readonly StatusOrHolder<TableHandle> _tableHandle = new(UnsetTableHandleText);
 
   public TableProvider(StateManager stateManager, EndpointId endpointId,
     PqName? pqName, string tableName) {
@@ -35,17 +35,17 @@ internal class TableProvider :
     _tableName = tableName;
   }
 
-  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  public IObservableCallbacks Subscribe(IValueObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _tableHandle.AddObserverAndNotify(_observers, observer, out var isFirst);
 
       if (isFirst) {
         if (_pqName != null) {
-          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<DndClient>>>(
+          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<DndClient>>(
             this, _upstreamTokenSource.Token);
           _upstreamCallbacks = _stateManager.SubscribeToCorePlusClient(_endpointId, _pqName, voc);
         } else {
-          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<RefCounted<Client>>>(
+          var voc = ValueObserverWithCancelWrapper.Create<StatusOr<Client>>(
             this, _upstreamTokenSource.Token);
           _upstreamCallbacks = _stateManager.SubscribeToCoreClient(_endpointId, voc);
         }
@@ -55,19 +55,7 @@ internal class TableProvider :
     return ObservableCallbacks.Create(Retry, () => RemoveObserver(observer));
   }
 
-  private void Retry() {
-    lock (_sync) {
-      if (!_cachedClient.GetValueOrStatus(out _, out _)) {
-        // Parent is in error state, so propagate retry to parent.
-        _upstreamCallbacks?.Retry();
-      } else {
-        // Parent is in healthy state, so retry here.
-        OnNextHelper();
-      }
-    }
-  }
-
-  private void RemoveObserver(IValueObserver<StatusOr<RefCounted<TableHandle>>> observer) {
+  private void RemoveObserver(IValueObserver<StatusOr<TableHandle>> observer) {
     lock (_sync) {
       _observers.Remove(observer, out var wasLast);
       if (!wasLast) {
@@ -83,30 +71,31 @@ internal class TableProvider :
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<DndClient>> client, CancellationToken token) {
+  private void Retry() {
     lock (_sync) {
-      if (token.IsCancellationRequested) {
-        return;
-      }
-
-      // Awkward work to turn RefCounted<DnClient> into RefCounted<Client>
-      RefCounted<Client>? newRef = null;
-      StatusOr<RefCounted<Client>> newState;
-      if (client.GetValueOrStatus(out var dndClient, out var status)) {
-        newRef = RefCounted<Client>.CastAndShare(dndClient);
-        newState = newRef;
+      if (!_cachedClient.GetValueOrStatus(out _, out _)) {
+        // Parent is in error state, so propagate retry to parent.
+        _upstreamCallbacks?.Retry();
       } else {
-        newState = status;
+        // Parent is in healthy state, so retry here.
+        OnNextHelper();
       }
-
-      using var cleanup = newRef;
-
-      _cachedClient.Replace(newState);
-      OnNextHelper();
     }
   }
 
-  public void OnNext(StatusOr<RefCounted<Client>> client, CancellationToken token) {
+  public void OnNext(StatusOr<DndClient> client, CancellationToken token) {
+    // Awkward work to turn StatusOr<DnClient> into StatusOr<Client>
+    StatusOr<Client> newState;
+    if (client.GetValueOrStatus(out var dndClient, out var status)) {
+      newState = dndClient;
+    } else {
+      newState = status;
+    }
+
+    OnNext(newState, token);
+  }
+
+  public void OnNext(StatusOr<Client> client, CancellationToken token) {
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
@@ -130,44 +119,48 @@ internal class TableProvider :
         return;
       }
 
-      var progress = StatusOr<RefCounted<TableHandle>>.OfTransient("Fetching Table");
+      var progress = StatusOr<TableHandle>.OfTransient("Fetching Table");
       _tableHandle.ReplaceAndNotify(progress, _observers);
 
       // RefCounted item gets acquired on this thread.
-      var clientShare = cliRef.Share();
+      var shareDisposer = Repository.Share(cliRef);
       var backgroundToken = _backgroundTokenSource.Token;
       Background.Run(() => {
         // RefCounted item gets released on this thread.
-        using var cleanup = clientShare;
-        OnNextBackground(clientShare, backgroundToken);
+        using var cleanup = shareDisposer;
+        OnNextBackground(cliRef, backgroundToken);
       });
     }
   }
 
   private void OnNextBackground(Client client, CancellationToken token) {
-    IDisposable? disposer = null;
-    StatusOr<TableHandle> newState;
+    IDisposable? shareDisposer = null;
+    StatusOr<TableHandle> result;
     try {
       var th = client.Manager.FetchTable(_tableName);
       // Keep a dependency on client
-      disposer = Repository.Register(th, client);
-      newState = th;
+      shareDisposer = Repository.Register(th, client);
+      result = th;
     } catch (Exception ex) {
-      newState = ex.Message;
+      result = ex.Message;
     }
-    using var cleanup = disposer;
+    using var cleanup = shareDisposer;
 
     lock (_sync) {
       if (token.IsCancellationRequested) {
         return;
       }
-      _tableHandle.ReplaceAndNotify(newState, _observers);
+      _tableHandle.ReplaceAndNotify(result, _observers);
     }
   }
 }
 
 public class Repository {
-  public static IDisposable Register(object o, params object[] dependencies) {
+  public static IDisposable Register(IDisposable o, params IDisposable[] dependencies) {
+
+  }
+
+  public static IDisposable Share(IDisposable o) {
 
   }
 }
