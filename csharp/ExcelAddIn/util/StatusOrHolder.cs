@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Deephaven.ExcelAddIn.Observable;
-using Deephaven.ExcelAddIn.Providers;
+using Deephaven.ExcelAddIn.Refcounting;
 
 namespace Deephaven.ExcelAddIn.Util;
 
