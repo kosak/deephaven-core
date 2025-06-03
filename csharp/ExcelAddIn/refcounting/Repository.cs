@@ -1,12 +1,11 @@
 ﻿using System.Diagnostics;
 using Deephaven.ExcelAddIn.Util;
-using static Grpc.Core.Metadata;
 
 namespace Deephaven.ExcelAddIn.Refcounting;
 
 public static class Repository {
   private static readonly object _sync = new();
-  private static readonly Dictionary<IDisposable, ZamboniEntry> _dict =
+  private static readonly Dictionary<IDisposable, Entry> _dict =
     new(ReferenceEqualityComparer.Instance);
 
   public static IDisposable Register(IDisposable o, params IDisposable[] dependencies) {
@@ -18,27 +17,23 @@ public static class Repository {
         throw new Exception("Can't re-register an object that is already in the Repository");
       }
 
-      var zEntries = new ZamboniEntry[dependencies.Length];
+      var dependencyEntries = dependencies.Select(Increment).ToArray();
 
-      for (var i = 0; i != dependencies.Length; ++i) {
-        zEntries[i] = Increment(dependencies[i]);
-      }
-
-      var entry = new ZamboniEntry(o, zEntries);
+      var entry = new Entry(o, dependencyEntries);
       _dict.Add(o, entry);
 
-      return new ZamboniDisposer(entry);
+      return new ShareDisposer(entry);
     }
   }
 
   public static IDisposable Share(IDisposable o) {
     lock (_sync) {
       var entry = Increment(o);
-      return new ZamboniDisposer(entry);
+      return new ShareDisposer(entry);
     }
   }
 
-  private static ZamboniEntry Increment(IDisposable o) {
+  private static Entry Increment(IDisposable o) {
     lock (_sync) {
       if (!_dict.TryGetValue(o, out var entry)) {
         throw new Exception("Can't share an object that is not in the Repository");
@@ -50,9 +45,9 @@ public static class Repository {
     }
   }
 
-  private record ZamboniEntry(
+  private record Entry(
     IDisposable Item,
-    ZamboniEntry[] Dependencies) {
+    Entry[] Dependencies) {
     public int Count = 1;
 
     public void Decrement(List<IDisposable> toDispose) {
@@ -74,10 +69,10 @@ public static class Repository {
     }
   }
 
-  private class ZamboniDisposer : IDisposable {
-    private ZamboniEntry? _entry = null;
+  private class ShareDisposer : IDisposable {
+    private Entry? _entry = null;
 
-    public ZamboniDisposer(ZamboniEntry? entry) {
+    public ShareDisposer(Entry? entry) {
       _entry = entry;
     }
 
@@ -103,13 +98,13 @@ public static class Repository {
         Debug.WriteLine("nothing to dispose");
         return;
       }
-      Debug.WriteLine($"Scheduling the dispose of: {string.Join(',', items.Select(item => item.GetType().Name))}");
+      Debug.WriteLine($"Scheduling the dispose of: {string.Join(',',
+        items.Select(item => item.GetType().Name))}");
       Background.Run(() => {
         foreach (var item in items) {
           item.Dispose();
         }
       });
     }
-
   }
 }
