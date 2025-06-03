@@ -228,10 +228,8 @@ public class Server : IDisposable {
       }
     }
     try {
-      Debug.WriteLine("Hi sending keepalive");
       var req = new ConfigurationConstantsRequest();
       SendRpc(opts => ConfigStub.GetConfigurationConstantsAsync(req, opts));
-      Debug.WriteLine("Hi that looks like that (that = sending keepalive) worked");
     } catch (Exception e) {
       Debug.WriteLine($"Keepalive timer: ignoring {e}");
       // Successful SendRpc will reset the timer for us. For a failed SendRpc,
