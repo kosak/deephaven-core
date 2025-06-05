@@ -142,6 +142,7 @@
       jsonUrlBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       jsonUrlBox.Location = new Point(194, 27);
       jsonUrlBox.Name = "jsonUrlBox";
+      jsonUrlBox.PlaceholderText = "https://ent-server.mycorp.internal:8123/iris/connection.json";
       jsonUrlBox.Size = new Size(795, 31);
       jsonUrlBox.TabIndex = 1;
       // 
@@ -169,6 +170,7 @@
       connectionStringBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       connectionStringBox.Location = new Point(194, 20);
       connectionStringBox.Name = "connectionStringBox";
+      connectionStringBox.PlaceholderText = "community-server.mycorp.internal:10000";
       connectionStringBox.Size = new Size(795, 31);
       connectionStringBox.TabIndex = 1;
       // 
