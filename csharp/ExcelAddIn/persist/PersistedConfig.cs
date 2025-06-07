@@ -9,6 +9,9 @@ public static class PersistedConfig {
     var configPath = GetConfigPath();
     var holderArrayAsJson = File.ReadAllText(configPath);
     var holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
+    if (holderArray == null) {
+      return Array.Empty<EndpointConfigBase>();
+    }
     var configArray = holderArray.Select(FromJsonHolder).ToArray();
     return configArray;
   }
@@ -77,11 +80,16 @@ public abstract class JsonEndpointConfigBase {
 /// </summary>
 public sealed class JsonEmptyEndpointConfig : JsonEndpointConfigBase {
   public JsonEmptyEndpointConfig() {
-
   }
 
   public JsonEmptyEndpointConfig(EmptyEndpointConfig config) : base(config) {
+  }
 
+  public override T AcceptVisitor<T>(
+    Func<JsonEmptyEndpointConfig, T> ofEmpty,
+    Func<JsonCoreEndpointConfig, T> ofCore,
+    Func<JsonCorePlusEndpointConfig, T> ofCorePlus) {
+    return ofEmpty(this);
   }
 }
 
@@ -98,6 +106,13 @@ public sealed class JsonCoreEndpointConfig : JsonEndpointConfigBase {
   }
 
   public string ConnectionString { get; set; } = "";
+
+  public override T AcceptVisitor<T>(
+    Func<JsonEmptyEndpointConfig, T> ofEmpty,
+    Func<JsonCoreEndpointConfig, T> ofCore,
+    Func<JsonCorePlusEndpointConfig, T> ofCorePlus) {
+    return ofCore(this);
+  }
 }
 
 /// <summary>
@@ -120,4 +135,12 @@ public sealed class JsonCorePlusEndpointConfig : JsonEndpointConfigBase {
   // note we don't persist password
   public string OperateAs { get; set; } = "";
   public bool ValidateCertificate { get; set; } = false;
+
+  public override T AcceptVisitor<T>(
+    Func<JsonEmptyEndpointConfig, T> ofEmpty,
+    Func<JsonCoreEndpointConfig, T> ofCore,
+    Func<JsonCorePlusEndpointConfig, T> ofCorePlus) {
+    return ofCorePlus(this);
+  }
+
 }
