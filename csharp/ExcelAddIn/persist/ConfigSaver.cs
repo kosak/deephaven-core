@@ -6,8 +6,13 @@ namespace Deephaven.ExcelAddIn.Persist;
 
 public class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>> {
   private readonly object _sync = new();
-  private SharableDict<EndpointConfigBase> _cachedValue = SharableDict<EndpointConfigBase>.Empty;
+  private SharableDict<EndpointConfigBase> _cachedValue;
   private SharableDict<EndpointConfigBase>? _dictToWrite = null;
+  private bool _threadIsAlive = false;
+
+  public ConfigSaver(SharableDict<EndpointConfigBase> initialValue) {
+    _cachedValue = initialValue;
+  }
 
   public void OnNext(SharableDict<EndpointConfigBase> value) {
     lock (_sync) {
@@ -15,27 +20,29 @@ public class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>> {
         return;
       }
       _cachedValue = value;
-
-      var writeScheduled = _dictToWrite != null;
       _dictToWrite = value;
 
-      if (!writeScheduled) {
+      if (!_threadIsAlive) {
+        _threadIsAlive = true;
         Background.Run(WriteConfig);
       }
     }
   }
 
   private void WriteConfig() {
-    SharableDict<EndpointConfigBase>? toWrite;
-    lock (_sync) {
-      toWrite = Utility.Exchange(ref _dictToWrite, null);
-    }
+    while (true) {
+      SharableDict<EndpointConfigBase>? toWrite;
+      lock (_sync) {
+        toWrite = Utility.Exchange(ref _dictToWrite, null);
 
-    if (toWrite == null) {
-      return;
-    }
+        if (toWrite == null) {
+          _threadIsAlive = false;
+          return;
+        }
+      }
 
-    var items = toWrite.Values.ToArray();
-    _ = PersistedConfig.TryWriteConfigFile(items);
+      var items = toWrite.Values.ToArray();
+      _ = PersistedConfig.TryWriteConfigFile(items);
+    }
   }
 }

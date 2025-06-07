@@ -31,7 +31,7 @@ internal class EndpointConfigDialogState :
   private readonly EndpointId? _whitelistId;
   private readonly object _sync = new();
   private CancellationTokenSource _backgroundToken = new();
-  private SharableDict<EndpointConfigBase> _endpointDict;
+  private SharableDict<EndpointConfigBase> _endpointDict = SharableDict<EndpointConfigBase>.Empty;
   private IDisposable? _disposer;
 
   public EndpointConfigDialogState(

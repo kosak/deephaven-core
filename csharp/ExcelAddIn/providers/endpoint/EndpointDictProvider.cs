@@ -73,4 +73,6 @@ internal class EndpointDictProvider :
       return true;
     }
   }
+
+  public SharableDict<EndpointConfigBase> GetDict() => _dict;
 }

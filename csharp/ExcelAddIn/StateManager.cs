@@ -19,8 +19,9 @@ public class StateManager {
         _ = edp.TryAddWithoutNotify(config);
       }
     }
+    var configSaver = new ConfigSaver(edp.GetDict());
     var result = new StateManager(edp);
-    result.SubscribeToEndpointDict(new ConfigSaver());
+    result.SubscribeToEndpointDict(configSaver);
     return result;
   }
 

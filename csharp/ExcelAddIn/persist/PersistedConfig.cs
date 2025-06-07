@@ -5,19 +5,22 @@ using System.Text.Json.Serialization;
 namespace Deephaven.ExcelAddIn.Persist;
 
 public static class PersistedConfig {
-  public static IList<EndpointConfigBase> ReadConfigFile() {
+  public static bool TryReadConfigFile(out IList<EndpointConfigBase> result) {
     var configPath = GetConfigPath();
     try {
       var jsonText = File.ReadAllText(configPath);
-      var items = ConfigItemsFromJson(jsonText);
-      return items;
+      result = ConfigItemsFromJson(jsonText);
+      return true;
     } catch (Exception) {
-      return Array.Empty<EndpointConfigBase>();
+      result = Array.Empty<EndpointConfigBase>();
+      return false;
     }
   }
 
   public static bool TryWriteConfigFile(IEnumerable<EndpointConfigBase> items) {
     try {
+      var configDir = GetConfigDirectory();
+      Directory.CreateDirectory(configDir);
       var configPath = GetConfigPath();
       var jsonText = ConfigItemsToJson(items);
       File.WriteAllText(configPath, jsonText);
@@ -60,9 +63,15 @@ public static class PersistedConfig {
     return result;
   }
 
-  private static string GetConfigPath() {
+  private static string GetConfigDirectory() {
     var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    var result = Path.Combine(folder, "Deephaven", "ExcelAddIn", "config.json");
+    var result = Path.Combine(folder, "Deephaven", "ExcelAddIn");
+    return result;
+  }
+
+  private static string GetConfigPath() {
+    var folder = GetConfigDirectory();
+    var result = Path.Combine(folder, "config.json");
     return result;
   }
 }
