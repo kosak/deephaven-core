@@ -6,12 +6,23 @@ using Deephaven.ExcelAddIn.Providers;
 using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
-using System.Net;
 using Deephaven.ExcelAddIn.Observable;
 
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
+  public static StateManager Create() {
+    var configs = EndpointCOnfigFilg.ReadAll();
+    var edp = new EndpointDictProvider();
+    foreach (var config in configs) {
+      edp.TryAddWithoutNotify(config);
+    }
+    var result = new StateManager(edp);
+
+    result.SubscribeToEndpointDict(PersistConfigWhateverBye);
+    return result;
+  }
+
   private readonly object _sync = new();
   private readonly ReferenceCountingDict<EndpointId, CoreClientProvider> _coreClientProviders = new();
   private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
@@ -24,8 +35,12 @@ public class StateManager {
   private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
 
   private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
-  private readonly EndpointDictProvider _endpointDictProvider = new();
   private readonly OpStatusDictProvider _statusDictProvider = new();
+  private readonly EndpointDictProvider _endpointDictProvider;
+
+  private StateManager(EndpointDictProvider endpointDictProvider) {
+    _endpointDictProvider = endpointDictProvider;
+  }
 
   public IObservableCallbacks SubscribeToCoreClient(EndpointId endpointId,
     IValueObserver<StatusOr<Client>> observer) {

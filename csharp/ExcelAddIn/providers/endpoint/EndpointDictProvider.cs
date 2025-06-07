@@ -56,7 +56,6 @@ internal class EndpointDictProvider :
     }
   }
 
-
   public bool TryRemove(EndpointId endpointId) {
     lock (_sync) {
       if (!_idToKey.Remove(endpointId, out var removedKey)) {
