@@ -5,11 +5,31 @@ using System.Text.Json.Serialization;
 namespace Deephaven.ExcelAddIn.Persist;
 
 public static class PersistedConfig {
-  public static string ToJson(EndpointConfigBase ecb) {
+  public static IList<EndpointConfigBase> ReadConfigFile() {
+    var configPath = GetConfigPath();
+    var holderArrayAsJson = File.ReadAllText(configPath);
+    var holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
+    var configArray = holderArray.Select(FromJsonHolder).ToArray();
+    return configArray;
+  }
+
+  public static bool TryWriteConfigFile(IEnumerable<EndpointConfigBase> items) {
+    try {
+      var holderArray = items.Select(ToJsonHolder).ToArray();
+      var holderArrayAsJson = JsonSerializer.Serialize(holderArray);
+      var configPath = GetConfigPath();
+      File.WriteAllText(configPath, holderArrayAsJson);
+      return true;
+    } catch (Exception) {
+      return false;
+    }
+  }
+
+  public static JsonEndpointConfigBase ToJsonHolder(EndpointConfigBase ecb) {
     var result = ecb.AcceptVisitor(
-      empty => JsonSerializer.Serialize(new JsonEmptyEndpointConfig(empty)),
-      core => JsonSerializer.Serialize(new JsonCoreEndpointConfig(core)),
-      corePlus => JsonSerializer.Serialize(new JsonCorePlusEndpointConfig(corePlus)));
+      empty => (JsonEndpointConfigBase)new JsonEmptyEndpointConfig(empty),
+      core => new JsonCoreEndpointConfig(core),
+      corePlus => new JsonCorePlusEndpointConfig(corePlus));
 
     return result;
   }
