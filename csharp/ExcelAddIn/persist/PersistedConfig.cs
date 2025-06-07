@@ -7,13 +7,34 @@ namespace Deephaven.ExcelAddIn.Persist;
 public static class PersistedConfig {
   public static IList<EndpointConfigBase> ReadConfigFile() {
     var configPath = GetConfigPath();
-    JsonEndpointConfigBase[]? holderArray;
     try {
-      var holderArrayAsJson = File.ReadAllText(configPath);
-      holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
+      var jsonText = File.ReadAllText(configPath);
+      var items = ConfigItemsFromJson(jsonText);
+      return items;
     } catch (Exception) {
       return Array.Empty<EndpointConfigBase>();
     }
+  }
+
+  public static bool TryWriteConfigFile(IEnumerable<EndpointConfigBase> items) {
+    try {
+      var configPath = GetConfigPath();
+      var jsonText = ConfigItemsToJson(items);
+      File.WriteAllText(configPath, jsonText);
+      return true;
+    } catch (Exception) {
+      return false;
+    }
+  }
+
+  private static string ConfigItemsToJson(IEnumerable<EndpointConfigBase> items) {
+    var holderArray = items.Select(ToJsonHolder).ToArray();
+    var holderArrayAsJson = JsonSerializer.Serialize(holderArray);
+    return holderArrayAsJson;
+  }
+
+  private static IList<EndpointConfigBase> ConfigItemsFromJson(string jsonText) {
+    var holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(jsonText);
     if (holderArray == null) {
       return Array.Empty<EndpointConfigBase>();
     }
@@ -21,23 +42,7 @@ public static class PersistedConfig {
     return configArray;
   }
 
-  public static bool TryWriteConfigFile(IEnumerable<EndpointConfigBase> items) {
-    try {
-      var holderArray = items.Select(ToJsonHolder).ToArray();
-      var holderArrayAsJson = JsonSerializer.Serialize(holderArray);
-
-      var sickness = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
-      var sickness2 = holderArray.Select(FromJsonHolder).ToArray();
-
-      var configPath = GetConfigPath();
-      File.WriteAllText(configPath, holderArrayAsJson);
-      return true;
-    } catch (Exception) {
-      return false;
-    }
-  }
-
-  public static JsonEndpointConfigBase ToJsonHolder(EndpointConfigBase ecb) {
+  private static JsonEndpointConfigBase ToJsonHolder(EndpointConfigBase ecb) {
     var result = ecb.AcceptVisitor(
       empty => (JsonEndpointConfigBase)new JsonEmptyEndpointConfig(empty),
       core => new JsonCoreEndpointConfig(core),
@@ -46,7 +51,7 @@ public static class PersistedConfig {
     return result;
   }
 
-  public static EndpointConfigBase FromJsonHolder(JsonEndpointConfigBase ecb) {
+  private static EndpointConfigBase FromJsonHolder(JsonEndpointConfigBase ecb) {
     var result = ecb.AcceptVisitor(
       empty => (EndpointConfigBase)new EmptyEndpointConfig(new EndpointId(empty.Id)),
       core => new CoreEndpointConfig(new EndpointId(core.Id), core.ConnectionString),
