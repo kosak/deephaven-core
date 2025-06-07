@@ -43,6 +43,11 @@ public static class PersistedConfig {
     return result;
   }
 
+  private static string GetConfigPath() {
+    var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    var result = Path.Combine(folder, "Deephaven", "ExcelAddIn", "config.json");
+    return result;
+  }
 }
 
 /// <summary>
