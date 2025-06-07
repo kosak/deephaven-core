@@ -7,8 +7,13 @@ namespace Deephaven.ExcelAddIn.Persist;
 public static class PersistedConfig {
   public static IList<EndpointConfigBase> ReadConfigFile() {
     var configPath = GetConfigPath();
-    var holderArrayAsJson = File.ReadAllText(configPath);
-    var holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
+    JsonEndpointConfigBase[]? holderArray;
+    try {
+      var holderArrayAsJson = File.ReadAllText(configPath);
+      holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
+    } catch (Exception) {
+      return Array.Empty<EndpointConfigBase>();
+    }
     if (holderArray == null) {
       return Array.Empty<EndpointConfigBase>();
     }
@@ -20,6 +25,10 @@ public static class PersistedConfig {
     try {
       var holderArray = items.Select(ToJsonHolder).ToArray();
       var holderArrayAsJson = JsonSerializer.Serialize(holderArray);
+
+      var sickness = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(holderArrayAsJson);
+      var sickness2 = holderArray.Select(FromJsonHolder).ToArray();
+
       var configPath = GetConfigPath();
       File.WriteAllText(configPath, holderArrayAsJson);
       return true;

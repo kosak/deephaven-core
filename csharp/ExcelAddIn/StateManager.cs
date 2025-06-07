@@ -7,19 +7,26 @@ using Deephaven.ExcelAddIn.Util;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
 using Deephaven.ExcelAddIn.Observable;
+using Deephaven.ExcelAddIn.Persist;
 
 namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   public static StateManager Create() {
-    var configs = EndpointCOnfigFilg.ReadAll();
+    var configs = PersistedConfig.ReadConfigFile();
     var edp = new EndpointDictProvider();
     foreach (var config in configs) {
-      edp.TryAddWithoutNotify(config);
+      _ = edp.TryAddWithoutNotify(config);
     }
     var result = new StateManager(edp);
 
-    result.SubscribeToEndpointDict(PersistConfigWhateverBye);
+    var test1 = new CoreEndpointConfig(new EndpointId("con1"), "localhost:10000");
+    var test2 = new CorePlusEndpointConfig(new EndpointId("con2"), "whateverlocalhost:10000",
+      "iris", "iris", "iris", true);
+    var all = new EndpointConfigBase[] { test1, test2 };
+    _ = PersistedConfig.TryWriteConfigFile(all);
+
+    // result.SubscribeToEndpointDict(PersistConfigWhateverBye);
     return result;
   }
 

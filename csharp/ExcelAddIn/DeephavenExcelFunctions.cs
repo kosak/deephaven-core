@@ -10,7 +10,14 @@ using ExcelDna.Integration;
 namespace Deephaven.ExcelAddIn;
 
 public static class DeephavenExcelFunctions {
-  private static readonly StateManager StateManager = new();
+  private static class StateManagerHolder {
+    public static readonly StateManager Value = StateManager.Create();
+  }
+  /// <summary>
+  /// This adds a layer of indirection so the static StateManager is created later,
+  /// when this property is called at runtime, rather than at class load time.
+  /// </summary>
+  private static StateManager StateManager => StateManagerHolder.Value;
 
   [ExcelCommand(MenuName = "Deephaven", MenuText = "&Control Panel")]
   public static void ShowConnectionsDialog() {

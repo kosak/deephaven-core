@@ -31,14 +31,19 @@ internal class EndpointDictProvider :
   }
 
   public bool TryAdd(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, false);
+    return TryAddOrMaybeReplace(config, false, true);
   }
-
+  
   public bool AddOrReplace(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, true);
+    return TryAddOrMaybeReplace(config, true, true);
   }
 
-  private bool TryAddOrMaybeReplace(EndpointConfigBase config, bool permitReplace) {
+  public bool TryAddWithoutNotify(EndpointConfigBase config) {
+    return TryAddOrMaybeReplace(config, false, false);
+  }
+
+  private bool TryAddOrMaybeReplace(EndpointConfigBase config, bool permitReplace,
+    bool wantNotify) {
     lock (_sync) {
       var inserted = false;
       if (!_idToKey.TryGetValue(config.Id, out var key)) {
@@ -51,7 +56,9 @@ internal class EndpointDictProvider :
         return false;
       }
       _dict = _dict.With(key, config);
-      _observers.OnNext(_dict);
+      if (wantNotify) {
+        _observers.OnNext(_dict);
+      }
       return inserted;
     }
   }
