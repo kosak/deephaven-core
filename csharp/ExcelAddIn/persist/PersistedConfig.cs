@@ -33,6 +33,16 @@ public static class PersistedConfig {
 
     return result;
   }
+
+  public static EndpointConfigBase FromJsonHolder(JsonEndpointConfigBase ecb) {
+    var result = ecb.AcceptVisitor(
+      empty => (EndpointConfigBase)new EmptyEndpointConfig(new EndpointId(empty.Id)),
+      core => new CoreEndpointConfig(new EndpointId(core.Id), core.ConnectionString),
+      corePlus => new CorePlusEndpointConfig(new EndpointId(corePlus.Id),
+        corePlus.JsonUrl, corePlus.User, "", corePlus.OperateAs, corePlus.ValidateCertificate));
+    return result;
+  }
+
 }
 
 /// <summary>
@@ -50,6 +60,11 @@ public abstract class JsonEndpointConfigBase {
   }
 
   public string Id { get; set; } = "";
+
+  public abstract T AcceptVisitor<T>(
+    Func<JsonEmptyEndpointConfig, T> ofEmpty,
+    Func<JsonCoreEndpointConfig, T> ofCore,
+    Func<JsonCorePlusEndpointConfig, T> ofCorePlus);
 }
 
 /// <summary>
