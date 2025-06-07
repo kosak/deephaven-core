@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue>, IEquatable<SharableDict<TValue>> {
+public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   public static readonly SharableDict<TValue> Empty = new();
 
   private readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> _root;
