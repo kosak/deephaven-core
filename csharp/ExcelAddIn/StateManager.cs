@@ -24,42 +24,6 @@ public class StateManager {
     return result;
   }
 
-  private class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>> {
-    private readonly object _sync = new();
-    private SharableDict<EndpointConfigBase> _cachedValue = SharableDict<EndpointConfigBase>.Empty;
-    private SharableDict<EndpointConfigBase>? _dictToWrite = null;
-
-    public void OnNext(SharableDict<EndpointConfigBase> value) {
-      lock (_sync) {
-        if (value.Equals(_cachedValue)) {
-          return;
-        }
-        _cachedValue = value;
-
-        var writeScheduled = _dictToWrite != null;
-        _dictToWrite = value;
-
-        if (!writeScheduled) {
-          Background.Run(WriteConfig);
-        }
-      }
-    }
-
-    private void WriteConfig() {
-      SharableDict<EndpointConfigBase>? toWrite;
-      lock (_sync) {
-        toWrite = Utility.Exchange(ref _dictToWrite, null);
-      }
-
-      if (toWrite == null) {
-        return;
-      }
-
-      var items = toWrite.Values.ToArray();
-      _ = PersistedConfig.TryWriteConfigFile(items);
-    }
-  }
-
   private readonly object _sync = new();
   private readonly ReferenceCountingDict<EndpointId, CoreClientProvider> _coreClientProviders = new();
   private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
