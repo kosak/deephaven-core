@@ -13,21 +13,51 @@ namespace Deephaven.ExcelAddIn;
 
 public class StateManager {
   public static StateManager Create() {
-    var configs = PersistedConfig.ReadConfigFile();
     var edp = new EndpointDictProvider();
-    foreach (var config in configs) {
-      _ = edp.TryAddWithoutNotify(config);
+    if (PersistedConfig.TryReadConfigFile(out var configs)) {
+      foreach (var config in configs) {
+        _ = edp.TryAddWithoutNotify(config);
+      }
     }
     var result = new StateManager(edp);
-
-    var test1 = new CoreEndpointConfig(new EndpointId("con1"), "localhost:10000");
-    var test2 = new CorePlusEndpointConfig(new EndpointId("con2"), "whateverlocalhost:10000",
-      "iris", "iris", "iris", true);
-    var all = new EndpointConfigBase[] { test1, test2 };
-    _ = PersistedConfig.TryWriteConfigFile(all);
-
-    // result.SubscribeToEndpointDict(PersistConfigWhateverBye);
+    result.SubscribeToEndpointDict(new ConfigSaver());
     return result;
+  }
+
+  private class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>> {
+    private readonly object _sync = new();
+    private SharableDict<EndpointConfigBase> _cachedValue = SharableDict<EndpointConfigBase>.Empty;
+    private SharableDict<EndpointConfigBase>? _dictToWrite = null;
+
+    public void OnNext(SharableDict<EndpointConfigBase> value) {
+      lock (_sync) {
+        if (value.Equals(_cachedValue)) {
+          return;
+        }
+        _cachedValue = value;
+
+        var writeScheduled = _dictToWrite != null;
+        _dictToWrite = value;
+
+        if (!writeScheduled) {
+          Background.Run(WriteConfig);
+        }
+      }
+    }
+
+    private void WriteConfig() {
+      SharableDict<EndpointConfigBase>? toWrite;
+      lock (_sync) {
+        toWrite = Utility.Exchange(ref _dictToWrite, null);
+      }
+
+      if (toWrite == null) {
+        return;
+      }
+
+      var items = toWrite.Values.ToArray();
+      _ = PersistedConfig.TryWriteConfigFile(items);
+    }
   }
 
   private readonly object _sync = new();
