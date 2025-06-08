@@ -1,6 +1,4 @@
-﻿#define DEEPHAVEN_TESTING
-
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Deephaven.ExcelAddIn.ExcelDna;
 using Deephaven.ExcelAddIn.Gui;
 using Deephaven.ExcelAddIn.Models;
