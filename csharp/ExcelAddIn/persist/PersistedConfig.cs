@@ -65,7 +65,7 @@ public static class PersistedConfig {
 
   private static string GetConfigDirectory() {
     var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    var result = Path.Combine(folder, "Deephaven", "ExcelAddIn");
+    var result = Path.Combine(folder, "Deephaven Data Labs LLC", "Deephaven Excel Add-In");
     return result;
   }
 
