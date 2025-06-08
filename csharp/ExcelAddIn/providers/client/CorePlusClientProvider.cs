@@ -132,8 +132,18 @@ internal class CorePlusClientProvider :
     }
 
     // Is our PQInfo in the running state?
-    if (!ControllerClient.IsRunning(pq.State.Status)) {
-      _client.ReplaceAndNotify($"PQ is in state {pq.State.Status}", _observers);
+    var pqStatus = pq.State.Status;
+    if (!ControllerClient.IsRunning(pqStatus)) {
+      // No it's not, so notify the state we are in, refined by whether that is a transient
+      // or final state
+      var statusText = pqStatus.ToString();
+      StatusOr<DndClient> result;
+      if (ControllerClient.IsTerminal(pqStatus)) {
+        result = StatusOr<DndClient>.OfFixed(statusText);
+      } else {
+        result = StatusOr<DndClient>.OfTransient(statusText);
+      }
+      _client.ReplaceAndNotify(result, _observers);
       return;
     }
 
