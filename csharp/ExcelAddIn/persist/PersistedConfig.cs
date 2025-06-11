@@ -4,25 +4,30 @@ using System.Text.Json.Serialization;
 
 namespace Deephaven.ExcelAddIn.Persist;
 
-public static class PersistedConfig {
-  public static bool TryReadConfigFile(out IList<EndpointConfigBase> result) {
+public record PersistedConfig(EndpointConfigBase[] Endpoints,
+  string DefaultEndpoint) {
+  public static readonly PersistedConfig Empty = new([], "");
+}
+
+public static class PersistedConfigManager {
+  public static bool TryReadConfigFile(out PersistedConfig result) {
     try {
       var configPath = GetConfigPath();
       var jsonText = File.ReadAllText(configPath);
-      result = ConfigItemsFromJson(jsonText);
+      result = PersistedConfigFromJson(jsonText);
       return true;
     } catch (Exception) {
-      result = Array.Empty<EndpointConfigBase>();
+      result = PersistedConfig.Empty;
       return false;
     }
   }
 
-  public static bool TryWriteConfigFile(IEnumerable<EndpointConfigBase> items) {
+  public static bool TryWriteConfigFile(PersistedConfig config) {
     try {
       var configDir = GetConfigDirectory();
       Directory.CreateDirectory(configDir);
       var configPath = GetConfigPath();
-      var jsonText = ConfigItemsToJson(items);
+      var jsonText = PersistedConfigToJson(config);
       File.WriteAllText(configPath, jsonText);
       return true;
     } catch (Exception) {
@@ -30,19 +35,20 @@ public static class PersistedConfig {
     }
   }
 
-  private static string ConfigItemsToJson(IEnumerable<EndpointConfigBase> items) {
-    var holderArray = items.Select(ToJsonHolder).ToArray();
-    var holderArrayAsJson = JsonSerializer.Serialize(holderArray);
-    return holderArrayAsJson;
+  private static string PersistedConfigToJson(PersistedConfig config) {
+    var endpoints = config.Endpoints.Select(ToJsonHolder).ToArray();
+    var jpc = new JsonPersistedConfig { Endpoints = endpoints, DefaultEndpoint = config.DefaultEndpoint };
+    var jsonText = JsonSerializer.Serialize(jpc);
+    return jsonText;
   }
 
-  private static IList<EndpointConfigBase> ConfigItemsFromJson(string jsonText) {
-    var holderArray = JsonSerializer.Deserialize<JsonEndpointConfigBase[]>(jsonText);
-    if (holderArray == null) {
-      return Array.Empty<EndpointConfigBase>();
+  private static PersistedConfig PersistedConfigFromJson(string jsonText) {
+    var jpc = JsonSerializer.Deserialize<JsonPersistedConfig>(jsonText);
+    if (jpc == null) {
+      return PersistedConfig.Empty;
     }
-    var configArray = holderArray.Select(FromJsonHolder).ToArray();
-    return configArray;
+    var endpoints = jpc.Endpoints.Select(FromJsonHolder).ToArray();
+    return new PersistedConfig(endpoints, jpc.DefaultEndpoint);
   }
 
   private static JsonEndpointConfigBase ToJsonHolder(EndpointConfigBase ecb) {
@@ -114,6 +120,14 @@ public sealed class JsonEmptyEndpointConfig : JsonEndpointConfigBase {
     Func<JsonCorePlusEndpointConfig, T> ofCorePlus) {
     return ofEmpty(this);
   }
+}
+
+/// <summary>
+/// The version of PersistedConfig, suitable for serialization
+/// </summary>
+public sealed class JsonPersistedConfig {
+  public string DefaultEndpoint { get; set; } = "";
+  public JsonEndpointConfigBase[] Endpoints = [];
 }
 
 /// <summary>
