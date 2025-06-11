@@ -10,12 +10,15 @@ internal static class ConfigDialogFactory {
     EndpointId? whitelistId) {
     Background.Run(() => {
       var cd = new ConfigDialog(cvm);
-      var state = new EndpointConfigDialogState(stateManager, cd, cvm, whitelistId);
 
-      cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
-      cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
+      cd.Load += (_, _) => {
+        var state = new EndpointConfigDialogState(stateManager, cd, cvm, whitelistId);
+        cd.OnSetCredentialsButtonClicked += state.OnSetCredentials;
+        cd.OnTestCredentialsButtonClicked += state.OnTestCredentials;
 
-      cd.Closed += (_, _) => state.Dispose();
+        cd.Closed += (_, _) => state.Dispose();
+      };
+
       // Blocks (in this private thread) until the dialog is closed.
       cd.ShowDialog();
     });

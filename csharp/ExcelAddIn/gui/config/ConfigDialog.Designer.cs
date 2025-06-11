@@ -142,18 +142,18 @@
       jsonUrlBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       jsonUrlBox.Location = new Point(194, 27);
       jsonUrlBox.Name = "jsonUrlBox";
-      jsonUrlBox.PlaceholderText = "https://ent-server.mycorp.internal:8123/iris/connection.json";
+      jsonUrlBox.PlaceholderText = "https://ent-server.mycorp.internal:8123/";
       jsonUrlBox.Size = new Size(795, 31);
       jsonUrlBox.TabIndex = 1;
       // 
       // jsonUrlLabel
       // 
       jsonUrlLabel.AutoSize = true;
-      jsonUrlLabel.Location = new Point(89, 30);
+      jsonUrlLabel.Location = new Point(51, 33);
       jsonUrlLabel.Name = "jsonUrlLabel";
-      jsonUrlLabel.Size = new Size(91, 25);
+      jsonUrlLabel.Size = new Size(120, 25);
       jsonUrlLabel.TabIndex = 0;
-      jsonUrlLabel.Text = "JSON URL";
+      jsonUrlLabel.Text = "Endpoint URL";
       // 
       // corePanel
       // 
