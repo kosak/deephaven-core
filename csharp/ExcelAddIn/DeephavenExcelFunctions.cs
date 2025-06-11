@@ -4,60 +4,62 @@ using Deephaven.ExcelAddIn.Gui;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;
 using ExcelDna.Integration;
+using ExcelDna.IntelliSense;
 
 namespace Deephaven.ExcelAddIn;
 
-public static class DeephavenExcelFunctions {
-  private static class StateManagerHolder {
-    public static readonly StateManager Value = StateManager.Create();
+public class StartupHelper : IExcelAddIn {
+  public void AutoOpen() {
+    IntelliSenseServer.Install();
+    _ = StateManagerSingleton.Instance;
   }
-  /// <summary>
-  /// This adds a layer of indirection so the static StateManager is created later,
-  /// when this property is called at runtime, rather than at class load time.
-  /// </summary>
-  private static StateManager StateManager => StateManagerHolder.Value;
+  public void AutoClose() {
+    IntelliSenseServer.Uninstall();
+  }
+}
 
+public static class StateManagerSingleton {
+  private static readonly object _sync = new();
+  private static StateManager? _instance = null;
+
+  public static StateManager Instance {
+    get {
+      lock (_sync) {
+        if (_instance == null) {
+          _instance = StateManager.Create();
+        }
+        return _instance;
+      }
+    }
+  }
+}
+
+public static class DeephavenExcelFunctions {
   [ExcelCommand(MenuName = "Deephaven", MenuText = "&Control Panel")]
   public static void ShowConnectionsDialog() {
-    ControlPanelManager.CreateAndShow(StateManager);
+    ControlPanelManager.CreateAndShow(StateManagerSingleton.Instance);
   }
 
-#if DEEPHAVEN_TESTING
-  [ExcelCommand(MenuName = "Debug", MenuText = "kosak testing")]
-  public static void AddTestingConnections() {
-    var id1 = new EndpointId("con1");
-    var config1 = EndpointConfigBase.OfCore(id1, "10.0.4.109:10000");
-    StateManager.SetConfig(config1);
+  private const string TableDescriptorDescription =
+    "A string in the form con:pq/table.  con refers to a configured connection. " +
+    "If con: is left out, the default connection is used. " +
+    "pq refers to named Persistent Query. If pq/ is left out, a Community Core server is assumed.";
 
-    var id2 = new EndpointId("con2");
-    var config2 = EndpointConfigBase.OfCorePlus(id2,
-      "https://kosak-rc-the-og.int.illumon.com:8123/iris/connection.json",
-      "iris", "iris", "iris", true);
-    StateManager.SetConfig(config2);
-  }
+  private const string FilterDescription =
+    "A filter expression in server query syntax. Can be left blank. Example: \"Volume > 5000 || Price < 100.0\"";
 
-  // See if this works to set note or comment
-  // ExcelReference? refCaller = XlCall.Excel(XlCall.xlfCaller) as ExcelReference;
-  // and then
-
-  // [ExcelFunction(IsThreadSafe = false)]
-  // public static void AddCommentToCell(int rowIndex, int colIndex, string commentText) {
-  //   Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
-  //   Excel.Worksheet ws = (Excel.Worksheet)app.ActiveSheet;
-  //   Excel.Range cell = (Excel.Range)ws.Cells[rowIndex, colIndex];
-  //
-  //   // Add the comment
-  //   cell.AddComment(commentText);
-  // }
-
-  [ExcelFunction(Description = "Test function", IsThreadSafe = true)]
-  public static object DEEPHAVEN_TEST() {
-    return ExcelError.ExcelErrorNull;
-  }
-#endif
+  private const string WantHeadersDescription =
+    "If a header row should be included in the output. Valid values are true or false. " +
+    "Can be left blank. To provide headers separately from the data, use =DEEPHAVEN_HEADERS";
 
   [ExcelFunction(Description = "Snapshots a table", IsThreadSafe = true)]
-  public static object DEEPHAVEN_SNAPSHOT(string tableDescriptor, object filter, object wantHeaders) {
+  public static object DEEPHAVEN_SNAPSHOT(
+    [ExcelArgument(Name="tableDescriptor", Description = TableDescriptorDescription)]
+    string tableDescriptor,
+    [ExcelArgument(Name="filter", Description = FilterDescription)]
+    object filter,
+    [ExcelArgument(Name="wantHeaders", Description = WantHeadersDescription)]
+    object wantHeaders) {
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out _)) {
       return ExcelError.ExcelErrorValue;
     }
@@ -69,14 +71,20 @@ public static class DeephavenExcelFunctions {
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SNAPSHOT";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => {
-      var op = new SnapshotOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, op, StateManager);
+      var op = new SnapshotOperation(tq, wh, StateManagerSingleton.Instance);
+      return new ExcelOperation(description, op, StateManagerSingleton.Instance);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
   [ExcelFunction(Description = "Subscribes to a table", IsThreadSafe = true)]
-  public static object DEEPHAVEN_SUBSCRIBE(string tableDescriptor, object filter, object wantHeaders) {
+  public static object DEEPHAVEN_SUBSCRIBE(
+    [ExcelArgument(Name="tableDescriptor", Description = TableDescriptorDescription)]
+    string tableDescriptor,
+    [ExcelArgument(Name="filter", Description = FilterDescription)]
+    object filter,
+    [ExcelArgument(Name="wantHeaders", Description = WantHeadersDescription)]
+    object wantHeaders) {
     if (!TryInterpretCommonArgs(tableDescriptor, filter, wantHeaders, out var tq, out var wh, out _)) {
       return ExcelError.ExcelErrorValue;
     }
@@ -88,15 +96,16 @@ public static class DeephavenExcelFunctions {
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_SUBSCRIBE";
     var parms = new[] { tableDescriptor, filter, wantHeaders };
     ExcelObservableSource eos = () => {
-      var op = new SubscribeOperation(tq, wh, StateManager);
-      return new ExcelOperation(description, op, StateManager);
+      var op = new SubscribeOperation(tq, wh, StateManagerSingleton.Instance);
+      return new ExcelOperation(description, op, StateManagerSingleton.Instance);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }
 
-
   [ExcelFunction(Description = "Gets table headers", IsThreadSafe = true)]
-  public static object DEEPHAVEN_HEADERS(string tableDescriptor) {
+  public static object DEEPHAVEN_HEADERS(
+    [ExcelArgument(Name="tableDescriptor", Description = TableDescriptorDescription)]
+    string tableDescriptor) {
     if (!TableTriple.TryParse(tableDescriptor, out var tt, out _)) {
       return ExcelError.ExcelErrorValue;
     }
@@ -108,8 +117,8 @@ public static class DeephavenExcelFunctions {
     const string functionName = "Deephaven.ExcelAddIn.DeephavenExcelFunctions.DEEPHAVEN_HEADERS";
     var parms = new[] { tableDescriptor };
     ExcelObservableSource eos = () => {
-      var op = new TableHeadersOperation(tt, StateManager);
-      return new ExcelOperation(description, op, StateManager);
+      var op = new TableHeadersOperation(tt, StateManagerSingleton.Instance);
+      return new ExcelOperation(description, op, StateManagerSingleton.Instance);
     };
     return ExcelAsyncUtil.Observe(functionName, parms, eos);
   }

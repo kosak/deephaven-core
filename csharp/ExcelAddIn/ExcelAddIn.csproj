@@ -19,6 +19,9 @@
 		<PackageReference Include="ExcelDna.Addin" Version="*-*" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="ExcelDna.IntelliSense" Version="*-*" />
+	</ItemGroup>
+	<ItemGroup>
 	  <ProjectReference Include="..\client\ManagedClient\ManagedClient.csproj" />
 	</ItemGroup>
 

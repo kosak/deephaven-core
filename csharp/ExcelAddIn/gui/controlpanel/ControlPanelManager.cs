@@ -22,8 +22,10 @@ internal class ControlPanelManager : IDisposable {
 
     Background.Run(() => {
       var cpDialog = new ControlPanel();
-      var cpManager = Create(stateManager, cpDialog);
-      cpDialog.Closed += (_, _) => cpManager.Dispose();
+      cpDialog.Load += (o, e) => {
+        var cpManager = Create(stateManager, cpDialog);
+        cpDialog.Closed += (_, _) => cpManager.Dispose();
+      };
       // Blocks forever (in this dedicated thread) until the form is closed.
       cpDialog.ShowDialog();
       Interlocked.Decrement(ref _numOpenDialogs);
