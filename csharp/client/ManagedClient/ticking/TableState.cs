@@ -121,16 +121,17 @@ public class TableState {
       var destData = srcData.CreateOfSameType(newNumRows);
       var destDataIndex = 0;
 
-      foreach (var interval in rowsToEraseKeySpace.Intervals) {
-        var size = interval.Count.ToIntExact();
-        var beginIndex = _spaceMapper.EraseRange(interval).ToIntExact();
-        var endIndex = beginIndex + size;
-
-        var numItemsToCopy = beginIndex - srcIndex;
+      foreach (var interval in result.Intervals) {
+        var iBegin = interval.Begin.ToIntExact();
+        var iEnd = interval.End.ToIntExact();
+        // srcIndex is "where we left off" in the source
+        // iBegin is "the next starting point to delete"
+        // The gap between these two is the amount of data to keep, i.e. to copy over
+        var numItemsToCopy = iBegin - srcIndex;
 
         IColumnSource.Copy(srcData, srcIndex, destData, destDataIndex, numItemsToCopy);
 
-        srcIndex = endIndex;
+        srcIndex = iEnd;
       }
 
       var numFinalItemsToCopy = _numRows - srcIndex;
@@ -138,6 +139,11 @@ public class TableState {
 
       _colData[i] = destData;
     }
+
+    foreach (var interval in rowsToEraseKeySpace.Intervals) {
+      _spaceMapper.EraseRange(interval);
+    }
+
     _numRows = newNumRows;
     return result;
   }
