@@ -226,6 +226,13 @@ public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
       var uri = new Uri(url);
       var pq = uri.PathAndQuery;
       Console.WriteLine(pq);
+      if (!pq.Equals("/")) {
+        return url;
+      }
+      if (!url.EndsWith('/')) {
+        url += "/";
+      }
+      url += "iriside/connection.json";
       return url;
     } catch (Exception) {
       // ignore
