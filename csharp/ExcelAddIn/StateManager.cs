@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Deephaven.DheClient.Controller;
+﻿using Deephaven.DheClient.Controller;
 using Deephaven.DheClient.Session;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Providers;

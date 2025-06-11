@@ -1,6 +1,4 @@
 ﻿using Apache.Arrow;
-using System.Collections.Generic;
-using System;
 
 namespace Deephaven.ManagedClient;
 
@@ -116,7 +114,7 @@ public class TableState {
 
     for (var i = 0; i != ncols; ++i) {
       var srcData = _colData[i];
-      var srcIndex = 0;
+      var srcDataIndex = 0;
 
       var destData = srcData.CreateOfSameType(newNumRows);
       var destDataIndex = 0;
@@ -124,18 +122,23 @@ public class TableState {
       foreach (var interval in result.Intervals) {
         var iBegin = interval.Begin.ToIntExact();
         var iEnd = interval.End.ToIntExact();
-        // srcIndex is "where we left off" in the source
+        // srcDataIndex is "where we left off" in the source
         // iBegin is "the next starting point to delete"
         // The gap between these two is the amount of data to keep, i.e. to copy over
-        var numItemsToCopy = iBegin - srcIndex;
+        var numItemsToCopy = iBegin - srcDataIndex;
 
-        IColumnSource.Copy(srcData, srcIndex, destData, destDataIndex, numItemsToCopy);
+        IColumnSource.Copy(srcData, srcDataIndex, destData, destDataIndex, numItemsToCopy);
 
-        srcIndex = iEnd;
+        srcDataIndex = iEnd;
+        destDataIndex += numItemsToCopy;
       }
 
-      var numFinalItemsToCopy = _numRows - srcIndex;
-      IColumnSource.Copy(srcData, srcIndex, destData, destDataIndex, numFinalItemsToCopy);
+      var numFinalItemsToCopy = _numRows - srcDataIndex;
+      IColumnSource.Copy(srcData, srcDataIndex, destData, destDataIndex, numFinalItemsToCopy);
+      destDataIndex += numFinalItemsToCopy;
+      if (destDataIndex != newNumRows) {
+        throw new Exception($"Short erase operation: expected {newNumRows}, have {destDataIndex}");
+      }
 
       _colData[i] = destData;
     }

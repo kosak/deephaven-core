@@ -6,8 +6,8 @@ namespace Deephaven.ExcelAddIn.Persist;
 
 public static class PersistedConfig {
   public static bool TryReadConfigFile(out IList<EndpointConfigBase> result) {
-    var configPath = GetConfigPath();
     try {
+      var configPath = GetConfigPath();
       var jsonText = File.ReadAllText(configPath);
       result = ConfigItemsFromJson(jsonText);
       return true;
