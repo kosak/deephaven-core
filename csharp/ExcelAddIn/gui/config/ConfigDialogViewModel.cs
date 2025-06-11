@@ -73,6 +73,8 @@ public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
       CheckMissing(Password, "Password");
     }
 
+    var jsonUrlToUse = SanitizeJsonUrl(JsonUrl);
+
     if (missingFields.Count > 0) {
       errorText = string.Join(Environment.NewLine, missingFields);
       return false;
@@ -80,7 +82,7 @@ public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
 
     var epId = new EndpointId(_id);
     result = _isCorePlus
-      ? EndpointConfigBase.OfCorePlus(epId, JsonUrl, UserId, Password, OperateAsToUse, ValidateCertificate)
+      ? EndpointConfigBase.OfCorePlus(epId, jsonUrlToUse, UserId, Password, OperateAsToUse, ValidateCertificate)
       : EndpointConfigBase.OfCore(epId, ConnectionString);
     return true;
   }
@@ -217,5 +219,17 @@ public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
 
   private void OnPropertyChanged([CallerMemberName] string? name = null) {
     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+  }
+
+  private static string SanitizeJsonUrl(string url) {
+    try {
+      var uri = new Uri(url);
+      var pq = uri.PathAndQuery;
+      Console.WriteLine(pq);
+      return url;
+    } catch (Exception) {
+      // ignore
+      return url;
+    }
   }
 }
