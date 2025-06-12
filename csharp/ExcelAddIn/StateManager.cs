@@ -13,14 +13,19 @@ namespace Deephaven.ExcelAddIn;
 public class StateManager {
   public static StateManager Create() {
     var edp = new EndpointDictProvider();
-    if (PersistedConfig.TryReadConfigFile(out var configs)) {
-      foreach (var config in configs) {
-        _ = edp.TryAddWithoutNotify(config);
+    var dep = new DefaultEndpointProvider();
+    if (PersistedConfigManager.TryReadConfigFile(out var pc)) {
+      foreach (var ep in pc.Endpoints) {
+        _ = edp.TryAddWithoutNotify(ep);
+      }
+      if (pc.DefaultEndpoint.Length > 0) {
+        dep.SetValue(new EndpointId(pc.DefaultEndpoint));
       }
     }
-    var configSaver = new ConfigSaver(edp.GetDict());
-    var result = new StateManager(edp);
+    var configSaver = new ConfigSaver(edp.GetDict(), dep.Value);
+    var result = new StateManager(edp, dep);
     result.SubscribeToEndpointDict(configSaver);
+    result.SubscribeToDefaultEndpoint(configSaver);
     return result;
   }
 

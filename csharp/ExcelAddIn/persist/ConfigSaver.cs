@@ -4,7 +4,8 @@ using Deephaven.ExcelAddIn.Util;
 
 namespace Deephaven.ExcelAddIn.Persist;
 
-public class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>> {
+public class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>>,
+  IValueObserver<StatusOr<EndpointId>> {
   private readonly object _sync = new();
   private SharableDict<EndpointConfigBase> _cachedValue;
   private SharableDict<EndpointConfigBase>? _dictToWrite = null;
