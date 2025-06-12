@@ -6,44 +6,44 @@ namespace Deephaven.ExcelAddIn.Persist;
 
 public class ConfigSaver : IValueObserver<SharableDict<EndpointConfigBase>>,
   IValueObserver<StatusOr<EndpointId>> {
-  private readonly object _sync = new();
-  private SharableDict<EndpointConfigBase> _cachedValue;
-  private SharableDict<EndpointConfigBase>? _dictToWrite = null;
-  private bool _threadIsAlive = false;
+  private record State(
+    SharableDict<EndpointConfigBase> Dict,
+    EndpointId? Endpoint);
 
-  public ConfigSaver(SharableDict<EndpointConfigBase> initialValue) {
-    _cachedValue = initialValue;
+  private readonly object _sync = new();
+  private State _currentState;
+
+  public ConfigSaver(SharableDict<EndpointConfigBase> dict, EndpointId? endpoint) {
+    _currentState = new State(dict, endpoint);
   }
 
-  public void OnNext(SharableDict<EndpointConfigBase> value) {
+  public void OnNext(SharableDict<EndpointConfigBase> dict) {
     lock (_sync) {
-      if (ReferenceEquals(value, _cachedValue)) {
-        return;
-      }
-      _cachedValue = value;
-      _dictToWrite = value;
-
-      if (!_threadIsAlive) {
-        _threadIsAlive = true;
-        Background.Run(WriteConfig);
-      }
+      var nextState = _currentState with { Dict = dict };
+      MaybeInvokeWrite(nextState);
     }
   }
 
-  private void WriteConfig() {
-    while (true) {
-      SharableDict<EndpointConfigBase>? toWrite;
-      lock (_sync) {
-        toWrite = Utility.Exchange(ref _dictToWrite, null);
+  public void OnNext(StatusOr<EndpointId> value) {
+    lock (_sync) {
+      value.Deconstruct(out var ep, out _);
+      var nextState = _currentState with { Endpoint = ep };
+      MaybeInvokeWrite(nextState);
+    }
+  }
 
-        if (toWrite == null) {
-          _threadIsAlive = false;
-          return;
-        }
+  private void MaybeInvokeWrite(State nextState) {
+    lock (_sync) {
+      if (_currentState.Equals(nextState)) {
+        return;
       }
 
-      var items = toWrite.Values.ToArray();
-      _ = PersistedConfig.TryWriteConfigFile(items);
+      _currentState = nextState;
+
+      var endpoints = _currentState.Dict.Values.ToArray();
+      var epId = _currentState.Endpoint != null ? _currentState.Endpoint.Id : "";
+      var pc = new PersistedConfig(endpoints, epId);
+      _ = PersistedConfigManager.TryWriteConfigFile(pc);
     }
   }
 }

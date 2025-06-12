@@ -127,7 +127,7 @@ public sealed class JsonEmptyEndpointConfig : JsonEndpointConfigBase {
 /// </summary>
 public sealed class JsonPersistedConfig {
   public string DefaultEndpoint { get; set; } = "";
-  public JsonEndpointConfigBase[] Endpoints = [];
+  public JsonEndpointConfigBase[] Endpoints { get; set; } = [];
 }
 
 /// <summary>

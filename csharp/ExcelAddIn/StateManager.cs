@@ -30,6 +30,11 @@ public class StateManager {
   }
 
   private readonly object _sync = new();
+
+  private readonly EndpointDictProvider _endpointDictProvider;
+  private readonly DefaultEndpointProvider _defaultEndpointProvider;
+  private readonly OpStatusDictProvider _statusDictProvider = new();
+
   private readonly ReferenceCountingDict<EndpointId, CoreClientProvider> _coreClientProviders = new();
   private readonly ReferenceCountingDict<(EndpointId, PqName), CorePlusClientProvider> _corePlusClientProviders = new();
   private readonly ReferenceCountingDict<EndpointId, EndpointConfigProvider> _endpointConfigProviders = new();
@@ -40,12 +45,10 @@ public class StateManager {
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
 
-  private readonly DefaultEndpointProvider _defaultEndpointProvider = new();
-  private readonly OpStatusDictProvider _statusDictProvider = new();
-  private readonly EndpointDictProvider _endpointDictProvider;
-
-  private StateManager(EndpointDictProvider endpointDictProvider) {
+  private StateManager(EndpointDictProvider endpointDictProvider,
+    DefaultEndpointProvider defaultEndpointProvider) {
     _endpointDictProvider = endpointDictProvider;
+    _defaultEndpointProvider = defaultEndpointProvider;
   }
 
   public IObservableCallbacks SubscribeToCoreClient(EndpointId endpointId,
