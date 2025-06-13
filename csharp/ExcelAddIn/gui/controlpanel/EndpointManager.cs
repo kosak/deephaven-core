@@ -91,28 +91,15 @@ internal class EndpointManager :
   }
 
   private void OnDeleteButtonClicked(EndpointManagerRow[] rows) {
-    var failures = new List<string>();
     lock (_sync) {
       var managers = rows.Where(_rowToManager.ContainsKey)
         .Select(row => _rowToManager[row])
         .ToArray();
 
       foreach (var manager in managers) {
-        if (!manager.TryDelete()) {
-          failures.Add(manager.EndpointId.Id);
-        }
+        manager.DoDelete();
       }
     }
-
-    if (failures.Count == 0) {
-      return;
-    }
-    var failureText = string.Join(Environment.NewLine, failures);
-    const string caption = "Couldn't delete some selections";
-    _endpointElements.Owner.BeginInvoke(() => {
-      var mbox = new DeephavenMessageBox(caption, failureText, false);
-      _ = mbox.ShowDialog(_endpointElements.Owner);
-    });
   }
 
   private void OnReconnectButtonClicked(EndpointManagerRow[] rows) {

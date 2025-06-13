@@ -22,7 +22,7 @@ internal class ControlPanelManager : IDisposable {
 
     Background.Run(() => {
       var cpDialog = new ControlPanel();
-      cpDialog.Load += (o, e) => {
+      cpDialog.Load += (_, _) => {
         var cpManager = Create(stateManager, cpDialog);
         cpDialog.Closed += (_, _) => cpManager.Dispose();
       };

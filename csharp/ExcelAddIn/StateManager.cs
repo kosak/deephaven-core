@@ -137,13 +137,9 @@ public class StateManager {
     }
   }
 
-  public bool TryDeleteConfig(EndpointId id) {
+  public void DeleteConfig(EndpointId id) {
     lock (_sync) {
-      if (_endpointConfigProviders.ContainsKey(id)) {
-        // Someone is still referencing it, so it's unsafe to delete
-        return false;
-      }
-      return _endpointDictProvider.TryRemove(id);
+      _ = _endpointDictProvider.TryRemove(id);
     }
   }
 

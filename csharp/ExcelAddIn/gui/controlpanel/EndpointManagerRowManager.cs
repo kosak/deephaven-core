@@ -16,7 +16,7 @@ public sealed class EndpointManagerRowManager :
   public static EndpointManagerRowManager Create(EndpointManagerRow row,
     EndpointId endpointId, StateManager stateManager) {
     var result = new EndpointManagerRowManager(row, endpointId, stateManager);
-    result.Resubscribe();
+    result.Subscribe();
     return result;
   }
 
@@ -39,11 +39,8 @@ public sealed class EndpointManagerRowManager :
     Unsubscribe();
   }
 
-  private void Resubscribe() {
+  private void Subscribe() {
     lock (_sync) {
-      // paranoia
-      Unsubscribe();
-
       // We watch for endpoint health, endpoint config, and default endpoint
       _healthDisposable = _stateManager.SubscribeToEndpointHealth(EndpointId, this);
       _configDisposable = _stateManager.SubscribeToEndpointConfig(EndpointId, this);
@@ -85,20 +82,10 @@ public sealed class EndpointManagerRowManager :
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, EndpointId);
   }
 
-  public bool TryDelete() {
+  public void DoDelete() {
     lock (_sync) {
-      // Strategy:
-      // 1. Unsubscribe to everything
-      // 2. Ask the StateManager to delete the endpoint config.
-      // 3. If this succeeds, great.
-      // 4. If it fails, then there are other users of the endpoint, so resubscribe and
-      //    signal that the delete failed.
       Unsubscribe();
-      var success = _stateManager.TryDeleteConfig(EndpointId);
-      if (!success) {
-        Resubscribe();
-      }
-      return success;
+      _stateManager.DeleteConfig(EndpointId);
     }
   }
 
