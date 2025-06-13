@@ -29,37 +29,33 @@ public class SessionManager : IDisposable {
 
   public static SessionManager FromJson(string descriptiveName, Credentials credentials,
     string json) {
-    try {
-      var info = JsonSerializer.Deserialize<SessionInfo>(json);
-      if (info == null) {
-        // Can this happen?
-        throw new Exception("Deserialize returned null");
-      }
-
-      string? rootCerts = null;
-      if (info.truststore_url != null) {
-        // TODO(kosak): true, false, or pass through some parameter?
-        rootCerts = GetUrl(info.truststore_url, false);
-      }
-
-      string? authAuthority = null;
-      string? controllerAuthority = null;
-      if (info.override_authorities) {
-        authAuthority = info.auth_authority ?? DefaultOverrideAuthority;
-        controllerAuthority = info.controller_authority ?? DefaultOverrideAuthority;
-      }
-
-      return Create(
-        descriptiveName,
-        credentials,
-        info.auth_host[0], info.auth_port,
-        authAuthority,
-        info.controller_host, info.controller_port,
-        controllerAuthority,
-        rootCerts);
-    } catch (Exception e) {
-      throw new Exception($"Error processing JSON document: {e}");
+    var info = JsonSerializer.Deserialize<SessionInfo>(json);
+    if (info == null) {
+      // Can this happen?
+      throw new Exception("Deserialize returned null");
     }
+
+    string? rootCerts = null;
+    if (info.truststore_url != null) {
+      // TODO(kosak): true, false, or pass through some parameter?
+      rootCerts = GetUrl(info.truststore_url, false);
+    }
+
+    string? authAuthority = null;
+    string? controllerAuthority = null;
+    if (info.override_authorities) {
+      authAuthority = info.auth_authority ?? DefaultOverrideAuthority;
+      controllerAuthority = info.controller_authority ?? DefaultOverrideAuthority;
+    }
+
+    return Create(
+      descriptiveName,
+      credentials,
+      info.auth_host[0], info.auth_port,
+      authAuthority,
+      info.controller_host, info.controller_port,
+      controllerAuthority,
+      rootCerts);
   }
 
   private static SessionManager Create(

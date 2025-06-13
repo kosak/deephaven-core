@@ -232,7 +232,7 @@ public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
       if (!url.EndsWith('/')) {
         url += "/";
       }
-      url += "iriside/connection.json";
+      url += "iris/connection.json";
       return url;
     } catch (Exception) {
       // ignore

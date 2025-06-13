@@ -14,7 +14,7 @@ global using ITimeOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<Syste
 namespace Deephaven.ExcelAddIn.Util;
 
 internal static class Utility {
-  public const string VersionString = "Version 1.0.3-snapshot";
+  public const string VersionString = "Version 1.0.3";
 
   public static void ClearAndDispose<T>(ref T? item) where T : class, IDisposable {
     var temp = Exchange(ref item, null);

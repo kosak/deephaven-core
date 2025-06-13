@@ -15,7 +15,7 @@
     <ROW Property="ProductCode" Value="1033:{17F5C084-51AB-494B-B20D-D237A164B0BD} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="Deephaven Excel Add-In"/>
-    <ROW Property="ProductVersion" Value="1.0.2" Options="32"/>
+    <ROW Property="ProductVersion" Value="1.0.3" Options="32"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{98EB9359-8BA3-44BA-A411-AED290E6EBD9}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-"/>
