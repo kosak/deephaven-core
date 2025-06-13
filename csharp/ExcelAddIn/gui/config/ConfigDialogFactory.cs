@@ -84,6 +84,12 @@ internal class EndpointConfigDialogState :
     _stateManager.SetConfig(newCreds);
     if (_cvm.IsDefault) {
       _stateManager.SetDefaultEndpoint(newCreds.Id);
+    } else {
+      var de = _stateManager.GetDefaultEndpoint();
+      if (newCreds.Id.Equals(de)) {
+        // ids match but "IsDefault" checkbox was cleared.
+        _stateManager.SetDefaultEndpoint(null);
+      }
     }
 
     _configDialog.Close();

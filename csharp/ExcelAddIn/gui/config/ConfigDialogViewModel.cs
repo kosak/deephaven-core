@@ -11,9 +11,10 @@ public sealed class ConfigDialogViewModel : INotifyPropertyChanged {
     return new ConfigDialogViewModel();
   }
 
-  public static ConfigDialogViewModel OfConfig(EndpointConfigBase config) {
+  public static ConfigDialogViewModel OfConfig(EndpointConfigBase config, bool isDefault) {
     var result = new ConfigDialogViewModel {
-      Id = config.Id.Id
+      Id = config.Id.Id,
+      IsDefault = isDefault
     };
     _ = config.AcceptVisitor(
       empty => Unit.Instance,

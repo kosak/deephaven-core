@@ -76,9 +76,11 @@ public sealed class EndpointManagerRowManager :
 
   public void DoEdit() {
     var config = _row.GetConfig();
+    var isDefault = _row.IsDefault;
+
     // If we have valid credentials, then make a populated viewmodel.
     // If we don't, then make an empty viewmodel with only Id populated.
-    var cvm = ConfigDialogViewModel.OfConfig(config);
+    var cvm = ConfigDialogViewModel.OfConfig(config, isDefault);
     ConfigDialogFactory.CreateAndShow(_stateManager, cvm, EndpointId);
   }
 

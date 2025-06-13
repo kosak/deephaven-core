@@ -115,6 +115,10 @@ public class StateManager {
     return _endpointDictProvider.Subscribe(observer);
   }
 
+  public EndpointId? GetDefaultEndpoint() {
+    return _endpointDictProvider.GetDefaultEndpoint();
+  }
+
   public void SetDefaultEndpoint(EndpointId? defaultEndpointId) {
     _ = _endpointDictProvider.TrySetDefaultEndpoint(defaultEndpointId);
   }
