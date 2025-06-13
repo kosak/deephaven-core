@@ -8,7 +8,7 @@ namespace Deephaven.ExcelAddIn.Providers;
 internal class EndpointDictProvider :
   IValueObservable<SharableDict<EndpointConfigBase>>,
   IValueObservable<StatusOr<EndpointId>> {
-  private const string UnsetEndpointText = "No endpoint";
+  private const string UnsetEndpointText = "No default endpoint";
 
   private readonly object _sync = new();
   private readonly ObserverContainer<SharableDict<EndpointConfigBase>> _dictObservers = new();
@@ -51,19 +51,14 @@ internal class EndpointDictProvider :
   }
 
   public bool TryAdd(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, false, true);
+    return TryAddOrMaybeReplace(config, false);
   }
-  
+
   public bool AddOrReplace(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, true, true);
+    return TryAddOrMaybeReplace(config, true);
   }
 
-  public bool TryAddWithoutNotify(EndpointConfigBase config) {
-    return TryAddOrMaybeReplace(config, false, false);
-  }
-
-  private bool TryAddOrMaybeReplace(EndpointConfigBase config, bool permitReplace,
-    bool wantNotify) {
+  private bool TryAddOrMaybeReplace(EndpointConfigBase config, bool permitReplace) {
     lock (_sync) {
       var inserted = false;
       if (!_idToKey.TryGetValue(config.Id, out var key)) {
@@ -76,9 +71,7 @@ internal class EndpointDictProvider :
         return false;
       }
       _dict = _dict.With(key, config);
-      if (wantNotify) {
-        _observers.OnNext(_dict);
-      }
+      _dictObservers.OnNext(_dict);
       return inserted;
     }
   }
@@ -89,29 +82,36 @@ internal class EndpointDictProvider :
         return false;
       }
       _dict = _dict.Without(removedKey);
-      _observers.OnNext(_dict);
+      _dictObservers.OnNext(_dict);
+
+      if (_endpointId.GetValueOrStatus(out var ep, out _) && ep.Equals(endpointId)) {
+        _ = TrySetDefaultEndpoint(null);
+      }
+
       return true;
     }
   }
 
   public SharableDict<EndpointConfigBase> GetDict() => _dict;
 
-  public EndpointId? DefaultEndpoint {
-    get {
-      lock (_sync) {
-        return _endpointId.GetValueOrStatus(out var value, out _) ? value : null;
-      }
-    }
-  }
-
-  public void SetDefaultEndpoint(EndpointId? endpointId) {
+  public bool TrySetDefaultEndpoint(EndpointId? endpointId) {
     lock (_sync) {
       if (endpointId == null) {
-        _endpointId.ReplaceAndNotify(UnsetEndpointText, _observers);
-      } else {
-        _endpointId.ReplaceAndNotify(endpointId, _observers);
+        _endpointId.ReplaceAndNotify(UnsetEndpointText, _defaultEpObservers);
+        return true;
       }
+      if (!_idToKey.ContainsKey(endpointId)) {
+        // endpoint is not known. Ignore it.
+        return false;
+      }
+      _endpointId.ReplaceAndNotify(endpointId, _defaultEpObservers);
+      return true;
     }
   }
 
+  public EndpointId? GetDefaultEndpoint() {
+    lock (_sync) {
+      return _endpointId.GetValueOrStatus(out var value, out _) ? value : null;
+    }
+  }
 }

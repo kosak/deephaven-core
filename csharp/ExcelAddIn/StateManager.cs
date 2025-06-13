@@ -13,17 +13,16 @@ namespace Deephaven.ExcelAddIn;
 public class StateManager {
   public static StateManager Create() {
     var edp = new EndpointDictProvider();
-    var dep = new DefaultEndpointProvider();
     if (PersistedConfigManager.TryReadConfigFile(out var pc)) {
       foreach (var ep in pc.Endpoints) {
-        _ = edp.TryAddWithoutNotify(ep);
+        _ = edp.TryAdd(ep);
       }
       if (pc.DefaultEndpoint.Length > 0) {
-        dep.SetValue(new EndpointId(pc.DefaultEndpoint));
+        _ = edp.TrySetDefaultEndpoint(new EndpointId(pc.DefaultEndpoint));
       }
     }
-    var configSaver = new ConfigSaver(edp.GetDict(), dep.Value);
-    var result = new StateManager(edp, dep);
+    var configSaver = new ConfigSaver(edp.GetDict(), edp.GetDefaultEndpoint());
+    var result = new StateManager(edp);
     result.SubscribeToEndpointDict(configSaver);
     result.SubscribeToDefaultEndpoint(configSaver);
     return result;
@@ -32,7 +31,6 @@ public class StateManager {
   private readonly object _sync = new();
 
   private readonly EndpointDictProvider _endpointDictProvider;
-  private readonly DefaultEndpointProvider _defaultEndpointProvider;
   private readonly OpStatusDictProvider _statusDictProvider = new();
 
   private readonly ReferenceCountingDict<EndpointId, CoreClientProvider> _coreClientProviders = new();
@@ -45,10 +43,8 @@ public class StateManager {
   private readonly ReferenceCountingDict<EndpointId, SessionManagerProvider> _sessionManagerProviders = new();
   private readonly ReferenceCountingDict<EndpointId, PqSubscriptionProvider> _subscriptionProviders = new();
 
-  private StateManager(EndpointDictProvider endpointDictProvider,
-    DefaultEndpointProvider defaultEndpointProvider) {
+  private StateManager(EndpointDictProvider endpointDictProvider) {
     _endpointDictProvider = endpointDictProvider;
-    _defaultEndpointProvider = defaultEndpointProvider;
   }
 
   public IObservableCallbacks SubscribeToCoreClient(EndpointId endpointId,
@@ -116,11 +112,11 @@ public class StateManager {
   }
 
   public IObservableCallbacks SubscribeToDefaultEndpoint(IValueObserver<StatusOr<EndpointId>> observer) {
-    return _defaultEndpointProvider.Subscribe(observer);
+    return _endpointDictProvider.Subscribe(observer);
   }
 
   public void SetDefaultEndpoint(EndpointId? defaultEndpointId) {
-    _defaultEndpointProvider.SetValue(defaultEndpointId);
+    _ = _endpointDictProvider.TrySetDefaultEndpoint(defaultEndpointId);
   }
 
   public IObservableCallbacks SubscribeToEndpointDict(
