@@ -1,24 +1,94 @@
 ﻿namespace Deephaven.ManagedClient;
 
-#if false
-
 public class TableMaker {
+  private readonly List<ColumnInfo> _columnInfos = new();
 
-  /// <summary>
-  /// Creates a column whose server type most closely matches type T, having the given name and
-  /// values.Each call to this method adds a column. When there are multiple calls to this method,
-  /// the sizes of the `values` arrays must be consistent across those calls. That is, when the
-  /// table has multiple columns, they all have to have the same number of rows.
-  /// </summary>
-  /// <typeparam name="T"></typeparam>
-  /// <param name="name"></param>
-  /// <param name="values"></param>
-  public void AddColumn<T>(string name, IEnumerable<T> values) {
-    var cb = new ColumnBuilder<T>();
-    foreach (var element in values) {
-      cb.Append(element);
+  public void AddColumn(string name, IEnumerable<byte> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.UInt8Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<char> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create((UInt16)v, true));
+    var builder = new Apache.Arrow.UInt16Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<sbyte> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.Int8Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+  public void AddColumn(string name, IEnumerable<Int16> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.Int16Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<Int32> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.Int32Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<Int64> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.Int64Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<float> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.FloatArray.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<double> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.DoubleArray.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<DateTimeOffset> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.TimestampArray.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<TimeOnly> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.Time32Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<DateOnly> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    var builder = new Apache.Arrow.Date32Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  public void AddColumn(string name, IEnumerable<string?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? "", v != null));
+    var builder = new Apache.Arrow.StringArray.Builder();
+    AddColumnHelper<string, Apache.Arrow.StringArray, Apache.Arrow.StringArray.Builder>(name, wrapped, builder);
+  }
+
+  // IArrowArrayBuilder<byte, TArray, TBuilder>
+  private void AddColumnHelper<T, TArray, TBuilder>(string name,
+    IEnumerable<KeyValuePair<T, bool>> kvps,
+    Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder)
+    where TArray : Apache.Arrow.IArrowArray
+    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
+    foreach (var kvp in kvps) {
+      if (kvp.Value) {
+        builder.Append(kvp.Key);
+      } else {
+        builder.AppendNull();
+      }
     }
-    var array = cb.Finish();
+    var array = builder.Build(null);
+
     // var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
 
     // var kvMetadata = new KeyValueMetadata();
@@ -30,33 +100,8 @@ public class TableMaker {
     //       std::move(*deephaven_metadata_component_type_name))));
     // }
 
-    _columnInfos.Add(std::move(name), data->type(), std::move(kv_metadata),
-      std::move(data));
-
+    _columnInfos.Add(new ColumnInfo(name, array));
   }
 
-  private class ColumnInfo {
-    private Apache.Arrow.Date32Array d;
-    std::string name_;
-    std::shared_ptr<arrow::DataType> arrow_type_;
-    std::shared_ptr<arrow::KeyValueMetadata> arrow_metadata_;
-    std::shared_ptr<arrow::Array> data_;
-
-    ColumnInfo(std::string name, std::shared_ptr<arrow::DataType> arrow_type,
-      std::shared_ptr<arrow::KeyValueMetadata> arrow_metadata,
-      std::shared_ptr<arrow::Array> data);
-    ColumnInfo(ColumnInfo &&other) noexcept;
-    ~ColumnInfo();
-
-    public void Foo() {
-      Apache.Arrow.Date32Array
-
-    }
-
-  };
-
+  private record ColumnInfo(string Name, Apache.Arrow.IArrowArray Data);
 }
-
-
-#endif
-
