@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExcelAddIn", "ExcelAddIn.cs
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dh_NetClient", "..\client\Dh_NetClient\Dh_NetClient.csproj", "{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dhe_NetClient", "..\Dhe_NetClient\Dhe_NetClient.csproj", "{366BB352-E065-48F0-81AD-828F859E6758}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dhe_NetClient", "..\client\Dhe_NetClient\Dhe_NetClient.csproj", "{366BB352-E065-48F0-81AD-828F859E6758}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

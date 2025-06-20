@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\client\Dh_NetClient\Dh_NetClient.csproj" />
+    <ProjectReference Include="..\Dh_NetClient\Dh_NetClient.csproj" />
   </ItemGroup>
 
 

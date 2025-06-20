@@ -23,7 +23,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\client\Dh_NetClient\Dh_NetClient.csproj" />
-	  <ProjectReference Include="..\Dhe_NetClient\Dhe_NetClient.csproj" />
+	  <ProjectReference Include="..\client\Dhe_NetClient\Dhe_NetClient.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup>
