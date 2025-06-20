@@ -5,7 +5,9 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExcelAddIn", "ExcelAddIn.csproj", "{08852A0D-DB96-404E-B3CE-BF30F2AD3F74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dh_NetClient", "..\client\ManagedClient\Dh_NetClient.csproj", "{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dh_NetClient", "..\client\Dh_NetClient\Dh_NetClient.csproj", "{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dhe_NetClient", "..\Dhe_NetClient\Dhe_NetClient.csproj", "{366BB352-E065-48F0-81AD-828F859E6758}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{366BB352-E065-48F0-81AD-828F859E6758}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{366BB352-E065-48F0-81AD-828F859E6758}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{366BB352-E065-48F0-81AD-828F859E6758}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{366BB352-E065-48F0-81AD-828F859E6758}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
