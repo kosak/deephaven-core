@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Grpc.Net.Client;
 
 namespace Deephaven.ManagedClient;

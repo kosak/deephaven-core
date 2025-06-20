@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿namespace Deephaven.ManagedClient;
+
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
