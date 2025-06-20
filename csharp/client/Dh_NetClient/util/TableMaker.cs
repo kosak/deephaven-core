@@ -31,14 +31,26 @@ public class TableMaker {
     AddColumn(name, values.Select(v => (float?)v));
   }
 
-  public void AddColumn(string name, IEnumerable<float> values) {
-    AddColumn(name, values.Select(v => (float?)v));
+  public void AddColumn(string name, IEnumerable<double> values) {
+    AddColumn(name, values.Select(v => (double?)v));
   }
 
+  public void AddColumn(string name, IEnumerable<DateTimeOffset> values) {
+    AddColumn(name, values.Select(v => (DateTimeOffset?)v));
+  }
 
+  public void AddColumn(string name, IEnumerable<TimeOnly> values) {
+    AddColumn(name, values.Select(v => (TimeOnly?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<DateOnly> values) {
+    AddColumn(name, values.Select(v => (DateOnly?)v));
+  }
 
   public void AddColumn(string name, IEnumerable<byte?> values) {
-    AddNullableColumn(name, values, new Apache.Arrow.UInt8Array.Builder());
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
+    var builder = new Apache.Arrow.UInt8Array.Builder();
+    AddColumnHelper(name, wrapped, builder);
   }
 
   public void AddColumn(string name, IEnumerable<char?> values) {
@@ -47,56 +59,56 @@ public class TableMaker {
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<sbyte> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<sbyte?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
     var builder = new Apache.Arrow.Int8Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<Int16> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<Int16?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
     var builder = new Apache.Arrow.Int16Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<Int32> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<Int32?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
     var builder = new Apache.Arrow.Int32Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<Int64> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<Int64?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
     var builder = new Apache.Arrow.Int64Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<float> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<float?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
     var builder = new Apache.Arrow.FloatArray.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<double> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<double?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
     var builder = new Apache.Arrow.DoubleArray.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<DateTimeOffset> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<DateTimeOffset?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? new DateTimeOffset(), v.HasValue));
     var builder = new Apache.Arrow.TimestampArray.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<TimeOnly> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<TimeOnly?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? new TimeOnly(), v.HasValue));
     var builder = new Apache.Arrow.Time32Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
 
-  public void AddColumn(string name, IEnumerable<DateOnly> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+  public void AddColumn(string name, IEnumerable<DateOnly?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? new DateOnly(), v.HasValue));
     var builder = new Apache.Arrow.Date32Array.Builder();
     AddColumnHelper<DateOnly, Apache.Arrow.Date32Array, Apache.Arrow.Date32Array.Builder>(name, wrapped, builder);
   }
