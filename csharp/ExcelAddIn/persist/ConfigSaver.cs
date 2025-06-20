@@ -1,6 +1,7 @@
 ﻿using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Persist;
 

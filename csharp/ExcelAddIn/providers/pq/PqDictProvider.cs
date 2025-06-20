@@ -3,6 +3,7 @@ using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Refcounting;
 using Deephaven.ExcelAddIn.Util;
+using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
 
 namespace Deephaven.ExcelAddIn.Providers;

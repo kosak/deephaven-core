@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\client\Dh_NetClient\Dh_NetClient.csproj" />
+  </ItemGroup>
+
 </Project>

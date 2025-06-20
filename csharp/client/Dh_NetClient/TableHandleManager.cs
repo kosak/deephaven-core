@@ -29,7 +29,7 @@ public class TableHandleManager : IDisposable {
   /// DndTableHandleManager.
   /// </summary>
   /// <returns>The released TableHandleManager</returns>
-  internal (Ticket?, Server) ReleaseServer() {
+  public (Ticket?, Server) ReleaseServer() {
     var c = _consoleId;
     var s = Server;
     Server = null;

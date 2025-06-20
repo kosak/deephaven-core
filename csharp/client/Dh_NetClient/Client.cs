@@ -53,7 +53,7 @@ public class Client : IDisposable {
   /// This is used when we start with a Client and want to use it as a DndClient.
   /// </summary>
   /// <returns>The released TableHandleManager</returns>
-  internal TableHandleManager ReleaseTableHandleManager() {
+  public TableHandleManager ReleaseTableHandleManager() {
     var temp = Manager;
     _manager = null;
     return temp;

@@ -2,6 +2,7 @@
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using System;
+using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 
