@@ -10,7 +10,7 @@
     <PackageReference Include="Apache.Arrow" Version="20.0.0" />
     <PackageReference Include="Apache.Arrow.Flight" Version="20.0.0" />
     <PackageReference Include="C5" Version="3.0.0" />
-    <PackageReference Include="Google.FlatBuffers" Version="25.2.10" />
+    <PackageReference Include="Google.FlatBuffers" Version="23.5.26" />
     <PackageReference Include="Google.Protobuf" Version="3.31.1" />
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageReference Include="Grpc.Tools" Version="2.72.0">
