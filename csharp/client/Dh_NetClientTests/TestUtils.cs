@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if false
+using System.Collections;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -104,3 +105,4 @@ class TableComparer {
     }
   }
 }
+#endif

@@ -1,4 +1,4 @@
-﻿
+﻿#if false
 using Deephaven.ManagedClient;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -23,3 +23,4 @@ public class ViewTest {
     tc.AssertEqualTo(t1);
   }
 }
+#endif

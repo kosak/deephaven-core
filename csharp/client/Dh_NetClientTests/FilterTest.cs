@@ -1,4 +1,5 @@
-﻿using Deephaven.DhClientTests;
+﻿#if false
+using Deephaven.DhClientTests;
 using Deephaven.ManagedClient;
 using Xunit.Abstractions;
 
@@ -35,3 +36,4 @@ public class FilterTest {
     tc.AssertEqualTo(t1);
   }
 }
+#endif

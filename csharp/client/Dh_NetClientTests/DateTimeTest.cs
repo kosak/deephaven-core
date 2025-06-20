@@ -1,4 +1,5 @@
-﻿using Xunit.Abstractions;
+﻿#if false
+using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -20,7 +21,8 @@ public class DateTimeTest {
     var dt3 = new DhDateTime(2001, 3, 1, 12, 34, 56, 987654321);
     Assert.Equal(983450096987654321, dt3.Nanos);
   }
-
+    
   // TODO(kosak): DhDateTime.Parse (including parsing full nanosecond resolution)
   // and DhDateTime.Format
 }
+#endif

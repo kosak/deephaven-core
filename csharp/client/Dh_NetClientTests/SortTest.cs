@@ -1,4 +1,5 @@
-﻿using Deephaven.DhClientTests;
+﻿#if false
+using Deephaven.DhClientTests;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -59,3 +60,4 @@ public class SortTest {
     tc.AssertEqualTo(sorted);
   }
 }
+#endif

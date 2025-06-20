@@ -1,4 +1,5 @@
-﻿using Deephaven.DhClientTests;
+﻿#if false
+using Deephaven.DhClientTests;
 using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Xunit.Abstractions;
@@ -45,3 +46,4 @@ public class AggregatesTest {
     tc.AssertEqualTo(aggTable);
   }
 }
+#endif

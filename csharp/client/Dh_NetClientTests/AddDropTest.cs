@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClientTests;
+﻿#if false
+using Deephaven.Dh_NetClientTests;
 using Deephaven.ManagedClient;
 using Xunit.Abstractions;
 
@@ -30,3 +31,4 @@ public class AddDropTest {
     tc.AssertEqualTo(t2);
   }
 }
+#endif

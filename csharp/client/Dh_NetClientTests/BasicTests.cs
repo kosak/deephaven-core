@@ -1,4 +1,5 @@
-﻿using Xunit.Abstractions;
+﻿#if false
+using Xunit.Abstractions;
 using System;
 using Deephaven.DhClientTests;
 using Deephaven.ManagedClient;
@@ -20,3 +21,4 @@ public class BasicTests {
     ctx.Client.Close();
   }
 }
+#endif

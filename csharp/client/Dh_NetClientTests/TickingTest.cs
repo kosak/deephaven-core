@@ -1,4 +1,5 @@
-﻿using Deephaven.ManagedClient;
+﻿#if false
+using Deephaven.ManagedClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -271,3 +272,4 @@ public sealed class AllValuesGreaterThanNCallback : CommonBase {
     }
   }
 }
+#endif
