@@ -41,7 +41,7 @@ public sealed class CommonContextForTests : IDisposable {
   }
 
   private static Client CreateClient(ClientOptions clientOptions) {
-    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "10.0.4.109");
+    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "127.0.0.1");
     var port = GlobalEnvironmentForTests.GetEnv("DH_PORT", "10000");
     var connectionString = $"{host}:{port}";
     var client = Client.Connect(connectionString, clientOptions);
