@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if false
+using System;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -135,3 +136,4 @@ public class ColumnDataForTests {
     1500
   };
 }
+#endif
