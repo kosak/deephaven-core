@@ -4,13 +4,45 @@ public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
 
   public void AddColumn(string name, IEnumerable<byte> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
-    var builder = new Apache.Arrow.UInt8Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
+    AddColumn(name, values.Select(v => (byte?)v));
   }
 
   public void AddColumn(string name, IEnumerable<char> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create((UInt16)v, true));
+    AddColumn(name, values.Select(v => (char?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<sbyte> values) {
+    AddColumn(name, values.Select(v => (sbyte?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<Int16> values) {
+    AddColumn(name, values.Select(v => (Int16?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<Int32> values) {
+    AddColumn(name, values.Select(v => (Int32?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<Int64> values) {
+    AddColumn(name, values.Select(v => (Int64?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<float> values) {
+    AddColumn(name, values.Select(v => (float?)v));
+  }
+
+  public void AddColumn(string name, IEnumerable<float> values) {
+    AddColumn(name, values.Select(v => (float?)v));
+  }
+
+
+
+  public void AddColumn(string name, IEnumerable<byte?> values) {
+    AddNullableColumn(name, values, new Apache.Arrow.UInt8Array.Builder());
+  }
+
+  public void AddColumn(string name, IEnumerable<char?> values) {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? (UInt16)0, v.HasValue));
     var builder = new Apache.Arrow.UInt16Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
@@ -20,6 +52,7 @@ public class TableMaker {
     var builder = new Apache.Arrow.Int8Array.Builder();
     AddColumnHelper(name, wrapped, builder);
   }
+
   public void AddColumn(string name, IEnumerable<Int16> values) {
     var wrapped = values.Select(v => KeyValuePair.Create(v, true));
     var builder = new Apache.Arrow.Int16Array.Builder();
@@ -65,13 +98,29 @@ public class TableMaker {
   public void AddColumn(string name, IEnumerable<DateOnly> values) {
     var wrapped = values.Select(v => KeyValuePair.Create(v, true));
     var builder = new Apache.Arrow.Date32Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
+    AddColumnHelper<DateOnly, Apache.Arrow.Date32Array, Apache.Arrow.Date32Array.Builder>(name, wrapped, builder);
   }
 
   public void AddColumn(string name, IEnumerable<string?> values) {
     var wrapped = values.Select(v => KeyValuePair.Create(v ?? "", v != null));
     var builder = new Apache.Arrow.StringArray.Builder();
     AddColumnHelper<string, Apache.Arrow.StringArray, Apache.Arrow.StringArray.Builder>(name, wrapped, builder);
+  }
+
+  private void AddSimpleColumn<T, TArray, TBuilder>(string name, IEnumerable<T> values,
+    Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder) where T : struct
+    where TArray : Apache.Arrow.IArrowArray
+    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
+    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
+    AddColumnHelper(name, wrapped, builder);
+  }
+
+  private void AddNullableColumn<T, TArray, TBuilder>(string name, IEnumerable<T?> values,
+    Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder) where T : struct
+    where TArray : Apache.Arrow.IArrowArray
+    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
+    var wrapped = values.Select(v => KeyValuePair.Create(v ?? default, v.HasValue));
+    AddColumnHelper(name, wrapped, builder);
   }
 
   // IArrowArrayBuilder<byte, TArray, TBuilder>
