@@ -114,28 +114,31 @@ public class TableMaker {
   }
 
   public void AddColumn(string name, IEnumerable<string?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? "", v != null));
+    // Arrow StringArray.Builder is special.
     var builder = new Apache.Arrow.StringArray.Builder();
-    AddColumnHelper<string, Apache.Arrow.StringArray, Apache.Arrow.StringArray.Builder>(name, wrapped, builder);
+    foreach (var value in values) {
+      if (value != null) {
+        builder.Append(value);
+      } else {
+        builder.AppendNull();
+      }
+    }
+    var array = builder.Build(null);
+
+    // var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
+
+    // var kvMetadata = new KeyValueMetadata();
+    // OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
+    //   kv_metadata->Set(DeephavenMetadataConstants::Keys::Type(), std::move(deephaven_metadata_type_name))));
+    // if (deephaven_metadata_component_type_name.has_value()) {
+    //   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
+    //     kv_metadata->Set(DeephavenMetadataConstants::Keys::ComponentType(),
+    //       std::move(*deephaven_metadata_component_type_name))));
+    // }
+
+    _columnInfos.Add(new ColumnInfo(name, array));
   }
 
-  private void AddSimpleColumn<T, TArray, TBuilder>(string name, IEnumerable<T> values,
-    Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder) where T : struct
-    where TArray : Apache.Arrow.IArrowArray
-    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
-    var wrapped = values.Select(v => KeyValuePair.Create(v, true));
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  private void AddNullableColumn<T, TArray, TBuilder>(string name, IEnumerable<T?> values,
-    Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder) where T : struct
-    where TArray : Apache.Arrow.IArrowArray
-    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? default, v.HasValue));
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  // IArrowArrayBuilder<byte, TArray, TBuilder>
   private void AddColumnHelper<T, TArray, TBuilder>(string name,
     IEnumerable<KeyValuePair<T, bool>> kvps,
     Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder)
