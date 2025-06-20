@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExcelAddIn", "ExcelAddIn.csproj", "{08852A0D-DB96-404E-B3CE-BF30F2AD3F74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManagedClient", "..\client\ManagedClient\ManagedClient.csproj", "{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dh_NetClient", "..\client\ManagedClient\Dh_NetClient.csproj", "{3226D3C7-2D1C-403F-B99D-EE95655F4FA2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

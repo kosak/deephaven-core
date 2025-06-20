@@ -22,7 +22,7 @@
 		<PackageReference Include="ExcelDna.IntelliSense" Version="*-*" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\client\ManagedClient\ManagedClient.csproj" />
+	  <ProjectReference Include="..\client\Dh_NetClient\Dh_NetClient.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup>
