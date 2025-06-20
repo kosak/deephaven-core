@@ -167,5 +167,60 @@ public class TableMaker {
     _columnInfos.Add(new ColumnInfo(name, array));
   }
 
+  public TableHandle MakeTable(TableHandleManager manager) {
+    auto schema = MakeSchema();
+
+    auto wrapper = manager.CreateFlightWrapper();
+    auto ticket = manager.NewTicket();
+    auto flight_descriptor = ArrowUtil::ConvertTicketToFlightDescriptor(ticket);
+
+    arrow::flight::FlightCallOptions options;
+    wrapper.AddHeaders(&options);
+
+    auto res = wrapper.FlightClient()->DoPut(options, flight_descriptor, schema);
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res));
+    auto data = GetColumnsNotEmpty();
+    auto num_rows = data.back()->length();
+    auto batch = arrow::RecordBatch::Make(schema, num_rows, std::move(data));
+
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->WriteRecordBatch(*batch)));
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->DoneWriting()));
+
+    std::shared_ptr<arrow::Buffer> buf;
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->reader->ReadMetadata(&buf)));
+    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->Close()));
+    return manager.MakeTableHandleFromTicket(std::move(ticket));
+  }
+
+  std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
+    ValidateSchema();
+
+    arrow::SchemaBuilder sb;
+    for ( const auto 
+    &info : column_infos_) {
+      auto field = std::make_shared<arrow::Field>(info.name_, info.arrow_type_, true,
+        info.arrow_metadata_);
+      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.AddField(field)));
+    }
+
+    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.Finish()));
+  }
+
+  private void ValidateSchema() {
+    if (_columnInfos.Count == 0) {
+      return;
+    }
+
+    var numRows = _columnInfos[0].Data.Length;
+    for (var i = 1; i != _columnInfos.Count; ++i) {
+      var ci = _columnInfos[i];
+      if (ci.Data.Length != numRows) {
+        var message =
+          $"Column sizes not consistent: column 0 has size {numRows}, but column {i} has size {ci.Data.Length}";
+        throw new Exception(message);
+      }
+    }
+  }
+
   private record ColumnInfo(string Name, Apache.Arrow.IArrowArray Data);
 }
