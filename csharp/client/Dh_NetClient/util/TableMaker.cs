@@ -113,6 +113,11 @@ public class TableMaker {
     AddColumnHelper<DateOnly, Apache.Arrow.Date32Array, Apache.Arrow.Date32Array.Builder>(name, wrapped, builder);
   }
 
+  public void AddColumn<T>(string name, IEnumerable<List<T>?> values) {
+    // needs a different approach
+    throw new Exception("TODO(kosak)");
+  }
+
   public void AddColumn(string name, IEnumerable<string?> values) {
     // Arrow StringArray.Builder is special.
     var builder = new Apache.Arrow.StringArray.Builder();
@@ -192,18 +197,17 @@ public class TableMaker {
     return manager.MakeTableHandleFromTicket(std::move(ticket));
   }
 
-  std::shared_ptr<arrow::Schema> TableMaker::MakeSchema() const {
+  private Apache.Arrow.Schema MakeSchema() {
     ValidateSchema();
 
-    arrow::SchemaBuilder sb;
-    for ( const auto 
-    &info : column_infos_) {
-      auto field = std::make_shared<arrow::Field>(info.name_, info.arrow_type_, true,
-        info.arrow_metadata_);
-      OkOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.AddField(field)));
+    var sb = new Apache.Arrow.Schema.Builder();
+    foreach (var info in _columnInfos) {
+      var field = new Apache.Arrow.Field(info.Name, info.ArrowType, true,
+        info.ArrowMetadata);
+      sb.Field(field);
     }
 
-    return ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(sb.Finish()));
+    return sb.Build();
   }
 
   private void ValidateSchema() {
@@ -220,7 +224,11 @@ public class TableMaker {
         throw new Exception(message);
       }
     }
+    Apache.Arrow.Types.TimestampType
   }
 
-  private record ColumnInfo(string Name, Apache.Arrow.IArrowArray Data);
+  private record ColumnInfo(string Name,
+    Apache.Arrow.Types.IArrowType ArrowType,
+    Apache.Arrow.IArrowArray Data,
+    KeyValuePair<string, string>[] ArrowMetadata);
 }
