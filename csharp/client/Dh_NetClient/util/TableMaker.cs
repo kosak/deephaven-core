@@ -127,12 +127,11 @@ public class TableMaker {
     var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
 
     var kvMetadata = new Dictionary<string, string>();
-    kvMetadata.Add(DeephavenMetadataConstants::Keys::Type(), typeName);
+    kvMetadata.Add(DeephavenMetadataConstants.Keys.Type, typeName);
     if (componentTypeName != null) {
-      kvMetadata.Add(DeephavenMetadataConstants::Keys::ComponentType(), componentTypeName);
+      kvMetadata.Add(DeephavenMetadataConstants.Keys.ComponentType, componentTypeName);
     }
-
-    _columnInfos.Add(new ColumnInfo(name, array));
+    _columnInfos.Add(new ColumnInfo(name, array, kvMetadata));
   }
 
 
@@ -219,9 +218,9 @@ public class TableMaker {
     ValidateSchema();
 
     var sb = new Apache.Arrow.Schema.Builder();
-    foreach (var info in _columnInfos) {
-      var field = new Apache.Arrow.Field(info.Name, info.ArrowType, true,
-        info.ArrowMetadata);
+    foreach (var ci in _columnInfos) {
+      var arrowType = ci.Data.Data.DataType;
+      var field = new Apache.Arrow.Field(ci.Name, arrowType, true, ci.ArrowMetadata);
       sb.Field(field);
     }
 
@@ -242,11 +241,9 @@ public class TableMaker {
         throw new Exception(message);
       }
     }
-    Apache.Arrow.Types.TimestampType
   }
 
   private record ColumnInfo(string Name,
-    Apache.Arrow.Types.IArrowType ArrowType,
     Apache.Arrow.IArrowArray Data,
     KeyValuePair<string, string>[] ArrowMetadata);
 }
