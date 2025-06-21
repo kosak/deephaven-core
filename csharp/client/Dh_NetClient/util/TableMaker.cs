@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ManagedClient;
+﻿using Apache.Arrow;
+
+namespace Deephaven.ManagedClient;
 
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
@@ -161,11 +163,13 @@ public class TableMaker {
     _columnInfos.Add(new ColumnInfo(name, array));
   }
 
+#if false
   private void AddColumnHelper<T, TArray, TBuilder>(string name,
     IEnumerable<KeyValuePair<T, bool>> kvps,
     Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder)
     where TArray : Apache.Arrow.IArrowArray
     where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
+
     foreach (var kvp in kvps) {
       if (kvp.Value) {
         builder.Append(kvp.Key);
@@ -188,7 +192,9 @@ public class TableMaker {
 
     _columnInfos.Add(new ColumnInfo(name, array));
   }
+#endif
 
+#if false
   public TableHandle MakeTable(TableHandleManager manager) {
     auto schema = MakeSchema();
 
@@ -213,6 +219,7 @@ public class TableMaker {
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->Close()));
     return manager.MakeTableHandleFromTicket(std::move(ticket));
   }
+#endif
 
   private Apache.Arrow.Schema MakeSchema() {
     ValidateSchema();
@@ -245,22 +252,52 @@ public class TableMaker {
 
   private class ColumnBuilder {
     public static ColumnBuilder<T> ForType<T>() {
-
+      var type = typeof(T);
+      if (type == typeof(Int32)) {
+        var arrowBuilder = new Apache.Arrow.Int32Array.Builder();
+        ColumnBuilder builder = new TypicalBuilder<Int32, Apache.Arrow.Int32Array, Apache.Arrow.Int32Array.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Int32);
+        return (ColumnBuilder<T>)builder;
+      }
     }
-
   }
 
-  private abstract class ColumnBuilder<T> {
+  private abstract class ColumnBuilder<T> : ColumnBuilder {
     public abstract void Append(T item);
+    public abstract void AppendNull();
 
     public abstract Apache.Arrow.IArrowArray Build();
 
-    public void GetDeephavenMetadata(out string typeName, out string? componentTypeName) {
-
-    }
-
+    public abstract (string, string?) GetDeephavenMetadata();
   }
 
+  private sealed class TypicalBuilder<T, TArray, TBuilder> : ColumnBuilder<T>
+    where TArray : Apache.Arrow.IArrowArray
+    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
+    private readonly Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> _builder;
+    private readonly string _typeName;
+
+    public TypicalBuilder(IArrowArrayBuilder<T, TArray, TBuilder> builder, string typeName) {
+      _builder = builder;
+      _typeName = typeName;
+    }
+
+    public override void Append(T item) {
+      _builder.Append(item);
+    }
+
+    public override void AppendNull() {
+      _builder.AppendNull();
+    }
+
+    public override (string, string?) GetDeephavenMetadata() {
+      return (_typeName, null);
+    }
+
+    public override IArrowArray Build() {
+      return _builder.Build(null);
+    }
+  }
 
   private record ColumnInfo(string Name,
     Apache.Arrow.IArrowArray Data,
