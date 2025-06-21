@@ -1,6 +1,4 @@
-﻿using Apache.Arrow;
-
-namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.ManagedClient;
 
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
@@ -262,8 +260,12 @@ public class TableMaker {
     public static ColumnBuilder ForType(Type type) {
       var underlyingType = Nullable.GetUnderlyingType(type);
       if (underlyingType != null) {
-        var underlyingCb = ForType(underlyingType);
-        return new NullableBuilder<T>(underlyingCb);
+        var miGeneric = typeof(ColumnBuilder).GetMethod(nameof(ForNullableType));
+        if (miGeneric == null) {
+          throw new Exception($"Can't find {nameof(ForNullableType)}");
+        }
+        var miInstantiated = miGeneric.MakeGenericMethod(underlyingType);
+        return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
       }
 
       if (type == typeof(Int32)) {
@@ -273,6 +275,11 @@ public class TableMaker {
       }
 
       throw new Exception($"ColumnBuilder does not support type {Utility.FriendlyTypeName(type)}");
+    }
+    
+    public static ColumnBuilder<T?> ForNullableType<T>() where T : struct {
+      var underlyingCb = ForType<T>();
+      return new NullableBuilder<T>(underlyingCb);
     }
   }
 
@@ -332,7 +339,7 @@ public class TableMaker {
       _underlyingBuilder.AppendNull();
     }
 
-    public override IArrowArray Build() {
+    public override Apache.Arrow.IArrowArray Build() {
       return _underlyingBuilder.Build();
     }
 
