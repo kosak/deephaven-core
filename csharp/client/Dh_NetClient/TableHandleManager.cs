@@ -16,11 +16,11 @@ public class TableHandleManager : IDisposable {
     return new TableHandleManager(consoleId, server);
   }
 
-  private readonly Ticket? _consoleId;
+  public Ticket? ConsoleId { get; init; }
   public Server? Server { get; private set; }
 
   protected TableHandleManager(Ticket? consoleId, Server server) {
-    _consoleId = consoleId;
+    ConsoleId = consoleId;
     Server = server;
   }
 
@@ -31,13 +31,13 @@ public class TableHandleManager : IDisposable {
   /// </summary>
   /// <returns>The released TableHandleManager</returns>
   public (Ticket?, Server) ReleaseServer() {
-    var c = _consoleId;
+    var c = ConsoleId;
     var s = Server;
-    Server = null;
-
     if (s == null) {
       throw new Exception("Server is null");
     }
+
+    Server = null;
     return (c, s);
   }
 

@@ -2,6 +2,7 @@
 using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
+using Io.Deephaven.Proto.Backplane.Script.Grpc;
 using Table = Apache.Arrow.Table;
 
 namespace Deephaven.ManagedClient;
@@ -78,6 +79,20 @@ public class TableHandle : IDisposable {
     req.Filters.Add(condition);
     var resp = server.SendRpc(opts => server.TableStub.UnstructuredFilterAsync(req, opts));
     return TableHandle.Create(_manager, resp);
+  }
+
+  public void BindToVariable(string variable) {
+    var server = _manager.Server;
+    if (_manager.ConsoleId == null) {
+      throw new Exception("Client was created without specifying a script language");
+    }
+    var req = new BindTableToVariableRequest {
+      ConsoleId = _manager.ConsoleId,
+      VariableName = variable,
+      TableId = _ticket
+    };
+
+    _ = server.SendRpc(opts => server.ConsoleStub.BindTableToVariableAsync(req, opts));
   }
 
   public FlightRecordBatchStreamReader GetFlightStream() {
