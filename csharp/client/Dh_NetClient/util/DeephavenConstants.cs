@@ -9,3 +9,25 @@ public static class DeephavenConstants {
   public const double NullDouble = -double.MaxValue;
   public const char NullChar = Char.MaxValue;
 }
+
+public static class DeephavenMetadataConstants {
+ public static class Keys {
+    public const string Type = "deephaven:type";
+    public const string ComponentType = "deephaven:componentType";
+  }
+
+  public static class Types {
+    public const string Bool = "java.lang.Boolean";
+    public const string Char16 = "char";
+    public const string Int8 = "byte";
+    public const string Int16 = "short";
+    public const string Int32 = "int";
+    public const string Int64 = "long";
+    public const string Float = "float";
+    public const string Double = "double";
+    public const string String = "java.lang.String";
+    public const string DateTime = "java.time.ZonedDateTime";
+    public const string LocalDate = "java.time.LocalDate";
+    public const string LocalTime = "java.time.LocalTime";
+  }
+}

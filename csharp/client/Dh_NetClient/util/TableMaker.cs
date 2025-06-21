@@ -118,6 +118,24 @@ public class TableMaker {
     throw new Exception("TODO(kosak)");
   }
 
+  public void AddColumnSoSayWeAll<T>(string name, IEnumerable<T> values) {
+    var cb = ColumnBuilder.ForType<T>();
+    foreach (var value in values) {
+      cb.Append(value);
+    }
+    var array = cb.Build();
+    var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
+
+    var kvMetadata = new Dictionary<string, string>();
+    kvMetadata.Add(DeephavenMetadataConstants::Keys::Type(), typeName);
+    if (componentTypeName != null) {
+      kvMetadata.Add(DeephavenMetadataConstants::Keys::ComponentType(), componentTypeName);
+    }
+
+    _columnInfos.Add(new ColumnInfo(name, array));
+  }
+
+
   public void AddColumn(string name, IEnumerable<string?> values) {
     // Arrow StringArray.Builder is special.
     var builder = new Apache.Arrow.StringArray.Builder();
