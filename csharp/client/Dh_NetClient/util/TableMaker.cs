@@ -256,12 +256,20 @@ public class TableMaker {
 
   private class ColumnBuilder {
     public static ColumnBuilder<T> ForType<T>() {
-      var type = typeof(T);
+      return (ColumnBuilder<T>)ForType(typeof(T));
+    }
+
+    public static ColumnBuilder ForType(Type type) {
+      var underlyingType = Nullable.GetUnderlyingType(type);
+      if (underlyingType != null) {
+        var underlyingCb = ForType(underlyingType);
+        return new NullableBuilder<T>(underlyingCb);
+      }
+
       if (type == typeof(Int32)) {
         var arrowBuilder = new Apache.Arrow.Int32Array.Builder();
-        ColumnBuilder builder = new TypicalBuilder<Int32, Apache.Arrow.Int32Array, Apache.Arrow.Int32Array.Builder>(
+        return new TypicalBuilder<Int32, Apache.Arrow.Int32Array, Apache.Arrow.Int32Array.Builder>(
           arrowBuilder, DeephavenMetadataConstants.Types.Int32);
-        return (ColumnBuilder<T>)builder;
       }
 
       throw new Exception($"ColumnBuilder does not support type {Utility.FriendlyTypeName(type)}");
@@ -283,7 +291,7 @@ public class TableMaker {
     private readonly Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> _builder;
     private readonly string _typeName;
 
-    public TypicalBuilder(IArrowArrayBuilder<T, TArray, TBuilder> builder, string typeName) {
+    public TypicalBuilder(Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder, string typeName) {
       _builder = builder;
       _typeName = typeName;
     }
@@ -300,8 +308,36 @@ public class TableMaker {
       return (_typeName, null);
     }
 
-    public override IArrowArray Build() {
+    public override Apache.Arrow.IArrowArray Build() {
       return _builder.Build(null);
+    }
+  }
+
+  private sealed class NullableBuilder<T> : ColumnBuilder<T?> where T : struct {
+    private readonly ColumnBuilder<T> _underlyingBuilder;
+
+    public NullableBuilder(ColumnBuilder<T> underlyingBuilder) {
+      _underlyingBuilder = underlyingBuilder;
+    }
+
+    public override void Append(T? item) {
+      if (item.HasValue) {
+        _underlyingBuilder.Append(item.Value);
+      } else {
+        _underlyingBuilder.AppendNull();
+      }
+    }
+
+    public override void AppendNull() {
+      _underlyingBuilder.AppendNull();
+    }
+
+    public override IArrowArray Build() {
+      return _underlyingBuilder.Build();
+    }
+
+    public override (string, string?) GetDeephavenMetadata() {
+      return _underlyingBuilder.GetDeephavenMetadata();
     }
   }
 
