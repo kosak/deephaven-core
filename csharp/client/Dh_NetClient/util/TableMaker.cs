@@ -124,14 +124,14 @@ public class TableMaker {
       cb.Append(value);
     }
     var array = cb.Build();
-    var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
+    cb.GetDeephavenMetadata(out var typeName, out var componentTypeName);
 
-    var kvMetadata = new Dictionary<string, string>();
-    kvMetadata.Add(DeephavenMetadataConstants.Keys.Type, typeName);
+    var kvMetadata = new List<KeyValuePair<string, string>>();
+    kvMetadata.Add(KeyValuePair.Create(DeephavenMetadataConstants.Keys.Type, typeName));
     if (componentTypeName != null) {
-      kvMetadata.Add(DeephavenMetadataConstants.Keys.ComponentType, componentTypeName);
+      kvMetadata.Add(KeyValuePair.Create(DeephavenMetadataConstants.Keys.ComponentType, componentTypeName));
     }
-    _columnInfos.Add(new ColumnInfo(name, array, kvMetadata));
+    _columnInfos.Add(new ColumnInfo(name, array, kvMetadata.ToArray()));
   }
 
 
@@ -242,6 +242,25 @@ public class TableMaker {
       }
     }
   }
+
+  private class ColumnBuilder {
+    public static ColumnBuilder<T> ForType<T>() {
+
+    }
+
+  }
+
+  private abstract class ColumnBuilder<T> {
+    public abstract void Append(T item);
+
+    public abstract Apache.Arrow.IArrowArray Build();
+
+    public void GetDeephavenMetadata(out string typeName, out string? componentTypeName) {
+
+    }
+
+  }
+
 
   private record ColumnInfo(string Name,
     Apache.Arrow.IArrowArray Data,

@@ -8,6 +8,6 @@ public class BootstrapTest(ITestOutputHelper testOutputHelper) {
   [Fact]
   public void TestLala() {
     var tm = new TableMaker();
-    tm.AddColumn("kosak", ["hello", "there", null]);
+    tm.AddColumnSoSayWeAll("kosak", ["hello", "there", null]);
   }
 }
