@@ -33,18 +33,20 @@ public class TableMaker {
     var headers = new Metadata();
     server.ForEachHeaderNameAndValue(headers.Add);
 
-    var res = server.FlightClient.StartPut(flightDescriptor, schema, headers);
+    var res = server.FlightClient.StartPut(flightDescriptor, schema, headers).Result;
     var data = GetColumnsNotEmpty();
-    var numRows = data.back()->length();
+    var numRows = data[^1].Length;
 
     var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
 
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->WriteRecordBatch(*batch)));
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->DoneWriting()));
+    res.RequestStream.WriteAsync(recordBatch).Wait();
+    res.RequestStream.CompleteAsync().Wait();
 
-    std::shared_ptr<arrow::Buffer> buf;
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->reader->ReadMetadata(&buf)));
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->Close()));
+    while (res.ResponseStream.MoveNext().Result) {
+      // eat values. Is this necessary?
+    }
+
+    res.Dispose();
     return manager.MakeTableHandleFromTicket(ticket);
   }
 
@@ -75,6 +77,14 @@ public class TableMaker {
         throw new Exception(message);
       }
     }
+  }
+
+  private Apache.Arrow.IArrowArray[] GetColumnsNotEmpty() {
+    var result = _columnInfos.Select(ci => ci.Data).ToArray();
+    if (result.Length == 0) {
+      throw new Exception("Can't make table with no columns");
+    }
+    return result;
   }
 
   private class ColumnBuilder {

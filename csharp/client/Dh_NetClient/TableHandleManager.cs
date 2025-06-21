@@ -1,4 +1,5 @@
 ﻿using Google.Protobuf;
+using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
@@ -123,6 +124,11 @@ public class TableHandleManager : IDisposable {
   /// <param name="code">The script to be run on the server</param>
   public void RunScript(string code) {
     throw new NotImplementedException();
+  }
+
+  public TableHandle MakeTableHandleFromTicket(Ticket ticket) {
+    var resp = Server.SendRpc(opts => Server.TableStub.GetExportedTableCreationResponseAsync(ticket, opts));
+    return TableHandle.Create(this, resp);
   }
 
   /// <summary>
