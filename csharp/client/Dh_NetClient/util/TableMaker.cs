@@ -5,6 +5,7 @@ namespace Deephaven.ManagedClient;
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
 
+#if false
   public void AddColumn(string name, IEnumerable<byte> values) {
     AddColumn(name, values.Select(v => (byte?)v));
   }
@@ -119,6 +120,7 @@ public class TableMaker {
     // needs a different approach
     throw new Exception("TODO(kosak)");
   }
+#endif
 
   public void AddColumnSoSayWeAll<T>(string name, IEnumerable<T> values) {
     var cb = ColumnBuilder.ForType<T>();
@@ -126,7 +128,7 @@ public class TableMaker {
       cb.Append(value);
     }
     var array = cb.Build();
-    cb.GetDeephavenMetadata(out var typeName, out var componentTypeName);
+    var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
 
     var kvMetadata = new List<KeyValuePair<string, string>>();
     kvMetadata.Add(KeyValuePair.Create(DeephavenMetadataConstants.Keys.Type, typeName));
@@ -137,6 +139,7 @@ public class TableMaker {
   }
 
 
+#if false
   public void AddColumn(string name, IEnumerable<string?> values) {
     // Arrow StringArray.Builder is special.
     var builder = new Apache.Arrow.StringArray.Builder();
@@ -162,6 +165,7 @@ public class TableMaker {
 
     _columnInfos.Add(new ColumnInfo(name, array));
   }
+#endif
 
 #if false
   private void AddColumnHelper<T, TArray, TBuilder>(string name,
@@ -259,6 +263,8 @@ public class TableMaker {
           arrowBuilder, DeephavenMetadataConstants.Types.Int32);
         return (ColumnBuilder<T>)builder;
       }
+
+      throw new Exception($"ColumnBuilder does not support type {type.Name}");
     }
   }
 
