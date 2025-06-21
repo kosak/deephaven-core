@@ -16,8 +16,10 @@ public class BootstrapTest(ITestOutputHelper testOutputHelper) {
     tm.AddColumn("strings", ["hello", "there", "Deephaven", null]);
 
     var th = tm.MakeTable(manager);
-    var temp = th.ToString(true);
-    testOutputHelper.WriteLine(temp);
+    var at = th.ToArrowTable();
+    var col = at.Column(0);
+    var data = col.Data;
+    var arr = data.ArrowArray(0);
 
     th.BindToVariable("kosak1");
   }
