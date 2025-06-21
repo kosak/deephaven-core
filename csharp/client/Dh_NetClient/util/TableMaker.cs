@@ -3,124 +3,7 @@
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
 
-#if false
-  public void AddColumn(string name, IEnumerable<byte> values) {
-    AddColumn(name, values.Select(v => (byte?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<char> values) {
-    AddColumn(name, values.Select(v => (char?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<sbyte> values) {
-    AddColumn(name, values.Select(v => (sbyte?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<Int16> values) {
-    AddColumn(name, values.Select(v => (Int16?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<Int32> values) {
-    AddColumn(name, values.Select(v => (Int32?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<Int64> values) {
-    AddColumn(name, values.Select(v => (Int64?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<float> values) {
-    AddColumn(name, values.Select(v => (float?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<double> values) {
-    AddColumn(name, values.Select(v => (double?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<DateTimeOffset> values) {
-    AddColumn(name, values.Select(v => (DateTimeOffset?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<TimeOnly> values) {
-    AddColumn(name, values.Select(v => (TimeOnly?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<DateOnly> values) {
-    AddColumn(name, values.Select(v => (DateOnly?)v));
-  }
-
-  public void AddColumn(string name, IEnumerable<byte?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.UInt8Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<char?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? (UInt16)0, v.HasValue));
-    var builder = new Apache.Arrow.UInt16Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<sbyte?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.Int8Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<Int16?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.Int16Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<Int32?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.Int32Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<Int64?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.Int64Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<float?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.FloatArray.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<double?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? 0, v.HasValue));
-    var builder = new Apache.Arrow.DoubleArray.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<DateTimeOffset?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? new DateTimeOffset(), v.HasValue));
-    var builder = new Apache.Arrow.TimestampArray.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<TimeOnly?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? new TimeOnly(), v.HasValue));
-    var builder = new Apache.Arrow.Time32Array.Builder();
-    AddColumnHelper(name, wrapped, builder);
-  }
-
-  public void AddColumn(string name, IEnumerable<DateOnly?> values) {
-    var wrapped = values.Select(v => KeyValuePair.Create(v ?? new DateOnly(), v.HasValue));
-    var builder = new Apache.Arrow.Date32Array.Builder();
-    AddColumnHelper<DateOnly, Apache.Arrow.Date32Array, Apache.Arrow.Date32Array.Builder>(name, wrapped, builder);
-  }
-
-  public void AddColumn<T>(string name, IEnumerable<List<T>?> values) {
-    // needs a different approach
-    throw new Exception("TODO(kosak)");
-  }
-#endif
-
-  public void AddColumnSoSayWeAll<T>(string name, IEnumerable<T> values) {
+  public void AddColumn<T>(string name, IEnumerable<T> values) {
     var cb = ColumnBuilder.ForType<T>();
     foreach (var value in values) {
       cb.Append(value);
@@ -135,66 +18,6 @@ public class TableMaker {
     }
     _columnInfos.Add(new ColumnInfo(name, array, kvMetadata.ToArray()));
   }
-
-
-#if false
-  public void AddColumn(string name, IEnumerable<string?> values) {
-    // Arrow StringArray.Builder is special.
-    var builder = new Apache.Arrow.StringArray.Builder();
-    foreach (var value in values) {
-      if (value != null) {
-        builder.Append(value);
-      } else {
-        builder.AppendNull();
-      }
-    }
-    var array = builder.Build(null);
-
-    // var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
-
-    // var kvMetadata = new KeyValueMetadata();
-    // OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
-    //   kv_metadata->Set(DeephavenMetadataConstants::Keys::Type(), std::move(deephaven_metadata_type_name))));
-    // if (deephaven_metadata_component_type_name.has_value()) {
-    //   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
-    //     kv_metadata->Set(DeephavenMetadataConstants::Keys::ComponentType(),
-    //       std::move(*deephaven_metadata_component_type_name))));
-    // }
-
-    _columnInfos.Add(new ColumnInfo(name, array));
-  }
-#endif
-
-#if false
-  private void AddColumnHelper<T, TArray, TBuilder>(string name,
-    IEnumerable<KeyValuePair<T, bool>> kvps,
-    Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> builder)
-    where TArray : Apache.Arrow.IArrowArray
-    where TBuilder : Apache.Arrow.IArrowArrayBuilder<TArray> {
-
-    foreach (var kvp in kvps) {
-      if (kvp.Value) {
-        builder.Append(kvp.Key);
-      } else {
-        builder.AppendNull();
-      }
-    }
-    var array = builder.Build(null);
-
-    // var (typeName, componentTypeName) = cb.GetDeephavenMetadata();
-
-    // var kvMetadata = new KeyValueMetadata();
-    // OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
-    //   kv_metadata->Set(DeephavenMetadataConstants::Keys::Type(), std::move(deephaven_metadata_type_name))));
-    // if (deephaven_metadata_component_type_name.has_value()) {
-    //   OkOrThrow(DEEPHAVEN_LOCATION_EXPR(
-    //     kv_metadata->Set(DeephavenMetadataConstants::Keys::ComponentType(),
-    //       std::move(*deephaven_metadata_component_type_name))));
-    // }
-
-    _columnInfos.Add(new ColumnInfo(name, array));
-  }
-#endif
 
 #if false
   public TableHandle MakeTable(TableHandleManager manager) {
@@ -268,10 +91,67 @@ public class TableMaker {
         return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
       }
 
+
+      if (type == typeof(sbyte)) {
+        var arrowBuilder = new Apache.Arrow.Int8Array.Builder();
+        return new TypicalBuilder<sbyte, Apache.Arrow.Int8Array, Apache.Arrow.Int8Array.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Int8);
+      }
+
+      if (type == typeof(Int16)) {
+        var arrowBuilder = new Apache.Arrow.Int16Array.Builder();
+        return new TypicalBuilder<Int16, Apache.Arrow.Int16Array, Apache.Arrow.Int16Array.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Int16);
+      }
+
       if (type == typeof(Int32)) {
         var arrowBuilder = new Apache.Arrow.Int32Array.Builder();
         return new TypicalBuilder<Int32, Apache.Arrow.Int32Array, Apache.Arrow.Int32Array.Builder>(
           arrowBuilder, DeephavenMetadataConstants.Types.Int32);
+      }
+
+      if (type == typeof(Int64)) {
+        var arrowBuilder = new Apache.Arrow.Int64Array.Builder();
+        return new TypicalBuilder<Int64, Apache.Arrow.Int64Array, Apache.Arrow.Int64Array.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Int64);
+      }
+
+      if (type == typeof(float)) {
+        var arrowBuilder = new Apache.Arrow.FloatArray.Builder();
+        return new TypicalBuilder<float, Apache.Arrow.FloatArray, Apache.Arrow.FloatArray.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Float);
+      }
+
+      if (type == typeof(double)) {
+        var arrowBuilder = new Apache.Arrow.DoubleArray.Builder();
+        return new TypicalBuilder<double, Apache.Arrow.DoubleArray, Apache.Arrow.DoubleArray.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Double);
+      }
+
+      if (type == typeof(char)) {
+        return new CharColumnBuilder();
+      }
+
+      if (type == typeof(string)) {
+        return new StringColumnBuilder();
+      }
+
+      if (type == typeof(DateTimeOffset)) {
+        var arrowBuilder = new Apache.Arrow.TimestampArray.Builder();
+        return new TypicalBuilder<DateTimeOffset, Apache.Arrow.TimestampArray, Apache.Arrow.TimestampArray.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.DateTime);
+      }
+
+      if (type == typeof(DateOnly)) {
+        var arrowBuilder = new Apache.Arrow.Date64Array.Builder();
+        return new TypicalBuilder<DateOnly, Apache.Arrow.Date64Array, Apache.Arrow.Date64Array.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.LocalDate);
+      }
+
+      if (type == typeof(TimeOnly)) {
+        var arrowBuilder = new Apache.Arrow.Time64Array.Builder();
+        return new TypicalBuilder<TimeOnly, Apache.Arrow.Time64Array, Apache.Arrow.Time64Array.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.LocalTime);
       }
 
       throw new Exception($"ColumnBuilder does not support type {Utility.FriendlyTypeName(type)}");
@@ -317,6 +197,46 @@ public class TableMaker {
 
     public override Apache.Arrow.IArrowArray Build() {
       return _builder.Build(null);
+    }
+  }
+
+  private sealed class CharColumnBuilder : ColumnBuilder<char> {
+    private readonly Apache.Arrow.UInt16Array.Builder _builder = new();
+
+    public override void Append(char item) {
+      _builder.Append(item);
+    }
+
+    public override void AppendNull() {
+      _builder.AppendNull();
+    }
+
+    public override (string, string?) GetDeephavenMetadata() {
+      return (DeephavenMetadataConstants.Types.Char16, null);
+    }
+
+    public override Apache.Arrow.IArrowArray Build() {
+      return _builder.Build();
+    }
+  }
+
+  private sealed class StringColumnBuilder : ColumnBuilder<string> {
+    private readonly Apache.Arrow.StringArray.Builder _builder = new();
+
+    public override void Append(string item) {
+      _builder.Append(item);
+    }
+
+    public override void AppendNull() {
+      _builder.AppendNull();
+    }
+
+    public override (string, string?) GetDeephavenMetadata() {
+      return (DeephavenMetadataConstants.Types.String, null);
+    }
+
+    public override Apache.Arrow.IArrowArray Build() {
+      return _builder.Build();
     }
   }
 
