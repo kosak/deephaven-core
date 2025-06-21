@@ -1,5 +1,4 @@
-﻿#if false
-using System;
+﻿using System;
 using Deephaven.ManagedClient;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -42,7 +41,7 @@ public sealed class CommonContextForTests : IDisposable {
   }
 
   private static Client CreateClient(ClientOptions clientOptions) {
-    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "127.0.0.1");
+    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "10.0.4.109");
     var port = GlobalEnvironmentForTests.GetEnv("DH_PORT", "10000");
     var connectionString = $"{host}:{port}";
     var client = Client.Connect(connectionString, clientOptions);
@@ -136,4 +135,3 @@ public class ColumnDataForTests {
     1500
   };
 }
-#endif

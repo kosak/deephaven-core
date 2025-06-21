@@ -1,7 +1,5 @@
-﻿#if false
- using Deephaven.DhClientTests;
- using Deephaven.ManagedClient;
- using Xunit.Abstractions;
+﻿using Deephaven.ManagedClient;
+using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -25,7 +23,7 @@ public class SelectTest {
     var floatData = new List<float>();
     var doubleData = new List<double>();
     var stringData = new List<string>();
-    var dateTimeData = new List<DhDateTime>();
+    var dateTimeData = new List<DateTimeOffset>();
 
     const int startValue = -8;
     const int endValue = 8;
@@ -39,10 +37,10 @@ public class SelectTest {
       floatData.Add(i * 123.456F);
       doubleData.Add(i * 987654.321);
       stringData.Add($"test {i}");
-      dateTimeData.Add(DhDateTime.FromNanos(i));
+      dateTimeData.Add(DateTimeOffset.FromUnixTimeMilliseconds(i));
     }
 
-    using var maker = new TableMaker();
+    var maker = new TableMaker();
     maker.AddColumn("boolData", boolData);
     maker.AddColumn("charData", charData);
     maker.AddColumn("byteData", byteData);
@@ -58,6 +56,9 @@ public class SelectTest {
 
     _output.WriteLine(t.ToString(true));
 
+    t.BindToVariable("test_kosak");
+
+#if false
     var tc = new TableComparer();
     tc.AddColumn("boolData", boolData);
     tc.AddColumn("charData", charData);
@@ -70,8 +71,10 @@ public class SelectTest {
     tc.AddColumn("stringData", stringData);
     tc.AddColumn("dateTimeData", dateTimeData);
     tc.AssertEqualTo(t);
+#endif
   }
 
+#if false
   [Fact]
   public void TestCreateUpdateFetchATable() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -309,5 +312,5 @@ public class SelectTest {
     tc.AddColumn("A", expectedAData);
     tc.AssertEqualTo(result);
   }
-}
 #endif
+}

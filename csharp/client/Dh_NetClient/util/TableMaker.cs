@@ -140,6 +140,12 @@ public class TableMaker {
           arrowBuilder, DeephavenMetadataConstants.Types.Double);
       }
 
+      if (type == typeof(bool)) {
+        var arrowBuilder = new Apache.Arrow.BooleanArray.Builder();
+        return new TypicalBuilder<bool, Apache.Arrow.BooleanArray, Apache.Arrow.BooleanArray.Builder>(
+          arrowBuilder, DeephavenMetadataConstants.Types.Bool);
+      }
+
       if (type == typeof(char)) {
         return new CharColumnBuilder();
       }
