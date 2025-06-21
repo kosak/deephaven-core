@@ -1,6 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
-
-namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.ManagedClient;
 
 public struct DurationSpecifier {
   private readonly object _duration;

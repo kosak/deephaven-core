@@ -264,7 +264,7 @@ public class TableMaker {
         return (ColumnBuilder<T>)builder;
       }
 
-      throw new Exception($"ColumnBuilder does not support type {type.Name}");
+      throw new Exception($"ColumnBuilder does not support type {Utility.FriendlyTypeName(type)}");
     }
   }
 
