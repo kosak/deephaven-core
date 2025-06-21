@@ -1,4 +1,7 @@
-﻿namespace Deephaven.ManagedClient;
+﻿using Apache.Arrow.Flight;
+using Grpc.Core;
+
+namespace Deephaven.ManagedClient;
 
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
@@ -19,22 +22,22 @@ public class TableMaker {
     _columnInfos.Add(new ColumnInfo(name, array, kvMetadata.ToArray()));
   }
 
-#if false
   public TableHandle MakeTable(TableHandleManager manager) {
-    auto schema = MakeSchema();
+    var schema = MakeSchema();
 
-    auto wrapper = manager.CreateFlightWrapper();
-    auto ticket = manager.NewTicket();
-    auto flight_descriptor = ArrowUtil::ConvertTicketToFlightDescriptor(ticket);
+    var server = manager.Server!;
 
-    arrow::flight::FlightCallOptions options;
-    wrapper.AddHeaders(&options);
+    var ticket = server.NewTicket();
+    var flightDescriptor = ArrowUtil.ConvertTicketToFlightDescriptor(ticket);
 
-    auto res = wrapper.FlightClient()->DoPut(options, flight_descriptor, schema);
-    OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res));
-    auto data = GetColumnsNotEmpty();
-    auto num_rows = data.back()->length();
-    auto batch = arrow::RecordBatch::Make(schema, num_rows, std::move(data));
+    var headers = new Metadata();
+    server.ForEachHeaderNameAndValue(headers.Add);
+
+    var res = server.FlightClient.StartPut(flightDescriptor, schema, headers);
+    var data = GetColumnsNotEmpty();
+    var numRows = data.back()->length();
+
+    var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
 
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->WriteRecordBatch(*batch)));
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->DoneWriting()));
@@ -42,9 +45,8 @@ public class TableMaker {
     std::shared_ptr<arrow::Buffer> buf;
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->reader->ReadMetadata(&buf)));
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(res->writer->Close()));
-    return manager.MakeTableHandleFromTicket(std::move(ticket));
+    return manager.MakeTableHandleFromTicket(ticket);
   }
-#endif
 
   private Apache.Arrow.Schema MakeSchema() {
     ValidateSchema();

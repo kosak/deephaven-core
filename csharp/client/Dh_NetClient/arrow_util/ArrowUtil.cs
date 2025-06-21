@@ -1,6 +1,4 @@
-﻿using Apache.Arrow;
-using Apache.Arrow.Flight;
-using Apache.Arrow.Types;
+﻿using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.ManagedClient;
