@@ -58,7 +58,6 @@ public class SelectTest {
     TableComparer.AssertSame(maker, th);
   }
 
-#if false
   [Fact]
   public void TestCreateUpdateFetchATable() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -70,7 +69,7 @@ public class SelectTest {
       "eight", "nine"
     };
 
-    using var maker = new TableMaker();
+    var maker = new TableMaker();
     maker.AddColumn("IntValue", intData);
     maker.AddColumn("DoubleValue", doubleData);
     maker.AddColumn("StringValue", stringData);
@@ -83,15 +82,13 @@ public class SelectTest {
     var q3Data = new[] { 10, 110, 210, 310, 410, 510, 610, 710, 810, 910 };
     var q4Data = new[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 
-    var tc = new TableComparer();
-    tc.AddColumn("IntValue", intData);
-    tc.AddColumn("DoubleValue", doubleData);
-    tc.AddColumn("StringValue", stringData);
-    tc.AddColumn("Q2", q2Data);
-    tc.AddColumn("Q3", q3Data);
-    tc.AddColumn("Q4", q4Data);
-    tc.AssertEqualTo(t4);
+    maker.AddColumn("Q2", q2Data);
+    maker.AddColumn("Q3", q3Data);
+    maker.AddColumn("Q4", q4Data);
+    TableComparer.AssertSame(maker, t4);
   }
+
+#if false
 
   [Fact]
   public void TestSelectAFewColumns() {
