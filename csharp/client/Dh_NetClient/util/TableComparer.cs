@@ -67,8 +67,6 @@ public static class TableComparer {
           throw new Exception(
             $"Values differ at row {rowsConsumed}: expected={expIter.Current}, actual={actIter.Current}");
         }
-
-        Debug.WriteLine($"Can this really be working {expIter.Current} vs {actIter.Current}");
       }
     }
   }
