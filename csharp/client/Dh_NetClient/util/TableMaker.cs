@@ -1,7 +1,4 @@
-﻿using Apache.Arrow.Flight;
-using Grpc.Core;
-
-namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.ManagedClient;
 
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
@@ -30,7 +27,7 @@ public class TableMaker {
     var ticket = server.NewTicket();
     var flightDescriptor = ArrowUtil.ConvertTicketToFlightDescriptor(ticket);
 
-    var headers = new Metadata();
+    var headers = new Grpc.Core.Metadata();
     server.ForEachHeaderNameAndValue(headers.Add);
 
     var res = server.FlightClient.StartPut(flightDescriptor, schema, headers).Result;
@@ -42,7 +39,7 @@ public class TableMaker {
     res.RequestStream.WriteAsync(recordBatch).Wait();
     res.RequestStream.CompleteAsync().Wait();
 
-    while (res.ResponseStream.MoveNext().Result) {
+    while (res.ResponseStream.MoveNext(CancellationToken.None).Result) {
       // eat values. Is this necessary?
     }
 
