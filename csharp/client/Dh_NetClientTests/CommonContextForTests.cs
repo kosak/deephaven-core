@@ -1,5 +1,5 @@
 ﻿using System;
-using Deephaven.ManagedClient;
+using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 

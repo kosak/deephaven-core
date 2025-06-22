@@ -1,6 +1,5 @@
 ﻿using Apache.Arrow;
 using Apache.Arrow.Flight;
-using Deephaven.ManagedClient;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;

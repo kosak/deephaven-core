@@ -1,15 +1,15 @@
-﻿global using BooleanArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<bool>;
-global using StringArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<string>;
-global using CharArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<char>;
-global using ByteArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<sbyte>;
-global using Int16ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int16>;
-global using Int32ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int32>;
-global using Int64ArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.Int64>;
-global using FloatArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<float>;
-global using DoubleArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<double>;
-global using TimestampArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.DateTime>;
-global using LocalDateArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.DateOnly>;
-global using LocalTimeArrowColumnSource = Deephaven.ManagedClient.ArrowColumnSource<System.TimeOnly>;
+﻿global using BooleanArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<bool>;
+global using StringArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<string>;
+global using CharArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<char>;
+global using ByteArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<sbyte>;
+global using Int16ArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.Int16>;
+global using Int32ArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.Int32>;
+global using Int64ArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.Int64>;
+global using FloatArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<float>;
+global using DoubleArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<double>;
+global using TimestampArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateTime>;
+global using LocalDateArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateOnly>;
+global using LocalTimeArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.TimeOnly>;
 
 using Apache.Arrow;
 using Apache.Arrow.Types;

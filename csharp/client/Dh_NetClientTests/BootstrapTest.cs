@@ -1,4 +1,4 @@
-﻿using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;

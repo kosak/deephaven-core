@@ -1,15 +1,15 @@
-﻿global using BooleanChunk = Deephaven.ManagedClient.Chunk<bool>;
-global using StringChunk = Deephaven.ManagedClient.Chunk<string>;
-global using CharChunk = Deephaven.ManagedClient.Chunk<char>;
-global using ByteChunk = Deephaven.ManagedClient.Chunk<sbyte>;
-global using Int16Chunk = Deephaven.ManagedClient.Chunk<System.Int16>;
-global using Int32Chunk = Deephaven.ManagedClient.Chunk<System.Int32>;
-global using Int64Chunk = Deephaven.ManagedClient.Chunk<System.Int64>;
-global using FloatChunk = Deephaven.ManagedClient.Chunk<float>;
-global using DoubleChunk = Deephaven.ManagedClient.Chunk<double>;
-global using DateTimeChunk = Deephaven.ManagedClient.Chunk<System.DateTime>;
-global using DateOnlyChunk = Deephaven.ManagedClient.Chunk<System.DateOnly>;
-global using TimeOnlyChunk = Deephaven.ManagedClient.Chunk<System.TimeOnly>;
+﻿global using BooleanChunk = Deephaven.Dh_NetClient.Chunk<bool>;
+global using StringChunk = Deephaven.Dh_NetClient.Chunk<string>;
+global using CharChunk = Deephaven.Dh_NetClient.Chunk<char>;
+global using ByteChunk = Deephaven.Dh_NetClient.Chunk<sbyte>;
+global using Int16Chunk = Deephaven.Dh_NetClient.Chunk<System.Int16>;
+global using Int32Chunk = Deephaven.Dh_NetClient.Chunk<System.Int32>;
+global using Int64Chunk = Deephaven.Dh_NetClient.Chunk<System.Int64>;
+global using FloatChunk = Deephaven.Dh_NetClient.Chunk<float>;
+global using DoubleChunk = Deephaven.Dh_NetClient.Chunk<double>;
+global using DateTimeChunk = Deephaven.Dh_NetClient.Chunk<System.DateTime>;
+global using DateOnlyChunk = Deephaven.Dh_NetClient.Chunk<System.DateOnly>;
+global using TimeOnlyChunk = Deephaven.Dh_NetClient.Chunk<System.TimeOnly>;
 
 namespace Deephaven.Dh_NetClient;
 

@@ -1,15 +1,15 @@
-﻿global using BooleanArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<bool>;
-global using StringArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<string>;
-global using CharArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<char>;
-global using ByteArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<sbyte>;
-global using Int16ArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.Int16>;
-global using Int32ArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.Int32>;
-global using Int64ArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.Int64>;
-global using FloatArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<float>;
-global using DoubleArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<double>;
-global using DateTimeArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.DateTime>;
-global using DateOnlyArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.DateOnly>;
-global using TimeOnlyArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSource<System.TimeOnly>;
+﻿global using BooleanArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<bool>;
+global using StringArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<string>;
+global using CharArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<char>;
+global using ByteArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<sbyte>;
+global using Int16ArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.Int16>;
+global using Int32ArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.Int32>;
+global using Int64ArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.Int64>;
+global using FloatArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<float>;
+global using DoubleArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<double>;
+global using DateTimeArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.DateTime>;
+global using DateOnlyArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.DateOnly>;
+global using TimeOnlyArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.TimeOnly>;
 
 using Apache.Arrow.Types;
 
