@@ -1,4 +1,5 @@
 ﻿using System;
+using Apache.Arrow;
 
 namespace Deephaven.ManagedClient;
 
@@ -44,8 +45,8 @@ public static class TableComparer {
         throw new Exception($"Column {i}: Expected length {exp.Length}, actual length {act.Length}");
       }
 
-      using var expIter = MakeScalarIterator(exp.Data).GetEnumerator();
-      using var actIter = MakeScalarIterator(act.Data).GetEnumerator();
+      using var expIter = MakeScalarEnumerable(exp.Data).GetEnumerator();
+      using var actIter = MakeScalarEnumerable(act.Data).GetEnumerator();
 
       var rowsConsumed = 0;
       while (true) {
@@ -70,9 +71,25 @@ public static class TableComparer {
     }
   }
 
-  private static IEnumerable<object> MakeScalarIterator(Apache.Arrow.ChunkedArray chunkedArray) {
+  private static IEnumerable<object> MakeScalarEnumerable(Apache.Arrow.ChunkedArray chunkedArray) {
+    var numArrays = chunkedArray.ArrayCount;
+    var arrayVisitor = new MyArrayVisitor();
+    for (var i = 0; i != numArrays; ++i) {
+      var array = chunkedArray.ArrowArray(i);
+      array.Accept(arrayVisitor);
+      foreach (var result in arrayVisitor.MakeEnumerable()) {
+        yield return result;
+      }
+    }
+  }
 
+  private class MyArrayVisitor : IArrowArrayVisitor {
+    public void Visit(IArrowArray array) {
+      throw new Exception($"Can't process type {array.Data.DataType}");
+    }
 
-
+    public IEnumerable<object> MakeEnumerable() {
+      yield return 12;
+    }
   }
 }

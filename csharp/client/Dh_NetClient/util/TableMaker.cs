@@ -40,7 +40,7 @@ public class TableMaker {
     res.RequestStream.CompleteAsync().Wait();
 
     while (res.ResponseStream.MoveNext(CancellationToken.None).Result) {
-      // eat values. Is this necessary?
+      // TODO(kosak): find out whether it is necessary to eat values like this.
     }
 
     res.Dispose();

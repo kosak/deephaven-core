@@ -52,26 +52,10 @@ public class SelectTest {
     maker.AddColumn("stringData", stringData);
     maker.AddColumn("dateTimeData", dateTimeData);
 
-    var t = maker.MakeTable(ctx.Client.Manager);
+    var th = maker.MakeTable(ctx.Client.Manager);
+    _output.WriteLine(th.ToString(true));
 
-    _output.WriteLine(t.ToString(true));
-
-    t.BindToVariable("test_kosak");
-
-#if false
-    var tc = new TableComparer();
-    tc.AddColumn("boolData", boolData);
-    tc.AddColumn("charData", charData);
-    tc.AddColumn("byteData", byteData);
-    tc.AddColumn("shortData", shortData);
-    tc.AddColumn("intData", intData);
-    tc.AddColumn("longData", longData);
-    tc.AddColumn("floatData", floatData);
-    tc.AddColumn("doubleData", doubleData);
-    tc.AddColumn("stringData", stringData);
-    tc.AddColumn("dateTimeData", dateTimeData);
-    tc.AssertEqualTo(t);
-#endif
+    TableComparer.AssertSame(maker, th);
   }
 
 #if false
