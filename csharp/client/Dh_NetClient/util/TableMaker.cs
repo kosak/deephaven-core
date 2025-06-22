@@ -1,4 +1,6 @@
-﻿namespace Deephaven.ManagedClient;
+﻿using Apache.Arrow.Types;
+
+namespace Deephaven.ManagedClient;
 
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
@@ -19,10 +21,16 @@ public class TableMaker {
     _columnInfos.Add(new ColumnInfo(name, array, kvMetadata.ToArray()));
   }
 
+  public Apache.Arrow.Table MakeArrowTable() {
+    var schema = MakeSchema();
+    var columns = MakeColumns();
+    return new Apache.Arrow.Table(schema, columns);
+  }
+
   public TableHandle MakeTable(TableHandleManager manager) {
     var schema = MakeSchema();
 
-    var server = manager.Server!;
+    var server = manager.Server;
 
     var ticket = server.NewTicket();
     var flightDescriptor = ArrowUtil.ConvertTicketToFlightDescriptor(ticket);
@@ -58,6 +66,18 @@ public class TableMaker {
     }
 
     return sb.Build();
+  }
+
+  private Apache.Arrow.Column[] MakeColumns() {
+    var result = new List<Apache.Arrow.Column>();
+
+    foreach (var ci in _columnInfos) {
+      var arrowType = ci.Data.Data.DataType;
+      var field = new Apache.Arrow.Field(ci.Name, arrowType, true, ci.ArrowMetadata);
+      result.Add(new Apache.Arrow.Column(field, [ci.Data]));
+    }
+
+    return result.ToArray();
   }
 
   private void ValidateSchema() {

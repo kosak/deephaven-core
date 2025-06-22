@@ -17,11 +17,21 @@ public class TableHandleManager : IDisposable {
   }
 
   public Ticket? ConsoleId { get; init; }
-  public Server? Server { get; private set; }
+  private readonly Server _server;
+  private bool _isDisposed = false;
+
+  public Server Server {
+    get {
+      if (_isDisposed) {
+        throw new Exception("Object is disposed");
+      }
+      return _server;
+    }
+  }
 
   protected TableHandleManager(Ticket? consoleId, Server server) {
     ConsoleId = consoleId;
-    Server = server;
+    _server = server;
   }
 
   /// <summary>
@@ -33,16 +43,17 @@ public class TableHandleManager : IDisposable {
   public (Ticket?, Server) ReleaseServer() {
     var c = ConsoleId;
     var s = Server;
-    if (s == null) {
-      throw new Exception("Server is null");
-    }
 
-    Server = null;
+    _isDisposed = true;
     return (c, s);
   }
 
   public void Dispose() {
-    Server?.Dispose();
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
+    Server.Dispose();
   }
 
   /// <summary>
