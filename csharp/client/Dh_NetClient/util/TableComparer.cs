@@ -1,4 +1,6 @@
-﻿using Apache.Arrow;
+﻿using System.Collections;
+using System.Diagnostics;
+using Apache.Arrow;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -65,29 +67,19 @@ public static class TableComparer {
           throw new Exception(
             $"Values differ at row {rowsConsumed}: expected={expIter.Current}, actual={actIter.Current}");
         }
+
+        Debug.WriteLine($"Can this really be working {expIter.Current} vs {actIter.Current}");
       }
     }
   }
 
   private static IEnumerable<object> MakeScalarEnumerable(Apache.Arrow.ChunkedArray chunkedArray) {
     var numArrays = chunkedArray.ArrayCount;
-    var arrayVisitor = new MyArrayVisitor();
     for (var i = 0; i != numArrays; ++i) {
       var array = chunkedArray.ArrowArray(i);
-      array.Accept(arrayVisitor);
-      foreach (var result in arrayVisitor.MakeEnumerable()) {
+      foreach (var result in (IEnumerable)array) {
         yield return result;
       }
-    }
-  }
-
-  private class MyArrayVisitor : IArrowArrayVisitor {
-    public void Visit(IArrowArray array) {
-      throw new Exception($"Can't process type {array.Data.DataType}");
-    }
-
-    public IEnumerable<object> MakeEnumerable() {
-      yield return 12;
     }
   }
 }
