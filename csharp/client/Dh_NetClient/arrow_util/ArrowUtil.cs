@@ -1,7 +1,7 @@
 ﻿using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public static class ArrowUtil {
   public static FlightDescriptor ConvertTicketToFlightDescriptor(Ticket ticket) {
@@ -12,5 +12,11 @@ public static class ArrowUtil {
 
     var value = BitConverter.ToUInt32(bytes.Slice(1));
     return FlightDescriptor.CreatePathDescriptor("export", value.ToString());
+  }
+
+  public static bool TypesEqual(Apache.Arrow.Types.IArrowType lhs, Apache.Arrow.Types.IArrowType rhs) {
+    var dtc = new third_party.Apache.Arrow.ArrayDataTypeComparer(lhs);
+    rhs.Accept(dtc);
+    return dtc.DataTypeMatch;
   }
 }

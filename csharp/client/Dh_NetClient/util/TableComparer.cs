@@ -1,7 +1,8 @@
 ﻿using System;
 using Apache.Arrow;
+using Deephaven.ManagedClient;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public static class TableComparer {
   public static void AssertSame(TableMaker expected, TableHandle actual) {
@@ -27,8 +28,7 @@ public static class TableComparer {
         throw new Exception($"Column {i}: Expected column name {exp.Name}, actual is {act.Name}");
       }
 
-      // throw new Exception("check this");
-      if (!exp.DataType.Equals(act.DataType)) {
+      if (!ArrowUtil.TypesEqual(exp.DataType, act.DataType)) {
         issues.Add($"Column {i}: Expected column type {exp.DataType}, actual is {act.DataType}");
       }
     }
@@ -93,3 +93,54 @@ public static class TableComparer {
     }
   }
 }
+
+
+
+
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+  static class FieldComparer999 {
+    public static bool Compare(Field expected, Field actual) {
+      if (ReferenceEquals(expected, actual)) {
+        return true;
+      }
+
+      if (expected.Name != actual.Name || expected.IsNullable != actual.IsNullable ||
+          expected.HasMetadata != actual.HasMetadata) {
+        return false;
+      }
+
+      if (expected.HasMetadata) {
+        if (expected.Metadata.Count != actual.Metadata.Count) {
+          return false;
+        }
+
+        if (!expected.Metadata.Keys.All(k => actual.Metadata.ContainsKey(k) && expected.Metadata[k] == actual.Metadata[k])) {
+          return false;
+        }
+      }
+
+      var dataTypeComparer = new ArrayDataTypeComparer(expected.DataType);
+
+      actual.DataType.Accept(dataTypeComparer);
+
+      if (!dataTypeComparer.DataTypeMatch) {
+        return false;
+      }
+
+      return true;
+    }
+  }

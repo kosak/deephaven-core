@@ -52,8 +52,9 @@ public class TableHandleManager : IDisposable {
     if (_isDisposed) {
       return;
     }
+    var temp = Server;
     _isDisposed = true;
-    Server.Dispose();
+    temp.Dispose();
   }
 
   /// <summary>
