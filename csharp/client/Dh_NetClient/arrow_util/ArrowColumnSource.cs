@@ -15,7 +15,7 @@ using Apache.Arrow;
 using Apache.Arrow.Types;
 using Google.Protobuf.WellKnownTypes;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public abstract class ArrowColumnSource : IColumnSource {
   public static ArrowColumnSource CreateFromColumn(Column column) {

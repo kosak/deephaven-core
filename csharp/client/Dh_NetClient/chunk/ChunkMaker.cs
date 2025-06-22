@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.Dh_NetClient;
 
 public static class ChunkMaker {
   public static Chunk CreateChunkFor(IColumnSource columnSource, int chunkSize) {

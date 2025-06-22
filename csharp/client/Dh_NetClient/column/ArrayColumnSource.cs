@@ -13,7 +13,7 @@ global using TimeOnlyArrayColumnSource = Deephaven.ManagedClient.ArrayColumnSour
 
 using Apache.Arrow.Types;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
   public static ArrayColumnSource CreateFromArrowType(IArrowType type, int size) {

@@ -1,8 +1,7 @@
 ﻿using Google.Protobuf;
-using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 /// <summary>
 /// This class is the main way to get access to new TableHandle objects, via methods like EmptyTable()

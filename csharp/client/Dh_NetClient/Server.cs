@@ -6,7 +6,7 @@ using Io.Deephaven.Proto.Backplane.Script.Grpc;
 using Google.Protobuf;
 using Grpc.Net.Client;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public class Server : IDisposable {
   private const string AuthorizationKey = "authorization";

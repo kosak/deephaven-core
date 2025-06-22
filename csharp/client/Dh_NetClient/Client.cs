@@ -1,7 +1,7 @@
 ﻿using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 /// <summary>
 /// The main class for interacting with Deephaven. Start here to Connect with

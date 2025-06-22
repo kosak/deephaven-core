@@ -11,7 +11,7 @@ global using DateTimeChunk = Deephaven.ManagedClient.Chunk<System.DateTime>;
 global using DateOnlyChunk = Deephaven.ManagedClient.Chunk<System.DateOnly>;
 global using TimeOnlyChunk = Deephaven.ManagedClient.Chunk<System.TimeOnly>;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public abstract class Chunk(int size) {
   public int Size { get; } = size;

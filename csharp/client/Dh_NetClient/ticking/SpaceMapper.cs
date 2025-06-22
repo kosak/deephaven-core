@@ -1,6 +1,6 @@
 ﻿using C5;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public class SpaceMapper {
   private readonly TreeSet<UInt64> _set = new();

@@ -1,6 +1,6 @@
 ﻿using Apache.Arrow;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public record struct SourceAndRange(IColumnSource Source, Interval Range) {
 }

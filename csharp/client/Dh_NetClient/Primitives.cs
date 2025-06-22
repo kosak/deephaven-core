@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.Dh_NetClient;
 
 public struct DurationSpecifier {
   private readonly object _duration;

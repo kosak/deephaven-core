@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.Dh_NetClient;
 
 public static class Utility {
   public static string FriendlyTypeName(Type t) {

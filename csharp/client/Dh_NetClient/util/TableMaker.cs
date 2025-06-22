@@ -1,6 +1,6 @@
 ﻿using Apache.Arrow.Types;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();

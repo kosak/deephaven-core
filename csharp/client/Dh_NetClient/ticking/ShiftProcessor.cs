@@ -1,4 +1,5 @@
-﻿namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.Dh_NetClient;
+
 public static class ShiftProcessor {
   public static IEnumerable<(Interval, UInt64 destKey)> AnalyzeShiftData(RowSequence firstIndex,
     RowSequence lastIndex, RowSequence destIndex) {

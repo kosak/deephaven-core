@@ -6,7 +6,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 internal class SubscriptionThread {
   public static IDisposable Start(Server server, Schema schema, Ticket ticket, IObserver<TickingUpdate> observer) {

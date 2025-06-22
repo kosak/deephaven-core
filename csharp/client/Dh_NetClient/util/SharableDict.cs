@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.Dh_NetClient;
 
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;

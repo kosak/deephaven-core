@@ -1,7 +1,7 @@
 ﻿using Apache.Arrow;
 using Apache.Arrow.Types;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public sealed class ArrowClientTable : IClientTable {
   public static IClientTable Create(Apache.Arrow.Table arrowTable) {

@@ -11,7 +11,7 @@ global using IDateTimeColumnSource = Deephaven.ManagedClient.IColumnSource<Syste
 global using IDateOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.DateOnly>;
 global using ITimeOnlyColumnSource = Deephaven.ManagedClient.IColumnSource<System.TimeOnly>;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public interface IColumnSource {
   void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);

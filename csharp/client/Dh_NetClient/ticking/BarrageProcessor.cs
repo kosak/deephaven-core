@@ -1,10 +1,9 @@
-﻿using System.Diagnostics;
-using Apache.Arrow;
+﻿using Apache.Arrow;
 using Google.FlatBuffers;
 using io.deephaven.barrage.flatbuf;
 using Array = System.Array;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 interface IChunkProcessor {
   (TickingUpdate?, IChunkProcessor) ProcessNextChunk(SourceAndRange[] sourcesAndRanges, byte[]? metadata);

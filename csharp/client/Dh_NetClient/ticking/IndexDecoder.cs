@@ -1,5 +1,4 @@
-﻿namespace Deephaven.ManagedClient;
-
+﻿namespace Deephaven.Dh_NetClient;
 
 public class IndexDecoder {
   public static RowSequence ReadExternalCompressedDelta(DataInput input) {

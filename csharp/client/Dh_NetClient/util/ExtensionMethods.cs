@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public static class ExtensionMethods {
   public static bool IsEmpty(this string s) {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public abstract class RowSequence {
   public static RowSequence CreateEmpty() => SequentialRowSequence.EmptyInstance;

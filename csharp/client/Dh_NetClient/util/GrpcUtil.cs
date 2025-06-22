@@ -1,7 +1,7 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public static class GrpcUtil {
   public static GrpcChannel CreateChannel(string target, ClientOptions clientOptions) {

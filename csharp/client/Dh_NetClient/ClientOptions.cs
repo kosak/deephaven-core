@@ -1,7 +1,6 @@
-﻿using Grpc.Net.Client;
-using System.Text;
+﻿using System.Text;
 
-namespace Deephaven.ManagedClient;
+namespace Deephaven.Dh_NetClient;
 
 public static class SessionTypes {
   public const string Python = "python";

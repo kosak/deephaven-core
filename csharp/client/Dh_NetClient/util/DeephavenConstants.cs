@@ -1,4 +1,4 @@
-﻿namespace Deephaven.ManagedClient;
+﻿namespace Deephaven.Dh_NetClient;
 
 public static class DeephavenConstants {
   public const sbyte NullByte = sbyte.MinValue;
