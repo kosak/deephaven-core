@@ -56,6 +56,22 @@ public class TableHandle : IDisposable {
     return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.UpdateAsync);
   }
 
+  private TableHandle SelectOrUpdateHelper(string[] columnSpecs,
+    Func<SelectOrUpdateRequest, CallOptions, AsyncUnaryCall<ExportedTableCreationResponse>> func) {
+    var server = _manager.Server;
+    var req = new SelectOrUpdateRequest {
+      ResultId = server.NewTicket(),
+      SourceId = new TableReference {
+        Ticket = _ticket
+      }
+    };
+    foreach (var cs in columnSpecs) {
+      req.ColumnSpecs.Add(cs);
+    }
+
+    var resp = server.SendRpc(opts => func(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
 
   /// <summary>
   /// Creates a new table from this table containing the first 'n' rows of this table.
@@ -90,21 +106,81 @@ public class TableHandle : IDisposable {
     return TableHandle.Create(_manager, resp);
   }
 
-  private TableHandle SelectOrUpdateHelper(string[] columnSpecs,
-    Func<SelectOrUpdateRequest, CallOptions, AsyncUnaryCall<ExportedTableCreationResponse>> func) {
-    var server = _manager.Server;
-    var req = new SelectOrUpdateRequest {
-      ResultId = server.NewTicket(),
-      SourceId = new TableReference {
-        Ticket = _ticket
-      }
-    };
-    foreach (var cs in columnSpecs) {
-      req.ColumnSpecs.Add(cs);
-    }
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::MinBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::MIN, std::move(column_specs));
+  }
 
-    var resp = server.SendRpc(opts => func(req, opts));
-    return TableHandle.Create(_manager, resp);
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::MaxBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::MAX, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::SumBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::SUM, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::AbsSumBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::ABS_SUM, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::VarBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::VAR, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::StdBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::STD, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::AvgBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::AVG, std::move(column_specs));
+  
+
+  public TableHandle LastBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.LAST, columnSpecs);
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::FirstBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::FIRST, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::MedianBy(std::vector<std::string> column_specs) {
+    return DefaultAggregateByType(ComboAggregateRequest::MEDIAN, std::move(column_specs));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::DefaultAggregateByDescriptor(
+    ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> group_by_columns) {
+    auto descriptors = MakeReservedVector<ComboAggregateRequest::Aggregate>(1);
+    descriptors.push_back(std::move(descriptor));
+    return By(std::move(descriptors), std::move(group_by_columns));
+  }
+
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::DefaultAggregateByType(
+    ComboAggregateRequest::AggType aggregate_type, std::vector<std::string> group_by_columns) {
+    ComboAggregateRequest::Aggregate descriptor;
+    descriptor.set_type(aggregate_type);
+    return DefaultAggregateByDescriptor(std::move(descriptor), std::move(group_by_columns));
+  }
+
+  std::shared_ptr<TableHandleImpl> TableHandleImpl::By(
+    std::vector<ComboAggregateRequest::Aggregate> descriptors,
+    std::vector<std::string> group_by_columns) {
+    auto* server = managerImpl_->Server().get();
+    auto result_ticket = server->NewTicket();
+    ComboAggregateRequest req;
+    *req.mutable_result_id() = std::move(result_ticket);
+    *req.mutable_source_id()->mutable_ticket() = ticket_;
+    for (auto & agg : descriptors) {
+      *req.mutable_aggregates()->Add() = std::move(agg);
+    }
+    for (auto & gbc : group_by_columns) {
+      *req.mutable_group_by_columns()->Add() = std::move(gbc);
+    }
+    req.set_force_combo(false);
+    ExportedTableCreationResponse resp;
+    server->SendRpc([&](grpc::ClientContext * ctx) {
+      return server->TableStub()->ComboAggregate(ctx, req, &resp);
+    });
+    return TableHandleImpl::Create(managerImpl_, std::move(resp));
   }
 
   /// <summary>
