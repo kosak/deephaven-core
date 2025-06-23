@@ -25,6 +25,7 @@ public class TableHandle : IDisposable {
   public readonly Ticket Ticket;
   public readonly Schema Schema;
   public readonly Int64 NumRows;
+  public readonly Int64 NumCols;
   public readonly bool IsStatic;
 
   private TableHandle(TableHandleManager manager, Ticket ticket, Schema schema, long numRows, bool isStatic) {
@@ -32,6 +33,7 @@ public class TableHandle : IDisposable {
     Ticket = ticket;
     Schema = schema;
     NumRows = numRows;
+    NumCols = schema.FieldsList.Count;
     IsStatic = isStatic;
   }
 

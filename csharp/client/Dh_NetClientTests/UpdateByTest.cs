@@ -1,18 +1,12 @@
-﻿using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class UpdateByTest {
+public class UpdateByTest(ITestOutputHelper output) {
   const int NumCols = 5;
   const int NumRows = 1000;
-
-  private readonly ITestOutputHelper _output;
-
-  public UpdateByTest(ITestOutputHelper output) {
-    _output = output;
-  }
 
   [Fact]
   public void SimpleCumSum() {
@@ -22,9 +16,10 @@ public class UpdateByTest {
     var source = tm.EmptyTable(10).Update("Letter = (i % 2 == 0) ? `A` : `B`", "X = i");
     var result = source.UpdateBy(new[] { CumSum(new[] { "SumX = X" }) }, new[] { "Letter" });
     var filtered = result.Select("SumX");
-    var tc = new TableComparer();
-    tc.AddColumn("SumX", new Int64[] { 0, 1, 2, 4, 6, 9, 12, 16, 20, 25 });
-    tc.AssertEqualTo(filtered);
+
+    var expected = new TableMaker();
+    expected.AddColumn("SumX", new Int64[] { 0, 1, 2, 4, 6, 9, 12, 16, 20, 25 });
+    TableComparer.AssertSame(expected, filtered);
   }
 
   [Fact]
@@ -39,8 +34,8 @@ public class UpdateByTest {
       var op = simpleOps[opIndex];
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
-        _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
-        using var result = table.UpdateBy(new[] { op }, new[] { "e" });
+        output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
+        using var result = table.UpdateBy([op], "e");
         Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
@@ -60,7 +55,7 @@ public class UpdateByTest {
       var op = emOps[opIndex];
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
-        _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
+        output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
         using var result = table.UpdateBy(new[] { op }, new[] { "b" });
         Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(1 + table.NumCols, result.NumCols);
@@ -83,8 +78,8 @@ public class UpdateByTest {
       var op = rollingOps[opIndex];
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
-        _output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
-        using var result = table.UpdateBy(new[] { op }, new[] { "c" });
+        output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
+        using var result = table.UpdateBy(new[] { op }, "c");
         Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
@@ -108,7 +103,7 @@ public class UpdateByTest {
 
     for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
       var table = tables[tableIndex];
-      _output.WriteLine($"Processing table {tableIndex}");
+      output.WriteLine($"Processing table {tableIndex}");
       using var result = table.UpdateBy(multipleOps, new[] { "c" });
       Assert.Equal(table.IsStatic, result.IsStatic);
       Assert.Equal(10 + table.NumCols, result.NumCols);
@@ -122,7 +117,7 @@ public class UpdateByTest {
     var staticTable = MakeRandomTable(tm).Update("Timestamp=now()");
     var tickingTable = tm.TimeTable(TimeSpan.FromSeconds(1))
       .Update("a = i", "b = i*i % 13", "c = i * 13 % 23", "d = a + b", "e = a - b");
-    return new[] { staticTable, tickingTable };
+    return [staticTable, tickingTable];
   }
 
   private static TableHandle MakeRandomTable(TableHandleManager tm) {
@@ -146,7 +141,7 @@ public class UpdateByTest {
     return maker.MakeTable(tm);
   }
 
-  private static UpdateByRequest.Types.UpdateByOperation[] MakeSimpleOps() {
+  private static UpdateByOperation[] MakeSimpleOps() {
     var simpleOpPairs = new[] { "UA=a", "UB=b" };
     var result = new[] {
       CumSum(simpleOpPairs),
@@ -162,7 +157,7 @@ public class UpdateByTest {
     return result;
   }
 
-  private static UpdateByRequest.Types.UpdateByOperation[] MakeEmOps() {
+  private static UpdateByOperation[] MakeEmOps() {
     var emOpControl = new OperationControl(BadDataBehavior.Throw, BadDataBehavior.Reset,
       MathContext.Unlimited);
 
@@ -207,7 +202,7 @@ public class UpdateByTest {
     return result;
   }
 
-  private static UpdateByRequest.Types.UpdateByOperation[] MakeRollingOps() {
+  private static UpdateByOperation[] MakeRollingOps() {
     static TimeSpan Secs(int s) => TimeSpan.FromSeconds(s);
 
     // exponential moving average
