@@ -60,91 +60,44 @@ public class Aggregate {
     return Aggregate(std::move(impl));
   }
 
-  /**
-   * Returns an aggregator that computes an array of all values within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Group(std::vector<std::string> column_specs);
-/**
- * A variadic form of Group(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Group
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Group(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Group(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the first value, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate First(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.First, columnSpecs);
   }
 
-  
-  /**
-   * Returns an aggregator that computes the number of elements within an aggregation group.
-   */
-  [[nodiscard]]
-  static Aggregate Count(std::string column_spec);
-
-/**
- * Returns an aggregator that computes the first value, within an aggregation group,
- * for each input column.
- */
-[[nodiscard]]
-  static Aggregate First(std::vector<std::string> column_specs);
-/**
- * A variadic form of First(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to First
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate First(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return First(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes an array of all values within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Group(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Group, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the last value, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Last(std::vector<std::string> column_specs);
-/**
- * A variadic form of First(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Last
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Last(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Last(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the last value, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Last(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Last, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the maximum value, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Max(std::vector<std::string> column_specs);
-/**
- * A variadic form of Max(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Max
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Max(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Max(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the maximum value, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Max(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Max, columnSpecs);
   }
 
   /**
