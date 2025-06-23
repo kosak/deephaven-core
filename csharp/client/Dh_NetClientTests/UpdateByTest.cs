@@ -1,5 +1,4 @@
-﻿#if false
-using Deephaven.ManagedClient;
+﻿using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Xunit.Abstractions;
 
@@ -271,4 +270,3 @@ public class UpdateByTest {
     return result;
   }
 }
-#endif

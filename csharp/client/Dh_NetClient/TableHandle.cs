@@ -3,9 +3,8 @@ using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
-using System;
-using System.Diagnostics;
 using Apache.Arrow.Types;
+using static Io.Deephaven.Proto.Backplane.Grpc.UpdateByRequest.Types;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -131,6 +130,7 @@ public class TableHandle : IDisposable {
   }
 
   /// <summary>
+  /// 
   /// Creates a new table from this table containing the first 'n' rows of this table.
   /// </summary>
   /// <param name="n">Number of rows</param>
@@ -451,6 +451,30 @@ public class TableHandle : IDisposable {
     req.ExactMatchColumns.AddRange(onList);
     req.ColumnsToAdd.AddRange(joins);
     return req;
+  }
+
+  /// <summary>
+  /// Performs one or more UpdateByOperation ops grouped by zero or more key columns to calculate
+  /// cumulative or window-based aggregations of columns in a source table.Operations include
+  /// cumulative sums, moving averages, EMAs, etc.The aggregations are defined by the provided
+  /// operations, which support incremental aggregations over the corresponding rows in the source
+  /// table.Cumulative aggregations use all rows in the source table, whereas rolling aggregations
+  /// will apply position or time-based windowing relative to the current row.Calculations are
+  /// performed over all rows or each row group as identified by the provided key columns.
+  /// </summary>
+  /// <param name="ops">The requested UpdateByOperation ops</param>
+  /// <param name="by">The columns to group by</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle UpdateBy(IEnumerable<UpdateByOperation> ops, params string[] by) {
+    var req = new UpdateByRequest {
+      ResultId = Server.NewTicket(),
+      SourceId = new TableReference { Ticket = Ticket }
+    };
+    req.Operations.AddRange(ops.Select(op => op.UpdateByProto));
+    req.GroupByColumns.AddRange(by);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.UpdateByAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
   }
 
   public TableHandle Merge(params TableHandle[] sources) {
