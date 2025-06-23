@@ -106,62 +106,59 @@ public class TableHandle : IDisposable {
     return TableHandle.Create(_manager, resp);
   }
 
-#if false
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::MinBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::MIN, std::move(column_specs));
+  public TableHandle MinBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Min, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::MaxBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::MAX, std::move(column_specs));
+  public TableHandle MaxBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Max, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::SumBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::SUM, std::move(column_specs));
+  public TableHandle SumBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Sum, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::AbsSumBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::ABS_SUM, std::move(column_specs));
+  public TableHandle AbsSumBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.AbsSum, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::VarBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::VAR, std::move(column_specs));
+  public TableHandle VarBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Var, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::StdBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::STD, std::move(column_specs));
+  public TableHandle StdBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Std, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::AvgBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::AVG, std::move(column_specs));
-  
+  public TableHandle AvgBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Avg, columnSpecs);
+  }
 
   public TableHandle LastBy(params string[] columnSpecs) {
-    return DefaultAggregateByType(ComboAggregateRequest.LAST, columnSpecs);
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Last, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::FirstBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::FIRST, std::move(column_specs));
+  public TableHandle FirstBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.First, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::MedianBy(std::vector<std::string> column_specs) {
-    return DefaultAggregateByType(ComboAggregateRequest::MEDIAN, std::move(column_specs));
+  public TableHandle MedianBy(params string[] columnSpecs) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Median, columnSpecs);
   }
 
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::DefaultAggregateByDescriptor(
-    ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> group_by_columns) {
-    auto descriptors = MakeReservedVector<ComboAggregateRequest::Aggregate>(1);
-    descriptors.push_back(std::move(descriptor));
-    return By(std::move(descriptors), std::move(group_by_columns));
+  private TableHandle DefaultAggregateByDescriptor(ComboAggregateRequest.Types.Aggregate descriptor,
+    IList<string> groupByColumns) {
+    var descriptors = new[] {descriptor};
+    return By(descriptors, groupByColumns);
   }
 
-
-  std::shared_ptr<TableHandleImpl> TableHandleImpl::DefaultAggregateByType(
-    ComboAggregateRequest::AggType aggregate_type, std::vector<std::string> group_by_columns) {
-    ComboAggregateRequest::Aggregate descriptor;
-    descriptor.set_type(aggregate_type);
-    return DefaultAggregateByDescriptor(std::move(descriptor), std::move(group_by_columns));
+  private TableHandle DefaultAggregateByType(ComboAggregateRequest.Types.AggType aggregateType,
+    IList<string> groupByColumns) {
+    var descriptor = new ComboAggregateRequest.Types.Aggregate {
+      Type = aggregateType
+    };
+    return DefaultAggregateByDescriptor(descriptor, groupByColumns);
   }
-#endif
 
   public TableHandle By(IList<ComboAggregateRequest.Types.Aggregate> descriptors,
     IList<string> groupByColumns) {

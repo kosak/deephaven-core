@@ -40,44 +40,44 @@ public class SelectTest {
       dateTimeData.Add(DateTimeOffset.FromUnixTimeMilliseconds(i));
     }
 
-    var maker = new TableMaker();
-    maker.AddColumn("boolData", boolData);
-    maker.AddColumn("charData", charData);
-    maker.AddColumn("byteData", byteData);
-    maker.AddColumn("shortData", shortData);
-    maker.AddColumn("intData", intData);
-    maker.AddColumn("longData", longData);
-    maker.AddColumn("floatData", floatData);
-    maker.AddColumn("doubleData", doubleData);
-    maker.AddColumn("stringData", stringData);
-    maker.AddColumn("dateTimeData", dateTimeData);
+    var tm = new TableMaker();
+    tm.AddColumn("boolData", boolData);
+    tm.AddColumn("charData", charData);
+    tm.AddColumn("byteData", byteData);
+    tm.AddColumn("shortData", shortData);
+    tm.AddColumn("intData", intData);
+    tm.AddColumn("longData", longData);
+    tm.AddColumn("floatData", floatData);
+    tm.AddColumn("doubleData", doubleData);
+    tm.AddColumn("stringData", stringData);
+    tm.AddColumn("dateTimeData", dateTimeData);
 
-    var th = maker.MakeTable(ctx.Client.Manager);
+    var th = tm.MakeTable(ctx.Client.Manager);
     _output.WriteLine(th.ToString(true));
 
-    TableComparer.AssertSame(maker, th);
+    TableComparer.AssertSame(tm, th);
   }
 
   [Fact]
   public void TestCreateUpdateFetchATable() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var maker = new TableMaker();
-    maker.AddColumn("IntValue", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    maker.AddColumn("DoubleValue", [0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9]);
-    maker.AddColumn("StringValue", [
+    var tm = new TableMaker();
+    tm.AddColumn("IntValue", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    tm.AddColumn("DoubleValue", [0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9]);
+    tm.AddColumn("StringValue", [
       "zero", "one", "two", "three", "four", "five", "six", "seven",
       "eight", "nine"
     ]);
-    var t = maker.MakeTable(ctx.Client.Manager);
+    var t = tm.MakeTable(ctx.Client.Manager);
     var t2 = t.Update("Q2 = IntValue * 100");
     var t3 = t2.Update("Q3 = Q2 + 10");
     var t4 = t3.Update("Q4 = Q2 + 100");
 
-    maker.AddColumn("Q2", [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
-    maker.AddColumn("Q3", [10, 110, 210, 310, 410, 510, 610, 710, 810, 910]);
-    maker.AddColumn("Q4", [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
-    TableComparer.AssertSame(maker, t4);
+    tm.AddColumn("Q2", [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
+    tm.AddColumn("Q3", [10, 110, 210, 310, 410, 510, 610, 710, 810, 910]);
+    tm.AddColumn("Q4", [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
+    TableComparer.AssertSame(tm, t4);
   }
 
   [Fact]
@@ -89,11 +89,11 @@ public class SelectTest {
       .Select("Ticker", "Close", "Volume")
       .Head(2);
 
-    var maker = new TableMaker();
-    maker.AddColumn("Ticker", ["AAPL", "AAPL"]);
-    maker.AddColumn("Close", [23.5, 24.2]);
-    maker.AddColumn("Volume", [(long)100000, 250000]);
-    TableComparer.AssertSame(maker, t1);
+    var tm = new TableMaker();
+    tm.AddColumn("Ticker", ["AAPL", "AAPL"]);
+    tm.AddColumn("Close", [23.5, 24.2]);
+    tm.AddColumn("Volume", [(long)100000, 250000]);
+    TableComparer.AssertSame(tm, t1);
   }
 
 
@@ -111,11 +111,11 @@ public class SelectTest {
     var closeData = new[] { 26.7 };
     var volData = new Int64[] { 19000 };
 
-    var tc = new TableComparer();
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Close", closeData);
-    tc.AddColumn("Volume", volData);
-    tc.AssertEqualTo(t1);
+    var tm = new TableMaker();
+    tm.AddColumn("Ticker", tickerData);
+    tm.AddColumn("Close", closeData);
+    tm.AddColumn("Volume", volData);
+    TableComparer.AssertSame(tm, t1);
   }
 
 #if false
