@@ -48,6 +48,17 @@ public class TableHandle : IDisposable {
   }
 
   /// <summary>
+  /// View columnSpecs from a table. The columnSpecs can be column names or formulas like
+  /// "NewCol = A + 12". See the Deephaven documentation for the difference between Select() and
+  /// View().
+  /// </summary>
+  /// <param name="columnSpecs">The columnSpecs to select</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle View(params string[] columnSpecs) {
+    return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.ViewAsync);
+  }
+
+  /// <summary>
   /// Creates a new table from this table, but including the additional specified columns
   /// </summary>
   /// <param name="columnSpecs">The columnSpecs to add. For example, "X = A + 5", "Y = X * 2"</param>

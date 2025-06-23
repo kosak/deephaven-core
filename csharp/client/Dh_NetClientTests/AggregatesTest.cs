@@ -1,18 +1,10 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class AggregatesTest {
-  private readonly ITestOutputHelper _output;
-
-  public AggregatesTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class AggregatesTest(ITestOutputHelper output) {
   [Fact]
   public void TestVariousAggregates() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -31,19 +23,14 @@ public class AggregatesTest {
       }));
 
     var tickerData = new[]{ "AAPL", "AAPL", "AAPL"};
-    var avgCloseData = new[] { 541.55 };
-    var sumCloseData = new[] { 1083.1 };
-    var minCloseData = new[] { 538.2 };
-    var maxCloseData = new[] { 544.9 };
-    var countData = new Int64[] { 2 };
 
-    var tc = new TableComparer();
-    tc.AddColumn("AvgClose", avgCloseData);
-    tc.AddColumn("SumClose", sumCloseData);
-    tc.AddColumn("MinClose", minCloseData);
-    tc.AddColumn("MaxClose", maxCloseData);
-    tc.AddColumn("Count", countData);
-    tc.AssertEqualTo(aggTable);
+    var expected = new TableMaker();
+    expected.AddColumn("AvgClose", [541.55]);
+    expected.AddColumn("SumClose", [1083.1]);
+    expected.AddColumn("MinClose", [538.2]);
+    expected.AddColumn("MaxClose", [544.9]);
+    expected.AddColumn("Count", [(Int64)2]);
+
+    TableComparer.AssertSame(expected, aggTable);
   }
 }
-#endif
