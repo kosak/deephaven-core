@@ -62,33 +62,23 @@ public class SelectTest {
   public void TestCreateUpdateFetchATable() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var intData = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    var doubleData = new[] { 0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9 };
-    var stringData = new[] {
+    var maker = new TableMaker();
+    maker.AddColumn("IntValue", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    maker.AddColumn("DoubleValue", [0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9]);
+    maker.AddColumn("StringValue", [
       "zero", "one", "two", "three", "four", "five", "six", "seven",
       "eight", "nine"
-    };
-
-    var maker = new TableMaker();
-    maker.AddColumn("IntValue", intData);
-    maker.AddColumn("DoubleValue", doubleData);
-    maker.AddColumn("StringValue", stringData);
+    ]);
     var t = maker.MakeTable(ctx.Client.Manager);
     var t2 = t.Update("Q2 = IntValue * 100");
     var t3 = t2.Update("Q3 = Q2 + 10");
     var t4 = t3.Update("Q4 = Q2 + 100");
 
-    var q2Data = new[] { 0, 100, 200, 300, 400, 500, 600, 700, 800, 900 };
-    var q3Data = new[] { 10, 110, 210, 310, 410, 510, 610, 710, 810, 910 };
-    var q4Data = new[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-
-    maker.AddColumn("Q2", q2Data);
-    maker.AddColumn("Q3", q3Data);
-    maker.AddColumn("Q4", q4Data);
+    maker.AddColumn("Q2", [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
+    maker.AddColumn("Q3", [10, 110, 210, 310, 410, 510, 610, 710, 810, 910]);
+    maker.AddColumn("Q4", [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
     TableComparer.AssertSame(maker, t4);
   }
-
-#if false
 
   [Fact]
   public void TestSelectAFewColumns() {
@@ -99,17 +89,15 @@ public class SelectTest {
       .Select("Ticker", "Close", "Volume")
       .Head(2);
 
-    var tickerData = new[] { "AAPL", "AAPL" };
-    var closeData = new[] { 23.5, 24.2 };
-    var volData = new Int64[] { 100000, 250000 };
-
-    var tc = new TableComparer();
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Close", closeData);
-    tc.AddColumn("Volume", volData);
-    tc.AssertEqualTo(t1);
+    var maker = new TableMaker();
+    maker.AddColumn("Ticker", ["AAPL", "AAPL"]);
+    maker.AddColumn("Close", [23.5, 24.2]);
+    maker.AddColumn("Volume", [(long)100000, 250000]);
+    TableComparer.AssertSame(maker, t1);
   }
 
+
+#if false
   [Fact]
   public void TestLastByAndSelect() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());

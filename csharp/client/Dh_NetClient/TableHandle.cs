@@ -3,6 +3,7 @@ using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
+using System;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -38,12 +39,55 @@ public class TableHandle : IDisposable {
   }
 
   /// <summary>
+  /// Creates a new table from this table, but including only the specified columns
+  /// </summary>
+  /// <param name="columnSpecs">The columnSpecs to select</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Select(params string[] columnSpecs) {
+    return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.SelectAsync);
+  }
+
+  /// <summary>
   /// Creates a new table from this table, but including the additional specified columns
   /// </summary>
   /// <param name="columnSpecs">The columnSpecs to add. For example, "X = A + 5", "Y = X * 2"</param>
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle Update(params string[] columnSpecs) {
     return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.UpdateAsync);
+  }
+
+
+  /// <summary>
+  /// Creates a new table from this table containing the first 'n' rows of this table.
+  /// </summary>
+  /// <param name="n">Number of rows</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Head(Int64 n) {
+    return HeadOrTailHelper(n, true);
+  }
+
+  /// <summary>
+  /// Creates a new table from this table containing the last 'n' rows of this table.
+  /// </summary>
+  /// <param name="n">Number of rows</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Tail(Int64 n) {
+    return HeadOrTailHelper(n, false);
+  }
+
+  private TableHandle HeadOrTailHelper(Int64 n, bool head) {
+    var server = _manager.Server;
+    var req = new HeadOrTailRequest {
+      ResultId = server.NewTicket(),
+      SourceId = new TableReference {
+        Ticket = _ticket
+      },
+      NumRows = n
+    };
+
+    var resp = server.SendRpc(opts => head ? server.TableStub.HeadAsync(req, opts) :
+      server.TableStub.TailAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
   }
 
   private TableHandle SelectOrUpdateHelper(string[] columnSpecs,
