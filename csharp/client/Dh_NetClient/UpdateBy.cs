@@ -6,16 +6,20 @@ namespace Deephaven.Dh_NetClient;
 
 public enum MathContext : Int32 {
   Unlimited, Decimal32, Decimal64, Decimal128
-};
+}
 
 public enum BadDataBehavior : Int32 {
   Reset, Skip, Throw, Poison
-};
+}
 
 public enum DeltaControl : Int32 {
   NullDominates, ValueDominates, ZeroDominates
-};
+}
 
+public record OperationControl(
+  BadDataBehavior OnNull = BadDataBehavior.Skip,
+  BadDataBehavior OnNan = BadDataBehavior.Skip,
+  MathContext BigValueContext = MathContext.Decimal128);
 
 public class UpdateByOperation {
   public readonly UpdateByOperationProto UpdateByProto;
@@ -66,6 +70,21 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
+  public static UpdateByOperation EmaTick(double decayTicks, IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().Ema = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEma {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = new UpdateByWindowScale {
+        Ticks = new UpdateByWindowScale.Types.UpdateByWindowTicks {
+          Ticks = decayTicks
+        }
+      }
+    };
+    ubb.SetTicks(&UpdateBySpec::mutable_ema, decayTicks, op_control);
+    return ubb.Build();
+  }
+
+
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
       DeltaControl.NullDominates => UpdateByNullBehavior.NullDominates,
@@ -73,6 +92,16 @@ public class UpdateByOperation {
       DeltaControl.ZeroDominates => UpdateByNullBehavior.ZeroDominates,
       _ => throw new Exception($"Unexpected DeltaControl {dc}")
     };
+  }
+
+  private static UpdateByEmOptions ConvertOperationControl(OperationControl? oc) {
+    oc ??= new OperationControl();
+    var result = new UpdateByEmOptions {
+      OnNullValue = ConvertBadDataBehavior(oc.OnNull),
+      OnNanValue = ConvertBadDataBehavior(oc.OnNan),
+      BigValueContext = ConvertMathContext(oc.BigValueContext)
+    };
+    return result;
   }
 }
 
@@ -88,13 +117,6 @@ internal class UpdateByBuilder {
     _gup.Column.Spec ??= new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec();
     return _gup.Column.Spec;
   }
-
-  public UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec MutableNullBehavior() {
-    _gup.Column ??= new UpdateByOperationProto.Types.UpdateByColumn();
-    _gup.Column.Spec ??= new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec();
-    return _gup.Column.Spec;
-  }
-
 
   public UpdateByOperation Build() {
     return new UpdateByOperation(_gup);
@@ -310,12 +332,6 @@ return std::move(v.result);
 
 
 
-UpdateByOperation emaTick(double decay_ticks, std::vector<std::string> cols,
-    const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTicks(&UpdateBySpec::mutable_ema, decay_ticks, op_control);
-  return ubb.Build();
-}
 
 UpdateByOperation emaTime(std::string timestamp_col, DurationSpecifier decay_time,
     std::vector<std::string> cols, const OperationControl &op_control) {
