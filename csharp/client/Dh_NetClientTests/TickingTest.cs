@@ -3,13 +3,7 @@ using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class TickingTest {
-  private readonly ITestOutputHelper _output;
-
-  public TickingTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class TickingTest(ITestOutputHelper output) {
   [Fact]
   public void EventuallyReaches10Rows() {
     const Int64 maxRows = 10;
@@ -17,7 +11,7 @@ public class TickingTest {
     var thm = ctx.Client.Manager;
 
     using var table = thm.TimeTable(TimeSpan.FromMilliseconds(500)).Update("II = ii");
-    var callback = new ReachesNRowsCallback(_output, maxRows);
+    var callback = new ReachesNRowsCallback(output, maxRows);
     using var cookie = table.Subscribe(callback);
 
     while (true) {
@@ -29,8 +23,6 @@ public class TickingTest {
         throw new Exception(errorText);
       }
     }
-
-    table.Unsubscribe(cookie);
   }
 
   [Fact]
@@ -53,7 +45,7 @@ public class TickingTest {
       .View("Key = (long)(ii % 10)", "Value = ii")
       .LastBy("Key");
 
-    var callback = new AllValuesGreaterThanNCallback(_output, maxRows);
+    var callback = new AllValuesGreaterThanNCallback(output, maxRows);
     using var cookie = table.Subscribe(callback);
 
     while (true) {
@@ -65,8 +57,6 @@ public class TickingTest {
         throw new Exception(errorText);
       }
     }
-
-    table.Unsubscribe(cookie);
   }
 
   [Fact]
@@ -92,7 +82,7 @@ public class TickingTest {
       .Sort(SortPair.Ascending("II"))
       .DropColumns("Timestamp", "II");
 
-    var callback = new WaitForPopulatedTableCallback(_output, maxRows);
+    var callback = new WaitForPopulatedTableCallback(output, maxRows);
     using var cookie = table.Subscribe(callback);
 
     while (true) {
@@ -104,12 +94,10 @@ public class TickingTest {
         throw new Exception(errorText);
       }
     }
-
-    table.Unsubscribe(cookie);
   }
 }
 
-public abstract class CommonBase : ITickingCallback {
+public abstract class CommonBase : IObserver<TickingUpdate> {
   private readonly object _sync = new();
   private bool _done = false;
   private string? _errorText = null;
@@ -133,7 +121,15 @@ public abstract class CommonBase : ITickingCallback {
     }
   }
 
-  public abstract void OnTick(TickingUpdate update);
+  public void OnCompleted() {
+    throw new NotImplementedException();
+  }
+
+  public void OnError(Exception error) {
+    throw new NotImplementedException();
+  }
+
+  public abstract void OnNext(TickingUpdate value);
 
   protected void NotifyDone() {
     lock (_sync) {
@@ -143,44 +139,28 @@ public abstract class CommonBase : ITickingCallback {
   }
 }
 
-public sealed class ReachesNRowsCallback : CommonBase {
-  private readonly ITestOutputHelper _output;
-  private readonly Int64 _targetRows;
-
-  public ReachesNRowsCallback(ITestOutputHelper output, Int64 targetRows) {
-    _output = output;
-    _targetRows = targetRows;
-  }
-
-  public override void OnTick(TickingUpdate update) {
-    _output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
-    if (update.Current.NumRows >= _targetRows) {
+public sealed class ReachesNRowsCallback(ITestOutputHelper output, Int64 targetRows) : CommonBase {
+  public override void OnNext(TickingUpdate update) {
+    output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
+    if (update.Current.NumRows >= targetRows) {
       NotifyDone();
     }
   }
 }
 
-public sealed class WaitForPopulatedTableCallback : CommonBase {
-  private readonly ITestOutputHelper _output;
-  private readonly Int64 _target;
-
-  public WaitForPopulatedTableCallback(ITestOutputHelper output, Int64 target) {
-    _output = output;
-    _target = target;
-  }
-
-  public override void OnTick(TickingUpdate update) {
-    _output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
+public sealed class WaitForPopulatedTableCallback(ITestOutputHelper output, Int64 target) : CommonBase {
+  public override void OnNext(TickingUpdate update) {
+    output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
 
     var current = update.Current;
 
-    if (current.NumRows < _target) {
+    if (current.NumRows < target) {
       return;
     }
 
-    if (current.NumRows > _target) {
+    if (current.NumRows > target) {
       // table has more rows than expected.
-      var message = $"Expected table to have {_target} rows, got {current.NumRows}";
+      var message = $"Expected table to have {target} rows, got {current.NumRows}";
       throw new Exception(message);
     }
 
@@ -193,11 +173,11 @@ public sealed class WaitForPopulatedTableCallback : CommonBase {
     var doubleData = new List<double?>();
     var boolData = new List<bool?>();
     var stringData = new List<string?>();
-    var dateTimeData = new List<DhDateTime?>();
+    var dateTimeData = new List<DateTime?>();
 
-    var dateTimeStart = DhDateTime.Parse("2001-03-01T12:34:56Z");
+    var dateTimeStart = DateTime.Parse("2001-03-01T12:34:56Z");
 
-    for (Int64 i = 0; i != _target; ++i) {
+    for (Int64 i = 0; i != target; ++i) {
       charData.Add((char)('a' + i));
       int8Data.Add((sbyte)(i));
       int16Data.Add((Int16)(i));
@@ -207,14 +187,14 @@ public sealed class WaitForPopulatedTableCallback : CommonBase {
       doubleData.Add((double)(i));
       boolData.Add((i % 2) == 0);
       stringData.Add($"hello {i}");
-      dateTimeData.Add(DhDateTime.FromNanos(dateTimeStart.Nanos + i));
+      dateTimeData.Add(new DateTime(dateTimeStart.Ticks + i));
     }
 
-    if (_target == 0) {
+    if (target == 0) {
       throw new Exception("Target should not be 0");
     }
 
-    var t2 = (int)(_target / 2);
+    var t2 = (int)(target / 2);
     // Set the middle element to the unset optional, which for the purposes of this test is
     // our representation of null.
     charData[t2] = null;
@@ -228,34 +208,26 @@ public sealed class WaitForPopulatedTableCallback : CommonBase {
     stringData[t2] = null;
     dateTimeData[t2] = null;
 
-    var tc = new TableComparer();
-    tc.AddColumn("Chars", charData);
-    tc.AddColumn("Bytes", int8Data);
-    tc.AddColumn("Shorts", int16Data);
-    tc.AddColumn("Ints", int32Data);
-    tc.AddColumn("Longs", int64Data);
-    tc.AddColumn("Floats", floatData);
-    tc.AddColumn("Doubles", doubleData);
-    tc.AddColumn("Bools", boolData);
-    tc.AddColumn("Strings", stringData);
-    tc.AddColumn("DateTimes", dateTimeData);
+    var expected = new TableMaker();
+    expected.AddColumn("Chars", charData);
+    expected.AddColumn("Bytes", int8Data);
+    expected.AddColumn("Shorts", int16Data);
+    expected.AddColumn("Ints", int32Data);
+    expected.AddColumn("Longs", int64Data);
+    expected.AddColumn("Floats", floatData);
+    expected.AddColumn("Doubles", doubleData);
+    expected.AddColumn("Bools", boolData);
+    expected.AddColumn("Strings", stringData);
+    expected.AddColumn("DateTimes", dateTimeData);
 
-    tc.AssertEqualTo(current);
+    TableComparer.AssertSame(expected, current);
     NotifyDone();
   }
 }
 
-public sealed class AllValuesGreaterThanNCallback : CommonBase {
-  private readonly ITestOutputHelper _output;
-  private readonly Int64 _target;
-
-  public AllValuesGreaterThanNCallback(ITestOutputHelper output, Int64 target) {
-    _output = output;
-    _target = target;
-  }
-
-  public override void OnTick(TickingUpdate update) {
-    _output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
+public sealed class AllValuesGreaterThanNCallback(ITestOutputHelper output, Int64 target) : CommonBase {
+  public override void OnNext(TickingUpdate update) {
+    output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
 
     var current = update.Current;
 
@@ -265,7 +237,7 @@ public sealed class AllValuesGreaterThanNCallback : CommonBase {
 
     var (values, nulls) = current.GetColumn("Value");
     var data = (Int64[])values;
-    var allGreater = data.All(elt => elt > _target);
+    var allGreater = data.All(elt => elt > target);
     if (allGreater) {
       NotifyDone();
     }
