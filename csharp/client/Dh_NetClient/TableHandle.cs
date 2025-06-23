@@ -4,6 +4,8 @@ using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 using System;
+using System.Diagnostics;
+using Apache.Arrow.Types;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -525,6 +527,74 @@ public class TableHandle : IDisposable {
     return call.ResponseStream;
   }
 
+  private class EmptyArrayBuilder : Apache.Arrow.Types.IArrowTypeVisitor,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.Int8Type>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.Int16Type>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.Int32Type>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.Int64Type>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.FloatType>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.DoubleType>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.UInt16Type>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.StringType>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.BooleanType>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.TimestampType>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.Date64Type>,
+    Apache.Arrow.Types.IArrowTypeVisitor<Apache.Arrow.Types.Time64Type> {
+    public IArrowArray? EmptyArray = null;
+
+    public void Visit(IArrowType type) {
+      throw new NotImplementedException($"Type {type} is not implemented");
+    }
+
+    public void Visit(Int8Type type) {
+      EmptyArray = new Int8Array.Builder().Build();
+    }
+
+    public void Visit(Int16Type type) {
+      EmptyArray = new Int16Array.Builder().Build();
+    }
+
+    public void Visit(Int32Type type) {
+      EmptyArray = new Int32Array.Builder().Build();
+    }
+
+    public void Visit(Int64Type type) {
+      EmptyArray = new Int64Array.Builder().Build();
+    }
+
+    public void Visit(FloatType type) {
+      EmptyArray = new FloatArray.Builder().Build();
+    }
+
+    public void Visit(DoubleType type) {
+      EmptyArray = new DoubleArray.Builder().Build();
+    }
+
+    public void Visit(UInt16Type type) {
+      EmptyArray = new UInt16Array.Builder().Build();
+    }
+
+    public void Visit(BooleanType type) {
+      EmptyArray = new BooleanArray.Builder().Build();
+    }
+
+    public void Visit(TimestampType type) {
+      EmptyArray = new TimestampArray.Builder().Build();
+    }
+
+    public void Visit(Date64Type type) {
+      EmptyArray = new Date64Array.Builder().Build();
+    }
+
+    public void Visit(Time64Type type) {
+      EmptyArray = new Time64Array.Builder().Build();
+    }
+
+    public void Visit(StringType type) {
+      EmptyArray = new StringArray.Builder().Build();
+    }
+  }
+
   public Table ToArrowTable() {
     using var reader = GetFlightStream();
     // Gather record batches
@@ -534,8 +604,18 @@ public class TableHandle : IDisposable {
     }
 
     var schema = reader.Schema.Result;
-    var table = Table.TableFromRecordBatches(schema, recordBatches);
-    return table;
+    if (recordBatches.Count != 0) {
+      return Table.TableFromRecordBatches(schema, recordBatches);
+    }
+
+    // Workaround when there are no RecordBatches
+    var columns = schema.FieldsList.Select(f => {
+      var visitor = new EmptyArrayBuilder();
+      f.DataType.Accept(visitor);
+      return new Column(f, [visitor.EmptyArray]);
+    }).ToArray();
+
+    return new Table(schema, columns);
   }
 
   public IClientTable ToClientTable() {
