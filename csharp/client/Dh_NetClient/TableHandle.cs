@@ -467,7 +467,7 @@ public class TableHandle : IDisposable {
   /// <param name="ops">The requested UpdateByOperation ops</param>
   /// <param name="by">The columns to group by</param>
   /// <returns>The TableHandle of the new table</returns>
-  public TableHandle UpdateBy(IEnumerable<UpdateByOperation> ops, params string[] by) {
+  public TableHandle UpdateBy(UpdateByOperation[] ops, params string[] by) {
     var req = new UpdateByRequest {
       ResultId = Server.NewTicket(),
       SourceId = new TableReference { Ticket = Ticket }

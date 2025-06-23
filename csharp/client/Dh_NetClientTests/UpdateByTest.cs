@@ -1,6 +1,7 @@
 ﻿using Deephaven.Dh_NetClient;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Xunit.Abstractions;
+using static Deephaven.Dh_NetClient.UpdateByOperation;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -14,7 +15,7 @@ public class UpdateByTest(ITestOutputHelper output) {
     var tm = ctx.Client.Manager;
 
     var source = tm.EmptyTable(10).Update("Letter = (i % 2 == 0) ? `A` : `B`", "X = i");
-    var result = source.UpdateBy(new[] { CumSum(new[] { "SumX = X" }) }, new[] { "Letter" });
+    var result = source.UpdateBy([CumSum("SumX = X")], "Letter");
     var filtered = result.Select("SumX");
 
     var expected = new TableMaker();
