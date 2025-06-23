@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClient;
+﻿using System.Diagnostics;
+using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -98,13 +99,19 @@ public class TickingTest(ITestOutputHelper output) {
 }
 
 public abstract class CommonBase : IObserver<TickingUpdate> {
+  protected readonly ITestOutputHelper Output;
+
+  protected CommonBase(ITestOutputHelper output) { 
+    Output = output;
+  }
+
   private readonly object _sync = new();
   private bool _done = false;
   private string? _errorText = null;
 
-  public void OnFailure(string errorText) {
+  public void OnError(Exception error) {
     lock (_sync) {
-      _errorText = errorText;
+      _errorText = error.Message;
       Monitor.PulseAll(_sync);
     }
   }
@@ -122,11 +129,7 @@ public abstract class CommonBase : IObserver<TickingUpdate> {
   }
 
   public void OnCompleted() {
-    throw new NotImplementedException();
-  }
-
-  public void OnError(Exception error) {
-    throw new NotImplementedException();
+    Output.WriteLine("Subscription complete");
   }
 
   public abstract void OnNext(TickingUpdate value);
@@ -139,28 +142,40 @@ public abstract class CommonBase : IObserver<TickingUpdate> {
   }
 }
 
-public sealed class ReachesNRowsCallback(ITestOutputHelper output, Int64 targetRows) : CommonBase {
+public sealed class ReachesNRowsCallback: CommonBase {
+  private readonly Int64 _target;
+
+  public ReachesNRowsCallback(ITestOutputHelper output, Int64 target) : base(output) {
+    _target = target;
+  }
+
   public override void OnNext(TickingUpdate update) {
-    output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
-    if (update.Current.NumRows >= targetRows) {
+    Output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
+    if (update.Current.NumRows >= _target) {
       NotifyDone();
     }
   }
 }
 
-public sealed class WaitForPopulatedTableCallback(ITestOutputHelper output, Int64 target) : CommonBase {
+public sealed class WaitForPopulatedTableCallback : CommonBase {
+  private readonly Int64 _target;
+
+  public WaitForPopulatedTableCallback(ITestOutputHelper output, Int64 target) : base(output) {
+    _target = target;
+  }
+
   public override void OnNext(TickingUpdate update) {
-    output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
+    Output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
 
     var current = update.Current;
 
-    if (current.NumRows < target) {
+    if (current.NumRows < _target) {
       return;
     }
 
-    if (current.NumRows > target) {
+    if (current.NumRows > _target) {
       // table has more rows than expected.
-      var message = $"Expected table to have {target} rows, got {current.NumRows}";
+      var message = $"Expected table to have {_target} rows, got {current.NumRows}";
       throw new Exception(message);
     }
 
@@ -177,7 +192,7 @@ public sealed class WaitForPopulatedTableCallback(ITestOutputHelper output, Int6
 
     var dateTimeStart = DateTime.Parse("2001-03-01T12:34:56Z");
 
-    for (Int64 i = 0; i != target; ++i) {
+    for (Int64 i = 0; i != _target; ++i) {
       charData.Add((char)('a' + i));
       int8Data.Add((sbyte)(i));
       int16Data.Add((Int16)(i));
@@ -190,11 +205,11 @@ public sealed class WaitForPopulatedTableCallback(ITestOutputHelper output, Int6
       dateTimeData.Add(new DateTime(dateTimeStart.Ticks + i));
     }
 
-    if (target == 0) {
+    if (_target == 0) {
       throw new Exception("Target should not be 0");
     }
 
-    var t2 = (int)(target / 2);
+    var t2 = (_target / 2).ToIntExact();
     // Set the middle element to the unset optional, which for the purposes of this test is
     // our representation of null.
     charData[t2] = null;
@@ -225,19 +240,25 @@ public sealed class WaitForPopulatedTableCallback(ITestOutputHelper output, Int6
   }
 }
 
-public sealed class AllValuesGreaterThanNCallback(ITestOutputHelper output, Int64 target) : CommonBase {
+public sealed class AllValuesGreaterThanNCallback : CommonBase {
+  private readonly Int64 _target;
+
+  public AllValuesGreaterThanNCallback(ITestOutputHelper output, Int64 target) : base(output) {
+    _target = target;
+  }
+
   public override void OnNext(TickingUpdate update) {
     var current = update.Current;
 
-    output.WriteLine($"=== The Full Table ===\n{current.ToString(true, true)}");
+    Output.WriteLine($"=== The Full Table ===\n{current.ToString(true, true)}");
 
     if (current.NumRows == 0) {
       return;
     }
 
     var col = current.GetColumn("Value");
-    var data = (Int64[])col.ToArray();
-    var allGreater = data.All(elt => elt > target);
+    var data = (Int64[])col.ToArray(current.NumRows.ToIntExact());
+    var allGreater = data.All(elt => elt > _target);
     if (allGreater) {
       NotifyDone();
     }
