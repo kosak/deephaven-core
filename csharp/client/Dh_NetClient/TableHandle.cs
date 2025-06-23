@@ -452,6 +452,32 @@ public class TableHandle : IDisposable {
     return req;
   }
 
+  public TableHandle Merge(params TableHandle[] sources) {
+    return Merge("", sources);
+  }
+
+  // TODO(kosak): document keyColumn
+
+  /// <summary>
+  /// * Creates a new table by merging `sources` together.The tables are essentially stacked on top
+  /// of each other.
+  /// </summary>
+  /// <param name="keyColumn"></param>
+  /// <param name="sources">the tables to Merge.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Merge(string keyColumn, params TableHandle[] sources) {
+    var sourceRefs = sources.Prepend(this).Select(th => new TableReference {Ticket = th.Ticket}).ToArray();
+
+    var req = new MergeTablesRequest {
+      ResultId = Server.NewTicket(),
+      KeyColumn = keyColumn
+    };
+    req.SourceIds.AddRange(sourceRefs);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.MergeTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
   public void BindToVariable(string variable) {
     var server = _manager.Server;
     if (_manager.ConsoleId == null) {

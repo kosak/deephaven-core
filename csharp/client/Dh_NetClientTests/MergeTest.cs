@@ -1,6 +1,4 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -16,23 +14,18 @@ public class MergeTest {
     var aaplTable = table.Where("Ticker == `AAPL`").Tail(10);
     var zngaTable = table.Where("Ticker == `ZNGA`").Tail(10);
 
-    var merged = aaplTable.Merge(new[] { zngaTable} );
+    var merged = aaplTable.Merge(zngaTable);
 
-    var importDateData = new[] {
+    var expected = new TableMaker();
+    expected.AddColumn("ImportDate", [
       "2017-11-01", "2017-11-01", "2017-11-01",
-      "2017-11-01", "2017-11-01"};
-    var tickerData = new[] { "AAPL", "AAPL", "AAPL", "ZNGA", "ZNGA"};
-    var openData = new[] { 22.1, 26.8, 31.5, 541.2, 685.3 };
-    var closeData = new[] { 23.5, 24.2, 26.7, 538.2, 544.9 };
-    var volData = new Int64[] { 100000, 250000, 19000, 46123, 48300 };
+      "2017-11-01", "2017-11-01"
+    ]);
+    expected.AddColumn("Ticker", ["AAPL", "AAPL", "AAPL", "ZNGA", "ZNGA"]);
+    expected.AddColumn("Open", [22.1, 26.8, 31.5, 541.2, 685.3]);
+    expected.AddColumn("Close", [23.5, 24.2, 26.7, 538.2, 544.9]);
+    expected.AddColumn("Volume", [(Int64)100000, 250000, 19000, 46123, 48300]);
 
-    var tc = new TableComparer();
-    tc.AddColumn("ImportDate", importDateData);
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Open", openData);
-    tc.AddColumn("Close", closeData);
-    tc.AddColumn("Volume", volData);
-    tc.AssertEqualTo(merged);
+    TableComparer.AssertSame(expected, merged);
   }
 }
-#endif
