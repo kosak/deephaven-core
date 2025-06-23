@@ -97,7 +97,6 @@ public class SelectTest {
   }
 
 
-#if false
   [Fact]
   public void TestLastByAndSelect() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -119,6 +118,7 @@ public class SelectTest {
     tc.AssertEqualTo(t1);
   }
 
+#if false
   [Fact]
   public void TestNewColumns() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
