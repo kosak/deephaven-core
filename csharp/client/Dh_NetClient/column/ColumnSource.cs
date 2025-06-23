@@ -14,10 +14,6 @@ global using ITimeOnlyColumnSource = Deephaven.Dh_NetClient.IColumnSource<System
 namespace Deephaven.Dh_NetClient;
 
 public interface IColumnSource {
-  Array ToArray(int numRows) {
-    return ColumnSourceConverter.ToArray(this, numRows);
-  }
-
   void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
   void Accept(IColumnSourceVisitor visitor);
 

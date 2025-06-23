@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Apache.Arrow;
 using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
@@ -79,7 +80,7 @@ public class TickingTest(ITestOutputHelper output) {
         "Doubles = II == 5 ? null : (double)II",
         "Bools = II == 5 ? null : ((II % 2) == 0)",
         "Strings = II == 5 ? null : (`hello ` + II)",
-        "DateTimes = II == 5 ? null : ('2001-03-01T12:34:56Z' + II)")
+        "DateTimes = II == 5 ? null : ('2001-03-01T12:34:56Z' + II * 1000)")
       .LastBy("II")
       .Sort(SortPair.Ascending("II"))
       .DropColumns("Timestamp", "II");
@@ -203,7 +204,7 @@ public sealed class WaitForPopulatedTableCallback : CommonBase {
       doubleData.Add((double)(i));
       boolData.Add((i % 2) == 0);
       stringData.Add($"hello {i}");
-      dateTimeData.Add(new DateTimeOffset(dateTimeStart.Ticks + i, TimeSpan.Zero));
+      dateTimeData.Add(dateTimeStart.AddMicroseconds(i));
     }
 
     if (_target == 0) {
@@ -258,7 +259,7 @@ public sealed class AllValuesGreaterThanNCallback : CommonBase {
     }
 
     var col = current.GetColumn("Value");
-    var data = (Int64[])col.ToArray(current.NumRows.ToIntExact());
+    var data = (Int64Array)ArrowArrayConverter.ColumnSourceToArray(col, current.NumRows);
     var allGreater = data.All(elt => elt > _target);
     if (allGreater) {
       NotifyDone();
