@@ -97,7 +97,7 @@ public class UpdateByTest(ITestOutputHelper output) {
       CumSum("sum_a=a", "sum_b=b"),
       CumSum("max_a=a", "max_d=d"),
       EmaTick(10, ["ema_d=d", "ema_e=e"]),
-      EmaTime("Timestamp", "PT00:00:00.1", new[] { "ema_time_d=d", "ema_time_e=e" }),
+      EmaTime("Timestamp", "PT00:00:00.1", ["ema_time_d=d", "ema_time_e=e"]),
       RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d" }, 10)
     };
 

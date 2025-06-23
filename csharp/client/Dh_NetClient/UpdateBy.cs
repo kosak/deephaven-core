@@ -82,6 +82,17 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
+  public static UpdateByOperation EmaTime(string timestampCol, DurationSpecifier decayTime,
+    IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().Ema = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEma {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(timestampCol, decayTime)
+    };
+    return ubb.Build();
+  }
+
+
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
       DeltaControl.NullDominates => UpdateByNullBehavior.NullDominates,
@@ -144,6 +155,21 @@ public class UpdateByOperation {
         Ticks = ticks
       }
     };
+  }
+
+  private static UpdateByWindowScale MakeWindowScale(string timestampCol, DurationSpecifier decayTime) {
+    var result = new UpdateByWindowScale {
+      Time = new UpdateByWindowScale.Types.UpdateByWindowTime {
+        Column = timestampCol
+      }
+    };
+
+    decayTime.Visit(
+      nanos => result.Time.Nanos = nanos,
+      duration => result.Time.DurationString = duration
+      );
+
+    return result;
   }
 }
 
@@ -291,28 +317,6 @@ namespace deephaven::client::update_by {
      * If it is nanoseconds, we set the nanos field of the UpdateByWindowTime proto. Otherwise (if it is
      * a string), then we set the duration_string field.
      */
-    UpdateByWindowScale.Types.UpdateByWindowTime convertDecayTime(std::string timestamp_col, DurationSpecifier decay_time) {
-  struct Visitor {
-      void operator()(std::chrono::nanoseconds nanos) {
-      result.set_nanos(nanos.count());
-    }
-    void operator()(int64_t nanos) {
-      result.set_nanos(nanos);
-    }
-  void operator()(std::string duration) {
-      * result.mutable_duration_string() = std::move(duration);
-    }
-UpdateByWindowScale.Types.UpdateByWindowTime result;
-  };
-Visitor v;
-// Unconditionally set the column field with the value from timestampCol
-*v.result.mutable_column() = std::move(timestamp_col);
-
-// Conditionally set either the nanos field or the duration_string with the nanoseconds or string
-// part of the variant.
-std::visit(v, std::move(decay_time));
-return std::move(v.result);
-}
 
 ;
 }  // namespace
@@ -323,12 +327,6 @@ return std::move(v.result);
 
 
 
-UpdateByOperation emaTime(std::string timestamp_col, DurationSpecifier decay_time,
-    std::vector<std::string> cols, const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTime(&UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec::mutable_ema, std::move(timestamp_col), std::move(decay_time), op_control);
-  return ubb.Build();
-}
 
 UpdateByOperation emsTick(double decay_ticks, std::vector<std::string> cols,
     const OperationControl &op_control) {

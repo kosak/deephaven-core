@@ -1,6 +1,6 @@
 ﻿namespace Deephaven.Dh_NetClient;
 
-public struct DurationSpecifier {
+public readonly struct DurationSpecifier {
   private readonly object _duration;
 
   public DurationSpecifier(Int64 nanos) => _duration = nanos;
@@ -19,7 +19,7 @@ public struct DurationSpecifier {
   }
 }
 
-public struct TimePointSpecifier {
+public readonly struct TimePointSpecifier {
   private readonly object _timePoint;
 
   public TimePointSpecifier(Int64 nanos) => _timePoint = nanos;
