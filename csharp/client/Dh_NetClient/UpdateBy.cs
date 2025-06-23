@@ -110,20 +110,25 @@ public class UpdateByOperation {
     };
     return ubb.Build();
   }
-  UpdateByOperation emminTick(double decay_ticks, std::vector<std::string> cols,
-  const OperationControl &op_control) {
-    UpdateByBuilder ubb(std::move(cols));
-    ubb.SetTicks(&UpdateBySpec::mutable_em_min, decay_ticks, op_control);
+
+  public static UpdateByOperation EmMinTick(double decayTicks, IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().EmMin = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEmMin {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(decayTicks)
+    };
     return ubb.Build();
   }
 
-  UpdateByOperation emminTime(std::string timestamp_col, DurationSpecifier decay_time,
-  std::vector<std::string> cols, const OperationControl &op_control) {
-    UpdateByBuilder ubb(std::move(cols));
-    ubb.SetTime(&UpdateBySpec::mutable_em_min, std::move(timestamp_col), std::move(decay_time), op_control);
+  public static UpdateByOperation EmMinTime(string timestampCol, DurationSpecifier decayTime,
+    IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().EmMin = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEmMin {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(timestampCol, decayTime)
+    };
     return ubb.Build();
   }
-
 
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
