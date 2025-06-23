@@ -209,32 +209,27 @@ public class SelectTest {
     TableComparer.AssertSame(expected, result);
   }
 
-#if false
   [Fact]
   public void TestLazyUpdate() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var aData = new[] { "The", "At", "Is", "On" };
-    var bData = new[] { 1, 2, 3, 4 };
-    var cData = new[] { 5, 2, 5, 5 };
-
-    using var sourceMaker = new TableMaker();
-    sourceMaker.AddColumn("A", aData);
-    sourceMaker.AddColumn("B", bData);
-    sourceMaker.AddColumn("C", cData);
+    var sourceMaker = new TableMaker();
+    sourceMaker.AddColumn("A", ["The", "At", "Is", "On"]);
+    sourceMaker.AddColumn("B", [1, 2, 3, 4]);
+    sourceMaker.AddColumn("C", [5, 2, 5, 5]);
     var source = sourceMaker.MakeTable(ctx.Client.Manager);
 
     var result = source.LazyUpdate("Y = sqrt(C)");
 
-    var sqrtData = new[] { Math.Sqrt(5), Math.Sqrt(2), Math.Sqrt(5), Math.Sqrt(5) };
-
-    var tc = new TableComparer();
-    tc.AddColumn("A", aData);
-    tc.AddColumn("B", bData);
-    tc.AddColumn("C", cData);
-    tc.AddColumn("Y", sqrtData);
-    tc.AssertEqualTo(result);
+    var expected = new TableMaker();
+    expected.AddColumn("A", ["The", "At", "Is", "On"]);
+    expected.AddColumn("B", [1, 2, 3, 4]);
+    expected.AddColumn("C", [5, 2, 5, 5]);
+    expected.AddColumn("Y", [Math.Sqrt(5), Math.Sqrt(2), Math.Sqrt(5), Math.Sqrt(5)]);
+    TableComparer.AssertSame(expected, result);
   }
+
+#if false
 
   [Fact]
   public void TestSelectDistinct() {

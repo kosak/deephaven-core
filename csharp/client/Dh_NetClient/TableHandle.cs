@@ -56,6 +56,15 @@ public class TableHandle : IDisposable {
     return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.UpdateAsync);
   }
 
+  /// <summary>
+  /// Creates a new table containing a new cached formula column for each argument.
+  /// </summary>
+  /// <param name="columnSpecs">The columnSpecs to add. For exampe, {"X = A + 5", "Y = X * 2"}.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle LazyUpdate(params string[] columnSpecs) {
+    return SelectOrUpdateHelper(columnSpecs, _manager.Server.TableStub.LazyUpdateAsync);
+  }
+
   private TableHandle SelectOrUpdateHelper(string[] columnSpecs,
     Func<SelectOrUpdateRequest, CallOptions, AsyncUnaryCall<ExportedTableCreationResponse>> func) {
     var server = _manager.Server;
