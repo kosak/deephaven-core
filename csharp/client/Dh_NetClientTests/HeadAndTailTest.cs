@@ -1,16 +1,10 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class HeadAndTailTest {
-  private readonly ITestOutputHelper _output;
-
-  public HeadAndTailTest(ITestOutputHelper output) {
-    _output = output;
-  }
+public class HeadAndTailTest(ITestOutputHelper output) {
+  private readonly ITestOutputHelper _output = output;
 
   [Fact]
   public void TestHeadAndTail() {
@@ -23,24 +17,19 @@ public class HeadAndTailTest {
     var tt = table.Tail(2).Select("Ticker", "Volume");
 
     {
-      var tickerData = new[] { "XRX", "XRX" };
-      var volumeData = new Int64[] { 345000, 87000 };
-      var tc = new TableComparer();
+      var expected = new TableMaker();
 
-      tc.AddColumn("Ticker", tickerData);
-      tc.AddColumn("Volume", volumeData);
-      tc.AssertEqualTo(th);
+      expected.AddColumn("Ticker", ["XRX", "XRX"]);
+      expected.AddColumn("Volume", [(Int64)345000, 87000]);
+      TableComparer.AssertSame(expected, th);
     }
 
     {
-      var tickerData = new[] { "ZNGA", "ZNGA" };
-      var volumeData = new Int64[] { 46123, 48300 };
-      var tc = new TableComparer();
+      var expected = new TableMaker();
 
-      tc.AddColumn("Ticker", tickerData);
-      tc.AddColumn("Volume", volumeData);
-      tc.AssertEqualTo(tt);
+      expected.AddColumn("Ticker", ["ZNGA", "ZNGA"]);
+      expected.AddColumn("Volume", [(Int64)46123, 48300]);
+      TableComparer.AssertSame(expected, tt);
     }
   }
 }
-#endif
