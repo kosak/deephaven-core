@@ -1,17 +1,9 @@
-﻿#if false
-using Deephaven.Dh_NetClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
-namespace Deephaven.DhClientTests;
+namespace Deephaven.Dh_NetClientTests;
 
-public class AddDropTest {
-  private readonly ITestOutputHelper _output;
-
-  public AddDropTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class AddDropTest(ITestOutputHelper output) {
   [Fact]
   public void TestDropSomeColumns() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -20,15 +12,12 @@ public class AddDropTest {
     var t = table.Update("II = ii").Where("Ticker == `AAPL`");
     var cn = ctx.ColumnNames;
     var t2 = t.DropColumns(cn.ImportDate, cn.Ticker, cn.Open, cn.Close);
-    _output.WriteLine(t2.ToString(true));
+    output.WriteLine(t2.ToString(true));
 
-    var volData = new Int64[] { 100000, 250000, 19000 };
-    var iiData = new Int64[] { 5, 6, 7 };
+    var expected = new TableMaker();
+    expected.AddColumn("Volume", [(Int64)100000, 250000, 19000]);
+    expected.AddColumn("II", [(Int64)5, 6, 7]);
 
-    var tc = new TableComparer();
-    tc.AddColumn("Volume", volData);
-    tc.AddColumn("II", iiData);
-    tc.AssertEqualTo(t2);
+    TableComparer.AssertSame(expected, t2);
   }
 }
-#endif
