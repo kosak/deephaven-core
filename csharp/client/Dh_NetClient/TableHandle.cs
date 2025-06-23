@@ -201,22 +201,16 @@ public class TableHandle : IDisposable {
     return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Median, columnSpecs);
   }
 
-  private TableHandle DefaultAggregateByDescriptor(ComboAggregateRequest.Types.Aggregate descriptor,
-    IList<string> groupByColumns) {
-    var descriptors = new[] {descriptor};
-    return By(descriptors, groupByColumns);
+  public TableHandle By(params string[] groupByColumns) {
+    return DefaultAggregateByType(ComboAggregateRequest.Types.AggType.Group, groupByColumns);
   }
 
-  private TableHandle DefaultAggregateByType(ComboAggregateRequest.Types.AggType aggregateType,
-    IList<string> groupByColumns) {
-    var descriptor = new ComboAggregateRequest.Types.Aggregate {
-      Type = aggregateType
-    };
-    return DefaultAggregateByDescriptor(descriptor, groupByColumns);
+  public TableHandle By(AggregateCombo combo, params string[] groupByColumns) {
+    return ByHelper(combo.Aggregates, groupByColumns);
   }
 
-  public TableHandle By(IList<ComboAggregateRequest.Types.Aggregate> descriptors,
-    IList<string> groupByColumns) {
+  private TableHandle ByHelper(IReadOnlyList<ComboAggregateRequest.Types.Aggregate> descriptors,
+    string[] groupByColumns) {
     var server = _manager.Server;
 
     var req = new ComboAggregateRequest {
@@ -230,6 +224,21 @@ public class TableHandle : IDisposable {
     var resp = server.SendRpc(opts => server.TableStub.ComboAggregateAsync(req, opts));
     return TableHandle.Create(_manager, resp);
   }
+
+  private TableHandle DefaultAggregateByDescriptor(ComboAggregateRequest.Types.Aggregate descriptor,
+    string[] groupByColumns) {
+    var descriptors = new[] {descriptor};
+    return ByHelper(descriptors, groupByColumns);
+  }
+
+  private TableHandle DefaultAggregateByType(ComboAggregateRequest.Types.AggType aggregateType,
+    string[] groupByColumns) {
+    var descriptor = new ComboAggregateRequest.Types.Aggregate {
+      Type = aggregateType
+    };
+    return DefaultAggregateByDescriptor(descriptor, groupByColumns);
+  }
+
 
   /// <summary>
   /// Creates a new table from this table, filtered by condition. Consult the Deephaven

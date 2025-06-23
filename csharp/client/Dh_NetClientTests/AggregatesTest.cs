@@ -14,13 +14,13 @@ public class AggregatesTest(ITestOutputHelper output) {
     var zngaTable = table.Where("Ticker == `ZNGA`");
 
     var aggTable = zngaTable.View("Close")
-      .By(new AggregateCombo(new[] {
-        ComboAggregateRequest.Types.Aggregate.Avg(new []{"AvgClose=Close"}),
-        ComboAggregateRequest.Types.Aggregate.Sum(new []{"SumClose=Close"}),
-        ComboAggregateRequest.Types.Aggregate.Min(new [] {"MinClose=Close"}),
-        ComboAggregateRequest.Types.Aggregate.Max(new []{"MaxClose=Close"}),
-        ComboAggregateRequest.Types.Aggregate.Count("Count")
-      }));
+      .By(AggregateCombo.Create(
+        Aggregate.Avg("AvgClose=Close"),
+        Aggregate.Sum("SumClose=Close"),
+        Aggregate.Min("MinClose=Close"),
+        Aggregate.Max("MaxClose=Close"),
+        Aggregate.Count("Count")
+      ));
 
     var tickerData = new[]{ "AAPL", "AAPL", "AAPL"};
 

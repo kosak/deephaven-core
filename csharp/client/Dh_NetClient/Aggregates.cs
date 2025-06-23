@@ -1,8 +1,6 @@
-﻿using System;
-using Io.Deephaven.Proto.Backplane.Grpc;
+﻿using Io.Deephaven.Proto.Backplane.Grpc;
 
 namespace Deephaven.Dh_NetClient;
-
 
 /// <summary>
 /// Represents a collection of Aggregate objects.
@@ -13,20 +11,24 @@ public class AggregateCombo {
   /// </summary>
   /// <param name="list">The contained Aggregates</param>
   /// <returns></returns>
-  static AggregateCombo Create(params Aggregate[] list) {
+  public static AggregateCombo Create(params Aggregate[] list) {
     var aggregates = list.Select(elt => elt.Descriptor).ToArray();
     return new AggregateCombo(aggregates);
   }
 
-  private readonly ComboAggregateRequest.Types.Aggregate[] _aggregates;
+  public readonly IReadOnlyList<ComboAggregateRequest.Types.Aggregate> Aggregates;
 
   private AggregateCombo(ComboAggregateRequest.Types.Aggregate[] aggregates) {
-    _aggregates = aggregates;
+    Aggregates = aggregates;
   }
 }
 
 public class Aggregate {
   public readonly ComboAggregateRequest.Types.Aggregate Descriptor;
+
+  public Aggregate(ComboAggregateRequest.Types.Aggregate descriptor) {
+    Descriptor = descriptor;
+  }
 
   /// <summary>
   /// Returns an aggregator that computes the total sum of values, within an aggregation group,
@@ -34,7 +36,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate AbsSum(params string[] columnSpecs) {
+  public static Aggregate AbsSum(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.AbsSum, columnSpecs);
   }
 
@@ -44,7 +46,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Avg(params string[] columnSpecs) {
+  public static Aggregate Avg(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Avg, columnSpecs);
   }
 
@@ -54,10 +56,9 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Count(params string[] columnSpecs) {
-    auto ad = CreateDescForColumn(ComboAggregateRequest::COUNT, std::move(column_spec));
-    auto impl = AggregateImpl::Create(std::move(ad));
-    return Aggregate(std::move(impl));
+  public static Aggregate Count(string columnSpec) {
+    var ad = CreateDescForColumn(ComboAggregateRequest.Types.AggType.Count, columnSpec);
+    return new Aggregate(ad);
   }
 
   /// <summary>
@@ -66,7 +67,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate First(params string[] columnSpecs) {
+  public static Aggregate First(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.First, columnSpecs);
   }
 
@@ -76,7 +77,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Group(params string[] columnSpecs) {
+  public static Aggregate Group(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Group, columnSpecs);
   }
 
@@ -86,7 +87,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Last(params string[] columnSpecs) {
+  public static Aggregate Last(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Last, columnSpecs);
   }
 
@@ -96,7 +97,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Max(params string[] columnSpecs) {
+  public static Aggregate Max(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Max, columnSpecs);
   }
 
@@ -106,7 +107,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Med(params string[] columnSpecs) {
+  public static Aggregate Med(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Median, columnSpecs);
   }
 
@@ -116,7 +117,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Min(params string[] columnSpecs) {
+  public static Aggregate Min(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Min, columnSpecs);
   }
 
@@ -126,16 +127,14 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Pct(double percentile, bool avgMedian, params string[] columnSpecs) {
-    ComboAggregateRequest::Aggregate pd;
-    pd.set_type(ComboAggregateRequest::PERCENTILE);
-    pd.set_percentile(percentile);
-    pd.set_avg_median(avg_median);
-    for (auto & cs : column_specs) {
-      pd.mutable_match_pairs()->Add(std::move(cs));
-    }
-    auto impl = AggregateImpl::Create(std::move(pd));
-    return Aggregate(std::move(impl));
+  public static Aggregate Pct(double percentile, bool avgMedian, params string[] columnSpecs) {
+    var pd = new ComboAggregateRequest.Types.Aggregate {
+      Type = ComboAggregateRequest.Types.AggType.Percentile,
+      Percentile = percentile,
+      AvgMedian = avgMedian
+    };
+    pd.MatchPairs.AddRange(columnSpecs);
+    return new Aggregate(pd);
   }
 
   /// <summary>
@@ -147,7 +146,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Std(params string[] columnSpecs) {
+  public static Aggregate Std(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Std, columnSpecs);
   }
 
@@ -157,7 +156,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Sum(params string[] columnSpecs) {
+  public static Aggregate Sum(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Sum, columnSpecs);
   }
 
@@ -170,7 +169,7 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate Var(params string[] columnSpecs) {
+  public static Aggregate Var(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Var, columnSpecs);
   }
 
@@ -180,7 +179,33 @@ public class Aggregate {
   /// </summary>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
-  static Aggregate WAvg(params string[] columnSpecs) {
+  public static Aggregate WAvg(params string[] columnSpecs) {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.WeightedAvg, columnSpecs);
   }
+
+  private static ComboAggregateRequest.Types.Aggregate
+    CreateDescForMatchPairs(ComboAggregateRequest.Types.AggType aggregateType,
+      string[] columnSpecs) {
+    var result = new ComboAggregateRequest.Types.Aggregate {
+      Type = aggregateType
+    };
+    result.MatchPairs.AddRange(columnSpecs);
+    return result;
+  }
+
+  private static ComboAggregateRequest.Types.Aggregate CreateDescForColumn(
+    ComboAggregateRequest.Types.AggType aggregateType, string columnSpec) {
+    var result = new ComboAggregateRequest.Types.Aggregate {
+      Type = aggregateType,
+      ColumnName = columnSpec
+    };
+    return result;
+  }
+
+  private static Aggregate CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType aggregateType,
+    string[] columnSpecs) {
+    var ad = CreateDescForMatchPairs(aggregateType, columnSpecs);
+    return new Aggregate(ad);
+  }
+
 }
