@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Diagnostics;
 using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using ArrowColumn = Apache.Arrow.Column;
@@ -111,6 +110,5 @@ public static class ArrowUtil {
         yield return result;
       }
     }
-    Debug.WriteLine("hi enumeration done bye");
   }
 }

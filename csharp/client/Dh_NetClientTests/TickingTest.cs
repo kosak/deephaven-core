@@ -189,7 +189,7 @@ public sealed class WaitForPopulatedTableCallback : CommonBase {
     var doubleData = new List<double?>();
     var boolData = new List<bool?>();
     var stringData = new List<string?>();
-    var dateTimeData = new List<DateTime?>();
+    var dateTimeData = new List<DateTimeOffset?>();
 
     var dateTimeStart = DateTime.Parse("2001-03-01T12:34:56Z");
 
@@ -203,7 +203,7 @@ public sealed class WaitForPopulatedTableCallback : CommonBase {
       doubleData.Add((double)(i));
       boolData.Add((i % 2) == 0);
       stringData.Add($"hello {i}");
-      dateTimeData.Add(new DateTime(dateTimeStart.Ticks + i));
+      dateTimeData.Add(new DateTimeOffset(dateTimeStart.Ticks + i, TimeSpan.Zero));
     }
 
     if (_target == 0) {

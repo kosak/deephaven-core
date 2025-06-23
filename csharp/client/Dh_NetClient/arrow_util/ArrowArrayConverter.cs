@@ -41,14 +41,6 @@ public static class ArrowArrayConverter {
 
 
     public Apache.Arrow.IArrowArray? Result = null;
-    public void Visit(ICharColumnSource cs) {
-      // var arrowBuilder = new Apache.Arrow.UInt16Array.Builder();
-      // var chunk = (CharChunk)_data;
-      // CopyHelper<UInt16, Apache.Arrow.TimestampArray, Apache.Arrow.TimestampArray.Builder>(
-      //   arrowBuilder, chunk);
-      //
-      throw new NotImplementedException();
-    }
 
     public void Visit(IByteColumnSource cs) {
       var arrowBuilder = new Apache.Arrow.Int8Array.Builder();
@@ -86,10 +78,6 @@ public static class ArrowArrayConverter {
         arrowBuilder);
     }
 
-    public void Visit(IStringColumnSource cs) {
-      throw new NotImplementedException();
-    }
-
     public void Visit(IBooleanColumnSource cs) {
       var arrowBuilder = new Apache.Arrow.BooleanArray.Builder();
       CopyHelper<bool, Apache.Arrow.BooleanArray, Apache.Arrow.BooleanArray.Builder>(
@@ -109,7 +97,34 @@ public static class ArrowArrayConverter {
     public void Visit(ITimeOnlyColumnSource cs) {
       var arrowBuilder = new Apache.Arrow.Date64Array.Builder();
       CopyHelper<DateOnly, Apache.Arrow.Date64Array, Apache.Arrow.Date64Array.Builder>(arrowBuilder);
-      throw new NotImplementedException();
+    }
+
+    public void Visit(ICharColumnSource cs) {
+      var arrowBuilder = new Apache.Arrow.UInt16Array.Builder();
+      var typedData = ((CharChunk)_data).Data;
+      for (var i = 0; i != _numRows; ++i) {
+        if (!_nulls.Data[i]) {
+          arrowBuilder.Append(typedData[i]);
+        } else {
+          arrowBuilder.AppendNull();
+        }
+      }
+
+      Result = arrowBuilder.Build();
+    }
+
+    public void Visit(IStringColumnSource cs) {
+      var arrowBuilder = new Apache.Arrow.StringArray.Builder();
+      var typedData = ((StringChunk)_data).Data;
+      for (var i = 0; i != _numRows; ++i) {
+        if (!_nulls.Data[i]) {
+          arrowBuilder.Append(typedData[i]);
+        } else {
+          arrowBuilder.AppendNull();
+        }
+      }
+
+      Result = arrowBuilder.Build();
     }
 
     private void CopyHelper<T, TArray, TBuilder>(TBuilder arrowBuilder)
