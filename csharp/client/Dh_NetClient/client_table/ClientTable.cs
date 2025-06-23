@@ -4,6 +4,10 @@ using Apache.Arrow;
 namespace Deephaven.Dh_NetClient;
 
 public interface IClientTable : IDisposable {
+  Apache.Arrow.Table ToArrowTable() {
+    return ArrowUtil.ToArrowTable(this);
+  }
+
   /// <summary>
   /// Get the RowSequence (in position space) that underlies this Table.
   /// </summary>

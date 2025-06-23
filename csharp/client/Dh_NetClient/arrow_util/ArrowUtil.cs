@@ -1,5 +1,8 @@
 ﻿using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;
+using ArrowColumn = Apache.Arrow.Column;
+using ArrowTable = Apache.Arrow.Table;
+using IArrowType = Apache.Arrow.Types.IArrowType;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -14,9 +17,23 @@ public static class ArrowUtil {
     return FlightDescriptor.CreatePathDescriptor("export", value.ToString());
   }
 
-  public static bool TypesEqual(Apache.Arrow.Types.IArrowType lhs, Apache.Arrow.Types.IArrowType rhs) {
+  public static bool TypesEqual(IArrowType lhs, IArrowType rhs) {
     var dtc = new third_party.Apache.Arrow.ArrayDataTypeComparer(lhs);
     rhs.Accept(dtc);
     return dtc.DataTypeMatch;
+  }
+
+  public static ArrowTable ToArrowTable(IClientTable clientTable) {
+    var ncols = clientTable.NumCols;
+    var nrows = clientTable.NumRows;
+    var arrays = new List<ArrowColumn>();
+
+    for (var i = 0; i != ncols; ++i) {
+      var columnSource = clientTable.GetColumn(i);
+      var arrowArray = ArrowArrayConverter.ColumnSourceToArray(columnSource, nrows);
+      arrays.Add(arrowArray);
+    }
+
+    return new ArrowTable(clientTable.Schema, arrays);
   }
 }

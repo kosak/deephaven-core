@@ -21,7 +21,7 @@ public class TableMaker {
     _columnInfos.Add(new ColumnInfo(name, array, kvMetadata.ToArray()));
   }
 
-  public Apache.Arrow.Table MakeArrowTable() {
+  public Apache.Arrow.Table ToArrowTable() {
     var schema = MakeSchema();
     var columns = MakeColumns();
     return new Apache.Arrow.Table(schema, columns);

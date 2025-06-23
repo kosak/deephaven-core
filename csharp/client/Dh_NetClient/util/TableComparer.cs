@@ -6,7 +6,13 @@ namespace Deephaven.Dh_NetClient;
 
 public static class TableComparer {
   public static void AssertSame(TableMaker expected, TableHandle actual) {
-    var expAsArrow = expected.MakeArrowTable();
+    var expAsArrow = expected.ToArrowTable();
+    var actAsArrow = actual.ToArrowTable();
+    AssertSame(expAsArrow, actAsArrow);
+  }
+
+  public static void AssertSame(TableMaker expected, IClientTable actual) {
+    var expAsArrow = expected.ToArrowTable();
     var actAsArrow = actual.ToArrowTable();
     AssertSame(expAsArrow, actAsArrow);
   }
