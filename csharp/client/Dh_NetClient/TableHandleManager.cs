@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf;
 using Io.Deephaven.Proto.Backplane.Grpc;
+using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -154,7 +155,14 @@ public class TableHandleManager : IDisposable {
   /// </summary>
   /// <param name="code">The script to be run on the server</param>
   public void RunScript(string code) {
-    throw new NotImplementedException();
+    if (ConsoleId == null) {
+      throw new Exception("Can't RunScript because Client was created without specifying a script language");
+    }
+    var req = new ExecuteCommandRequest {
+      ConsoleId = ConsoleId,
+      Code = code
+    };
+    _ = Server.SendRpc(opts => Server.ConsoleStub.ExecuteCommandAsync(req, opts));
   }
 
   public TableHandle MakeTableHandleFromTicket(Ticket ticket) {

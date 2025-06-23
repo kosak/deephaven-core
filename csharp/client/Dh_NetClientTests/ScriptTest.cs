@@ -1,6 +1,4 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -38,10 +36,9 @@ public class ScriptTest {
     m.RunScript(script);
     var t = m.FetchTable("mytable");
 
-    var tc = new TableComparer();
-    tc.AddColumn("intData", intData);
-    tc.AddColumn("longData", longData);
-    tc.AssertEqualTo(t);
+    var expected = new TableMaker();
+    expected.AddColumn("intData", intData);
+    expected.AddColumn("longData", longData);
+    TableComparer.AssertSame(expected, t);
   }
 }
-#endif
