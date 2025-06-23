@@ -1,21 +1,12 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class JoinTest {
-  private readonly ITestOutputHelper _output;
-
-  public JoinTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class JoinTest(ITestOutputHelper output) {
   [Fact]
   public void TestJoin() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
-    var tm = ctx.Client.Manager;
     var testTable = ctx.TestTable;
 
     using var table = testTable.Where("ImportDate == `2017-11-01`");
@@ -25,15 +16,12 @@ public class JoinTest {
     using var joined = lastClose.NaturalJoin(avgView, new[] {"Ticker"}, new[]{ "ADV = Volume"});
     using var filtered = joined.Select("Ticker", "Close", "ADV");
 
-    var tickerData = new[] { "XRX", "XYZZY", "IBM", "GME", "AAPL", "ZNGA" };
-    var closeData = new[] { 53.8, 88.5, 38.7, 453, 26.7, 544.9 };
-    var advData = new[] { 216000, 6060842, 138000, 138000000, 123000, 47211.50 };
+    var expected = new TableMaker();
+    expected.AddColumn("Ticker", ["XRX", "XYZZY", "IBM", "GME", "AAPL", "ZNGA"]);
+    expected.AddColumn("Close", [53.8, 88.5, 38.7, 453, 26.7, 544.9]);
+    expected.AddColumn("ADV", [216000, 6060842, 138000, 138000000, 123000, 47211.50]);
 
-    var tc = new TableComparer();
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Close", closeData);
-    tc.AddColumn("ADV", advData);
-    tc.AssertEqualTo(filtered);
+    TableComparer.AssertSame(expected, filtered);
   }
 
   [Fact]
@@ -53,7 +41,8 @@ public class JoinTest {
       };
       var priceData = new[] { 2.5, 3.7, 3.0, 100.50, 110 };
       var sizeData = new[] { 52, 14, 73, 11, 6 };
-      using var tableMaker = new TableMaker();
+
+      var tableMaker = new TableMaker();
       tableMaker.AddColumn("Ticker", tickerData);
       tableMaker.AddColumn("Timestamp", instantDdata);
       tableMaker.AddColumn("Price", priceData);
@@ -185,7 +174,8 @@ public class JoinTest {
       var bidSizeData = new int?[] { 10, null, null, 5, 13 };
       var askData = new double?[] { 2.5, null, null, 105, 110 };
       var askSizeData = new int?[] { 83, null, null, 47, 15 };
-      var tableComparer = new TableComparer();
+
+      var tableComparer = new TableMaker();
       tableComparer.AddColumn("Ticker", tickerData);
       tableComparer.AddColumn("Timestamp", timestampData);
       tableComparer.AddColumn("Price", priceData);
@@ -198,4 +188,3 @@ public class JoinTest {
     }
   }
 }
-#endif
