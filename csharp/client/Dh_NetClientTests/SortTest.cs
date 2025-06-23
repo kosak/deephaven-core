@@ -1,6 +1,4 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -17,47 +15,34 @@ public class SortTest {
 
     var table1 = filtered.Sort(SortPair.Descending("Ticker"), SortPair.Ascending("Volume"));
 
-    var tickerData = new[] { "ZNGA", "ZNGA", "XYZZY", "XRX", "XRX"};
-    var openData = new[] { 541.2, 685.3, 92.3, 50.5, 83.1 };
-    var volData = new Int64[] { 46123, 48300, 6060842, 87000, 345000 };
+    var expected = new TableMaker();
+    expected.AddColumn("Ticker", ["ZNGA", "ZNGA", "XYZZY", "XRX", "XRX"]);
+    expected.AddColumn("Open", [541.2, 685.3, 92.3, 50.5, 83.1]);
+    expected.AddColumn("Volume", [(Int64)46123, 48300, 6060842, 87000, 345000]);
 
-    var tc = new TableComparer();
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Open", openData);
-    tc.AddColumn("Volume", volData);
-    tc.AssertEqualTo(table1);
+    TableComparer.AssertSame(expected, table1);
   }
 
   [Fact]
   public void SortTempTable() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var intData0 = new []{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    var intData1 = new []{ 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
-    var intData2 = new []{ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
-    var intData3 = new []{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
-
     var maker = new TableMaker();
-    maker.AddColumn("IntValue0", intData0);
-    maker.AddColumn("IntValue1", intData1);
-    maker.AddColumn("IntValue2", intData2);
-    maker.AddColumn("IntValue3", intData3);
+    maker.AddColumn("IntValue0", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    maker.AddColumn("IntValue1", [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7]);
+    maker.AddColumn("IntValue2", [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]);
+    maker.AddColumn("IntValue3", [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]);
 
-    var temp_table = maker.MakeTable(ctx.Client.Manager);
+    var tempTable = maker.MakeTable(ctx.Client.Manager);
 
-    var sorted = temp_table.Sort(SortPair.Descending("IntValue3"), SortPair.Ascending("IntValue2"));
+    var sorted = tempTable.Sort(SortPair.Descending("IntValue3"), SortPair.Ascending("IntValue2"));
 
-    var sid0 = new[] { 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
-    var sid1 = new[] { 4, 4, 5, 5, 6, 6, 7, 7, 0, 0, 1, 1, 2, 2, 3, 3};
-    var sid2 = new[] { 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1};
-    var sid3 = new[] { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+    var expected = new TableMaker();
+    expected.AddColumn("IntValue0", [8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7]);
+    expected.AddColumn("IntValue1", [4, 4, 5, 5, 6, 6, 7, 7, 0, 0, 1, 1, 2, 2, 3, 3]);
+    expected.AddColumn("IntValue2", [2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1]);
+    expected.AddColumn("IntValue3", [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-    var tc = new TableComparer();
-    tc.AddColumn("IntValue0", sid0);
-    tc.AddColumn("IntValue1", sid1);
-    tc.AddColumn("IntValue2", sid2);
-    tc.AddColumn("IntValue3", sid3);
-    tc.AssertEqualTo(sorted);
+    TableComparer.AssertSame(expected, sorted);
   }
 }
-#endif

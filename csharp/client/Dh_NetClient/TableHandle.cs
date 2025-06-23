@@ -440,11 +440,10 @@ public class TableHandle : IDisposable {
     var req = new AjRajTablesRequest {
       ResultId = Server.NewTicket(),
       LeftId = new TableReference { Ticket = leftTableTicket },
-      RightId = new TableReference { Ticket = rightTableTicket }
-
+      RightId = new TableReference { Ticket = rightTableTicket },
+      // The final 'on' column is the as of column
+      AsOfColumn = onList[^1]
     };
-    // The final 'on' column is the as of column
-    req.AsOfColumn = onList[^1];
     onList.RemoveAt(onList.Count - 1);
     // The remaining 'on' columns are the exact_match_columns
     req.ExactMatchColumns.AddRange(onList);
@@ -454,6 +453,31 @@ public class TableHandle : IDisposable {
 
   public TableHandle Merge(params TableHandle[] sources) {
     return Merge("", sources);
+  }
+
+  /// <summary>
+  /// Creates a new table from this table, sorted By sortPairs.
+  /// </summary>
+  /// <param name="sortPairs">A vector of SortPair objects describing the sort. Each SortPair refers to
+  /// a column, a sort direction, and whether the sort should consider to the value's regular or
+  /// absolute value when doing comparisons.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Sort(params SortPair[] sortPairs) {
+    var sortDescriptors = sortPairs.Select(sp => new SortDescriptor {
+      ColumnName = sp.Column,
+      IsAbsolute = sp.Abs,
+      Direction = sp.Direction == SortDirection.Ascending ? 
+        SortDescriptor.Types.SortDirection.Ascending :
+        SortDescriptor.Types.SortDirection.Descending
+    }).ToArray();
+    var req = new SortTableRequest {
+      ResultId = Server.NewTicket(),
+      SourceId = new TableReference { Ticket = Ticket }
+    };
+    req.Sorts.AddRange(sortDescriptors);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.SortAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
   }
 
   // TODO(kosak): document keyColumn
