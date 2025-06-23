@@ -229,28 +229,20 @@ public class SelectTest {
     TableComparer.AssertSame(expected, result);
   }
 
-#if false
-
   [Fact]
   public void TestSelectDistinct() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var aData = new[] { "apple", "apple", "orange", "orange", "plum", "grape" };
-    var bData = new[] { 1, 1, 2, 2, 3, 3 };
-
-    using var sourceMaker = new TableMaker();
-    sourceMaker.AddColumn("A", aData);
-    sourceMaker.AddColumn("B", bData);
+    var sourceMaker = new TableMaker();
+    sourceMaker.AddColumn("A", ["apple", "apple", "orange", "orange", "plum", "grape"]);
+    sourceMaker.AddColumn("B", [1, 1, 2, 2, 3, 3]);
     var source = sourceMaker.MakeTable(ctx.Client.Manager);
 
     var result = source.SelectDistinct("A");
     _output.WriteLine(result.ToString(true));
 
-    var expectedAData = new[] { "apple", "orange", "plum", "grape" };
-
-    var tc = new TableComparer();
-    tc.AddColumn("A", expectedAData);
-    tc.AssertEqualTo(result);
+    var expected = new TableMaker();
+    expected.AddColumn("A", ["apple", "orange", "plum", "grape"]);
+    TableComparer.AssertSame(expected, result);
   }
-#endif
 }

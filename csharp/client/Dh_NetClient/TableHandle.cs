@@ -74,11 +74,27 @@ public class TableHandle : IDisposable {
         Ticket = _ticket
       }
     };
-    foreach (var cs in columnSpecs) {
-      req.ColumnSpecs.Add(cs);
-    }
-
+    req.ColumnSpecs.AddRange(columnSpecs);
     var resp = server.SendRpc(opts => func(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  /// <summary>
+  /// Creates a new table containing all of the unique values for a set of key columns.
+  /// When used on multiple columns, it looks for distinct sets of values in the selected columns.
+  /// </summary>
+  /// <param name="columnSpecs">The columnSpecs to select</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle SelectDistinct(params string[] columnSpecs) {
+    var server = _manager.Server;
+    var req = new SelectDistinctRequest {
+      ResultId = server.NewTicket(),
+      SourceId = new TableReference {
+        Ticket = _ticket
+      }
+    };
+    req.ColumnNames.AddRange(columnSpecs);
+    var resp = server.SendRpc(opts => server.TableStub.SelectDistinctAsync(req, opts));
     return TableHandle.Create(_manager, resp);
   }
 
