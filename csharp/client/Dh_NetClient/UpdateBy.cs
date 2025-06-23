@@ -1,7 +1,21 @@
 ﻿using Io.Deephaven.Proto.Backplane.Grpc;
+using System;
 using UpdateByOperationProto = Io.Deephaven.Proto.Backplane.Grpc.UpdateByRequest.Types.UpdateByOperation;
 
 namespace Deephaven.Dh_NetClient;
+
+public enum MathContext : Int32 {
+  Unlimited, Decimal32, Decimal64, Decimal128
+};
+
+public enum BadDataBehavior : Int32 {
+  Reset, Skip, Throw, Poison
+};
+
+public enum DeltaControl : Int32 {
+  NullDominates, ValueDominates, ZeroDominates
+};
+
 
 public class UpdateByOperation {
   public readonly UpdateByOperationProto UpdateByProto;
@@ -41,12 +55,31 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
+  public static UpdateByOperation Delta(IEnumerable<string> cols, DeltaControl deltaControl = DeltaControl.NullDominates) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().Delta =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByDelta {
+        Options = new UpdateByDeltaOptions {
+          NullBehavior = ConvertDeltaControl(deltaControl)
+        }
+      };
+    return ubb.Build();
+  }
+
+  private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
+    return dc switch {
+      DeltaControl.NullDominates => UpdateByNullBehavior.NullDominates,
+      DeltaControl.ValueDominates => UpdateByNullBehavior.ValueDominates,
+      DeltaControl.ZeroDominates => UpdateByNullBehavior.ZeroDominates,
+      _ => throw new Exception($"Unexpected DeltaControl {dc}")
+    };
+  }
 }
 
 internal class UpdateByBuilder {
   private readonly UpdateByOperationProto _gup = new();
 
-  public UpdateByBuilder(string[] cols) {
+  public UpdateByBuilder(IEnumerable<string> cols) {
     _gup.Column.MatchPairs.AddRange(cols);
   }
 
@@ -56,9 +89,18 @@ internal class UpdateByBuilder {
     return _gup.Column.Spec;
   }
 
+  public UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec MutableNullBehavior() {
+    _gup.Column ??= new UpdateByOperationProto.Types.UpdateByColumn();
+    _gup.Column.Spec ??= new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec();
+    return _gup.Column.Spec;
+  }
+
+
   public UpdateByOperation Build() {
     return new UpdateByOperation(_gup);
   }
+
+
 
   template<typename Member>
   void TouchEmpty(Member mutable_member) {
@@ -165,17 +207,6 @@ UpdateByOperation::~UpdateByOperation() = default;
 
 namespace deephaven::client::update_by {
   namespace {
-    UpdateByNullBehavior convertDeltaControl(DeltaControl dc) {
-      switch (dc) {
-        case DeltaControl::kNullDominates: return UpdateByNullBehavior::NULL_DOMINATES;
-        case DeltaControl::kValueDominates: return UpdateByNullBehavior::VALUE_DOMINATES;
-        case DeltaControl::kZeroDominates: return UpdateByNullBehavior::ZERO_DOMINATES;
-        default: {
-            auto message = fmt::format("Unexpected DeltaControl {}", static_cast<int>(dc));
-            throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-          }
-      }
-    }
 
     BadDataBehaviorProtoEnum convertBadDataBehavior(BadDataBehavior bdb) {
       switch (bdb) {
@@ -278,11 +309,6 @@ return std::move(v.result);
 
 
 
-UpdateByOperation delta(std::vector<std::string> cols, DeltaControl delta_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetNullBehavior(&UpdateBySpec::mutable_delta, delta_control);
-  return ubb.Build();
-}
 
 UpdateByOperation emaTick(double decay_ticks, std::vector<std::string> cols,
     const OperationControl &op_control) {
