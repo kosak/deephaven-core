@@ -1,99 +1,63 @@
 ﻿using System;
+using Io.Deephaven.Proto.Backplane.Grpc;
+
 namespace Deephaven.Dh_NetClient;
 
 
-/**
- * Represents a collection of Aggregate objects.
- */
+/// <summary>
+/// Represents a collection of Aggregate objects.
+/// </summary>
+public class AggregateCombo {
+  /// <summary>
+  /// Create an AggregateCombo
+  /// </summary>
+  /// <param name="list">The contained Aggregates</param>
+  /// <returns></returns>
+  static AggregateCombo Create(params Aggregate[] list) {
+    var aggregates = list.Select(elt => elt.Descriptor).ToArray();
+    return new AggregateCombo(aggregates);
+  }
 
-class AggregateCombo {
-  public:
-  /**
-   * Create an AggregateCombo from an initializer list.
-   */
-  [[nodiscard]]
-  static AggregateCombo Create(std::initializer_list<Aggregate> list);
-  /**
-   * Create an AggregateCombo from a vector.
-   */
-  [[nodiscard]]
-  static AggregateCombo Create(std::vector<Aggregate> vec);
+  private readonly ComboAggregateRequest.Types.Aggregate[] _aggregates;
 
-  /**
-   * Copy constructor
-   */
-  AggregateCombo(const AggregateCombo &other);
-  /**
-   * Move constructor
-   */
-  AggregateCombo(AggregateCombo &&other) noexcept;
-  /**
-   * Copy assigment operator.
-   */
-  AggregateCombo &operator=(const AggregateCombo &other);
-  /**
-   * Move assigment operator.
-   */
-  AggregateCombo &operator=(AggregateCombo &&other) noexcept;
-
-  ~AggregateCombo();
-
-  /**
-   * Returns the underlying "impl" object. Used internally.
-   */
-  [[nodiscard]]
-  const std::shared_ptr<impl::AggregateComboImpl> &Impl() const { return impl_; }
-
-  private:
-  explicit AggregateCombo(std::shared_ptr<impl::AggregateComboImpl> impl);
-
-  std::shared_ptr<impl::AggregateComboImpl> impl_;
+  private AggregateCombo(ComboAggregateRequest.Types.Aggregate[] aggregates) {
+    _aggregates = aggregates;
+  }
 }
 
-class Aggregate {
-  public:
-  /*
- * Default constructor. Creates a (useless) empty object.
- */
-  Aggregate();
-  /**
-   * Copy constructor
-   */
-  Aggregate(const Aggregate &other);
-  /**
-   * Move constructor
-   */
-  Aggregate(Aggregate &&other) noexcept;
-  /**
-   * Copy assigment operator.
-   */
-  Aggregate &operator=(const Aggregate &other);
-  /**
-   * Move assigment operator.
-   */
-  Aggregate &operator=(Aggregate &&other) noexcept;
-  /**
-   * Destructor
-   */
-  ~Aggregate();
-  /**
-   * Returns an aggregator that computes the total sum of values, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate AbsSum(std::vector<std::string> column_specs);
-  /**
-   * A variadic form of AbsSum(std::vector<std::string>) const that takes a combination of
-   * argument types.
-   * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
-   * @param args The arguments to AbsSum
-   * @return An Aggregate object representing the aggregation
-   */
-  template<typename...Args>
-  [[nodiscard]]
-  static Aggregate AbsSum(Args &&...args) {
-    std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return AbsSum(std::move(vec));
+public class Aggregate {
+  public readonly ComboAggregateRequest.Types.Aggregate Descriptor;
+
+  /// <summary>
+  /// Returns an aggregator that computes the total sum of values, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate AbsSum(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.AbsSum, columnSpecs);
+  }
+
+  /// <summary>
+  /// Returns an aggregator that computes the average (mean) of values, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Avg(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Avg, columnSpecs);
+  }
+
+  /// <summary>
+  /// Returns an aggregator that computes the number of elements within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Count(params string[] columnSpecs) {
+    auto ad = CreateDescForColumn(ComboAggregateRequest::COUNT, std::move(column_spec));
+    auto impl = AggregateImpl::Create(std::move(ad));
+    return Aggregate(std::move(impl));
   }
 
   /**
@@ -116,26 +80,7 @@ template < typename...Args >
 return Group(std::move(vec));
   }
 
-  /**
-   * Returns an aggregator that computes the average (mean) of values, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Avg(std::vector<std::string> column_specs);
-/**
- * A variadic form of Avg(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Avg
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Avg(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Avg(std::move(vec));
-  }
-
+  
   /**
    * Returns an aggregator that computes the number of elements within an aggregation group.
    */
