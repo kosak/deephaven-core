@@ -7,7 +7,7 @@ global using Int32Chunk = Deephaven.Dh_NetClient.Chunk<System.Int32>;
 global using Int64Chunk = Deephaven.Dh_NetClient.Chunk<System.Int64>;
 global using FloatChunk = Deephaven.Dh_NetClient.Chunk<float>;
 global using DoubleChunk = Deephaven.Dh_NetClient.Chunk<double>;
-global using DateTimeChunk = Deephaven.Dh_NetClient.Chunk<System.DateTime>;
+global using DateTimeOffsetChunk = Deephaven.Dh_NetClient.Chunk<System.DateTimeOffset>;
 global using DateOnlyChunk = Deephaven.Dh_NetClient.Chunk<System.DateOnly>;
 global using TimeOnlyChunk = Deephaven.Dh_NetClient.Chunk<System.TimeOnly>;
 

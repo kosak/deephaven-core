@@ -171,7 +171,7 @@ public class TableMaker {
         return new StringColumnBuilder();
       }
 
-      if (type == typeof(DateTimeOffset)) {
+      if (type == typeof(DateTime)) {
         var arrowBuilder = new Apache.Arrow.TimestampArray.Builder(TimeUnit.Nanosecond, "UTC");
         return new TypicalBuilder<DateTimeOffset, Apache.Arrow.TimestampArray, Apache.Arrow.TimestampArray.Builder>(
           arrowBuilder, DeephavenMetadataConstants.Types.DateTime);

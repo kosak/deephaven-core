@@ -7,7 +7,7 @@ global using Int32ArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<S
 global using Int64ArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.Int64>;
 global using FloatArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<float>;
 global using DoubleArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<double>;
-global using TimestampArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateTime>;
+global using DateTimeOffsetArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateTimeOffset>;
 global using LocalDateArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateOnly>;
 global using LocalTimeArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.TimeOnly>;
 
@@ -64,7 +64,7 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
     IColumnSourceVisitor<IDoubleColumnSource>,
     IColumnSourceVisitor<IBooleanColumnSource>,
     IColumnSourceVisitor<IStringColumnSource>,
-    IColumnSourceVisitor<IDateTimeColumnSource>,
+    IColumnSourceVisitor<IDateTimeOffsetColumnSource>,
     IColumnSourceVisitor<IDateOnlyColumnSource>,
     IColumnSourceVisitor<ITimeOnlyColumnSource> {
   public void Visit(ICharColumnSource src) {
@@ -119,13 +119,10 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
     vc.FillChunk(rows, chunkedArray);
   }
 
-  public void Visit(IDateTimeColumnSource _) {
-    var tc = new TransformingCopier<Int64, DateTime>((DateTimeChunk)destData,
-      nullFlags, DeephavenConstants.NullLong, new DateTime(),
-      nanos => {
-        var dto = DateTimeOffset.UnixEpoch + TimeSpan.FromTicks(nanos / TimeSpan.NanosecondsPerTick);
-        return dto.DateTime;
-      });
+  public void Visit(IDateTimeOffsetColumnSource _) {
+    var tc = new TransformingCopier<Int64, DateTimeOffset>((DateTimeOffsetChunk)destData,
+      nullFlags, DeephavenConstants.NullLong, new DateTimeOffset(),
+      nanos => DateTimeOffset.UnixEpoch + TimeSpan.FromTicks(nanos / TimeSpan.NanosecondsPerTick));
     tc.FillChunk(rows, chunkedArray);
   }
 
@@ -329,7 +326,7 @@ class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   }
 
   public void Visit(TimestampType type) {
-    Result = new TimestampArrowColumnSource(chunkedArray);
+    Result = new DateTimeOffsetArrowColumnSource(chunkedArray);
   }
 
   public void Visit(Date64Type type) {

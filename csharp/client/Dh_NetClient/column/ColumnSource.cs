@@ -7,7 +7,7 @@ global using IFloatColumnSource = Deephaven.Dh_NetClient.IColumnSource<float>;
 global using IDoubleColumnSource = Deephaven.Dh_NetClient.IColumnSource<double>;
 global using IBooleanColumnSource = Deephaven.Dh_NetClient.IColumnSource<bool>;
 global using IStringColumnSource = Deephaven.Dh_NetClient.IColumnSource<string>;
-global using IDateTimeColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.DateTime>;
+global using IDateTimeOffsetColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.DateTimeOffset>;
 global using IDateOnlyColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.DateOnly>;
 global using ITimeOnlyColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.TimeOnly>;
 

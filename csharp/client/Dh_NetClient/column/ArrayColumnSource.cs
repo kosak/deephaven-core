@@ -7,7 +7,7 @@ global using Int32ArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<S
 global using Int64ArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.Int64>;
 global using FloatArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<float>;
 global using DoubleArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<double>;
-global using DateTimeArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.DateTime>;
+global using DateTimeOffsetColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.DateTimeOffset>;
 global using DateOnlyArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.DateOnly>;
 global using TimeOnlyArrayColumnSource = Deephaven.Dh_NetClient.ArrayColumnSource<System.TimeOnly>;
 
@@ -83,7 +83,7 @@ public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
     }
 
     public void Visit(TimestampType type) {
-      Result = new DateTimeArrayColumnSource(size);
+      Result = new DateTimeOffsetColumnSource(size);
     }
 
     public void Visit(Date64Type type) {

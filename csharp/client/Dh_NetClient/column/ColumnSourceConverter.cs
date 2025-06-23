@@ -11,7 +11,7 @@ public static class ColumnSourceConverter {
     public Array Result = Array.Empty<object>();
 
     public void Visit(IColumnSource cs) {
-      throw new Exception($"ToArray not supported for type {cs.GetType().Name}");
+      throw new Exception($"ToArray not supported for type {Utility.FriendlyTypeName(cs.GetType())}");
     }
   }
 }

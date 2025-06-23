@@ -9,7 +9,8 @@ public interface IClientTable : IDisposable {
   }
 
   string ToString(bool wantHeaders, bool wantLineNumbers) {
-    return "TODO(kosak)";
+    var at = ToArrowTable();
+    return ArrowUtil.Render(at, wantHeaders, wantLineNumbers);
   }
 
   /// <summary>

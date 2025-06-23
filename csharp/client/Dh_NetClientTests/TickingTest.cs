@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
@@ -16,12 +17,12 @@ public class TickingTest(ITestOutputHelper output) {
     using var cookie = table.Subscribe(callback);
 
     while (true) {
-      var (done, errorText) = callback.WaitForUpdate();
+      var (done, exception) = callback.WaitForUpdate();
       if (done) {
         break;
       }
-      if (errorText != null) {
-        throw new Exception(errorText);
+      if (exception != null) {
+        throw new Exception("Caught exception", exception);
       }
     }
   }
@@ -50,12 +51,12 @@ public class TickingTest(ITestOutputHelper output) {
     using var cookie = table.Subscribe(callback);
 
     while (true) {
-      var (done, errorText) = callback.WaitForUpdate();
+      var (done, exception) = callback.WaitForUpdate();
       if (done) {
         break;
       }
-      if (errorText != null) {
-        throw new Exception(errorText);
+      if (exception != null) {
+        throw new Exception("Caught exception", exception);
       }
     }
   }
@@ -87,12 +88,12 @@ public class TickingTest(ITestOutputHelper output) {
     using var cookie = table.Subscribe(callback);
 
     while (true) {
-      var (done, errorText) = callback.WaitForUpdate();
+      var (done, exception) = callback.WaitForUpdate();
       if (done) {
         break;
       }
-      if (errorText != null) {
-        throw new Exception(errorText);
+      if (exception != null) {
+        throw new Exception("Caught exception", exception);
       }
     }
   }
@@ -107,20 +108,20 @@ public abstract class CommonBase : IObserver<TickingUpdate> {
 
   private readonly object _sync = new();
   private bool _done = false;
-  private string? _errorText = null;
+  private Exception? _exception = null;
 
   public void OnError(Exception error) {
     lock (_sync) {
-      _errorText = error.Message;
+      _exception = error;
       Monitor.PulseAll(_sync);
     }
   }
 
-  public (bool, string?) WaitForUpdate() {
+  public (bool, Exception?) WaitForUpdate() {
     lock (_sync) {
       while (true) {
-        if (_done || _errorText != null) {
-          return (_done, _errorText);
+        if (_done || _exception != null) {
+          return (_done, _exception);
         }
 
         Monitor.Wait(_sync);

@@ -51,8 +51,8 @@ public static class TableComparer {
         throw new Exception($"Column {i}: Expected length {exp.Length}, actual length {act.Length}");
       }
 
-      using var expIter = MakeScalarEnumerable(exp.Data).GetEnumerator();
-      using var actIter = MakeScalarEnumerable(act.Data).GetEnumerator();
+      using var expIter = ArrowUtil.MakeScalarEnumerable(exp.Data).GetEnumerator();
+      using var actIter = ArrowUtil.MakeScalarEnumerable(act.Data).GetEnumerator();
 
       var rowsConsumed = 0;
       while (true) {
@@ -73,16 +73,6 @@ public static class TableComparer {
           throw new Exception(
             $"Values differ at row {rowsConsumed}: expected={expIter.Current}, actual={actIter.Current}");
         }
-      }
-    }
-  }
-
-  private static IEnumerable<object> MakeScalarEnumerable(Apache.Arrow.ChunkedArray chunkedArray) {
-    var numArrays = chunkedArray.ArrayCount;
-    for (var i = 0; i != numArrays; ++i) {
-      var array = chunkedArray.ArrowArray(i);
-      foreach (var result in (IEnumerable)array) {
-        yield return result;
       }
     }
   }

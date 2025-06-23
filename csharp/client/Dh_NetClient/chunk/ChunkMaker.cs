@@ -17,7 +17,7 @@ public static class ChunkMaker {
     IColumnSourceVisitor<IDoubleColumnSource>,
     IColumnSourceVisitor<IBooleanColumnSource>,
     IColumnSourceVisitor<IStringColumnSource>,
-    IColumnSourceVisitor<IDateTimeColumnSource>,
+    IColumnSourceVisitor<IDateTimeOffsetColumnSource>,
     IColumnSourceVisitor<IDateOnlyColumnSource>,
     IColumnSourceVisitor<ITimeOnlyColumnSource> {
     public Chunk? Result { get; private set; }
@@ -31,12 +31,12 @@ public static class ChunkMaker {
     public void Visit(IDoubleColumnSource cs) => Doit(cs);
     public void Visit(IBooleanColumnSource cs) => Doit(cs);
     public void Visit(IStringColumnSource cs) => Doit(cs);
-    public void Visit(IDateTimeColumnSource cs) => Doit(cs);
+    public void Visit(IDateTimeOffsetColumnSource cs) => Doit(cs);
     public void Visit(IDateOnlyColumnSource cs) => Doit(cs);
     public void Visit(ITimeOnlyColumnSource cs) => Doit(cs);
 
     public void Visit(IColumnSource cs) {
-      throw new Exception($"Programming error: No visitor for type {cs.GetType().Name}");
+      throw new Exception($"Programming error: No visitor for type {Utility.FriendlyTypeName(cs.GetType())}");
     }
 
     private void Doit<T>(IColumnSource<T> _) {
