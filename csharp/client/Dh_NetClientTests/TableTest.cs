@@ -1,6 +1,4 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -21,7 +19,7 @@ public class TableTest {
         "Doubles = ii == 5 ? null : (double)(ii)",
         "Bools = ii == 5 ? null : ((ii % 2) == 0)",
         "Strings = ii == 5 ? null : `hello ` + i",
-        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii"
+        "DateTimes = ii == 5 ? null : '2001-03-01T12:34:56Z' + ii * 1000000"
       );
 
     var chars = new List<char?>();
@@ -33,9 +31,9 @@ public class TableTest {
     var doubles = new List<double?>();
     var bools = new List<bool?>();
     var strings = new List<string?>();
-    var dateTimes = new List<DhDateTime?>();
+    var dateTimes = new List<DateTimeOffset?>();
 
-    var dateTimeStart = DhDateTime.Parse("2001-03-01T12:34:56Z");
+    var dateTimeStart = DateTimeOffset.Parse("2001-03-01T12:34:56Z");
 
     for (var i = 0; i != target; ++i) {
       chars.Add((char)('a' + i));
@@ -47,11 +45,11 @@ public class TableTest {
       doubles.Add((double)i);
       bools.Add((i % 2) == 0);
       strings.Add($"hello {i}");
-      dateTimes.Add(DhDateTime.FromNanos(dateTimeStart.Nanos + i));
+      dateTimes.Add(DateTimeOffset.FromUnixTimeMilliseconds(dateTimeStart.ToUnixTimeMilliseconds() + i));
     }
 
     var t2 = target / 2;
-    // Set the middle element to the null
+    // Set the middle element to the null value
     chars[t2] = null;
     int8s[t2] = null;
     int16s[t2] = null;
@@ -63,18 +61,18 @@ public class TableTest {
     strings[t2] = null;
     dateTimes[t2] = null;
 
-    var tc = new TableComparer();
-    tc.AddColumn("Chars", chars);
-    tc.AddColumn("Bytes", int8s);
-    tc.AddColumn("Shorts", int16s);
-    tc.AddColumn("Ints", int32s);
-    tc.AddColumn("Longs", int64s);
-    tc.AddColumn("Floats", floats);
-    tc.AddColumn("Doubles", doubles);
-    tc.AddColumn("Bools", bools);
-    tc.AddColumn("Strings", strings);
-    tc.AddColumn("DateTimes", dateTimes);
-    tc.AssertEqualTo(th);
+    var expected = new TableMaker();
+    expected.AddColumn("Chars", chars);
+    expected.AddColumn("Bytes", int8s);
+    expected.AddColumn("Shorts", int16s);
+    expected.AddColumn("Ints", int32s);
+    expected.AddColumn("Longs", int64s);
+    expected.AddColumn("Floats", floats);
+    expected.AddColumn("Doubles", doubles);
+    expected.AddColumn("Bools", bools);
+    expected.AddColumn("Strings", strings);
+    expected.AddColumn("DateTimes", dateTimes);
+
+    TableComparer.AssertSame(expected, th);
   }
 }
-#endif
