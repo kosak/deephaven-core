@@ -100,164 +100,87 @@ public class Aggregate {
     return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Max, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the median value, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Med(std::vector<std::string> column_specs);
-/**
- * A variadic form of Med(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Med
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Med(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Med(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the median value, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Med(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Median, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the minimum value, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Min(std::vector<std::string> column_specs);
-/**
- * A variadic form of Min(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Min
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Min(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Min(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the minimum value, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Min(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Min, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the designated percentile of values, within an aggregation
-   * group, for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Pct(double percentile, bool avg_median, std::vector<std::string> column_specs);
-/**
- * A variadic form of Pct(double, bool, std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Pct
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Pct(double percentile, bool avg_median, Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Pct(percentile, avg_median, std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the designated percentile, within an aggregation group,
+  /// for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Pct(double percentile, bool avgMedian, params string[] columnSpecs) {
+    ComboAggregateRequest::Aggregate pd;
+    pd.set_type(ComboAggregateRequest::PERCENTILE);
+    pd.set_percentile(percentile);
+    pd.set_avg_median(avg_median);
+    for (auto & cs : column_specs) {
+      pd.mutable_match_pairs()->Add(std::move(cs));
+    }
+    auto impl = AggregateImpl::Create(std::move(pd));
+    return Aggregate(std::move(impl));
   }
 
-  /**
-   * Returns an aggregator that computes the sample standard deviation of values, within an
-   * aggregation group, for each input column.
-   *
-   * Sample standard deviation is computed using Bessel's correction (https://en.wikipedia.org/wiki/Bessel%27s_correction),
-   * which ensures that the sample variance will be an unbiased estimator of population variance.
-   */
-  [[nodiscard]]
-  static Aggregate Std(std::vector<std::string> column_specs);
-/**
- * A variadic form of Std(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Std
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Std(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Std(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the sample standard deviation of values, within an
+  /// aggregation group, for each input column.
+  ///
+  /// Sample standard deviation is computed using Bessel's correction (https://en.wikipedia.org/wiki/Bessel%27s_correction),
+  /// which ensures that the sample variance will be an unbiased estimator of population variance.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Std(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Std, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the total sum of values, within an aggregation group,
-   * for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate Sum(std::vector<std::string> column_specs);
-/**
- * A variadic form of Sum(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Sum
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Sum(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Sum(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the total sum of values, within an
+  /// aggregation group, for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Sum(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Sum, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the sample variance of values, within an aggregation group,
-   * for each input column.
-   *
-   * Sample variance is computed using Bessel's correction (https://en.wikipedia.org/wiki/Bessel%27s_correction),
-   * which ensures that the sample variance will be an unbiased estimator of population variance.
-   */
-  [[nodiscard]]
-  static Aggregate Var(std::vector<std::string> column_specs);
-/**
- * A variadic form of Var(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to Var
- * @return An Aggregate object representing the aggregation
- */
-template < typename...Args >
-[[nodiscard]]
-  static Aggregate Var(Args &&...args) {
-  std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return Var(std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the sample variance of values, within an
+  /// aggregation group, for each input column.
+  ///
+  /// Sample variance is computed using Bessel's correction (https://en.wikipedia.org/wiki/Bessel%27s_correction),
+  /// which ensures that the sample variance will be an unbiased estimator of population variance.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate Var(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.Var, columnSpecs);
   }
 
-  /**
-   * Returns an aggregator that computes the weighted average of values, within an aggregation
-   * group, for each input column.
-   */
-  [[nodiscard]]
-  static Aggregate WAvg(std::string weight_column, std::vector<std::string> column_specs);
-/**
- * A variadic form of WAvg(std::vector<std::string>) const that takes a combination of
- * argument types.
- * @tparam Args Any combination of `std::string`, `std::string_view`, or `const char *`
- * @param args The arguments to WAvg
- * @return An Aggregate object representing the aggregation
- */
-template<typename WeightArg, typename...Args>
-[[nodiscard]]
-  static Aggregate WAvg(WeightArg &&weight_column, Args &&...args) {
-  auto weight = internal::ConvertToString::ToString(std::forward<WeightArg>(weight_column));
-std::vector < std::string> vec{internal::ConvertToString::ToString(std::forward<Args>(args))...};
-return WAvg(std::move(weight), std::move(vec));
+  /// <summary>
+  /// Returns an aggregator that computes the weighted average of values, within an
+  /// aggregation group, for each input column.
+  /// </summary>
+  /// <param name="columnSpecs"></param>
+  /// <returns>An Aggregate object representing the aggregation</returns>
+  static Aggregate WAvg(params string[] columnSpecs) {
+    return CreateAggForMatchPairs(ComboAggregateRequest.Types.AggType.WeightedAvg, columnSpecs);
   }
-
-  /**
-   * Constructor.
-   */
-  explicit Aggregate(std::shared_ptr<impl::AggregateImpl> impl);
-
-/**
- * Returns the underlying "impl" object. Used internally.
- */
-[[nodiscard]]
-  const std::shared_ptr<impl::AggregateImpl> &Impl() const { return impl_; }
-
-private:
-  std::shared_ptr<impl::AggregateImpl> impl_;
 }
