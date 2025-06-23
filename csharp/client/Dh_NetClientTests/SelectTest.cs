@@ -129,7 +129,6 @@ public class SelectTest {
     TableComparer.AssertSame(tm, t1);
   }
 
-#if false
 
   [Fact]
   public void TestDropColumns() {
@@ -137,9 +136,10 @@ public class SelectTest {
     var table = ctx.TestTable;
 
     var t1 = table.DropColumns("ImportDate", "Open", "Close");
-    Assert.Equal(5, table.Schema.NumCols);
-    Assert.Equal(2, t1.Schema.NumCols);
+    Assert.Equal(5, table.Schema.FieldsList.Count);
+    Assert.Equal(2, t1.Schema.FieldsList.Count);
   }
+
 
   [Fact]
   public void TestSimpleWhere() {
@@ -150,13 +150,10 @@ public class SelectTest {
     var t1 = updated.Where("ImportDate == `2017-11-01` && Ticker == `IBM`")
       .Select("Ticker", "Volume");
 
-    var tickerData = new[] { "IBM" };
-    var volData = new Int64[] { 138000 };
-
-    var tc = new TableComparer();
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Volume", volData);
-    tc.AssertEqualTo(t1);
+    var tm = new TableMaker();
+    tm.AddColumn("Ticker", ["IBM"]);
+    tm.AddColumn("Volume", [(Int64)138000]);
+    TableComparer.AssertSame(tm, t1);
   }
 
   [Fact]
@@ -169,13 +166,10 @@ public class SelectTest {
       .Select("Ticker", "Volume");
     _output.WriteLine(t1.ToString(true));
 
-    var tickerData = new[] { "AAPL", "AAPL", "AAPL" };
-    var volData = new Int64[] { 100000, 250000, 19000 };
-
-    var tc = new TableComparer();
-    tc.AddColumn("Ticker", tickerData);
-    tc.AddColumn("Volume", volData);
-    tc.AssertEqualTo(t1);
+    var tm = new TableMaker();
+    tm.AddColumn("Ticker", ["AAPL", "AAPL", "AAPL"]);
+    tm.AddColumn("Volume", [(Int64)100000, 250000, 19000]);
+    TableComparer.AssertSame(tm, t1);
   }
 
   [Fact]
@@ -183,7 +177,7 @@ public class SelectTest {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
-    Assert.Throws<Exception>(() => {
+    Assert.Throws<AggregateException>(() => {
       var t1 = table.Where(")))))");
       _output.WriteLine(t1.ToString(true));
     });
@@ -193,41 +187,29 @@ public class SelectTest {
   public void TestWhereIn() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
 
-    var letterData = new[] { "A", "C", "F", "B", "E", "D", "A" };
-    var numberData = new Int32?[] { null, 2, 1, null, 4, 5, 3 };
-    var colorData = new[] { "red", "blue", "orange", "purple", "yellow", "pink", "blue" };
-    var codeData = new Int32?[] { 12, 13, 11, null, 16, 14, null };
-
-    using var sourceMaker = new TableMaker();
-    sourceMaker.AddColumn("Letter", letterData);
-    sourceMaker.AddColumn("Number", numberData);
-    sourceMaker.AddColumn("Color", colorData);
-    sourceMaker.AddColumn("Code", codeData);
+    var sourceMaker = new TableMaker();
+    sourceMaker.AddColumn("Letter", ["A", "C", "F", "B", "E", "D", "A"]);
+    sourceMaker.AddColumn("Number", [(Int32?)null, 2, 1, null, 4, 5, 3]);
+    sourceMaker.AddColumn("Color", ["red", "blue", "orange", "purple", "yellow", "pink", "blue"]);
+    sourceMaker.AddColumn("Code", [(Int32?)12, 13, 11, null, 16, 14, null]);
 
     var source = sourceMaker.MakeTable(ctx.Client.Manager);
 
-    var filterColorData = new[] { "blue", "red", "purple", "white" };
-
-    using var filterMaker = new TableMaker();
-    filterMaker.AddColumn("Colors", filterColorData);
+    var filterMaker = new TableMaker();
+    filterMaker.AddColumn("Colors", ["blue", "red", "purple", "white"]);
     var filter = filterMaker.MakeTable(ctx.Client.Manager);
 
     var result = source.WhereIn(filter, "Color = Colors");
 
-    var letterExpected = new[] { "A", "C", "B", "A" };
-    var numberExpected = new Int32?[] { null, 2, null, 3 };
-    var colorExpected = new[] { "red", "blue", "purple", "blue" };
-    var codeExpected = new Int32?[] { 12, 13, null, null };
-
-    var expected = new TableComparer();
-    expected.AddColumn("Letter", letterExpected);
-    expected.AddColumn("Number", numberExpected);
-    expected.AddColumn("Color", colorExpected);
-    expected.AddColumn("Code", codeExpected);
-
-    expected.AssertEqualTo(result);
+    var expected = new TableMaker();
+    expected.AddColumn("Letter", ["A", "C", "B", "A"]);
+    expected.AddColumn("Number", [(Int32?)null, 2, null, 3]);
+    expected.AddColumn("Color", ["red", "blue", "purple", "blue"]);
+    expected.AddColumn("Code", [(Int32?)12, 13, null, null]);
+    TableComparer.AssertSame(expected, result);
   }
 
+#if false
   [Fact]
   public void TestLazyUpdate() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());

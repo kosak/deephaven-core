@@ -22,14 +22,14 @@ public class TableHandle : IDisposable {
 
   private readonly TableHandleManager _manager;
   private readonly Ticket _ticket;
-  private readonly Schema _schema;
+  public readonly Schema Schema;
   private readonly Int64 _numRows;
   private readonly bool _isStatic;
 
   private TableHandle(TableHandleManager manager, Ticket ticket, Schema schema, long numRows, bool isStatic) {
     _manager = manager;
     _ticket = ticket;
-    _schema = schema;
+    Schema = schema;
     _numRows = numRows;
     _isStatic = isStatic;
   }
@@ -70,6 +70,25 @@ public class TableHandle : IDisposable {
     }
 
     var resp = server.SendRpc(opts => func(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  /// <summary>
+  /// Creates a new table from this table Where the specified columns have been excluded.
+  /// </summary>
+  /// <param name="columnSpecs">The columnSpecs to exclude.</param>
+  /// <returns></returns>
+  public TableHandle DropColumns(params string[] columnSpecs) {
+    var server = _manager.Server;
+    var req = new DropColumnsRequest {
+      ResultId = server.NewTicket(),
+      SourceId = new TableReference {
+        Ticket = _ticket
+      }
+    };
+    req.ColumnNames.Add(columnSpecs);
+
+    var resp = server.SendRpc(opts => server.TableStub.DropColumnsAsync(req, opts));
     return TableHandle.Create(_manager, resp);
   }
 
@@ -193,6 +212,27 @@ public class TableHandle : IDisposable {
     return TableHandle.Create(_manager, resp);
   }
 
+  /// <summary>
+  /// Creates a new table containing rows from the source table, where the rows match values in the
+  /// filter table.The filter is updated whenever either table changes.See the Deephaven
+  /// documentation for the difference between "Where" and "WhereIn".
+  /// </summary>
+  /// <param name="filterTable">The table containing the set of values to filter on</param>
+  /// <param name="columns">The columns to match on</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle WhereIn(TableHandle filterTable, params string[] columns) {
+    var server = _manager.Server;
+    var req = new WhereInRequest {
+      ResultId = server.NewTicket(),
+      LeftId = new TableReference { Ticket = _ticket },
+      RightId = new TableReference { Ticket = filterTable._ticket },
+      Inverted = false
+    };
+    req.ColumnsToMatch.AddRange(columns);
+    var resp = server.SendRpc(opts => server.TableStub.WhereInAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
   public void BindToVariable(string variable) {
     var server = _manager.Server;
     if (_manager.ConsoleId == null) {
@@ -235,7 +275,7 @@ public class TableHandle : IDisposable {
   }
 
   public IDisposable Subscribe(IObserver<TickingUpdate> observer) {
-    var disposer = SubscriptionThread.Start(_manager.Server, _schema, _ticket, observer);
+    var disposer = SubscriptionThread.Start(_manager.Server, Schema, _ticket, observer);
     // _manager.AddSubscriptionDisposer(disposer);
     return disposer;
   }

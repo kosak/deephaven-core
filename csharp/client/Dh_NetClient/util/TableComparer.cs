@@ -63,7 +63,7 @@ public static class TableComparer {
           break;
         }
 
-        if (!expIter.Current.Equals(actIter.Current)) {
+        if (!object.Equals(expIter.Current, actIter.Current)) {
           throw new Exception(
             $"Values differ at row {rowsConsumed}: expected={expIter.Current}, actual={actIter.Current}");
         }
