@@ -1,5 +1,4 @@
 ﻿using Deephaven.Dh_NetClient;
-using Io.Deephaven.Proto.Backplane.Grpc;
 using Xunit.Abstractions;
 using static Deephaven.Dh_NetClient.UpdateByOperation;
 
@@ -57,7 +56,7 @@ public class UpdateByTest(ITestOutputHelper output) {
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
         output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
-        using var result = table.UpdateBy(new[] { op }, new[] { "b" });
+        using var result = table.UpdateBy([op], "b");
         Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(1 + table.NumCols, result.NumCols);
         if (result.IsStatic) {
@@ -80,7 +79,7 @@ public class UpdateByTest(ITestOutputHelper output) {
       for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
         var table = tables[tableIndex];
         output.WriteLine($"Processing op {opIndex} on Table {tableIndex}");
-        using var result = table.UpdateBy(new[] { op }, "c");
+        using var result = table.UpdateBy([op], "c");
         Assert.Equal(table.IsStatic, result.IsStatic);
         Assert.Equal(2 + table.NumCols, result.NumCols);
         Assert.True(result.NumRows >= table.NumRows);
@@ -95,9 +94,9 @@ public class UpdateByTest(ITestOutputHelper output) {
 
     var tables = MakeTables(tm);
     var multipleOps = new[] {
-      CumSum(new[] { "sum_a=a", "sum_b=b" }),
-      CumSum(new[] { "max_a=a", "max_d=d" }),
-      EmaTick(10, new[] { "ema_d=d", "ema_e=e" }),
+      CumSum("sum_a=a", "sum_b=b"),
+      CumSum("max_a=a", "max_d=d"),
+      EmaTick(10, ["ema_d=d", "ema_e=e"]),
       EmaTime("Timestamp", "PT00:00:00.1", new[] { "ema_time_d=d", "ema_time_e=e" }),
       RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d" }, 10)
     };
@@ -164,8 +163,8 @@ public class UpdateByTest(ITestOutputHelper output) {
 
     var result = new [] {
       // exponential moving average
-      EmaTick(100, new[] { "ema_a = a" }),
-      EmaTick(100, new[] { "ema_a = a" }, emOpControl),
+      EmaTick(100, ["ema_a = a"]),
+      EmaTick(100, ["ema_a = a"], emOpControl),
       EmaTime("Timestamp", 10, new[] { "ema_a = a" }),
       EmaTime("Timestamp", "PT00:00:00.001", new[] { "ema_c = c" }, emOpControl),
       EmaTime("Timestamp", "PT1M", new[] { "ema_c = c" }),

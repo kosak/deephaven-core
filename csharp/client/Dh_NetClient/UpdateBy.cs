@@ -1,6 +1,9 @@
 ﻿using Io.Deephaven.Proto.Backplane.Grpc;
 using System;
 using UpdateByOperationProto = Io.Deephaven.Proto.Backplane.Grpc.UpdateByRequest.Types.UpdateByOperation;
+using BadDataBehaviorProtoEnum = Io.Deephaven.Proto.Backplane.Grpc.BadDataBehavior;
+using MathContextProto = Io.Deephaven.Proto.Backplane.Grpc.MathContext;
+using RoundingModeProtoEnum = Io.Deephaven.Proto.Backplane.Grpc.MathContext.Types.RoundingMode;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -74,16 +77,10 @@ public class UpdateByOperation {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().Ema = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEma {
       Options = ConvertOperationControl(opControl),
-      WindowScale = new UpdateByWindowScale {
-        Ticks = new UpdateByWindowScale.Types.UpdateByWindowTicks {
-          Ticks = decayTicks
-        }
-      }
+      WindowScale = MakeWindowScale(decayTicks)
     };
-    ubb.SetTicks(&UpdateBySpec::mutable_ema, decayTicks, op_control);
     return ubb.Build();
   }
-
 
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
@@ -102,6 +99,51 @@ public class UpdateByOperation {
       BigValueContext = ConvertMathContext(oc.BigValueContext)
     };
     return result;
+  }
+
+  private static BadDataBehaviorProtoEnum ConvertBadDataBehavior(BadDataBehavior bdb) {
+    return bdb switch {
+      BadDataBehavior.Reset => BadDataBehaviorProtoEnum.Reset,
+      BadDataBehavior.Skip => BadDataBehaviorProtoEnum.Skip,
+      BadDataBehavior.Throw => BadDataBehaviorProtoEnum.Throw,
+      BadDataBehavior.Poison => BadDataBehaviorProtoEnum.Poison,
+      _ => throw new Exception($"Unexpected BadDataBehavior {bdb}")
+    };
+  }
+
+  private static MathContextProto ConvertMathContext(MathContext mctx) {
+    var (precision, roundingMode) = mctx switch {
+      // For the values used here, please see the documentation for java.math.MathContext:
+      // https://docs.oracle.com/javase/8/docs/api/java/math/MathContext.html
+
+      // "A MathContext object whose settings have the values required for unlimited precision arithmetic."
+      MathContext.Unlimited => (0, RoundingModeProtoEnum.HalfUp),
+
+      // "A MathContext object with a precision setting matching the IEEE 754R Decimal32 format, 7 digits, and a rounding mode of HALF_EVEN, the IEEE 754R default."
+      MathContext.Decimal32 => (7, RoundingModeProtoEnum.HalfEven),
+
+      // "A MathContext object with a precision setting matching the IEEE 754R Decimal64 format, 16 digits, and a rounding mode of HALF_EVEN, the IEEE 754R default."
+      MathContext.Decimal64 => (16, RoundingModeProtoEnum.HalfEven),
+
+      // "A MathContext object with a precision setting matching the IEEE 754R Decimal128 format, 34 digits, and a rounding mode of HALF_EVEN, the IEEE 754R default."
+      MathContext.Decimal128 => (34, RoundingModeProtoEnum.HalfEven),
+
+      _ => throw new Exception($"Unexpected MathContext {mctx}")
+    };
+    var result = new MathContextProto {
+      Precision = precision,
+      RoundingMode = roundingMode
+    };
+    return result;
+  }
+
+
+  private static UpdateByWindowScale MakeWindowScale(double ticks) {
+    return new UpdateByWindowScale {
+      Ticks = new UpdateByWindowScale.Types.UpdateByWindowTicks {
+        Ticks = ticks
+      }
+    };
   }
 }
 
@@ -230,59 +272,7 @@ UpdateByOperation::~UpdateByOperation() = default;
 namespace deephaven::client::update_by {
   namespace {
 
-    BadDataBehaviorProtoEnum convertBadDataBehavior(BadDataBehavior bdb) {
-      switch (bdb) {
-        case BadDataBehavior::kReset: return BadDataBehaviorProtoEnum::RESET;
-        case BadDataBehavior::kSkip: return BadDataBehaviorProtoEnum::SKIP;
-        case BadDataBehavior::kThrow: return BadDataBehaviorProtoEnum::THROW;
-        case BadDataBehavior::kPoison: return BadDataBehaviorProtoEnum::POISON;
-        default: {
-            auto message = fmt::format("Unexpected BadDataBehavior {}", static_cast<int>(bdb));
-            throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-          }
-      }
-    }
 
-    MathContextProto convertMathContext(MathContext mctx) {
-      int32_t precision;
-      RoundingModeProtoEnum rounding_mode;
-      switch (mctx) {
-        // For the values used here, please see the documentation for java.math.MathContext:
-        // https://docs.oracle.com/javase/8/docs/api/java/math/MathContext.html
-        case MathContext::kUnlimited: {
-            // "A MathContext object whose settings have the values required for unlimited precision arithmetic."
-            precision = 0;
-            rounding_mode = RoundingModeProtoEnum::MathContext_RoundingMode_HALF_UP;
-            break;
-          }
-        case MathContext::kDecimal32: {
-            // "A MathContext object with a precision setting matching the IEEE 754R Decimal32 format, 7 digits, and a rounding mode of HALF_EVEN, the IEEE 754R default."
-            precision = 7;
-            rounding_mode = RoundingModeProtoEnum::MathContext_RoundingMode_HALF_EVEN;
-            break;
-          }
-        case MathContext::kDecimal64: {
-            // "A MathContext object with a precision setting matching the IEEE 754R Decimal64 format, 16 digits, and a rounding mode of HALF_EVEN, the IEEE 754R default."
-            precision = 16;
-            rounding_mode = RoundingModeProtoEnum::MathContext_RoundingMode_HALF_EVEN;
-            break;
-          }
-        case MathContext::kDecimal128: {
-            // "A MathContext object with a precision setting matching the IEEE 754R Decimal128 format, 34 digits, and a rounding mode of HALF_EVEN, the IEEE 754R default."
-            precision = 34;
-            rounding_mode = RoundingModeProtoEnum::MathContext_RoundingMode_HALF_EVEN;
-            break;
-          }
-        default: {
-            auto message = fmt::format("Unexpected MathContext {}", static_cast<int>(mctx));
-            throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
-          }
-      }
-      MathContextProto result;
-      result.set_precision(precision);
-      result.set_rounding_mode(rounding_mode);
-      return result;
-    }
 
     UpdateByEmOptions convertOperationControl(const OperationControl &oc) {
       auto on_null = convertBadDataBehavior(oc.on_null);
@@ -301,7 +291,7 @@ namespace deephaven::client::update_by {
      * If it is nanoseconds, we set the nanos field of the UpdateByWindowTime proto. Otherwise (if it is
      * a string), then we set the duration_string field.
      */
-    UpdateByWindowTime convertDecayTime(std::string timestamp_col, DurationSpecifier decay_time) {
+    UpdateByWindowScale.Types.UpdateByWindowTime convertDecayTime(std::string timestamp_col, DurationSpecifier decay_time) {
   struct Visitor {
       void operator()(std::chrono::nanoseconds nanos) {
       result.set_nanos(nanos.count());
@@ -312,7 +302,7 @@ namespace deephaven::client::update_by {
   void operator()(std::string duration) {
       * result.mutable_duration_string() = std::move(duration);
     }
-UpdateByWindowTime result;
+UpdateByWindowScale.Types.UpdateByWindowTime result;
   };
 Visitor v;
 // Unconditionally set the column field with the value from timestampCol
@@ -336,7 +326,7 @@ return std::move(v.result);
 UpdateByOperation emaTime(std::string timestamp_col, DurationSpecifier decay_time,
     std::vector<std::string> cols, const OperationControl &op_control) {
   UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTime(&UpdateBySpec::mutable_ema, std::move(timestamp_col), std::move(decay_time), op_control);
+  ubb.SetTime(&UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec::mutable_ema, std::move(timestamp_col), std::move(decay_time), op_control);
   return ubb.Build();
 }
 
