@@ -1,16 +1,9 @@
-﻿#if false
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class TableHandleAttributesTest {
-  private readonly ITestOutputHelper _output;
-
-  public TableHandleAttributesTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class TableHandleAttributesTest(ITestOutputHelper output) {
   [Fact]
   public void TableHandleAttributes() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -39,4 +32,3 @@ public class TableHandleAttributesTest {
     Assert.Equal(expectedSize, table.NumRows);
   }
 }
-#endif

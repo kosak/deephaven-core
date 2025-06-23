@@ -25,15 +25,15 @@ public class TableHandle : IDisposable {
   private readonly TableHandleManager _manager;
   public readonly Ticket Ticket;
   public readonly Schema Schema;
-  private readonly Int64 _numRows;
-  private readonly bool _isStatic;
+  public readonly Int64 NumRows;
+  public readonly bool IsStatic;
 
   private TableHandle(TableHandleManager manager, Ticket ticket, Schema schema, long numRows, bool isStatic) {
     _manager = manager;
     Ticket = ticket;
     Schema = schema;
-    _numRows = numRows;
-    _isStatic = isStatic;
+    NumRows = numRows;
+    IsStatic = isStatic;
   }
 
   public void Dispose() {
