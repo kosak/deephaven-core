@@ -227,16 +227,16 @@ public sealed class WaitForPopulatedTableCallback(ITestOutputHelper output, Int6
 
 public sealed class AllValuesGreaterThanNCallback(ITestOutputHelper output, Int64 target) : CommonBase {
   public override void OnNext(TickingUpdate update) {
-    output.WriteLine($"=== The Full Table ===\n{update.Current.ToString(true, true)}");
-
     var current = update.Current;
+
+    output.WriteLine($"=== The Full Table ===\n{current.ToString(true, true)}");
 
     if (current.NumRows == 0) {
       return;
     }
 
-    var (values, nulls) = current.GetColumn("Value");
-    var data = (Int64[])values;
+    var col = current.GetColumn("Value");
+    var data = (Int64[])col.ToArray();
     var allGreater = data.All(elt => elt > target);
     if (allGreater) {
       NotifyDone();

@@ -8,6 +8,10 @@ public interface IClientTable : IDisposable {
     return ArrowUtil.ToArrowTable(this);
   }
 
+  string ToString(bool wantHeaders, bool wantLineNumbers) {
+    return "TODO(kosak)";
+  }
+
   /// <summary>
   /// Get the RowSequence (in position space) that underlies this Table.
   /// </summary>

@@ -1,6 +1,7 @@
 ﻿using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using ArrowColumn = Apache.Arrow.Column;
+using ArrowField = Apache.Arrow.Field;
 using ArrowTable = Apache.Arrow.Table;
 using IArrowType = Apache.Arrow.Types.IArrowType;
 
@@ -26,14 +27,16 @@ public static class ArrowUtil {
   public static ArrowTable ToArrowTable(IClientTable clientTable) {
     var ncols = clientTable.NumCols;
     var nrows = clientTable.NumRows;
-    var arrays = new List<ArrowColumn>();
+    var columns = new List<ArrowColumn>();
 
     for (var i = 0; i != ncols; ++i) {
       var columnSource = clientTable.GetColumn(i);
       var arrowArray = ArrowArrayConverter.ColumnSourceToArray(columnSource, nrows);
-      arrays.Add(arrowArray);
+      var field = clientTable.Schema.GetFieldByIndex(i);
+      var column = new ArrowColumn(field, [arrowArray]);
+      columns.Add(column);
     }
 
-    return new ArrowTable(clientTable.Schema, arrays);
+    return new ArrowTable(clientTable.Schema, columns);
   }
 }
