@@ -92,7 +92,7 @@ public class SelectTest {
     var tm = new TableMaker();
     tm.AddColumn("Ticker", ["AAPL", "AAPL"]);
     tm.AddColumn("Close", [23.5, 24.2]);
-    tm.AddColumn("Volume", [(long)100000, 250000]);
+    tm.AddColumn("Volume", [(Int64)100000, 250000]);
     TableComparer.AssertSame(tm, t1);
   }
 
@@ -107,18 +107,13 @@ public class SelectTest {
       .Select("Ticker", "Close", "Volume");
     _output.WriteLine(t1.ToString(true));
 
-    var tickerData = new[] { "AAPL" };
-    var closeData = new[] { 26.7 };
-    var volData = new Int64[] { 19000 };
-
     var tm = new TableMaker();
-    tm.AddColumn("Ticker", tickerData);
-    tm.AddColumn("Close", closeData);
-    tm.AddColumn("Volume", volData);
+    tm.AddColumn("Ticker", ["AAPL"]);
+    tm.AddColumn("Close", [26.7]);
+    tm.AddColumn("Volume", [(Int64)19000]);
     TableComparer.AssertSame(tm, t1);
   }
 
-#if false
   [Fact]
   public void TestNewColumns() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -128,14 +123,13 @@ public class SelectTest {
     var t1 = table.Where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
       .Select("MV1 = Volume * Close", "V_plus_12 = Volume + 12");
 
-    var mv1Data = new double[] { 2350000, 6050000, 507300 };
-    var vp2Data = new long[] { 100012, 250012, 19012 };
-
-    var tc = new TableComparer();
-    tc.AddColumn("MV1", mv1Data);
-    tc.AddColumn("V_plus_12", vp2Data);
-    tc.AssertEqualTo(t1);
+    var tm = new TableMaker();
+    tm.AddColumn("MV1", [(double)2350000, 6050000, 507300]);
+    tm.AddColumn("V_plus_12", [(Int64)100012, 250012, 19012]);
+    TableComparer.AssertSame(tm, t1);
   }
+
+#if false
 
   [Fact]
   public void TestDropColumns() {
