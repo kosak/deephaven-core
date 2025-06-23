@@ -1,16 +1,9 @@
-﻿#if false
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class ValidationTest {
-  private readonly ITestOutputHelper _output;
-
-  public ValidationTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class ValidationTest(ITestOutputHelper output) {
   [Fact]
   public void Select() {
     var badSelects = new[] {
@@ -61,10 +54,10 @@ public class ValidationTest {
     IEnumerable<string> badWheres, IEnumerable<string> goodWheres) {
     foreach (var bw in badWheres) {
       try {
-        _output.WriteLine($"Trying {what} {bw}");
+        output.WriteLine($"Trying {what} {bw}");
         using var dummy = table.Where(bw);
       } catch (Exception e) {
-        _output.WriteLine($"{what}: {bw}: Failed *as expected* with: {e.Message}");
+        output.WriteLine($"{what}: {bw}: Failed *as expected* with: {e.Message}");
         continue;
       }
 
@@ -73,7 +66,7 @@ public class ValidationTest {
 
     foreach (var gw in goodWheres) {
       using var dummy = table.Where(gw);
-      _output.WriteLine($"{what}: {gw}: Succeeded as expected");
+      output.WriteLine($"{what}: {gw}: Succeeded as expected");
     }
   }
 
@@ -84,7 +77,7 @@ public class ValidationTest {
       try {
         using var dummy = table.Select(bs);
       } catch (Exception e) {
-        _output.WriteLine($"{what}: {printable}: Failed as expected with: {e.Message}");
+        output.WriteLine($"{what}: {printable}: Failed as expected with: {e.Message}");
         continue;
       }
 
@@ -94,8 +87,7 @@ public class ValidationTest {
     foreach (var gs in goodSelects) {
       var printable = string.Join(", ", gs);
       using var dummy = table.Select(gs);
-      _output.WriteLine($"{what}: {printable}: Succeeded as expected");
+      output.WriteLine($"{what}: {printable}: Succeeded as expected");
     }
   }
 }
-#endif
