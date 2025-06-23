@@ -92,6 +92,38 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
+  public static UpdateByOperation EmsTick(double decayTicks, IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().Ems = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEms {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(decayTicks)
+    };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation EmsTime(string timestampCol, DurationSpecifier decayTime,
+    IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().Ems = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEms {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(timestampCol, decayTime)
+    };
+    return ubb.Build();
+  }
+  UpdateByOperation emminTick(double decay_ticks, std::vector<std::string> cols,
+  const OperationControl &op_control) {
+    UpdateByBuilder ubb(std::move(cols));
+    ubb.SetTicks(&UpdateBySpec::mutable_em_min, decay_ticks, op_control);
+    return ubb.Build();
+  }
+
+  UpdateByOperation emminTime(std::string timestamp_col, DurationSpecifier decay_time,
+  std::vector<std::string> cols, const OperationControl &op_control) {
+    UpdateByBuilder ubb(std::move(cols));
+    ubb.SetTime(&UpdateBySpec::mutable_em_min, std::move(timestamp_col), std::move(decay_time), op_control);
+    return ubb.Build();
+  }
+
 
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
@@ -257,17 +289,6 @@ template<typename Member>
 }
 
 
-/*
- * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
- */
-#include "deephaven/client/client.h"
-
-#include "deephaven_core/proto/table.pb.h"
-#include "deephaven_core/proto/table.grpc.pb.h"
-#include "deephaven/client/impl/update_by_operation_impl.h"
-#include "deephaven/client/impl/util.h"
-#include "deephaven/client/update_by.h"
-#include "deephaven/dhcore/utility/utility.h"
 
 using deephaven::client::impl::MoveVectorData;
 using deephaven::client::impl::UpdateByOperationImpl;
@@ -284,42 +305,8 @@ using UpdateByOperationProto = io::deephaven::proto::backplane::grpc::UpdateByRe
 using UpdateByWindowTime = io::deephaven::proto::backplane::grpc::UpdateByWindowScale::UpdateByWindowTime;
 using DurationSpecifier = deephaven::client::utility::DurationSpecifier;
 
-namespace deephaven::client {
-UpdateByOperation::UpdateByOperation() = default;
-UpdateByOperation::UpdateByOperation(std::shared_ptr<impl::UpdateByOperationImpl> impl) :
-    impl_(std::move(impl)) { }
-  UpdateByOperation::UpdateByOperation(const UpdateByOperation &other) = default;
-UpdateByOperation &UpdateByOperation::operator=(const UpdateByOperation &other) = default;
-UpdateByOperation::UpdateByOperation(UpdateByOperation &&other) noexcept = default;
-UpdateByOperation &UpdateByOperation::operator=(UpdateByOperation &&other) noexcept = default;
-UpdateByOperation::~UpdateByOperation() = default;
-}  // namespace deephaven::client
 
 namespace deephaven::client::update_by {
-  namespace {
-
-
-
-    UpdateByEmOptions convertOperationControl(const OperationControl &oc) {
-      auto on_null = convertBadDataBehavior(oc.on_null);
-      auto on_nan = convertBadDataBehavior(oc.on_nan);
-      auto big_value_context = convertMathContext(oc.big_value_context);
-
-      UpdateByEmOptions result;
-      result.set_on_null_value(on_null);
-      result.set_on_nan_value(on_nan);
-      *result.mutable_big_value_context() = std::move(big_value_context);
-      return result;
-    }
-
-    /**
-     * decayTime will be specified as either std::chrono::nanoseconds, or as a string.
-     * If it is nanoseconds, we set the nanos field of the UpdateByWindowTime proto. Otherwise (if it is
-     * a string), then we set the duration_string field.
-     */
-
-;
-}  // namespace
 
 
 
@@ -328,33 +315,8 @@ namespace deephaven::client::update_by {
 
 
 
-UpdateByOperation emsTick(double decay_ticks, std::vector<std::string> cols,
-    const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTicks(&UpdateBySpec::mutable_ems, decay_ticks, op_control);
-  return ubb.Build();
-}
 
-UpdateByOperation emsTime(std::string timestamp_col, DurationSpecifier decay_time,
-    std::vector<std::string> cols, const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTime(&UpdateBySpec::mutable_ems, std::move(timestamp_col), std::move(decay_time), op_control);
-  return ubb.Build();
-}
 
-UpdateByOperation emminTick(double decay_ticks, std::vector<std::string> cols,
-    const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTicks(&UpdateBySpec::mutable_em_min, decay_ticks, op_control);
-  return ubb.Build();
-}
-
-UpdateByOperation emminTime(std::string timestamp_col, DurationSpecifier decay_time,
-    std::vector<std::string> cols, const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTime(&UpdateBySpec::mutable_em_min, std::move(timestamp_col), std::move(decay_time), op_control);
-  return ubb.Build();
-}
 
 UpdateByOperation emmaxTick(double decay_ticks, std::vector<std::string> cols,
     const OperationControl &op_control) {
