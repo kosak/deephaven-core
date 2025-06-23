@@ -297,6 +297,161 @@ public class TableHandle : IDisposable {
     _ = server.SendRpc(opts => server.InputTableStub.DeleteTableFromInputTableAsync(req, opts));
   }
 
+  /// <summary>
+  /// Creates a new table by cross joining this table with `rightSide`. The tables are joined By
+  /// the columns in `columnsToMatch`, and columns from `rightSide` are brought in and optionally
+  /// renamed By `columnsToAdd`. Example:
+  /// <code>
+  /// t1.CrossJoin({ "Col1", "Col2"}, {"Col3", "NewCol=Col4"})
+  /// </code>
+  /// </summary>
+  /// <param name="rightSide">The table to join with this table</param>
+  /// <param name="columnsToMatch">The columns to join on</param>
+  /// <param name="columnsToAdd">The columns from the right side to add, and possibly rename.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle CrossJoin(TableHandle rightSide, IEnumerable<string> columnsToMatch,
+    IEnumerable<string> columnsToAdd) {
+    var req = new CrossJoinTablesRequest {
+      ResultId = Server.NewTicket(),
+      LeftId = new TableReference { Ticket = Ticket },
+      RightId = new TableReference { Ticket = rightSide.Ticket }
+    };
+    req.ColumnsToMatch.AddRange(columnsToMatch);
+    req.ColumnsToAdd.AddRange(columnsToAdd);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.CrossJoinTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  /// <summary>
+  /// Creates a new table by natural joining this table with `rightSide`. The tables are joined By
+  /// the columns in `columnsToMatch`, and columns from `rightSide` are brought in and optionally
+  /// renamed By `columnsToAdd`. Example:
+  /// <code>
+  /// t1.NaturalJoin({ "Col1", "Col2"}, {"Col3", "NewCol=Col4"})
+  /// </code>
+  /// </summary>
+  /// <param name="rightSide">The table to join with this table</param>
+  /// <param name="columnsToMatch">The columns to join on</param>
+  /// <param name="columnsToAdd">The columns from the right side to add, and possibly rename.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle NaturalJoin(TableHandle rightSide, IEnumerable<string> columnsToMatch,
+    IEnumerable<string> columnsToAdd) {
+    var req = new NaturalJoinTablesRequest {
+      ResultId = Server.NewTicket(),
+      LeftId = new TableReference { Ticket = Ticket },
+      RightId = new TableReference { Ticket = rightSide.Ticket }
+    };
+    req.ColumnsToMatch.AddRange(columnsToMatch);
+    req.ColumnsToAdd.AddRange(columnsToAdd);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.NaturalJoinTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  /// <summary>
+  /// Creates a new table by exact joining this table with `rightSide`. The tables are joined By
+  /// the columns in `columnsToMatch`, and columns from `rightSide` are brought in and optionally
+  /// renamed By `columnsToAdd`. Example:
+  /// <code>
+  /// t1.ExactJoin({ "Col1", "Col2"}, {"Col3", "NewCol=Col4"})
+  /// </code>
+  /// </summary>
+  /// <param name="rightSide">The table to join with this table</param>
+  /// <param name="columnsToMatch">The columns to join on</param>
+  /// <param name="columnsToAdd">The columns from the right side to add, and possibly rename.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle ExactJoin(TableHandle rightSide, IEnumerable<string> columnsToMatch,
+    IEnumerable<string> columnsToAdd) {
+    var req = new ExactJoinTablesRequest {
+      ResultId = Server.NewTicket(),
+      LeftId = new TableReference { Ticket = Ticket },
+      RightId = new TableReference { Ticket = rightSide.Ticket }
+    };
+    req.ColumnsToMatch.AddRange(columnsToMatch);
+    req.ColumnsToAdd.AddRange(columnsToAdd);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.ExactJoinTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  /// <summary>
+  /// Creates a new table by left outer joining this table with `rightSide`. The tables are joined By
+  /// the columns in `columnsToMatch`, and columns from `rightSide` are brought in and optionally
+  /// renamed By `columnsToAdd`. Example:
+  /// <code>
+  /// t1.ExactJoin({ "Col1", "Col2"}, {"Col3", "NewCol=Col4"})
+  /// </code>
+  /// </summary>
+  /// <param name="rightSide">The table to join with this table</param>
+  /// <param name="columnsToMatch">The columns to join on</param>
+  /// <param name="columnsToAdd">The columns from the right side to add, and possibly rename.</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle LeftOuterJoin(TableHandle rightSide, IEnumerable<string> columnsToMatch,
+    IEnumerable<string> columnsToAdd) {
+    var req = new LeftJoinTablesRequest {
+      ResultId = Server.NewTicket(),
+      LeftId = new TableReference { Ticket = Ticket },
+      RightId = new TableReference { Ticket = rightSide.Ticket }
+    };
+    req.ColumnsToMatch.AddRange(columnsToMatch);
+    req.ColumnsToAdd.AddRange(columnsToAdd);
+
+    var resp = Server.SendRpc(opts => Server.TableStub.LeftJoinTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  /// <summary>
+  /// Creates a new table containing all the rows and columns of the left table, plus additional
+  /// columns containing data from the right table.For columns appended to the left table(joins),
+  /// row values equal the row values from the right table where the keys from the left table most
+  /// closely match the keys from the right table without going over.If there is no matching key in
+  /// the right table, appended row values are NULL.
+  /// </summary>
+  /// <param name="rightSide">The table to join with this table</param>
+  /// <param name="on"> The column(s) to match, can be a common name or a match condition of two
+  /// columns, e.g. 'col_a = col_b'. The first 'N-1' matches are exact matches.The final match is
+  /// an inexact match.The inexact match can use either '>' or '>='.  If a common name is used
+  /// for the inexact match, '>=' is used for the comparison.</param>
+  /// <param name="joins">The column(s) to be added from the right table to the result table, can be
+  /// renaming expressions, i.e. "new_col = col"; default is empty, which means all the columns
+  /// from the right table, excluding those specified in 'on'</param>
+  /// <returns>The TableHandle of the new table</returns>
+  public TableHandle Aj(TableHandle rightSide, IEnumerable<string> on, params string[] joins) {
+    var resultTicket = Server.NewTicket();
+    var req = MakeAjRajTablesRequest(Ticket, rightSide.Ticket, on, joins, resultTicket);
+    var resp = Server.SendRpc(opts => Server.TableStub.AjTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  public TableHandle Raj(TableHandle rightSide, IEnumerable<string> on, params string[] joins) {
+    var resultTicket = Server.NewTicket();
+    var req = MakeAjRajTablesRequest(Ticket, rightSide.Ticket, on, joins, resultTicket);
+    var resp = Server.SendRpc(opts => Server.TableStub.RajTablesAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
+  private AjRajTablesRequest MakeAjRajTablesRequest(Ticket leftTableTicket, Ticket rightTableTicket,
+    IEnumerable<string> on, string[] joins, Ticket result) {
+    var onList = on.ToList();
+    if (onList.Count == 0) {
+      throw new Exception("Need at least one 'on' column");
+    }
+    var req = new AjRajTablesRequest {
+      ResultId = Server.NewTicket(),
+      LeftId = new TableReference { Ticket = leftTableTicket },
+      RightId = new TableReference { Ticket = rightTableTicket }
+
+    };
+    // The final 'on' column is the as of column
+    req.AsOfColumn = onList[^1];
+    onList.RemoveAt(onList.Count - 1);
+    // The remaining 'on' columns are the exact_match_columns
+    req.ExactMatchColumns.AddRange(onList);
+    req.ColumnsToAdd.AddRange(joins);
+    return req;
+  }
+
   public void BindToVariable(string variable) {
     var server = _manager.Server;
     if (_manager.ConsoleId == null) {
@@ -348,4 +503,6 @@ public class TableHandle : IDisposable {
     var t = ToArrowTable();
     return t.ToString();
   }
+
+  private Server Server => _manager.Server;
 }

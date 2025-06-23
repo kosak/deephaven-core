@@ -13,7 +13,7 @@ public class JoinTest(ITestOutputHelper output) {
     using var lastClose = table.LastBy("Ticker");
     using var avgView = table.View("Ticker", "Volume").AvgBy("Ticker");
 
-    using var joined = lastClose.NaturalJoin(avgView, new[] {"Ticker"}, new[]{ "ADV = Volume"});
+    using var joined = lastClose.NaturalJoin(avgView, ["Ticker"], ["ADV = Volume"]);
     using var filtered = joined.Select("Ticker", "Close", "ADV");
 
     var expected = new TableMaker();
@@ -31,78 +31,58 @@ public class JoinTest(ITestOutputHelper output) {
 
     TableHandle trades;
     {
-      var tickerData = new[] { "AAPL", "AAPL", "AAPL", "IBM", "IBM" };
-      var instantDdata = new[] {
-        DhDateTime.Parse("2021-04-05T09:10:00-0500"),
-        DhDateTime.Parse("2021-04-05T09:31:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:30:00-0500")
-      };
-      var priceData = new[] { 2.5, 3.7, 3.0, 100.50, 110 };
-      var sizeData = new[] { 52, 14, 73, 11, 6 };
-
       var tableMaker = new TableMaker();
-      tableMaker.AddColumn("Ticker", tickerData);
-      tableMaker.AddColumn("Timestamp", instantDdata);
-      tableMaker.AddColumn("Price", priceData);
-      tableMaker.AddColumn("Size", sizeData);
+      tableMaker.AddColumn("Ticker", ["AAPL", "AAPL", "AAPL", "IBM", "IBM"]);
+      tableMaker.AddColumn("Timestamp", [
+        DateTimeOffset.Parse("2021-04-05T09:10:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T09:31:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:30:00-0500")
+      ]);
+      tableMaker.AddColumn("Price", [2.5, 3.7, 3.0, 100.50, 110]);
+      tableMaker.AddColumn("Size", [52, 14, 73, 11, 6]);
       trades = tableMaker.MakeTable(tm);
     }
 
     TableHandle quotes;
     {
-      var tickerData = new[] { "AAPL", "AAPL", "IBM", "IBM", "IBM" };
-      var timeStampData = new[] {
-        DhDateTime.Parse("2021-04-05T09:11:00-0500"),
-        DhDateTime.Parse("2021-04-05T09:30:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:30:00-0500"),
-        DhDateTime.Parse("2021-04-05T17:00:00-0500")
-      };
-      var bidData = new[] { 2.5, 3.4, 97, 102, 108 };
-      var bidSizeData = new[] { 10, 20, 5, 13, 23 };
-      var askData = new[] { 2.5, 3.4, 105, 110, 111 };
-      var askSizeData = new[] { 83, 33, 47, 15, 5 };
       var tableMaker = new TableMaker();
-      tableMaker.AddColumn("Ticker", tickerData);
-      tableMaker.AddColumn("Timestamp", timeStampData);
-      tableMaker.AddColumn("Bid", bidData);
-      tableMaker.AddColumn("BidSize", bidSizeData);
-      tableMaker.AddColumn("Ask", askData);
-      tableMaker.AddColumn("AskSize", askSizeData);
+      tableMaker.AddColumn("Ticker", ["AAPL", "AAPL", "IBM", "IBM", "IBM"]);
+      tableMaker.AddColumn("Timestamp", [
+        DateTimeOffset.Parse("2021-04-05T09:11:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T09:30:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:30:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T17:00:00-0500")
+      ]);
+      tableMaker.AddColumn("Bid", [2.5, 3.4, 97, 102, 108]);
+      tableMaker.AddColumn("BidSize", [10, 20, 5, 13, 23]);
+      tableMaker.AddColumn("Ask", [2.5, 3.4, 105, 110, 111]);
+      tableMaker.AddColumn("AskSize", [83, 33, 47, 15, 5]);
       quotes = tableMaker.MakeTable(tm);
     }
 
-    using var result = trades.Aj(quotes, new[] { "Ticker", "Timestamp" });
+    using var result = trades.Aj(quotes, ["Ticker", "Timestamp"]);
 
     // Expected data
     {
-      var tickerData = new[] { "AAPL", "AAPL", "AAPL", "IBM", "IBM" };
-      var timestampData = new[] {
-        DhDateTime.Parse("2021-04-05T09:10:00-0500"),
-        DhDateTime.Parse("2021-04-05T09:31:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:30:00-0500")
-      };
-      var priceData = new[] { 2.5, 3.7, 3.0, 100.50, 110 };
-      var sizeData = new[] { 52, 14, 73, 11, 6 };
-      var bidData = new double?[] { null, 3.4, 3.4, 97, 102 };
-      var bidSizeData = new int?[] { null, 20, 20, 5, 13 };
-      var askData = new double?[] { null, 3.4, 3.4, 105, 110 };
-      var askSizeData = new int?[] { null, 33, 33, 47, 15 };
-
-      var tc = new TableComparer();
-      tc.AddColumn("Ticker", tickerData);
-      tc.AddColumn("Timestamp", timestampData);
-      tc.AddColumn("Price", priceData);
-      tc.AddColumn("Size", sizeData);
-      tc.AddColumn("Bid", bidData);
-      tc.AddColumn("BidSize", bidSizeData);
-      tc.AddColumn("Ask", askData);
-      tc.AddColumn("AskSize", askSizeData);
-      tc.AssertEqualTo(result);
+      var expected = new TableMaker();
+      expected.AddColumn("Ticker", ["AAPL", "AAPL", "AAPL", "IBM", "IBM"]);
+      expected.AddColumn("Timestamp", [
+        DateTimeOffset.Parse("2021-04-05T09:10:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T09:31:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:30:00-0500")
+      ]);
+      expected.AddColumn("Price", [2.5, 3.7, 3.0, 100.50, 110]);
+      expected.AddColumn("Size", [52, 14, 73, 11, 6]);
+      expected.AddColumn("Bid", [(double?)null, 3.4, 3.4, 97, 102]);
+      expected.AddColumn("BidSize", [(int?)null, 20, 20, 5, 13]);
+      expected.AddColumn("Ask", [(double?)null, 3.4, 3.4, 105, 110]);
+      expected.AddColumn("AskSize", [(int?)null, 33, 33, 47, 15]);
+      TableComparer.AssertSame(expected, result);
     }
   }
 
@@ -113,45 +93,35 @@ public class JoinTest(ITestOutputHelper output) {
 
     TableHandle trades;
     {
-      var tickerData = new[] { "AAPL", "AAPL", "AAPL", "IBM", "IBM" };
-      var instantData = new[] {
-        DhDateTime.Parse("2021-04-05T09:10:00-0500"),
-        DhDateTime.Parse("2021-04-05T09:31:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:30:00-0500")
-      };
-      var priceData = new[] { 2.5, 3.7, 3.0, 100.50, 110 };
-      var sizeData = new[] { 52, 14, 73, 11, 6 };
       var tableMaker = new TableMaker();
-      tableMaker.AddColumn("Ticker", tickerData);
-      tableMaker.AddColumn("Timestamp", instantData);
-      tableMaker.AddColumn("Price", priceData);
-      tableMaker.AddColumn("Size", sizeData);
+      tableMaker.AddColumn("Ticker", ["AAPL", "AAPL", "AAPL", "IBM", "IBM"]);
+      tableMaker.AddColumn("Timestamp", [
+        DateTimeOffset.Parse("2021-04-05T09:10:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T09:31:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:30:00-0500")
+      ]);
+      tableMaker.AddColumn("Price", [2.5, 3.7, 3.0, 100.50, 110]);
+      tableMaker.AddColumn("Size", [52, 14, 73, 11, 6]);
       trades = tableMaker.MakeTable(tm);
     }
 
     TableHandle quotes;
     {
-      var tickerData = new[] { "AAPL", "AAPL", "IBM", "IBM", "IBM"};
-      var timestampData = new[] {
-        DhDateTime.Parse("2021-04-05T09:11:00-0500"),
-        DhDateTime.Parse("2021-04-05T09:30:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:30:00-0500"),
-        DhDateTime.Parse("2021-04-05T17:00:00-0500")
-      };
-      var bidData = new[] { 2.5, 3.4, 97, 102, 108 };
-      var bidSizeData = new[] { 10, 20, 5, 13, 23 };
-      var askData = new[] { 2.5, 3.4, 105, 110, 111 };
-      var askSizeData = new[] { 83, 33, 47, 15, 5 };
       var tableMaker = new TableMaker();
-      tableMaker.AddColumn("Ticker", tickerData);
-      tableMaker.AddColumn("Timestamp", timestampData);
-      tableMaker.AddColumn("Bid", bidData);
-      tableMaker.AddColumn("BidSize", bidSizeData);
-      tableMaker.AddColumn("Ask", askData);
-      tableMaker.AddColumn("AskSize", askSizeData);
+      tableMaker.AddColumn("Ticker", ["AAPL", "AAPL", "IBM", "IBM", "IBM"]);
+      tableMaker.AddColumn("Timestamp", [
+        DateTimeOffset.Parse("2021-04-05T09:11:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T09:30:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:30:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T17:00:00-0500")
+      ]);
+      tableMaker.AddColumn("Bid", [2.5, 3.4, 97, 102, 108]);
+      tableMaker.AddColumn("BidSize", [10, 20, 5, 13, 23]);
+      tableMaker.AddColumn("Ask", [2.5, 3.4, 105, 110, 111]);
+      tableMaker.AddColumn("AskSize", [83, 33, 47, 15, 5]);
       quotes = tableMaker.MakeTable(tm);
     }
 
@@ -159,32 +129,23 @@ public class JoinTest(ITestOutputHelper output) {
 
     // Expected data
     {
-      var tickerData = new[] { "AAPL", "AAPL", "AAPL", "IBM", "IBM"};
-      var timestampData = new[] {
-        DhDateTime.Parse("2021-04-05T09:10:00-0500"),
-        DhDateTime.Parse("2021-04-05T09:31:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:00:00-0500"),
-        DhDateTime.Parse("2021-04-05T16:30:00-0500")
-      };
+      var expected = new TableMaker();
+      expected.AddColumn("Ticker", ["AAPL", "AAPL", "AAPL", "IBM", "IBM"]);
+      expected.AddColumn("Timestamp", [
+        DateTimeOffset.Parse("2021-04-05T09:10:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T09:31:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:00:00-0500"),
+        DateTimeOffset.Parse("2021-04-05T16:30:00-0500")
+      ]);
+      expected.AddColumn("Price", [2.5, 3.7, 3.0, 100.50, 110]);
+      expected.AddColumn("Size", [52, 14, 73, 11, 6]);
+      expected.AddColumn("Bid", [(double?)2.5, null, null, 97, 102]);
+      expected.AddColumn("BidSize", [(int?)10, null, null, 5, 13]);
+      expected.AddColumn("Ask", [(double?)2.5, null, null, 105, 110]);
+      expected.AddColumn("AskSize", [(int?)83, null, null, 47, 15]);
 
-      var priceData = new[] { 2.5, 3.7, 3.0, 100.50, 110 };
-      var sizeData = new[] { 52, 14, 73, 11, 6 };
-      var bidData = new double?[] { 2.5, null, null, 97, 102 };
-      var bidSizeData = new int?[] { 10, null, null, 5, 13 };
-      var askData = new double?[] { 2.5, null, null, 105, 110 };
-      var askSizeData = new int?[] { 83, null, null, 47, 15 };
-
-      var tableComparer = new TableMaker();
-      tableComparer.AddColumn("Ticker", tickerData);
-      tableComparer.AddColumn("Timestamp", timestampData);
-      tableComparer.AddColumn("Price", priceData);
-      tableComparer.AddColumn("Size", sizeData);
-      tableComparer.AddColumn("Bid", bidData);
-      tableComparer.AddColumn("BidSize", bidSizeData);
-      tableComparer.AddColumn("Ask", askData);
-      tableComparer.AddColumn("AskSize", askSizeData);
-      tableComparer.AssertEqualTo(result);
+      TableComparer.AssertSame(expected, result);
     }
   }
 }
