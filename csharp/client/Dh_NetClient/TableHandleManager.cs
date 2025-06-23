@@ -125,7 +125,27 @@ public class TableHandleManager : IDisposable {
   /// <param name="keyColumns">The set of key columns</param>
   /// <returns>The TableHandle of the new table</returns>
   public TableHandle InputTable(TableHandle initialTable, params string[] keyColumns) {
-    throw new NotImplementedException();
+    var req = new CreateInputTableRequest {
+      ResultId = Server.NewTicket(),
+      SourceTableId = new TableReference { Ticket = initialTable.Ticket }
+    };
+    if (keyColumns.Length == 0) {
+      req.Kind = new CreateInputTableRequest.Types.InputTableKind {
+        InMemoryAppendOnly = new CreateInputTableRequest.Types.InputTableKind.Types.InMemoryAppendOnly()
+      };
+    } else {
+      var kb = new CreateInputTableRequest.Types.InputTableKind.Types.InMemoryKeyBacked();
+      kb.KeyColumns.AddRange(keyColumns);
+      req.Kind = new CreateInputTableRequest.Types.InputTableKind {
+        InMemoryKeyBacked = kb
+      };
+    }
+
+    var resp = Server.SendRpc(opts => Server.TableStub.CreateInputTableAsync(req, opts));
+    var result = TableHandle.Create(this, resp);
+
+    result.AddTable(initialTable);
+    return result;
   }
 
   /// <summary>

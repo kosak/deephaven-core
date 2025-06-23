@@ -21,14 +21,14 @@ public class TableHandle : IDisposable {
   }
 
   private readonly TableHandleManager _manager;
-  private readonly Ticket _ticket;
+  public readonly Ticket Ticket;
   public readonly Schema Schema;
   private readonly Int64 _numRows;
   private readonly bool _isStatic;
 
   private TableHandle(TableHandleManager manager, Ticket ticket, Schema schema, long numRows, bool isStatic) {
     _manager = manager;
-    _ticket = ticket;
+    Ticket = ticket;
     Schema = schema;
     _numRows = numRows;
     _isStatic = isStatic;
@@ -82,7 +82,7 @@ public class TableHandle : IDisposable {
     var req = new SelectOrUpdateRequest {
       ResultId = server.NewTicket(),
       SourceId = new TableReference {
-        Ticket = _ticket
+        Ticket = Ticket
       }
     };
     req.ColumnSpecs.AddRange(columnSpecs);
@@ -101,7 +101,7 @@ public class TableHandle : IDisposable {
     var req = new SelectDistinctRequest {
       ResultId = server.NewTicket(),
       SourceId = new TableReference {
-        Ticket = _ticket
+        Ticket = Ticket
       }
     };
     req.ColumnNames.AddRange(columnSpecs);
@@ -119,7 +119,7 @@ public class TableHandle : IDisposable {
     var req = new DropColumnsRequest {
       ResultId = server.NewTicket(),
       SourceId = new TableReference {
-        Ticket = _ticket
+        Ticket = Ticket
       }
     };
     req.ColumnNames.Add(columnSpecs);
@@ -151,7 +151,7 @@ public class TableHandle : IDisposable {
     var req = new HeadOrTailRequest {
       ResultId = server.NewTicket(),
       SourceId = new TableReference {
-        Ticket = _ticket
+        Ticket = Ticket
       },
       NumRows = n
     };
@@ -215,7 +215,7 @@ public class TableHandle : IDisposable {
 
     var req = new ComboAggregateRequest {
       ResultId = server.NewTicket(),
-      SourceId = new TableReference { Ticket = _ticket },
+      SourceId = new TableReference { Ticket = Ticket },
       ForceCombo = false
     };
     req.Aggregates.AddRange(descriptors);
@@ -239,7 +239,6 @@ public class TableHandle : IDisposable {
     return DefaultAggregateByDescriptor(descriptor, groupByColumns);
   }
 
-
   /// <summary>
   /// Creates a new table from this table, filtered by condition. Consult the Deephaven
   /// documentation for more information about valid conditions.
@@ -250,7 +249,7 @@ public class TableHandle : IDisposable {
     var server = _manager.Server;
     var req = new UnstructuredFilterTableRequest {
       ResultId = server.NewTicket(),
-      SourceId = new TableReference { Ticket = _ticket }
+      SourceId = new TableReference { Ticket = Ticket }
     };
     req.Filters.Add(condition);
     var resp = server.SendRpc(opts => server.TableStub.UnstructuredFilterAsync(req, opts));
@@ -269,13 +268,33 @@ public class TableHandle : IDisposable {
     var server = _manager.Server;
     var req = new WhereInRequest {
       ResultId = server.NewTicket(),
-      LeftId = new TableReference { Ticket = _ticket },
-      RightId = new TableReference { Ticket = filterTable._ticket },
+      LeftId = new TableReference { Ticket = Ticket },
+      RightId = new TableReference { Ticket = filterTable.Ticket },
       Inverted = false
     };
     req.ColumnsToMatch.AddRange(columns);
     var resp = server.SendRpc(opts => server.TableStub.WhereInAsync(req, opts));
     return TableHandle.Create(_manager, resp);
+  }
+
+  public void AddTable(TableHandle tableToAdd) {
+    var server = _manager.Server;
+    var req = new AddTableRequest {
+      InputTable = Ticket,
+      TableToAdd = tableToAdd.Ticket
+    };
+
+    _ = server.SendRpc(opts => server.InputTableStub.AddTableToInputTableAsync(req, opts));
+  }
+
+  public void RemoveTable(TableHandle tableToRemove) {
+    var server = _manager.Server;
+    var req = new DeleteTableRequest {
+      InputTable = Ticket,
+      TableToRemove = tableToRemove.Ticket
+    };
+
+    _ = server.SendRpc(opts => server.InputTableStub.DeleteTableFromInputTableAsync(req, opts));
   }
 
   public void BindToVariable(string variable) {
@@ -286,7 +305,7 @@ public class TableHandle : IDisposable {
     var req = new BindTableToVariableRequest {
       ConsoleId = _manager.ConsoleId,
       VariableName = variable,
-      TableId = _ticket
+      TableId = Ticket
     };
 
     _ = server.SendRpc(opts => server.ConsoleStub.BindTableToVariableAsync(req, opts));
@@ -296,7 +315,7 @@ public class TableHandle : IDisposable {
     var server = _manager.Server;
     var metadata = new Metadata();
     server.ForEachHeaderNameAndValue(metadata.Add);
-    var ticket = new FlightTicket(_ticket.Ticket_);
+    var ticket = new FlightTicket(Ticket.Ticket_);
     var call = _manager.Server.FlightClient.GetStream(ticket, metadata);
     return call.ResponseStream;
   }
@@ -320,7 +339,7 @@ public class TableHandle : IDisposable {
   }
 
   public IDisposable Subscribe(IObserver<TickingUpdate> observer) {
-    var disposer = SubscriptionThread.Start(_manager.Server, Schema, _ticket, observer);
+    var disposer = SubscriptionThread.Start(_manager.Server, Schema, Ticket, observer);
     // _manager.AddSubscriptionDisposer(disposer);
     return disposer;
   }

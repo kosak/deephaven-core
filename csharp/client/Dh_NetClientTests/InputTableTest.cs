@@ -1,17 +1,9 @@
-﻿#if false
-using Deephaven.DhClientTests;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class InputTableTest {
-  private readonly ITestOutputHelper _output;
-
-  public InputTableTest(ITestOutputHelper output) {
-    _output = output;
-  }
-
+public class InputTableTest(ITestOutputHelper output) {
   [Fact]
   public void TestInputTableAppend() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
@@ -23,12 +15,10 @@ public class InputTableTest {
 
     // expect inputTable to be {0, 100}, {1, 101}, {2, 102}
     {
-      var aData = new Int64[] { 0, 1, 2 };
-      var bData = new Int64[] { 100, 101, 102 };
-      var tc = new TableComparer();
-      tc.AddColumn("A", aData);
-      tc.AddColumn("B", bData);
-      tc.AssertEqualTo(inputTable);
+      var expected = new TableMaker();
+      expected.AddColumn("A", [(Int64)0, 1, 2]);
+      expected.AddColumn("B", [(Int64)100, 101, 102]);
+      TableComparer.AssertSame(expected, inputTable);
     }
 
     var tableToAdd = tm.EmptyTable(2).Update("A = ii", "B = ii + 200");
@@ -38,10 +28,10 @@ public class InputTableTest {
     {
       var aData = new Int64[] { 0, 1, 2, 0, 1 };
       var bData = new Int64[] { 100, 101, 102, 200, 201 };
-      var tc = new TableComparer();
-      tc.AddColumn("A", aData);
-      tc.AddColumn("B", bData);
-      tc.AssertEqualTo(inputTable);
+      var expected = new TableMaker();
+      expected.AddColumn("A", aData);
+      expected.AddColumn("B", bData);
+      TableComparer.AssertSame(expected, inputTable);
     }
   }
 
@@ -60,10 +50,10 @@ public class InputTableTest {
     {
       var aData = new Int64[] { 0, 1, 2 };
       var bData = new Int64[] { 100, 101, 102 };
-      var tc = new TableComparer();
-      tc.AddColumn("A", aData);
-      tc.AddColumn("B", bData);
-      tc.AssertEqualTo(inputTable);
+      var expected = new TableMaker();
+      expected.AddColumn("A", aData);
+      expected.AddColumn("B", bData);
+      TableComparer.AssertSame(expected, inputTable);
     }
 
 
@@ -74,11 +64,10 @@ public class InputTableTest {
     {
       var aData = new Int64[] { 0, 1, 2 };
       var bData = new Int64[] { 200, 201, 102 };
-      var tc = new TableComparer();
-      tc.AddColumn("A", aData);
-      tc.AddColumn("B", bData);
-      tc.AssertEqualTo(inputTable);
+      var expected = new TableMaker();
+      expected.AddColumn("A", aData);
+      expected.AddColumn("B", bData);
+      TableComparer.AssertSame(expected, inputTable);
     }
   }
 }
-#endif
