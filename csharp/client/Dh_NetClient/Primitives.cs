@@ -3,6 +3,7 @@
 public readonly struct DurationSpecifier {
   private readonly object _duration;
 
+  public DurationSpecifier() => _duration = (Int64)0;
   public DurationSpecifier(Int64 nanos) => _duration = nanos;
   public DurationSpecifier(string duration) => _duration = duration;
 
@@ -22,6 +23,7 @@ public readonly struct DurationSpecifier {
 public readonly struct TimePointSpecifier {
   private readonly object _timePoint;
 
+  public TimePointSpecifier() => _timePoint = (Int64)0;
   public TimePointSpecifier(Int64 nanos) => _timePoint = nanos;
   public TimePointSpecifier(string timePoint) => _timePoint = timePoint;
 

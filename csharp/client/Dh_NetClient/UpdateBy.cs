@@ -168,7 +168,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingSumTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingSumTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingSum =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingSum {
@@ -179,7 +179,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingSumTime(string timestampCol, IEnumerable<string> cols,
-  DurationSpecifier revTime, DurationSpecifier fwdTime) {
+  DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingSum =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingSum {
@@ -189,7 +189,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingGroupTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingGroupTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingGroup =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingGroup {
@@ -200,7 +200,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingGroupTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingGroup =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingGroup {
@@ -210,7 +210,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingAvgTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingAvgTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingAvg =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingAvg {
@@ -221,7 +221,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingAvgTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingAvg =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingAvg {
@@ -231,7 +231,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingMinTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingMinTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingMin =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMin {
@@ -242,7 +242,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingMinTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingMin =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMin {
@@ -252,7 +252,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingMaxTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingMaxTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingMax =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMax {
@@ -263,7 +263,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingMaxTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingMax =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMax {
@@ -273,7 +273,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingProdTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingProdTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingProduct =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingProduct {
@@ -284,7 +284,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingProdTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingProduct =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingProduct {
@@ -294,7 +294,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingCountTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingCountTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingCount =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingCount {
@@ -305,7 +305,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingCountTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingCount =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingCount {
@@ -315,7 +315,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingStdTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingStdTick(IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingStd =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingStd {
@@ -326,7 +326,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingStdTime(string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingStd =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingStd {
@@ -336,7 +336,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingWavgTick(string weightCol, IEnumerable<string> cols, int revTicks, int fwdTicks) {
+  public static UpdateByOperation RollingWavgTick(string weightCol, IEnumerable<string> cols, int revTicks, int fwdTicks = 0) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingWavg =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingWAvg {
@@ -348,7 +348,7 @@ public class UpdateByOperation {
   }
 
   public static UpdateByOperation RollingWavgTime(string weightCol, string timestampCol, IEnumerable<string> cols,
-    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingWavg =
       new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingWAvg {
@@ -423,14 +423,16 @@ public class UpdateByOperation {
     };
   }
 
-  private static UpdateByWindowScale MakeWindowScale(string timestampCol, DurationSpecifier decayTime) {
+  private static UpdateByWindowScale MakeWindowScale(string timestampCol, DurationSpecifier? decayTime) {
     var result = new UpdateByWindowScale {
       Time = new UpdateByWindowScale.Types.UpdateByWindowTime {
         Column = timestampCol
       }
     };
 
-    decayTime.Visit(
+    var decayTimeToUse = decayTime ?? new DurationSpecifier();
+
+    decayTimeToUse.Visit(
       nanos => result.Time.Nanos = nanos,
       duration => result.Time.DurationString = duration
       );
@@ -443,6 +445,7 @@ internal class UpdateByBuilder {
   private readonly UpdateByOperationProto _gup = new();
 
   public UpdateByBuilder(IEnumerable<string> cols) {
+    _gup.Column ??= new UpdateByOperationProto.Types.UpdateByColumn();
     _gup.Column.MatchPairs.AddRange(cols);
   }
 

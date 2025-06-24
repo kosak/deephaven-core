@@ -98,13 +98,13 @@ public class UpdateByTest(ITestOutputHelper output) {
       CumSum("max_a=a", "max_d=d"),
       EmaTick(10, ["ema_d=d", "ema_e=e"]),
       EmaTime("Timestamp", "PT00:00:00.1", ["ema_time_d=d", "ema_time_e=e"]),
-      RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d" }, 10)
+      RollingWavgTick("b", ["rwavg_a = a", "rwavg_d = d"], 10)
     };
 
     for (var tableIndex = 0; tableIndex != tables.Length; ++tableIndex) {
       var table = tables[tableIndex];
       output.WriteLine($"Processing table {tableIndex}");
-      using var result = table.UpdateBy(multipleOps, new[] { "c" });
+      using var result = table.UpdateBy(multipleOps, "c");
       Assert.Equal(table.IsStatic, result.IsStatic);
       Assert.Equal(10 + table.NumCols, result.NumCols);
       if (result.IsStatic) {
@@ -165,38 +165,38 @@ public class UpdateByTest(ITestOutputHelper output) {
       // exponential moving average
       EmaTick(100, ["ema_a = a"]),
       EmaTick(100, ["ema_a = a"], emOpControl),
-      EmaTime("Timestamp", 10, new[] { "ema_a = a" }),
-      EmaTime("Timestamp", "PT00:00:00.001", new[] { "ema_c = c" }, emOpControl),
-      EmaTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
-      EmaTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
+      EmaTime("Timestamp", 10, ["ema_a = a"]),
+      EmaTime("Timestamp", "PT00:00:00.001", ["ema_c = c"], emOpControl),
+      EmaTime("Timestamp", "PT1M", ["ema_c = c"]),
+      EmaTime("Timestamp", "PT1M", ["ema_c = c"], emOpControl),
       // exponential moving sum
-      EmsTick(100, new[] { "ems_a = a" }),
-      EmsTick(100, new[] { "ems_a = a" }, emOpControl),
-      EmsTime("Timestamp", 10,  new[] { "ems_a = a"}),
-      EmsTime("Timestamp", "PT00:00:00.001", new[] { "ems_c = c" }, emOpControl),
-      EmsTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
-      EmsTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
+      EmsTick(100, ["ems_a = a"]),
+      EmsTick(100, ["ems_a = a"], emOpControl),
+      EmsTime("Timestamp", 10, ["ems_a = a"]),
+      EmsTime("Timestamp", "PT00:00:00.001", ["ems_c = c"], emOpControl),
+      EmsTime("Timestamp", "PT1M", ["ema_c = c"]),
+      EmsTime("Timestamp", "PT1M", ["ema_c = c"], emOpControl),
       // exponential moving minimum
-      EmminTick(100, new[] { "emmin_a = a" }),
-      EmminTick(100, new[] { "emmin_a = a" }, emOpControl),
-      EmminTime("Timestamp", 10, new[] { "emmin_a = a" }),
-      EmminTime("Timestamp", "PT00:00:00.001", new[] { "emmin_c = c" }, emOpControl),
-      EmminTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
-      EmminTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
+      EmMinTick(100, ["emmin_a = a"]),
+      EmMinTick(100, ["emmin_a = a"], emOpControl),
+      EmMinTime("Timestamp", 10, ["emmin_a = a"]),
+      EmMinTime("Timestamp", "PT00:00:00.001", ["emmin_c = c"], emOpControl),
+      EmMinTime("Timestamp", "PT1M", ["ema_c = c"]),
+      EmMinTime("Timestamp", "PT1M", ["ema_c = c"], emOpControl),
       // exponential moving maximum
-      EmmaxTick(100, new[] { "emmax_a = a" }),
-      EmmaxTick(100, new[] { "emmax_a = a" }, emOpControl),
-      EmmaxTime("Timestamp", 10, new[] { "emmax_a = a" }),
-      EmmaxTime("Timestamp", "PT00:00:00.001", new[] { "emmax_c = c" }, emOpControl),
-      EmmaxTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
-      EmmaxTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl),
+      EmMaxTick(100, ["emmax_a = a"]),
+      EmMaxTick(100, ["emmax_a = a"], emOpControl),
+      EmMaxTime("Timestamp", 10, ["emmax_a = a"]),
+      EmMaxTime("Timestamp", "PT00:00:00.001", ["emmax_c = c"], emOpControl),
+      EmMaxTime("Timestamp", "PT1M", ["ema_c = c"]),
+      EmMaxTime("Timestamp", "PT1M", ["ema_c = c"], emOpControl),
       // exponential moving standard deviation
-      EmstdTick(100, new[] { "emstd_a = a" }),
-      EmstdTick(100, new[] { "emstd_a = a" }, emOpControl),
-      EmstdTime("Timestamp", 10, new[] { "emstd_a = a" }),
-      EmstdTime("Timestamp", "PT00:00:00.001", new[] { "emtd_c = c" }, emOpControl),
-      EmstdTime("Timestamp", "PT1M", new[] { "ema_c = c" }),
-      EmstdTime("Timestamp", "PT1M", new[] { "ema_c = c" }, emOpControl)
+      EmStdTick(100, ["emstd_a = a"]),
+      EmStdTick(100, ["emstd_a = a"], emOpControl),
+      EmStdTime("Timestamp", 10, ["emstd_a = a"]),
+      EmStdTime("Timestamp", "PT00:00:00.001", ["emtd_c = c"], emOpControl),
+      EmStdTime("Timestamp", "PT1M", ["ema_c = c"]),
+      EmStdTime("Timestamp", "PT1M", ["ema_c = c"], emOpControl)
     };
 
     return result;
@@ -206,61 +206,61 @@ public class UpdateByTest(ITestOutputHelper output) {
     static TimeSpan Secs(int s) => TimeSpan.FromSeconds(s);
 
     // exponential moving average
-    var result = new UpdateByRequest.Types.UpdateByOperation[] {
+    var result = new[] {
       // rolling sum
-      RollingSumTick(new[] {"rsum_a = a", "rsum_d = d"}, 10),
-      RollingSumTick(new[] { "rsum_a = a", "rsum_d = d"}, 10, 10),
-      RollingSumTime("Timestamp",  new[] { "rsum_b = b", "rsum_e = e"}, "PT00:00:10"),
-      RollingSumTime("Timestamp",  new[] { "rsum_b = b", "rsum_e = e"}, Secs(10), Secs(-10)),
-      RollingSumTime("Timestamp",  new[] { "rsum_b = b", "rsum_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingSumTick(["rsum_a = a", "rsum_d = d"], 10),
+      RollingSumTick(["rsum_a = a", "rsum_d = d"], 10, 10),
+      RollingSumTime("Timestamp", ["rsum_b = b", "rsum_e = e"], "PT00:00:10"),
+      RollingSumTime("Timestamp", ["rsum_b = b", "rsum_e = e"], Secs(10), Secs(-10)),
+      RollingSumTime("Timestamp", ["rsum_b = b", "rsum_e = e"], "PT30S", "-PT00:00:20"),
       // rolling group
-      RollingGroupTick(new[] { "rgroup_a = a", "rgroup_d = d"}, 10),
-      RollingGroupTick(new[] { "rgroup_a = a", "rgroup_d = d"}, 10, 10),
-      RollingGroupTime("Timestamp", new[] { "rgroup_b = b", "rgroup_e = e"}, "PT00:00:10"),
-      RollingGroupTime("Timestamp", new[] { "rgroup_b = b", "rgroup_e = e"}, Secs(10), Secs(-10)),
-      RollingGroupTime("Timestamp",  new[] { "rgroup_b = b", "rgroup_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingGroupTick(["rgroup_a = a", "rgroup_d = d"], 10),
+      RollingGroupTick(["rgroup_a = a", "rgroup_d = d"], 10, 10),
+      RollingGroupTime("Timestamp", ["rgroup_b = b", "rgroup_e = e"], "PT00:00:10"),
+      RollingGroupTime("Timestamp", ["rgroup_b = b", "rgroup_e = e"], Secs(10), Secs(-10)),
+      RollingGroupTime("Timestamp", ["rgroup_b = b", "rgroup_e = e"], "PT30S", "-PT00:00:20"),
       // rolling average
-      RollingAvgTick(new[] { "ravg_a = a", "ravg_d = d"}, 10),
-      RollingAvgTick(new[] { "ravg_a = a", "ravg_d = d"}, 10, 10),
-      RollingAvgTime("Timestamp", new[] { "ravg_b = b", "ravg_e = e"}, "PT00:00:10"),
-      RollingAvgTime("Timestamp", new[] { "ravg_b = b", "ravg_e = e"}, Secs(10), Secs(-10)),
-      RollingAvgTime("Timestamp",  new[] { "ravg_b = b", "ravg_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingAvgTick(["ravg_a = a", "ravg_d = d"], 10),
+      RollingAvgTick(["ravg_a = a", "ravg_d = d"], 10, 10),
+      RollingAvgTime("Timestamp", ["ravg_b = b", "ravg_e = e"], "PT00:00:10"),
+      RollingAvgTime("Timestamp", ["ravg_b = b", "ravg_e = e"], Secs(10), Secs(-10)),
+      RollingAvgTime("Timestamp", ["ravg_b = b", "ravg_e = e"], "PT30S", "-PT00:00:20"),
       // rolling minimum
-      RollingMinTick(new[] { "rmin_a = a", "rmin_d = d"}, 10),
-      RollingMinTick(new[] { "rmin_a = a", "rmin_d = d"}, 10, 10),
-      RollingMinTime("Timestamp", new[] { "rmin_b = b", "rmin_e = e"}, "PT00:00:10"),
-      RollingMinTime("Timestamp", new[] { "rmin_b = b", "rmin_e = e"}, Secs(10), Secs(-10)),
-      RollingMinTime("Timestamp", new[] { "rmin_b = b", "rmin_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingMinTick(["rmin_a = a", "rmin_d = d"], 10),
+      RollingMinTick(["rmin_a = a", "rmin_d = d"], 10, 10),
+      RollingMinTime("Timestamp", ["rmin_b = b", "rmin_e = e"], "PT00:00:10"),
+      RollingMinTime("Timestamp", ["rmin_b = b", "rmin_e = e"], Secs(10), Secs(-10)),
+      RollingMinTime("Timestamp", ["rmin_b = b", "rmin_e = e"], "PT30S", "-PT00:00:20"),
       // rolling maximum
-      RollingMaxTick(new[] { "rmax_a = a", "rmax_d = d"}, 10),
-      RollingMaxTick(new[] { "rmax_a = a", "rmax_d = d"}, 10, 10),
-      RollingMaxTime("Timestamp", new[] { "rmax_b = b", "rmax_e = e"}, "PT00:00:10"),
-      RollingMaxTime("Timestamp", new[] { "rmax_b = b", "rmax_e = e"}, Secs(10), Secs(-10)),
-      RollingMaxTime("Timestamp", new[] { "rmax_b = b", "rmax_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingMaxTick(["rmax_a = a", "rmax_d = d"], 10),
+      RollingMaxTick(["rmax_a = a", "rmax_d = d"], 10, 10),
+      RollingMaxTime("Timestamp", ["rmax_b = b", "rmax_e = e"], "PT00:00:10"),
+      RollingMaxTime("Timestamp", ["rmax_b = b", "rmax_e = e"], Secs(10), Secs(-10)),
+      RollingMaxTime("Timestamp", ["rmax_b = b", "rmax_e = e"], "PT30S", "-PT00:00:20"),
       // rolling product
-      RollingProdTick(new[] { "rprod_a = a", "rprod_d = d"}, 10),
-      RollingProdTick(new[] { "rprod_a = a", "rprod_d = d"}, 10, 10),
-      RollingProdTime("Timestamp", new[] { "rprod_b = b", "rprod_e = e"}, "PT00:00:10"),
-      RollingProdTime("Timestamp", new[] { "rprod_b = b", "rprod_e = e"}, Secs(10), Secs(-10)),
-      RollingProdTime("Timestamp",  new[] { "rprod_b = b", "rprod_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingProdTick(["rprod_a = a", "rprod_d = d"], 10),
+      RollingProdTick(["rprod_a = a", "rprod_d = d"], 10, 10),
+      RollingProdTime("Timestamp", ["rprod_b = b", "rprod_e = e"], "PT00:00:10"),
+      RollingProdTime("Timestamp", ["rprod_b = b", "rprod_e = e"], Secs(10), Secs(-10)),
+      RollingProdTime("Timestamp", ["rprod_b = b", "rprod_e = e"], "PT30S", "-PT00:00:20"),
       // rolling count
-      RollingCountTick(new[] { "rcount_a = a", "rcount_d = d"}, 10),
-      RollingCountTick(new[] { "rcount_a = a", "rcount_d = d"}, 10, 10),
-      RollingCountTime("Timestamp", new[] { "rcount_b = b", "rcount_e = e"}, "PT00:00:10"),
-      RollingCountTime("Timestamp",  new[] { "rcount_b = b", "rcount_e = e"}, Secs(10), Secs(-10)),
-      RollingCountTime("Timestamp", new[] { "rcount_b = b", "rcount_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingCountTick(["rcount_a = a", "rcount_d = d"], 10),
+      RollingCountTick(["rcount_a = a", "rcount_d = d"], 10, 10),
+      RollingCountTime("Timestamp", ["rcount_b = b", "rcount_e = e"], "PT00:00:10"),
+      RollingCountTime("Timestamp", ["rcount_b = b", "rcount_e = e"], Secs(10), Secs(-10)),
+      RollingCountTime("Timestamp", ["rcount_b = b", "rcount_e = e"], "PT30S", "-PT00:00:20"),
       // rolling standard deviation
-      RollingStdTick(new[] { "rstd_a = a", "rstd_d = d"}, 10),
-      RollingStdTick(new[] { "rstd_a = a", "rstd_d = d"}, 10, 10),
-      RollingStdTime("Timestamp", new[] { "rstd_b = b", "rstd_e = e"}, "PT00:00:10"),
-      RollingStdTime("Timestamp", new[] { "rstd_b = b", "rstd_e = e"}, Secs(10), Secs(-10)),
-      RollingStdTime("Timestamp", new[] { "rstd_b = b", "rstd_e = e"}, "PT30S", "-PT00:00:20"),
+      RollingStdTick(["rstd_a = a", "rstd_d = d"], 10),
+      RollingStdTick(["rstd_a = a", "rstd_d = d"], 10, 10),
+      RollingStdTime("Timestamp", ["rstd_b = b", "rstd_e = e"], "PT00:00:10"),
+      RollingStdTime("Timestamp", ["rstd_b = b", "rstd_e = e"], Secs(10), Secs(-10)),
+      RollingStdTime("Timestamp", ["rstd_b = b", "rstd_e = e"], "PT30S", "-PT00:00:20"),
       // rolling weighted average (using "b" as the weight column)
-      RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d"}, 10),
-      RollingWavgTick("b", new[] { "rwavg_a = a", "rwavg_d = d"}, 10, 10),
-      RollingWavgTime("Timestamp", "b", new[] { "rwavg_b = b", "rwavg_e = e"}, "PT00:00:10"),
-      RollingWavgTime("Timestamp", "b", new[] { "rwavg_b = b", "rwavg_e = e"}, Secs(10), Secs(-10)),
-      RollingWavgTime("Timestamp", "b", new[] { "rwavg_b = b", "rwavg_e = e"}, "PT30S", "-PT00:00:20")
+      RollingWavgTick("b", ["rwavg_a = a", "rwavg_d = d"], 10),
+      RollingWavgTick("b", ["rwavg_a = a", "rwavg_d = d"], 10, 10),
+      RollingWavgTime("Timestamp", "b", ["rwavg_b = b", "rwavg_e = e"], "PT00:00:10"),
+      RollingWavgTime("Timestamp", "b", ["rwavg_b = b", "rwavg_e = e"], Secs(10), Secs(-10)),
+      RollingWavgTime("Timestamp", "b", ["rwavg_b = b", "rwavg_e = e"], "PT30S", "-PT00:00:20")
     };
     return result;
   }
