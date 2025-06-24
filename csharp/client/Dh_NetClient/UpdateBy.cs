@@ -347,7 +347,7 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-  public static UpdateByOperation RollingWavgTime(string weightCol, string timestampCol, IEnumerable<string> cols,
+  public static UpdateByOperation RollingWavgTime(string timestampCol, string weightCol, IEnumerable<string> cols,
     DurationSpecifier revTime, DurationSpecifier? fwdTime = null) {
     var ubb = new UpdateByBuilder(cols);
     ubb.MutableColumnSpec().RollingWavg =
