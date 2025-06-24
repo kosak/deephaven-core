@@ -1,6 +1,6 @@
 ﻿using Io.Deephaven.Proto.Controller;
 
-namespace Deephaven.DheClient.Controller;
+namespace Deephaven.Dhe_NetClient;
 
 public class Subscription : IDisposable {
   private readonly SubscriptionContext _context;

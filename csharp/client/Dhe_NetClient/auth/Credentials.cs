@@ -1,4 +1,4 @@
-﻿namespace Deephaven.DheClient.Auth;
+﻿namespace Deephaven.Dhe_NetClient;
 
 public abstract class Credentials {
   public static Credentials OfUsernamePassword(string user, string password, string operateAs) {

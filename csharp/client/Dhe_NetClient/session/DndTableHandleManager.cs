@@ -1,7 +1,7 @@
-﻿using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Io.Deephaven.Proto.Backplane.Grpc;
 
-namespace Deephaven.DheClient.Session;
+namespace Deephaven.Dhe_NetClient;
 
 public class DndTableHandleManager : TableHandleManager {
   internal DndTableHandleManager(Ticket? consoleId, Server server) : base(consoleId, server) {

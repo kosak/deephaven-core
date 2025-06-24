@@ -1,7 +1,7 @@
 ﻿using Google.Protobuf;
 using Io.Deephaven.Proto.Auth;
 
-namespace Deephaven.DheClient.Auth;
+namespace Deephaven.Dhe_NetClient;
 
 public static class ClientUtil {
   public static string GetName(string descriptiveName) {

@@ -1,10 +1,8 @@
 ﻿using System.Text.Json;
-using Deephaven.DheClient.Auth;
-using Deephaven.DheClient.Controller;
-using Deephaven.ManagedClient;
+using Deephaven.Dh_NetClient;
 using Io.Deephaven.Proto.Controller;
 
-namespace Deephaven.DheClient.Session;
+namespace Deephaven.Dhe_NetClient;
 
 public class SessionManager : IDisposable {
   private const string DefaultOverrideAuthority = "authserver";

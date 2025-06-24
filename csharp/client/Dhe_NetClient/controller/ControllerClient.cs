@@ -1,12 +1,11 @@
-﻿using Deephaven.DheClient.Auth;
-using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 using Google.Protobuf;
 using Grpc.Net.Client;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
 
-namespace Deephaven.DheClient.Controller;
+namespace Deephaven.Dhe_NetClient;
 
 public class ControllerClient : IDisposable {
   private const string ControllerServiceName = "PersistentQueryController";

@@ -2,10 +2,10 @@
 using Io.Deephaven.Proto.Controller;
 using Io.Deephaven.Proto.Controller.Grpc;
 using System.Diagnostics;
-using Deephaven.ManagedClient;
+using Deephaven.Dh_NetClient;
 using Google.Protobuf;
 
-namespace Deephaven.DheClient.Controller;
+namespace Deephaven.Dhe_NetClient;
 
 internal class SubscriptionContext : IDisposable {
   public static SubscriptionContext Create(ControllerApi.ControllerApiClient controllerApi,

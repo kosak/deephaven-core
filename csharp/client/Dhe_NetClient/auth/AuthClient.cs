@@ -1,11 +1,10 @@
-﻿using Deephaven.ManagedClient;
-using Google.Protobuf;
+﻿using Google.Protobuf;
 using Io.Deephaven.Proto.Auth;
 using Io.Deephaven.Proto.Auth.Grpc;
 using Grpc.Net.Client;
-using System.Net;
+using Deephaven.Dh_NetClient;
 
-namespace Deephaven.DheClient.Auth;
+namespace Deephaven.Dhe_NetClient;
 
 public class AuthClient : IDisposable {
   public static AuthClient Connect(string descriptiveName, Credentials credentials,

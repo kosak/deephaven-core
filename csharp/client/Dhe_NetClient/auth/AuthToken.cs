@@ -1,6 +1,6 @@
 ﻿using Google.Protobuf;
 
-namespace Deephaven.DheClient.Auth;
+namespace Deephaven.Dhe_NetClient;
 
 public record AuthToken(
   UInt64 TokenId,

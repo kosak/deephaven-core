@@ -1,6 +1,6 @@
-﻿using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
 
-namespace Deephaven.DheClient.Session;
+namespace Deephaven.Dhe_NetClient;
 
 public class DndClient : Client {
   public static DndClient Create(Int64 pqSerial, Client client) {
