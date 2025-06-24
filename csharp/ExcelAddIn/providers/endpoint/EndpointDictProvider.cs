@@ -2,7 +2,7 @@
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Util;
 using System;
-using Deephaven.ManagedClient;
+using Deephaven.Dh_NetClient;
 
 namespace Deephaven.ExcelAddIn.Providers;
 

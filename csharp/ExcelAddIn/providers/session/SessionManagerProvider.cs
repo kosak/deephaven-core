@@ -1,4 +1,4 @@
-﻿using Deephaven.DheClient.Session;
+﻿using Deephaven.Dhe_NetClient;
 using Deephaven.ExcelAddIn.Factories;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;

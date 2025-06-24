@@ -1,10 +1,11 @@
-﻿using Deephaven.DheClient.Controller;
+﻿using Deephaven.Dh_NetClient;
+using Deephaven.Dhe_NetClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Refcounting;
 using Deephaven.ExcelAddIn.Util;
-using Deephaven.ManagedClient;
 using Io.Deephaven.Proto.Controller;
+using Utility = Deephaven.ExcelAddIn.Util.Utility;
 
 namespace Deephaven.ExcelAddIn.Providers;
 

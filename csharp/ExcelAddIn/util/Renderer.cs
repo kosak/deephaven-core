@@ -1,4 +1,6 @@
-﻿using Deephaven.ManagedClient;
+﻿using Deephaven.Dh_NetClient;
+
+using DhClientUtility = Deephaven.Dh_NetClient.Utility;
 
 namespace Deephaven.ExcelAddIn.Util;
 
@@ -68,13 +70,13 @@ internal static class Renderer {
     IColumnSourceVisitor<IDoubleColumnSource>,
     IColumnSourceVisitor<IBooleanColumnSource>,
     IColumnSourceVisitor<IStringColumnSource>,
-    IColumnSourceVisitor<IDateTimeColumnSource>,
+    IColumnSourceVisitor<IDateTimeOffsetColumnSource>,
     IColumnSourceVisitor<IDateOnlyColumnSource>,
     IColumnSourceVisitor<ITimeOnlyColumnSource> {
     public IAdaptor? Result { get; private set; }
 
     public void Visit(IColumnSource cs) {
-      throw new NotImplementedException($"Don't have an adaptor for type {cs.GetType()}");
+      throw new NotImplementedException($"Don't have an adaptor for type {DhClientUtility.FriendlyTypeName(cs.GetType())}");
     }
 
     public void Visit(ICharColumnSource _) => Result = new Adaptor<char>(size, ch => ch.ToString());
@@ -86,7 +88,7 @@ internal static class Renderer {
     public void Visit(IDoubleColumnSource _) => Result = new Adaptor<double>(size, x => x);
     public void Visit(IBooleanColumnSource _) => Result = new Adaptor<bool>(size, x => x);
     public void Visit(IStringColumnSource _) => Result = new Adaptor<string>(size, x => x);
-    public void Visit(IDateTimeColumnSource _) => Result = new Adaptor<DateTime>(size,
+    public void Visit(IDateTimeOffsetColumnSource _) => Result = new Adaptor<DateTimeOffset>(size,
       dt => dt.ToString("o", null));
     public void Visit(IDateOnlyColumnSource _) => Result = new Adaptor<DateOnly>(size,
         dt => dt.ToString("o", null));

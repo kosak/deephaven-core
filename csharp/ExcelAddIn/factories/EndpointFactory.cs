@@ -1,7 +1,6 @@
-﻿using Deephaven.DheClient.Auth;
-using Deephaven.DheClient.Session;
+﻿using Deephaven.Dh_NetClient;
+using Deephaven.Dhe_NetClient;
 using Deephaven.ExcelAddIn.Models;
-using Deephaven.ManagedClient;
 
 namespace Deephaven.ExcelAddIn.Factories;
 

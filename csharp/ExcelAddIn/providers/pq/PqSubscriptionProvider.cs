@@ -1,5 +1,4 @@
-﻿using Deephaven.DheClient.Controller;
-using Deephaven.DheClient.Session;
+﻿using Deephaven.Dhe_NetClient;
 using Deephaven.ExcelAddIn.Models;
 using Deephaven.ExcelAddIn.Observable;
 using Deephaven.ExcelAddIn.Refcounting;

@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using Deephaven.ManagedClient;
+using Deephaven.Dh_NetClient;
 
 namespace Deephaven.ExcelAddIn.Util;
 
