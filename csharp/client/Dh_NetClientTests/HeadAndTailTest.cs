@@ -1,9 +1,8 @@
 ﻿using Deephaven.Dh_NetClient;
-using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class HeadAndTailTest(ITestOutputHelper output) {
+public class HeadAndTailTest {
   [Fact]
   public void TestHeadAndTail() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());

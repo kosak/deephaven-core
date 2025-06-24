@@ -1,9 +1,8 @@
 ﻿using Deephaven.Dh_NetClient;
-using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class InputTableTest(ITestOutputHelper output) {
+public class InputTableTest {
   [Fact]
   public void TestInputTableAppend() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());

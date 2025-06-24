@@ -205,11 +205,13 @@ sealed class TransformingCopier<TSrc, TDest>(Chunk<TDest> typedDest, BooleanChun
     var typedSrc = (IReadOnlyList<TSrc?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];
-      var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
-      try {
-        typedDest.Data[destOffset] = isNull ? transformedNullValue : transformer(value.Value);
-      } catch (Exception e) {
-        typedDest.Data[destOffset] = isNull ? transformedNullValue : transformer(value.Value);
+      bool isNull;
+      if (!value.HasValue || value.Value.Equals(deephavenNullValue)) {
+        isNull = true;
+        typedDest.Data[destOffset] = transformedNullValue;
+      } else {
+        isNull = false;
+        typedDest.Data[destOffset] = transformer(value.Value);
       }
 
       if (nullFlags != null) {

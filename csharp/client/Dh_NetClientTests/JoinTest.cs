@@ -1,9 +1,8 @@
 ﻿using Deephaven.Dh_NetClient;
-using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class JoinTest(ITestOutputHelper output) {
+public class JoinTest {
   [Fact]
   public void TestJoin() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());

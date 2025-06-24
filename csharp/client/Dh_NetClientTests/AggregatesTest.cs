@@ -1,10 +1,8 @@
 ﻿using Deephaven.Dh_NetClient;
-using Io.Deephaven.Proto.Backplane.Grpc;
-using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class AggregatesTest(ITestOutputHelper output) {
+public class AggregatesTest {
   [Fact]
   public void TestVariousAggregates() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());

@@ -1,9 +1,8 @@
 ﻿using Deephaven.Dh_NetClient;
-using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class TableHandleAttributesTest(ITestOutputHelper output) {
+public class TableHandleAttributesTest {
   [Fact]
   public void TableHandleAttributes() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
