@@ -1,4 +1,5 @@
-﻿using Apache.Arrow;
+﻿using System.Diagnostics;
+using Apache.Arrow;
 using Apache.Arrow.Flight;
 using Grpc.Core;
 using Io.Deephaven.Proto.Backplane.Grpc;
@@ -38,7 +39,7 @@ public class TableHandle : IDisposable {
   }
 
   public void Dispose() {
-    Console.Error.WriteLine("TableHandle.Dispose: NIY");
+    Debug.WriteLine("TableHandle.Dispose: NIY");
   }
 
   /// <summary>
