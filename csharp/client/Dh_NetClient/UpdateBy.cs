@@ -231,25 +231,133 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
-
-
-  UpdateByOperation rollingMinTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-    UpdateByBuilder ubb(std::move(cols));
-    ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_min, rev_ticks, fwd_ticks);
+  public static UpdateByOperation RollingMinTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingMin =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMin {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
     return ubb.Build();
   }
 
-  UpdateByOperation rollingMinTime(std::string timestamp_col, std::vector<std::string> cols,
-  DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-    UpdateByBuilder ubb(std::move(cols));
-    ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_min, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
+  public static UpdateByOperation RollingMinTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingMin =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMin {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
     return ubb.Build();
   }
 
+  public static UpdateByOperation RollingMaxTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingMax =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMax {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
 
+  public static UpdateByOperation RollingMaxTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingMax =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingMax {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
 
+  public static UpdateByOperation RollingProdTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingProduct =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingProduct {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
 
+  public static UpdateByOperation RollingProdTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingProduct =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingProduct {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingCountTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingCount =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingCount {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingCountTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingCount =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingCount {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingStdTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingStd =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingStd {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingStdTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingStd =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingStd {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingWavgTick(string weightCol, IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingWavg =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingWAvg {
+        WeightColumn = weightCol,
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingWavgTime(string weightCol, string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingWavg =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingWAvg {
+        WeightColumn = weightCol,
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
 
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
@@ -445,75 +553,7 @@ namespace deephaven::client::update_by {
 
 
 
-UpdateByOperation rollingMaxTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_max, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
 
-UpdateByOperation rollingMaxTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_max, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
 
-UpdateByOperation rollingProdTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_product, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
 
-UpdateByOperation rollingProdTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_product, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
-
-UpdateByOperation rollingCountTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_count, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingCountTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_count, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
-
-UpdateByOperation rollingStdTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_std, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingStdTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_std, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
-
-UpdateByOperation rollingWavgTick(std::string weight_col, std::vector<std::string> cols,
-    int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetWeightedRevAndFwdTicks(&UpdateBySpec::mutable_rolling_wavg, std::move(weight_col), rev_ticks,
-      fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingWavgTime(std::string timestamp_col, std::string weight_col,
-    std::vector<std::string> cols, DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetWeightedRevAndFwdTime(&UpdateBySpec::mutable_rolling_wavg, std::move(timestamp_col),
-      std::move(weight_col), std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
 }  // namespace deephaven::client::update_by
