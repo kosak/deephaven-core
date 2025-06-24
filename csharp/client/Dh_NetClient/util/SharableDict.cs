@@ -91,7 +91,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
                         foreach (var i10 in child9.ValiditySet) {
                           var data = child9.Data[i10];
                           var offset = Splitter.Merge(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
-                          yield return KeyValuePair.Create(offset, data);
+                          yield return KeyValuePair.Create(offset, data!);
                         }
                       }
                     }
