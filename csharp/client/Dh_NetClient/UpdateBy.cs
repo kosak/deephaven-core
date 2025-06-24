@@ -130,6 +130,127 @@ public class UpdateByOperation {
     return ubb.Build();
   }
 
+  public static UpdateByOperation EmMaxTick(double decayTicks, IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().EmMax = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEmMax {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(decayTicks)
+    };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation EmMaxTime(string timestampCol, DurationSpecifier decayTime,
+    IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().EmMax = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEmMax {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(timestampCol, decayTime)
+    };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation EmStdTick(double decayTicks, IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().EmStd = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEmStd {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(decayTicks)
+    };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation EmStdTime(string timestampCol, DurationSpecifier decayTime,
+    IEnumerable<string> cols, OperationControl? opControl = null) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().EmStd = new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByEmStd {
+      Options = ConvertOperationControl(opControl),
+      WindowScale = MakeWindowScale(timestampCol, decayTime)
+    };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingSumTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingSum =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingSum {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingSumTime(string timestampCol, IEnumerable<string> cols,
+  DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingSum =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingSum {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingGroupTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingGroup =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingGroup {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingGroupTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingGroup =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingGroup {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingAvgTick(IEnumerable<string> cols, int revTicks, int fwdTicks) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingAvg =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingAvg {
+        ReverseWindowScale = MakeWindowScale(revTicks),
+        ForwardWindowScale = MakeWindowScale(fwdTicks)
+      };
+    return ubb.Build();
+  }
+
+  public static UpdateByOperation RollingAvgTime(string timestampCol, IEnumerable<string> cols,
+    DurationSpecifier revTime, DurationSpecifier fwdTime) {
+    var ubb = new UpdateByBuilder(cols);
+    ubb.MutableColumnSpec().RollingAvg =
+      new UpdateByOperationProto.Types.UpdateByColumn.Types.UpdateBySpec.Types.UpdateByRollingAvg {
+        ReverseWindowScale = MakeWindowScale(timestampCol, revTime),
+        ForwardWindowScale = MakeWindowScale(timestampCol, fwdTime)
+      };
+    return ubb.Build();
+  }
+
+
+
+  UpdateByOperation rollingMinTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
+    UpdateByBuilder ubb(std::move(cols));
+    ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_min, rev_ticks, fwd_ticks);
+    return ubb.Build();
+  }
+
+  UpdateByOperation rollingMinTime(std::string timestamp_col, std::vector<std::string> cols,
+  DurationSpecifier rev_time, DurationSpecifier fwd_time) {
+    UpdateByBuilder ubb(std::move(cols));
+    ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_min, std::move(timestamp_col),
+      std::move(rev_time), std::move(fwd_time));
+    return ubb.Build();
+  }
+
+
+
+
+
   private static UpdateByNullBehavior ConvertDeltaControl(DeltaControl dc) {
     return dc switch {
       DeltaControl.NullDominates => UpdateByNullBehavior.NullDominates,
@@ -323,89 +444,6 @@ namespace deephaven::client::update_by {
 
 
 
-UpdateByOperation emmaxTick(double decay_ticks, std::vector<std::string> cols,
-    const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTicks(&UpdateBySpec::mutable_em_max, decay_ticks, op_control);
-  return ubb.Build();
-}
-
-UpdateByOperation emmaxTime(std::string timestamp_col, DurationSpecifier decay_time,
-    std::vector<std::string> cols, const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTime(&UpdateBySpec::mutable_em_max, std::move(timestamp_col), std::move(decay_time), op_control);
-  return ubb.Build();
-}
-
-UpdateByOperation emstdTick(double decay_ticks, std::vector<std::string> cols,
-    const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTicks(&UpdateBySpec::mutable_em_std, decay_ticks, op_control);
-  return ubb.Build();
-}
-
-UpdateByOperation emstdTime(std::string timestamp_col, DurationSpecifier decay_time,
-    std::vector<std::string> cols, const OperationControl &op_control) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetTime(&UpdateBySpec::mutable_em_std, std::move(timestamp_col), std::move(decay_time), op_control);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingSumTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_sum, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingSumTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_sum, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
-
-UpdateByOperation rollingGroupTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_group, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingGroupTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_group, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
-
-UpdateByOperation rollingAvgTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_avg, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingAvgTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_avg, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
-
-UpdateByOperation rollingMinTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTicks(&UpdateBySpec::mutable_rolling_min, rev_ticks, fwd_ticks);
-  return ubb.Build();
-}
-
-UpdateByOperation rollingMinTime(std::string timestamp_col, std::vector<std::string> cols,
-    DurationSpecifier rev_time, DurationSpecifier fwd_time) {
-  UpdateByBuilder ubb(std::move(cols));
-  ubb.SetRevAndFwdTime(&UpdateBySpec::mutable_rolling_min, std::move(timestamp_col),
-      std::move(rev_time), std::move(fwd_time));
-  return ubb.Build();
-}
 
 UpdateByOperation rollingMaxTick(std::vector<std::string> cols, int rev_ticks, int fwd_ticks) {
   UpdateByBuilder ubb(std::move(cols));
