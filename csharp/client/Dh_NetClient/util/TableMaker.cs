@@ -110,16 +110,15 @@ public class TableMaker {
     }
 
     public static ColumnBuilder ForType(Type type) {
-      var underlyingType = Nullable.GetUnderlyingType(type);
-      if (underlyingType != null) {
+      var nullableUnderlyingType = Nullable.GetUnderlyingType(type);
+      if (nullableUnderlyingType != null) {
         var miGeneric = typeof(ColumnBuilder).GetMethod(nameof(ForNullableType));
         if (miGeneric == null) {
           throw new Exception($"Can't find {nameof(ForNullableType)}");
         }
-        var miInstantiated = miGeneric.MakeGenericMethod(underlyingType);
+        var miInstantiated = miGeneric.MakeGenericMethod(nullableUnderlyingType);
         return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
       }
-
 
       if (type == typeof(sbyte)) {
         var arrowBuilder = new Apache.Arrow.Int8Array.Builder();
@@ -189,12 +188,42 @@ public class TableMaker {
           arrowBuilder, DeephavenMetadataConstants.Types.LocalTime);
       }
 
+      var listUnderlyingType = GetIListInterfaceUnderlyingType(type);
+      if (listUnderlyingType != null) {
+        var miGeneric = typeof(ColumnBuilder).GetMethod(nameof(ForIListType));
+        if (miGeneric == null) {
+          throw new Exception($"Can't find {nameof(ForIListType)}");
+        }
+        var miInstantiated = miGeneric.MakeGenericMethod(listUnderlyingType);
+        return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
+      }
+
       throw new Exception($"ColumnBuilder does not support type {Utility.FriendlyTypeName(type)}");
     }
     
     public static ColumnBuilder<T?> ForNullableType<T>() where T : struct {
       var underlyingCb = ForType<T>();
       return new NullableBuilder<T>(underlyingCb);
+    }
+
+    public static ColumnBuilder<T> ForIListType<T>() {
+      var underlyingCb = ForType<T>();
+      throw new Exception("MEGA SAD");
+    }
+
+    private static Type? GetIListInterfaceUnderlyingType(Type ilistType) {
+      return ilistType.GetInterfaces().Select(GetIListUnderlyingType).FirstOrDefault();
+    }
+
+    private static Type? GetIListUnderlyingType(Type ilistType) {
+      if (ilistType.IsGenericType && !ilistType.IsGenericTypeDefinition) {
+        // Instantiated generic type only
+        var genericType = ilistType.GetGenericTypeDefinition();
+        if (ReferenceEquals(genericType, typeof(IList<>))) {
+          return ilistType.GetGenericArguments()[0];
+        }
+      }
+      return null;
     }
   }
 

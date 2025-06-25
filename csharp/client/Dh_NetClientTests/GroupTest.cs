@@ -35,7 +35,7 @@ public class GroupTest(ITestOutputHelper output) {
     expected.AddColumn("Type", ["Granny Smith", "Gala", "Golden Delicious"]);
     expected.AddColumn<List<string>>("Color",
       [["Green", "Green"], ["Red-Green", "Orange-Green"], ["Yellow", "Yellow"]]);
-    expected.AddColumn<List<Int32>>("Weight", [[102, 85], [79, 92], [78, 99]]);
+    expected.AddColumn<Int32[]>("Weight", [[102, 85], [79, 92], [78, 99]]);
     expected.AddColumn<List<Int32>>("Calories", [[53, 48], [51, 61], [46, 57]]);
     TableComparer.AssertSame(expected, t1);
   }
