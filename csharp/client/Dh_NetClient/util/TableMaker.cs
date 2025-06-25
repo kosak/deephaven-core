@@ -208,6 +208,7 @@ public class TableMaker {
 
     public static ColumnBuilder<T> ForIListType<T>() {
       var underlyingCb = ForType<T>();
+      var temp = new Apache.Arrow.ListArray.Builder(zamboni);
       throw new Exception("MEGA SAD");
     }
 
