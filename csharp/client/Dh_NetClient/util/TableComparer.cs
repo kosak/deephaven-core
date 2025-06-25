@@ -36,6 +36,7 @@ public static class TableComparer {
 
       if (!ArrowUtil.TypesEqual(exp.DataType, act.DataType)) {
         issues.Add($"Column {i}: Expected column type {exp.DataType}, actual is {act.DataType}");
+        var zamboni = ArrowUtil.TypesEqual(exp.DataType, act.DataType);
       }
     }
 

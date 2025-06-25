@@ -130,9 +130,10 @@ namespace Deephaven.Dh_NetClient.third_party.Apache.Arrow {
           return false;
         }
 
-        var dataTypeMatch = FieldComparer.Compare(expectedType.Fields[i], actualType.Fields[i]);
 
-        if (!dataTypeMatch) {
+        var nestedComparer = new ArrayDataTypeComparer(expectedType.Fields[i].DataType);
+        actualType.Fields[i].DataType.Accept(nestedComparer);
+        if (!nestedComparer.DataTypeMatch) {
           return false;
         }
       }
