@@ -656,9 +656,9 @@ public class TableHandle : IDisposable {
     return disposer;
   }
 
-  public string ToString(bool wantHeaders) {
-    var t = ToArrowTable();
-    return t.ToString();
+  public string ToString(bool wantHeaders, bool wantLineNumbers = false) {
+    var at = ToArrowTable();
+    return ArrowUtil.Render(at, wantHeaders, wantLineNumbers);
   }
 
   private Server Server => _manager.Server;
