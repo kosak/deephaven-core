@@ -1,7 +1,6 @@
 ﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
-
 namespace Deephaven.Dh_NetClientTests;
 
 public class GroupTest(ITestOutputHelper output) {
@@ -38,10 +37,6 @@ public class GroupTest(ITestOutputHelper output) {
       [["Green", "Green"], ["Red-Green", "Orange-Green"], ["Yellow", "Yellow"]]);
     expected.AddColumn<List<Int32>>("Weight", [[102, 85], [79, 92], [78, 99]]);
     expected.AddColumn<List<Int32>>("Calories", [[53, 48], [51, 61], [46, 57]]);
-
-    output.WriteLine(expected.ToString(true, true));
-    output.WriteLine(grouped.ToString(true, true));
-
     TableComparer.AssertSame(expected, grouped);
   }
 
@@ -55,6 +50,6 @@ public class GroupTest(ITestOutputHelper output) {
       [[4, 5]]
     ]);
     using var t = maker.MakeTable(ctx.Client.Manager);
-    //CHECK_THROWS_WITH(t.ToClientTable(), StartsWith("Nested lists are not currently supported"));
+    Assert.Throws<Exception>(t.ToClientTable);
   }
 }
