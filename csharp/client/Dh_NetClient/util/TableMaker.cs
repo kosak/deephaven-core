@@ -1,4 +1,5 @@
-﻿using Apache.Arrow.Types;
+﻿using Apache.Arrow;
+using Apache.Arrow.Types;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -194,7 +195,7 @@ public class TableMaker {
         if (miGeneric == null) {
           throw new Exception($"Can't find {nameof(ForIListType)}");
         }
-        var miInstantiated = miGeneric.MakeGenericMethod(listUnderlyingType);
+        var miInstantiated = miGeneric.MakeGenericMethod(type, listUnderlyingType);
         return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
       }
 
@@ -206,10 +207,9 @@ public class TableMaker {
       return new NullableBuilder<T>(underlyingCb);
     }
 
-    public static ColumnBuilder<T> ForIListType<T>() {
-      var underlyingCb = ForType<T>();
-      var temp = new Apache.Arrow.ListArray.Builder(zamboni);
-      throw new Exception("MEGA SAD");
+    public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>() where TList : IList<TUnderlying> {
+      var underlyingCb = ForType<TUnderlying>();
+      return new ListBuilder<TList, TUnderlying>();
     }
 
     private static Type? GetIListInterfaceUnderlyingType(Type ilistType) {
@@ -332,6 +332,29 @@ public class TableMaker {
       return _underlyingBuilder.GetDeephavenMetadata();
     }
   }
+
+  private class ListBuilder<TList, TUnderlying> : ColumnBuilder<TList> where TList : IList<TUnderlying> {
+    public override void Append(TList item) {
+      throw new NotImplementedException();
+    }
+
+    public override void AppendNull() {
+      throw new NotImplementedException();
+    }
+
+    public override IArrowArray Build() {
+      throw new NotImplementedException();
+    }
+
+    public override (string, string?) GetDeephavenMetadata() {
+      throw new NotImplementedException();
+    }
+  }
+  //
+  //
+  // var temp = new Apache.Arrow.ListArray.Builder(arrowType);
+  // temp.Append();
+
 
   private record ColumnInfo(string Name,
     Apache.Arrow.IArrowArray Data,
