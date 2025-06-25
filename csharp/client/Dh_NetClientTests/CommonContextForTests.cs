@@ -41,18 +41,21 @@ public sealed class CommonContextForTests : IDisposable {
   }
 
   private static Client CreateClient(ClientOptions clientOptions) {
-    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST", "10.0.4.109");
-    var port = GlobalEnvironmentForTests.GetEnv("DH_PORT", "10000");
+    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST");
+    var port = GlobalEnvironmentForTests.GetEnv("DH_PORT");
     var connectionString = $"{host}:{port}";
     var client = Client.Connect(connectionString, clientOptions);
     return client;
   }
 }
 
-// TODO(kosak): put this somewhere, and implement for real
 class GlobalEnvironmentForTests {
-  public static string GetEnv(string environmentVariable, string defaultValue) {
-    return defaultValue;
+  public static string GetEnv(string environmentVariable) {
+    var value = Environment.GetEnvironmentVariable(environmentVariable);
+    if (value == null) {
+      throw new Exception($"Environment variable {environmentVariable} is not set");
+    }
+    return value;
   }
 }
 
