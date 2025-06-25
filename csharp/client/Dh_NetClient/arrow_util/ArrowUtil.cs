@@ -1,6 +1,8 @@
 ﻿using System.Collections;
+using Apache.Arrow;
 using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;
+using Array = System.Array;
 using ArrowColumn = Apache.Arrow.Column;
 using ArrowField = Apache.Arrow.Field;
 using ArrowTable = Apache.Arrow.Table;
@@ -104,11 +106,62 @@ public static class ArrowUtil {
 
   public static IEnumerable<object> MakeScalarEnumerable(Apache.Arrow.ChunkedArray chunkedArray) {
     var numArrays = chunkedArray.ArrayCount;
+    var visitor = new ScalarEnumerableVisitor();
     for (var i = 0; i != numArrays; ++i) {
       var array = chunkedArray.ArrowArray(i);
-      foreach (var result in (IEnumerable)array) {
+      array.Accept(visitor);
+      foreach (var result in visitor.Result) {
         yield return result;
       }
+    }
+  }
+
+  private class ScalarEnumerableVisitor : Apache.Arrow.IArrowArrayVisitor,
+    IArrowArrayVisitor<ListArray> {
+    public IEnumerable Result = Array.Empty<object>();
+
+    public void Visit(IArrowArray array) {
+      Result = (IEnumerable)array;
+    }
+
+    public void Visit(ListArray array) {
+      Result = ListArrayHelper(array);
+    }
+
+    private IEnumerable ListArrayHelper(ListArray array) {
+      var innerVisitor = new ScalarEnumerableVisitor();
+      for (var i = 0; i != array.Length; ++i) {
+        var slice = array.GetSlicedValues(i);
+        slice.Accept(innerVisitor);
+        yield return new ObjectListWithEqualityAndToString(innerVisitor.Result);
+      }
+    }
+  }
+
+  private sealed class ObjectListWithEqualityAndToString : IEquatable<ObjectListWithEqualityAndToString> {
+    private readonly object?[] _values;
+
+    public ObjectListWithEqualityAndToString(IEnumerable items) {
+      _values = items.Cast<object?>().ToArray();
+    }
+
+    public override bool Equals(object? other) {
+      return Equals(other as ObjectListWithEqualityAndToString);
+    }
+
+
+    public bool Equals(ObjectListWithEqualityAndToString? other) {
+      return other != null &&
+        StructuralComparisons.StructuralEqualityComparer.Equals(_values, other._values);
+    }
+
+    public int GetHashCode() {
+      return StructuralComparisons.StructuralEqualityComparer.GetHashCode(_values);
+    }
+
+    public override string ToString() {
+      var filterNull = _values.Select(e => e ?? "[null]");
+      return $"[{string.Join(", ", filterNull)}]";
     }
   }
 }
