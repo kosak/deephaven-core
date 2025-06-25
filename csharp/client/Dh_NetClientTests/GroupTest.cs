@@ -38,7 +38,11 @@ public class GroupTest(ITestOutputHelper output) {
       [["Green", "Green"], ["Red-Green", "Orange-Green"], ["Yellow", "Yellow"]]);
     expected.AddColumn<List<Int32>>("Weight", [[102, 85], [79, 92], [78, 99]]);
     expected.AddColumn<List<Int32>>("Calories", [[53, 48], [51, 61], [46, 57]]);
-    TableComparer.AssertSame(expected, t1);
+
+    output.WriteLine(expected.ToString(true, true));
+    output.WriteLine(grouped.ToString(true, true));
+
+    TableComparer.AssertSame(expected, grouped);
   }
 
   [Fact]
