@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <!-- List of environment variables we want to set-->
+	<!-- <DH_HOST>10.0.4.109</DH_HOST> -->
+	<!-- <DH_PORT>10000</DH_PORT> -->
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>
