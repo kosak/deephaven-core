@@ -62,8 +62,12 @@ internal class GlobalEnvironmentForTests {
     }
 
     if (missing.Count != 0) {
-      throw new Exception("The following environment variables were not found. " +
-      $"Please set them either in the environment or in the .RunSettings file in the project directory: {string.Join(", ", missing)}");
+      throw new Exception($"The following environment variables were not found: {string.Join(", ", missing)}.\n" +
+        "Please set them in your environment.\n" +
+        "Sample values:\n" +
+        "  DH_HOST=10.0.4.109\n" +
+        "  DH_PORT=10000\n" +
+        "If using Visual Studio you can edit the .runsettings file in the project directory.");
     }
     return results.ToArray();
   }
