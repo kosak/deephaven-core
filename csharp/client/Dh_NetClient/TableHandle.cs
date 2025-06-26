@@ -230,6 +230,21 @@ public class TableHandle : IDisposable {
     return TableHandle.Create(_manager, resp);
   }
 
+  public TableHandle Ungroup(params string[] groupByColumns) {
+    return Ungroup(false, groupByColumns);
+  }
+
+  public TableHandle Ungroup(bool null_fill, params string[] groupByColumns) {
+    var req = new UngroupRequest {
+      ResultId = Server.NewTicket(),
+      SourceId = new TableReference { Ticket = Ticket },
+      NullFill = null_fill
+    };
+    req.ColumnsToUngroup.AddRange(groupByColumns);
+    var resp = Server.SendRpc(opts => Server.TableStub.UngroupAsync(req, opts));
+    return TableHandle.Create(_manager, resp);
+  }
+
   private TableHandle DefaultAggregateByDescriptor(ComboAggregateRequest.Types.Aggregate descriptor,
     string[] groupByColumns) {
     var descriptors = new[] {descriptor};

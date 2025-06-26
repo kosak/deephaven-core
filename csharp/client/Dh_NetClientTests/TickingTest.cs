@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using Apache.Arrow;
+﻿using Apache.Arrow;
 using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
@@ -26,16 +24,6 @@ public class TickingTest(ITestOutputHelper output) {
         throw new Exception("Caught exception", exception);
       }
     }
-  }
-
-  [Fact]
-  public void AFourthTest() {
-    Assert.Equal(7, 7);
-  }
-
-  [Fact]
-  public void AFifthTest() {
-    Assert.Equal(7, 7);
   }
 
   [Fact]
