@@ -41,21 +41,31 @@ public sealed class CommonContextForTests : IDisposable {
   }
 
   private static Client CreateClient(ClientOptions clientOptions) {
-    var host = GlobalEnvironmentForTests.GetEnv("DH_HOST");
-    var port = GlobalEnvironmentForTests.GetEnv("DH_PORT");
-    var connectionString = $"{host}:{port}";
+    var results = GlobalEnvironmentForTests.GetEnv("DH_HOST", "DH_PORT");
+    var connectionString = $"{results[0]}:{results[1]}";
     var client = Client.Connect(connectionString, clientOptions);
     return client;
   }
 }
 
-class GlobalEnvironmentForTests {
-  public static string GetEnv(string environmentVariable) {
-    var value = Environment.GetEnvironmentVariable(environmentVariable);
-    if (value == null) {
-      throw new Exception($"Environment variable {environmentVariable} is not set");
+internal class GlobalEnvironmentForTests {
+  public static string[] GetEnv(params string[] environmentVariables) {
+    var results = new List<string>();
+    var missing = new List<string>();
+    foreach (var enVar in environmentVariables) {
+      var enVal = Environment.GetEnvironmentVariable(enVar);
+      if (enVal != null) {
+        results.Add(enVal);
+      } else {
+        missing.Add(enVar);
+      }
     }
-    return value;
+
+    if (missing.Count != 0) {
+      throw new Exception("The following environment variables were not found. " +
+      $"Please set them either in the environment or in the .RunSettings file in the project directory: {string.Join(", ", missing)}");
+    }
+    return results.ToArray();
   }
 }
 
