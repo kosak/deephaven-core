@@ -258,7 +258,8 @@ public class TableMaker {
     }
 
     private static Type? GetIListInterfaceUnderlyingType(Type ilistType) {
-      return ilistType.GetInterfaces().Select(GetIListUnderlyingType).FirstOrDefault();
+      var temp = ilistType.GetInterfaces();
+      return ilistType.GetInterfaces().Select(GetIListUnderlyingType).FirstOrDefault(t => t != null);
     }
 
     private static Type? GetIListUnderlyingType(Type ilistType) {

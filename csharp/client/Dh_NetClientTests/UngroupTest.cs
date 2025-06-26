@@ -5,8 +5,7 @@ namespace Deephaven.Dh_NetClientTests;
 
 public class UngroupTest(ITestOutputHelper output) {
   [Fact]
-  public void UngroupColumns666() {
-    output.WriteLine("WAKE THE HELL UP");
+  public void UngroupColumns() {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
@@ -19,16 +18,8 @@ public class UngroupTest(ITestOutputHelper output) {
 
     {
       var expected = new TableMaker();
-      expected.AddColumn("Ticker", "AAPL");
-      expected.AddColumn("Close", [23.5, 24.2, 26.7]);
-
-
-      output.WriteLine("THIS IS EXPECTED");
-      output.WriteLine(expected.ToString(true, true));
-
-      output.WriteLine("THIS IS BYTABLE");
-      output.WriteLine(byTable.ToString(true, true));
-
+      expected.AddColumn("Ticker", ["AAPL"]);
+      expected.AddColumn<double[]>("Close", [[23.5, 24.2, 26.7]]);
       TableComparer.AssertSame(expected, byTable);
     }
 
