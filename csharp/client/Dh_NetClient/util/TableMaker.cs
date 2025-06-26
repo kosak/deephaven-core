@@ -119,7 +119,7 @@ public class TableMaker {
       return (ColumnBuilder<T>)ForType(typeof(T));
     }
 
-    public static ColumnBuilder ForType(Type type) {
+    public static ColumnBuilder ForType(Type type, IArrowArrayBuilder? callerProvidedBuilder) {
       var nullableUnderlyingType = Nullable.GetUnderlyingType(type);
       if (nullableUnderlyingType != null) {
         var miGeneric = typeof(ColumnBuilder).GetMethod(nameof(ForNullableType));
@@ -131,72 +131,92 @@ public class TableMaker {
       }
 
       if (type == typeof(sbyte)) {
-        var arrowBuilder = new Apache.Arrow.Int8Array.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<sbyte, Int8Array, Int8Array.Builder>?)callerProvidedBuilder
+          ?? new Apache.Arrow.Int8Array.Builder();
         return new TypicalBuilder<sbyte, Apache.Arrow.Int8Array, Apache.Arrow.Int8Array.Builder>(
-          arrowBuilder, Apache.Arrow.Types.Int8Type.Default, DeephavenMetadataConstants.Types.Int8);
+          builderToUse, Apache.Arrow.Types.Int8Type.Default, DeephavenMetadataConstants.Types.Int8);
       }
 
       if (type == typeof(Int16)) {
-        var arrowBuilder = new Apache.Arrow.Int16Array.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<Int16, Int16Array, Int16Array.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.Int16Array.Builder();
         return new TypicalBuilder<Int16, Apache.Arrow.Int16Array, Apache.Arrow.Int16Array.Builder>(
-          arrowBuilder, Apache.Arrow.Types.Int16Type.Default, DeephavenMetadataConstants.Types.Int16);
+          builderToUse, Apache.Arrow.Types.Int16Type.Default, DeephavenMetadataConstants.Types.Int16);
       }
 
       if (type == typeof(Int32)) {
-        var arrowBuilder = new Apache.Arrow.Int32Array.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<Int32, Int32Array, Int32Array.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.Int32Array.Builder();
         return new TypicalBuilder<Int32, Apache.Arrow.Int32Array, Apache.Arrow.Int32Array.Builder>(
-          arrowBuilder, Apache.Arrow.Types.Int32Type.Default, DeephavenMetadataConstants.Types.Int32);
+          builderToUse, Apache.Arrow.Types.Int32Type.Default, DeephavenMetadataConstants.Types.Int32);
       }
 
       if (type == typeof(Int64)) {
-        var arrowBuilder = new Apache.Arrow.Int64Array.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<Int64, Int64Array, Int64Array.Builder>?)callerProvidedBuilder ?? 
+          new Apache.Arrow.Int64Array.Builder();
         return new TypicalBuilder<Int64, Apache.Arrow.Int64Array, Apache.Arrow.Int64Array.Builder>(
-          arrowBuilder, Apache.Arrow.Types.Int64Type.Default, DeephavenMetadataConstants.Types.Int64);
+          builderToUse, Apache.Arrow.Types.Int64Type.Default, DeephavenMetadataConstants.Types.Int64);
       }
 
       if (type == typeof(float)) {
-        var arrowBuilder = new Apache.Arrow.FloatArray.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<float, FloatArray, FloatArray.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.FloatArray.Builder();
         return new TypicalBuilder<float, Apache.Arrow.FloatArray, Apache.Arrow.FloatArray.Builder>(
-          arrowBuilder, Apache.Arrow.Types.FloatType.Default, DeephavenMetadataConstants.Types.Float);
+          builderToUse, Apache.Arrow.Types.FloatType.Default, DeephavenMetadataConstants.Types.Float);
       }
 
       if (type == typeof(double)) {
-        var arrowBuilder = new Apache.Arrow.DoubleArray.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<double, DoubleArray, DoubleArray.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.DoubleArray.Builder();
         return new TypicalBuilder<double, Apache.Arrow.DoubleArray, Apache.Arrow.DoubleArray.Builder>(
-          arrowBuilder, Apache.Arrow.Types.DoubleType.Default, DeephavenMetadataConstants.Types.Double);
+          builderToUse, Apache.Arrow.Types.DoubleType.Default, DeephavenMetadataConstants.Types.Double);
       }
 
       if (type == typeof(bool)) {
-        var arrowBuilder = new Apache.Arrow.BooleanArray.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<bool, BooleanArray, BooleanArray.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.BooleanArray.Builder();
         return new TypicalBuilder<bool, Apache.Arrow.BooleanArray, Apache.Arrow.BooleanArray.Builder>(
-          arrowBuilder, Apache.Arrow.Types.BooleanType.Default, DeephavenMetadataConstants.Types.Bool);
+          builderToUse, Apache.Arrow.Types.BooleanType.Default, DeephavenMetadataConstants.Types.Bool);
       }
 
       if (type == typeof(char)) {
-        return new CharColumnBuilder();
+        return new CharColumnBuilder(callerProvidedBuilder);
       }
 
       if (type == typeof(string)) {
-        return new StringColumnBuilder();
+        return new StringColumnBuilder(callerProvidedBuilder);
       }
 
       if (type == typeof(DateTimeOffset)) {
         var dataType = new Apache.Arrow.Types.TimestampType(TimeUnit.Nanosecond, "UTC");
-        var arrowBuilder = new Apache.Arrow.TimestampArray.Builder(dataType);
+        var builderToUse =
+          (IArrowArrayBuilder<DateTimeOffset, TimestampArray, TimestampArray.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.TimestampArray.Builder(dataType);
         return new TypicalBuilder<DateTimeOffset, Apache.Arrow.TimestampArray, Apache.Arrow.TimestampArray.Builder>(
-          arrowBuilder, dataType, DeephavenMetadataConstants.Types.DateTime);
+          builderToUse, dataType, DeephavenMetadataConstants.Types.DateTime);
       }
 
       if (type == typeof(DateOnly)) {
-        var arrowBuilder = new Apache.Arrow.Date64Array.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<DateOnly, Date64Array, Date64Array.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.Date64Array.Builder();
         return new TypicalBuilder<DateOnly, Apache.Arrow.Date64Array, Apache.Arrow.Date64Array.Builder>(
-          arrowBuilder, Apache.Arrow.Types.Date64Type.Default, DeephavenMetadataConstants.Types.LocalDate);
+          builderToUse, Apache.Arrow.Types.Date64Type.Default, DeephavenMetadataConstants.Types.LocalDate);
       }
 
       if (type == typeof(TimeOnly)) {
-        var arrowBuilder = new Apache.Arrow.Time64Array.Builder();
+        var builderToUse =
+          (IArrowArrayBuilder<TimeOnly, Time64Array, Time64Array.Builder>?)callerProvidedBuilder ??
+          new Apache.Arrow.Time64Array.Builder();
         return new TypicalBuilder<TimeOnly, Apache.Arrow.Time64Array, Apache.Arrow.Time64Array.Builder>(
-          arrowBuilder, Apache.Arrow.Types.Time64Type.Default, DeephavenMetadataConstants.Types.LocalTime);
+          builderToUse, Apache.Arrow.Types.Time64Type.Default, DeephavenMetadataConstants.Types.LocalTime);
       }
 
       var listUnderlyingType = GetIListInterfaceUnderlyingType(type);
@@ -219,6 +239,11 @@ public class TableMaker {
 
     public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>() where TList : IList<TUnderlying> {
       var underlyingCb = ForType<TUnderlying>();
+
+      var (underlyingArrowType, _, _) = underlyingBuilder.GetTypeInfo();
+      _listBuilder = new Apache.Arrow.ListArray.Builder(underlyingArrowType);
+      _underlyingBuilder = underlyingBuilder.With(_listBuilder.ValueBuilder);
+
       return new ListBuilder<TList, TUnderlying>(underlyingCb);
     }
 
