@@ -7,7 +7,7 @@ public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
 
   public void AddColumn<T>(string name, IEnumerable<T> values) {
-    var cb = ColumnBuilder.ForType<T>();
+    var cb = ColumnBuilder.ForType<T>(null);
     foreach (var value in values) {
       cb.Append(value);
     }
@@ -115,8 +115,8 @@ public class TableMaker {
   }
 
   private class ColumnBuilder {
-    public static ColumnBuilder<T> ForType<T>() {
-      return (ColumnBuilder<T>)ForType(typeof(T));
+    public static ColumnBuilder<T> ForType<T>(IArrowArrayBuilder? callerProvidedBuilder) {
+      return (ColumnBuilder<T>)ForType(typeof(T), callerProvidedBuilder);
     }
 
     public static ColumnBuilder ForType(Type type, IArrowArrayBuilder? callerProvidedBuilder) {
@@ -127,7 +127,7 @@ public class TableMaker {
           throw new Exception($"Can't find {nameof(ForNullableType)}");
         }
         var miInstantiated = miGeneric.MakeGenericMethod(nullableUnderlyingType);
-        return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
+        return (ColumnBuilder)miInstantiated.Invoke(null, [callerProvidedBuilder])!;
       }
 
       if (type == typeof(sbyte)) {
@@ -187,11 +187,17 @@ public class TableMaker {
       }
 
       if (type == typeof(char)) {
-        return new CharColumnBuilder(callerProvidedBuilder);
+        var builderToUse =
+          (Apache.Arrow.UInt16Array.Builder?)callerProvidedBuilder ??
+          new Apache.Arrow.UInt16Array.Builder();
+        return new CharColumnBuilder(builderToUse);
       }
 
       if (type == typeof(string)) {
-        return new StringColumnBuilder(callerProvidedBuilder);
+        var builderToUse =
+          (Apache.Arrow.StringArray.Builder?)callerProvidedBuilder ??
+          new Apache.Arrow.StringArray.Builder();
+        return new StringColumnBuilder(builderToUse);
       }
 
       if (type == typeof(DateTimeOffset)) {
@@ -226,25 +232,29 @@ public class TableMaker {
           throw new Exception($"Can't find {nameof(ForIListType)}");
         }
         var miInstantiated = miGeneric.MakeGenericMethod(type, listUnderlyingType);
-        return (ColumnBuilder)miInstantiated.Invoke(null, null)!;
+        return (ColumnBuilder)miInstantiated.Invoke(null, [callerProvidedBuilder])!;
       }
 
       throw new Exception($"ColumnBuilder does not support type {Utility.FriendlyTypeName(type)}");
     }
     
-    public static ColumnBuilder<T?> ForNullableType<T>() where T : struct {
-      var underlyingCb = ForType<T>();
+    public static ColumnBuilder<T?> ForNullableType<T>(IArrowArrayBuilder? callerProvidedBuilder) where T : struct {
+      var underlyingCb = ForType<T>(callerProvidedBuilder);
       return new NullableBuilder<T>(underlyingCb);
     }
 
-    public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>() where TList : IList<TUnderlying> {
-      var underlyingCb = ForType<TUnderlying>();
-
-      var (underlyingArrowType, _, _) = underlyingBuilder.GetTypeInfo();
-      _listBuilder = new Apache.Arrow.ListArray.Builder(underlyingArrowType);
-      _underlyingBuilder = underlyingBuilder.With(_listBuilder.ValueBuilder);
-
-      return new ListBuilder<TList, TUnderlying>(underlyingCb);
+    public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>(
+      IArrowArrayBuilder? callerProvidedBuilder) where TList : IList<TUnderlying> {
+      Apache.Arrow.ListArray.Builder builderToUse;
+      if (callerProvidedBuilder == null) {
+        // Make a temporary column builder just so I can get the correct Arrow data type
+        var tempCb = ForType<TUnderlying>(null);
+        var (underlyingArrowType, _, _) = tempCb.GetTypeInfo();
+        builderToUse = new Apache.Arrow.ListArray.Builder(underlyingArrowType);
+      } else {
+        builderToUse = (Apache.Arrow.ListArray.Builder)callerProvidedBuilder;
+      }
+      return new ListBuilder<TList, TUnderlying>(builderToUse);
     }
 
     private static Type? GetIListInterfaceUnderlyingType(Type ilistType) {
@@ -264,7 +274,6 @@ public class TableMaker {
   }
 
   private abstract class ColumnBuilder<T> : ColumnBuilder {
-    public abstract ColumnBuilder<T> With(IArrowArrayBuilder replacementBuilder);
     public abstract void Append(T item);
     public abstract void AppendNull();
 
@@ -287,12 +296,6 @@ public class TableMaker {
       _deephavenTypeName = deephavenTypeName;
     }
 
-    public override ColumnBuilder<T> With(IArrowArrayBuilder replacementBuilder) {
-      return new TypicalBuilder<T, TArray, TBuilder>(
-        (Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder>)replacementBuilder,
-        _arrowType, _deephavenTypeName);
-    }
-
     public override void Append(T item) {
       _builder.Append(item);
     }
@@ -313,17 +316,8 @@ public class TableMaker {
   private sealed class CharColumnBuilder : ColumnBuilder<char> {
     private readonly Apache.Arrow.UInt16Array.Builder _builder;
 
-    public CharColumnBuilder() {
-      _builder = new();
-    }
-
-    private CharColumnBuilder(UInt16Array.Builder builder) {
+    public CharColumnBuilder(UInt16Array.Builder builder) {
       _builder = builder;
-    }
-
-    public override ColumnBuilder<char> With(IArrowArrayBuilder replacementBuilder) {
-      var typedReplacementBuilder = (Apache.Arrow.UInt16Array.Builder)replacementBuilder;
-      return new CharColumnBuilder(typedReplacementBuilder);
     }
 
     public override void Append(char item) {
@@ -346,17 +340,8 @@ public class TableMaker {
   private sealed class StringColumnBuilder : ColumnBuilder<string> {
     private readonly Apache.Arrow.StringArray.Builder _builder;
 
-    public StringColumnBuilder() {
-      _builder = new();
-    }
-
-    private StringColumnBuilder(StringArray.Builder builder) {
+    public StringColumnBuilder(StringArray.Builder builder) {
       _builder = builder;
-    }
-
-    public override ColumnBuilder<string> With(IArrowArrayBuilder replacementBuilder) {
-      var typedReplacementBuilder = (Apache.Arrow.StringArray.Builder)replacementBuilder;
-      return new StringColumnBuilder(typedReplacementBuilder);
     }
 
     public override void Append(string item) {
@@ -381,11 +366,6 @@ public class TableMaker {
 
     public NullableBuilder(ColumnBuilder<T> underlyingBuilder) {
       _underlyingBuilder = underlyingBuilder;
-    }
-
-    public override ColumnBuilder<T?> With(IArrowArrayBuilder replacementBuilder) {
-      var ub = _underlyingBuilder.With(replacementBuilder);
-      return new NullableBuilder<T>(ub);
     }
 
     public override void Append(T? item) {
@@ -413,21 +393,9 @@ public class TableMaker {
     private readonly Apache.Arrow.ListArray.Builder _listBuilder;
     private readonly ColumnBuilder<TUnderlying> _underlyingBuilder;
 
-    public ListBuilder(ColumnBuilder<TUnderlying> underlyingBuilder) {
-      var (underlyingArrowType, _, _) = underlyingBuilder.GetTypeInfo();
-      _listBuilder = new Apache.Arrow.ListArray.Builder(underlyingArrowType);
-      _underlyingBuilder = underlyingBuilder.With(_listBuilder.ValueBuilder);
-    }
-
-    private ListBuilder(ListArray.Builder listBuilder, ColumnBuilder<TUnderlying> underlyingBuilder) {
+    public ListBuilder(Apache.Arrow.ListArray.Builder listBuilder) {
       _listBuilder = listBuilder;
-      _underlyingBuilder = underlyingBuilder;
-    }
-
-    public override ColumnBuilder<TList> With(IArrowArrayBuilder replacementBuilder) {
-      var typedReplacementBuilder = (Apache.Arrow.ListArray.Builder)replacementBuilder;
-      var replacementUnderlying = _underlyingBuilder.With(typedReplacementBuilder.ValueBuilder);
-      return new ListBuilder<TList, TUnderlying>(typedReplacementBuilder, replacementUnderlying);
+      _underlyingBuilder = ColumnBuilder.ForType<TUnderlying>(_listBuilder.ValueBuilder);
     }
 
     public override void Append(TList list) {
