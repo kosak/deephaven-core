@@ -6,7 +6,7 @@ namespace Deephaven.Dh_NetClient;
 public class TableMaker {
   private readonly List<ColumnInfo> _columnInfos = new();
 
-  public void AddColumn<T>(string name, IEnumerable<T> values) {
+  public void AddColumn<T>(string name, IReadOnlyList<T> values) {
     var cb = ColumnBuilder.ForType<T>(null);
     foreach (var value in values) {
       cb.Append(value);
