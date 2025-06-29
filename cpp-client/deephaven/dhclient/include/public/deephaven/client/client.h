@@ -1558,7 +1558,7 @@ public:
 
   //TODO(kosak): document keyColumn
   /**
-   * Creates a new table By merging `sources` together. The tables are essentially stacked on top
+   * Creates a new table by merging `sources` together. The tables are essentially stacked on top
    * of each other.
    * @param sources The tables to Merge.
    * @return A TableHandle referencing the new table
@@ -1584,7 +1584,7 @@ public:
   }
 
   /**
-   * Creates a new table By merging `sources` together. The tables are essentially stacked on top
+   * Creates a new table by merging `sources` together. The tables are essentially stacked on top
    * of each other.
    * @param sources The tables to Merge.
    * @return A TableHandle referencing the new table
