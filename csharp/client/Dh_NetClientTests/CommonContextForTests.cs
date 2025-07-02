@@ -12,9 +12,11 @@ public sealed class CommonContextForTests : IDisposable {
 
   public static CommonContextForTests Create(ClientOptions options) {
     var temp = Interlocked.Increment(ref _concurrentCount);
-    Console.WriteLine($"+++ COMMON CONTEXT IS entering IN WITH {temp}");
+    Console.WriteLine($"+++ COMMON CONTEXT {temp} IS entering");
 
     var client = CreateClient(options);
+    Console.WriteLine($"--- COMMON CONTEXT {temp} has a client");
+
     var manager = client.Manager;
 
     var cn = new ColumnNamesForTests();
@@ -27,7 +29,12 @@ public sealed class CommonContextForTests : IDisposable {
     maker.AddColumn(cn.Close, cd.Close);
     maker.AddColumn(cn.Volume, cd.Volume);
 
+    Console.WriteLine($"--- COMMON CONTEXT {temp} is making a table");
+
     var testTable = maker.MakeTable(manager);
+
+    Console.WriteLine($"--- COMMON CONTEXT {temp} is done making a table");
+
     var temp2 = Interlocked.Decrement(ref _concurrentCount);
     Console.WriteLine($"--- COMMON CONTEXT IS leaving WITH {temp2}");
 
