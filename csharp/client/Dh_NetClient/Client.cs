@@ -19,7 +19,7 @@ public class Client : IDisposable {
 
     var server = Server.CreateFromTarget(target, options);
 
-    Console.WriteLine("Start creating console sad");
+    Console.WriteLine("Start icreating console sad");
 
     Ticket? consoleTicket = null;
     if (!options.SessionType.IsEmpty()) {
