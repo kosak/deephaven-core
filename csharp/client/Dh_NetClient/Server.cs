@@ -27,6 +27,7 @@ public class Server : IDisposable {
 // }
 //
 
+    Console.WriteLine("starting to make my stubs");
     var channel = GrpcUtil.CreateChannel(target, clientOptions);
 
     var aps = new ApplicationService.ApplicationServiceClient(channel);
@@ -36,6 +37,7 @@ public class Server : IDisposable {
     var cfs = new ConfigService.ConfigServiceClient(channel);
     var its = new InputTableService.InputTableServiceClient(channel);
     var fc = new FlightClient(channel);
+    Console.WriteLine("done making my stubs");
 
     string sessionToken;
     TimeSpan expirationInterval;
@@ -46,10 +48,12 @@ public class Server : IDisposable {
         metadata.Add(k, v);
       }
 
+      Console.WriteLine("this async tragedy");
       var ccReq = new ConfigurationConstantsRequest();
       var ccTask = cfs.GetConfigurationConstantsAsync(ccReq, metadata);
       var serverMetadata = ccTask.ResponseHeadersAsync.Result;
       var ccResp = ccTask.ResponseAsync.Result;
+      Console.WriteLine("done with this async tragedy");
       var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
       sessionToken = maybeToken ?? throw new Exception("Configuration response didn't contain authorization token");
       if (!TryExtractExpirationInterval(ccResp, out expirationInterval)) {
