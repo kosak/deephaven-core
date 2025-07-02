@@ -12,7 +12,12 @@ public class AddDropTest(ITestOutputHelper output) {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
+    Console.WriteLine("Did TestDropTableGet Heer?");
+
     var t = table.Update("II = ii").Where("Ticker == `AAPL`");
+
+    Console.WriteLine("WHAT ABOUT HERE -- Did TestDropTableGet Heer?");
+
     var cn = ctx.ColumnNames;
     var t2 = t.DropColumns(cn.ImportDate, cn.Ticker, cn.Open, cn.Close);
     output.WriteLine(t2.ToString(true));
