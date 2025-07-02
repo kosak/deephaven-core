@@ -2,7 +2,9 @@
 using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
-[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)] namespace Deephaven.Dh_NetClientTests;
+// [assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
+
+namespace Deephaven.Dh_NetClientTests;
 
 public class AddDropTest(ITestOutputHelper output) {
   [Fact]
