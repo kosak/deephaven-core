@@ -49,13 +49,13 @@ public class TableMaker {
       var stupid = new WorkQuantum(manager, schema, data, tcs);
       bool threadWasRunning;
       lock (_sync) {
-        threadWasRunning = !_threadIsRunning;
+        threadWasRunning = _threadIsRunning;
         _threadIsRunning = true;
         _todo.Add(stupid);
       }
 
       if (!threadWasRunning) {
-        Console.WriteLine("I started a thread");
+        Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! I started a thread!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  *** WAKE THE HELL UP");
         Task.Run(ZamboniThread);
       } else {
         Console.WriteLine("I added to a thread");
