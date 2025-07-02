@@ -39,20 +39,33 @@ public class TableMaker {
     var headers = new Grpc.Core.Metadata();
     server.ForEachHeaderNameAndValue(headers.Add);
 
+    Console.WriteLine("starting a put ok?");
+
     var res = server.FlightClient.StartPut(flightDescriptor, schema, headers).Result;
     var data = GetColumnsNotEmpty();
     var numRows = data[^1].Length;
 
     var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
 
+    Console.WriteLine("writing some trash");
+
     res.RequestStream.WriteAsync(recordBatch).Wait();
+
+    Console.WriteLine("doing a complete");
+
     res.RequestStream.CompleteAsync().Wait();
+
+    Console.WriteLine("let's wait for a painful response... from anyone... so  lonely");
 
     while (res.ResponseStream.MoveNext(CancellationToken.None).Result) {
       // TODO(kosak): find out whether it is necessary to eat values like this.
     }
 
+    Console.WriteLine("disposing?");
+
     res.Dispose();
+
+    Console.WriteLine("done");
     return manager.MakeTableHandleFromTicket(ticket);
   }
 
