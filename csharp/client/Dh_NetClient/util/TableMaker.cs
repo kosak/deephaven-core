@@ -34,7 +34,7 @@ public class TableMaker {
     return _tableMonster.MakeTableAsync(manager, schema, data).Result;
   }
 
-  private readonly TableMonster _tableMonster = new();
+  private static readonly TableMonster _tableMonster = new();
 
   private class TableMonster {
     private record WorkQuantum(TableHandleManager Manager, Apache.Arrow.Schema Schema, Apache.Arrow.IArrowArray[] Data, TaskCompletionSource<TableHandle> Tcs);
