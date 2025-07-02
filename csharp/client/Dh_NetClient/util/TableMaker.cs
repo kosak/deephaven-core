@@ -29,6 +29,10 @@ public class TableMaker {
   }
 
   public TableHandle MakeTable(TableHandleManager manager) {
+    return MakeTableHandleTask(manager).Result;
+  }
+
+  private async Task<TableHandle> MakeTableHandleTask(TableHandleManager manager) {
     var schema = MakeSchema();
 
     var server = manager.Server;
@@ -41,7 +45,7 @@ public class TableMaker {
 
     Console.WriteLine("starting a put ok?");
 
-    var res = server.FlightClient.StartPut(flightDescriptor, schema, headers).Result;
+    var res = await server.FlightClient.StartPut(flightDescriptor, schema, headers);
     var data = GetColumnsNotEmpty();
     var numRows = data[^1].Length;
 
@@ -49,7 +53,7 @@ public class TableMaker {
 
     Console.WriteLine("writing some trash");
 
-    res.RequestStream.WriteAsync(recordBatch).Wait();
+    await res.RequestStream.WriteAsync(recordBatch);
 
     Console.WriteLine("doing a complete");
 
@@ -57,7 +61,7 @@ public class TableMaker {
 
     Console.WriteLine("let's wait for a painful response... from anyone... so  lonely");
 
-    while (res.ResponseStream.MoveNext(CancellationToken.None).Result) {
+    while (await res.ResponseStream.MoveNext(CancellationToken.None)) {
       // TODO(kosak): find out whether it is necessary to eat values like this.
     }
 
