@@ -56,7 +56,7 @@ public class TableMaker {
 
       if (!threadWasRunning) {
         Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! I started a thread!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  *** WAKE THE HELL UP");
-        Task.Run(ZamboniThread);
+        Task.Run(ZamboniThread).Forget();
       } else {
         Console.WriteLine("I added to a thread");
       }
@@ -65,7 +65,8 @@ public class TableMaker {
     }
 
     private void ZamboniThread() {
-      Console.WriteLine("ZAMBONI THREAD WAKING UP");
+      Console.WriteLine("ZAMBONI THREAD WAKING UP -- and sleeping for 3 seconds");
+      Thread.Sleep(3 * 1000);
       try {
         ZamboniThreadHelper();
       } catch (Exception e) {
