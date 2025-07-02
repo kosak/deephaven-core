@@ -65,6 +65,7 @@ public class TableMaker {
     }
 
     private void ZamboniThread() {
+      Console.WriteLine("ZAMBONI THREAD WAKING UP");
       try {
         ZamboniThreadHelper();
       } catch (Exception e) {
@@ -76,6 +77,7 @@ public class TableMaker {
     private void ZamboniThreadHelper() {
       while (true) {
         List<WorkQuantum> todo;
+        Console.WriteLine("ZAMBONI THREAD checking count");
         lock (_sync) {
           if (_todo.Count == 0) {
             _threadIsRunning = false;
