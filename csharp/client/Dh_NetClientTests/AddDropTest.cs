@@ -19,8 +19,12 @@ public class AddDropTest(ITestOutputHelper output) {
     Console.WriteLine("WHAT ABOUT HERE -- Did TestDropTableGet Heer?");
 
     var cn = ctx.ColumnNames;
+    Console.WriteLine("ok then WHAT ABOUT HERE -- Did TestDropTableGet Heer?");
+
     var t2 = t.DropColumns(cn.ImportDate, cn.Ticker, cn.Open, cn.Close);
+    Console.WriteLine("and finally zamboni infinite ok then WHAT ABOUT HERE -- Did TestDropTableGet Heer?");
     output.WriteLine(t2.ToString(true));
+    Console.WriteLine("probably didn't get here and finally zamboni infinite ok then WHAT ABOUT HERE -- Did TestDropTableGet Heer?");
 
     var expected = new TableMaker();
     expected.AddColumn("Volume", [(Int64)100000, 250000, 19000]);
