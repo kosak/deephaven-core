@@ -29,48 +29,107 @@ public class TableMaker {
   }
 
   public TableHandle MakeTable(TableHandleManager manager) {
-    return MakeTableHandleTask(manager).Result;
+    var schema = MakeSchema();
+    var data = GetColumnsNotEmpty();
+    return _tableMonster.MakeTableAsync(manager, schema, data).Result;
   }
 
-  private async Task<TableHandle> MakeTableHandleTask(TableHandleManager manager) {
-    var schema = MakeSchema();
+  private readonly TableMonster _tableMonster = new();
 
-    var server = manager.Server;
+  private class TableMonster {
+    private record WorkQuantum(TableHandleManager Manager, Apache.Arrow.Schema Schema, Apache.Arrow.IArrowArray[] Data, TaskCompletionSource<TableHandle> Tcs);
 
-    var ticket = server.NewTicket();
-    var flightDescriptor = ArrowUtil.ConvertTicketToFlightDescriptor(ticket);
+    private readonly object _sync = new();
+    private bool _threadIsRunning = false;
+    private List<WorkQuantum> _todo = new();
 
-    var headers = new Grpc.Core.Metadata();
-    server.ForEachHeaderNameAndValue(headers.Add);
+    public Task<TableHandle> MakeTableAsync(TableHandleManager manager, Apache.Arrow.Schema schema, Apache.Arrow.IArrowArray[] data) {
+      var tcs = new TaskCompletionSource<TableHandle>();
+      var stupid = new WorkQuantum(manager, schema, data, tcs);
+      bool threadWasRunning;
+      lock (_sync) {
+        threadWasRunning = !_threadIsRunning;
+        _threadIsRunning = true;
+        _todo.Add(stupid);
+      }
 
-    Console.WriteLine("starting a put ok?");
+      if (!threadWasRunning) {
+        Task.Run(ZamboniThread);
+      }
 
-    var res = await server.FlightClient.StartPut(flightDescriptor, schema, headers);
-    var data = GetColumnsNotEmpty();
-    var numRows = data[^1].Length;
-
-    var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
-
-    Console.WriteLine("writing some trash");
-
-    await res.RequestStream.WriteAsync(recordBatch);
-
-    Console.WriteLine("doing a complete");
-
-    res.RequestStream.CompleteAsync().Wait();
-
-    Console.WriteLine("let's wait for a painful response... from anyone... so  lonely");
-
-    while (await res.ResponseStream.MoveNext(CancellationToken.None)) {
-      // TODO(kosak): find out whether it is necessary to eat values like this.
+      return tcs.Task;
     }
 
-    Console.WriteLine("disposing?");
+    private void ZamboniThread() {
+      try {
+        ZamboniThreadHelper();
+      } catch (Exception e) {
+        Console.WriteLine("zamboni thread sad");
+      }
+      Console.WriteLine("Zamboni thread exiting");
+    }
 
-    res.Dispose();
+    private void ZamboniThreadHelper() {
+      while (true) {
+        List<WorkQuantum> todo;
+        lock (_sync) {
+          if (_todo.Count == 0) {
+            _threadIsRunning = false;
+            return;
+          }
+          todo = _todo;
+          _todo = new();
+        }
 
-    Console.WriteLine("done");
-    return manager.MakeTableHandleFromTicket(ticket);
+        Console.WriteLine($"Zamboni thread found {todo.Count} items of work to do");
+
+        foreach (var wq in todo) {
+          var schema = wq.Schema;
+
+          var manager = wq.Manager;
+          var server = manager.Server;
+
+          var ticket = server.NewTicket();
+          var flightDescriptor = ArrowUtil.ConvertTicketToFlightDescriptor(ticket);
+
+          var headers = new Grpc.Core.Metadata();
+          server.ForEachHeaderNameAndValue(headers.Add);
+
+          Console.WriteLine("starting a put ok?");
+
+          var res = server.FlightClient.StartPut(flightDescriptor, schema, headers).Result;
+
+          Console.WriteLine("starting a put ok?");
+
+          var data = wq.Data;
+          var numRows = data[^1].Length;
+
+          var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
+
+          Console.WriteLine("writing some trash");
+
+          res.RequestStream.WriteAsync(recordBatch).Wait();
+
+          Console.WriteLine("doing a complete");
+
+          res.RequestStream.CompleteAsync().Wait();
+
+          Console.WriteLine("let's wait for a painful response... from anyone... so  lonely");
+
+          while (res.ResponseStream.MoveNext(CancellationToken.None).Result) {
+            // TODO(kosak): find out whether it is necessary to eat values like this.
+          }
+
+          Console.WriteLine("disposing?");
+
+          res.Dispose();
+
+          Console.WriteLine("done");
+          var th = manager.MakeTableHandleFromTicket(ticket);
+          wq.Tcs.SetResult(th);
+        }
+      }
+    }
   }
 
   private Apache.Arrow.Schema MakeSchema() {
