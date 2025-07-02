@@ -1,6 +1,8 @@
 ﻿using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
+// [assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
+
 namespace Deephaven.Dh_NetClientTests;
 
 public class GroupTest(ITestOutputHelper output) {
