@@ -43,7 +43,8 @@ public class TableMaker {
     private bool _threadIsRunning = false;
     private List<WorkQuantum> _todo = new();
 
-    public Task<TableHandle> MakeTableAsync(TableHandleManager manager, Apache.Arrow.Schema schema, Apache.Arrow.IArrowArray[] data) {
+    public Task<TableHandle> MakeTableAsync(TableHandleManager manager, Apache.Arrow.Schema schema,
+      Apache.Arrow.IArrowArray[] data) {
       var tcs = new TaskCompletionSource<TableHandle>();
       var stupid = new WorkQuantum(manager, schema, data, tcs);
       bool threadWasRunning;
@@ -54,7 +55,10 @@ public class TableMaker {
       }
 
       if (!threadWasRunning) {
+        Console.WriteLine("I started a thread");
         Task.Run(ZamboniThread);
+      } else {
+        Console.WriteLine("I added to a thread");
       }
 
       return tcs.Task;
