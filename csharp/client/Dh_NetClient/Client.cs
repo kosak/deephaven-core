@@ -19,6 +19,8 @@ public class Client : IDisposable {
 
     var server = Server.CreateFromTarget(target, options);
 
+    Console.WriteLine("Start creating console sad");
+
     Ticket? consoleTicket = null;
     if (!options.SessionType.IsEmpty()) {
       var req = new StartConsoleRequest {
@@ -28,6 +30,8 @@ public class Client : IDisposable {
       var resp = server.SendRpc(opts => server.ConsoleStub.StartConsoleAsync(req, opts));
       consoleTicket = resp.ResultId;
     }
+
+    Console.WriteLine("Done creating console sad");
 
     var thm = TableHandleManager.Create(consoleTicket, server);
     return new Client(thm);
