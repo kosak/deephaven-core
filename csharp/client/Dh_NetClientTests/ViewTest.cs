@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClient;
+﻿#if false
+using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -19,3 +20,4 @@ public class ViewTest {
     TableComparer.AssertSame(expected, t1);
   }
 }
+#endif

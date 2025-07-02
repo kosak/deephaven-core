@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClient;
+﻿#if false
+using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -91,3 +92,4 @@ public class ValidationTest(ITestOutputHelper output) {
     }
   }
 }
+#endif

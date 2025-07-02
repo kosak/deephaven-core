@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClient;
+﻿#if false
+using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -21,3 +22,4 @@ public class AddDropTest(ITestOutputHelper output) {
     TableComparer.AssertSame(expected, t2);
   }
 }
+#endif

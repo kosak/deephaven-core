@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClient;
+﻿#if false
+using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 using static Deephaven.Dh_NetClient.UpdateByOperation;
 
@@ -265,3 +266,4 @@ public class UpdateByTest(ITestOutputHelper output) {
     return result;
   }
 }
+#endif

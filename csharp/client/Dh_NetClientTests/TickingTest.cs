@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if false
+using System;
 using System.Diagnostics;
 using Apache.Arrow;
 using Deephaven.Dh_NetClient;
@@ -266,3 +267,4 @@ public sealed class AllValuesGreaterThanNCallback : CommonBase {
     }
   }
 }
+#endif

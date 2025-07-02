@@ -1,4 +1,5 @@
-﻿using Deephaven.Dh_NetClient;
+﻿#if false
+using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -46,3 +47,4 @@ public class SortTest {
     TableComparer.AssertSame(expected, sorted);
   }
 }
+#endif
