@@ -31,7 +31,9 @@ public class TableMaker {
   public TableHandle MakeTable(TableHandleManager manager) {
     var schema = MakeSchema();
     var data = GetColumnsNotEmpty();
-    return _tableMonster.MakeTableAsync(manager, schema, data).Result;
+    var result = _tableMonster.MakeTableAsync(manager, schema, data).Result;
+    Console.WriteLine("I GOT MY RESULT AND I AM MOVING ON IN LIFE!!!!!");
+    return result;
   }
 
   private static readonly TableMonster _tableMonster = new();
