@@ -48,9 +48,9 @@ public class Server : IDisposable {
       var ccReq = new ConfigurationConstantsRequest();
       var (serverMetadata, ccResp) = Task.Run(async () => {
           var ccTask = cfs.GetConfigurationConstantsAsync(ccReq, metadata);
-          var serverMetadata = await ccTask.ResponseHeadersAsync;
-          var ccResp = await ccTask.ResponseAsync;
-          return (serverMetadata, ccResp);
+          var smd = await ccTask.ResponseHeadersAsync;
+          var ccr = await ccTask.ResponseAsync;
+          return (smd, ccr);
       }).Result;
       var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
       sessionToken = maybeToken ?? throw new Exception("Configuration response didn't contain authorization token");
