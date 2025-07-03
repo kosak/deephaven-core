@@ -86,7 +86,7 @@ internal class SubscriptionThread {
 
       var subReq = BarrageProcessor.CreateSubscriptionRequest(_ticket.Ticket_.ToByteArray());
       var subReqAsByteString = ByteString.CopyFrom(subReq);
-      _exchange.RequestStream.WriteAsync(uselessMessage, subReqAsByteString).Wait();
+      _exchange.RequestStream.WriteAsync(uselessMessage, subReqAsByteString).ConfigureAwait(false).GetAwaiter().GetResult();
 
       var responseStream = _exchange.ResponseStream;
 
@@ -94,7 +94,7 @@ internal class SubscriptionThread {
       var bp = new BarrageProcessor(_schema);
 
       while (true) {
-        var moveNextSucceeded = responseStream.MoveNext().Result;
+        var moveNextSucceeded = responseStream.MoveNext().ConfigureAwait(false).GetAwaiter().GetResult();
         if (!moveNextSucceeded) {
           Debug.WriteLine("SubscriptionThread: all done");
           return;

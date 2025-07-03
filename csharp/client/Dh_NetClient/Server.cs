@@ -48,8 +48,8 @@ public class Server : IDisposable {
 
       var ccReq = new ConfigurationConstantsRequest();
       var ccTask = cfs.GetConfigurationConstantsAsync(ccReq, metadata);
-      var serverMetadata = ccTask.ResponseHeadersAsync.Result;
-      var ccResp = ccTask.ResponseAsync.Result;
+      var serverMetadata = ccTask.ResponseHeadersAsync.ConfigureAwait(false).GetAwaiter().GetResult();
+      var ccResp = ccTask.ResponseAsync.ConfigureAwait(false).GetAwaiter().GetResult();
       var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
       sessionToken = maybeToken ?? throw new Exception("Configuration response didn't contain authorization token");
       if (!TryExtractExpirationInterval(ccResp, out expirationInterval)) {
@@ -171,8 +171,8 @@ public class Server : IDisposable {
     var options = new CallOptions(headers: metadata);
     var asyncResp = callback(options);
 
-    var serverMetadata = asyncResp.ResponseHeadersAsync.Result;
-    var result = asyncResp.ResponseAsync.Result;
+    var serverMetadata = asyncResp.ResponseHeadersAsync.ConfigureAwait(false).GetAwaiter().GetResult();
+    var result = asyncResp.ResponseAsync.ConfigureAwait(false).GetAwaiter().GetResult();
 
     var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
     lock (_synced.SyncRoot) {
