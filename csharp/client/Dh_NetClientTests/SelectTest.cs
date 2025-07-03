@@ -1,4 +1,5 @@
 ﻿using Deephaven.Dh_NetClient;
+using Grpc.Core;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -177,7 +178,7 @@ public class SelectTest {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var table = ctx.TestTable;
 
-    Assert.Throws<AggregateException>(() => {
+    Assert.Throws<RpcException>(() => {
       var t1 = table.Where(")))))");
       _output.WriteLine(t1.ToString(true));
     });
