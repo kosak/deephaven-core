@@ -29,6 +29,10 @@ public class TableMaker {
   }
 
   public TableHandle MakeTable(TableHandleManager manager) {
+    return Task.Run(() => MakeTableAsync(manager)).Result;
+  }
+
+  private async Task<TableHandle> MakeTableAsync(TableHandleManager manager) {
     var schema = MakeSchema();
 
     var server = manager.Server;
@@ -39,16 +43,16 @@ public class TableMaker {
     var headers = new Grpc.Core.Metadata();
     server.ForEachHeaderNameAndValue(headers.Add);
 
-    var res = TaskUtil.SaferGetResult(() => server.FlightClient.StartPut(flightDescriptor, schema, headers));
+    var res = await server.FlightClient.StartPut(flightDescriptor, schema, headers);
     var data = GetColumnsNotEmpty();
     var numRows = data[^1].Length;
 
     var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
 
-    TaskUtil.SaferWait(() => res.RequestStream.WriteAsync(recordBatch));
-    TaskUtil.SaferWait(() => res.RequestStream.CompleteAsync());
+    await res.RequestStream.WriteAsync(recordBatch);
+    await res.RequestStream.CompleteAsync();
 
-    while (TaskUtil.SaferGetResult(() => res.ResponseStream.MoveNext(CancellationToken.None))) {
+    while (await res.ResponseStream.MoveNext(CancellationToken.None)) {
       // TODO(kosak): find out whether it is necessary to eat values like this.
     }
 

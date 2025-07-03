@@ -39,7 +39,6 @@ public class Server : IDisposable {
 
     string sessionToken;
     TimeSpan expirationInterval;
-    var sendTime = DateTime.Now;
     {
       var metadata = new Metadata { { AuthorizationKey, clientOptions.AuthorizationValue } };
       foreach (var (k, v) in clientOptions.ExtraHeaders) {
@@ -47,9 +46,12 @@ public class Server : IDisposable {
       }
 
       var ccReq = new ConfigurationConstantsRequest();
-      var ccTask = cfs.GetConfigurationConstantsAsync(ccReq, metadata);
-      var serverMetadata = TaskUtil.SaferGetResult(() => ccTask.ResponseHeadersAsync);
-      var ccResp = TaskUtil.SaferGetResult(() => ccTask.ResponseAsync);
+      var (serverMetadata, ccResp) = Task.Run(async () => {
+          var ccTask = cfs.GetConfigurationConstantsAsync(ccReq, metadata);
+          var serverMetadata = await ccTask.ResponseHeadersAsync;
+          var ccResp = await ccTask.ResponseAsync;
+          return (serverMetadata, ccResp);
+      }).Result;
       var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
       sessionToken = maybeToken ?? throw new Exception("Configuration response didn't contain authorization token");
       if (!TryExtractExpirationInterval(ccResp, out expirationInterval)) {
@@ -169,10 +171,13 @@ public class Server : IDisposable {
     // We do an async call, not because we want it to be asynchronous, but because only the
     // async versions of the calls give us access to the server metadata.
     var options = new CallOptions(headers: metadata);
-    var asyncResp = callback(options);
 
-    var serverMetadata = TaskUtil.SaferGetResult(() => asyncResp.ResponseHeadersAsync);
-    var result = TaskUtil.SaferGetResult(() => asyncResp.ResponseAsync);
+    var (serverMetadata, result) = Task.Run(async () => {
+      var asyncResp = callback(options);
+      var smd = await asyncResp.ResponseHeadersAsync;
+      var res = await asyncResp.ResponseAsync;
+      return (smd, res);
+    }).Result;
 
     var maybeToken = serverMetadata.Where(e => e.Key == AuthorizationKey).Select(e => e.Value).FirstOrDefault();
     lock (_synced.SyncRoot) {

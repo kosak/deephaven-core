@@ -54,7 +54,7 @@ internal class SubscriptionThread {
     private void RunForever() {
       Exception? savedException = null;
       try {
-        RunForeverHelper(); 
+        RunForeverHelper().Wait();
       } catch (Exception ex) {
         savedException = ex;
       }
@@ -78,7 +78,7 @@ internal class SubscriptionThread {
       _exchange.Dispose();
     }
 
-    private void RunForeverHelper() {
+    private async Task RunForeverHelper() {
       var batchBuilder = new RecordBatch.Builder();
       var arrayBuilder = new Int32Array.Builder();
       batchBuilder.Append("Dummy", true, arrayBuilder.Build());
@@ -86,7 +86,7 @@ internal class SubscriptionThread {
 
       var subReq = BarrageProcessor.CreateSubscriptionRequest(_ticket.Ticket_.ToByteArray());
       var subReqAsByteString = ByteString.CopyFrom(subReq);
-      TaskUtil.SaferWait(() => _exchange.RequestStream.WriteAsync(uselessMessage, subReqAsByteString));
+      await _exchange.RequestStream.WriteAsync(uselessMessage, subReqAsByteString);
 
       var responseStream = _exchange.ResponseStream;
 
@@ -94,7 +94,7 @@ internal class SubscriptionThread {
       var bp = new BarrageProcessor(_schema);
 
       while (true) {
-        var moveNextSucceeded = TaskUtil.SaferGetResult(() => responseStream.MoveNext());
+        var moveNextSucceeded = await responseStream.MoveNext();
         if (!moveNextSucceeded) {
           Debug.WriteLine("SubscriptionThread: all done");
           return;
