@@ -17,7 +17,8 @@ public class TableHandle : IDisposable {
     server.ForEachHeaderNameAndValue(metadata.Add);
 
     var fd = ArrowUtil.ConvertTicketToFlightDescriptor(resp.ResultId.Ticket);
-    var schema = server.FlightClient.GetSchema(fd, metadata).ResponseAsync.Result;
+    var schema = server.FlightClient.GetSchema(fd, metadata).ResponseAsync.ConfigureAwait(false).GetAwaiter()
+      .GetResult();
     return new TableHandle(manager, resp.ResultId.Ticket, schema, resp.Size, resp.IsStatic);
   }
 
@@ -638,11 +639,11 @@ public class TableHandle : IDisposable {
     using var reader = GetFlightStream();
     // Gather record batches
     var recordBatches = new List<RecordBatch>();
-    while (reader.MoveNext().Result) {
+    while (Task.Run(() => reader.MoveNext().Result).Result) {
       recordBatches.Add(reader.Current);
     }
 
-    var schema = reader.Schema.Result;
+    var schema = Task.Run(() => reader.Schema.Result).Result;
     if (recordBatches.Count != 0) {
       return Table.TableFromRecordBatches(schema, recordBatches);
     }

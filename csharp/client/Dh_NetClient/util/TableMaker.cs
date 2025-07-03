@@ -39,16 +39,16 @@ public class TableMaker {
     var headers = new Grpc.Core.Metadata();
     server.ForEachHeaderNameAndValue(headers.Add);
 
-    var res = server.FlightClient.StartPut(flightDescriptor, schema, headers).Result;
+    var res = Task.Run(() => server.FlightClient.StartPut(flightDescriptor, schema, headers).Result).Result;
     var data = GetColumnsNotEmpty();
     var numRows = data[^1].Length;
 
     var recordBatch = new Apache.Arrow.RecordBatch(schema, data, numRows);
 
-    res.RequestStream.WriteAsync(recordBatch).Wait();
-    res.RequestStream.CompleteAsync().Wait();
+    Task.Run(() => res.RequestStream.WriteAsync(recordBatch).Wait()).Wait();
+    Task.Run(() => res.RequestStream.CompleteAsync().Wait()).Wait();
 
-    while (res.ResponseStream.MoveNext(CancellationToken.None).Result) {
+    while (Task.Run(() => res.ResponseStream.MoveNext(CancellationToken.None).Result).Result) {
       // TODO(kosak): find out whether it is necessary to eat values like this.
     }
 
