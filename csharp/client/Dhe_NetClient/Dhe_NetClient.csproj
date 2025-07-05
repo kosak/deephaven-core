@@ -4,6 +4,27 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Deephaven.Dhe_NetClient</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageId>Deephaven.EnterpriseClient</PackageId>
+    <Title>Client Library for Deephaven Enterprise</Title>
+    <Version>20240517.494.0</Version>
+    <Authors>Deephaven Authors</Authors>
+    <Company>Deephaven Data Labs LLC</Company>
+    <Description>A .NET library for accessing data from Deephaven Enterprise servers.</Description>
+    <Copyright>Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending</Copyright>
+    <PackageProjectUrl>https://deephaven.io/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/deephaven/deephaven-enterprise-client</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591;612</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;1591;612</NoWarn>
   </PropertyGroup>
 
 
