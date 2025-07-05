@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using System.Diagnostics;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Apache.Arrow.Flight.Client;
 using Grpc.Core;

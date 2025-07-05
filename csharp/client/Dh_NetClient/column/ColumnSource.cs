@@ -1,4 +1,7 @@
-﻿global using ICharColumnSource = Deephaven.Dh_NetClient.IColumnSource<char>;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+global using ICharColumnSource = Deephaven.Dh_NetClient.IColumnSource<char>;
 global using IByteColumnSource = Deephaven.Dh_NetClient.IColumnSource<sbyte>;
 global using IInt16ColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.Int16>;
 global using IInt32ColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.Int32>;

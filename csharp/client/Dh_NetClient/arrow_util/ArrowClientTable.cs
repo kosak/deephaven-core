@@ -1,4 +1,7 @@
-﻿using Apache.Arrow;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Apache.Arrow;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -39,4 +42,8 @@ public sealed class ArrowClientTable : IClientTable {
   }
 
   public IColumnSource GetColumn(int columnIndex) => _columnSources[columnIndex];
+
+  public override string ToString() {
+    return ((IClientTable)this).ToString(true, false);
+  }
 }

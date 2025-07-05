@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using System.Diagnostics;
 using Apache.Arrow.Flight;
 using Apache.Arrow;
 using Apache.Arrow.Flight.Client;

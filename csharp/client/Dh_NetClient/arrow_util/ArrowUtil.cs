@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using System.Collections;
 using Apache.Arrow;
 using Apache.Arrow.Flight;
 using Io.Deephaven.Proto.Backplane.Grpc;

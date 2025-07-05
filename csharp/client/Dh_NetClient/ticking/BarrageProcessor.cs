@@ -1,4 +1,7 @@
-﻿using Apache.Arrow;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Apache.Arrow;
 using Google.FlatBuffers;
 using io.deephaven.barrage.flatbuf;
 using Array = System.Array;

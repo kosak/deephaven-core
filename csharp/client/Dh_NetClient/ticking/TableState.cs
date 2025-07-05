@@ -1,4 +1,7 @@
-﻿using Apache.Arrow;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Apache.Arrow;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -245,4 +248,8 @@ sealed class TableStateClientTable : IClientTable {
 
   public long NumRows => _numRows;
   public long NumCols => _colData.Length;
+
+  public override string ToString() {
+    return ((IClientTable)this).ToString(true, false);
+  }
 }

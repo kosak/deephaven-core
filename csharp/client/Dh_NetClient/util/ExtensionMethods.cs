@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using System.Collections;
 
 namespace Deephaven.Dh_NetClient;
 

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using System.Diagnostics.CodeAnalysis;
 using Apache.Arrow;
 
 namespace Deephaven.Dh_NetClient;

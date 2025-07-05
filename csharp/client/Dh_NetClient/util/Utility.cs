@@ -1,4 +1,7 @@
-﻿namespace Deephaven.Dh_NetClient;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+namespace Deephaven.Dh_NetClient;
 
 public static class Utility {
   public static string FriendlyTypeName(Type t) {

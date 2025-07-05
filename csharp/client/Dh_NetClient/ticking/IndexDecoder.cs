@@ -1,4 +1,7 @@
-﻿namespace Deephaven.Dh_NetClient;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+namespace Deephaven.Dh_NetClient;
 
 public class IndexDecoder {
   public static RowSequence ReadExternalCompressedDelta(DataInput input) {

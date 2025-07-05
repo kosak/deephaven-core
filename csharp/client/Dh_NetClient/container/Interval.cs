@@ -1,4 +1,7 @@
-﻿namespace Deephaven.Dh_NetClient;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+namespace Deephaven.Dh_NetClient;
 
 public readonly record struct Interval(UInt64 Begin, UInt64 End) {
   public static readonly Interval OfEmpty = new(0, 0);

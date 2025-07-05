@@ -1,4 +1,7 @@
-﻿using Io.Deephaven.Proto.Backplane.Grpc;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 
 namespace Deephaven.Dh_NetClient;

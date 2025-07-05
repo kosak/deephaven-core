@@ -1,4 +1,7 @@
-﻿using Apache.Arrow.Types;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Apache.Arrow.Types;
 
 namespace Deephaven.Dh_NetClient;
 

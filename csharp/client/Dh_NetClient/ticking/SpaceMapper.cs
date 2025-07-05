@@ -1,4 +1,7 @@
-﻿using C5;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using C5;
 
 namespace Deephaven.Dh_NetClient;
 

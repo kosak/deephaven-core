@@ -1,4 +1,7 @@
-﻿using Grpc.Core;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Grpc.Core;
 using Grpc.Net.Client;
 
 namespace Deephaven.Dh_NetClient;

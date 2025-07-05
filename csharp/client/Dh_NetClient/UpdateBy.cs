@@ -1,4 +1,7 @@
-﻿using Io.Deephaven.Proto.Backplane.Grpc;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Io.Deephaven.Proto.Backplane.Grpc;
 using System;
 using UpdateByOperationProto = Io.Deephaven.Proto.Backplane.Grpc.UpdateByRequest.Types.UpdateByOperation;
 using BadDataBehaviorProtoEnum = Io.Deephaven.Proto.Backplane.Grpc.BadDataBehavior;

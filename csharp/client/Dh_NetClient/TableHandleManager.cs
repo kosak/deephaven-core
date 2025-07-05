@@ -1,4 +1,7 @@
-﻿using Google.Protobuf;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Google.Protobuf;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Io.Deephaven.Proto.Backplane.Script.Grpc;
 

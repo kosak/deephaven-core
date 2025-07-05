@@ -1,4 +1,7 @@
-﻿global using BooleanArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<bool>;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+global using BooleanArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<bool>;
 global using StringArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<string>;
 global using CharArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<char>;
 global using ByteArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<sbyte>;
