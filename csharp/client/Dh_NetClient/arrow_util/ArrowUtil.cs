@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using Apache.Arrow;
 using Apache.Arrow.Flight;
+using Apache.Arrow.Types;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Array = System.Array;
 using ArrowColumn = Apache.Arrow.Column;
@@ -145,17 +146,16 @@ public static class ArrowUtil {
       _values = items.Cast<object?>().ToArray();
     }
 
-    public override bool Equals(object? other) {
-      return Equals(other as ObjectListWithEqualityAndToString);
-    }
-
-
     public bool Equals(ObjectListWithEqualityAndToString? other) {
       return other != null &&
         StructuralComparisons.StructuralEqualityComparer.Equals(_values, other._values);
     }
 
-    public int GetHashCode() {
+    public override bool Equals(object? other) {
+      return Equals(other as ObjectListWithEqualityAndToString);
+    }
+
+    public override int GetHashCode() {
       return StructuralComparisons.StructuralEqualityComparer.GetHashCode(_values);
     }
 
