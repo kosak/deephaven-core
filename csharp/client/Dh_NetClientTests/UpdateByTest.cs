@@ -1,4 +1,7 @@
-﻿using Deephaven.Dh_NetClient;
+﻿//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+using Deephaven.Dh_NetClient;
 using Xunit.Abstractions;
 using static Deephaven.Dh_NetClient.UpdateByOperation;
 
