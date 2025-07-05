@@ -10,17 +10,17 @@ public class NullSentinelPassthroughTest {
     using var ctx = CommonContextForTests.Create(new ClientOptions());
     var manager = ctx.Client.Manager;
     using var t = manager.EmptyTable(1)
-      .Update([
+      .Update(
         "NullChar = (char)null",
         "NullByte = (byte)null",
         "NullShort = (short)null",
         "NullInt = (int)null",
         "NullLong = (long)null",
         "NullFloat = (float)null",
-        "NullDouble = (double)null",
-        "NullDouble = (double)null",
-      ]);
+        "NullDouble = (double)null"
+      );
 
+    var ct = t.ToClientTable();
 
 
     tm.AddColumn("boolData", boolData);

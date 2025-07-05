@@ -1,5 +1,4 @@
 ﻿using Apache.Arrow;
-using Apache.Arrow.Types;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -14,19 +13,25 @@ public sealed class ArrowClientTable : IClientTable {
       columnSources.Add(ArrowColumnSource.CreateFromColumn(col));
     }
 
-    return new ArrowClientTable(arrowTable, rowSequence, columnSources.ToArray());
+    var schema = arrowTable.Schema;
+    return new ArrowClientTable(schema, arrowTable.RowCount, arrowTable.ColumnCount,
+      rowSequence, columnSources);
   }
 
-  private readonly Apache.Arrow.Table _arrowTable;
-  public Schema Schema => _arrowTable.Schema;
+  public Schema Schema { get; init; }
+  public Int64 NumRows { get; init; }
+  public Int64 NumCols { get; init; }
+
   public RowSequence RowSequence { get; }
   private readonly IColumnSource[] _columnSources;
 
-  private ArrowClientTable(Apache.Arrow.Table arrowTable, RowSequence rowSequence,
-    IColumnSource[] columnSources) {
-    _arrowTable = arrowTable;
+  private ArrowClientTable(Schema schema, long numRows, long numCols, RowSequence rowSequence,
+    IEnumerable<IColumnSource> columnSources) {
+    Schema = schema;
+    NumRows = numRows;
+    NumCols = numCols;
     RowSequence = rowSequence;
-    _columnSources = columnSources;
+    _columnSources = columnSources.ToArray();
   }
 
   public void Dispose() {
@@ -34,7 +39,4 @@ public sealed class ArrowClientTable : IClientTable {
   }
 
   public IColumnSource GetColumn(int columnIndex) => _columnSources[columnIndex];
-
-  public Int64 NumRows => _arrowTable.RowCount;
-  public Int64 NumCols => _arrowTable.ColumnCount;
 }
