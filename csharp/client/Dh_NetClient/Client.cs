@@ -74,12 +74,4 @@ public class Client : IDisposable {
       return result;
     }
   }
-
-  /// <summary>
-  /// Adds a callback to be invoked when this client is closed.
-  /// On close callbacks are invoked before the client is actually shut down,
-  /// so they can perform regular client and table manager operations before
-  /// closing.
-  /// </summary>
-  public event Action? OnClose;
-};
+}

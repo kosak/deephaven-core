@@ -14,9 +14,9 @@ public sealed class CommonContextForTests : IDisposable {
   /// in the project directory. However, note that the Resharper test runner does not seem to honor
   /// .runsettings.
   /// </summary>
-  private const string? DefaultDhHost = null;
+  private const string? DefaultDhHost = "10.0.4.109";
 
-  private const string? DefaultDhPort = null;
+  private const string? DefaultDhPort = "10000";
 
   public readonly Client Client;
   public readonly TableHandle TestTable;
@@ -99,7 +99,7 @@ public class ColumnNamesForTests {
 }
 
 public class ColumnDataForTests {
-  public string[] ImportDate = {
+  public string[] ImportDate = [
     "2017-11-01",
     "2017-11-01",
     "2017-11-01",
@@ -111,9 +111,9 @@ public class ColumnDataForTests {
     "2017-11-01",
     "2017-11-01",
     "2017-11-02"
-  };
+  ];
 
-  public string[] Ticker = {
+  public string[] Ticker = [
     "XRX",
     "XRX",
     "XYZZY",
@@ -125,9 +125,9 @@ public class ColumnDataForTests {
     "ZNGA",
     "ZNGA",
     "T"
-  };
+  ];
 
-  public double[] Open = {
+  public double[] Open = [
     83.1,
     50.5,
     92.3,
@@ -139,9 +139,9 @@ public class ColumnDataForTests {
     541.2,
     685.3,
     18.8
-  };
+  ];
 
-  public double[] Close = {
+  public double[] Close = [
     88.2,
     53.8,
     88.5,
@@ -153,9 +153,9 @@ public class ColumnDataForTests {
     538.2,
     544.9,
     13.4
-  };
+  ];
 
-  public long[] Volume = {
+  public long[] Volume = [
     345000,
     87000,
     6060842,
@@ -167,5 +167,5 @@ public class ColumnDataForTests {
     46123,
     48300,
     1500
-  };
+  ];
 }

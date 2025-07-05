@@ -57,7 +57,7 @@ public class Aggregate {
   /// Returns an aggregator that computes the number of elements within an aggregation group,
   /// for each input column.
   /// </summary>
-  /// <param name="columnSpecs"></param>
+  /// <param name="columnSpec">The column spec</param>
   /// <returns>An Aggregate object representing the aggregation</returns>
   public static Aggregate Count(string columnSpec) {
     var ad = CreateDescForColumn(ComboAggregateRequest.Types.AggType.Count, columnSpec);
@@ -128,6 +128,8 @@ public class Aggregate {
   /// Returns an aggregator that computes the designated percentile, within an aggregation group,
   /// for each input column.
   /// </summary>
+  /// <param name="percentile">The designated percentile</param>
+  /// <param name="avgMedian"></param>
   /// <param name="columnSpecs"></param>
   /// <returns>An Aggregate object representing the aggregation</returns>
   public static Aggregate Pct(double percentile, bool avgMedian, params string[] columnSpecs) {
