@@ -16,13 +16,11 @@
 	  <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="Deephaven.EnterpriseClient.Grizzly" Version="1.494.0-SNAPSHOT" />
 		<PackageReference Include="ExcelDna.Addin" Version="*-*" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="ExcelDna.IntelliSense" Version="*-*" />
-	</ItemGroup>
-	<ItemGroup>
-	  <ProjectReference Include="..\client\Dhe_NetClient\Dhe_NetClient.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup>
