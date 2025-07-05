@@ -24,6 +24,8 @@ public class SelectTest {
     var doubleData = new List<double>();
     var stringData = new List<string>();
     var dateTimeData = new List<DateTimeOffset>();
+    var dateOnlyData = new List<DateOnly>();
+    var timeOnlyData = new List<TimeOnly>();
 
     const int startValue = -8;
     const int endValue = 8;
@@ -38,6 +40,8 @@ public class SelectTest {
       doubleData.Add(i * 987654.321);
       stringData.Add($"test {i}");
       dateTimeData.Add(DateTimeOffset.FromUnixTimeMilliseconds(i));
+      dateOnlyData.Add(DateOnly.FromDayNumber(i + 1000));
+      timeOnlyData.Add(TimeOnly.FromTimeSpan(TimeSpan.FromMilliseconds(i + 1000)));
     }
 
     var tm = new TableMaker();
@@ -51,6 +55,8 @@ public class SelectTest {
     tm.AddColumn("doubleData", doubleData);
     tm.AddColumn("stringData", stringData);
     tm.AddColumn("dateTimeData", dateTimeData);
+    tm.AddColumn("dateOnlyData", dateOnlyData);
+    tm.AddColumn("timeOnlyData", timeOnlyData);
 
     var th = tm.MakeTable(ctx.Client.Manager);
     _output.WriteLine(th.ToString(true));
