@@ -1,11 +1,9 @@
 ﻿using System.Collections;
 using Apache.Arrow;
 using Apache.Arrow.Flight;
-using Apache.Arrow.Types;
 using Io.Deephaven.Proto.Backplane.Grpc;
 using Array = System.Array;
 using ArrowColumn = Apache.Arrow.Column;
-using ArrowField = Apache.Arrow.Field;
 using ArrowTable = Apache.Arrow.Table;
 using IArrowType = Apache.Arrow.Types.IArrowType;
 
@@ -23,9 +21,9 @@ public static class ArrowUtil {
   }
 
   public static bool TypesEqual(IArrowType lhs, IArrowType rhs) {
-    var dtc = new third_party.Apache.Arrow.ArrayDataTypeComparer(lhs);
+    var dtc = new ArrowDataTypeComparer(lhs);
     rhs.Accept(dtc);
-    return dtc.DataTypeMatch;
+    return dtc.Result;
   }
 
   public static ArrowTable ToArrowTable(IClientTable clientTable) {
