@@ -6,10 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Dh_NetClient\Dh_NetClient.csproj" />
-  </ItemGroup>
-
 
   <ItemGroup>
     <Protobuf Include="..\..\..\..\iris\proto\*\src\main\proto\deephaven_enterprise\proto\*.proto" ProtoRoot="..\..\..\..\iris\proto\proto-auth-grpc\src\main\proto" AdditionalImportDirs="..\..\..\..\iris\proto\proto-auth\src\main\proto;..\..\..\..\iris\proto\proto-common\src\main\proto;..\..\..\..\iris\proto\proto-config-grpc\src\main\proto;..\..\..\..\iris\proto\proto-config\src\main\proto;..\..\..\..\iris\proto\proto-controller-grpc\src\main\proto;..\..\..\..\iris\proto\proto-controller\src\main\proto;..\..\..\..\iris\proto\proto-registry-grpc\src\main\proto;..\..\..\..\iris\proto\proto-registry\src\main\proto;..\..\..\..\iris\proto\proto-routing-grpc\src\main\proto;..\..\..\..\iris\proto\proto-routing\src\main\proto;..\..\..\..\iris\proto\proto-schema-grpc\src\main\proto;..\..\..\..\iris\proto\proto-schema\src\main\proto;..\..\..\..\iris\proto\proto-serviceregistry-grpc\src\main\proto;..\..\..\..\iris\proto\proto-serviceregistry\src\main\proto;..\..\..\..\iris\proto\proto-unified-grpc\src\main\proto;..\..\..\..\iris\proto\proto-unified\src\main\proto" GrpcServices="Client" />
@@ -17,6 +13,7 @@
 
 
   <ItemGroup>
+    <PackageReference Include="Deephaven.CommunityClient" Version="0.39.1-SNAPSHOT" />
     <PackageReference Include="Google.Protobuf" Version="3.31.1" />
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageReference Include="Grpc.Tools" Version="2.72.0">
