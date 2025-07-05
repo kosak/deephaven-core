@@ -70,6 +70,9 @@ internal class SubscriptionThread {
     }
 
     public void Dispose() {
+      if (_cancelled.Increment() != 1) {
+        return;
+      }
       DisposeHelper();
       _observer.OnCompleted();
     }

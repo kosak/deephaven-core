@@ -672,6 +672,10 @@ public class TableHandle : IDisposable {
     return disposer;
   }
 
+  public override string ToString() {
+    return ToString(true, false);
+  }
+
   public string ToString(bool wantHeaders, bool wantLineNumbers = false) {
     var at = ToArrowTable();
     return ArrowUtil.Render(at, wantHeaders, wantLineNumbers);
