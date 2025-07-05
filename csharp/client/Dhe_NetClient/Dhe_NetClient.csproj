@@ -6,9 +6,9 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Deephaven.Dhe_NetClient</RootNamespace>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <PackageId>Deephaven.EnterpriseClient</PackageId>
+    <PackageId>Deephaven.EnterpriseClient.Grizzly</PackageId>
     <Title>Client Library for Deephaven Enterprise</Title>
-    <Version>20240517.494.0</Version>
+    <Version>1.494.0-SNAPSHOT</Version>
     <Authors>Deephaven Authors</Authors>
     <Company>Deephaven Data Labs LLC</Company>
     <Description>A .NET library for accessing data from Deephaven Enterprise servers.</Description>
