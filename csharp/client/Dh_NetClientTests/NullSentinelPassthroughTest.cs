@@ -40,7 +40,7 @@ public class NullSentinelPassthroughTest {
     }
 
     if (!sentinel.Equals(typedChunk.Data[0])) {
-      throw new Exception($"Expected value {sentinel}, got {typedChunk.Data[0]}");
+      throw new Exception($"For type {Utility.FriendlyTypeName(typeof(T))}, expected value {sentinel}, got {typedChunk.Data[0]}");
     }
   }
 }
