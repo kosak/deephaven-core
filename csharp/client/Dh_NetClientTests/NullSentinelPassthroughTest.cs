@@ -32,11 +32,17 @@ public class NullSentinelPassthroughTest {
     var rs = RowSequence.CreateSequential(Interval.OfStartAndSize(0, 1));
     var cs = ct.GetColumn(columnIndex);
     var chunk = ChunkMaker.CreateChunkFor(cs, 1);
-    cs.FillChunk(rs, chunk, null);
+    var nullChunk = Chunk<bool>.Create(1);
+
+    cs.FillChunk(rs, chunk, nullChunk);
+
+    if (!nullChunk.Data[0]) {
+      throw new Exception("Expected value to be null, got non-null");
+    }
 
     if (chunk is not Chunk<T> typedChunk) {
       throw new Exception($"Expected type {Utility.FriendlyTypeName(typeof(Chunk<T>))}, " +
-        "got type {Utility.FriendlyTypeName(chunk.GetType())}");
+        $"got type {Utility.FriendlyTypeName(chunk.GetType())}");
     }
 
     if (!sentinel.Equals(typedChunk.Data[0])) {

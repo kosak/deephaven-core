@@ -13,7 +13,6 @@ global using LocalTimeArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSour
 
 using Apache.Arrow;
 using Apache.Arrow.Types;
-using Google.Protobuf.WellKnownTypes;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -184,11 +183,20 @@ sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T? deep
     var typedSrc = (IReadOnlyList<T?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];
-      typedDest.Data[destOffset] = value ?? default;
+      var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
+      T destToUse;
+      if (value.HasValue) {
+        destToUse = value.Value;
+      } else if (deephavenNullValue.HasValue) {
+        destToUse = deephavenNullValue.Value;
+      } else {
+        destToUse = default;
+      }
+      typedDest.Data[destOffset] = destToUse;
+
       if (nullFlags != null) {
         // It looks like even though Deephaven is correctly setting the null bitmap when
         // it comes through DoGet, we're not getting null values when it comes through Barrage.
-        var isNull = !value.HasValue || value.Value.Equals(deephavenNullValue);
         nullFlags.Data[destOffset] = isNull;
       }
 
