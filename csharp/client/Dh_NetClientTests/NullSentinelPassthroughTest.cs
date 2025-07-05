@@ -1,6 +1,4 @@
-﻿
-using Deephaven.Dh_NetClient;
-using Microsoft.VisualStudio.TestPlatform.Utilities;
+﻿using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
@@ -21,20 +19,28 @@ public class NullSentinelPassthroughTest {
       );
 
     var ct = t.ToClientTable();
+    AssertHasSentinel(ct, 0, DeephavenConstants.NullChar);
+    AssertHasSentinel(ct, 1, DeephavenConstants.NullByte);
+    AssertHasSentinel(ct, 2, DeephavenConstants.NullShort);
+    AssertHasSentinel(ct, 3, DeephavenConstants.NullInt);
+    AssertHasSentinel(ct, 4, DeephavenConstants.NullLong);
+    AssertHasSentinel(ct, 5, DeephavenConstants.NullFloat);
+    AssertHasSentinel(ct, 6, DeephavenConstants.NullDouble);
+  }
 
+  private static void AssertHasSentinel<T>(IClientTable ct, int columnIndex, T sentinel) where T : struct, IEquatable<T> {
+    var rs = RowSequence.CreateSequential(Interval.OfStartAndSize(0, 1));
+    var cs = ct.GetColumn(columnIndex);
+    var chunk = ChunkMaker.CreateChunkFor(cs, 1);
+    cs.FillChunk(rs, chunk, null);
 
-    tm.AddColumn("boolData", boolData);
-    tm.AddColumn("charData", charData);
-    tm.AddColumn("byteData", byteData);
-    tm.AddColumn("shortData", shortData);
-    tm.AddColumn("intData", intData);
-    tm.AddColumn("longData", longData);
-    tm.AddColumn("floatData", floatData);
-    tm.AddColumn("doubleData", doubleData);
-    tm.AddColumn("stringData", stringData);
-    tm.AddColumn("dateTimeData", dateTimeData);
+    if (chunk is not Chunk<T> typedChunk) {
+      throw new Exception($"Expected type {Utility.FriendlyTypeName(typeof(Chunk<T>))}, " +
+        "got type {Utility.FriendlyTypeName(chunk.GetType())}");
+    }
 
-
-
+    if (!sentinel.Equals(typedChunk.Data[0])) {
+      throw new Exception($"Expected value {sentinel}, got {typedChunk.Data[0]}");
+    }
   }
 }
