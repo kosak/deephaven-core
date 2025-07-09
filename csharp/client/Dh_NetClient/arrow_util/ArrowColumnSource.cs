@@ -151,6 +151,15 @@ class FillChunkVisitor(ChunkedArray chunkedArray, RowSequence rows, Chunk destDa
 }
 
 abstract class FillChunkHelper {
+  // RowSequence is this kosak thing which returns an arbitrary sequence of intervals
+  // [0,5) then [100,102) then [4000,5000)
+  //
+  // ChunkedArray is, ironically, also of the same structure
+  // it might have 7 IArrowArrays inside it
+  // first one of length 2
+  // second one of length 87
+  // third one of length 4
+  //
   public void FillChunk(RowSequence rows, ChunkedArray srcArray) {
     if (rows.IsEmpty) {
       return;
@@ -183,6 +192,9 @@ abstract class FillChunkHelper {
 sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T? deephavenNullValue)
       : FillChunkHelper where T : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+    Int32Array temp;
+
+    // this cast is magic
     var typedSrc = (IReadOnlyList<T?>)src;
     for (var i = 0; i < count; ++i) {
       var value = typedSrc[srcOffset];

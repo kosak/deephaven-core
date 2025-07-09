@@ -106,6 +106,14 @@ public static class ArrowUtil {
     return sw.ToString();
   }
 
+
+
+  // THIS THING takes an arrow chunkedarray and returns an enumerable of all of its elements, boxed as an object, end of story.
+  // Give me a chunked array of underlying iarrowarrays of int32, and I will give you an enumerable of boxed int32 liek [3, 4, 17]
+  // COMPLICATION it works with lists
+  // Give me a chunked array of underlying iarrowarrays of list<int32>, and I will give you an enumerable of List<int32> like [[3,4], [82,5,8], [2, 9, 13, 14]]
+
+  // this should probably have a name which indicates just how narrow and limited it is
   public static IEnumerable<object> MakeScalarEnumerable(Apache.Arrow.ChunkedArray chunkedArray) {
     var numArrays = chunkedArray.ArrayCount;
     var visitor = new ScalarEnumerableVisitor();
@@ -117,6 +125,25 @@ public static class ArrowUtil {
       }
     }
   }
+
+  public static IEnumerable<object> MakeScalarEnumerableSIMPLE(Apache.Arrow.ChunkedArray chunkedArray) {
+    var numArrays = chunkedArray.ArrayCount;
+    for (var i = 0; i != numArrays; ++i) {
+      var array = chunkedArray.ArrowArray(i);
+      foreach (var result in (IEnumerable)array) {
+        yield return result;
+      }
+    }
+  }
+
+  // IF CHUNKED ARRAYS DID NOT EXIST
+  public static IEnumerable MakeScalarEnumerableFROMIDATAWHATEVER(Apache.Arrow.IArrowArray array) {
+    // Int32Array will implement IEnumerable and IEnumerable<int32>
+
+    return (IEnumerable)array;
+  }
+
+
 
   private class ScalarEnumerableVisitor : Apache.Arrow.IArrowArrayVisitor,
     IArrowArrayVisitor<ListArray> {
