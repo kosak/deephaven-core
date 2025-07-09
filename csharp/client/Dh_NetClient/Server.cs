@@ -199,7 +199,7 @@ public class Server : IDisposable {
     chars[0] = 'e';
     var span = new Span<char>(chars, 1, 4);
     if (!Utility.TryConvertToBase52(ticketId, span)) {
-      throw new Exception($"Programming error: couldn't convert {ticketId} to base 52");
+      throw new Exception($"Assertion failed: couldn't convert {ticketId} to base 52");
     }
     var result = new Ticket {
       Ticket_ = ByteString.CopyFromUtf8(new string(chars))

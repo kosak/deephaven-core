@@ -259,7 +259,7 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
   public void Advance(Int64 start) {
     while (true) {
       if (start < _segmentBegin) {
-        throw new Exception($"Programming error: Can't go backwards from {_segmentBegin} to {start}");
+        throw new Exception($"Assertion failed: Can't go backwards from {_segmentBegin} to {start}");
       }
 
       if (start < _segmentEnd) {
