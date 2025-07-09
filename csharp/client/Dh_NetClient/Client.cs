@@ -11,6 +11,17 @@ namespace Deephaven.Dh_NetClient;
 /// the server and to get a TableHandleManager.
 /// </summary>
 public class Client : IDisposable {
+
+
+  // Group class members in the following order:
+  // Nested classes, enums, delegates and events.
+  //   Static, const and readonly EVFERYTHING
+  //   Fields and properties.
+  //   Constructors and finalizers.
+  // Methods.
+
+  private TableHandleManager? _manager;
+
   /// <summary>
   /// Factory method to Connect to a Deephaven server using the specified options.
   /// </summary>
@@ -35,8 +46,6 @@ public class Client : IDisposable {
     var thm = TableHandleManager.Create(consoleTicket, server);
     return new Client(thm);
   }
-
-  private TableHandleManager? _manager;
 
   protected Client(TableHandleManager tableHandleManager) {
     _manager = tableHandleManager;
