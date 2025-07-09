@@ -305,7 +305,11 @@ public class TableMaker {
     }
 
     public override void Append(T item) {
-      _builder.Append(item);
+      if (item.Equals(_deephavenNullShit)) {
+        _builder.AppendNull();
+      } else {
+        _builder.Append(item);
+      }
     }
 
     public override void AppendNull() {

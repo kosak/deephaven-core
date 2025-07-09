@@ -2,7 +2,6 @@
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
 
-using System.Diagnostics;
 using Apache.Arrow;
 using Google.FlatBuffers;
 using io.deephaven.barrage.flatbuf;
@@ -99,11 +98,11 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     var diThreeShiftIndices = new DataInput(shiftDataBytes);
     var diAdded = new DataInput(addedRowsBytes);
 
-    var removedRows = IndexDecoder.ReadExternalCompressedDelta(diRemoved);
-    var shiftStartIndex = IndexDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
-    var shiftEndIndex = IndexDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
-    var shiftDestIndex = IndexDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
-    var addedRows = IndexDecoder.ReadExternalCompressedDelta(diAdded);
+    var removedRows = RowSequenceDecoder.ReadExternalCompressedDelta(diRemoved);
+    var shiftStartIndex = RowSequenceDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
+    var shiftEndIndex = RowSequenceDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
+    var shiftDestIndex = RowSequenceDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
+    var addedRows = RowSequenceDecoder.ReadExternalCompressedDelta(diAdded);
 
     var perColumnModifies = new List<RowSequence>();
     for (var i = 0; i != bmd.ModColumnNodesLength; ++i) {
@@ -118,7 +117,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
       }
 
       var diModified = new DataInput(modifiedRowsBytes);
-      var modRows = IndexDecoder.ReadExternalCompressedDelta(diModified);
+      var modRows = RowSequenceDecoder.ReadExternalCompressedDelta(diModified);
       perColumnModifies.Add(modRows);
     }
 
