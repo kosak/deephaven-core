@@ -1,4 +1,3 @@
-
 # Deephaven Python Client 
 
 Deephaven Python Client is a Python package created by Deephaven Data Labs. It is a client API that allows Python applications to remotely access Deephaven data servers.
@@ -11,7 +10,19 @@ below to create a venv. Then, activate the venv.
 ``` shell
 python3 -m venv ~/py/dhenv
 source ~/py/dhenv/bin/activate
+
+Windows
+%HOMEWHATVER%py\dhenv\Scripts\activate
 ```
+
+    # Ensure distutils uses the compiler and linker in %PATH%
+    # You need an installation of Visual Studio 2022 with
+    # * Python Development Workload
+    # * Option "Python native development tools" enabled
+    # And this should be run from the "x64 Native Tools Command Prompt" installed by VS
+    # Note "x64_x86 Cross Tools Command Prompt" will NOT work.
+
+
 
 ## Source Directory
 
@@ -40,21 +51,90 @@ $ pip3 install -r requirements-dev.txt
 
 ## Build
 ``` shell
+### NO NO NO YOU HAVE TO TYPE PYTHON NOT PYTHON3 GOD ONLY KNOWS WHY
+
+this is a hellscape for Windows. Install Java? Like no thanks
+set DEEPHAVEN_VERSION=0.40.0-SNAPSHOT
+
+JUST SAY PYTHON NOT PYTHON3
 $ DEEPHAVEN_VERSION=$(../../gradlew :printVersion -q) python3 setup.py bdist_wheel
 ```
 
-## Run tests
-``` shell
-$ python3 -m unittest discover tests
+also if you mess up, you may want to git clean -xfd to clean up all the
+state
 
+
+and python not python3
+
+## Run tests
+windows (and linux): probably needs DH_HOST and DH_PORT again
+``` shell
+$ python -m unittest discover tests
 ```
-## Run examples
+
+failed test_systemic_scripts but I've stopped caring
+
+
+xs!## Run examples
 ``` shell
 $ python3 -m examples.demo_table_ops
+   hardcoded to localhost
+   but eventually runs if server is fixed... surprisingly slow startup
 $ python3 -m examples.demo_query
+   ditto... also surprisingly slow... like 23 seconds
 $ python3 -m examples.demo_run_script
+  ditto, has bug
+      dh_session.run_script(server_script)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "c:\Users\kosak\dhsrc\deephaven-core\py\client\pydeephaven\session.py", line 510, in run_script
+    raise DHError("could not run script: " + response.error_message)
+pydeephaven.dherror.DHError: could not run script: java.lang.RuntimeException: Error in Python interpreter:
+Type: <class 'deephaven.dherror.DHError'>
+Value: table sort operation failed. : deephaven.dherror.DHError: The sort direction must be either 'ASCENDING' or 'DESCENDING'. : The sort direction must be either 'ASCENDING' or 'DESCENDING'.
+Traceback (most recent call last):
+  File "/opt/deephaven/venv/lib/python3.10/site-packages/deephaven/table.py", line 1391, in sort
+    raise DHError(message="The sort direction must be either 'ASCENDING' or 'DESCENDING'.")
+deephaven.dherror.DHError: The sort direction must be either 'ASCENDING' or 'DESCENDING'. : The sort direction must be either 'ASCENDING' or 'DESCENDING'.
+NoneType: None
+
+
+Line: 1399
+Namespace: sort
+File: /opt/deephaven/venv/lib/python3.10/site-packages/deephaven/table.py
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+  File "/opt/deephaven/venv/lib/python3.10/site-packages/deephaven/table.py", line 1399, in sort
+
+        at org.jpy.PyLib.executeCode(Native Method)
+        at org.jpy.PyObject.executeCode(PyObject.java:133)
+        at io.deephaven.engine.util.PythonEvaluatorJpy.evalScript(PythonEvaluatorJpy.java:73)
+        at io.deephaven.integrations.python.PythonDeephavenSession.lambda$evaluate$1(PythonDeephavenSession.java:229)
+        at io.deephaven.util.locks.FunctionalLock.doLockedInterruptibly(FunctionalLock.java:51)
+        at io.deephaven.integrations.python.PythonDeephavenSession.evaluate(PythonDeephavenSession.java:229)
+        at io.deephaven.engine.util.AbstractScriptSession.lambda$evaluateScript$0(AbstractScriptSession.java:168)
+        at io.deephaven.engine.context.ExecutionContext.lambda$apply$0(ExecutionContext.java:196)
+        at io.deephaven.engine.context.ExecutionContext.apply(ExecutionContext.java:207)
+        at io.deephaven.engine.context.ExecutionContext.apply(ExecutionContext.java:195)
+        at io.deephaven.engine.util.AbstractScriptSession.evaluateScript(AbstractScriptSession.java:168)
+        at io.deephaven.engine.util.DelegatingScriptSession.evaluateScript(DelegatingScriptSession.java:77)
+        at io.deephaven.engine.util.ScriptSession.evaluateScript(ScriptSession.java:90)
+        at io.deephaven.server.console.ConsoleServiceGrpcImpl.lambda$executeCommand$7(ConsoleServiceGrpcImpl.java:202)
+        at io.deephaven.server.session.SessionState$ExportObject.doExport(SessionState.java:1001)
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at io.deephaven.server.runner.scheduler.SchedulerModule$ThreadFactory.lambda$newThread$0(SchedulerModule.java:100)
+        at org.jpy.PyLib.callAndReturnObject(Native Method)
+        at org.jpy.PyObject.call(PyObject.java:444)
+        at io.deephaven.server.console.python.DebuggingInitializer.lambda$createInitializer$0(DebuggingInitializer.java:46)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
 $ python3 -m examples.demo_merge_tables
+works ok once I fix the server name but slow... all these examples based on taxi data are slow (21 sec)
 $ python3 -m examples.demo_asof_join
+works ok with server name fixed.  NOT slow because doesn't depend on taxi data
+
+
 
 ```
 ## Install

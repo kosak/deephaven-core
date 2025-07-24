@@ -1,5 +1,9 @@
 # Building the C++ client on Ubuntu 20.04 / 22.04 and Windows 10 / 11.
 
+
+### ALSO PUT IN A NOTE ABOUT FUCKING LONG C++ PATHNAMES
+### and make Deephaven bug report -- we cannot keep doing this
+
 These instructions show how to install and run the Deephaven C++ client, its
 dependencies, its unit tests on Linux and Windows. We have tested these instructions in Ubuntu 22.04 with the default
 C++ compiler and tool suite (cmake etc). We have also tested these instructions
@@ -217,6 +221,8 @@ Notes
 
 # Building the C++ client on Windows 10 / Windows 11
 
+0. Recommend disk space of at least 150G
+
 1. Install Visual Studio 2022 Community Edition (or Professional, or Enterprise)
    from here:
 
@@ -227,6 +233,14 @@ Notes
 2. Use your preferred version of git, or install Git from here:
 
    https://git-scm.com/download/win
+
+
+Basically you have to turn on the Windows policy for long file names.
+For Windows 10 Pro or Enterprise editions, open the Group Policy Editor (gpedit.msc) and go to Computer Configuration > Administrative Templates > System > Filesystem. Enable the "Enable Win32 long paths" setting.
+Then you have to
+Open Git Bash as an administrator.
+Run the command git config --system core.longpaths true.
+
 
 3. We will do the actual build process inside a Visual Studio developer
    command prompt. Run the developer command prompt by navigating here:

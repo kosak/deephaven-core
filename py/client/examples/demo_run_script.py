@@ -12,7 +12,7 @@ from pydeephaven import Session, Table
 def run_script(dh_session: Session) -> Table:
     server_script = '''
 t2 = t.where("VendorID > 0")\
-        .sort("VendorID", "fare_amount")\
+        .sort("[VendorID", "fare_amount"])\
         .head_by(5, "VendorID")
 '''
     dh_session.run_script(server_script)
