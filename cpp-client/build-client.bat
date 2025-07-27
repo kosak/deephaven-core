@@ -25,5 +25,5 @@ cd /d %DHSRC%\deephaven-core\cpp-client\deephaven || exit /b
 echo *** CONFIGURING DEEPHAVEN BUILD ***
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%DHINSTALL% -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON || exit /b
 
-ecoh *** BUILDING C++ CLIENT ***
+echo *** BUILDING C++ CLIENT ***
 cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16 -m:1 || exit /b
