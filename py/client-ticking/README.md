@@ -132,8 +132,8 @@ https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
    * `%HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate`
 
 3. Fetch the build script from the Deephaven repository
-   * `curl https://`
-
+   * `curl -O https://raw.githubusercontent.com/kosak/deephaven-core/refs/heads/kosak_todo-fixes/py/client-ticking/build-client-ticking.bat`
+   
 3. Set environment variables
    * `set DEEPHAVEN_VERSION=0.50.0-SNAPSHOT`
    * set DEEPHAVEN_VERSION=0.38.0-SNAPSHOT
