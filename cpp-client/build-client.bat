@@ -1,3 +1,12 @@
+REM Performance note
+REM With an unpopulated vcpkg cache, this script takes a long time to build
+REM the dependent packages (could take hours on a slow machine).
+REM Once the vcpkg cache is populated, it is fast enough (maybe 5-10 minutes).
+REM If this machine is running in the cloud, one reasonable strategy is to
+REM first configure a machine with a large number of cores (16+) and run this
+REM script once to populate the vcpkg cache. Assuming the vcpkg persists
+REM between runs, subsequent runs can work with a smaller number of cores.
+
 set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
 set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
 set VCPKG_ROOT=%DHSRC%\vcpkg
@@ -8,11 +17,7 @@ mkdir %DHINSTALL% || exit /b
 echo *** CLONING REPOSITORIES ***
 cd /d %DHSRC% || exit /b
 git clone https://github.com/microsoft/vcpkg.git || exit /b
-
-echo *** WARNING FIX THIS REPOSITORY ***
-echo *** WARNING FIX THIS REPOSITORY ***
-echo *** WARNING FIX THIS REPOSITORY ***
-git clone -b kosak_todo-fixes https://github.com/kosak/deephaven-core.git || exit /b
+git clone https://github.com/deephaven/deephaven-core.git || exit /b
 
 echo *** BOOTSTRAPPING VCPKG ***
 cd /d %VCPKG_ROOT% || exit /b
