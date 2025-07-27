@@ -12,7 +12,7 @@ git clone https://github.com/microsoft/vcpkg.git || exit /b
 echo *** WARNING FIX THIS REPOSITORY ***
 echo *** WARNING FIX THIS REPOSITORY ***
 echo *** WARNING FIX THIS REPOSITORY ***
-git clone -b kosak_kosak-todo-fixes https://github.com/kosak/deephaven-core.git // exit /b
+git clone -b kosak_kosak-todo-fixes https://github.com/kosak/deephaven-core.git || exit /b
 
 echo *** BOOTSTRAPPING VCPKG ***
 cd /d %VCPKG_ROOT% || exit /b
