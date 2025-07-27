@@ -188,6 +188,9 @@ class NumericImmerColumnSource final : public ImmerColumnSource,
   using ColumnSourceVisitor = deephaven::dhcore::column::ColumnSourceVisitor;
   using RowSequence = deephaven::dhcore::container::RowSequence;
 
+  // Avoid Visual Studio warning about "inherits via dominance" for diamond inheritance pattern.
+  using ImmerColumnSource::GetElementType;
+
 public:
   static std::shared_ptr<NumericImmerColumnSource> Create(const ElementType &element_type,
       immer::flex_vector<T> data) {
