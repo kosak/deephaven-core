@@ -1,28 +1,29 @@
 set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
 set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
 set VCPKG_ROOT=%DHSRC%\vcpkg
-mkdir %DHSRC%
-mkdir %DHINSTALL%
+echo *** MAKING DIRECTORIES
+mkdir %DHSRC% || exit /b
+mkdir %DHINSTALL% || exit /b
 
 echo *** CLONING REPOSITORIES ***
-cd /d %DHSRC%
-git clone https://github.com/microsoft/vcpkg.git
+cd /d %DHSRC% || exit /b
+git clone https://github.com/microsoft/vcpkg.git || exit /b
 
 echo *** WARNING FIX THIS REPOSITORY ***
 echo *** WARNING FIX THIS REPOSITORY ***
 echo *** WARNING FIX THIS REPOSITORY ***
-git clone -b kosak_kosak-todo-fixes https://github.com/kosak/deephaven-core.git
+git clone -b kosak_kosak-todo-fixes https://github.com/kosak/deephaven-core.git // exit /b
 
 echo *** BOOTSTRAPPING VCPKG ***
-cd /d %VCPKG_ROOT%
-call .\bootstrap-vcpkg.bat
+cd /d %VCPKG_ROOT% || exit /b
+call .\bootstrap-vcpkg.bat || exit /b
 
 echo *** BUILDING DEPENDENT LIBRARIES ***
-cd /d %DHSRC%\deephaven-core\cpp-client\deephaven
-%VCPKG_ROOT%\vcpkg.exe install --triplet x64-windows
+cd /d %DHSRC%\deephaven-core\cpp-client\deephaven || exit /b
+%VCPKG_ROOT%\vcpkg.exe install --triplet x64-windows || exit /b
 
 echo *** CONFIGURING DEEPHAVEN BUILD ***
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%DHINSTALL% -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%DHINSTALL% -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON || exit /b
 
 ecoh *** BUILDING C++ CLIENT ***
-cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16 -m:1
+cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16 -m:1 || exit /b
