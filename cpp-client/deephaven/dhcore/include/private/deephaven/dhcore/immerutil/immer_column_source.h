@@ -177,6 +177,9 @@ protected:
   ElementType element_type_;
 };
 
+// Avoid Visual Studio warning about "inherits via dominance" for diamond inheritance pattern.
+#pragma warning(push)
+#pragma warning(disable: 4250)
 template<typename T>
 class NumericImmerColumnSource final : public ImmerColumnSource,
     public deephaven::dhcore::column::GenericColumnSource<T>,
@@ -187,9 +190,6 @@ class NumericImmerColumnSource final : public ImmerColumnSource,
   using UInt64Chunk = deephaven::dhcore::chunk::UInt64Chunk;
   using ColumnSourceVisitor = deephaven::dhcore::column::ColumnSourceVisitor;
   using RowSequence = deephaven::dhcore::container::RowSequence;
-
-  // Avoid Visual Studio warning about "inherits via dominance" for diamond inheritance pattern.
-  using ImmerColumnSource::GetElementType;
 
 public:
   static std::shared_ptr<NumericImmerColumnSource> Create(const ElementType &element_type,
@@ -220,16 +220,17 @@ public:
 private:
   immer::flex_vector<T> data_;
 };
+#pragma warning(pop)
 
+// Avoid Visual Studio warning about "inherits via dominance" for diamond inheritance pattern.
+#pragma warning(push)
+#pragma warning(disable: 4250)
 template<typename T>
 class GenericImmerColumnSource final : public ImmerColumnSource,
     public deephaven::dhcore::column::GenericColumnSource<T>,
     std::enable_shared_from_this<GenericImmerColumnSource<T>> {
   struct Private {};
   using ColumnSourceVisitor = deephaven::dhcore::column::ColumnSourceVisitor;
-
-  // Avoid Visual Studio warning about "inherits via dominance" for diamond inheritance pattern.
-  using ImmerColumnSource::GetElementType;
 
 public:
   static std::shared_ptr<GenericImmerColumnSource> Create(const ElementType &element_type,
@@ -262,4 +263,5 @@ private:
   immer::flex_vector<T> data_;
   immer::flex_vector<bool> null_flags_;
 };
+#pragma warning(pop)
 }  // namespace deephaven::dhcore::immerutil
