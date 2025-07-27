@@ -205,49 +205,12 @@ These instructions have been tested on both Windows 10 and Windows 11.
 
    `Start -> V -> Visual Studio 2022 -> Developer Command Prompt for VS 2022`
 
-2. Establish source and installation directories. You can use different values than the ones
-   we have chosen below.
-   ```
-   set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
-   set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
-   set VCPKG_ROOT=%DHSRC%\vcpkg
-   mkdir %DHSRC%
-   mkdir %DHINSTALL%
-   ```
+2. Run the installation script in deephaven-core\cpp-client\build-client.bat
 
-3. Clone the Deephaven Core repository and the vcpkg repository.
+   If you want different values for the src and installation directories,
+   you can set the DHSRC and DHINSTALL variables before running the script.
 
-   ```
-   cd /d %DHSRC%
-   git clone https://github.com/microsoft/vcpkg.git
-   git clone https://github.com/deephaven/deephaven-core.git
-   ```
-
-4. Do the one-time installation steps for vcpkg.
-   ```
-   cd /d %VCPKG_ROOT%
-   .\bootstrap-vcpkg.bat
-   ```
-
-5. Build and install the dependent packages. On my computer (a relatively fast
-   CPU with 16+ cores) this process took about 20 minutes.
-   ```
-   cd /d %DHSRC%\deephaven-core\cpp-client\deephaven
-   %VCPKG_ROOT%\vcpkg.exe install --triplet x64-windows
-    ```
-
-6. Configure the build for Deephaven Core:
-   ``` 
-   cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%DHINSTALL% -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
-   ```
-   
-9. Finally, build and install Deephaven Core.
-   ```
-   # Replace '16' by the number of CPU threads you want to use for building
-   cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16 -m:1
-   ```
-
-10. (Optional) run the tests.
+3. (Optional) run the tests.
     Note this assumes a Deephaven Core server is running.
 
     ```

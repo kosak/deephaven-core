@@ -7,8 +7,12 @@ REM first configure a machine with a large number of cores (16+) and run this
 REM script once to populate the vcpkg cache. Assuming the vcpkg persists
 REM between runs, subsequent runs can work with a smaller number of cores.
 
-set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
-set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
+if not defined DHSRC (
+  set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
+)
+if not defined DHINSTALL (
+  set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
+)
 set VCPKG_ROOT=%DHSRC%\vcpkg
 echo *** MAKING DIRECTORIES
 mkdir %DHSRC% || exit /b
