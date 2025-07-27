@@ -343,9 +343,9 @@ public:
         {2, {}, 8}
     });
     expected.AddColumn<std::vector<std::optional<float>>>("Floats", {
-        {0, 3, 6, 9},
-        {1, 4, 7},
-        {2, {}, 8}
+        {0f, 3f, 6f, 9f},
+        {1f, 4f, 7f},
+        {2f, {}, 8f}
     });
     expected.AddColumn<std::vector<std::optional<double>>>("Doubles", {
         {0, 3, 6, 9},
