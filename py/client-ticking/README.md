@@ -17,14 +17,14 @@ Windows support is expected to be made available in the future.
 
 ## `pip`
 
-A Linux operating system on x86_64 architecture or Windows 10 64 bits is requi!red to install via `pip`.
-It's recommended to install this way in a Python virtual environment (venv).
+A Linux operating system on x86_64 architecture or Windows 10/11 64 bits is required to install via
+`pip`. It's recommended to install this way in a Python virtual environment (venv).
 
 ```sh
 pip install pydeephaven-ticking
 ```
 
-## Build from source
+## Building from source on Linux
 
 If building from source, `pydeephaven-ticking` also requires a working installation of the C++
 client. All four packages (Deephaven Core, `pydeephaven`, `pydeephaven-ticking`, and the Deephaven 
@@ -135,6 +135,34 @@ pip3 install --force --no-deps dist\pydeephaven_ticking<x.y.z>-cp312-cp312-win_a
 The `--force` flag is required to overwrite any previously-built version of the package that might
 already be there. The `--no-deps` flag ensures that we are sure to refer to the `pydeephaven`
 package just built from the above steps, rather than one from PyPi.
+
+## Building from source on Windows 10/11
+
+### Install the C++ client
+
+First, install the Deephaven C++ client. Follow the instructions in
+https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
+
+### Prerequisites
+
+1. Install the "Python Development Workload" into your existing Visual Studio installation:
+   * `Start -> V -> Visual Studio Installer`
+   * Check the checkbox next to "Python development" and click Modify
+
+2. Create a python virtual environment
+   * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
+     - Note this is NOT the `Developer Command Prompt`
+   * `python -m venv %HOMEDRIVE%%HOMEPATH%\cython`
+
+### Building the python-ticking client
+
+1. Enter the x64 Native Tools Command Prompt if you're not already there
+   * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
+
+2. Activate your python venv
+   * %HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate
+
+3. 
 
 ## Testing the library
 
