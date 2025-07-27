@@ -177,10 +177,14 @@ These instructions have been tested on both Windows 10 and Windows 11.
 
    https://git-scm.com/download/win
 
-3. Configure your computer to allow Windows long pathname support. The Deephaven git repository
-   currently has some paths longer than the Windows maximum path length.
-   To work around this, you will need to change a git configuration setting and
-   a Windows group policy setting.
+   When running Setup, select the option "Git from the command line and also
+   from 3rd-party software". This allows you to use git from the Windows command
+   prompt.
+
+3. Configure your computer to allow Windows long pathname support. The
+   Deephaven git repository currently has some paths longer than the Windows
+   maximum path length. To work around this, you will need to change a git
+   configuration setting and a Windows group policy setting.
 
    3.1 git configuration setting:
    * Open Git Bash as an administrator.
@@ -211,32 +215,28 @@ These instructions have been tested on both Windows 10 and Windows 11.
    mkdir %DHINSTALL%
    ```
 
-3. Use git to clone the Deephaven Core repository and the vcpkg repository.
-   If you are using Git for Windows, you may need to open a fresh shell window, 
-   the "Git Bash Shell", and type these commands into it.
-   You can close the Git Bash Shell when these commands are done.
+3. Clone the Deephaven Core repository and the vcpkg repository.
+
    ```
-   cd $HOME/dhsrc  # change if you modified the dhsrc location above
+   cd /d %DHSRC%
    git clone https://github.com/microsoft/vcpkg.git
    git clone https://github.com/deephaven/deephaven-core.git
    ```
 
-4. Come back to the Visual Studio developer command prompt and do the
-   one-time installation steps for vcpkg.
+4. Do the one-time installation steps for vcpkg.
    ```
    cd /d %VCPKG_ROOT%
    .\bootstrap-vcpkg.bat
    ```
 
-5. Change to the Deephaven core directory and build/install the dependent
-   packages. On my computer (a relatively fast CPU with 16+ cores) this process took
-   about 20 minutes.
+5. Build and install the dependent packages. On my computer (a relatively fast
+   CPU with 16+ cores) this process took about 20 minutes.
    ```
    cd /d %DHSRC%\deephaven-core\cpp-client\deephaven
    %VCPKG_ROOT%\vcpkg.exe install --triplet x64-windows
     ```
 
-6. Now configure the build for Deephaven Core:
+6. Configure the build for Deephaven Core:
    ``` 
    cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%DHINSTALL% -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
    ```
