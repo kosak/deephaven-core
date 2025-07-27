@@ -167,7 +167,7 @@ struct ImmerColumnSourceImpls {
 
 class ImmerColumnSource : public virtual deephaven::dhcore::column::ColumnSource {
 public:
-  explicit ImmerColumnSource(const ElementType &elementType) : element_type_(elementType) {}
+  explicit ImmerColumnSource(const ElementType &element_type) : element_type_(element_type) {}
 
   const ElementType &GetElementType() const final {
     return element_type_;
@@ -224,6 +224,10 @@ class GenericImmerColumnSource final : public ImmerColumnSource,
     std::enable_shared_from_this<GenericImmerColumnSource<T>> {
   struct Private {};
   using ColumnSourceVisitor = deephaven::dhcore::column::ColumnSourceVisitor;
+
+  // Avoid Visual Studio warning about "inherits via dominance" for diamond inheritance pattern.
+  using ImmerColumnSource::GetElementType;
+
 public:
   static std::shared_ptr<GenericImmerColumnSource> Create(const ElementType &element_type,
       immer::flex_vector<T> data, immer::flex_vector<bool> null_flags) {
