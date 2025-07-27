@@ -59,17 +59,9 @@ you will continue to use that venv here.
 
 If you've exited your venv, re-activate it.
 
-For Linux: 
-
 ```sh
 # This assumes your venv is in $HOME/py/cython
 source ~/py/cython/bin/activate
-```
-
-For Windows
-```bat
-rem This assumes your venv is in %DHINSTALL%\py\cython
-%DHINSTALL%\py\cython\Scripts\activate.bat
 ```
 
 Then run 
@@ -78,7 +70,7 @@ Then run
 pip3 install cython
 ```
 
-#### Build the shared library (Linux version)
+#### Build the shared library
 
 ```sh
 cd ${DHROOT}/py/client-ticking
@@ -90,32 +82,11 @@ rm -rf build dist  # Ensure we clean the remnants of any pre-existing build.
 DEEPHAVEN_VERSION=$(../../gradlew :printVersion -q) CPPFLAGS="-I${DHCPP}/include" LDFLAGS="-L${DHCPP}/lib" python3 setup.py build_ext -i
 ```
 
-#### Build the shared library (Windows version)
-
-```bat
-cd %DHSRC%\py\client-ticking
-```
-
-```sh
-rem Ensure we clean the remnants of any pre-existing build.
-rmdir build dist /s /q
-rem replace the value below to the version you are building
-set DEEPHAVEN_VERSION=0.38.0-SNAPSHOT
-python setup.py build_ext -i
-```
 
 #### Install pydeephaven-ticking
 
-In linux, build the wheel with
-
 ```sh
 DEEPHAVEN_VERSION=$(../../gradlew :printVersion -q) python3 setup.py bdist_wheel
-```
-
-In windows, use
-```bat
-rem ensure you have %DEEPHAVEN_VERSION% defined with the right value
-python setup.py bdist_wheel
 ```
 
 Then install the package.
@@ -125,11 +96,6 @@ On Linux:
 
 ```sh
 pip3 install --force --no-deps dist/pydeephaven_ticking-<x.y.z>-cp310-cp310-linux_x86_64.whl
-```
-
-On Windows:
-```bat
-pip3 install --force --no-deps dist\pydeephaven_ticking<x.y.z>-cp312-cp312-win_amd64.whl
 ```
 
 The `--force` flag is required to overwrite any previously-built version of the package that might
@@ -149,20 +115,62 @@ https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
    * `Start -> V -> Visual Studio Installer`
    * Check the checkbox next to "Python development" and click Modify
 
+2. Install JDK 24 from https://www.oracle.com/java/technologies/downloads/
+
 2. Create a python virtual environment
    * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
-     - Note this is NOT the `Developer Command Prompt`
+     - Note this is NOT the "Developer Command Prompt"
    * `python -m venv %HOMEDRIVE%%HOMEPATH%\cython`
 
 ### Building the python-ticking client
 
 1. Enter the x64 Native Tools Command Prompt if you're not already there
    * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
+     - Note this is NOT the "Developer Command Prompt"
 
 2. Activate your python venv
-   * %HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate
+   * `%HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate`
 
-3. 
+3. Fetch the build script from the Deephaven repository
+   * `curl https://`
+
+3. Set environment variables
+   * `set DEEPHAVEN_VERSION=0.50.0-SNAPSHOT`
+   * set DEEPHAVEN_VERSION=0.38.0-SNAPSHOT
+   * FOR /F "tokens=*" %%a IN ('date /t') DO (
+     SET currentDate=%%a
+     )
+
+4. Install cython
+   * `pip3 install cython`
+
+
+
+```bat
+cd %DHSRC%\py\client-ticking
+```
+
+```sh
+rem Ensure we clean the remnants of any pre-existing build.
+rmdir build dist /s /q
+rem replace the value below to the version you are building
+python setup.py build_ext -i
+```
+
+In windows, use
+```bat
+rem ensure you have %DEEPHAVEN_VERSION% defined with the right value
+python setup.py bdist_wheel
+```
+
+
+On Windows:
+```bat
+pip3 install --force --no-deps dist\pydeephaven_ticking<x.y.z>-cp312-cp312-win_amd64.whl
+```
+
+
+
 
 ## Testing the library
 
