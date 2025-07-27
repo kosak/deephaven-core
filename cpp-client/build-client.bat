@@ -7,7 +7,11 @@ mkdir %DHINSTALL%
 echo *** CLONING REPOSITORIES ***
 cd /d %DHSRC%
 git clone https://github.com/microsoft/vcpkg.git
-git clone https://github.com/deephaven/deephaven-core.git
+
+echo *** WARNING FIX THIS REPOSITORY ***
+echo *** WARNING FIX THIS REPOSITORY ***
+echo *** WARNING FIX THIS REPOSITORY ***
+git clone -b kosak_kosak-todo-fixes https://github.com/kosak/deephaven-core.git
 
 echo *** BOOTSTRAPPING VCPKG ***
 cd /d %VCPKG_ROOT%
