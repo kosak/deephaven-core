@@ -15,7 +15,7 @@ git clone -b kosak_kosak-todo-fixes https://github.com/kosak/deephaven-core.git
 
 echo *** BOOTSTRAPPING VCPKG ***
 cd /d %VCPKG_ROOT%
-.\bootstrap-vcpkg.bat
+call .\bootstrap-vcpkg.bat
 
 echo *** BUILDING DEPENDENT LIBRARIES ***
 cd /d %DHSRC%\deephaven-core\cpp-client\deephaven
