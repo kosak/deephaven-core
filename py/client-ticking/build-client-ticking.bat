@@ -6,7 +6,7 @@ if not defined DHINSTALL (
   set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
 )
 
-cd /d %DHSRC% || exit /b
+cd /d %DHSRC%\deephaven-core || exit /b
 
 FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
   SET DEEPHAVEN_VERSION=%%a
@@ -17,7 +17,7 @@ if not defined DEEPHAVEN_VERSION (
   exit /b
 )
 
-cd %DHSRC%\py\client-ticking
+cd %DHSRC%\deephaven-core\py\client-ticking
 python setup.py build_ext -i || exit /b
 
 python setup.py bdist_wheel || exit /b
