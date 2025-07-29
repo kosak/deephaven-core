@@ -8,16 +8,18 @@ if not defined DHINSTALL (
 
 cd /d %DHSRC%\deephaven-core || exit /b
 
-FOR /F "tokens=*" %%a IN ('..\..\gradlew :printVersion -q') DO (
-  SET DEEPHAVEN_VERSION=%%a
+set DEEPHAVEN_VERSION=
+
+FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
+  set DEEPHAVEN_VERSION=%%a
 )
 
 if not defined DEEPHAVEN_VERSION (
   echo DEEPHAVEN_VERSION is not defined
-  exit /b
+  exit /b 1
 )
 
-cd %DHSRC%\deephaven-core\py\client-ticking
+cd %DHSRC%\deephaven-core\py\client-ticking || exit /b
 python setup.py build_ext -i || exit /b
 
 python setup.py bdist_wheel || exit /b
