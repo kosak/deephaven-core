@@ -18,7 +18,7 @@ FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
 
 if not defined DEEPHAVEN_VERSION (
   echo DEEPHAVEN_VERSION is not defined
-  exit /b
+  exit /b 1
 )
 
 python setup.py bdist_wheel || exit /b
