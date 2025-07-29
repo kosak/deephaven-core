@@ -1,3 +1,7 @@
+if not defined DHSRC (
+  set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
+)
+
 if not defined DHINSTALL (
   set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
 )

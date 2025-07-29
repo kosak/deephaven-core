@@ -112,32 +112,32 @@ package just built from the above steps, rather than one from PyPi.
 2. Install the "Python Development Workload" into your existing Visual Studio installation
    (you installed Visual Studio as part of the C++ client installation).
    * `Start -> V -> Visual Studio Installer`
-   * Check the checkbox next to "Python development" and click Modify
+   * Click "Modify"
+   * Select the checkbox next to "Python development" and click "Modify"
 
 3. Install JDK 24 from https://www.oracle.com/java/technologies/downloads/
-
-4. Start a x64 Native Tools Command Prompt and create a Python venv
-   * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
-     - Note this is NOT the "Developer Command Prompt"
-   * `python -m venv %HOMEDRIVE%%HOMEPATH%\cython`
-
-5. Install cython in the venv
-   * `pip3 install cython`
 
 ### Building the python-ticking client
 
 1. Start a x64 Native Tools Command Prompt if you didn't already do so above
-   * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
+   * `Start -> V -> Visual Studio 2022 -> x64 Native Tools Command Prompt for VS 2022`
      - Note this is NOT the "Developer Command Prompt"
+
+2. Create a python venv
+   * `python3 -m venv %HOMEDRIVE%%HOMEPATH%\cython`
 
 2. Activate your python venv
    * `%HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate`
 
-3. Fetch the build script from the Deephaven repository
+3. Install cython in the venv
+   * `pip3 install cython`
+
+4. Fetch the build script from the Deephaven repository
    * `cd %HOMEDRIVE%%HOMEPATH%`
    * `curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/py/client-ticking/build-client-ticking.bat`
 
-4. If you used a custom value of DHINSTALL when installing C++, confirm it is still set
+4. If you used custom values of DHSRC or DHINSTALL when installing C++, confirm they are still set
+   * `echo %DHSRC%`
    * `echo %DHINSTALL%`
 
 5. Run the python-ticking build script
