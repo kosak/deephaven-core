@@ -16,3 +16,9 @@ if not defined DEEPHAVEN_VERSION (
 )
 
 python setup.py bdist_wheel || exit /b
+
+FOR %%f IN (".\dist\*.whl") DO (
+  SET DEEPHAVEN_WHEEL_FILE=%%f
+)
+
+pip3 install --force --no-deps %DEEPHAVEN_WHEEL_FILE% || exit /b
