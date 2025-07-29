@@ -8,6 +8,8 @@ call "%HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate" || exit /b
 
 pip3 install cython wheel || exit /b
 
+cd /d %DHSRC%\deephaven-core || exit /b
+
 set DEEPHAVEN_VERSION=
 
 FOR /F "tokens=*" %%a IN ('..\..\gradlew :printVersion -q') DO (
