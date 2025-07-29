@@ -190,7 +190,7 @@ These instructions have been tested on both Windows 10 and Windows 11.
    * Open Git Bash as an administrator.
    * Run the command `git config --system core.longpaths true`
 
-   3.2 group policy setting
+   3.2 group policy setting -- Windows 10 only I think
    * For Windows Pro or Enterprise editions, open the Group Policy Editor (gpedit.msc) and go to
      `Computer Configuration > Administrative Templates > System > Filesystem`. Then enable the
      `Enable Win32 long paths` setting.
