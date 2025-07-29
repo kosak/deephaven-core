@@ -8,7 +8,7 @@ if not defined DHINSTALL (
 
 cd /d %DHSRC%\deephaven-core || exit /b
 
-FOR /F "tokens=*" %%a IN (".\gradlew :printVersion -q") DO (
+FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
   SET DEEPHAVEN_VERSION=%%a
 )
 
