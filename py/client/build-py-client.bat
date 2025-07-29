@@ -12,7 +12,7 @@ cd /d %DHSRC%\deephaven-core\py\client || exit /b
 
 pip3 install -r requirements-dev.txt || exit /b
 
-FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
+FOR /F "tokens=*" %%a IN ('..\..\gradlew :printVersion -q') DO (
   SET DEEPHAVEN_VERSION=%%a
 )
 
