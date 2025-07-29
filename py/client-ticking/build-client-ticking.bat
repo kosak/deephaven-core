@@ -8,7 +8,7 @@ if not defined DHINSTALL (
 
 cd /d %DHSRC%\deephaven-core || exit /b
 
-FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
+FOR /F "tokens=*" %%a IN (".\gradlew :printVersion -q") DO (
   SET DEEPHAVEN_VERSION=%%a
 )
 
@@ -22,4 +22,8 @@ python setup.py build_ext -i || exit /b
 
 python setup.py bdist_wheel || exit /b
 
-pip3 install --force --no-deps dist/pydeephaven_ticking-%DEEPHAVEN_VERSION%-cp310-cp310-linux_x86_64.whl
+FOR %%f IN (".\dist\*.whl") DO (
+  SET DEEPHAVEN_WHEEL_FILE=%%f
+)
+
+pip3 install --force --no-deps %DEEPHAVEN_WHEEL_FILE% || exit /b

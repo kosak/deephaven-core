@@ -129,8 +129,8 @@ package just built from the above steps, rather than one from PyPi.
 2. Activate your python venv
    * `%HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate`
 
-3. Install cython in the venv
-   * `pip3 install cython`
+3. Install cython and wheel in the venv
+   * `pip3 install cython wheel`
 
 4. Fetch the build script from the Deephaven repository
    * `cd %HOMEDRIVE%%HOMEPATH%`
