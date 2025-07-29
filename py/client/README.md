@@ -27,7 +27,7 @@ Windows
 
 ### Prerequisites
 
-1. Install Visual Studio, git, configure Windows long pathname support.
+1. Install Visual Studio, git, and configure Windows long pathname support.
    Follow the instructions here:
    https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README-windows-common.md
 
