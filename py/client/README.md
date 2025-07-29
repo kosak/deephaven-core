@@ -1,3 +1,4 @@
+====================================================================================================
 # Deephaven Python Client 
 
 Deephaven Python Client is a Python package created by Deephaven Data Labs. It is a client API that allows Python applications to remotely access Deephaven data servers.
@@ -21,6 +22,27 @@ Windows
     # * Option "Python native development tools" enabled
     # And this should be run from the "x64 Native Tools Command Prompt" installed by VS
     # Note "x64_x86 Cross Tools Command Prompt" will NOT work.
+
+## Building from source on Windows 10/11
+
+### Prerequisites
+
+1. Install Visual Studio, git, configure Windows long pathname support.
+   Follow the instructions here:
+   https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README-windows-common.md
+
+You can follow the instructions 
+
+
+
+
+2. Install the "Python Development Workload" into your existing Visual Studio installation
+   (you installed Visual Studio as part of the C++ client installation).
+   * `Start -> V -> Visual Studio Installer`
+   * Click "Modify"
+   * Select the checkbox next to "Python development" and click "Modify"
+
+
 
 
 
