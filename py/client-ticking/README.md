@@ -106,25 +106,28 @@ package just built from the above steps, rather than one from PyPi.
 
 ### Install the C++ client
 
-First, install the Deephaven C++ client. Follow the instructions in
-https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
-
 ### Prerequisites
 
-1. Install the "Python Development Workload" into your existing Visual Studio installation:
+1. First, install the Deephaven C++ client. Follow the instructions in
+   https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
+
+2. Install the "Python Development Workload" into your existing Visual Studio installation:
    * `Start -> V -> Visual Studio Installer`
    * Check the checkbox next to "Python development" and click Modify
 
-2. Install JDK 24 from https://www.oracle.com/java/technologies/downloads/
+3. Install JDK 24 from https://www.oracle.com/java/technologies/downloads/
 
-2. Create a python virtual environment
+4. Start a x64 Native Tools Command Prompt and create a Python venv
    * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
      - Note this is NOT the "Developer Command Prompt"
    * `python -m venv %HOMEDRIVE%%HOMEPATH%\cython`
 
+5. Install cython in the venv
+   * `pip3 install cython`
+
 ### Building the python-ticking client
 
-1. Enter the x64 Native Tools Command Prompt if you're not already there
+1. Start a x64 Native Tools Command Prompt if you didn't already do so above
    * `Start -> V -> x64 Native Tools Command Prompt for VS 2022`
      - Note this is NOT the "Developer Command Prompt"
 
@@ -132,17 +135,20 @@ https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
    * `%HOMEDRIVE%%HOMEPATH%\cython\Scripts\activate`
 
 3. Fetch the build script from the Deephaven repository
-   * `curl -O https://raw.githubusercontent.com/kosak/deephaven-core/refs/heads/kosak_todo-fixes/py/client-ticking/build-client-ticking.bat`
-   
-3. Set environment variables
+   * `cd %HOMEDRIVE%%HOMEPATH%`
+   * `curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/py/client-ticking/build-client-ticking.bat`
+
+4. Customize DHFOO and DHBAR
+
+5. Run the python-ticking build scrip
+   `.\build-client-ticking.bat`
+
+5. Set environment variables
    * `set DEEPHAVEN_VERSION=0.50.0-SNAPSHOT`
    * set DEEPHAVEN_VERSION=0.38.0-SNAPSHOT
    * FOR /F "tokens=*" %%a IN ('date /t') DO (
      SET currentDate=%%a
      )
-
-4. Install cython
-   * `pip3 install cython`
 
 
 
