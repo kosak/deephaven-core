@@ -12,7 +12,7 @@ cd /d %DHSRC%\deephaven-core || exit /b
 
 set DEEPHAVEN_VERSION=
 
-FOR /F "tokens=*" %%a IN ('..\..\gradlew :printVersion -q') DO (
+FOR /F "tokens=*" %%a IN ('.\gradlew :printVersion -q') DO (
   set DEEPHAVEN_VERSION=%%a
 )
 
