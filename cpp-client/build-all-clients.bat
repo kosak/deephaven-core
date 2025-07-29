@@ -11,5 +11,5 @@ call "..\py\client\build-py-client.bat" || exit /b
 popd
 
 pushd .
-call "..\py\client\build-py-client-ticking.bat" || exit /b
+call "..\py\client-ticking\build-py-client-ticking.bat" || exit /b
 popd
