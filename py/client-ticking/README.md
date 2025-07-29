@@ -104,14 +104,13 @@ package just built from the above steps, rather than one from PyPi.
 
 ## Building from source on Windows 10/11
 
-### Install the C++ client
-
 ### Prerequisites
 
 1. First, install the Deephaven C++ client. Follow the instructions in
    https://github.com/deephaven/deephaven-core/blob/main/cpp-client/README.md
 
-2. Install the "Python Development Workload" into your existing Visual Studio installation:
+2. Install the "Python Development Workload" into your existing Visual Studio installation
+   (you installed Visual Studio as part of the C++ client installation).
    * `Start -> V -> Visual Studio Installer`
    * Check the checkbox next to "Python development" and click Modify
 
@@ -138,50 +137,18 @@ package just built from the above steps, rather than one from PyPi.
    * `cd %HOMEDRIVE%%HOMEPATH%`
    * `curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/py/client-ticking/build-client-ticking.bat`
 
-4. Customize DHFOO and DHBAR
+4. If you used a custom value of DHINSTALL when installing C++, confirm it is still set
+   * `echo %DHINSTALL%`
 
-5. Run the python-ticking build scrip
+5. Run the python-ticking build script
    `.\build-client-ticking.bat`
 
-5. Set environment variables
-   * `set DEEPHAVEN_VERSION=0.50.0-SNAPSHOT`
-   * set DEEPHAVEN_VERSION=0.38.0-SNAPSHOT
-   * FOR /F "tokens=*" %%a IN ('date /t') DO (
-     SET currentDate=%%a
-     )
+### Testing the library
 
 
-
-```bat
-cd %DHSRC%\py\client-ticking
-```
-
-```sh
-rem Ensure we clean the remnants of any pre-existing build.
-rmdir build dist /s /q
-rem replace the value below to the version you are building
-python setup.py build_ext -i
-```
-
-In windows, use
-```bat
-rem ensure you have %DEEPHAVEN_VERSION% defined with the right value
-python setup.py bdist_wheel
-```
-
-
-On Windows:
-```bat
-pip3 install --force --no-deps dist\pydeephaven_ticking<x.y.z>-cp312-cp312-win_amd64.whl
-```
-
-
-
-
-## Testing the library
-
-### Run tests
 ``` shell
+TODO set DH_HOST and DH_PORT to whatever???????
+
 $ python3 -m unittest discover tests
 
 ```
