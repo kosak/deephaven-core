@@ -35,10 +35,20 @@ dependencies will be explained in the section for each client.
    from 3rd-party software". This allows you to use git from the Windows command
    prompt.
 
-## Dependency Matrix
+### Command Prompt, venv, and Environment variables
+
+1. Start a x64 Native Tools Command Prompt
+
+* `Start -> V -> Visual Studio 2022 -> x64 Native Tools Command Prompt for VS 2022`
+
+2. (Optional) override environment variables
+
+* set `DHSRC=... # Directory for Deephaven Core checkouts and builds`
+* set `DHINSTALL=... # Directory where C++ (Core) and C++ (Core+) is installed` 
+
+### Dependency Matrix
 
 Some of the clients require others to be built first. This is the client dependency matrix.
-
 
 | Client (Deephaven version)  | Depends On                |
 |-----------------------------|---------------------------|
@@ -47,3 +57,6 @@ Some of the clients require others to be built first. This is the client depende
 | python (Core) [non-ticking] | ---                       |
 | python-ticking (Core)       | C++ (Core), python (Core) |
 | R (Core+)                   | C++ (Core), C++ (Core+)   |
+
+Consult each sections below to build the corresponding client. 
+
