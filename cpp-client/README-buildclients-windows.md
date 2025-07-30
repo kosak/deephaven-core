@@ -58,5 +58,15 @@ Some of the clients require others to be built first. This is the client depende
 | python-ticking (Core)       | C++ (Core), python (Core) |
 | R (Core+)                   | C++ (Core), C++ (Core+)   |
 
-Consult each sections below to build the corresponding client. 
+To build each client, consult the corresponding section below
+
+## C++ (Core)
+
+* cd %HOMEDRIVE%%HOMEPATH%
+* curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat
+** NOTE TO REVIEWERS:* curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat
+* 
+* .\build-cpp-client.bat
+
+
 
