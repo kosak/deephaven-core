@@ -62,11 +62,14 @@ To build each client, consult the corresponding section below
 
 ## C++ (Core)
 
-* cd %HOMEDRIVE%%HOMEPATH%
-* curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat
-** NOTE TO REVIEWERS:* curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat
-* 
-* .\build-cpp-client.bat
+```
+cd %HOMEDRIVE%%HOMEPATH%
+curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat`
+  * NOTE TO REVIEWERS:
+  * `curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat`
+.\build-cpp-client.bat
+```
+
 
 
 
