@@ -77,10 +77,12 @@ call :CREATE_AND_ACTIVATE_PYTHON_VENV || exit /b
 
 echo *** INSTALLING PYTHON PACKAGES
 pip3 install wheel || exit /b
+
+echo *** INSTALLING REQUIREMENTS
+cd /d "%DHSRC%/deephaven-core\py\client" || exit /b
 pip3 install -r requirements-dev.txt || exit /b
 
 echo *** RUNNING SETUP
-pushd "%DHSRC%/deephaven-core\py\client" || exit /b
 python setup.py bdist_wheel || exit /b
 
 echo *** INSTALLING PYDEEPHAVEN-STATIC WHEEL
@@ -91,7 +93,6 @@ FOR %%f IN (".\dist\*.whl") DO (
 )
 
 pip3 install --force --no-deps %DEEPHAVEN_WHEEL_FILE% || exit /b
-popd
 exit /b 0
 
 REM ============================================================================
@@ -113,7 +114,7 @@ echo *** INSTALLING PYTHON PACKAGES
 pip3 install cython || exit /b
 
 echo *** BUILDING PYDEEPHAVEN_TICKING ***
-pushd %DHSRC%\deephaven-core\py\client-ticking || exit /b
+cd /d %DHSRC%\deephaven-core\py\client-ticking || exit /b
 
 python setup.py build_ext -i || exit /b
 
@@ -128,7 +129,6 @@ FOR %%f IN (".\dist\*.whl") DO (
 
 pip3 install --force --no-deps %DEEPHAVEN_TICKING_WHEEL_FILE% || exit /b
 
-popd
 exit /b 0
 
 REM ================================================================
