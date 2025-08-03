@@ -70,25 +70,22 @@ curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/ma
   * `curl -O https://raw.githubusercontent.com/kosak/deephaven-core/refs/heads/kosak_consolidated-client-build-readmes/cpp-client/build-windows-clients.bat`
 ```
 
-To build each client, consult the corresponding section below
+## Building the clients
 
-## C++ (Core)
+To build the clients, first consult this table to determine the keyword of the client
+you want to build. You can specify more than one keyword.
 
-```
-cd %HOMEDRIVE%%HOMEPATH%
-.\build-windows-clients cpp-core
-```
+| Client (Deephaven version)   | Keyword                    |
+|------------------------------|----------------------------|
+| C++ (Core)                   | cpp-core-client            |
+| C++ (Core+)                  | [TODO]                     |
+| python (Core) [non-ticking]  | python-core-static-client  |
+| python-ticking (Core)        | python-core-ticking-client |
+| R (Core)                     | [TODO]                     |
 
-## Python static client (Core)
-
-```
-cd %HOMEDRIVE%%HOMEPATH%
-.\build-windows-clients python-static-core
-```
-
-## Python ticking client (Core)
+Then run these commands
 
 ```
 cd %HOMEDRIVE%%HOMEPATH%
-.\build-windows-clients python-ticking-core
+.\build-windows-clients [keyword or keywords selected above]
 ```
