@@ -27,11 +27,13 @@ dependencies will be explained in the section for each client.
    * "Desktop development with C++"
    * "Python development"
 
-2. Install Java JDK 21 for Windows from
+2. Install Python 3.10 from the Microsoft Store
+
+3. Install Java JDK 21 for Windows from
 
    https://www.oracle.com/java/technologies/downloads/
 
-3. Use your preferred version of git, or install Git from here:
+4. Use your preferred version of git, or install Git from here:
 
    https://git-scm.com/download/win
 
