@@ -1,5 +1,17 @@
-@echo off
+REM TODO change to @echo off
+@echo on
 
+pushd
+call :PROCESS_COMMAND_LINE || goto :ERROR
+popd
+exit /b 0
+
+:ERROR
+popd
+exit /b
+
+REM ============================================================================
+:PROCESS_COMMAND_LINE
 for %%a in (%*) do (
   if /I "%%~a"=="cpp-core-client" (
     call :BUILD_CPP_CORE || exit /b
@@ -15,7 +27,7 @@ for %%a in (%*) do (
 
 exit /b 0
 
-REM ================================================================
+REM ============================================================================
 :BUILD_CPP_CORE
 REM Performance note
 REM With an unpopulated vcpkg cache, this script takes a long time to build
@@ -50,7 +62,7 @@ cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16
 
 exit /b 0
 
-REM ================================================================
+REM ============================================================================
 :BUILD_PYTHON_STATIC_CORE
 
 echo *** SETTING VARIABLES
@@ -84,7 +96,7 @@ pip3 install --force --no-deps %DEEPHAVEN_WHEEL_FILE% || exit /b
 popd
 exit /b 0
 
-REM ================================================================
+REM ============================================================================
 :BUILD_PYTHON_TICKING_CORE
 
 echo *** SETTING VARIABLES
@@ -124,10 +136,10 @@ exit /b 0
 REM ================================================================
 :SET_COMMON_VARIABLES
 if not defined DHSRC (
-  set DHSRC="%HOMEDRIVE%%HOMEPATH%\dhsrc"
+  set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
 )
 if not defined DHINSTALL (
-  set DHINSTALL="%HOMEDRIVE%%HOMEPATH%\dhinstall"
+  set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
 )
 exit /b
 
