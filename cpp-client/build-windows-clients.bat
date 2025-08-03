@@ -1,13 +1,15 @@
 REM TODO change to @echo off
 @echo on
 
-pushd
+pushd .
 call :PROCESS_COMMAND_LINE %*
+REM get here on success or failure
 popd
 exit /b
 
 REM ============================================================================
 :PROCESS_COMMAND_LINE
+
 for %%a in (%*) do (
   if /I "%%~a"=="cpp-core-client" (
     call :BUILD_CPP_CORE || exit /b
