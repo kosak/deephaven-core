@@ -1,18 +1,17 @@
-
+@echo off
 
 for %%a in (%*) do (
-  echo hello %%a
-
-  if /I "%%~a"=="cpp-core" (
+  if /I "%%~a"=="cpp-core-client" (
     call :BUILD_CPP_CORE || exit /b
-  ) else if /I "%%~a"=="python-static-core" (
+  ) else if /I "%%~a"=="python-core-static-client" (
     call :BUILD_PYTHON_STATIC_CORE || exit /b
-  ) else if /I "%%~a"=="python-ticking-core" (
+  ) else if /I "%%~a"=="python-core-ticking-client" (
     call :BUILD_PYTHON_TICKING_CORE || exit /b
   ) else (
     echo argument "%%a" is unrecognized
     exit /b 1
   )
+)
 
 exit /b 0
 
