@@ -2,11 +2,7 @@ REM TODO change to @echo off
 @echo on
 
 pushd
-call :PROCESS_COMMAND_LINE || goto :ERROR
-popd
-exit /b 0
-
-:ERROR
+call :PROCESS_COMMAND_LINE %*
 popd
 exit /b
 
