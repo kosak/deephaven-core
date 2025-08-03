@@ -27,7 +27,11 @@ dependencies will be explained in the section for each client.
    * "Desktop development with C++"
    * "Python development"
 
-2. Use your preferred version of git, or install Git from here:
+2. Install Java JDK 21 for Windows from
+
+   https://www.oracle.com/java/technologies/downloads/
+
+3. Use your preferred version of git, or install Git from here:
 
    https://git-scm.com/download/win
 
@@ -37,7 +41,8 @@ dependencies will be explained in the section for each client.
 
 ### Command Prompt, venv, and Environment variables
 
-1. Start a x64 Native Tools Command Prompt
+1. Start a x64 Native Tools Command Prompt. Note this is NOT the regular Command Prompt,
+   nor the Visual Studio Developer Command Prompt. 
 
 * `Start -> V -> Visual Studio 2022 -> x64 Native Tools Command Prompt for VS 2022`
 
