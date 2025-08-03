@@ -155,7 +155,7 @@ if not exist "%DHSRC%" (
 
 cd /d %DHSRC% || exit /b
 REM work around Windows long path issue, until deephaven-core repo is fixed
-git clone --no-checkout https://github.com/deephaven/deephaven-core.git || exit /b
+git clone --no-checkout --depth 1 https://github.com/deephaven/deephaven-core.git || exit /b
 cd %DHSRC%/deephaven-core
 git config core.longpaths.true
 git checkout main
@@ -175,7 +175,7 @@ if not exist "%DHSRC%" (
 )
 
 cd /d %DHSRC% || exit /b
-git clone https://github.com/microsoft/vcpkg.git || exit /b
+git clone --depth 1 https://github.com/microsoft/vcpkg.git || exit /b
 
 exit /b 0
 

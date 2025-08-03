@@ -57,7 +57,6 @@ Some of the clients require others to be built first. This is the client depende
 | C++ (Core+)                  | C++ (Core)                |
 | python (Core) [non-ticking]  | ---                       |
 | python-ticking (Core)        | C++ (Core), python (Core) |
-| R (Core)                     | C++ (Core)                |
 
 ### Build script
 
@@ -81,7 +80,6 @@ you want to build. You can specify more than one keyword.
 | C++ (Core+)                  | [TODO]                     |
 | python (Core) [non-ticking]  | python-core-static-client  |
 | python-ticking (Core)        | python-core-ticking-client |
-| R (Core)                     | [TODO]                     |
 
 Then run these commands
 
