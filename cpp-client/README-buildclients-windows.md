@@ -44,19 +44,31 @@ dependencies will be explained in the section for each client.
 2. (Optional) override environment variables
 
 * set `DHSRC=... # Directory for Deephaven Core checkouts and builds`
-* set `DHINSTALL=... # Directory where C++ (Core) and C++ (Core+) is installed` 
+* set `DHINSTALL=... # Directory where C++ (Core) and C++ (Core+) is installed`
+
 
 ### Dependency Matrix
 
 Some of the clients require others to be built first. This is the client dependency matrix.
 
-| Client (Deephaven version)  | Depends On                |
-|-----------------------------|---------------------------|
-| C++ (Core)                  | ---                       |
-| C++ (Core+)                 | C++ (Core)                |
-| python (Core) [non-ticking] | ---                       |
-| python-ticking (Core)       | C++ (Core), python (Core) |
-| R (Core+)                   | C++ (Core), C++ (Core+)   |
+| Client (Deephaven version)   | Depends On                |
+|------------------------------|---------------------------|
+| C++ (Core)                   | ---                       |
+| C++ (Core+)                  | C++ (Core)                |
+| python (Core) [non-ticking]  | ---                       |
+| python-ticking (Core)        | C++ (Core), python (Core) |
+| R (Core)                     | C++ (Core)                |
+
+### Build script
+
+Download the build script:
+
+```
+cd %HOMEDRIVE%%HOMEPATH%
+curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-windows-clients.bat`
+  * NOTE TO REVIEWERS USE THIS FOR NOW:
+  * `curl -O https://raw.githubusercontent.com/kosak/deephaven-core/refs/heads/kosak_consolidated-client-build-readmes/cpp-client/build-windows-clients.bat`
+```
 
 To build each client, consult the corresponding section below
 
@@ -64,12 +76,19 @@ To build each client, consult the corresponding section below
 
 ```
 cd %HOMEDRIVE%%HOMEPATH%
-curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat`
-  * NOTE TO REVIEWERS:
-  * `curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-cpp-client.bat`
-.\build-cpp-client.bat
+.\build-windows-clients cpp-core
 ```
 
+## Python static client (Core)
 
+```
+cd %HOMEDRIVE%%HOMEPATH%
+.\build-windows-clients python-static-core
+```
 
+## Python ticking client (Core)
 
+```
+cd %HOMEDRIVE%%HOMEPATH%
+.\build-windows-clients python-ticking-core
+```
