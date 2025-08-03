@@ -1,3 +1,21 @@
+for %%a in (%*) do (
+  echo hello %%a
+
+  if /I "%%~a"=="cpp-core" (
+    call BUILD_CPP_CORE || exit /b
+  ) else if /I "%%~a"=="python-static-core" (
+    echo ztwo
+  ) else if /I "%%~a"=="python-ticking-core" (
+    echo zthree
+  ) else (
+    echo %%a is unrecognized
+    exit /b 1
+  )
+
+exit /b 0
+
+REM ================================================================
+:BUILD_CPP_CORE
 REM Performance note
 REM With an unpopulated vcpkg cache, this script takes a long time to build
 REM the dependent packages (could take hours on a slow machine).
@@ -36,3 +54,5 @@ cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcp
 
 echo *** BUILDING C++ CLIENT ***
 cmake --build build --config RelWithDebInfo --target install -- /p:CL_MPCount=16 -m:1 || exit /b
+
+exit /b
