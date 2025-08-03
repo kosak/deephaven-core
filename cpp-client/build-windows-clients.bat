@@ -1,6 +1,11 @@
 REM TODO change to @echo off
 @echo on
 
+REM NOTE TO DEVELOPERS: when editing this file, please preserve the CRLF
+REM line ending format. Otherwise there is a behavior that can trigger under
+REM very specific circumstances where labels that are a CALL target cannot
+REM be found. https://www.dostips.com/forum/viewtopic.php?t=8988#p58888
+
 pushd .
 call :PROCESS_COMMAND_LINE %*
 REM get here on success or failure
