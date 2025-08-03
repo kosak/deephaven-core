@@ -87,3 +87,11 @@ Then run these commands
 cd %HOMEDRIVE%%HOMEPATH%
 .\build-windows-clients [keyword or keywords selected above]
 ```
+
+For example, to build the C++ Core client, the Python core static client, and the Python core ticking
+client, run this command
+
+```
+cd %HOMEDRIVE%%HOMEPATH%
+.\build-windows-clients cpp-core-client python-core-static-client python-core-ticking-client
+```
