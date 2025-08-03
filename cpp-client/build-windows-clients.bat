@@ -134,10 +134,10 @@ exit /b 0
 REM ================================================================
 :SET_COMMON_VARIABLES
 if not defined DHSRC (
-  set DHSRC=%HOMEDRIVE%%HOMEPATH%\dhsrc
+  set DHSRC=%HOMEDRIVE%%HOMEPATH%\deephaven-clients\dhsrc
 )
 if not defined DHINSTALL (
-  set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\dhinstall
+  set DHINSTALL=%HOMEDRIVE%%HOMEPATH%\deephaven-clients\dhinstall
 )
 exit /b
 
