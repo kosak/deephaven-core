@@ -15,7 +15,8 @@ dependencies will be explained in the section for each client.
 * Intel/AMD CPUs (this is our only tested configuration)
 * Cores: 2 or 4 cores is fine, *except* for the initial C++ build (without a vcpkg cache).
   If you are doing a C++ build for the first time on a fresh machine, 16 cores is preferable
-  in order to populate the vcpkg cache. 
+  in order to populate the vcpkg cache.
+* Configure the machine to never sleep
 
 ### Software prerequisites
 
