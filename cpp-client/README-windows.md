@@ -1,6 +1,7 @@
 # Building the Deephaven clients from source on Windows 10 / 11
 
-These instructions describe how to build the Deephaven clients from source on Windows 10 / 11.
+These instructions describe how to build the Deephaven clients (C++, Python, R)
+from source on Windows 10 / 11.
 
 To begin, first read the Prerequisites section. Then follow the instructions for the client you
 want to build. Note that some clients depend on other clients being built first. These
@@ -44,7 +45,7 @@ dependencies will be explained in the section for each client.
 ### Command Prompt, venv, and Environment variables
 
 1. Start a x64 Native Tools Command Prompt. Note this is NOT the regular Command Prompt,
-   nor the Visual Studio Developer Command Prompt. 
+   nor is it the Visual Studio Developer Command Prompt. 
 
 * `Start -> V -> Visual Studio 2022 -> x64 Native Tools Command Prompt for VS 2022`
 
@@ -61,12 +62,9 @@ Some of the clients require others to be built first. This is the client depende
 | Client (Deephaven version)  | Depends On                |
 |-----------------------------|---------------------------|
 | C++ (Core)                  | ---                       |
-| C++ (Core+)                 | C++ (Core)                |
 | python (Core) [non-ticking] | ---                       |
 | python-ticking (Core)       | C++ (Core), python (Core) |
-| python-ticking (Core)       | C++ (Core), python (Core) |
 | R (Core)                    | C++ (Core)                |
-| R (Core+)                   | C++ (Core), C++ (Core+)   |
 
 ### Build script
 
@@ -75,8 +73,11 @@ Download the build script:
 ```
 cd %HOMEDRIVE%%HOMEPATH%
 curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/main/cpp-client/build-windows-clients.bat`
-  * NOTE TO REVIEWERS USE THIS FOR NOW:
-  * `curl -O https://raw.githubusercontent.com/kosak/deephaven-core/refs/heads/kosak_consolidated-client-build-readmes/cpp-client/build-windows-clients.bat`
+```
+
+**NOTE TO REVIEWERS USE THIS FOR NOW**
+```
+`curl -O https://raw.githubusercontent.com/kosak/deephaven-core/refs/heads/kosak_consolidated-client-build-readmes/cpp-client/build-windows-clients.bat`
 ```
 
 ## Building the clients
@@ -84,14 +85,12 @@ curl -O https://raw.githubusercontent.com/deephaven/deephaven-core/refs/heads/ma
 To build the clients, first consult this table to determine the keyword of the client
 you want to build. You can specify more than one keyword.
 
-| Client (Deephaven version)    | Keyword                            |
-|-------------------------------|------------------------------------|
-| C++ (Core)                    | cpp-core-client                    |
-| C++ (Core+)                   | [TODO]                             |
-| python (Core) [non-ticking]   | python-core-static-client          |
-| python-ticking (Core)         | python-core-ticking-client         |
-| R (Core)                      | (not implemented yet for Windows)  |
-| R (Core+)                     | (not implemented yet for Windows)  |
+| Client (Deephaven version)    | Keyword                 |
+|-------------------------------|-------------------------|
+| C++ (Core)                    | cpp-core                |
+| python (Core) [non-ticking]   | python-core-static      |
+| python-ticking (Core)         | python-core-ticking     |
+| R (Core)                      | r-core                  |
 
 Then run these commands
 
@@ -100,10 +99,9 @@ cd %HOMEDRIVE%%HOMEPATH%
 .\build-windows-clients [keyword or keywords selected above]
 ```
 
-For example, to build the C++ Core client, the Python core static client, and the Python core ticking
-client, run this command
+For example, to build all the supported Core clients, run this command
 
 ```
 cd %HOMEDRIVE%%HOMEPATH%
-.\build-windows-clients cpp-core-client python-core-static-client python-core-ticking-client
+.\build-windows-clients cpp-core python-core-static python-core-ticking r-core
 ```

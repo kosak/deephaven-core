@@ -16,11 +16,11 @@ REM ============================================================================
 :PROCESS_COMMAND_LINE
 
 for %%a in (%*) do (
-  if /I "%%~a"=="cpp-core-client" (
+  if /I "%%~a"=="cpp-core" (
     call :BUILD_CPP_CORE || exit /b
-  ) else if /I "%%~a"=="python-core-static-client" (
+  ) else if /I "%%~a"=="python-core-static" (
     call :BUILD_PYTHON_STATIC_CORE || exit /b
-  ) else if /I "%%~a"=="python-core-ticking-client" (
+  ) else if /I "%%~a"=="python-core-ticking" (
     call :BUILD_PYTHON_TICKING_CORE || exit /b
   ) else (
     echo argument "%%a" is unrecognized
