@@ -65,7 +65,6 @@ Some of the clients require others to be built first. This is the client depende
 | C++ (Core)                  | ---                       |
 | python (Core) [non-ticking] | ---                       |
 | python-ticking (Core)       | C++ (Core), python (Core) |
-| R (Core)                    | C++ (Core)                |
 
 ### Build script
 
@@ -91,7 +90,6 @@ you want to build. You can specify more than one keyword.
 | C++ (Core)                    | cpp-core                |
 | python (Core) [non-ticking]   | python-core-static      |
 | python-ticking (Core)         | python-core-ticking     |
-| R (Core)                      | r-core                  |
 
 Then run these commands
 
@@ -104,5 +102,5 @@ For example, to build all the supported Core clients, run this command
 
 ```
 cd %HOMEDRIVE%%HOMEPATH%
-.\build-windows-clients cpp-core python-core-static python-core-ticking r-core
+.\build-windows-clients cpp-core python-core-static python-core-ticking
 ```
