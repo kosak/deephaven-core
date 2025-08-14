@@ -7,17 +7,21 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
+public struct ZamboniWrap<T> : INode<ZamboniWrap<T>> {
+  public T Value;
+}
+
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   public static readonly SharableDict<TValue> Empty = new();
 
-  private readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> _root;
+  private readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>>>> _root;
 
   public SharableDict() {
-    _root = Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>>.Empty;
+    _root = Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>>>>.Empty;
   }
 
   public SharableDict(
-    Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>>
+    Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>>>>
       root) {
     _root = root;
   }
@@ -92,7 +96,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
                       foreach (var i9 in child8.ValiditySet) {
                         var child9 = child8.Children[i9];
                         foreach (var i10 in child9.ValiditySet) {
-                          var data = child9.Data[i10];
+                          var data = child9.Children[i10].Value;
                           var offset = Splitter.Merge(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
                           yield return KeyValuePair.Create(offset, data!);
                         }
@@ -119,20 +123,20 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
 internal readonly struct Destructured<TValue> {
   public readonly Int64 Key;
-  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> Root;
-  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>> Child0;
-  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>> Child1;
-  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>> Child2;
-  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>> Child3;
-  public readonly Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>> Child4;
-  public readonly Internal<Internal<Internal<Internal<Leaf<TValue>>>>> Child5;
-  public readonly Internal<Internal<Internal<Leaf<TValue>>>> Child6;
-  public readonly Internal<Internal<Leaf<TValue>>> Child7;
-  public readonly Internal<Leaf<TValue>> Child8;
-  public readonly Leaf<TValue> Leaf;
+  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>>>> Root;
+  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>>> Child0;
+  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>> Child1;
+  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>> Child2;
+  public readonly Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>> Child3;
+  public readonly Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>> Child4;
+  public readonly Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>> Child5;
+  public readonly Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>> Child6;
+  public readonly Internal<Internal<Internal<ZamboniWrap<TValue>>>> Child7;
+  public readonly Internal<Internal<ZamboniWrap<TValue>>> Child8;
+  public readonly Internal<ZamboniWrap<TValue>> Leaf;
   public readonly int LeafIndex;
 
-  public Destructured(Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Leaf<TValue>>>>>>>>>>> root,
+  public Destructured(Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<Internal<ZamboniWrap<TValue>>>>>>>>>>>> root,
     Int64 key) {
     Key = key;
     Root = root;
@@ -150,7 +154,7 @@ internal readonly struct Destructured<TValue> {
     LeafIndex = i10;
   }
 
-  public SharableDict<TValue> RebuildWith(Leaf<TValue> newLeaf) {
+  public SharableDict<TValue> RebuildWith(Internal<ZamboniWrap<TValue>> newLeaf) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, _) = Splitter.Split(Key);
     var newChild8 = Child8.With(i9, newLeaf);
     var newChild7 = Child7.With(i8, newChild8);
@@ -214,25 +218,12 @@ public static class Splitter {
 }
 
 public interface INode<TSelf> {
+  public int Count { get; }
   public static abstract TSelf Empty { get; }
   public (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
 }
 
-public abstract class NodeBase {
-  public readonly Bitset64 ValiditySet;
-  public readonly int Count = 0;
-
-  protected NodeBase() {
-    // defaults
-  }
-
-  protected NodeBase(Bitset64 validitySet, int count) {
-    ValiditySet = validitySet;
-    Count = count;
-  }
-}
-
-public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INode<T> {
+public class Internal<T> : INode<Internal<T>> where T : INode<T> {
   public static Internal<T> Empty { get; } = new();
 
   public static Internal<T> OfArray64(ReadOnlySpan<T> children) {
@@ -259,6 +250,8 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
       replacementChild);
   }
 
+  public readonly int Count = 0;
+  public readonly Bitset64 ValiditySet;
   public readonly Array64<T> Children;
 
   private Internal() {
@@ -316,100 +309,6 @@ public class Internal<T> : NodeBase, INode<Internal<T>> where T : NodeBase, INod
     var aResult = OfArray64(addedChildren);
     var rResult = OfArray64(removedChildren);
     var mResult = OfArray64(modifiedChildren);
-    return (aResult, rResult, mResult);
-  }
-}
-
-public class Leaf<T> : NodeBase, INode<Leaf<T>> {
-  public static Leaf<T> Empty { get; } = new();
-
-  public static Leaf<T> Create(Bitset64 validitySet, ReadOnlySpan<T?> srcData,
-    int replacementIndex, T? replacementData) {
-    if (validitySet.IsEmpty) {
-      return Empty;
-    }
-    return new Leaf<T>(validitySet.Count, validitySet, srcData,
-      replacementIndex, replacementData);
-  }
-
-  public readonly Array64<T?> Data;
-
-  private Leaf() {
-  }
-
-  private Leaf(int count, Bitset64 validitySet, ReadOnlySpan<T?> data,
-    int replacementIndex, T? replacementData) : base(validitySet, count) {
-    data.CopyTo(Data);
-    Data[replacementIndex] = replacementData;
-  }
-
-  public bool TryGetValue(int index, out T? value) {
-    if (!ValiditySet.ContainsElement(index)) {
-      value = default;
-      return false;
-    }
-
-    value = Data[index];
-    return true;
-  }
-
-  public Leaf<T> With(int index, T value) {
-    var newVs = ValiditySet.WithElement(index);
-    return Create(newVs, Data, index, value);
-  }
-
-  public Leaf<T> Without(int index) {
-    var newVs = ValiditySet.WithoutElement(index);
-    return Create(newVs, Data, index, default);
-  }
-
-  public (Leaf<T>, Leaf<T>, Leaf<T>) CalcDifference(Leaf<T> target) {
-    if (this == target) {
-      // Source and target are the same. No changes
-      return (Empty, Empty, Empty);  // added, removed, modified
-    }
-    if (this == Empty) {
-      // Relative to an empty source, everything in target was added
-      return (target, Empty, Empty);  // added, removed, modified
-    }
-    if (target == Empty) {
-      // Relative to an empty destination, everything in src was removed
-      return (Empty, this, Empty);  // added, removed, modified
-    }
-    Array64<T?> addedData = new();
-    Array64<T?> removedData = new();
-    Array64<T?> modifiedData = new();
-
-    var addedVs = target.ValiditySet.Without(ValiditySet);
-    var removedVs = ValiditySet.Without(target.ValiditySet);
-    // These are present on both sides and either equal or unequal.
-    var maybeModifiedVs = ValiditySet.Intersect(target.ValiditySet);
-
-    foreach (var element in addedVs) {
-      // Added data items come from target
-      addedData[element] = target.Data[element];
-    }
-    foreach (var element in removedVs) {
-      // Removed data items come from self
-      removedData[element] = Data[element];
-    }
-    var modifiedVs = new Bitset64();
-    var equalityComparer = EqualityComparer<T>.Default;
-    foreach (var element in maybeModifiedVs) {
-      // We return modified-after. In another design we could return
-      // both modified-before and modified-after.
-      var srcItem = Data[element]!;
-      var targetItem = target.Data[element]!;
-      if (equalityComparer.Equals(srcItem, targetItem)) {
-        continue;
-      }
-      modifiedVs = modifiedVs.WithElement(element);
-      modifiedData[element] = target.Data[element];
-    }
-
-    var aResult = Create(addedVs, addedData, 0, addedData[0]);
-    var rResult = Create(removedVs, removedData, 0, removedData[0]);
-    var mResult = Create(modifiedVs, modifiedData, 0, modifiedData[0]);
     return (aResult, rResult, mResult);
   }
 }
