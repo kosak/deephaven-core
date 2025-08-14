@@ -218,9 +218,11 @@ public static class Splitter {
 }
 
 public interface INode<TSelf> {
-  public int Count { get; }
   public static abstract TSelf Empty { get; }
+
+  public int Count { get; }
   public (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
+  public bool IsEmpty { get; }
 }
 
 public class Internal<T> : INode<Internal<T>> where T : INode<T> {
@@ -229,10 +231,9 @@ public class Internal<T> : INode<Internal<T>> where T : INode<T> {
   public static Internal<T> OfArray64(ReadOnlySpan<T> children) {
     var validitySet = new Bitset64();
     var count = 0;
-    var empty = T.Empty;
     for (var i = 0; i != children.Length; ++i) {
       var child = children[i];
-      if (child == empty) {
+      if (child.IsEmpty) {
         continue;
       }
       validitySet = validitySet.WithElement(i);
@@ -250,7 +251,7 @@ public class Internal<T> : INode<Internal<T>> where T : INode<T> {
       replacementChild);
   }
 
-  public readonly int Count = 0;
+  public int Count { get; init; }
   public readonly Bitset64 ValiditySet;
   public readonly Array64<T> Children;
 
@@ -259,13 +260,15 @@ public class Internal<T> : INode<Internal<T>> where T : INode<T> {
   }
 
   private Internal(Bitset64 validitySet, int count, ReadOnlySpan<T> children,
-    int replacementIndex, T replacementChild) : base(validitySet, count) {
+    int replacementIndex, T replacementChild) {
+    Count = count;
+    ValiditySet = validitySet;
     children.CopyTo(Children);
     Children[replacementIndex] = replacementChild;
   }
 
   public Internal<T> With(int index, T child) {
-    if (child == T.Empty) {
+    if (child.IsEmpty) {
       return Without(index);
     }
     var newVs = ValiditySet.WithElement(index);
