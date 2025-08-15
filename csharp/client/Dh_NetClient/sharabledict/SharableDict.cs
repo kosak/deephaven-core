@@ -143,11 +143,11 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   }
 }
 
-public interface INode<TSelf, TChild> {
+public interface INode<TSelf> {
   static abstract TSelf EmptyInstance { get; }
   int Count { get; }
   (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
-  bool TryGetChild(int childIndex, out TChild child);
+  // bool TryGetChild(int childIndex, out TChild child);
   bool IsEmpty { get; }
 }
 
