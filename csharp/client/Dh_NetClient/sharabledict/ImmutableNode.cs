@@ -7,10 +7,6 @@ namespace Deephaven.Dh_NetClient;
 public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
   public static ImmutableNode<T> EmptyInstance { get; } = new();
 
-  public bool TryGetChild(int childIndex, out T child) {
-    throw new NotImplementedException();
-  }
-
   public static ImmutableNode<T> OfArray64(ReadOnlySpan<T> children) {
     var validitySet = new Bitset64();
     var count = 0;
@@ -63,6 +59,10 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     var newVs = ValiditySet.WithoutElement(index);
     var newCount = Count - Children[index].Count;
     return Create(newVs, newCount, Children, index, T.EmptyInstance);
+  }
+
+  public bool TryGetChild(int childIndex, out T child) {
+    throw new NotImplementedException();
   }
 
   public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(ImmutableNode<T> target) {
