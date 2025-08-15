@@ -4,7 +4,7 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-public class ImmutableNode<T> : INode<ImmutableNode<T>, T> where T : INode<ImmutableNode<T>, T> {
+public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
   public static ImmutableNode<T> EmptyInstance { get; } = new();
 
   public bool TryGetChild(int childIndex, out T child) {

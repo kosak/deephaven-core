@@ -7,7 +7,7 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-public struct ZamboniWrap<T> : INode<ZamboniWrap<T>, T> {
+public struct ZamboniWrap<T> : INode<ZamboniWrap<T>> {
   public readonly T Value;
 
   public ZamboniWrap(T value) {
@@ -33,7 +33,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>> _root;
 
   public SharableDict() {
-    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>>.Empty;
+    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>>.EmptyInstance;
   }
 
   public SharableDict(
