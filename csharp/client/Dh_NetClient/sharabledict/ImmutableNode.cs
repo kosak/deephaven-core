@@ -2,6 +2,9 @@
 //
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
+
+using System.Diagnostics.CodeAnalysis;
+
 namespace Deephaven.Dh_NetClient;
 
 public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
@@ -61,8 +64,13 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     return Create(newVs, newCount, Children, index, T.EmptyInstance);
   }
 
-  public bool TryGetChild(int childIndex, out T child) {
-    throw new NotImplementedException();
+  public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out T child) {
+    if (!ValiditySet.ContainsElement(childIndex)) {
+      child = default;
+      return false;
+    }
+    child = Children[childIndex];
+    return true;
   }
 
   public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(ImmutableNode<T> target) {

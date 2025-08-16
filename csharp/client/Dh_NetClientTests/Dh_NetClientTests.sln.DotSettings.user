@@ -4,5 +4,6 @@
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::F17AD94B-7BA5-4B5B-B865-C80C497AC047::net8.0::Deephaven.Dh_NetClientTests.NullSentinelPassthroughTest.SentinelsVisible&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::F17AD94B-7BA5-4B5B-B865-C80C497AC047::net8.0::UtilityTest.TestConvertToBase52&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::F17AD94B-7BA5-4B5B-B865-C80C497AC047::net8.0::Deephaven.Dh_NetClientTests.SharableDictTest&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
