@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: Will it blend v7: call it working for C++, starting on Python
+run-name: Will it blend v8: call it working for C++, starting on Python
 on: [push, workflow_dispatch]
 
 jobs:
@@ -26,7 +26,6 @@ jobs:
         env:
           USERNAME: kosak
           FEED_URL: https://nuget.pkg.github.com/kosak/index.json
-          VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/kosak/index.json,readwrite"
         run: |
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
           & $nuget_exe sources add `
@@ -40,6 +39,8 @@ jobs:
       - name: Run cmake configuration
         shell: cmd
         run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
+        env:
+          VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/kosak/index.json,readwrite"
 
       - name: Run cmake build
         shell: cmd
