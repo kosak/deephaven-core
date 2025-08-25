@@ -1,10 +1,10 @@
 name: kosak-win
-run-name: Will it blend v6
+run-name: Will it blend v7: call it working for C++, starting on Python
 on: [push, workflow_dispatch]
 
 jobs:
   job:
-    name: Build C++ client really
+    name: Build C++ client and let's do Python too
     runs-on: windows-2025
 
     steps:
@@ -23,9 +23,12 @@ jobs:
 
       - name: Add Github NuGet caches (source/sink) for vcpkg
         shell: pwsh
+        env:
+          USERNAME: kosak
+          FEED_URL: https://nuget.pkg.github.com/kosak/index.json
+          VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/kosak/index.json,readwrite"
         run: |
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
-          echo zamboni_front $nuget_exe zamboni_back
           & $nuget_exe sources add `
           -Source "${{ env.FEED_URL }}" `
           -StorePasswordInClearText `
@@ -33,10 +36,6 @@ jobs:
           -UserName "${{ env.USERNAME }}" `
           -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
           & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.FEED_URL }}"
-        env:
-          USERNAME: kosak
-          FEED_URL: https://nuget.pkg.github.com/kosak/index.json
-          VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/kosak/index.json,readwrite"
         
       - name: Run cmake configuration
         shell: cmd
