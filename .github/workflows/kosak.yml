@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: Will it blend v3
+run-name: Will it blend v4
 on: [push, workflow_dispatch]
 
 env:
@@ -30,9 +30,10 @@ jobs:
       - name: Add Github NuGet caches (source/sink) for vcpkg
         shell: pwsh
         run: |
-          $nuget_exe = & "./vcpkg/vcpkg.exe fetch nuget"
+          $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
           echo $nuget_exe
           echo $nuget_exe again
+          echo la la la $nuget_exe again
           & $nuget_exe --star_trek_five
           echo ${{ env.ZAMBONI }}
           ./vcpkg/vcpkg.exe --star_trek
