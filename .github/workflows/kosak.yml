@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v9: make it nicer with venv. I'm so tired y'all"
+run-name: "Will it blend v10: versioning"
 on: [push, workflow_dispatch]
 
 env:
@@ -59,7 +59,7 @@ jobs:
 
       - name: Run Gradle printVersion
         id: print_version
-        run: echo dh_version=$(./gradlew --printVersion -q) >> $GITHUB_OUTPUT
+        run: echo dh_version=$(./gradlew :printVersion -q) >> $GITHUB_OUTPUT
 
   echo_job:
     name: echo the Deephaven version (sad)
