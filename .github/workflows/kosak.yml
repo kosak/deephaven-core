@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v12: No, this is the saddest"
+run-name: "Will it blend v13: too many cooks"
 on: [push, workflow_dispatch]
 
 env:
@@ -51,7 +51,7 @@ jobs:
     name: Find the Deephaven version (takes forever)
     runs-on: ubuntu-24.04
     outputs:
-      dh_version: ${{ steps.print_version.outputs.dh_version }}
+      dhc_version: ${{ steps.get-dhc-version.outputs.dhc_version }}
 
     steps:
       - name: Check out this repo
@@ -71,21 +71,22 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Output Deephaven Version
-        run: ./gradlew :outputVersion
+        id: get-dhc-version
+        run: |
+          ./gradlew :outputVersion
+          echo "YOU ARE SAD"
+          cat build/version
+          echo "dhc_version=$(cat build/version)" >> $GITHUB_OUTPUT
 
       - name: Why are you annoying me
         run: cat build/version
 
       - name: And why are you annoying me?
-        run: echo "dh_version=$(cat build/version)"
-
-      - name: Get Deephaven Version
-        id: dhc-version
-        run: echo "dh_version=$(cat build/version)" >> $GITHUB_OUTPUT
+        run: echo "dhc_version=$(cat build/version)"
 
   echo_job:
     name: echo the Deephaven version (sad)
     runs-on: windows-2025
     needs: version_job
     steps:
-      - run: echo "hello the version is ${{ needs.version_job.outputs.dh_version }}"
+      - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
