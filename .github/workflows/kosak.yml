@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: Will it blend v5-final-ha
+run-name: Will it blend v6
 on: [push, workflow_dispatch]
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
           -Name GitHubPackages `
           -UserName "${{ env.USERNAME }}" `
           -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
-          $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.FEED_URL }}"
+          & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.FEED_URL }}"
         env:
           USERNAME: kosak
           FEED_URL: https://nuget.pkg.github.com/kosak/index.json
