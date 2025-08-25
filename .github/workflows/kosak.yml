@@ -7,7 +7,7 @@ env:
   GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json  
 
 jobs:
-  job:
+  cpp_job:
     name: Build C++ client and let's do Python too
     runs-on: windows-2025
 
@@ -46,3 +46,24 @@ jobs:
       - name: Run cmake build
         shell: cmd
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
+
+  version_job:
+    name: Find the Deephaven version (takes forever)
+    runs-on: ubuntu-24.04
+    outputs:
+      dh_version: ${{ steps.print_version.outputs.dh_version }}
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v5
+
+      - name: Run Gradle printVersion
+        id: print_version
+        run: echo dh_version=$(./gradlew --printVersion -q) >> $GITHUB_OUTPUT
+
+  echo_job:
+    name: echo the Deephaven version (sad)
+    runs-on: windows-2025
+    needs: version_job
+    steps:
+      - run: echo "hello the version is ${{ needs.version_job.outputs.dh_version }}"
