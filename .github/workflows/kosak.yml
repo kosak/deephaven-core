@@ -1,6 +1,10 @@
 name: kosak-win
-run-name: "Will it blend v8: call it working for C++, starting on Python"
+run-name: "Will it blend v9: make it nicer with venv. I'm so tired y'all"
 on: [push, workflow_dispatch]
+
+env:
+  GH_PACKAGES_USERNAME: kosak
+  GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json  
 
 jobs:
   job:
@@ -23,24 +27,21 @@ jobs:
 
       - name: Add Github NuGet caches (source/sink) for vcpkg
         shell: pwsh
-        env:
-          USERNAME: kosak
-          FEED_URL: https://nuget.pkg.github.com/kosak/index.json
         run: |
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
           & $nuget_exe sources add `
-          -Source "${{ env.FEED_URL }}" `
+          -Source "${{ env.GH_PACKAGES_FEED }}" `
           -StorePasswordInClearText `
           -Name GitHubPackages `
-          -UserName "${{ env.USERNAME }}" `
+          -UserName "${{ env.GH_PACKAGES_USERNAME }}" `
           -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
-          & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.FEED_URL }}"
+          & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
         
       - name: Run cmake configuration
         shell: cmd
-        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/kosak/index.json,readwrite"
+          VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
+        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
 
       - name: Run cmake build
         shell: cmd
