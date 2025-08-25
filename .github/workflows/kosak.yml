@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v11: the saddest thing I have ever seen"
+run-name: "Will it blend v12: No, this is the saddest
 on: [push, workflow_dispatch]
 
 env:
@@ -71,7 +71,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Output Deephaven Version
-        run: ./gradlew --scan outputVersion
+        run: ./gradlew :outputVersion
+
+      - name: Why are you annoying me
+        run: cat build/version
+
+      - name: And why are you annoying me?
+        run: echo "dh_version=$(cat build/version)"
 
       - name: Get Deephaven Version
         id: dhc-version
