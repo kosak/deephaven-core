@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: My sad experiment to see what happens after I deleted two packages
+run-name: Does my old workflow still use its cache or did I break something?
 on: [push, workflow_dispatch]
 
 env:
