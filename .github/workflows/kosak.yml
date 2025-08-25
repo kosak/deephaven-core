@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v12: No, this is the saddest
+run-name: "Will it blend v12: No, this is the saddest"
 on: [push, workflow_dispatch]
 
 env:
