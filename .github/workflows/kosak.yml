@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: Will it blend?
+run-name: Will it blend v2
 on: [push, workflow_dispatch]
 
 env:
@@ -43,7 +43,7 @@ jobs:
           setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" `
           -Source "${{ env.FEED_URL }}"
         env:
-          ZAMBONI=el zamboni
+          ZAMBONI: el zambono
         
       - name: Run cmake configuration
         shell: cmd
