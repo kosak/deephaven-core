@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: Will it blend v8: call it working for C++, starting on Python
+run-name: "Will it blend v8: call it working for C++, starting on Python"
 on: [push, workflow_dispatch]
 
 jobs:
