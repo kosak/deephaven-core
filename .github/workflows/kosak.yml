@@ -74,15 +74,8 @@ jobs:
         id: get-dhc-version
         run: |
           ./gradlew :outputVersion
-          echo "YOU ARE SAD"
           cat build/version
           echo "dhc_version=$(cat build/version)" >> $GITHUB_OUTPUT
-
-      - name: Why are you annoying me
-        run: cat build/version
-
-      - name: And why are you annoying me?
-        run: echo "dhc_version=$(cat build/version)"
 
   echo_job:
     name: echo the Deephaven version (sad)
