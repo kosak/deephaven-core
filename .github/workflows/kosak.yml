@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v19: java 17 vs 11 driving me crazy"
+run-name: "Will it blend v20: powershell powershell"
 on: [push, workflow_dispatch]
 
 env:
@@ -109,11 +109,12 @@ jobs:
         run: echo get the build please thanks bye
 
       - name: Set common variables
-        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $GITHUB_ENV
+        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
 
       - name: DO YOU HAVE MY VARIABLE
         run: |
           echo one %DHINSTALL% oneend
+          echo four $env:DHINSTALL fourend
           echo two ${{ env.DHINSTALL }} twoend
 
       - name: Create the Python venv
