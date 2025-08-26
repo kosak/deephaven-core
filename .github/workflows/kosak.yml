@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v13: too many cooks"
+run-name: "Will it blend v14: more python"
 on: [push, workflow_dispatch]
 
 env:
@@ -86,22 +86,22 @@ jobs:
 
   python_static:
     name: Python static client and maybe also ticking client
-    needs:
-    - cpp_job
-    - version_job
+    needs: [cpp_job, version_job]
 
     steps:
       - name: Check out this repo
         uses: actions/checkout@v5
 
-    steps:
       - name: Get the C++ build
-        run: echo get the build please
+        run: echo get the build please thanks bye
 
-    steps:
       - name: Set common variables
         run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $GITHUB_ENV
 
-    step:
+      - name: DO YOU HAVE MY VARIABLE
+        run: |
+          echo one %DHINSTALL% oneend
+          echo two ${{ env.DHINSTALL }} twoend
+
       - name: Create the Python venv
         run: python3 -m venv "${{ github.workspace }}/cython-venv"
