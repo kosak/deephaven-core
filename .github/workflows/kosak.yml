@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v21: DRY powershell powershell DRY"
+run-name: "Will it blend v22: microprogress happened"
 on: [push, workflow_dispatch]
 
 env:
@@ -113,9 +113,7 @@ jobs:
 
       - name: DO YOU HAVE MY VARIABLE
         run: |
-          echo one %DHINSTALL% oneend
-          echo four $env:DHINSTALL fourend
-          echo two ${{ env.DHINSTALL }} twoend
+          echo yes I do $env:DHINSTALL and I am done
 
       - name: Create the Python venv
         run: python3 -m venv "${{ github.workspace }}/cython-venv"
@@ -128,9 +126,7 @@ jobs:
       - name: Set uncommon variables
         run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
 
-      - name: DO YOU HAVE MY VARIABLE
+      - name: THESE ARE YOUR CHOICES
         run: |
-          echo zero $DHINSTALL zeroend
-          echo four $env:DHINSTALL fourend
-          echo one $env.DHINSTALL oneend is it colon or dot
-          echo two ${{ env.DHINSTALL }} twoend
+          echo with colon using powershell syntax $env:DHINSTALL bye
+          echo with period using github syntax ${{ env.DHINSTALL }} alsobye
