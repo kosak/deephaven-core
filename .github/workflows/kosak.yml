@@ -1,10 +1,10 @@
 name: kosak-win
-run-name: "Will it blend v14: more python"
+run-name: "Will it blend v15: we will need to put something in here as a test"
 on: [push, workflow_dispatch]
 
 env:
   GH_PACKAGES_USERNAME: kosak
-  GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json  
+  GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json
 
 jobs:
   cpp_job:
@@ -36,7 +36,7 @@ jobs:
           -UserName "${{ env.GH_PACKAGES_USERNAME }}" `
           -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
           & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
-        
+
       - name: Run cmake configuration
         shell: cmd
         env:
@@ -69,6 +69,11 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Remind the Developer to remove cache-read-only
+        run: echo Hi, please remove the above "cache-read-only" thing when you move back to 'main'
 
       - name: Output Deephaven Version
         id: get-dhc-version
