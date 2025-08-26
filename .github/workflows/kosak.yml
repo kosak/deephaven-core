@@ -48,7 +48,7 @@ jobs:
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
 
   version_job:
-    name: Find the Deephaven version (takes forever)
+    name: Find the Deephaven version (separate job because it takes 45 seconds)
     runs-on: ubuntu-24.04
     outputs:
       dhc_version: ${{ steps.get-dhc-version.outputs.dhc_version }}
@@ -83,3 +83,25 @@ jobs:
     needs: version_job
     steps:
       - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
+
+  python_static:
+    name: Python static client and maybe also ticking client
+    needs:
+    - cpp_job
+    - version_job
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v5
+
+    steps:
+      - name: Get the C++ build
+        run: echo get the build please
+
+    steps:
+      - name: Set common variables
+        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $GITHUB_ENV
+
+    step:
+      - name: Create the Python venv
+        run: python3 -m venv "${{ github.workspace }}/cython-venv"
