@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v15: we will need to put something in here as a test"
+run-name: "Will it blend v16: everything is painful why don't I have variables"
 on: [push, workflow_dispatch]
 
 env:
@@ -8,7 +8,7 @@ env:
 
 jobs:
   cpp_job:
-    name: Build C++ client and let's do Python too
+    name: Build C++ client
     runs-on: windows-2025
 
     steps:
@@ -111,3 +111,16 @@ jobs:
 
       - name: Create the Python venv
         run: python3 -m venv "${{ github.workspace }}/cython-venv"
+
+  this_is_painful_job:
+    name: failing to understand why my variables don't propagate
+    runs-on: windows-2025
+
+    steps:
+      - name: Set common variables
+        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $GITHUB_ENV
+
+      - name: DO YOU HAVE MY VARIABLE
+        run: |
+          echo one $env.DHINSTALL oneend
+          echo two ${{ env.DHINSTALL }} twoend
