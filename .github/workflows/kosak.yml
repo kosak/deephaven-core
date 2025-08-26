@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v20: powershell powershell"
+run-name: "Will it blend v21: DRY powershell powershell DRY"
 on: [push, workflow_dispatch]
 
 env:
@@ -125,11 +125,12 @@ jobs:
     runs-on: windows-2025
 
     steps:
-      - name: Set common variables
-        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $GITHUB_ENV
+      - name: Set uncommon variables
+        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
 
       - name: DO YOU HAVE MY VARIABLE
         run: |
           echo zero $DHINSTALL zeroend
-          echo one $env.DHINSTALL oneend
+          echo four $env:DHINSTALL fourend
+          echo one $env.DHINSTALL oneend is it colon or dot
           echo two ${{ env.DHINSTALL }} twoend
