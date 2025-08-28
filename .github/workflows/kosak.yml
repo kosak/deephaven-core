@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v29: I mean, this is the whole cache tamale"
+run-name: "Will it blend v30: caching plus quick and dirty version"
 on: [push, workflow_dispatch]
 
 env:
@@ -184,3 +184,5 @@ jobs:
     runs-on: windows-2025
 
     steps:
+      - name: echoing my sadness
+        run: echo I AM SAD
