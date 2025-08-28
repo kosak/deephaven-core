@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v33: no change; test the cache"
+run-name: "Will it blend v34: no change; actually test the cache"
 on: [push, workflow_dispatch]
 
 env:
@@ -15,9 +15,6 @@ jobs:
       - name: Check out this repo
         uses: actions/checkout@v5
 
-      - name: Print me some hash codes
-        run: echo zamboni trash ${{ hashfiles('cpp-client/**', 'proto/**') }} bye
-
       - name: Cache the installation directory
         id: cache-cpp-install
         uses: actions/cache@v4
@@ -26,19 +23,19 @@ jobs:
           key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
-        if: steps.cache-cpp-build.outputs.cache-hit != 'true'
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         uses: actions/checkout@v5
         with:
           repository: microsoft/vcpkg
           path: vcpkg
 
       - name: Bootstrap vcpkg
-        if: steps.cache-cpp-build.outputs.cache-hit != 'true'
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: cmd
         run: ./vcpkg/bootstrap-vcpkg.bat
 
       - name: Add Github NuGet caches (source/sink) for vcpkg
-        if: steps.cache-cpp-build.outputs.cache-hit != 'true'
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
@@ -51,14 +48,14 @@ jobs:
           & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
 
       - name: Run cmake configuration
-        if: steps.cache-cpp-build.outputs.cache-hit != 'true'
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: cmd
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
         run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
 
       - name: Run cmake build
-        if: steps.cache-cpp-build.outputs.cache-hit != 'true'
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: cmd
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
 
