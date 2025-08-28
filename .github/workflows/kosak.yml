@@ -86,7 +86,7 @@ jobs:
 
   python_static_job:
     name: Python static client and maybe also ticking client
-    needs: [cpp_job, version_job]
+    needs: [cpp_job, version_job_v2]
     runs-on: windows-2025
 
     steps:
