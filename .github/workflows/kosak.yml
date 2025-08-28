@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v36: this should hit the cache"
+run-name: "Will it blend v37: upload and download c++ install artifacts
 on: [push, workflow_dispatch]
 
 env:
@@ -59,7 +59,13 @@ jobs:
         shell: cmd
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
 
-  version_job_v2:
+      - name: Upload install directory as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-client-install
+          path: ${{ github.workspace }}/dhinstall
+
+  version_job:
     name: Find the Deephaven version by grepping gradle.properties
     runs-on: ubuntu-24.04
     outputs:
@@ -74,24 +80,27 @@ jobs:
         run: |
           echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
 
-  echo_job_v2:
+  echo_job:
     name: echo the Deephaven version (not sad)
     runs-on: windows-2025
-    needs: version_job_v2
+    needs: version_job
     steps:
-      - run: echo "hello the version is ${{ needs.version_job_v2.outputs.dhc_version }}"
+      - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
 
   python_static_job:
     name: Python static client and maybe also ticking client
-    needs: [cpp_job, version_job_v2]
+    needs: [cpp_job, version_job]
     runs-on: windows-2025
 
     steps:
       - name: Check out this repo
         uses: actions/checkout@v5
 
-      - name: Get the C++ build
-        run: echo get the build please thanks bye
+      - name: Get the C++ installation as a build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cpp-client-install
+          path: ${{ github.workspace }}/dhinstall
 
       - name: Set common variables
         run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
