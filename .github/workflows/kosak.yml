@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v30: caching plus quick and dirty version"
+run-name: "Will it blend v31: ok did our cache work"
 on: [push, workflow_dispatch]
 
 env:
