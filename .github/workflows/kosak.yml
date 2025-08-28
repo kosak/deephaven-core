@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v25: stopped caring, started caring"
+run-name: "Will it blend v26: calculated a hash maybe"
 on: [push, workflow_dispatch]
 
 env:
@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Check out this repo
         uses: actions/checkout@v5
+
+      - name: Print me some hash codes
+        run: echo zamboni trash ${{ hashfiles('cpp-client/**', 'proto/**') }} bye
 
       - name: Check out vcpkg
         uses: actions/checkout@v5
