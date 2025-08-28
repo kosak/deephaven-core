@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v31: ok did our cache work"
+run-name: "Will it blend v32: oopsie cached the wrong thing
 on: [push, workflow_dispatch]
 
 env:
@@ -18,12 +18,12 @@ jobs:
       - name: Print me some hash codes
         run: echo zamboni trash ${{ hashfiles('cpp-client/**', 'proto/**') }} bye
 
-      - name: Cache the build
-        id: cache-cpp-build
+      - name: Cache the installation directory
+        id: cache-cpp-install
         uses: actions/cache@v4
         with:
-          path: cpp-client/deephaven/build
-          key: ${{ runner.os }}-cpp_client-${{ hashfiles('cpp-client/**', 'proto/**') }}
+          path: ${{ github.workspace }}/dhinstall
+          key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
         if: steps.cache-cpp-build.outputs.cache-hit != 'true'
@@ -62,48 +62,6 @@ jobs:
         shell: cmd
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
 
-  version_job:
-    name: Find the Deephaven version (separate job because it takes 45 seconds)
-    runs-on: ubuntu-24.04
-    outputs:
-      dhc_version: ${{ steps.get-dhc-version.outputs.dhc_version }}
-
-    steps:
-      - name: Check out this repo
-        uses: actions/checkout@v5
-
-      - name: Setup JDK 11
-        id: setup-java-11
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Setup JDK 17
-        id: setup-java-17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set JAVA_HOME
-        run: echo "JAVA_HOME=${{ steps.setup-java-11.outputs.path }}" >> $GITHUB_ENV
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: false
-
-      - name: Remind the Developer to remove cache-read-only
-        run: echo Hi, please remove the above "cache-read-only" thing when you move back to 'main'
-
-      - name: Output Deephaven Version
-        id: get-dhc-version
-        run: |
-          ./gradlew :outputVersion
-          cat build/version
-          echo "dhc_version=$(cat build/version)" >> $GITHUB_OUTPUT
-
   version_job_v2:
     name: Find the Deephaven version by grepping gradle.properties
     runs-on: ubuntu-24.04
@@ -118,13 +76,6 @@ jobs:
         id: get-dhc-version
         run: |
           echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
-
-  echo_job:
-    name: echo the Deephaven version (sad)
-    runs-on: windows-2025
-    needs: version_job
-    steps:
-      - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
 
   echo_job_v2:
     name: echo the Deephaven version (not sad)
@@ -154,35 +105,3 @@ jobs:
 
       - name: Create the Python venv
         run: python3 -m venv "${{ github.workspace }}/cython-venv"
-
-  this_is_painful_job:
-    name: failing to understand why my variables don't propagate
-    runs-on: windows-2025
-
-    steps:
-      - name: Set uncommon variables
-        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
-
-      - name: THESE ARE YOUR CHOICES
-        run: |
-          echo with colon using powershell syntax $env:DHINSTALL bye
-          echo with period using github syntax ${{ env.DHINSTALL }} alsobye
-
-  probe_job:
-    name: understanding things
-    runs-on: windows-2025
-
-    steps:
-      - name: what is pwd
-        run: pwd
-
-      - name: what is workspace
-        run: echo ${{ github.workspace }}
-
-  sad_job:
-    name: I am sad
-    runs-on: windows-2025
-
-    steps:
-      - name: echoing my sadness
-        run: echo I AM SAD
