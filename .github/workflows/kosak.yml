@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v22: microprogress happened"
+run-name: "Will it blend v23: some probes"
 on: [push, workflow_dispatch]
 
 env:
@@ -41,7 +41,7 @@ jobs:
         shell: cmd
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
-        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
+        run: cmake -S ./cpp-client/deephaven -B ./cpp-client/deephaven/build --toolchain ./vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
 
       - name: Run cmake build
         shell: cmd
@@ -110,6 +110,9 @@ jobs:
 
       - name: Set common variables
         run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
+
+      - name: is github.workspace what I think it is?
+        run: pwd
 
       - name: DO YOU HAVE MY VARIABLE
         run: |
