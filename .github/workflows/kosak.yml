@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v27: changed a file in the proto directory"
+run-name: "Will it blend v26: calculated a hash maybe"
 on: [push, workflow_dispatch]
 
 env:

@@ -28,8 +28,6 @@ message ConfigurationConstantsResponse {
   map<string, ConfigValue> config_values = 1;
 }
 
-// ZAMBONI THIS CHANGED YOUR HASH BYE
-
 message ConfigValue {
   // Using a oneof leaves room for more types. The string_value tag is used here to allow for "interop" with
   // struct.proto.
