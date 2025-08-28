@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v35: this should also build a tad faster"
+run-name: "Will it blend v36: this should hit the cache"
 on: [push, workflow_dispatch]
 
 env:
