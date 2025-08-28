@@ -104,12 +104,34 @@ jobs:
           cat build/version
           echo "dhc_version=$(cat build/version)" >> $GITHUB_OUTPUT
 
+  version_job_v2:
+    name: Find the Deephaven version by grepping gradle.properties
+    runs-on: ubuntu-24.04
+    outputs:
+      dhc_version: ${{ steps.get-dhc-version.outputs.dhc_version }}
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v5
+
+      - name: Output Deephaven Version
+        id: get-dhc-version
+        run: |
+          echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+
   echo_job:
     name: echo the Deephaven version (sad)
     runs-on: windows-2025
     needs: version_job
     steps:
       - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
+
+  echo_job_v2:
+    name: echo the Deephaven version (not sad)
+    runs-on: windows-2025
+    needs: version_job_v2
+    steps:
+      - run: echo "hello the version is ${{ needs.version_job_v2.outputs.dhc_version }}"
 
   python_static_job:
     name: Python static client and maybe also ticking client
@@ -156,3 +178,9 @@ jobs:
 
       - name: what is workspace
         run: echo ${{ github.workspace }}
+
+  sad_job:
+    name: I am sad
+    runs-on: windows-2025
+
+    steps:
