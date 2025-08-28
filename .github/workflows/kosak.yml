@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v32: oopsie cached the wrong thing"
+run-name: "Will it blend v33: no change; test the cache"
 on: [push, workflow_dispatch]
 
 env:
