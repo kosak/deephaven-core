@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v23: some probes"
+run-name: "Will it blend v24: tiny probes, tiny problems"
 on: [push, workflow_dispatch]
 
 env:
@@ -133,3 +133,14 @@ jobs:
         run: |
           echo with colon using powershell syntax $env:DHINSTALL bye
           echo with period using github syntax ${{ env.DHINSTALL }} alsobye
+
+  probe_job:
+    name: understanding things
+    runs-on: windows-2025
+
+    steps:
+      - name: what is pwd
+        run: pwd
+
+      - name: what is workspace
+        run: echo ${{ github.workspace }}
