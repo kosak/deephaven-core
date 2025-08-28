@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v37: upload and download c++ install artifacts
+run-name: "Will it blend v37: upload and download c++ install artifacts"
 on: [push, workflow_dispatch]
 
 env:
