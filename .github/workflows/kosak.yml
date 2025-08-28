@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v26: calculated a hash maybe"
+run-name: "Will it blend v28: I feel like my nuget packages are no longer being used no no sad"
 on: [push, workflow_dispatch]
 
 env:
