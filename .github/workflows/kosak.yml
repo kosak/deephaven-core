@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v55: everything is terrible now"
+run-name: "Will it blend v56: where is CL"
 on: [push, workflow_dispatch]
 
 env:
@@ -187,6 +187,13 @@ jobs:
           echo $env:PATH
           dir .\py\client-ticking -Recurse
           dir $env:DHINSTALL -Recurse
+
+      - name: Look at some stuff from CMD
+        if: ${{ ! cancelled() }}
+        shell: cmd
+        run: |
+          echo %PATH%
+          where cl.exe
 
       - name: Run setup.py
         shell: cmd
