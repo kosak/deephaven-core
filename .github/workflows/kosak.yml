@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v48: we might have a file not a directory"
+run-name: "Will it blend v49: expansion not working"
 on: [push, workflow_dispatch]
 
 env:
@@ -171,4 +171,7 @@ jobs:
 
       - name: Install the wheel from the static client
         shell: cmd
-        run: pip3 install --force --no-deps ./py/client/dist/*.whl
+        run: |
+          pwd
+          dir .\py\client\dist\*.whl
+          pip3 install --force --no-deps .\py\client\dist\*.whl
