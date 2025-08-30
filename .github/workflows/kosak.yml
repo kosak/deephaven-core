@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v57: no really, where is CL"
+run-name: "Will it blend v58: bring on the clammy"
 on: [push, workflow_dispatch]
 
 env:
@@ -156,6 +156,9 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: bring in those clammy hands
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install the 'wheel' and 'cython' packages
         shell: cmd
         run: pip3 install wheel cython
@@ -220,7 +223,7 @@ jobs:
         run: where cl.exe
 
   are_you_serious_job_2:
-    name: Are you serious that there is no cl.exe
+    name: Are you still serious that there is no cl.exe
     runs-on: windows-2025
 
     steps:
