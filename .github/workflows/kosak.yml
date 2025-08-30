@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v49: expansion not working"
+run-name: "Will it blend v50: powershell you are my only hope"
 on: [push, workflow_dispatch]
 
 env:
@@ -170,7 +170,7 @@ jobs:
         run: pip3 install wheel cython
 
       - name: Install the wheel from the static client
-        shell: cmd
+        shell: pwsh
         run: |
           pwd
           dir .\py\client\dist\*.whl
