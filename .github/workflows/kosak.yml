@@ -118,5 +118,5 @@ jobs:
     runs-on: windows-2025
 
     steps:
-      - name echo the thing
+      - name: echo the thing
         run: echo are these the same $env:XYZINSTALL and also ${{ github.workspace }}/dhinstall blah
