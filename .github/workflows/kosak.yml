@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v54: at the very least I need version_job"
+run-name: "Will it blend v55: everything is terrible now"
 on: [push, workflow_dispatch]
 
 env:
@@ -179,6 +179,14 @@ jobs:
         run: |
           cd .\py\client-ticking
           python setup.py build_ext -i
+
+      - name: Look at some stuff
+        if: ${{ ! cancelled() }}
+        shell: pwsh
+        run: |
+          echo $env:PATH
+          dir .\py\client-ticking -Recurse
+          dir $env:DHINSTALL -Recurse
 
       - name: Run setup.py
         shell: cmd
