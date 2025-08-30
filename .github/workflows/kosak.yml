@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v44: upload the static whl as an artifact"
+run-name: "Will it blend v45: try deleting old packages for fun"
 on: [push, workflow_dispatch]
 
 env:
@@ -8,6 +8,13 @@ env:
   DHINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
+  package_job:
+    name: clean up old packages
+    runs-on: ubuntu-24.04
+    uses: actions/delete-package-versions@v5
+    with:
+      package_type: nuget
+
   cpp_job:
     name: Build C++ client or fetch from cache
     runs-on: windows-2025
@@ -35,6 +42,7 @@ jobs:
         shell: cmd
         run: ./vcpkg/bootstrap-vcpkg.bat
 
+      # See https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages
       - name: Configure nuget to lookup / create cached packages that we need or need to build
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: pwsh
