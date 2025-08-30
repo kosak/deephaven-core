@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v47: Operation sad. Let's start with ticking"
+run-name: "Will it blend v48: we might have a file not a directory"
 on: [push, workflow_dispatch]
 
 env:
@@ -155,6 +155,10 @@ jobs:
         with:
           name: py-static-wheel
           path: ./py/client/dist/
+
+      - name: What do we have right now?
+        shell: pwsh
+        run: dir ./py/client/dist
 
       - name: Install Python
         uses: actions/setup-python@v5
