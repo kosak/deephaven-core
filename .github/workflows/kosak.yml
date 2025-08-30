@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v45: try deleting old packages for fun"
+run-name: "Will it blend v46: forget it. Python static client here we go"
 on: [push, workflow_dispatch]
 
 env:
@@ -8,15 +8,6 @@ env:
   DHINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
-  package_job:
-    name: clean up old packages
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/delete-package-versions@v5
-        with:
-          package-type: nuget
-          min-versions-to-keep: 1
-
   cpp_job:
     name: Build C++ client or fetch from cache
     runs-on: windows-2025
@@ -92,7 +83,7 @@ jobs:
           echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
 
   python_static_job:
-    name: Python static client and maybe also ticking client
+    name: Python static client
     needs: [cpp_job, version_job]
     runs-on: windows-2025
 
