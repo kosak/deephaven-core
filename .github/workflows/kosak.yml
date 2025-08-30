@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v38: the xyzinstall experiment
+run-name: "Will it blend v38: the xyzinstall experiment"
 on: [push, workflow_dispatch]
 
 env:
