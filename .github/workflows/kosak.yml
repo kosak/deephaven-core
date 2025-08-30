@@ -1,11 +1,11 @@
 name: kosak-win
-run-name: "Will it blend v38: the xyzinstall experiment"
+run-name: "Will it blend v39: introduce DHINSTALL"
 on: [push, workflow_dispatch]
 
 env:
   GH_PACKAGES_USERNAME: kosak
   GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json
-  XYZINSTALL: ${{ github.workspace }}/dhinstall
+  DHINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
   cpp_job:
@@ -20,7 +20,7 @@ jobs:
         id: cache-cpp-install
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/dhinstall
+          path: ${{ env.DHINSTALL }}
           key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
@@ -53,7 +53,7 @@ jobs:
         shell: cmd
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
-        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dhinstall -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
+        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
 
       - name: Run cmake build
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cpp-client-install
-          path: ${{ github.workspace }}/dhinstall
+          path: ${{ env.DHINSTALL }}
 
   version_job:
     name: Find the Deephaven version by grepping gradle.properties
@@ -101,10 +101,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: cpp-client-install
-          path: ${{ github.workspace }}/dhinstall
-
-      - name: Set common variables
-        run: echo "DHINSTALL=${{ github.workspace }}/dhinstall" >> $env:GITHUB_ENV
+          path: ${{ env.DHINSTALL }}
 
       - name: DO YOU HAVE MY VARIABLE
         run: |
@@ -119,4 +116,8 @@ jobs:
 
     steps:
       - name: echo the thing
-        run: echo are these the same $env:XYZINSTALL and also ${{ github.workspace }}/dhinstall blah
+        run: echo are these the same $env:XYZINSTALL and also ${{ github.workspace }}/dhinstall blah bye $env:DHINSTALL zap
+
+      - name: cmd shell too
+        shell: cmd
+        run: echo %XYZINSTALL%
