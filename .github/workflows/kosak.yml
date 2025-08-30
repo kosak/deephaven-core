@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v59: this one may actually blend"
+run-name: "Will it blend v60: make dependencies more accurate (faster)"
 on: [push, workflow_dispatch]
 
 env:
@@ -8,7 +8,7 @@ env:
   DHINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
-#==============================================================================
+  #============================================================================
   cpp_job:
     name: Build C++ client or fetch from cache
     runs-on: windows-2025
@@ -68,7 +68,7 @@ jobs:
           name: cpp-client-install
           path: ${{ env.DHINSTALL }}
 
-#==============================================================================
+  #============================================================================
   version_job:
     name: Find the Deephaven version by grepping gradle.properties
     runs-on: ubuntu-24.04
@@ -84,21 +84,15 @@ jobs:
         run: |
           echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
 
-#==============================================================================
+  #============================================================================
   python_static_job:
     name: Python static client
-    needs: [cpp_job, version_job]
+    needs: [version_job]
     runs-on: windows-2025
 
     steps:
       - name: Check out this repo
         uses: actions/checkout@v5
-
-      - name: Get the C++ installation as a build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: cpp-client-install
-          path: ${{ env.DHINSTALL }}
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -129,10 +123,10 @@ jobs:
           name: py-static-wheel
           path: ./py/client/dist/*.whl
 
-#==============================================================================
+  #============================================================================
   python_ticking_job:
     name: Python ticking client
-    needs: [python_static_job, version_job]
+    needs: [cpp_job, python_static_job, version_job]
     runs-on: windows-2025
 
     steps:
@@ -156,9 +150,6 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: setup PATH etc to be able to run Visual Studio tools like cl.exe
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Install the 'wheel' and 'cython' packages
         shell: cmd
         run: pip3 install wheel cython
@@ -169,11 +160,14 @@ jobs:
           cd .\py\client
           pip3 install -r requirements-dev.txt
 
-      - name: Install the wheel from the static client
+      - name: Install the static client
         shell: pwsh
         run: |
-          $wheels = (Get-ChildItem -Path .\py\client\dist\*.whl).FullName
-          pip3 install --force --no-deps $wheels
+          $wheel = (Get-ChildItem -Path .\py\client\dist\*.whl).FullName
+          pip3 install --force --no-deps $wheel
+
+      - name: setup PATH to be able to run Visual Studio tools like cl.exe
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Build cython code
         shell: cmd
