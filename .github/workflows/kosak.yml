@@ -11,9 +11,10 @@ jobs:
   package_job:
     name: clean up old packages
     runs-on: ubuntu-24.04
-    uses: actions/delete-package-versions@v5
-    with:
-      package_type: nuget
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          package_type: nuget
 
   cpp_job:
     name: Build C++ client or fetch from cache
