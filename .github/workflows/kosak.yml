@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v52: let's do a little more ticking"
+run-name: "Will it blend v53: you can't tick if you don't have the version. So say we all"
 on: [push, workflow_dispatch]
 
 env:
@@ -174,12 +174,16 @@ jobs:
 
       - name: Build cython code
         shell: cmd
+        env:
+          DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
         run: |
           cd .\py\client-ticking
           python setup.py build_ext -i
 
       - name: Run setup.py
         shell: cmd
+        env:
+          DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
         run: |
           cd .\py\client-ticking
           python setup.py bdist_wheel
