@@ -89,9 +89,8 @@ jobs:
       DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
     steps:
       - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
-      - run:
-        shell: cmd
-        steps: echo %DEEPHAVEN_VERSION%
+      - shell: cmd
+        run: echo %DEEPHAVEN_VERSION%
 
   python_static_job:
     name: Python static client and maybe also ticking client
