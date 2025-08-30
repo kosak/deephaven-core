@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v51: powershell you are truly my only hope"
+run-name: "Will it blend v52: let's do a little more ticking"
 on: [push, workflow_dispatch]
 
 env:
@@ -123,12 +123,7 @@ jobs:
           cd .\py\client
           python setup.py bdist_wheel
 
-      - name: Do I have a wheel in this location? Try to upload it.
-        shell: cmd
-        run: |
-          dir .\py\client\dist
-
-      - name: Upload .whl file as build artifact, to be used directly or by dependent clients like Python ticking
+      - name: Upload static .whl file as build artifact, to be used directly or by dependent clients like Python ticking
         uses: actions/upload-artifact@v4
         with:
           name: py-static-wheel
@@ -156,10 +151,6 @@ jobs:
           name: py-static-wheel
           path: ./py/client/dist/
 
-      - name: What do we have right now?
-        shell: pwsh
-        run: dir ./py/client/dist
-
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -169,10 +160,32 @@ jobs:
         shell: cmd
         run: pip3 install wheel cython
 
+      - name: Install requirements-dev.txt
+        shell: cmd
+        run: |
+          cd .\py\client
+          pip3 install -r requirements-dev.txt
+
       - name: Install the wheel from the static client
         shell: pwsh
         run: |
-          pwd
-          dir .\py\client\dist\*.whl
           $wheels = (Get-ChildItem -Path .\py\client\dist\*.whl).FullName
           pip3 install --force --no-deps $wheels
+
+      - name: Build cython code
+        shell: cmd
+        run: |
+          cd .\py\client-ticking
+          python setup.py build_ext -i
+
+      - name: Run setup.py
+        shell: cmd
+        run: |
+          cd .\py\client-ticking
+          python setup.py bdist_wheel
+
+      - name: Upload ticking .whl file as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: py-ticking-wheel
+          path: ./py/client-ticking/dist/*.whl
