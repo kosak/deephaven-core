@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v50: powershell you are my only hope"
+run-name: "Will it blend v51: powershell you are truly my only hope"
 on: [push, workflow_dispatch]
 
 env:
@@ -174,4 +174,5 @@ jobs:
         run: |
           pwd
           dir .\py\client\dist\*.whl
-          pip3 install --force --no-deps .\py\client\dist\*.whl
+          $wheels = (Get-ChildItem -Path .\py\client\dist\*.whl).FullName
+          pip3 install --force --no-deps $wheels
