@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v60: make dependencies more accurate (faster)"
+run-name: "Will it blend v61: zap a couple of nuget packages"
 on: [push, workflow_dispatch]
 
 env:
