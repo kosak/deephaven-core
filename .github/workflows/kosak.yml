@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v39: introduce DHINSTALL"
+run-name: "Will it blend v40: ya typo wrt DHINSTALL"
 on: [push, workflow_dispatch]
 
 env:
@@ -120,4 +120,4 @@ jobs:
 
       - name: cmd shell too
         shell: cmd
-        run: echo %XYZINSTALL%
+        run: echo %DHINSTALL%
