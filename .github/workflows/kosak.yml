@@ -224,10 +224,8 @@ jobs:
     runs-on: windows-2025
 
     steps:
-      - name: where 2
+      - name: bring in those clammy hands
         uses: ilammy/msvc-dev-cmd@v1
-        shell: cmd
-        run: where cl.exe
 
       - name: where 3
         shell: cmd
