@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v46: forget it. Python static client here we go"
+run-name: "Will it blend v47: Operation sad. Let's start with ticking"
 on: [push, workflow_dispatch]
 
 env:
@@ -8,6 +8,7 @@ env:
   DHINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
+#==============================================================================
   cpp_job:
     name: Build C++ client or fetch from cache
     runs-on: windows-2025
@@ -67,6 +68,7 @@ jobs:
           name: cpp-client-install
           path: ${{ env.DHINSTALL }}
 
+#==============================================================================
   version_job:
     name: Find the Deephaven version by grepping gradle.properties
     runs-on: ubuntu-24.04
@@ -82,6 +84,7 @@ jobs:
         run: |
           echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
 
+#==============================================================================
   python_static_job:
     name: Python static client
     needs: [cpp_job, version_job]
@@ -131,14 +134,37 @@ jobs:
           name: py-static-wheel
           path: ./py/client/dist/*.whl
 
-  corey_fun_times:
-    name: Corey fun times
+#==============================================================================
+  python_ticking_job:
+    name: Python ticking client
+    needs: python_static_job
     runs-on: windows-2025
 
     steps:
-      - name: echo the thing
-        run: echo are these the same $env:XYZINSTALL and also ${{ github.workspace }}/dhinstall blah bye $env:DHINSTALL zap
+      - name: Check out this repo
+        uses: actions/checkout@v5
 
-      - name: cmd shell too
+      - name: Get the C++ installation as a build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cpp-client-install
+          path: ${{ env.DHINSTALL }}
+
+      - name: Get the Python static installation as a build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: py-static-wheel
+          path: ./py/client/dist
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install the 'wheel' and 'cython' packages
         shell: cmd
-        run: echo %DHINSTALL%
+        run: pip3 install wheel cython
+
+      - name: Install the wheel from the static client
+        shell: cmd
+        run: pip3 install --force --no-deps ./py/client/dist/*.whl
