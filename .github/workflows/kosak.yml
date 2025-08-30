@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v41: let's get a little python going"
+run-name: "Will it blend v42: make a wheel"
 on: [push, workflow_dispatch]
 
 env:
@@ -115,8 +115,19 @@ jobs:
       - name: Install requirements
         shell: cmd
         run: |
-          cd ./py/client
+          cd .\py\client
           pip3 install -r requirements-dev.txt
+
+      - name: Running setup.py
+        shell: cmd
+        run: |
+          cd .\py\client
+          python setup.py bdist_wheel
+
+      - name: Do I have a wheel in this location? Try to upload it.
+        shell: cmd
+        run: |
+          dir .\py\client\dist
 
   corey_fun_times:
     name: Corey fun times
