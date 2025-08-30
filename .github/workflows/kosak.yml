@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v53: you can't tick if you don't have the version. So say we all"
+run-name: "Will it blend v54: at the very least I need version_job"
 on: [push, workflow_dispatch]
 
 env:
@@ -132,7 +132,7 @@ jobs:
 #==============================================================================
   python_ticking_job:
     name: Python ticking client
-    needs: python_static_job
+    needs: [python_static_job, version_job]
     runs-on: windows-2025
 
     steps:
