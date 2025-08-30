@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v56: where is CL"
+run-name: "Will it blend v57: no really, where is CL"
 on: [push, workflow_dispatch]
 
 env:
@@ -215,7 +215,7 @@ jobs:
     runs-on: windows-2025
 
     steps:
-      - where
+      - name: where
         shell: cmd
         run: where cl.exe
 
@@ -224,11 +224,11 @@ jobs:
     runs-on: windows-2025
 
     steps:
-      - where 2
-      - uses: ilammy/msvc-dev-cmd@v1
+      - name: where 2
+        uses: ilammy/msvc-dev-cmd@v1
         shell: cmd
         run: where cl.exe
 
-      - where 3
+      - name: where 3
         shell: cmd
         run: where cl.exe
