@@ -1,5 +1,5 @@
-name: kosak-win
-run-name: "Will it blend v43: you didn't have a DEEPHAVEN_VERSION"
+name: Windows Client Builds
+run-name: "Will it blend v44: upload the static whl as an artifact"
 on: [push, workflow_dispatch]
 
 env:
@@ -9,14 +9,14 @@ env:
 
 jobs:
   cpp_job:
-    name: Build C++ client
+    name: Build C++ client or fetch from cache
     runs-on: windows-2025
 
     steps:
       - name: Check out this repo
         uses: actions/checkout@v5
 
-      - name: Cache the installation directory
+      - name: Lookup or begin the creation of the cached installation directory
         id: cache-cpp-install
         uses: actions/cache@v4
         with:
@@ -35,7 +35,7 @@ jobs:
         shell: cmd
         run: ./vcpkg/bootstrap-vcpkg.bat
 
-      - name: Add Github NuGet caches (source/sink) for vcpkg
+      - name: Configure nuget to lookup / create cached packages that we need or need to build
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
@@ -60,7 +60,7 @@ jobs:
         shell: cmd
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
 
-      - name: Upload install directory as build artifact
+      - name: Upload install directory as build artifact, to be used directly or by dependent clients like Python ticking
         uses: actions/upload-artifact@v4
         with:
           name: cpp-client-install
@@ -81,17 +81,6 @@ jobs:
         run: |
           echo "dhc_version=$(grep ^deephavenBaseVersion= gradle.properties | cut -d'=' -f2)-$(grep ^deephavenBaseQualifier= gradle.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
 
-  echo_job:
-    name: echo the Deephaven version (not sad)
-    runs-on: windows-2025
-    needs: version_job
-    env:
-      DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
-    steps:
-      - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
-      - shell: cmd
-        run: echo %DEEPHAVEN_VERSION%
-
   python_static_job:
     name: Python static client and maybe also ticking client
     needs: [cpp_job, version_job]
@@ -107,22 +96,22 @@ jobs:
           name: cpp-client-install
           path: ${{ env.DHINSTALL }}
 
-      - name: Give me some Python
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install wheel
+      - name: Install the 'wheel' package
         shell: cmd
         run: pip3 install wheel
 
-      - name: Install requirements
+      - name: Install requirements-dev.txt
         shell: cmd
         run: |
           cd .\py\client
           pip3 install -r requirements-dev.txt
 
-      - name: Running setup.py
+      - name: Run setup.py
         shell: cmd
         env:
           DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
@@ -134,6 +123,12 @@ jobs:
         shell: cmd
         run: |
           dir .\py\client\dist
+
+      - name: Upload .whl file as build artifact, to be used directly or by dependent clients like Python ticking
+        uses: actions/upload-artifact@v4
+        with:
+          name: py-static-wheel
+          path: ./py/client/dist/*.whl
 
   corey_fun_times:
     name: Corey fun times
