@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v42: make a wheel"
+run-name: "Will it blend v43: you didn't have a DEEPHAVEN_VERSION"
 on: [push, workflow_dispatch]
 
 env:
@@ -85,8 +85,13 @@ jobs:
     name: echo the Deephaven version (not sad)
     runs-on: windows-2025
     needs: version_job
+    env:
+      DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
     steps:
       - run: echo "hello the version is ${{ needs.version_job.outputs.dhc_version }}"
+      - run:
+        shell: cmd
+        steps: echo %DEEPHAVEN_VERSION%
 
   python_static_job:
     name: Python static client and maybe also ticking client
@@ -120,6 +125,8 @@ jobs:
 
       - name: Running setup.py
         shell: cmd
+        env:
+          DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
         run: |
           cd .\py\client
           python setup.py bdist_wheel
