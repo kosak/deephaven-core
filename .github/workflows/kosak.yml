@@ -15,6 +15,7 @@ jobs:
       - uses: actions/delete-package-versions@v5
         with:
           package-type: nuget
+          min-versions-to-keep: 1
 
   cpp_job:
     name: Build C++ client or fetch from cache
