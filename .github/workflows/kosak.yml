@@ -1,10 +1,11 @@
 name: kosak-win
-run-name: "Will it blend v37: upload and download c++ install artifacts"
+run-name: "Will it blend v38: the xyzinstall experiment
 on: [push, workflow_dispatch]
 
 env:
   GH_PACKAGES_USERNAME: kosak
   GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json
+  XYZINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
   cpp_job:
@@ -111,3 +112,11 @@ jobs:
 
       - name: Create the Python venv
         run: python3 -m venv "${{ github.workspace }}/cython-venv"
+
+  corey_fun_times:
+    name: Corey fun times
+    runs-on: windows-2025
+
+    steps:
+      - name echo the thing
+        run: echo are these the same $env:XYZINSTALL and also ${{ github.workspace }}/dhinstall blah
