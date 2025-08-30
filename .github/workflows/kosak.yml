@@ -1,5 +1,5 @@
 name: kosak-win
-run-name: "Will it blend v40: ya typo wrt DHINSTALL"
+run-name: "Will it blend v41: let's get a little python going"
 on: [push, workflow_dispatch]
 
 env:
@@ -103,12 +103,20 @@ jobs:
           name: cpp-client-install
           path: ${{ env.DHINSTALL }}
 
-      - name: DO YOU HAVE MY VARIABLE
-        run: |
-          echo yes I do $env:DHINSTALL and I am done
+      - name: Give me some Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      - name: Create the Python venv
-        run: python3 -m venv "${{ github.workspace }}/cython-venv"
+      - name: Install wheel
+        shell: cmd
+        run: pip3 install wheel
+
+      - name: Install requirements
+        shell: cmd
+        run: |
+          cd ./py/client
+          pip3 install -r requirements-dev.txt
 
   corey_fun_times:
     name: Corey fun times
