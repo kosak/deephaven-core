@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v58: bring on the clammy"
+run-name: "Will it blend v59: this one may actually blend"
 on: [push, workflow_dispatch]
 
 env:
@@ -156,7 +156,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: bring in those clammy hands
+      - name: setup PATH etc to be able to run Visual Studio tools like cl.exe
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install the 'wheel' and 'cython' packages
@@ -183,21 +183,6 @@ jobs:
           cd .\py\client-ticking
           python setup.py build_ext -i
 
-      - name: Look at some stuff
-        if: ${{ ! cancelled() }}
-        shell: pwsh
-        run: |
-          echo $env:PATH
-          dir .\py\client-ticking -Recurse
-          dir $env:DHINSTALL -Recurse
-
-      - name: Look at some stuff from CMD
-        if: ${{ ! cancelled() }}
-        shell: cmd
-        run: |
-          echo %PATH%
-          where cl.exe
-
       - name: Run setup.py
         shell: cmd
         env:
@@ -206,30 +191,8 @@ jobs:
           cd .\py\client-ticking
           python setup.py bdist_wheel
 
-
       - name: Upload ticking .whl file as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: py-ticking-wheel
           path: ./py/client-ticking/dist/*.whl
-
-  are_you_serious_job:
-    name: Are you serious that there is no cl.exe
-    runs-on: windows-2025
-
-    steps:
-      - name: where
-        shell: cmd
-        run: where cl.exe
-
-  are_you_serious_job_2:
-    name: Are you still serious that there is no cl.exe
-    runs-on: windows-2025
-
-    steps:
-      - name: bring in those clammy hands
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: where 3
-        shell: cmd
-        run: where cl.exe
