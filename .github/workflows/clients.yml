@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v67: thanks to the super-yam I might have signtool"
+run-name: "Will it blend v68: thanks to the super-yam I might have signtool stop cancelling me"
 on: [push, workflow_dispatch]
 
 env:
@@ -232,7 +232,9 @@ jobs:
 
       - name: setup PATH to be able to run Visual Studio tools like cl.exe
         uses: ilammy/msvc-dev-cmd@v1
+        if: "!cancelled()"
 
       - name: Do I even have signtool
         shell: cmd
         run: where signtool
+        if: "!cancelled()"
