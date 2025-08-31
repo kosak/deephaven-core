@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v68: thanks to the super-yam I might have signtool stop cancelling me"
+run-name: "Will it blend v69: lots of nonsense; probably closer"
 on: [push, workflow_dispatch]
 
 env:
@@ -196,6 +196,8 @@ jobs:
     name: Build C# client and sign
     runs-on: windows-2025
     needs: version_job
+    env:
+      DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
 
     steps:
       - name: Check out this repo
@@ -212,29 +214,28 @@ jobs:
           cd csharp/client/Dh_NetClient
           dotnet build -c Release
 
+      - name: setup PATH to be able to run Visual Studio tools like signtool.exe
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Decode PFX and Import Certificate
+        shell: powershell
+        run: |
+          $pfxContent = [System.Convert]::FromBase64String("${{ secrets.CODE_SIGNING_CERT_PFX_BASE64 }}")
+          [System.IO.File]::WriteAllBytes("code-signing-cert.pfx", $pfxContent)
+
       - name: Sign the client
         shell: cmd
-        run: echo TODO sign DLLs
+        run: |
+          echo the star probably won't work
+          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\*.dll
 
       - name: Create NuGet package
         shell: cmd
         run: |
           cd csharp/client/Dh_NetClient
-          dotnet pack -c Release --no-build -p:PackageVersion=${{ needs.version_job.outputs.dhc_version }}
+          dotnet pack -c Release --no-build -p:PackageVersion=%DEEPHAVEN_VERSION%
 
       - name: Sign NuGet package
         shell: cmd
-        run: echo TODO sign package
-
-      - name: Do I even have signtool
-        shell: cmd
-        run: where signtool
-
-      - name: setup PATH to be able to run Visual Studio tools like cl.exe
-        uses: ilammy/msvc-dev-cmd@v1
-        if: "!cancelled()"
-
-      - name: Do I even have signtool
-        shell: cmd
-        run: where signtool
-        if: "!cancelled()"
+        run: |
+          dotnet nuget sign csharp\client\bin\Release\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digitcert.com --certificate-path code-signing-cert.pfx
