@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v65: pack and don't-sign C# client build"
+run-name: "Will it blend v66: where signtool"
 on: [push, workflow_dispatch]
 
 env:
@@ -225,3 +225,7 @@ jobs:
       - name: Sign NuGet package
         shell: cmd
         run: echo TODO sign package
+
+      - name: Do I even have signtool
+        shell: cmd
+        run: where signtool
