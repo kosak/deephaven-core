@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v69: lots of nonsense; probably closer"
+run-name: "Will it blend v70: without a star... except YOU"
 on: [push, workflow_dispatch]
 
 env:
@@ -226,8 +226,7 @@ jobs:
       - name: Sign the client
         shell: cmd
         run: |
-          echo the star probably won't work
-          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\*.dll
+          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\Deephaven.Core.Client.dll
 
       - name: Create NuGet package
         shell: cmd
