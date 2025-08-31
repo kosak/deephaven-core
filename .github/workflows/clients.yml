@@ -233,7 +233,7 @@ jobs:
         shell: cmd
         run: |
           cd csharp\client\Dh_NetClient
-          dotnet pack --no-build /c Release /p:Platform="Any CPU" /p:PackageVersion=%DEEPHAVEN_VERSION%
+          dotnet pack --no-build -c Release /p:Platform="Any CPU" /p:PackageVersion=%DEEPHAVEN_VERSION%
 
       - name: Sign NuGet package
         shell: cmd
