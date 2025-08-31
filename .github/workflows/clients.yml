@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v72: back with star"
+run-name: "Will it blend v73: this might upload the artifact"
 on: [push, workflow_dispatch]
 
 env:
@@ -17,7 +17,7 @@ jobs:
       - name: Check out this repo
         uses: actions/checkout@v5
 
-      - name: Lookup or begin the creation of the cached installation directory
+      - name: Try to restore (or begin the creation of) the cached installation directory
         id: cache-cpp-install
         uses: actions/cache@v4
         with:
@@ -37,7 +37,7 @@ jobs:
         run: ./vcpkg/bootstrap-vcpkg.bat
 
       # See https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages
-      - name: Configure nuget to lookup / create cached packages that we need or need to build
+      - name: Configure nuget to know how to restore (or upload) each cahced package that we need (or create)
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
@@ -50,7 +50,7 @@ jobs:
           -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
           & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
 
-      - name: Run cmake configuration
+      - name: Run cmake configuration. For dependent packages, cmake will use vcpkg, and vcpkg will use nuget
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: cmd
         env:
@@ -198,6 +198,7 @@ jobs:
     needs: version_job
     env:
       DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
+      RELEASE_DIR: csharp\client\Dh_NetClient\bin\Release\net8.0
 
     steps:
       - name: Check out this repo
@@ -211,7 +212,7 @@ jobs:
       - name: Build Deephaven Core C# Client
         shell: cmd
         run: |
-          cd csharp/client/Dh_NetClient
+          cd csharp\client\Dh_NetClient
           dotnet build -c Release
 
       - name: setup PATH to be able to run Visual Studio tools like signtool.exe
@@ -227,23 +228,24 @@ jobs:
         shell: pwsh
         run: dir -Recurse csharp\client\Dh_NetClient
 
-      - name: Sign the client v1
+      - name: Sign the client
         shell: cmd
         run: |
-          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\net8.0\*.dll
-
-      - name: Sign the client v2
-        shell: cmd
-        run: |
-          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\net8.0\Deephaven.Core.Client.dll
+          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 %RELEASE_DIR%\*.dll
 
       - name: Create NuGet package
         shell: cmd
         run: |
-          cd csharp/client/Dh_NetClient
+          cd csharp\client\Dh_NetClient
           dotnet pack -c Release --no-build -p:PackageVersion=%DEEPHAVEN_VERSION%
 
       - name: Sign NuGet package
         shell: cmd
         run: |
-          dotnet nuget sign csharp\client\bin\Release\net8.0\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digitcert.com --certificate-path code-signing-cert.pfx
+          dotnet nuget sign %RELEASE_DIR%\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digitcert.com --certificate-path code-signing-cert.pfx
+
+      - name: Upload signed NuGet package as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deephaven-core-client-package
+          path: %RELEASE_DIR%\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg
