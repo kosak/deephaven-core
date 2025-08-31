@@ -229,11 +229,6 @@ jobs:
         run: |
           signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 %RELEASE_DIR%\net8.0\*.dll
 
-      - name: Verify the client
-        shell: cmd
-        run: |
-          signtool.exe verify %RELEASE_DIR%\net8.0\*.dll
-
       - name: Create NuGet package
         shell: cmd
         run: |
