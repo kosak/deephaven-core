@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v76: fighting with dotnet pack"
+run-name: "Will it blend v77: ANY CPU ON PLANET EARTH"
 on: [push, workflow_dispatch]
 
 env:
@@ -233,7 +233,7 @@ jobs:
         shell: cmd
         run: |
           cd csharp\client\Dh_NetClient
-          dotnet pack --no-build -p:PackageVersion=%DEEPHAVEN_VERSION%
+          dotnet pack --no-build /c Release /p:Platform="Any CPU" /p:PackageVersion=%DEEPHAVEN_VERSION%
 
       - name: Sign NuGet package
         shell: cmd
