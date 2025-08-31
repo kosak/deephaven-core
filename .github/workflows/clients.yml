@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v66: where signtool"
+run-name: "Will it blend v67: thanks to the super-yam I might have signtool"
 on: [push, workflow_dispatch]
 
 env:
@@ -225,6 +225,13 @@ jobs:
       - name: Sign NuGet package
         shell: cmd
         run: echo TODO sign package
+
+      - name: Do I even have signtool
+        shell: cmd
+        run: where signtool
+
+      - name: setup PATH to be able to run Visual Studio tools like cl.exe
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Do I even have signtool
         shell: cmd
