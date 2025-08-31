@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v64: pack and don't-sign C# client build"
+run-name: "Will it blend v65: pack and don't-sign C# client build"
 on: [push, workflow_dispatch]
 
 env:
@@ -218,7 +218,9 @@ jobs:
 
       - name: Create NuGet package
         shell: cmd
-        run: dotnet pack -c Release --no-build -p:PackageVersion=${{ needs.version_job.outputs.dhc_version }}
+        run: |
+          cd csharp/client/Dh_NetClient
+          dotnet pack -c Release --no-build -p:PackageVersion=${{ needs.version_job.outputs.dhc_version }}
 
       - name: Sign NuGet package
         shell: cmd
