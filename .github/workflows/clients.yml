@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v71: another probe"
+run-name: "Will it blend v72: back with star"
 on: [push, workflow_dispatch]
 
 env:
