@@ -227,10 +227,15 @@ jobs:
         shell: pwsh
         run: dir -Recurse csharp\client\Dh_NetClient
 
-      - name: Sign the client
+      - name: Sign the client v1
         shell: cmd
         run: |
-          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\Deephaven.Core.Client.dll
+          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\net8.0\*.dll
+
+      - name: Sign the client v2
+        shell: cmd
+        run: |
+          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 csharp\client\Dh_NetClient\bin\Release\net8.0\Deephaven.Core.Client.dll
 
       - name: Create NuGet package
         shell: cmd
@@ -241,4 +246,4 @@ jobs:
       - name: Sign NuGet package
         shell: cmd
         run: |
-          dotnet nuget sign csharp\client\bin\Release\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digitcert.com --certificate-path code-signing-cert.pfx
+          dotnet nuget sign csharp\client\bin\Release\net8.0\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digitcert.com --certificate-path code-signing-cert.pfx
