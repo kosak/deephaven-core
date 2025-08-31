@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v82: are you serious RN"
+run-name: "Will it blend v83: call it dotnet-nupkg"
 on: [push, workflow_dispatch]
 
 env:
@@ -243,5 +243,5 @@ jobs:
       - name: Upload signed NuGet package as build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deephaven-core-client-package
+          name: dotnet-nupkg
           path: ${{ env.RELEASE_DIR }}\Deephaven.Core.Client.${{ env.DEEPHAVEN_VERSION }}.nupkg
