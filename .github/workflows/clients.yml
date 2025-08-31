@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v78: syntax will never be correct"
+run-name: "Will it blend v79: sometimes you feel like a .net8.0; sometimes you don't"
 on: [push, workflow_dispatch]
 
 env:
@@ -198,7 +198,7 @@ jobs:
     needs: version_job
     env:
       DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
-      RELEASE_DIR: csharp\client\Dh_NetClient\bin\Release\net8.0
+      RELEASE_DIR: csharp\client\Dh_NetClient\bin\Release
 
     steps:
       - name: Check out this repo
@@ -227,7 +227,7 @@ jobs:
       - name: Sign the client
         shell: cmd
         run: |
-          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 %RELEASE_DIR%\*.dll
+          signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 %RELEASE_DIR%\net8.0\*.dll
 
       - name: Create NuGet package
         shell: cmd
