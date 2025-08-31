@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v70: without a star... except YOU"
+run-name: "Will it blend v71: another probe"
 on: [push, workflow_dispatch]
 
 env:
@@ -222,6 +222,10 @@ jobs:
         run: |
           $pfxContent = [System.Convert]::FromBase64String("${{ secrets.CODE_SIGNING_CERT_PFX_BASE64 }}")
           [System.IO.File]::WriteAllBytes("code-signing-cert.pfx", $pfxContent)
+
+      - name: Find the client
+        shell: pwsh
+        run: dir -Recurse csharp\client\Dh_NetClient
 
       - name: Sign the client
         shell: cmd
