@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v79: sometimes you feel like a .net8.0; sometimes you don't"
+run-name: "Will it blend v80: in hell, no signed package"
 on: [push, workflow_dispatch]
 
 env:
@@ -228,6 +228,11 @@ jobs:
         shell: cmd
         run: |
           signtool.exe sign /f code-signing-cert.pfx /t http://timestamp.digicert.com /fd sha256 %RELEASE_DIR%\net8.0\*.dll
+
+      - name: Verify the client
+        shell: cmd
+        run: |
+          signtool.exe verify %RELEASE_DIR%\net8.0\*.dll
 
       - name: Create NuGet package
         shell: cmd
