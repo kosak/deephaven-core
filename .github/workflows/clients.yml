@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v77: ANY CPU ON PLANET EARTH"
+run-name: "Will it blend v78: syntax will never be correct"
 on: [push, workflow_dispatch]
 
 env:
