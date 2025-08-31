@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v81: in hell, no signed package, still"
+run-name: "Will it blend v82: are you serious RN"
 on: [push, workflow_dispatch]
 
 env:
@@ -238,7 +238,7 @@ jobs:
       - name: Sign NuGet package
         shell: cmd
         run: |
-          dotnet nuget sign %RELEASE_DIR%\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digitcert.com --certificate-path code-signing-cert.pfx
+          dotnet nuget sign %RELEASE_DIR%\Deephaven.Core.Client.%DEEPHAVEN_VERSION%.nupkg --timestamper http://timestamp.digicert.com --certificate-path code-signing-cert.pfx
 
       - name: Upload signed NuGet package as build artifact
         uses: actions/upload-artifact@v4
