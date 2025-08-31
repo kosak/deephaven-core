@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v62: zap the cache AND a couple of nuget packages"
+run-name: "Will it blend v63: add C# client build"
 on: [push, workflow_dispatch]
 
 env:
@@ -190,3 +190,23 @@ jobs:
         with:
           name: py-ticking-wheel
           path: ./py/client-ticking/dist/*.whl
+
+  #============================================================================
+  dotnet_job:
+    name: Build C# client and sign
+    runs-on: windows-2025
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v5
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build Deephaven Core C# Client
+        shell: cmd
+        run: |
+          cd csharp/client/Dh_NetClient
+          dotnet build -c Release
