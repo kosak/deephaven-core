@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v93: this might rebuild everything with owner deephaven-core"
+run-name: "Will it blend v94: delete the word 'experiment' and this might be a keeper"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -69,7 +69,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.DHINSTALL }}
-          key: ${{ runner.os }}-cpp-client-experiment93-${{ hashfiles('cpp-client/**', 'proto/**') }}
+          key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
         id: checkout-vcpkg
@@ -85,12 +85,20 @@ jobs:
         run: ./vcpkg/bootstrap-vcpkg.bat
 
       # See https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages
+      # Note the following hard-earned lesson: this approach should work ok if this repository
+      # is the only one creating nuget packages and storing them in github. If you have two
+      # different repos competing on creating nuget packages, you will have a problem
+      # because the GITHUB_TOKEN is scoped to a repository. One repo might create and own
+      # a package and the other one might not be able to write a new version of that package.
+      # If this ever becomes a problem you can either manually edit the packages to be owned
+      # by both repositories, or you can make a Personal Access Token which will work across
+      # repositories.
       - name: Configure nuget to know how to restore (or upload) each cached package that we need (or create)
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: pwsh
+        # Note this strangeness: the path to nuget.exe is not known
+        # a priori; it is the output of "vcpkg.exe fetch nuget".
         run: |
-          # Note this strangeness: the path to nuget.exe is not known
-          # a priori; it is the output of "vcpkg.exe fetch nuget".
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
           & $nuget_exe sources add `
           -Source "${{ env.GH_PACKAGES_FEED }}" `
