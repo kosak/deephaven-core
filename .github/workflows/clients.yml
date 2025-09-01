@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v86: mild documentation updates"
+run-name: "Will it blend v87: add interactive and welcome to hell"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -104,7 +104,7 @@ jobs:
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: cmd
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;interactive;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
         run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
 
       - name: Run cmake build
