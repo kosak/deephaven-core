@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v88: try to restore from before"
+run-name: "Will it blend v90: maybe I was hasty"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -97,8 +97,8 @@ jobs:
           -StorePasswordInClearText `
           -Name GitHubPackages `
           -UserName "${{ env.GH_PACKAGES_USERNAME }}" `
-          -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
-          & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
+          -Password "${{ secrets.GITHUB_TOKEN }}"
+          & $nuget_exe setapikey "${{ secrets.GITHUB_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
 
       - name: Run cmake configuration. For dependent packages, cmake will use vcpkg, and vcpkg will use nuget
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
