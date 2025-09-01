@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v90: maybe I was hasty"
+run-name: "Will it blend v91: maybe I was hasty"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -69,7 +69,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.DHINSTALL }}
-          key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
+          key: ${{ runner.os }}-cpp-client-experiment91-${{ hashfiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
         id: checkout-vcpkg
