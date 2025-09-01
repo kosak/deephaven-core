@@ -1,5 +1,5 @@
 name: Windows Client Builds
-run-name: "Will it blend v85: documented"
+run-name: "Will it blend v86: mild documentation updates"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -47,9 +47,8 @@ jobs:
   # 1. [step id: checkout-vcpkg and following steps]
   #    Check out and "bootstrap" the vcpkg tool by fetching it from github,
   #    then running its bootstrap-vcpkg.bat file
-  # 2. Configure nuget to use github to cache built dependencies.
-  #    Note this strangeness: the path to nuget.exe is not known a priori;
-  #    it is the output of "vcpkg.exe fetch nuget".
+  # 2. Configure nuget to use github to cache built dependencies in its
+  #    "packages" repo.
   # 3. Run cmake to build all the dependencies. If the nuget cache is populated,
   #    this will be quick. If it is not populated, this could take up to 90 minutes
   #    on a github 2-core Windows machine.
@@ -86,10 +85,12 @@ jobs:
         run: ./vcpkg/bootstrap-vcpkg.bat
 
       # See https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages
-      - name: Configure nuget to know how to restore (or upload) each cahced package that we need (or create)
+      - name: Configure nuget to know how to restore (or upload) each cached package that we need (or create)
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
+          # Note this strangeness: the path to nuget.exe is not known
+          # a priori; it is the output of "vcpkg.exe fetch nuget".
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
           & $nuget_exe sources add `
           -Source "${{ env.GH_PACKAGES_FEED }}" `
