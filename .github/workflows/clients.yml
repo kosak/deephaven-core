@@ -1,13 +1,61 @@
 name: Windows Client Builds
-run-name: "Will it blend v84: changed one thing"
+run-name: "Will it blend v85: documented"
 on: [push, workflow_dispatch]
+permissions:
+  packages: write
 
 env:
+  # TODO: update this before merging to main repo
   GH_PACKAGES_USERNAME: kosak
   GH_PACKAGES_FEED: https://nuget.pkg.github.com/kosak/index.json
   DHINSTALL: ${{ github.workspace }}/dhinstall
 
 jobs:
+  #============================================================================
+  # Here is the logic of this job, in pseudocode. For clarity we present the job
+  # steps in this way, but this is not exactly how they are implemented (there
+  # are no "subroutines" in the github steps). Instead, each step in the
+  # "subroutine" is controlled by an "if" statement which either lets it run
+  # or not, conditional on whether the cache lookup succeeded.
+  #
+  # 1. [step id: cache-cpp-install]
+  #    Try to fetch the whole installation directory (the final product of the build)
+  #    from the Github Cache. The key to this cache is, in part, derived from the hash
+  #    of the contents of the files in the cpp-client and proto directories.
+  # 2. If the files were not found:
+  #    - run the psuedocode subroutine "BUILD_IT_ALL" below
+  # 3. [step id: upload-install-directory]
+  #    If you get here, you either had a successful cache fetch, or you built
+  #    the install directory via BUILD_IT_ALL. Now upload them Github as a
+  #    "build artifact" with key cpp-client-install
+  # 4. [This is an implicit step created as a post-run action of the step id: cache-cpp-install]
+  #    Update the Github Cache specified in step 1 with these files.
+  # 5. END
+  #
+  # This is the pseudocode for the "subroutine" BUILD_IT_ALL:
+  #
+  # The C++ build is responsible for fetching and building dependent libraries,
+  # then building its own code. To speed things up, the build outputs for the
+  # dependent libraries are also cached.
+  #
+  # These are the players:
+  # cmake - controls the build, runs vcpkg
+  # vcpkg - manages the dependent packages, runs nuget for caching the build outputs
+  # nuget - caches the build outputs; configured to use a Deephaven-private nuget
+  #         repo at Github (not the main nuget repo at nuget.org)
+  #
+  # 1. [step id: checkout-vcpkg and following steps]
+  #    Check out and "bootstrap" the vcpkg tool by fetching it from github,
+  #    then running its bootstrap-vcpkg.bat file
+  # 2. Configure nuget to use github to cache built dependencies.
+  #    Note this strangeness: the path to nuget.exe is not known a priori;
+  #    it is the output of "vcpkg.exe fetch nuget".
+  # 3. Run cmake to build all the dependencies. If the nuget cache is populated,
+  #    this will be quick. If it is not populated, this could take up to 90 minutes
+  #    on a github 2-core Windows machine.
+  # 4. Run cmake again to do the build of our code. I think we could combine these
+  #    two cmake commands into one, but it's fine the way it is.
+  # 5. RETURN FROM SUBROUTINE BUILD_IT_ALL
   #============================================================================
   cpp_job:
     name: Build C++ client or fetch from cache
@@ -25,6 +73,7 @@ jobs:
           key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
+        id: checkout-vcpkg
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         uses: actions/checkout@v5
         with:
@@ -47,8 +96,8 @@ jobs:
           -StorePasswordInClearText `
           -Name GitHubPackages `
           -UserName "${{ env.GH_PACKAGES_USERNAME }}" `
-          -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
-          & $nuget_exe setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
+          -Password "${{ secrets.GITHUB_TOKEN }}"
+          & $nuget_exe setapikey "${{ secrets.GITHUB_TOKEN }}" -Source "${{ env.GH_PACKAGES_FEED }}"
 
       - name: Run cmake configuration. For dependent packages, cmake will use vcpkg, and vcpkg will use nuget
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
@@ -63,6 +112,7 @@ jobs:
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install
 
       - name: Upload install directory as build artifact, to be used directly or by dependent clients like Python ticking
+        id: upload-install-directory
         uses: actions/upload-artifact@v4
         with:
           name: cpp-client-install
