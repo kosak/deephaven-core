@@ -5,50 +5,62 @@ namespace Deephaven.Dh_NetClient;
 
 internal readonly struct Destructured<TValue> {
   public readonly Int64 Key;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>> Root;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>> Child0;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>> Child1;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>> Child2;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>> Child3;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>> Child4;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>> Child5;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>> Child6;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>> Child7;
-  public readonly ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>> Child8;
-  public readonly ImmutableNode<ZamboniWrap<TValue>> Leaf;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> Depth0;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>> Depth1;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>> Depth2;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>> Depth3;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>> Depth4;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>> Depth5;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>> Depth6;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>> Depth7;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>> Depth8;
+  public readonly ImmutableNode<ImmutableNode<ValueWrapper<TValue>>> Depth9;
+  public readonly ImmutableNode<ValueWrapper<TValue>> Depth10;
   public readonly int LeafIndex;
 
-  public Destructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>> root,
+  public Destructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> depth0,
     Int64 key) {
-    Key = key;
-    Root = root;
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
-    Child0 = Root.Children[i0];
-    Child1 = Child0.Children[i1];
-    Child2 = Child1.Children[i2];
-    Child3 = Child2.Children[i3];
-    Child4 = Child3.Children[i4];
-    Child5 = Child4.Children[i5];
-    Child6 = Child5.Children[i6];
-    Child7 = Child6.Children[i7];
-    Child8 = Child7.Children[i8];
-    Leaf = Child8.Children[i9];
+    Key = key;
+    Depth0 = depth0;
+    Depth1 = Depth0.Children[i0];
+    Depth2 = Depth1.Children[i1];
+    Depth3 = Depth2.Children[i2];
+    Depth4 = Depth3.Children[i3];
+    Depth5 = Depth4.Children[i4];
+    Depth6 = Depth5.Children[i5];
+    Depth7 = Depth6.Children[i6];
+    Depth8 = Depth7.Children[i7];
+    Depth9 = Depth8.Children[i8];
+    Depth10 = Depth9.Children[i9];
     LeafIndex = i10;
   }
 
-  public SharableDict<TValue> RebuildWith(ImmutableNode<ZamboniWrap<TValue>> newLeaf) {
+  public SharableDict<TValue> RebuildWith(TValue value) {
+    var wrappedValue = new ValueWrapper<TValue>(value);
+    var newDepth10 = Depth10.With(LeafIndex, wrappedValue);
+    return RebuildHelper(newDepth10);
+  }
+
+  public SharableDict<TValue> RebuildWithout(Int64 key) {
+    var (_, _, _, _, _, _, _, _, _, _, i10) = Splitter.Split(Key);
+    var newDepth10 = Depth10.Without(i10);
+    return RebuildHelper(newDepth10);
+  }
+
+  private SharableDict<TValue> RebuildHelper(ImmutableNode<ValueWrapper<TValue>> newDepth10) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, _) = Splitter.Split(Key);
-    var newChild8 = Child8.With(i9, newLeaf);
-    var newChild7 = Child7.With(i8, newChild8);
-    var newChild6 = Child6.With(i7, newChild7);
-    var newChild5 = Child5.With(i6, newChild6);
-    var newChild4 = Child4.With(i5, newChild5);
-    var newChild3 = Child3.With(i4, newChild4);
-    var newChild2 = Child2.With(i3, newChild3);
-    var newChild1 = Child1.With(i2, newChild2);
-    var newChild0 = Child0.With(i1, newChild1);
-    var newRoot = Root.With(i0, newChild0);
-    return new SharableDict<TValue>(newRoot);
+    var newDepth9 = Depth9.With(i9, newDepth10);
+    var newDepth8 = Depth8.With(i8, newDepth9);
+    var newDepth7 = Depth7.With(i7, newDepth8);
+    var newDepth6 = Depth6.With(i6, newDepth7);
+    var newDepth5 = Depth5.With(i5, newDepth6);
+    var newDepth4 = Depth4.With(i4, newDepth5);
+    var newDepth3 = Depth3.With(i3, newDepth4);
+    var newDepth2 = Depth2.With(i2, newDepth3);
+    var newDepth1 = Depth1.With(i1, newDepth2);
+    var newDepth0 = Depth0.With(i0, newDepth1);
+    return new SharableDict<TValue>(newDepth0);
   }
 }
 

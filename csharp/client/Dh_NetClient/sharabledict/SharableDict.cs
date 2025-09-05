@@ -5,59 +5,33 @@ namespace Deephaven.Dh_NetClient;
 
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-
-public struct ZamboniWrap<T> : INode<ZamboniWrap<T>> {
-  public readonly T Value;
-
-  public ZamboniWrap(T value) {
-    Value = value;
-  }
-
-  public static ZamboniWrap<T> EmptyInstance { get; }
-  public int Count { get; }
-  public (ZamboniWrap<T>, ZamboniWrap<T>, ZamboniWrap<T>) CalcDifference(ZamboniWrap<T> target) {
-    throw new NotImplementedException();
-  }
-
-  public bool TryGetChild(int childIndex, out T child) {
-    throw new NotImplementedException();
-  }
-
-  public bool IsEmpty { get; }
-}
 
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   public static readonly SharableDict<TValue> Empty = new();
 
-  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>> _root;
+  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> _root;
 
   public SharableDict() {
-    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>>.EmptyInstance;
+    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>.EmptyInstance;
   }
 
   public SharableDict(
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ZamboniWrap<TValue>>>>>>>>>>>>
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>
       root) {
     _root = root;
   }
 
   public SharableDict<TValue> With(Int64 key, TValue value) {
-    var s = new Destructured<TValue>(_root, key);
-    var wrappedValue = new ZamboniWrap<TValue>(value);
-    var newLeaf = s.Leaf.With(s.LeafIndex, wrappedValue);
-    return s.RebuildWith(newLeaf);
+    return new Destructured<TValue>(_root, key).RebuildWith(value);
   }
 
   public SharableDict<TValue> Without(Int64 key) {
-    var s = new Destructured<TValue>(_root, key);
-    var newLeaf = s.Leaf.Without(s.LeafIndex);
-    return s.RebuildWith(newLeaf);
+    return new Destructured<TValue>(_root, key).RebuildWithout(key);
   }
 
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
     var s = new Destructured<TValue>(_root, key);
-    if (!s.Leaf.TryGetChild(s.LeafIndex, out var wrappedValue)) {
+    if (!s.Depth10.TryGetChild(s.LeafIndex, out var wrappedValue)) {
       value = default;
       return false;
     }
@@ -141,17 +115,4 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   public override string ToString() {
     return string.Join(", ", this.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
   }
-}
-
-public interface INode<TSelf> {
-  static abstract TSelf EmptyInstance { get; }
-  int Count { get; }
-  (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
-  // bool TryGetChild(int childIndex, out TChild child);
-  bool IsEmpty { get; }
-}
-
-[InlineArray(64)]
-public struct Array64<T> {
-  public T Item;
 }
