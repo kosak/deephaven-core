@@ -8,7 +8,7 @@ namespace Deephaven.Dh_NetClientTests;
 public class SharableDictTest {
   [Fact]
   public void Simple() {
-    var d = new SharableDict<string>();
+    var d = SharableDict<string>.Empty;
     var d1 = d.With(10, "hello")
       .With(11, "world")
       .With(1000, "Deephaven");

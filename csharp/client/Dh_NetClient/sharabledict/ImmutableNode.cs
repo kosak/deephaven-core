@@ -7,8 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 namespace Deephaven.Dh_NetClient;
 
 public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
-  public static ImmutableNode<T> EmptyInstance { get; } = new();
-
   public static ImmutableNode<T> OfArray64(ReadOnlySpan<T> children) {
     var validitySet = new Bitset64();
     var subtreeCount = 0;
@@ -29,10 +27,6 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
   public int Count { get; init; }
   public readonly Bitset64 ValiditySet;
   public readonly Array64<T> Children;
-
-  private ImmutableNode() {
-    ((Span<T>)Children).Fill(T.EmptyInstance);
-  }
 
   private ImmutableNode(Bitset64 validitySet, int count, ReadOnlySpan<T> children) {
     Count = count;
@@ -56,18 +50,19 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     return true;
   }
 
-  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(ImmutableNode<T> target) {
+  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(ImmutableNode<T> target,
+    ImmutableNode<T> empty) {
     if (this == target) {
       // Source and target are the same. No changes
-      return (EmptyInstance, EmptyInstance, EmptyInstance);  // added, removed, modified
+      return (empty, empty, empty);  // added, removed, modified
     }
-    if (this == EmptyInstance) {
+    if (this == empty) {
       // Relative to an empty source, everything in target was added
-      return (target, EmptyInstance, EmptyInstance);  // added, removed, modified
+      return (target, empty, empty);  // added, removed, modified
     }
-    if (target == EmptyInstance) {
+    if (target == empty) {
       // Relative to an empty destination, everything in src was removed
-      return (EmptyInstance, this, EmptyInstance);  // added, removed, modified
+      return (empty, this, empty);  // added, removed, modified
     }
     // Need to recurse to all children to build new nodes
     Array64<T> addedChildren = new();
@@ -76,7 +71,7 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
 
     var length = ((ReadOnlySpan<T>)Children).Length;
     for (var i = 0; i != length; ++i) {
-      var (a, r, m) = Children[i].CalcDifference(target.Children[i]);
+      var (a, r, m) = Children[i].CalcDifference(target.Children[i], empty.Children[0]);
       addedChildren[i] = a;
       removedChildren[i] = r;
       modifiedChildren[i] = m;
