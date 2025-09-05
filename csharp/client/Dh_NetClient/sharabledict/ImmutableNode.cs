@@ -12,14 +12,8 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
       var child = children[i];
-      if (child.IsEmpty) {
-        continue;
-      }
       validitySet = validitySet.WithElement(i);
       subtreeCount += child.Count;
-    }
-    if (validitySet.IsEmpty) {
-      return EmptyInstance;
     }
     return new ImmutableNode<T>(validitySet, subtreeCount, children);
   }
@@ -82,6 +76,4 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     var mResult = OfArray64(modifiedChildren);
     return (aResult, rResult, mResult);
   }
-
-  public bool IsEmpty => ValiditySet.IsEmpty;
 }

@@ -5,6 +5,11 @@ namespace Deephaven.Dh_NetClient;
 
 using System.Runtime.CompilerServices;
 
+public interface INode<TSelf> {
+  int Count { get; }
+  (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf emptySubtree);
+}
+
 public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
   public readonly T Value;
 
@@ -12,23 +17,12 @@ public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
     Value = value;
   }
 
-  public static ValueWrapper<T> EmptyInstance => throw new NotImplementedException();
-
   public int Count => throw new NotImplementedException();
 
   public (ValueWrapper<T>, ValueWrapper<T>, ValueWrapper<T>) CalcDifference(ValueWrapper<T> target,
     ValueWrapper<T> empty) {
     throw new NotImplementedException();
   }
-
-  public bool IsEmpty => throw new NotImplementedException();
-}
-
-public interface INode<TSelf> {
-  // static abstract TSelf EmptyInstance { get; }
-  int Count { get; }
-  (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf emptySubtree);
-  bool IsEmpty { get; }
 }
 
 [InlineArray(64)]
