@@ -11,22 +11,22 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> _root;
 
-  public SharableDict() {
-    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>.EmptyInstance;
-  }
-
   public SharableDict(
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>
       root) {
     _root = root;
   }
 
+  private SharableDict() {
+    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>.EmptyInstance;
+  }
+
   public SharableDict<TValue> With(Int64 key, TValue value) {
-    return new Destructured<TValue>(_root, key).RebuildWithNewLeaf(value);
+    return new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
   }
 
   public SharableDict<TValue> Without(Int64 key) {
-    return new Destructured<TValue>(_root, key).RebuildWithoutLeaf();
+    return new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
   }
 
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
