@@ -24,7 +24,7 @@ public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
 }
 
 public interface INode<TSelf> {
-  static abstract TSelf EmptyInstance { get; }
+  // static abstract TSelf EmptyInstance { get; }
   int Count { get; }
   (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
   bool IsEmpty { get; }

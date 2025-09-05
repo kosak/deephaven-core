@@ -11,25 +11,19 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
 
   public static ImmutableNode<T> OfArray64(ReadOnlySpan<T> children) {
     var validitySet = new Bitset64();
-    var count = 0;
+    var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
       var child = children[i];
       if (child.IsEmpty) {
         continue;
       }
       validitySet = validitySet.WithElement(i);
-      count += child.Count;
+      subtreeCount += child.Count;
     }
-    return Create(validitySet, count, children, 0, children[0]);
-  }
-
-  public static ImmutableNode<T> Create(Bitset64 validitySet, int subtreeCount,
-    ReadOnlySpan<T> children, int replacementIndex, T replacementChild) {
     if (validitySet.IsEmpty) {
       return EmptyInstance;
     }
-    return new ImmutableNode<T>(validitySet, subtreeCount, children, replacementIndex,
-      replacementChild);
+    return new ImmutableNode<T>(validitySet, subtreeCount, children);
   }
 
   public int Count { get; init; }
@@ -40,27 +34,17 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     ((Span<T>)Children).Fill(T.EmptyInstance);
   }
 
-  private ImmutableNode(Bitset64 validitySet, int count, ReadOnlySpan<T> children,
-    int replacementIndex, T replacementChild) {
+  private ImmutableNode(Bitset64 validitySet, int count, ReadOnlySpan<T> children) {
     Count = count;
     ValiditySet = validitySet;
     children.CopyTo(Children);
-    Children[replacementIndex] = replacementChild;
   }
 
-  public ImmutableNode<T> With(int index, T child) {
-    if (child.IsEmpty) {
-      return Without(index);
-    }
-    var newVs = ValiditySet.WithElement(index);
-    var newCount = Count - Children[index].Count + child.Count;
-    return Create(newVs, newCount, Children, index, child);
-  }
-
-  public ImmutableNode<T> Without(int index) {
-    var newVs = ValiditySet.WithoutElement(index);
-    var newCount = Count - Children[index].Count;
-    return Create(newVs, newCount, Children, index, T.EmptyInstance);
+  public ImmutableNode<T> Replace(int index, T childOrEmpty) {
+    var newChildren = new Array64<T>();
+    ((ReadOnlySpan<T>)Children).CopyTo(newChildren);
+    newChildren[index] = childOrEmpty;
+    return OfArray64(newChildren);
   }
 
   public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out T child) {

@@ -22,11 +22,11 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   }
 
   public SharableDict<TValue> With(Int64 key, TValue value) {
-    return new Destructured<TValue>(_root, key).RebuildWith(value);
+    return new Destructured<TValue>(_root, key).RebuildWithNewLeaf(value);
   }
 
   public SharableDict<TValue> Without(Int64 key) {
-    return new Destructured<TValue>(_root, key).RebuildWithout(key);
+    return new Destructured<TValue>(_root, key).RebuildWithoutLeaf();
   }
 
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
