@@ -36,13 +36,13 @@ internal readonly struct Destructured<TValue> {
     LeafIndex = i10;
   }
 
-  public SharableDict<TValue> RebuildWithNewLeaf(TValue value) {
+  public SharableDict<TValue> RebuildWithNewLeafHere(TValue value) {
     var wrappedValue = new ValueWrapper<TValue>(value);
     var newDepth10 = Depth10.Replace(LeafIndex, wrappedValue);
     return RebuildHelper(newDepth10);
   }
 
-  public SharableDict<TValue> RebuildWithouteaf() {
+  public SharableDict<TValue> RebuildWithoutLeafHere() {
     var wrappedValue = ValueWrapper<TValue>.EmptyInstance;
     var newDepth10 = Depth10.Replace(LeafIndex, wrappedValue);
     return RebuildHelper(newDepth10);
