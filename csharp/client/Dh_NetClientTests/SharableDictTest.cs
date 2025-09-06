@@ -15,26 +15,40 @@ public class SharableDictTest(ITestOutputHelper output) {
       .With(11, "world")
       .With(1000, "Deephaven");
 
-    Assert.True(DictContains(dict, 10, "hello"));
-    Assert.True(DictContains(dict, 11, "world"));
-    Assert.True(DictContains(dict, 1000, "Deephaven"));
+    Assert.True(ContainsEntry(dict, 10, "hello"));
+    Assert.True(ContainsEntry(dict, 11, "world"));
+    Assert.True(ContainsEntry(dict, 1000, "Deephaven"));
     Assert.False(dict.TryGetValue(1001, out _));
     Assert.Equal(3, dict.Count);
 
     var dict2 = dict.With(11, "world v2")
       .With(1000, "Deephaven v2");
 
-    // Dict has some new values
-    Assert.True(DictContains(dict2, 10, "hello"));
-    Assert.True(DictContains(dict2, 11, "world v2"));
-    Assert.True(DictContains(dict2, 1000, "Deephaven v2"));
+    // dict2 has some new values
+    Assert.True(ContainsEntry(dict2, 10, "hello"));
+    Assert.True(ContainsEntry(dict2, 11, "world v2"));
+    Assert.True(ContainsEntry(dict2, 1000, "Deephaven v2"));
     Assert.Equal(3, dict2.Count);
 
     // Initial dict unchanged
-    Assert.True(DictContains(dict, 10, "hello"));
-    Assert.True(DictContains(dict, 11, "world"));
-    Assert.True(DictContains(dict, 1000, "Deephaven"));
+    Assert.True(ContainsEntry(dict, 10, "hello"));
+    Assert.True(ContainsEntry(dict, 11, "world"));
+    Assert.True(ContainsEntry(dict, 1000, "Deephaven"));
     Assert.Equal(3, dict.Count);
+  }
+
+  [Fact]
+  public void Ordering() {
+    var dict = SharableDict<int>.Empty;
+    dict = dict.With(3, 1000)
+      .With(10, 2000)
+      .With(-20, 3000)
+      .With(-10, 4000);
+
+    var list = dict.Select(kvp => (kvp.Key, kvp.Value)).ToList();
+    List<(Int64, int)> expected = [(-20, 3000), (10, 4000), (3, 1000), (10, 2000)];
+
+    Assert.Equal(expected, list);
   }
 
   [Fact]
@@ -129,7 +143,7 @@ public class SharableDictTest(ITestOutputHelper output) {
     Assert.Equal(expectedNodeCount, dict.CountNodesForUnitTesting());
   }
 
-  private static bool DictContains<T>(SharableDict<T> dict, Int64 key, T expected) {
+  private static bool ContainsEntry<T>(SharableDict<T> dict, Int64 key, T expected) {
     return dict.TryGetValue(key, out var value) && Object.Equals(value, expected);
   }
 }
