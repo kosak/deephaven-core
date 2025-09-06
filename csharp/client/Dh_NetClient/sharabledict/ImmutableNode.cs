@@ -7,6 +7,12 @@ using System.Diagnostics.CodeAnalysis;
 namespace Deephaven.Dh_NetClient;
 
 public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
+  public static ImmutableNode<T> OfEmpty(T emptyChild) {
+    var children = new Array64<T>();
+    ((Span<T>)children).Fill(emptyChild);
+    return new ImmutableNode<T>(0, new Bitset64(), children);
+  }
+
   public static ImmutableNode<T> OfArray64(ReadOnlySpan<T> children) {
     var validitySet = new Bitset64();
     var subtreeCount = 0;
@@ -15,14 +21,14 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
       validitySet = validitySet.WithElement(i);
       subtreeCount += child.Count;
     }
-    return new ImmutableNode<T>(validitySet, subtreeCount, children);
+    return new ImmutableNode<T>(subtreeCount, validitySet, children);
   }
 
   public int Count { get; init; }
   public readonly Bitset64 ValiditySet;
   public readonly Array64<T> Children;
 
-  private ImmutableNode(Bitset64 validitySet, int count, ReadOnlySpan<T> children) {
+  private ImmutableNode(int count, Bitset64 validitySet, ReadOnlySpan<T> children) {
     Count = count;
     ValiditySet = validitySet;
     children.CopyTo(Children);
@@ -33,6 +39,21 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     ((ReadOnlySpan<T>)Children).CopyTo(newChildren);
     newChildren[index] = childOrEmpty;
     return OfArray64(newChildren);
+  }
+
+  public ImmutableNode<T> WithLeaf(int index, T leaf) {
+    var newVs = ValiditySet.WithElement(index);
+    var newCount = newVs.Count;
+    var newChildren = new Array64<T>();
+    ((ReadOnlySpan<T>)Children).CopyTo(newChildren);
+    newChildren[index] = leaf;
+    return new ImmutableNode<T>(newCount, newVs, newChildren);
+  }
+
+  public ImmutableNode<T> WithoutLeaf(int index) {
+    var newVs = ValiditySet.WithoutElement(index);
+    var newCount = newVs.Count;
+    return new ImmutableNode<T>(newCount, newVs, Children);
   }
 
   public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out T child) {

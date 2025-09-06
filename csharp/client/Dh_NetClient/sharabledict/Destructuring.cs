@@ -38,8 +38,7 @@ internal readonly struct Destructured<TValue> {
 
   public SharableDict<TValue> RebuildWithNewLeafHere(TValue value) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var wrappedValue = new ValueWrapper<TValue>(value);
-    var newDepth10 = Depth10.Replace(i10, wrappedValue);
+    var newDepth10 = Depth10.WithLeaf(i10, new ValueWrapper<TValue>(value));
     var newDepth9 = Depth9.Replace(i9, newDepth10);
     var newDepth8 = Depth8.Replace(i8, newDepth9);
     var newDepth7 = Depth7.Replace(i7, newDepth8);
@@ -53,22 +52,26 @@ internal readonly struct Destructured<TValue> {
     return new SharableDict<TValue>(newDepth0);
   }
 
-  public SharableDict<TValue> RebuildWithoutLeafHere() {
-    var empties = new Destructured<TValue>();
+  public SharableDict<TValue> RebuildWithoutLeafHere(in Destructured<TValue> empties) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var newDepth10 = Depth10.Without(i10);
-    newDepth10 = Canonicalize(newDepth10, empties.Depth9);
+    var newDepth10 = Depth10.WithoutLeaf(i10);
     var newDepth9 = ReplaceAndCanonicalize(Depth9, i9, newDepth10, empties.Depth9);
     var newDepth8 = ReplaceAndCanonicalize(Depth8, i8, newDepth9, empties.Depth8);
     var newDepth7 = ReplaceAndCanonicalize(Depth7, i7, newDepth8, empties.Depth7);
     var newDepth6 = ReplaceAndCanonicalize(Depth6, i6, newDepth7, empties.Depth6);
     var newDepth5 = ReplaceAndCanonicalize(Depth5, i5, newDepth6, empties.Depth5);
-    var newDepth4 = ReplaceAndCanonicalize(Depth4, i4, newDepth5, empties.Depth3);
-    var newDepth3 = ReplaceAndCanonicalize(Depth3, i3, newDepth4, empties.Depth2);
-    var newDepth2 = ReplaceAndCanonicalize(Depth2, i2, newDepth3, empties.Depth1);
-    var newDepth1 = ReplaceAndCanonicalize(Depth1, i1, newDepth2, empties.Depth0);
-    var newDepth0 = ReplaceAndCanonicalize(Depth0, i0, newDepth1, empties.Depth8);
+    var newDepth4 = ReplaceAndCanonicalize(Depth4, i4, newDepth5, empties.Depth4);
+    var newDepth3 = ReplaceAndCanonicalize(Depth3, i3, newDepth4, empties.Depth3);
+    var newDepth2 = ReplaceAndCanonicalize(Depth2, i2, newDepth3, empties.Depth2);
+    var newDepth1 = ReplaceAndCanonicalize(Depth1, i1, newDepth2, empties.Depth1);
+    var newDepth0 = ReplaceAndCanonicalize(Depth0, i0, newDepth1, empties.Depth0);
     return new SharableDict<TValue>(newDepth0);
+  }
+
+  private static ImmutableNode<T> ReplaceAndCanonicalize<T>(ImmutableNode<T> srcNode, int childIndex,
+    T replacement, ImmutableNode<T> resultToUseIfEmpty) where T : INode<T> {
+    var result = srcNode.Replace(childIndex, replacement);
+    return result.Count == 0 ? resultToUseIfEmpty : result;
   }
 }
 

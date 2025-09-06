@@ -7,7 +7,32 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
-  public static readonly SharableDict<TValue> Empty = new();
+  /// <summary>
+  /// The singleton for an empty SharableDict&lt;TValue&gt;.
+  /// </summary>
+  public static readonly SharableDict<TValue> Empty = MakeEmpty();
+
+  /// <summary>
+  /// Make the singleton for the empty SharableDict&lt;TValue&gt;.
+  /// </summary>
+  private static SharableDict<TValue> MakeEmpty() {
+    ImmutableNode<T> WrapEmpty<T>(T item) where T : INode<T> {
+      return ImmutableNode<T>.OfEmpty(item);
+    }
+    var emptyValue = new ValueWrapper<TValue>();
+    var depth10 = WrapEmpty(emptyValue);
+    var depth9 = WrapEmpty(depth10);
+    var depth8 = WrapEmpty(depth9);
+    var depth7 = WrapEmpty(depth8);
+    var depth6 = WrapEmpty(depth7);
+    var depth5 = WrapEmpty(depth6);
+    var depth4 = WrapEmpty(depth5);
+    var depth3 = WrapEmpty(depth4);
+    var depth2 = WrapEmpty(depth3);
+    var depth1 = WrapEmpty(depth2);
+    var depth0 = WrapEmpty(depth1);
+    return new SharableDict<TValue>(depth0);
+  }
 
   private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> _root;
 
@@ -17,16 +42,14 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     _root = root;
   }
 
-  private SharableDict() {
-    _root = ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>.EmptyInstance;
-  }
 
   public SharableDict<TValue> With(Int64 key, TValue value) {
     return new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
   }
 
   public SharableDict<TValue> Without(Int64 key) {
-    return new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
+    var emptyDestructured = new Destructured<TValue>(Empty._root, 0);
+    return new Destructured<TValue>(_root, key).RebuildWithoutLeafHere(in emptyDestructured);
   }
 
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
