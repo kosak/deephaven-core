@@ -55,23 +55,17 @@ internal readonly struct Destructured<TValue> {
   public SharableDict<TValue> RebuildWithoutLeafHere(in Destructured<TValue> empties) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
     var newDepth10 = Depth10.Without(i10);
-    var newDepth9 = ReplaceAndCanonicalize(Depth9, i9, newDepth10, empties.Depth9);
-    var newDepth8 = ReplaceAndCanonicalize(Depth8, i8, newDepth9, empties.Depth8);
-    var newDepth7 = ReplaceAndCanonicalize(Depth7, i7, newDepth8, empties.Depth7);
-    var newDepth6 = ReplaceAndCanonicalize(Depth6, i6, newDepth7, empties.Depth6);
-    var newDepth5 = ReplaceAndCanonicalize(Depth5, i5, newDepth6, empties.Depth5);
-    var newDepth4 = ReplaceAndCanonicalize(Depth4, i4, newDepth5, empties.Depth4);
-    var newDepth3 = ReplaceAndCanonicalize(Depth3, i3, newDepth4, empties.Depth3);
-    var newDepth2 = ReplaceAndCanonicalize(Depth2, i2, newDepth3, empties.Depth2);
-    var newDepth1 = ReplaceAndCanonicalize(Depth1, i1, newDepth2, empties.Depth1);
-    var newDepth0 = ReplaceAndCanonicalize(Depth0, i0, newDepth1, empties.Depth0);
+    var newDepth9 = Depth9.Replace(i9, newDepth10);
+    var newDepth8 = Depth8.Replace(i8, newDepth9);
+    var newDepth7 = Depth7.Replace(i7, newDepth8);
+    var newDepth6 = Depth6.Replace(i6, newDepth7);
+    var newDepth5 = Depth5.Replace(i5, newDepth6);
+    var newDepth4 = Depth4.Replace(i4, newDepth5);
+    var newDepth3 = Depth3.Replace(i3, newDepth4);
+    var newDepth2 = Depth2.Replace(i2, newDepth3);
+    var newDepth1 = Depth1.Replace(i1, newDepth2);
+    var newDepth0 = Depth0.Replace(i0, newDepth1);
     return new SharableDict<TValue>(newDepth0);
-  }
-
-  private static ImmutableNode<T> ReplaceAndCanonicalize<T>(ImmutableNode<T> srcNode, int childIndex,
-    T replacement, ImmutableNode<T> resultToUseIfEmpty) where T : ImmutableBase<T> {
-    var result = srcNode.Replace(childIndex, replacement);
-    return result.Count == 0 ? resultToUseIfEmpty : result;
   }
 }
 

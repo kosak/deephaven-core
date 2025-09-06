@@ -4,58 +4,46 @@
 
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
-interface IPain {
-  public static abstract void SMOO();
-}
+public sealed class ImmutableNode<TChild> : ImmutableBase<ImmutableNode<TChild>> where TChild : ImmutableBase<TChild>, new() {
+  public static readonly ImmutableNode<TChild> Empty = new();
 
-class Cow : IPain {
-  public static void SMOO() {
+  public override ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
 
-  }
-
-  public void Moo() {
-
-  }
-
-}
-
-class Moo {
-  public void Doit<T>(T cow) where T : IPain {
-  }
-}
-
-public class ImmutableNode<T> : ImmutableBase<ImmutableNode<T>> where T : ImmutableBase<T>, new() {
-  public static ImmutableNode<T> OfEmpty(T emptyChild) {
-    new T().zamboni();
-    var children = new Array64<T>();
-    ((Span<T>)children).Fill(emptyChild);
-    return new ImmutableNode<T>(0, children);
-  }
-
-  public static ImmutableNode<T> OfArray64(ReadOnlySpan<T> children) {
+  public static ImmutableNode<TChild> OfArray64(ReadOnlySpan<TChild> children) {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
       var child = children[i];
       subtreeCount += child.Count;
     }
-    return new ImmutableNode<T>(subtreeCount, children);
+    return subtreeCount == 0 ? Empty : new ImmutableNode<TChild>(subtreeCount, children);
   }
 
-  public readonly Array64<T> Children;
+  public readonly Array64<TChild> Children;
 
-  private ImmutableNode(int count, ReadOnlySpan<T> children) : base(count) {
+  public ImmutableNode() : base(0) {
+    // This is our hack to access the static T.Empty for type T
+    var emptyChild = new TChild().GetEmptyInstanceForThisType();
+    ((Span<TChild>)Children).Fill(emptyChild);
+  }
+
+  private ImmutableNode(int count, ReadOnlySpan<TChild> children) : base(count) {
     children.CopyTo(Children);
   }
 
-  public ImmutableNode<T> Replace(int index, T childOrEmpty) {
-    var newChildren = new Array64<T>();
-    ((ReadOnlySpan<T>)Children).CopyTo(newChildren);
-    newChildren[index] = childOrEmpty;
+  public ImmutableNode<TChild> Replace(int index, TChild newChild) {
+    // If we are about to replace our only non-empty child, then canonicalize.
+    if (Count == Children[index].Count && newChild.Count == 0) {
+      return Empty;
+    }
+    var newChildren = new Array64<TChild>();
+    ((ReadOnlySpan<TChild>)Children).CopyTo(newChildren);
+    newChildren[index] = newChild;
     return OfArray64(newChildren);
   }
 
-  public override (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(
-    ImmutableNode<T> target, ImmutableNode<T> empty) {
+  public override (ImmutableNode<TChild>, ImmutableNode<TChild>, ImmutableNode<TChild>) CalcDifference(
+    ImmutableNode<TChild> target) {
+    var empty = Empty;
     if (this == target) {
       // Source and target are the same. No changes
       return (empty, empty, empty);  // added, removed, modified
@@ -70,13 +58,13 @@ public class ImmutableNode<T> : ImmutableBase<ImmutableNode<T>> where T : Immuta
     }
 
     // Need to recurse to all children to build new nodes
-    Array64<T> addedChildren = new();
-    Array64<T> removedChildren = new();
-    Array64<T> modifiedChildren = new();
+    Array64<TChild> addedChildren = new();
+    Array64<TChild> removedChildren = new();
+    Array64<TChild> modifiedChildren = new();
 
-    var length = ((ReadOnlySpan<T>)Children).Length;
+    var length = ((ReadOnlySpan<TChild>)Children).Length;
     for (var i = 0; i != length; ++i) {
-      var (a, r, m) = Children[i].CalcDifference(target.Children[i], empty.Children[0]);
+      var (a, r, m) = Children[i].CalcDifference(target.Children[i]);
       addedChildren[i] = a;
       removedChildren[i] = r;
       modifiedChildren[i] = m;

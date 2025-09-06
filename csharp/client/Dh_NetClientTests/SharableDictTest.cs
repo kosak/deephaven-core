@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class SharableDictTest(ITestOutputHelper output) {
+public class SharableDictTest {
   [Fact]
   public void Simple() {
     var d = SharableDict<string>.Empty;

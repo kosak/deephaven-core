@@ -6,8 +6,18 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
-public class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
+public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
   public static readonly ImmutableLeaf<TValue> Empty = new();
+
+  public override ImmutableLeaf<TValue> GetEmptyInstanceForThisType() => Empty;
+
+  /// <summary>
+  /// This constructor is used only to make the Empty singleton. No one else should call it.
+  /// We are keeping it public because our generics have a new() constraint on them, which
+  /// requires that this be public.
+  /// </summary>
+  public ImmutableLeaf() : base(0) {
+  }
 
   public static ImmutableLeaf<TValue> Of(Bitset64 validitySet, ReadOnlySpan<TValue> children) {
     return validitySet.IsEmpty ? Empty : new ImmutableLeaf<TValue>(validitySet.Count, validitySet, children);
@@ -15,9 +25,6 @@ public class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
 
   public readonly Bitset64 ValiditySet;
   public readonly Array64<TValue> Children;
-
-  private ImmutableLeaf() : base(0) {
-  }
 
   private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children) 
     : base(count) {
@@ -56,7 +63,8 @@ public class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
   }
 
   public override (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(
-    ImmutableLeaf<TValue> target, ImmutableLeaf<TValue> empty) {
+    ImmutableLeaf<TValue> target) {
+    var empty = Empty;
     if (this == target) {
       // Source and target are the same. No changes
       return (empty, empty, empty); // added, removed, modified

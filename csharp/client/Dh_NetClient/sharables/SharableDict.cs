@@ -11,34 +11,27 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// The singleton for an empty SharableDict&lt;TValue&gt;.
   /// </summary>
-  public static readonly SharableDict<TValue> Empty = MakeEmpty();
+  public static readonly SharableDict<TValue> Empty = new();
+
 
   /// <summary>
-  /// Make the singleton for the empty SharableDict&lt;TValue&gt;.
+  /// Makes the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
-  private static SharableDict<TValue> MakeEmpty() {
-    static ImmutableNode<T> WrapEmpty<T>(T item) where T : ImmutableBase<T> {
-      return ImmutableNode<T>.OfEmpty(item);
-    }
-
-    var depth10 = ImmutableLeaf<TValue>.Empty;
-    var depth9 = WrapEmpty(depth10);
-    var depth8 = WrapEmpty(depth9);
-    var depth7 = WrapEmpty(depth8);
-    var depth6 = WrapEmpty(depth7);
-    var depth5 = WrapEmpty(depth6);
-    var depth4 = WrapEmpty(depth5);
-    var depth3 = WrapEmpty(depth4);
-    var depth2 = WrapEmpty(depth3);
-    var depth1 = WrapEmpty(depth2);
-    var depth0 = WrapEmpty(depth1);
-    return new SharableDict<TValue>(depth0);
+  private SharableDict() {
+    _root =
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+        ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+          ImmutableLeaf<TValue>>>>>>>>>>>.Empty; 
   }
 
-  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> _root;
+  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableLeaf<TValue>>>>>>>>>>> _root;
 
   public SharableDict(
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> root) {
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+        ImmutableLeaf<TValue>>>>>>>>>>> root) {
     _root = root;
   }
 
@@ -67,7 +60,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
     CalcDifference(SharableDict<TValue> target) {
-    var (added, removed, modified) = _root.CalcDifference(target._root, Empty._root);
+    var (added, removed, modified) = _root.CalcDifference(target._root);
     var aResult = new SharableDict<TValue>(added);
     var rResult = new SharableDict<TValue>(removed);
     var mResult = new SharableDict<TValue>(modified);
