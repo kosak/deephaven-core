@@ -76,12 +76,15 @@ internal readonly struct Destructured<TValue> {
 }
 
 public static class Splitter {
+  private const UInt64 SignBit = 0x8000_0000_0000_0000UL;
+
   private const int Shift = 6;
   private const UInt64 Mask = 0x3f;
   public const int NumChildren = 1 << Shift;
 
   public static (int, int, int, int, int, int, int, int, int, int, int) Split(Int64 keySigned) {
-    var key = (UInt64)keySigned;
+    // After converting signed to unsigned, we still want the numbers to be ordered in the expected way.
+    var key = (UInt64)keySigned ^ SignBit;
     var i10 = (int)(key & Mask);
     key >>= Shift;
     var i9 = (int)(key & Mask);
@@ -119,6 +122,7 @@ public static class Splitter {
     temp = (temp << Shift) | (uint)i8;
     temp = (temp << Shift) | (uint)i9;
     temp = (temp << Shift) | (uint)i10;
+    temp ^= SignBit;
     return (Int64)temp;
   }
 }

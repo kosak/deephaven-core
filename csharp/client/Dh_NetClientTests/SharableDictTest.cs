@@ -45,8 +45,13 @@ public class SharableDictTest(ITestOutputHelper output) {
       .With(-20, 3000)
       .With(-10, 4000);
 
-    var list = dict.Select(kvp => (kvp.Key, kvp.Value)).ToList();
-    List<(Int64, int)> expected = [(-20, 3000), (10, 4000), (3, 1000), (10, 2000)];
+    var list = dict.ToList();
+    var expected = new List<KeyValuePair<Int64, int>> {
+      new(-20, 3000),
+      new(-10, 4000),
+      new(3, 1000),
+      new(10, 2000)
+    };
 
     Assert.Equal(expected, list);
   }
@@ -93,17 +98,37 @@ public class SharableDictTest(ITestOutputHelper output) {
     }
 
     var dict2 = dict1
-      .With(100, 999)
-      .With(1000, 9999)
-      .Without(3)
-      .Without(5)
-      .With(7, 12345)
-      .With(-1, 999);
+      .With(100, 999)  // add
+      .With(1000, 9999)  // add
+      .Without(3)  // remove
+      .Without(5)  // remove
+      .With(7, 12345)  // modify
+      .With(-1, 999);  // add
 
     var (a, r, m) = dict1.CalcDifference(dict2);
-    output.WriteLine($"Adds {a} which takes up {a.CountNodesForUnitTesting()}");
-    output.WriteLine($"Removes {r} which takes up {m.CountNodesForUnitTesting()}");
-    output.WriteLine($"Modifies {m} which takes up {m.CountNodesForUnitTesting()}");
+
+    var aExpected = new List<KeyValuePair<Int64, int>> {
+      new(-1, 999),
+      new(100, 999),
+      new(1000, 9999)
+    };
+
+    var rExpected = new List<KeyValuePair<Int64, int>> {
+      new(3, 3 * 37),
+      new(5, 5 * 37)
+    };
+
+    var mExpected = new List<KeyValuePair<Int64, int>> {
+      new(7, 12345)
+    };
+
+    Assert.Equal(aExpected, a);
+    Assert.Equal(rExpected, r);
+    Assert.Equal(mExpected, m);
+
+    Assert.Equal(32, a.CountNodesForUnitTesting());
+    Assert.Equal(21, r.CountNodesForUnitTesting());
+    Assert.Equal(21, m.CountNodesForUnitTesting());
   }
 
   [Fact]
