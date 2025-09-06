@@ -19,7 +19,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
       return ImmutableNode<T>.OfEmpty(item);
     }
 
-    var depth10 = ImmutableLeaf<TValue>.OfEmpty();
+    var depth10 = ImmutableLeaf<TValue>.Empty;
     var depth9 = WrapEmpty(depth10);
     var depth8 = WrapEmpty(depth9);
     var depth7 = WrapEmpty(depth8);
@@ -52,11 +52,11 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
     var s = new Destructured<TValue>(_root, key);
-    if (!s.Depth10.TryGetChild(s.LeafIndex, out var wrappedValue)) {
+    if (!s.Depth10.TryGetChild(s.LeafIndex, out var temp)) {
       value = default;
       return false;
     }
-    value = wrappedValue.Value;
+    value = temp;
     return true;
   }
 
@@ -66,7 +66,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
     CalcDifference(SharableDict<TValue> target) {
-    var (added, removed, modified) = _root.CalcDifference(0, target._root, Empty._root);
+    var (added, removed, modified) = _root.CalcDifference(target._root, Empty._root);
     var aResult = new SharableDict<TValue>(added);
     var rResult = new SharableDict<TValue>(removed);
     var mResult = new SharableDict<TValue>(modified);
@@ -87,33 +87,42 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   public IEnumerable<TValue> Values => this.Select(kvp => kvp.Value);
 
   public IEnumerator<KeyValuePair<Int64, TValue>> GetEnumerator() {
-    // This could be written more nicely and recursively as a bunch of nested iterators,
+    // This could be written more nicely and recursively as a bunch of nested iterators
     // but the overhead of fetching each element would be pretty high, as each iterator
     // would call the MoveNext of the next iterator, etc.
-    // Manually unrolling the structure into these nested foreach is a little bit homely
+    // Manually unrolling the structure into these nested loops is a little bit homely
     // but allows for more efficient code.
-    foreach (var i0 in _root.ValiditySet) {
+    for (var i0 = 0; i0 != Splitter.NumChildren; ++i0) {
       var depth1 = _root.Children[i0];
-      foreach (var i1 in depth1.ValiditySet) {
+      if (depth1.Count == 0) continue;
+      for (var i1 = 0; i1 != Splitter.NumChildren; ++i1) {
         var depth2 = depth1.Children[i1];
-        foreach (var i2 in depth2.ValiditySet) {
+        if (depth2.Count == 0) continue;
+        for (var i2 = 0; i2 != Splitter.NumChildren; ++i2) {
           var depth3 = depth2.Children[i2];
-          foreach (var i3 in depth3.ValiditySet) {
+          if (depth3.Count == 0) continue;
+          for (var i3 = 0; i3 != Splitter.NumChildren; ++i3) {
             var depth4 = depth3.Children[i3];
-            foreach (var i4 in depth4.ValiditySet) {
+            if (depth4.Count == 0) continue;
+            for (var i4 = 0; i4 != Splitter.NumChildren; ++i4) {
               var depth5 = depth4.Children[i4];
-              foreach (var i5 in depth5.ValiditySet) {
+              if (depth5.Count == 0) continue;
+              for (var i5 = 0; i5 != Splitter.NumChildren; ++i5) {
                 var depth6 = depth5.Children[i5];
-                foreach (var i6 in depth6.ValiditySet) {
+                if (depth6.Count == 0) continue;
+                for (var i6 = 0; i6 != Splitter.NumChildren; ++i6) {
                   var depth7 = depth6.Children[i6];
-                  foreach (var i7 in depth7.ValiditySet) {
+                  if (depth7.Count == 0) continue;
+                  for (var i7 = 0; i7 != Splitter.NumChildren; ++i7) {
                     var depth8 = depth7.Children[i7];
-                    foreach (var i8 in depth8.ValiditySet) {
+                    if (depth8.Count == 0) continue;
+                    for (var i8 = 0; i8 != Splitter.NumChildren; ++i8) {
                       var depth9 = depth8.Children[i8];
-                      foreach (var i9 in depth9.ValiditySet) {
+                      if (depth9.Count == 0) continue;
+                      for (var i9 = 0; i9 != Splitter.NumChildren; ++i9) {
                         var depth10 = depth9.Children[i9];
                         foreach (var i10 in depth10.ValiditySet) {
-                          var value = depth10.Children[i10].Value;
+                          var value = depth10.Children[i10];
                           var offset = Splitter.Merge(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
                           yield return KeyValuePair.Create(offset, value);
                         }
