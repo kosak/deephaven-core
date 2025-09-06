@@ -4,6 +4,26 @@
 
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
+interface IPain {
+  public static abstract void SMOO();
+}
+
+class Cow : IPain {
+  public static void SMOO() {
+
+  }
+
+  public void Moo() {
+
+  }
+
+}
+
+class Moo {
+  public void Doit<T>(T cow) where T : IPain {
+  }
+}
+
 public class ImmutableNode<T> : ImmutableBase<ImmutableNode<T>> where T : ImmutableBase<T> {
   public static ImmutableNode<T> OfEmpty(T emptyChild) {
     var children = new Array64<T>();

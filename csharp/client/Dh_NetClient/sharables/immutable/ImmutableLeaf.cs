@@ -6,17 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
-public abstract class ImmutableBase<TSelf> where TSelf : class {
-  public readonly int Count;
-
-  public ImmutableBase(int count) {
-    Count = count;
-  }
-
-  public abstract (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf empty);
-  public abstract void GatherNodesForUnitTesting(HashSet<object> nodes);
-}
-
 public class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
   public static readonly ImmutableLeaf<TValue> Empty = new();
 
