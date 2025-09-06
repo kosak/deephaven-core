@@ -17,7 +17,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// Make the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
   private static SharableDict<TValue> MakeEmpty() {
-    static ImmutableNode<T> WrapEmpty<T>(T item) where T : ImmutableBase, INode<T> {
+    static ImmutableNode<T> WrapEmpty<T>(T item) where T : ImmutableBase<T> {
       return ImmutableNode<T>.OfEmpty(item);
     }
 

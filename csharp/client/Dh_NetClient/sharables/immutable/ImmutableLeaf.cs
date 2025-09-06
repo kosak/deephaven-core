@@ -6,15 +6,18 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
-public class ImmutableBase {
+public abstract class ImmutableBase<TSelf> where TSelf : class {
   public readonly int Count;
 
   public ImmutableBase(int count) {
     Count = count;
   }
+
+  public abstract (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf empty);
+  public abstract void GatherNodesForUnitTesting(HashSet<object> nodes);
 }
 
-public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>> {
+public class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
   public static readonly ImmutableLeaf<TValue> Empty = new();
 
   public static ImmutableLeaf<TValue> Of(Bitset64 validitySet, ReadOnlySpan<TValue> children) {
@@ -63,7 +66,7 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
     return true;
   }
 
-  public (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(
+  public override (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(
     ImmutableLeaf<TValue> target, ImmutableLeaf<TValue> empty) {
     if (this == target) {
       // Source and target are the same. No changes
@@ -129,7 +132,7 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
     return (aResult, rResult, mResult);
   }
 
-  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
+  public override void GatherNodesForUnitTesting(HashSet<object> nodes) {
     nodes.Add(this);
   }
 }

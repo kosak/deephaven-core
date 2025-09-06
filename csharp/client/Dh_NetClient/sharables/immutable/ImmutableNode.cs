@@ -4,7 +4,7 @@
 
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
-public class ImmutableNode<T> : ImmutableBase, INode<ImmutableNode<T>> where T : ImmutableBase, INode<T> {
+public class ImmutableNode<T> : ImmutableBase<ImmutableNode<T>> where T : ImmutableBase<T> {
   public static ImmutableNode<T> OfEmpty(T emptyChild) {
     var children = new Array64<T>();
     ((Span<T>)children).Fill(emptyChild);
@@ -33,7 +33,7 @@ public class ImmutableNode<T> : ImmutableBase, INode<ImmutableNode<T>> where T :
     return OfArray64(newChildren);
   }
 
-  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(
+  public override (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(
     ImmutableNode<T> target, ImmutableNode<T> empty) {
     if (this == target) {
       // Source and target are the same. No changes
@@ -67,7 +67,7 @@ public class ImmutableNode<T> : ImmutableBase, INode<ImmutableNode<T>> where T :
     return (aResult, rResult, mResult);
   }
 
-  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
+  public override void GatherNodesForUnitTesting(HashSet<object> nodes) {
     if (!nodes.Add(this)) {
       return;
     }

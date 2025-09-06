@@ -69,7 +69,7 @@ internal readonly struct Destructured<TValue> {
   }
 
   private static ImmutableNode<T> ReplaceAndCanonicalize<T>(ImmutableNode<T> srcNode, int childIndex,
-    T replacement, ImmutableNode<T> resultToUseIfEmpty) where T : ImmutableBase, INode<T> {
+    T replacement, ImmutableNode<T> resultToUseIfEmpty) where T : ImmutableBase<T> {
     var result = srcNode.Replace(childIndex, replacement);
     return result.Count == 0 ? resultToUseIfEmpty : result;
   }
