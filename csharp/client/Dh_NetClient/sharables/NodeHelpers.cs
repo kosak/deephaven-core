@@ -6,7 +6,6 @@ namespace Deephaven.Dh_NetClient.Sharables;
 using System.Runtime.CompilerServices;
 
 public interface INode<TSelf> {
-  int Count { get; }
   (TSelf, TSelf, TSelf) CalcDifference(int depth, TSelf target, TSelf emptySubtree);
   void GatherNodesForUnitTesting(HashSet<object> nodes);
 }

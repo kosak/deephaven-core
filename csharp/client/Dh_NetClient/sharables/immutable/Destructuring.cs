@@ -5,20 +5,20 @@ namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
 internal readonly struct Destructured<TValue> {
   public readonly Int64 Key;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> Depth0;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>> Depth1;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>> Depth2;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>> Depth3;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>> Depth4;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>> Depth5;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>> Depth6;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>> Depth7;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>> Depth8;
-  public readonly ImmutableNode<ImmutableNode<ValueWrapper<TValue>>> Depth9;
-  public readonly ImmutableNode<ValueWrapper<TValue>> Depth10;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> Depth0;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>> Depth1;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>> Depth2;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>> Depth3;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>> Depth4;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>> Depth5;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>> Depth6;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>> Depth7;
+  public readonly ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>> Depth8;
+  public readonly ImmutableNode<ImmutableLeaf<TValue>> Depth9;
+  public readonly ImmutableLeaf<TValue> Depth10;
   public readonly int LeafIndex;
 
-  public Destructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> depth0,
+  public Destructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> depth0,
     Int64 key) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
     Key = key;
@@ -38,7 +38,7 @@ internal readonly struct Destructured<TValue> {
 
   public SharableDict<TValue> RebuildWithNewLeafHere(TValue value) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var newDepth10 = Depth10.WithLeaf(i10, new ValueWrapper<TValue>(value));
+    var newDepth10 = Depth10.With(i10, value);
     var newDepth9 = Depth9.Replace(i9, newDepth10);
     var newDepth8 = Depth8.Replace(i8, newDepth9);
     var newDepth7 = Depth7.Replace(i7, newDepth8);
@@ -54,7 +54,7 @@ internal readonly struct Destructured<TValue> {
 
   public SharableDict<TValue> RebuildWithoutLeafHere(in Destructured<TValue> empties) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var newDepth10 = Depth10.WithoutLeaf(i10);
+    var newDepth10 = Depth10.Without(i10);
     var newDepth9 = ReplaceAndCanonicalize(Depth9, i9, newDepth10, empties.Depth9);
     var newDepth8 = ReplaceAndCanonicalize(Depth8, i8, newDepth9, empties.Depth8);
     var newDepth7 = ReplaceAndCanonicalize(Depth7, i7, newDepth8, empties.Depth7);

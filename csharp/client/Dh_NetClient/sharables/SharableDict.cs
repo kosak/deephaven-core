@@ -18,8 +18,9 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     ImmutableNode<T> WrapEmpty<T>(T item) where T : INode<T> {
       return ImmutableNode<T>.OfEmpty(item);
     }
-    var emptyValue = new ValueWrapper<TValue>();
-    var depth10 = WrapEmpty(emptyValue);
+
+    var emptyLeaf = ImmutableLeaf<TValue>.OfEmpty();
+    var depth10 = WrapEmpty(emptyLeaf);
     var depth9 = WrapEmpty(depth10);
     var depth8 = WrapEmpty(depth9);
     var depth7 = WrapEmpty(depth8);
@@ -36,8 +37,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> _root;
 
   public SharableDict(
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>
-      root) {
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> root) {
     _root = root;
   }
 

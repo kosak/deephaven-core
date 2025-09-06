@@ -9,43 +9,46 @@ namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 public class ImmutableBase {
   public readonly int Count;
 
+  public ImmutableBase(int count) {
+    Count = count;
+  }
 }
 
-public class ImmutableLeaf<TValue> : INode<ImmutableLeaf<TValue>> {
-  public static ImmutableLeaf<TValue> OfEmpty(TValue placeholder) {
+public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>> {
+  public static ImmutableLeaf<TValue> OfEmpty() {
     var children = new Array64<TValue>();
-    ((Span<TValue>)children).Fill(placeholder);
+    ((Span<TValue>)children).Clear();
     return new ImmutableLeaf<TValue>(0, new Bitset64(), children);
   }
 
   public readonly Bitset64 ValiditySet;
-  public readonly Array64<TValue> Children;
+  public readonly Array64<TValue?> Children;
 
-  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children) 
+  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue?> children) 
     : base(count) {
     ValiditySet = validitySet;
     children.CopyTo(Children);
   }
 
-  public ImmutableLeaf<TValue> WithLeaf(int index, TValue leaf) {
+  public ImmutableLeaf<TValue> With(int index, TValue value) {
     var newVs = ValiditySet.WithElement(index);
     var newCount = newVs.Count;
-    var newChildren = new Array64<TValue>();
-    ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
-    newChildren[index] = leaf;
+    var newChildren = new Array64<TValue?>();
+    ((ReadOnlySpan<TValue?>)Children).CopyTo(newChildren);
+    newChildren[index] = value;
     return new ImmutableLeaf<TValue>(newCount, newVs, newChildren);
   }
 
-  public ImmutableLeaf<TValue> WithoutLeaf(int index) {
+  public ImmutableLeaf<TValue> Without(int index) {
     var newVs = ValiditySet.WithoutElement(index);
     var newCount = newVs.Count;
-    var newChildren = new Array64<TValue>();
-    ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
-    newChildren[index] = placeholderValue;
+    var newChildren = new Array64<TValue?>();
+    ((ReadOnlySpan<TValue?>)Children).CopyTo(newChildren);
+    newChildren[index] = default;
     return new ImmutableLeaf<TValue>(newCount, newVs, Children);
   }
 
-  public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out TValue child) {
+  public bool TryGetChild(int childIndex, out TValue? child) {
     if (!ValiditySet.ContainsElement(childIndex)) {
       child = default;
       return false;
@@ -70,12 +73,12 @@ public class ImmutableLeaf<TValue> : INode<ImmutableLeaf<TValue>> {
     }
 
     var placeholder = empty.Children[0];
-    Array64<TValue> addedValues = new();
-    Array64<TValue> removedValues = new();
-    Array64<TValue> modifiedValues = new();
-    ((Span<TValue>)addedValues).Fill(placeholder);
-    ((Span<TValue>)removedValues).Fill(placeholder);
-    ((Span<TValue>)modifiedValues).Fill(placeholder);
+    Array64<TValue?> addedValues = new();
+    Array64<TValue?> removedValues = new();
+    Array64<TValue?> modifiedValues = new();
+    ((Span<TValue?>)addedValues).Fill(placeholder);
+    ((Span<TValue?>)removedValues).Fill(placeholder);
+    ((Span<TValue?>)modifiedValues).Fill(placeholder);
 
     var addedSet = new Bitset64();
     var removedSet = new Bitset64();
