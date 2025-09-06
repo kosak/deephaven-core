@@ -138,4 +138,10 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   public override string ToString() {
     return string.Join(", ", this.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
   }
+
+  /**
+   * For unit tests
+   */
+  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> RootForUnitTests
+   => _root;
 }
