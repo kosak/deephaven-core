@@ -24,8 +24,9 @@ class Moo {
   }
 }
 
-public class ImmutableNode<T> : ImmutableBase<ImmutableNode<T>> where T : ImmutableBase<T> {
+public class ImmutableNode<T> : ImmutableBase<ImmutableNode<T>> where T : ImmutableBase<T>, new() {
   public static ImmutableNode<T> OfEmpty(T emptyChild) {
+    new T().zamboni();
     var children = new Array64<T>();
     ((Span<T>)children).Fill(emptyChild);
     return new ImmutableNode<T>(0, children);
