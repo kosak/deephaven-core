@@ -1,7 +1,7 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-namespace Deephaven.Dh_NetClient;
+namespace Deephaven.Dh_NetClient.Sharables;
 
 public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
   private readonly UInt64 _value = value;
