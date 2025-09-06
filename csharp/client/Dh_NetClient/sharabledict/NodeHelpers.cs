@@ -10,7 +10,11 @@ public interface INode<TSelf> {
   (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf emptySubtree);
 }
 
-public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
+public interface IUnitTesting {
+  void GatherNodes(HashSet<object> nodes);
+}
+
+public struct ValueWrapper<T> : INode<ValueWrapper<T>>, IUnitTesting {
   public readonly T Value;
 
   public ValueWrapper(T value) {
@@ -22,6 +26,10 @@ public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
   public (ValueWrapper<T>, ValueWrapper<T>, ValueWrapper<T>) CalcDifference(ValueWrapper<T> target,
     ValueWrapper<T> empty) {
     throw new NotImplementedException();
+  }
+
+  void IUnitTesting.GatherNodes(HashSet<object> nodes) {
+    // Do nothing
   }
 }
 

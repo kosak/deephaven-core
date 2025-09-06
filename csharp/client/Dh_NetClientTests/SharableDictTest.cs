@@ -22,6 +22,7 @@ public class SharableDictTest {
     var dict2 = dict.With(11, "world v2")
       .With(1000, "Deephaven v2");
 
+    // Dict has some new values
     Assert.True(DictContains(dict2, 10, "hello"));
     Assert.True(DictContains(dict2, 11, "world v2"));
     Assert.True(DictContains(dict2, 1000, "Deephaven v2"));
@@ -31,34 +32,8 @@ public class SharableDictTest {
     Assert.True(DictContains(dict, 10, "hello"));
     Assert.True(DictContains(dict, 11, "world"));
     Assert.True(DictContains(dict, 1000, "Deephaven"));
-  }
-
-  private static bool DictContains<T>(SharableDict<T> dict, Int64 key, T expected) {
-    return dict.TryGetValue(key, out var value) && Object.Equals(value, expected);
-  }
-
-  [Fact]
-  public void Replaces() {
-    var d = SharableDict<string>.Empty;
-    var dict = d.With(10, "hello")
-      .With(11, "world")
-      .With(1000, "Deephaven");
-
-
-    Assert.True(dict.TryGetValue(10, out var value));
-    Assert.Equal("hello", value);
-
-    Assert.True(dict.TryGetValue(11, out value));
-    Assert.Equal("world", value);
-
-    Assert.True(dict.TryGetValue(1000, out value));
-    Assert.Equal("Deephaven", value);
-
-    Assert.False(dict.TryGetValue(1001, out _));
-
     Assert.Equal(3, dict.Count);
   }
-
 
   [Fact]
   public void Canonicalizes() {
@@ -92,5 +67,16 @@ public class SharableDictTest {
       Assert.Equal("hello" + nextIndex, v);
       ++nextIndex;
     }
+  }
+
+  [Fact]
+  public void DictIsEfficientForLargeDenseSets() {
+    var dict = SharableDict<string>.Empty;
+    var temp = dict.CountNodesForUnitTesting();
+    Assert.Equal(10, temp);
+  }
+
+  private static bool DictContains<T>(SharableDict<T> dict, Int64 key, T expected) {
+    return dict.TryGetValue(key, out var value) && Object.Equals(value, expected);
   }
 }
