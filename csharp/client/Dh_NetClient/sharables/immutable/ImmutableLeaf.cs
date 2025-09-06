@@ -57,7 +57,7 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
     return true;
   }
 
-  public (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(int depth,
+  public (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(
     ImmutableLeaf<TValue> target, ImmutableLeaf<TValue> empty) {
     if (this == target) {
       // Source and target are the same. No changes
@@ -72,13 +72,9 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
       return (empty, this, empty); // added, removed, modified
     }
 
-    var placeholder = empty.Children[0];
     Array64<TValue?> addedValues = new();
     Array64<TValue?> removedValues = new();
     Array64<TValue?> modifiedValues = new();
-    ((Span<TValue?>)addedValues).Fill(placeholder);
-    ((Span<TValue?>)removedValues).Fill(placeholder);
-    ((Span<TValue?>)modifiedValues).Fill(placeholder);
 
     var addedSet = new Bitset64();
     var removedSet = new Bitset64();
