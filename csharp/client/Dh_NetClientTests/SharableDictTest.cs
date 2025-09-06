@@ -9,21 +9,56 @@ public class SharableDictTest {
   [Fact]
   public void Simple() {
     var d = SharableDict<string>.Empty;
-    var d1 = d.With(10, "hello")
+    var dict = d.With(10, "hello")
       .With(11, "world")
       .With(1000, "Deephaven");
 
-    Assert.True(d1.TryGetValue(10, out var value));
+    Assert.True(DictContains(dict, 10, "hello"));
+    Assert.True(DictContains(dict, 11, "world"));
+    Assert.True(DictContains(dict, 1000, "Deephaven"));
+    Assert.False(dict.TryGetValue(1001, out _));
+    Assert.Equal(3, dict.Count);
+
+    var dict2 = dict.With(11, "world v2")
+      .With(1000, "Deephaven v2");
+
+    Assert.True(DictContains(dict2, 10, "hello"));
+    Assert.True(DictContains(dict2, 11, "world v2"));
+    Assert.True(DictContains(dict2, 1000, "Deephaven v2"));
+    Assert.Equal(3, dict2.Count);
+
+    // Initial dict unchanged
+    Assert.True(DictContains(dict, 10, "hello"));
+    Assert.True(DictContains(dict, 11, "world"));
+    Assert.True(DictContains(dict, 1000, "Deephaven"));
+  }
+
+  private static bool DictContains<T>(SharableDict<T> dict, Int64 key, T expected) {
+    return dict.TryGetValue(key, out var value) && Object.Equals(value, expected);
+  }
+
+  [Fact]
+  public void Replaces() {
+    var d = SharableDict<string>.Empty;
+    var dict = d.With(10, "hello")
+      .With(11, "world")
+      .With(1000, "Deephaven");
+
+
+    Assert.True(dict.TryGetValue(10, out var value));
     Assert.Equal("hello", value);
 
-    Assert.True(d1.TryGetValue(11, out value));
+    Assert.True(dict.TryGetValue(11, out value));
     Assert.Equal("world", value);
 
-    Assert.True(d1.TryGetValue(1000, out value));
+    Assert.True(dict.TryGetValue(1000, out value));
     Assert.Equal("Deephaven", value);
 
-    Assert.False(d1.TryGetValue(1001, out _));
+    Assert.False(dict.TryGetValue(1001, out _));
+
+    Assert.Equal(3, dict.Count);
   }
+
 
   [Fact]
   public void Canonicalizes() {
@@ -41,6 +76,21 @@ public class SharableDictTest {
     var newd1 = newd2.Without(1_000_000);
     var newd0 = newd1.Without(1_000_000_000);
 
-    Assert.True(ReferenceEquals(newd0.Root, d0.Root));
+    Assert.True(ReferenceEquals(newd0.RootForUnitTests, d0.RootForUnitTests));
+  }
+
+  [Fact]
+  public void Iterates() {
+    var dict = SharableDict<string>.Empty;
+    for (var i = 0; i != 10000; ++i) {
+      dict = dict.With(i * 37, "hello" + i);
+    }
+
+    var nextIndex = 0;
+    foreach (var (k, v) in dict) {
+      Assert.Equal(nextIndex * 37, k);
+      Assert.Equal("hello" + nextIndex, v);
+      ++nextIndex;
+    }
   }
 }
