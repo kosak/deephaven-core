@@ -71,9 +71,39 @@ public class SharableDictTest {
 
   [Fact]
   public void DictIsEfficientForLargeDenseSets() {
-    var dict = SharableDict<string>.Empty;
-    var temp = dict.CountNodesForUnitTesting();
-    Assert.Equal(10, temp);
+    // These should asymptote towards 64 elements per node.
+
+    // An empty dict costs 11 nodes
+    TestDenseEfficiency(0, 11);
+
+    // A dict densely packed with the first 64 integers costs 21 nodes
+    // Efficency: 21 nodes per 64 elements
+    // 0.328 nodes per element, 3.048 elements per node
+    TestDenseEfficiency(64, 21);
+
+    // A dict densely packed with the first 4096 integers costs 84 nodes
+    // Efficency: 84 nodes per 4096 elements
+    // 0.021 nodes per element, 48.76 elements per node
+    TestDenseEfficiency(4096, 84);
+
+    // A dict densely packed with the first 65536 integers costs 84 nodes
+    // Efficency: 84 nodes per 4096 elements
+    // 0.016 nodes per element, 61.88 elements per node
+    TestDenseEfficiency(65536, 1059);
+  }
+
+  private void TestDenseEfficiency(int count, int expectedNodeCount) {
+    var dict = SharableDict<int>.Empty;
+    for (var i = 0; i != count; ++i) {
+      dict = dict.With(i, i * 1111);
+    }
+    for (var i = 0; i != count; ++i) {
+      Assert.True(dict.TryGetValue(i, out var value));
+      Assert.Equal(i * 1111, value);
+    }
+
+    Assert.Equal(count, dict.Count);
+    Assert.Equal(expectedNodeCount, dict.CountNodesForUnitTesting());
   }
 
   private static bool DictContains<T>(SharableDict<T> dict, Int64 key, T expected) {
