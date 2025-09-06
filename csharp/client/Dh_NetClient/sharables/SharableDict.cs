@@ -15,12 +15,11 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// Make the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
   private static SharableDict<TValue> MakeEmpty() {
-    ImmutableNode<T> WrapEmpty<T>(T item) where T : INode<T> {
+    ImmutableNode<T> WrapEmpty<T>(T item) where T : ImmutableBase, INode<T> {
       return ImmutableNode<T>.OfEmpty(item);
     }
 
-    var emptyLeaf = ImmutableLeaf<TValue>.OfEmpty();
-    var depth10 = WrapEmpty(emptyLeaf);
+    var depth10 = ImmutableLeaf<TValue>.OfEmpty();
     var depth9 = WrapEmpty(depth10);
     var depth8 = WrapEmpty(depth9);
     var depth7 = WrapEmpty(depth8);
@@ -141,7 +140,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// For unit tests
   /// </summary>
-  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> RootForUnitTests
+  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> RootForUnitTests
    => _root;
 
   internal int CountNodesForUnitTesting() {

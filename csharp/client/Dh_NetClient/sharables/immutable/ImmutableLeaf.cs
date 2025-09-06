@@ -15,9 +15,10 @@ public class ImmutableBase {
 }
 
 public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>> {
-  public static ImmutableLeaf<TValue> OfEmpty() {
-    var children = new Array64<TValue>();
-    ((Span<TValue>)children).Clear();
+  public static ImmutableLeaf<TValue> Empty = MakeEmpty();
+
+  private static ImmutableLeaf<TValue> MakeEmpty() {
+    var children = new Array64<TValue?>();
     return new ImmutableLeaf<TValue>(0, new Bitset64(), children);
   }
 
