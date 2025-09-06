@@ -23,9 +23,9 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
   }
 
   public readonly Bitset64 ValiditySet;
-  public readonly Array64<TValue?> Children;
+  public readonly Array64<TValue> Children;
 
-  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue?> children) 
+  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children) 
     : base(count) {
     ValiditySet = validitySet;
     children.CopyTo(Children);
@@ -34,8 +34,8 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
   public ImmutableLeaf<TValue> With(int index, TValue value) {
     var newVs = ValiditySet.WithElement(index);
     var newCount = newVs.Count;
-    var newChildren = new Array64<TValue?>();
-    ((ReadOnlySpan<TValue?>)Children).CopyTo(newChildren);
+    var newChildren = new Array64<TValue>();
+    ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
     newChildren[index] = value;
     return new ImmutableLeaf<TValue>(newCount, newVs, newChildren);
   }
@@ -43,13 +43,13 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
   public ImmutableLeaf<TValue> Without(int index) {
     var newVs = ValiditySet.WithoutElement(index);
     var newCount = newVs.Count;
-    var newChildren = new Array64<TValue?>();
-    ((ReadOnlySpan<TValue?>)Children).CopyTo(newChildren);
+    var newChildren = new Array64<TValue>();
+    ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
     newChildren[index] = default;
     return new ImmutableLeaf<TValue>(newCount, newVs, Children);
   }
 
-  public bool TryGetChild(int childIndex, out TValue? child) {
+  public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out TValue child) {
     if (!ValiditySet.ContainsElement(childIndex)) {
       child = default;
       return false;
