@@ -3,6 +3,7 @@
 //
 namespace Deephaven.Dh_NetClient;
 
+using Deephaven.Dh_NetClient.sharabledict.immutable;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
@@ -34,7 +35,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     return new SharableDict<TValue>(depth0);
   }
 
-  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>> _root;
+  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> _root;
 
   public SharableDict(
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ValueWrapper<TValue>>>>>>>>>>>>

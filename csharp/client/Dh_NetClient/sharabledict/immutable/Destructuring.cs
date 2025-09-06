@@ -1,6 +1,8 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
+using Deephaven.Dh_NetClient.sharabledict.immutable;
+
 namespace Deephaven.Dh_NetClient;
 
 internal readonly struct Destructured<TValue> {
