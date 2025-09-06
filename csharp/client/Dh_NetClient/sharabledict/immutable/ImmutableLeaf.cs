@@ -4,7 +4,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Deephaven.Dh_NetClient.Sharabledict.Immutable;
+namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
 public class ImmutableBase {
   public readonly int Count;
