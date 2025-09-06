@@ -16,7 +16,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// Make the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
   private static SharableDict<TValue> MakeEmpty() {
-    ImmutableNode<T> WrapEmpty<T>(T item) where T : INode<T>, IUnitTesting {
+    ImmutableNode<T> WrapEmpty<T>(T item) where T : INode<T> {
       return ImmutableNode<T>.OfEmpty(item);
     }
     var emptyValue = new ValueWrapper<TValue>();
@@ -147,7 +147,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   internal int CountNodesForUnitTesting() {
     var set = new HashSet<object>(ReferenceEqualityComparer.Instance);
-    ((IUnitTesting)_root).GatherNodes(set);
+    _root.GatherNodesForUnitTesting(set);
     return set.Count;
   }
 }

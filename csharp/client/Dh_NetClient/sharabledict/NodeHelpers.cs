@@ -8,13 +8,10 @@ using System.Runtime.CompilerServices;
 public interface INode<TSelf> {
   int Count { get; }
   (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf emptySubtree);
+  void GatherNodesForUnitTesting(HashSet<object> nodes);
 }
 
-public interface IUnitTesting {
-  void GatherNodes(HashSet<object> nodes);
-}
-
-public struct ValueWrapper<T> : INode<ValueWrapper<T>>, IUnitTesting {
+public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
   public readonly T Value;
 
   public ValueWrapper(T value) {
@@ -28,7 +25,7 @@ public struct ValueWrapper<T> : INode<ValueWrapper<T>>, IUnitTesting {
     throw new NotImplementedException();
   }
 
-  void IUnitTesting.GatherNodes(HashSet<object> nodes) {
+  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
     // Do nothing
   }
 }

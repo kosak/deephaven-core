@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient;
 
-public class ImmutableNode<T> : INode<ImmutableNode<T>>, IUnitTesting where T : INode<T>, IUnitTesting {
+public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
   public static ImmutableNode<T> OfEmpty(T emptyChild) {
     var children = new Array64<T>();
     ((Span<T>)children).Fill(emptyChild);
@@ -98,12 +98,12 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>>, IUnitTesting where T : 
     return (aResult, rResult, mResult);
   }
 
-  void IUnitTesting.GatherNodes(HashSet<object> nodes) {
+  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
     if (!nodes.Add(this)) {
       return;
     }
     foreach (var child in Children) {
-      child.GatherNodes(nodes);
+      child.GatherNodesForUnitTesting(nodes);
     }
   }
 }

@@ -86,7 +86,7 @@ public class SharableDictTest {
     // 0.021 nodes per element, 48.76 elements per node
     TestDenseEfficiency(4096, 84);
 
-    // A dict densely packed with the first 65536 integers costs 84 nodes
+    // A dict densely packed with the first 65536 integers costs 1059 nodes
     // Efficency: 84 nodes per 4096 elements
     // 0.016 nodes per element, 61.88 elements per node
     TestDenseEfficiency(65536, 1059);
