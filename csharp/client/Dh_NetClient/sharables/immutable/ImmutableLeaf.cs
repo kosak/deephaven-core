@@ -15,15 +15,17 @@ public class ImmutableBase {
 }
 
 public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>> {
-  public static ImmutableLeaf<TValue> Empty = MakeEmpty();
+  public static readonly ImmutableLeaf<TValue> Empty = new();
 
-  private static ImmutableLeaf<TValue> MakeEmpty() {
-    var children = new Array64<TValue?>();
-    return new ImmutableLeaf<TValue>(0, new Bitset64(), children);
+  public static ImmutableLeaf<TValue> Of(Bitset64 validitySet, ReadOnlySpan<TValue> children) {
+    return validitySet.IsEmpty ? Empty : new ImmutableLeaf<TValue>(validitySet.Count, validitySet, children);
   }
 
   public readonly Bitset64 ValiditySet;
   public readonly Array64<TValue> Children;
+
+  private ImmutableLeaf() : base(0) {
+  }
 
   private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children) 
     : base(count) {
@@ -42,6 +44,9 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
 
   public ImmutableLeaf<TValue> Without(int index) {
     var newVs = ValiditySet.WithoutElement(index);
+    if (newVs.IsEmpty) {
+      return Empty;
+    }
     var newCount = newVs.Count;
     var newChildren = new Array64<TValue>();
     ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
@@ -73,9 +78,9 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
       return (empty, this, empty); // added, removed, modified
     }
 
-    Array64<TValue?> addedValues = new();
-    Array64<TValue?> removedValues = new();
-    Array64<TValue?> modifiedValues = new();
+    Array64<TValue> addedValues = new();
+    Array64<TValue> removedValues = new();
+    Array64<TValue> modifiedValues = new();
 
     var addedSet = new Bitset64();
     var removedSet = new Bitset64();
@@ -117,6 +122,11 @@ public class ImmutableLeaf<TValue> : ImmutableBase, INode<ImmutableLeaf<TValue>>
         }
       }
     }
+
+    var aResult = Of(addedSet, addedValues);
+    var rResult = Of(removedSet, removedValues);
+    var mResult = Of(modifiedSet, modifiedValues);
+    return (aResult, rResult, mResult);
   }
 
   public void GatherNodesForUnitTesting(HashSet<object> nodes) {

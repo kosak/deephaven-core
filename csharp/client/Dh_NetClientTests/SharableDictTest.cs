@@ -1,7 +1,8 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-using Deephaven.Dh_NetClient;
+
+using Deephaven.Dh_NetClient.Sharables;
 using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -77,12 +78,18 @@ public class SharableDictTest(ITestOutputHelper output) {
       dict1 = dict1.With(i, i * 37);
     }
 
-    var dict2 = dict1.With(100, 999).Without(5);
+    var dict2 = dict1
+      .With(100, 999)
+      .With(1000, 9999)
+      .Without(3)
+      .Without(5)
+      .With(7, 12345)
+      .With(-1, 999);
 
     var (a, r, m) = dict1.CalcDifference(dict2);
-    output.WriteLine($"Adds {a}");
-    output.WriteLine($"Removes {r}");
-    output.WriteLine($"Modifies {m}");
+    output.WriteLine($"Adds {a} which takes up {a.CountNodesForUnitTesting()}");
+    output.WriteLine($"Removes {r} which takes up {m.CountNodesForUnitTesting()}");
+    output.WriteLine($"Modifies {m} which takes up {m.CountNodesForUnitTesting()}");
   }
 
   [Fact]
@@ -108,7 +115,7 @@ public class SharableDictTest(ITestOutputHelper output) {
     TestDenseEfficiency(65536, 1059);
   }
 
-  private void TestDenseEfficiency(int count, int expectedNodeCount) {
+  private static void TestDenseEfficiency(int count, int expectedNodeCount) {
     var dict = SharableDict<int>.Empty;
     for (var i = 0; i != count; ++i) {
       dict = dict.With(i, i * 1111);

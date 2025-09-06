@@ -6,11 +6,7 @@ namespace Deephaven.Dh_NetClient.Sharables;
 using System.Runtime.CompilerServices;
 
 public interface INode<TSelf> where TSelf : class {
-  (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf empty) {
-    if (this == target) {
-
-    }
-  }
+  (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf empty);
   void GatherNodesForUnitTesting(HashSet<object> nodes);
 }
 

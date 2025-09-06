@@ -2,8 +2,6 @@
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
 
-using System.Diagnostics.CodeAnalysis;
-
 namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
 public class ImmutableNode<T> : ImmutableBase, INode<ImmutableNode<T>> where T : ImmutableBase, INode<T> {

@@ -3,7 +3,9 @@
 //
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-namespace Deephaven.Dh_NetClient.Sharables.Immutable;
+using Deephaven.Dh_NetClient.Sharables.Immutable;
+
+namespace Deephaven.Dh_NetClient.Sharables;
 
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
@@ -15,7 +17,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// Make the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
   private static SharableDict<TValue> MakeEmpty() {
-    ImmutableNode<T> WrapEmpty<T>(T item) where T : ImmutableBase, INode<T> {
+    static ImmutableNode<T> WrapEmpty<T>(T item) where T : ImmutableBase, INode<T> {
       return ImmutableNode<T>.OfEmpty(item);
     }
 

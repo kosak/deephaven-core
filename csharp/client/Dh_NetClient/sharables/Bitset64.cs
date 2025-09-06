@@ -74,7 +74,7 @@ public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
       return true;
     }
 
-    public void Dispose() {
+    public readonly void Dispose() {
       // Do nothing
     }
 
