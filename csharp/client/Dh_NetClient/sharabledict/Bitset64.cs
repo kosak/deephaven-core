@@ -10,6 +10,10 @@ public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
     return new Bitset64(_value & other._value);
   }
 
+  public Bitset64 Union(Bitset64 other) {
+    return new Bitset64(_value | other._value);
+  }
+
   public Bitset64 Without(Bitset64 other) {
     return new Bitset64(_value & ~other._value);
   }
@@ -58,7 +62,7 @@ public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
     return new Enumerator(this);
   }
 
-  public struct Enumerator(Bitset64 bitset) {
+  public struct Enumerator(Bitset64 bitset) : IDisposable {
     private Bitset64 _bitset = bitset;
     private int _current;
 
@@ -68,6 +72,10 @@ public readonly struct Bitset64(UInt64 value) : IEquatable<Bitset64> {
       }
       _bitset = newBitset;
       return true;
+    }
+
+    public void Dispose() {
+      // Do nothing
     }
 
     public readonly int Current => _current;

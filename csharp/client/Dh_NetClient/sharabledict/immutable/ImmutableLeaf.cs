@@ -11,7 +11,7 @@ public class ImmutableBase {
 
 }
 
-public class ImmutableLeaf<TValue> : INode<ImmutableNode<T>> where T : INode<T> {
+public class ImmutableLeaf<TValue> : INode<ImmutableLeaf<TValue>> {
   public static ImmutableLeaf<TValue> OfEmpty(TValue placeholder) {
     var children = new Array64<TValue>();
     ((Span<TValue>)children).Fill(placeholder);
@@ -58,18 +58,18 @@ public class ImmutableLeaf<TValue> : INode<ImmutableNode<T>> where T : INode<T> 
     ImmutableLeaf<TValue> target, ImmutableLeaf<TValue> empty) {
     if (this == target) {
       // Source and target are the same. No changes
-      return (empty, empty, empty);  // added, removed, modified
+      return (empty, empty, empty); // added, removed, modified
     }
     if (this == empty) {
       // Relative to an empty source, everything in target was added
-      return (target, empty, empty);  // added, removed, modified
+      return (target, empty, empty); // added, removed, modified
     }
     if (target == empty) {
       // Relative to an empty destination, everything in src was removed
-      return (empty, this, empty);  // added, removed, modified
+      return (empty, this, empty); // added, removed, modified
     }
 
-    // Need to recurse to all children to build new nodes
+    var placeholder = empty.Children[0];
     Array64<TValue> addedValues = new();
     Array64<TValue> removedValues = new();
     Array64<TValue> modifiedValues = new();
@@ -77,58 +77,49 @@ public class ImmutableLeaf<TValue> : INode<ImmutableNode<T>> where T : INode<T> 
     ((Span<TValue>)removedValues).Fill(placeholder);
     ((Span<TValue>)modifiedValues).Fill(placeholder);
 
+    var addedSet = new Bitset64();
+    var removedSet = new Bitset64();
+    var modifiedSet = new Bitset64();
 
+    var union = ValiditySet.Union(target.ValiditySet);
 
+    while (union.TryExtractLowestBit(out var nextUnion, out var i)) {
+      union = nextUnion;
 
-    var length = ((ReadOnlySpan<TValue>)Children).Length;
-    for (var i = 0; i != length; ++i) {
       var selfHasBit = ValiditySet.ContainsElement(i);
       var targetHasBit = target.ValiditySet.ContainsElement(i);
 
-      if (selfHasBit && targetHasBit) {
-        // self && target. This is a modify (if the values are different) or a no-op (if they are the same)
-        if (!Object.Equals(Children[i], target.Children[i])) {
-          modifiedValues[i] = target.Children[i];
-          modifiedSet = modifiedSet.IncludeElement(i);
+      switch (selfHasBit, targetHasBit) {
+        case (true, true): {
+          // self && target. This is a modify (if the values are different) or a no-op (if they are the same)
+          if (!Object.Equals(Children[i], target.Children[i])) {
+            modifiedValues[i] = target.Children[i];
+            modifiedSet = modifiedSet.WithElement(i);
+          }
+          break;
         }
-        continue;
-      }
 
-      if (selfHasBit && !targetHasBit) {
-        removedValues[i] = Children[i];
-        removedSet = removedSet.IncludeElement(i);
-        continue;
+        case (true, false): {
+          removedValues[i] = Children[i];
+          removedSet = removedSet.WithElement(i);
+          break;
+        }
 
-      }
-      if (!selfHasBit && targetHasBit) {
-        addedValues[i] = target.Children[i];
-        addedSet = addedSet.IncludeElement(i);
-        continue;
-      }
+        case (false, true): {
+          addedValues[i] = target.Children[i];
+          addedSet = addedSet.WithElement(i);
+          break;
+        }
 
-      // if (!selfHasBit && targetHasBit)
-      // do nothing
+        case (false, false): {
+          // can't happen
+          throw new Exception("Assertion failure in CalcDifference");
+        }
+      }
     }
-
-    var aResult = OfArray64(addedChildren);
-    var rResult = OfArray64(removedChildren);
-    var mResult = OfArray64(modifiedChildren);
-    return (aResult, rResult, mResult);
-  }
-
-  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcLeafDifference(
-    ImmutableNode<T> target, ImmutableNode<T> empty) {
-    var nubbin1 = this as ImmutableNode<ValueWrapper<double>>;
-    var nubbin2 = target as ImmutableNode<ValueWrapper<double>>;
-    return (null, null, null);
   }
 
   public void GatherNodesForUnitTesting(HashSet<object> nodes) {
-    if (!nodes.Add(this)) {
-      return;
-    }
-    foreach (var child in Children) {
-      child.GatherNodesForUnitTesting(nodes);
-    }
+    nodes.Add(this);
   }
 }
