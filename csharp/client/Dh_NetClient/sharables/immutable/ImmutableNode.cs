@@ -4,7 +4,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Deephaven.Dh_NetClient.Sharabledict.Immutable;
+namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
 public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
   public static ImmutableNode<T> OfEmpty(T emptyChild) {

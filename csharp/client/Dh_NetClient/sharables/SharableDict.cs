@@ -1,11 +1,9 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-namespace Deephaven.Dh_NetClient;
-
-using Deephaven.Dh_NetClient.sharabledict.immutable;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+namespace Deephaven.Dh_NetClient.Sharables.Immutable;
 
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
