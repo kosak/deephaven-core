@@ -2,10 +2,11 @@
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
 using Deephaven.Dh_NetClient;
+using Xunit.Abstractions;
 
 namespace Deephaven.Dh_NetClientTests;
 
-public class SharableDictTest {
+public class SharableDictTest(ITestOutputHelper output) {
   [Fact]
   public void Simple() {
     var d = SharableDict<string>.Empty;
@@ -67,6 +68,21 @@ public class SharableDictTest {
       Assert.Equal("hello" + nextIndex, v);
       ++nextIndex;
     }
+  }
+
+  [Fact]
+  public void Difference() {
+    var dict1 = SharableDict<int>.Empty;
+    for (var i = 0; i != 10; ++i) {
+      dict1 = dict1.With(i, i * 37);
+    }
+
+    var dict2 = dict1.With(100, 999).Without(5);
+
+    var (a, r, m) = dict1.CalcDifference(dict2);
+    output.WriteLine($"Adds {a}");
+    output.WriteLine($"Removes {r}");
+    output.WriteLine($"Modifies {m}");
   }
 
   [Fact]

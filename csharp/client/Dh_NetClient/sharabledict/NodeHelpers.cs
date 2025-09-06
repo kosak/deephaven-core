@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 public interface INode<TSelf> {
   int Count { get; }
-  (TSelf, TSelf, TSelf) CalcDifference(TSelf target, TSelf emptySubtree);
+  (TSelf, TSelf, TSelf) CalcDifference(int depth, TSelf target, TSelf emptySubtree);
   void GatherNodesForUnitTesting(HashSet<object> nodes);
 }
 
@@ -20,8 +20,8 @@ public struct ValueWrapper<T> : INode<ValueWrapper<T>> {
 
   public int Count => throw new NotImplementedException();
 
-  public (ValueWrapper<T>, ValueWrapper<T>, ValueWrapper<T>) CalcDifference(ValueWrapper<T> target,
-    ValueWrapper<T> empty) {
+  public (ValueWrapper<T>, ValueWrapper<T>, ValueWrapper<T>) CalcDifference(
+    int depth, ValueWrapper<T> target, ValueWrapper<T> empty) {
     throw new NotImplementedException();
   }
 

@@ -18,6 +18,7 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
       var child = children[i];
+      throw new Exception("WRONG");
       validitySet = validitySet.WithElement(i);
       subtreeCount += child.Count;
     }
@@ -65,8 +66,8 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     return true;
   }
 
-  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(ImmutableNode<T> target,
-    ImmutableNode<T> empty) {
+  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcDifference(int depth,
+    ImmutableNode<T> target, ImmutableNode<T> empty) {
     if (this == target) {
       // Source and target are the same. No changes
       return (empty, empty, empty);  // added, removed, modified
@@ -79,6 +80,11 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
       // Relative to an empty destination, everything in src was removed
       return (empty, this, empty);  // added, removed, modified
     }
+
+    if (depth == Splitter.Depth) {
+      return CalcLeafDifference(target, empty);
+    }
+
     // Need to recurse to all children to build new nodes
     Array64<T> addedChildren = new();
     Array64<T> removedChildren = new();
@@ -86,7 +92,7 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
 
     var length = ((ReadOnlySpan<T>)Children).Length;
     for (var i = 0; i != length; ++i) {
-      var (a, r, m) = Children[i].CalcDifference(target.Children[i], empty.Children[0]);
+      var (a, r, m) = Children[i].CalcDifference(depth + 1, target.Children[i], empty.Children[0]);
       addedChildren[i] = a;
       removedChildren[i] = r;
       modifiedChildren[i] = m;
@@ -96,6 +102,13 @@ public class ImmutableNode<T> : INode<ImmutableNode<T>> where T : INode<T> {
     var rResult = OfArray64(removedChildren);
     var mResult = OfArray64(modifiedChildren);
     return (aResult, rResult, mResult);
+  }
+
+  public (ImmutableNode<T>, ImmutableNode<T>, ImmutableNode<T>) CalcLeafDifference(
+    ImmutableNode<T> target, ImmutableNode<T> empty) {
+    var nubbin1 = this as ImmutableNode<ValueWrapper<double>>;
+    var nubbin2 = target as ImmutableNode<ValueWrapper<double>>;
+    return (null, null, null);
   }
 
   public void GatherNodesForUnitTesting(HashSet<object> nodes) {
