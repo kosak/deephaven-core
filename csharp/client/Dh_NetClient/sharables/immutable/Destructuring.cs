@@ -78,7 +78,7 @@ internal readonly struct Destructured<TValue> {
 public static class Splitter {
   private const int Shift = 6;
   private const UInt64 Mask = 0x3f;
-  public const int Depth = 64 + (Shift - 1) / Shift;
+  public const int NumChildren = 1 << Shift;
 
   public static (int, int, int, int, int, int, int, int, int, int, int) Split(Int64 keySigned) {
     var key = (UInt64)keySigned;
