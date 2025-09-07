@@ -1,7 +1,7 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-namespace Deephaven.Dh_NetClient.Sharables;
+namespace Deephaven.Dh_NetClient;
 
 using System.Runtime.CompilerServices;
 

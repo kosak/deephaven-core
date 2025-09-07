@@ -2,7 +2,7 @@
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
 
-namespace Deephaven.Dh_NetClient.Sharables.Immutable;
+namespace Deephaven.Dh_NetClient;
 
 public sealed class ImmutableNode<TChild> : ImmutableBase<ImmutableNode<TChild>> where TChild : ImmutableBase<TChild>, new() {
   public static readonly ImmutableNode<TChild> Empty = new();

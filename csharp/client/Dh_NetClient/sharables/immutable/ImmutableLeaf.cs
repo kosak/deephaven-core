@@ -4,7 +4,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Deephaven.Dh_NetClient.Sharables.Immutable;
+namespace Deephaven.Dh_NetClient;
 
 public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
   public static readonly ImmutableLeaf<TValue> Empty = new();

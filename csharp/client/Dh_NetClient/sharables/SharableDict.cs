@@ -3,9 +3,8 @@
 //
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using Deephaven.Dh_NetClient.Sharables.Immutable;
 
-namespace Deephaven.Dh_NetClient.Sharables;
+namespace Deephaven.Dh_NetClient;
 
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>

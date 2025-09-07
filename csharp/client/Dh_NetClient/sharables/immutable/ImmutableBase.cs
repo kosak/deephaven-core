@@ -1,7 +1,7 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-namespace Deephaven.Dh_NetClient.Sharables.Immutable;
+namespace Deephaven.Dh_NetClient;
 
 public abstract class ImmutableBase<TSelf> where TSelf : class {
   public readonly int Count;

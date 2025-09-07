@@ -2,8 +2,7 @@
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
 
-using Deephaven.Dh_NetClient.Sharables;
-using Xunit.Abstractions;
+using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
 
