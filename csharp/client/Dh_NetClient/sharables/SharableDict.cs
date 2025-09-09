@@ -6,12 +6,34 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient;
 
+/// <summary>
+/// This class implements an immutable dictionary data structure with Int64 keys and values of user-specified type.
+/// The dictionary is implemented as a fixed-depth tree (the internal nodes have arity 64, and the tree has depth 11).
+/// Looking up an entry by key is constant time, because it traverses a fixed 11 nodes from root to leaf.
+/// Looking up an entry by rank (not implemented yet) is also constant time, but the constant is larger,
+/// because it needs to traverse 11 nodes but also scan children counts at every node.
+/// On the other hand, simple scans like this are fast on modern CPUs.
+/// Modifications the tree are performed by making a new tree that shares most of its substructure with the old tree,
+/// differing only on the path from root to new value. Callers are welcome to keep multiple versions of the dictionary
+/// if their application needs to. There are no locks and no caller synchronization is required.
+///
+/// The major operations are called "With" and "Without". The With(k, v) method returns a new dictionary
+/// which is just like the current one except it also has (new or modified) entry mapping "k" to "v". The
+/// Without(key) method returns a new dictionary just like the current one except it lacks an entry for "k".
+/// In the future we will provide batch versions of With and Without for greater efficiency.
+///
+/// There is also a "CalcDifference" operations which compares the current dictionary with another and
+/// returns three dictionaries representing the difference.
+///
+/// The data structure is also enumerable. As with any immutable data structure, there is no concern about
+/// enumerating while concurrently modifying (because there is no "modify" operation per se).
+/// </summary>
+/// <typeparam name="TValue"></typeparam>
 public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
-  /// The singleton for an empty SharableDict&lt;TValue&gt;.
+  /// The singleton for an empty SharableDict&lt;TValue&gt;. This is how you get your initial SharableDict.
   /// </summary>
   public static readonly SharableDict<TValue> Empty = new();
-
 
   /// <summary>
   /// Makes the singleton for the empty SharableDict&lt;TValue&gt;.
@@ -27,17 +49,37 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableLeaf<TValue>>>>>>>>>>> _root;
 
-  public SharableDict(
+  /// <summary>
+  /// Constructor. Used internally.
+  /// </summary>
+  /// <param name="root"></param>
+  internal SharableDict(
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
         ImmutableLeaf<TValue>>>>>>>>>>> root) {
     _root = root;
   }
 
+  /// <summary>
+  /// Makes a new SharableDict with the same entries as 'this', except that also 'key' now maps to 'value'.
+  /// Logically, this will be an add operation (if this dictionary does not currently contain 'key') or a modify operation
+  /// (if it does). In all cases 'this' dictionary is unchanged.
+  /// </summary>
+  /// <param name="key">The new key</param>
+  /// <param name="value">The new value</param>
+  /// <returns>The new dictionary</returns>
   public SharableDict<TValue> With(Int64 key, TValue value) {
     return new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
   }
 
+  /// <summary>
+  /// Makes a new SharableDict with the same entries as 'this', except that there is no entry for 'key'.
+  /// Logically, this will be a remove operation (if this dictionary currently contains 'key') or a no-op
+  /// (if it does). 'this' dictionary is unchanged.
+  /// </summary>
+  /// <param name="key">The new key</param>
+  /// <param name="value">The new value</param>
+  /// <returns>The new dictionary</returns>
   public SharableDict<TValue> Without(Int64 key) {
     var emptyDestructured = new Destructured<TValue>(Empty._root, 0);
     return new Destructured<TValue>(_root, key).RebuildWithoutLeafHere(in emptyDestructured);
