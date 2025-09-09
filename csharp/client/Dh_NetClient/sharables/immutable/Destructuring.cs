@@ -58,6 +58,10 @@ internal readonly struct Destructured<TValue> {
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> RebuildWithoutLeafHere() {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
+    if (!Depth10.TryGetChild(i10, out _)) {
+      // Leaf doesn't have a child at that index, so there is no change.
+      return Depth0;
+    }
     var newDepth10 = Depth10.Without(i10);
     var newDepth9 = Depth9.Replace(i9, newDepth10);
     var newDepth8 = Depth8.Replace(i8, newDepth9);

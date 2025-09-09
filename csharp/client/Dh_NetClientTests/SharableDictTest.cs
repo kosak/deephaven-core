@@ -75,7 +75,7 @@ public class SharableDictTest {
   }
 
   [Fact]
-  public void RemoveNonexistentIsNoop() {
+  public void NonexistentRemoveIsNoop() {
     var dict = SharableDict<string>.Empty
       .With(10, "hello")
       .With(11, "world")
