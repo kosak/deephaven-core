@@ -3,7 +3,7 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-public abstract class ImmutableBase<TSelf> where TSelf : class {
+public abstract class ImmutableBase<TSelf> : EitherBase<TSelf> where TSelf : class {
   public readonly int Count;
 
   public ImmutableBase(int count) {

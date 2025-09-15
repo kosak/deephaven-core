@@ -5,6 +5,10 @@ namespace Deephaven.Dh_NetClient;
 
 using System.Runtime.CompilerServices;
 
+public abstract class EitherBase<TChild> where TChild : class {
+
+}
+
 [InlineArray(64)]
 public struct Array64<T> {
   public T Item;
