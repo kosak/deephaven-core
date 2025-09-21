@@ -56,13 +56,13 @@ public class SharableDictTest {
   }
 
   [Fact]
-  public void Canonicalizes() {
-    var d0 = SharableDict<string>.Empty;
-    var d1 = d0.With(1_000, "hello");
+  public void CanonicalizesToEmpty() {
+    var empty = SharableDict<string>.Empty;
+    var d1 = empty.With(1_000, "hello");
     var d2 = d1.With(1_000_000, "there");
     var d3 = d2.With(1_000_000_000, "Deephaven");
 
-    Assert.Equal(0, d0.Count);
+    Assert.Equal(0, empty.Count);
     Assert.Equal(1, d1.Count);
     Assert.Equal(2, d2.Count);
     Assert.Equal(3, d3.Count);
@@ -71,7 +71,7 @@ public class SharableDictTest {
     var newd1 = newd2.Without(1_000_000);
     var newd0 = newd1.Without(1_000_000_000);
 
-    Assert.True(ReferenceEquals(newd0.RootForUnitTests, d0.RootForUnitTests));
+    Assert.True(ReferenceEquals(newd0, empty));
   }
 
   [Fact]
@@ -82,6 +82,18 @@ public class SharableDictTest {
       .With(1000, "Deephaven");
 
     var d2 = dict.Without(999); // nonexistent key
+
+    Assert.True(ReferenceEquals(dict, d2));
+  }
+
+  [Fact]
+  public void IdenticalReplaceIsNoop() {
+    var dict = SharableDict<string>.Empty
+      .With(10, "hello")
+      .With(11, "world")
+      .With(1000, "Deephaven");
+
+    var d2 = dict.With(1000, "Deephaven"); // identical value
 
     Assert.True(ReferenceEquals(dict, d2));
   }

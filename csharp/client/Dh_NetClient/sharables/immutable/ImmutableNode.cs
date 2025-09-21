@@ -1,82 +1,102 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableNode<TChild> : ImmutableBase<ImmutableNode<TChild>> where TChild : ImmutableBase<TChild>, new() {
+public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode<TChild>>
+  where TChild : IAmImmutable<TChild>, new() {
   public static readonly ImmutableNode<TChild> Empty = new();
 
-  public override ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
+  public ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
 
-  public static ImmutableNode<TChild> OfArray64(ReadOnlySpan<TChild> children) {
+  public static ItemWithCount<ImmutableNode<TChild>> OfArray64(ReadOnlySpan<TChild> children,
+    ReadOnlySpan<int> childCounts) {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
-      var child = children[i];
-      subtreeCount += child.Count;
+      subtreeCount += childCounts[i];
     }
-    return subtreeCount == 0 ? Empty : new ImmutableNode<TChild>(subtreeCount, children);
+    if (subtreeCount == 0) {
+      return ItemWithCount.Of(Empty, 0);
+    }
+    return ItemWithCount.Of(new ImmutableNode<TChild>(children, childCounts), subtreeCount);
   }
 
   public readonly Array64<TChild> Children;
+  public readonly Array64<int> ChildCounts;
 
-  public ImmutableNode() : base(0) {
+  public ImmutableNode() {
     // This is our hack to access the static T.Empty for type T
     var emptyChild = new TChild().GetEmptyInstanceForThisType();
     ((Span<TChild>)Children).Fill(emptyChild);
+    ((Span<int>)ChildCounts).Clear();
   }
 
-  private ImmutableNode(int count, ReadOnlySpan<TChild> children) : base(count) {
+  private ImmutableNode(ReadOnlySpan<TChild> children, ReadOnlySpan<int> childCounts) {
     children.CopyTo(Children);
+    childCounts.CopyTo(ChildCounts);
   }
 
-  public ImmutableNode<TChild> Replace(int index, TChild newChild) {
-    // If we are about to replace our only non-empty child, then canonicalize.
-    if (Count == Children[index].Count && newChild.Count == 0) {
-      return Empty;
-    }
+  public ItemWithCount<ImmutableNode<TChild>> Replace(int index, ItemWithCount<TChild> newChild) {
     var newChildren = new Array64<TChild>();
+    var newCounts = new Array64<int>();
     ((ReadOnlySpan<TChild>)Children).CopyTo(newChildren);
-    newChildren[index] = newChild;
-    return OfArray64(newChildren);
+    ((ReadOnlySpan<int>)ChildCounts).CopyTo(newCounts);
+    newChildren[index] = newChild.Item;
+    newCounts[index] = newChild.Count;
+    return OfArray64(newChildren, newCounts);
   }
 
-  public override (ImmutableNode<TChild>, ImmutableNode<TChild>, ImmutableNode<TChild>) CalcDifference(
-    ImmutableNode<TChild> target) {
-    var empty = Empty;
-    if (this == target) {
+  public (ItemWithCount<ImmutableNode<TChild>>, ItemWithCount<ImmutableNode<TChild>>, ItemWithCount<ImmutableNode<TChild>>)
+    CalcDifference(
+      ItemWithCount<ImmutableNode<TChild>> self,
+      ItemWithCount<ImmutableNode<TChild>> target) {
+    if (!ReferenceEquals(this, self.Item)) {
+      throw new Exception($"Assertion failed: this != self.Item");
+    }
+    var empty = ItemWithCount.Of(Empty, 0);
+    if (self == target) {
       // Source and target are the same. No changes
       return (empty, empty, empty);  // added, removed, modified
     }
-    if (this == empty) {
+    if (self == empty) {
       // Relative to an empty source, everything in target was added
       return (target, empty, empty);  // added, removed, modified
     }
     if (target == empty) {
       // Relative to an empty destination, everything in src was removed
-      return (empty, this, empty);  // added, removed, modified
+      return (empty, self, empty);  // added, removed, modified
     }
 
     // Need to recurse to all children to build new nodes
     Array64<TChild> addedChildren = new();
     Array64<TChild> removedChildren = new();
     Array64<TChild> modifiedChildren = new();
+    Array64<int> addedChildCounts = new();
+    Array64<int> removedChildCounts = new();
+    Array64<int> modifiedChildCounts = new();
 
     var length = ((ReadOnlySpan<TChild>)Children).Length;
     for (var i = 0; i != length; ++i) {
-      var (a, r, m) = Children[i].CalcDifference(target.Children[i]);
-      addedChildren[i] = a;
-      removedChildren[i] = r;
-      modifiedChildren[i] = m;
+      var newSelf = ItemWithCount.Of(Children[i], ChildCounts[i]);
+      var newTarget = ItemWithCount.Of(target.Item.Children[i], target.Item.ChildCounts[i]);
+      var (added, removed, modified) = newSelf.Item.CalcDifference(newSelf, newTarget);
+      addedChildren[i] = added.Item;
+      addedChildCounts[i] = added.Count;
+
+      removedChildren[i] = removed.Item;
+      removedChildCounts[i] = removed.Count;
+
+      modifiedChildren[i] = modified.Item;
+      modifiedChildCounts[i] = modified.Count;
     }
 
-    var aResult = OfArray64(addedChildren);
-    var rResult = OfArray64(removedChildren);
-    var mResult = OfArray64(modifiedChildren);
+    var aResult = OfArray64(addedChildren, addedChildCounts);
+    var rResult = OfArray64(removedChildren, removedChildCounts);
+    var mResult = OfArray64(modifiedChildren, modifiedChildCounts);
     return (aResult, rResult, mResult);
   }
 
-  public override void GatherNodesForUnitTesting(HashSet<object> nodes) {
+  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
     if (!nodes.Add(this)) {
       return;
     }
