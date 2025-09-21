@@ -230,7 +230,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// The number of entries in this dictionary.
   /// </summary>
-  public int Count => _root.Count;
+  public int Count => _rootCount;
 
   public override string ToString() {
     return string.Join(", ", this.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
@@ -239,7 +239,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// For unit tests
   /// </summary>
-  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> RootForUnitTests
+  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> RootForUnitTests
    => _root;
 
   /// <summary>
