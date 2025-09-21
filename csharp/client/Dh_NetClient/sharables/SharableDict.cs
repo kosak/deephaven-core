@@ -75,6 +75,9 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="value">The new value</param>
   /// <returns>The new dictionary</returns>
   public SharableDict<TValue> With(Int64 key, TValue value) {
+    if (TryGetValue(key, out var oldValue) && Equals(value, oldValue)) {
+      return this;
+    }
     var (newRoot, newCount) = new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
     return new SharableDict<TValue>(newRoot, newCount);
   }
@@ -87,8 +90,17 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="key">The key to remove</param>
   /// <returns>The resulting dictionary</returns>
   public SharableDict<TValue> Without(Int64 key) {
+    if (!ContainsKey(key)) {
+      return this;
+    }
     var (newRoot, newCount) = new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
-    return newRoot == _root ? this : new SharableDict<TValue>(newRoot, newCount);
+    if (newCount == 0) {
+      return Empty;
+    }
+    if (newRoot == _root) {
+      return this;
+    }
+    return new SharableDict<TValue>(newRoot, newCount);
   }
 
   /// <summary>

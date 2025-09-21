@@ -28,12 +28,38 @@ public struct ImmutableValueHolder<TValue> : IAmImmutable<ImmutableValueHolder<T
   }
 
   public ImmutableValueHolder<TValue> GetEmptyInstanceForThisType() {
-    throw new NotImplementedException();
+    // We are a struct, so we don't have a singleton canonical instance.
+    return new();
   }
 
   public (ImmutableValueHolder<TValue>, int, ImmutableValueHolder<TValue>, int, ImmutableValueHolder<TValue>, int) CalcDifference(int thisCount,
     ImmutableValueHolder<TValue> target, int targetCount) {
-    throw new NotImplementedException();
+    var empty = new ImmutableValueHolder<TValue>();
+    switch (thisCount, targetCount) {
+      case (0, 0): {
+        // Both sides empty
+        return (empty, 0, empty, 0, empty, 0);  // added, removed, modified
+      }
+      case (0, 1): {
+        // Source empty, target exists
+        return (target, 1, empty, 0, empty, 0);  // added, removed, modified
+      }
+      case (1, 0): {
+        // Target empty, source exists
+        return (empty, 0, this, 1, empty, 0);  // added, removed modified
+      }
+      case (1, 1): {
+        // Both exists. Do compare.
+        if (Equals(Value, target.Value)) {
+          // Same
+          return (empty, 0, empty, 0, empty, 0); // added, removed, modified
+        }
+        return (empty, 0, empty, 0, target, 1);  // added, removed modified
+      }
+      default: {
+        throw new Exception($"Assertion failure: thisCount={thisCount}, targetCount={targetCount}");
+      }
+    }
   }
 
   public void GatherNodesForUnitTesting(HashSet<object> nodes) {

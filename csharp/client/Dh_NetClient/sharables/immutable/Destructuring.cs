@@ -71,7 +71,6 @@ internal readonly struct Destructured<TValue> {
     var newDepth0 = Depth0.Replace(i0, newDepth1.Item1, newDepth1.Item2);
     return newDepth0;
   }
-
 }
 
 public static class Splitter {
