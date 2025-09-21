@@ -10,7 +10,7 @@ public interface IAmImmutable {
 
 }
 
-public class ImmutableValueHolder<TValue> : IAmImmutable {
+public struct ImmutableValueHolder<TValue> : IAmImmutable {
 
 }
 
