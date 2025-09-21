@@ -43,7 +43,7 @@ public readonly struct ImmutableValueHolder<TValue> : IAmImmutable<ImmutableValu
           return (empty0, self, empty0);  // added, removed modified
         }
       case (1, 1): {
-          // Both exists. Do compare.
+          // Both exist. Compare values compare.
           if (Equals(Value, target.Item1.Value)) {
             // Same
             return (empty0, empty0, empty0); // added, removed, modified
