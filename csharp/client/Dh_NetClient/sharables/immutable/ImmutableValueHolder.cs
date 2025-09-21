@@ -23,35 +23,36 @@ public readonly struct ImmutableValueHolder<TValue> : IAmImmutable<ImmutableValu
     return new();
   }
 
-  public ((ImmutableValueHolder<TValue>, int),
-    (ImmutableValueHolder<TValue>, int),
-    (ImmutableValueHolder<TValue>, int)) CalcDifference(
-    (ImmutableValueHolder<TValue>, int) self,
-    (ImmutableValueHolder<TValue>, int) target) {
-    var empty0 = (new ImmutableValueHolder<TValue>(), 0);
-    switch (self.Item2, target.Item2) {
+  public (ItemWithCount<ImmutableValueHolder<TValue>>,
+    ItemWithCount<ImmutableValueHolder<TValue>>,
+    ItemWithCount<ImmutableValueHolder<TValue>>)
+    CalcDifference(
+    ItemWithCount<ImmutableValueHolder<TValue>> self,
+    ItemWithCount<ImmutableValueHolder<TValue>> target) {
+    var empty = ItemWithCount.Of(new ImmutableValueHolder<TValue>(), 0);
+    switch (self.Count, target.Count) {
       case (0, 0): {
           // Both sides empty
-          return (empty0, empty0, empty0);  // added, removed, modified
+          return (empty, empty, empty);  // added, removed, modified
         }
       case (0, 1): {
           // Source empty, target exists
-          return (target, empty0, empty0);  // added, removed, modified
+          return (target, empty, empty);  // added, removed, modified
         }
       case (1, 0): {
           // Target empty, source exists
-          return (empty0, self, empty0);  // added, removed modified
+          return (empty, self, empty);  // added, removed modified
         }
       case (1, 1): {
           // Both exist. Compare values compare.
-          if (Equals(Value, target.Item1.Value)) {
+          if (Equals(Value, target.Item.Value)) {
             // Same
-            return (empty0, empty0, empty0); // added, removed, modified
+            return (empty, empty, empty); // added, removed, modified
           }
-          return (empty0, empty0, target);  // added, removed modified
+          return (empty, empty, target);  // added, removed modified
         }
       default: {
-          throw new Exception($"Assertion failure: thisCount={self.Item2}, targetCount={target.Item2}");
+          throw new Exception($"Assertion failure: thisCount={self.Count}, targetCount={target.Count}");
         }
     }
   }

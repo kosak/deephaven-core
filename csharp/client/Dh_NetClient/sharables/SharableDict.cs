@@ -40,17 +40,15 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// Makes the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
   private SharableDict() {
-    _root =
+    _root = ItemWithCount.Of(
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
         ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-          ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>.Empty; 
+          ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>.Empty, 0);
   }
 
-  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+  private readonly ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> _root;
-
-  private readonly int _rootCount;
+      ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>> _root;
 
   /// <summary>
   /// Constructor. Used internally.
@@ -58,12 +56,10 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="root">The root of the tree</param>
   /// <param name="rootCount">The total size of the tree</param>
   internal SharableDict(
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+    ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> root,
-    int rootCount) {
+        ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>> root) {
     _root = root;
-    _rootCount = rootCount;
   }
 
   /// <summary>
@@ -78,8 +74,8 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     if (TryGetValue(key, out var oldValue) && Equals(value, oldValue)) {
       return this;
     }
-    var (newRoot, newCount) = new ImmutableDestructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
-    return new SharableDict<TValue>(newRoot, newCount);
+    var newRoot = new ImmutableDestructured<TValue>(_root.Item, key).RebuildWithNewLeafHere(value);
+    return new SharableDict<TValue>(newRoot);
   }
 
   /// <summary>
@@ -93,14 +89,14 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     if (!ContainsKey(key)) {
       return this;
     }
-    var (newRoot, newCount) = new ImmutableDestructured<TValue>(_root, key).RebuildWithoutLeafHere();
-    if (newCount == 0) {
+    var newRoot = new ImmutableDestructured<TValue>(_root.Item, key).RebuildWithoutLeafHere();
+    if (newRoot.Count == 0) {
       return Empty;
     }
-    if (newRoot == _root) {
+    if (newRoot.Item == _root.Item) {
       return this;
     }
-    return new SharableDict<TValue>(newRoot, newCount);
+    return new SharableDict<TValue>(newRoot);
   }
 
   /// <summary>
@@ -111,7 +107,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="value">Storage for the looked-up value</param>
   /// <returns>True if the key was found; false otherwise.</returns>
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
-    var s = new ImmutableDestructured<TValue>(_root, key);
+    var s = new ImmutableDestructured<TValue>(_root.Item, key);
     var leaf = s.Depth10;
     var leafIndex = s.LeafIndex;
     if (leaf.ChildCounts[leafIndex] == 0) {
@@ -158,12 +154,10 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
     CalcDifference(SharableDict<TValue> target) {
-    var newSelf = (_root, _rootCount);
-    var newTarget = (target._root, target._rootCount);
-    var (added, removed, modified) = _root.CalcDifference(newSelf, newTarget);
-    var aResult = new SharableDict<TValue>(added.Item1, added.Item2);
-    var rResult = new SharableDict<TValue>(removed.Item1, removed.Item2);
-    var mResult = new SharableDict<TValue>(modified.Item1, modified.Item2);
+    var (added, removed, modified) = _root.Item.CalcDifference(_root, target._root);
+    var aResult = new SharableDict<TValue>(added);
+    var rResult = new SharableDict<TValue>(removed);
+    var mResult = new SharableDict<TValue>(modified);
     return (aResult, rResult, mResult);
   }
 
@@ -190,10 +184,12 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     // would call the MoveNext of the next iterator, etc.
     // Manually unrolling the structure into these nested loops is a little bit homely
     // but allows for more efficient code.
-    var numChildren = _root.Children.Length;
+    var depth0 = _root.Item;
+    var numChildren = depth0.Children.Length;
+
     for (var i0 = 0; i0 != numChildren; ++i0) {
-      if (_root.ChildCounts[i0] == 0) continue;
-      var depth1 = _root.Children[i0];
+      if (depth0.ChildCounts[i0] == 0) continue;
+      var depth1 = depth0.Children[i0];
       for (var i1 = 0; i1 != numChildren; ++i1) {
         if (depth1.ChildCounts[i1] == 0) continue;
         var depth2 = depth1.Children[i1];
@@ -244,7 +240,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// The number of entries in this dictionary.
   /// </summary>
-  public int Count => _rootCount;
+  public int Count => _root.Count;
 
   public override string ToString() {
     return string.Join(", ", this.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
@@ -253,8 +249,10 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// For unit tests
   /// </summary>
-  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> RootForUnitTests
-   => _root;
+  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>
+    RootForUnitTests
+    => _root.Item;
 
   /// <summary>
   /// Counts distinct nodes in the tree. Used in unit testing.
@@ -262,7 +260,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <returns>The number of distinct nodes in the tree</returns>
   internal int CountNodesForUnitTesting() {
     var set = new HashSet<object>(ReferenceEqualityComparer.Instance);
-    _root.GatherNodesForUnitTesting(set);
+    _root.Item.GatherNodesForUnitTesting(set);
     return set.Count;
   }
 }

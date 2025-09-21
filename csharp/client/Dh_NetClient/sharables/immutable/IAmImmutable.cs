@@ -12,8 +12,7 @@ public interface IAmImmutable<TSelf> {
   /// </summary>
   /// <returns></returns>
   public TSelf GetEmptyInstanceForThisType();
-  public ((TSelf, int), (TSelf, int), (TSelf, int)) CalcDifference(
-    (TSelf, int) self,
-    (TSelf, int) target);
+  public (ItemWithCount<TSelf>, ItemWithCount<TSelf>, ItemWithCount<TSelf>) CalcDifference(
+    ItemWithCount<TSelf> self, ItemWithCount<TSelf> target);
   public void GatherNodesForUnitTesting(HashSet<object> nodes);
 }

@@ -9,16 +9,16 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode
 
   public ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
 
-  public static (ImmutableNode<TChild>, int) OfArray64(ReadOnlySpan<TChild> children,
+  public static ItemWithCount<ImmutableNode<TChild>> OfArray64(ReadOnlySpan<TChild> children,
     ReadOnlySpan<int> childCounts) {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
       subtreeCount += childCounts[i];
     }
     if (subtreeCount == 0) {
-      return (Empty, 0);
+      return ItemWithCount.Of(Empty, 0);
     }
-    return (new ImmutableNode<TChild>(children, childCounts), subtreeCount);
+    return ItemWithCount.Of(new ImmutableNode<TChild>(children, childCounts), subtreeCount);
   }
 
   public readonly Array64<TChild> Children;
@@ -36,37 +36,35 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode
     childCounts.CopyTo(ChildCounts);
   }
 
-  public (ImmutableNode<TChild>, int) Replace(int index, TChild newChild, int newChildCount) {
+  public ItemWithCount<ImmutableNode<TChild>> Replace(int index, ItemWithCount<TChild> newChild) {
     var newChildren = new Array64<TChild>();
     var newCounts = new Array64<int>();
     ((ReadOnlySpan<TChild>)Children).CopyTo(newChildren);
     ((ReadOnlySpan<int>)ChildCounts).CopyTo(newCounts);
-    newChildren[index] = newChild;
-    newCounts[index] = newChildCount;
+    newChildren[index] = newChild.Item;
+    newCounts[index] = newChild.Count;
     return OfArray64(newChildren, newCounts);
   }
 
-  public ((ImmutableNode<TChild>, int),
-    (ImmutableNode<TChild>, int),
-    (ImmutableNode<TChild>, int))
+  public (ItemWithCount<ImmutableNode<TChild>>, ItemWithCount<ImmutableNode<TChild>>, ItemWithCount<ImmutableNode<TChild>>)
     CalcDifference(
-      (ImmutableNode<TChild>, int) self,
-      (ImmutableNode<TChild>, int) target) {
-    if (!ReferenceEquals(this, self.Item1)) {
-      throw new Exception($"Assertion failed: this != self.Item1");
+      ItemWithCount<ImmutableNode<TChild>> self,
+      ItemWithCount<ImmutableNode<TChild>> target) {
+    if (!ReferenceEquals(this, self.Item)) {
+      throw new Exception($"Assertion failed: this != self.Item");
     }
-    var empty0 = (Empty, 0);
+    var empty = ItemWithCount.Of(Empty, 0);
     if (self == target) {
       // Source and target are the same. No changes
-      return (empty0, empty0, empty0);  // added, removed, modified
+      return (empty, empty, empty);  // added, removed, modified
     }
-    if (self == empty0) {
+    if (self == empty) {
       // Relative to an empty source, everything in target was added
-      return (target, empty0, empty0);  // added, removed, modified
+      return (target, empty, empty);  // added, removed, modified
     }
-    if (target == empty0) {
+    if (target == empty) {
       // Relative to an empty destination, everything in src was removed
-      return (empty0, self, empty0);  // added, removed, modified
+      return (empty, self, empty);  // added, removed, modified
     }
 
     // Need to recurse to all children to build new nodes
@@ -79,17 +77,17 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode
 
     var length = ((ReadOnlySpan<TChild>)Children).Length;
     for (var i = 0; i != length; ++i) {
-      var newSelf = (Children[i], ChildCounts[i]);
-      var newTarget = (target.Item1.Children[i], target.Item1.ChildCounts[i]);
-      var (added, removed, modified) = newSelf.Item1.CalcDifference(newSelf, newTarget);
-      addedChildren[i] = added.Item1;
-      addedChildCounts[i] = added.Item2;
+      var newSelf = ItemWithCount.Of(Children[i], ChildCounts[i]);
+      var newTarget = ItemWithCount.Of(target.Item.Children[i], target.Item.ChildCounts[i]);
+      var (added, removed, modified) = newSelf.Item.CalcDifference(newSelf, newTarget);
+      addedChildren[i] = added.Item;
+      addedChildCounts[i] = added.Count;
 
-      removedChildren[i] = removed.Item1;
-      removedChildCounts[i] = removed.Item2;
+      removedChildren[i] = removed.Item;
+      removedChildCounts[i] = removed.Count;
 
-      modifiedChildren[i] = modified.Item1;
-      modifiedChildCounts[i] = modified.Item2;
+      modifiedChildren[i] = modified.Item;
+      modifiedChildCounts[i] = modified.Count;
     }
 
     var aResult = OfArray64(addedChildren, addedChildCounts);

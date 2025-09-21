@@ -36,39 +36,40 @@ internal readonly struct ImmutableDestructured<TValue> {
     LeafIndex = i10;
   }
 
-  public (ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+  public ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>,
-    int)
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>>
     RebuildWithNewLeafHere(TValue value) {
-    return RebuildWithHelper(value, 1);
+    var valueHolder = new ImmutableValueHolder<TValue>(value);
+    var newLeaf = ItemWithCount.Of(valueHolder, 1);
+    return RebuildWithHelper(newLeaf);
   }
 
-  public (ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+  public ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>,
-      int) RebuildWithoutLeafHere() {
-    return RebuildWithHelper(default, 0);
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>>
+      RebuildWithoutLeafHere() {
+    var valueHolder = new ImmutableValueHolder<TValue>();
+    var newLeaf = ItemWithCount.Of(valueHolder, 0);
+    return RebuildWithHelper(newLeaf);
   }
 
-  private (ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+  private ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>,
-    int)
-    RebuildWithHelper(TValue value, int valueExists) {
+        ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>>
+    RebuildWithHelper(ItemWithCount<ImmutableValueHolder<TValue>> newLeaf) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var leaf = new ImmutableValueHolder<TValue>(value);
-    var newDepth10 = Depth10.Replace(i10, leaf, valueExists);
-    var newDepth9 = Depth9.Replace(i9, newDepth10.Item1, newDepth10.Item2);
-    var newDepth8 = Depth8.Replace(i8, newDepth9.Item1, newDepth9.Item2);
-    var newDepth7 = Depth7.Replace(i7, newDepth8.Item1, newDepth8.Item2);
-    var newDepth6 = Depth6.Replace(i6, newDepth7.Item1, newDepth7.Item2);
-    var newDepth5 = Depth5.Replace(i5, newDepth6.Item1, newDepth6.Item2);
-    var newDepth4 = Depth4.Replace(i4, newDepth5.Item1, newDepth5.Item2);
-    var newDepth3 = Depth3.Replace(i3, newDepth4.Item1, newDepth4.Item2);
-    var newDepth2 = Depth2.Replace(i2, newDepth3.Item1, newDepth3.Item2);
-    var newDepth1 = Depth1.Replace(i1, newDepth2.Item1, newDepth2.Item2);
-    var newDepth0 = Depth0.Replace(i0, newDepth1.Item1, newDepth1.Item2);
+    var newDepth10 = Depth10.Replace(i10, newLeaf);
+    var newDepth9 = Depth9.Replace(i9, newDepth10);
+    var newDepth8 = Depth8.Replace(i8, newDepth9);
+    var newDepth7 = Depth7.Replace(i7, newDepth8);
+    var newDepth6 = Depth6.Replace(i6, newDepth7);
+    var newDepth5 = Depth5.Replace(i5, newDepth6);
+    var newDepth4 = Depth4.Replace(i4, newDepth5);
+    var newDepth3 = Depth3.Replace(i3, newDepth4);
+    var newDepth2 = Depth2.Replace(i2, newDepth3);
+    var newDepth1 = Depth1.Replace(i1, newDepth2);
+    var newDepth0 = Depth0.Replace(i0, newDepth1);
     return newDepth0;
   }
 }
