@@ -6,21 +6,7 @@ namespace Deephaven.Dh_NetClient;
 public abstract class NodeBase {
 }
 
-public interface IAmImmutable {
-
-}
-
-public struct ImmutableValueHolder<TValue> : IAmImmutable {
-  public readonly TValue Value;
-}
-
-public abstract class ImmutableBase<TSelf> where TSelf : class {
-  public readonly int Count;
-
-  public ImmutableBase(int count) {
-    Count = count;
-  }
-
+public interface IAmImmutable<TSelf> {
   /// <summary>
   /// This method exists as a hack to get the static Empty instance for this type.
   /// To do this, callers can say new T().GetEmptyInstanceForThisType().
@@ -28,7 +14,12 @@ public abstract class ImmutableBase<TSelf> where TSelf : class {
   /// of Empty instances for a given T, and not repeatedly run in the steady state.
   /// </summary>
   /// <returns></returns>
-  public abstract TSelf GetEmptyInstanceForThisType();
-  public abstract (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
-  public abstract void GatherNodesForUnitTesting(HashSet<object> nodes);
+  public TSelf GetEmptyInstanceForThisType();
+  public (TSelf, int, TSelf, int, TSelf, int) CalcDifference(int thisCount,
+    TSelf target, int targetCount);
+  public void GatherNodesForUnitTesting(HashSet<object> nodes);
+}
+
+public struct ImmutableValueHolder<TValue> : IAmImmutable<ImmutableValueHolder<TValue>> {
+  public readonly TValue Value;
 }
