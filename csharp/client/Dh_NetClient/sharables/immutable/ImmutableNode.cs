@@ -1,7 +1,6 @@
 ﻿//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-
 namespace Deephaven.Dh_NetClient;
 
 public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode<TChild>>
@@ -47,22 +46,27 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode
     return OfArray64(newChildren, newCounts);
   }
 
-  public (ImmutableNode<TChild>, int,
-    ImmutableNode<TChild>, int,
-    ImmutableNode<TChild>, int)
-    CalcDifference(int thisCount, ImmutableNode<TChild> target, int targetCount) {
-    var empty = Empty;
-    if (this == target) {
+  public ((ImmutableNode<TChild>, int),
+    (ImmutableNode<TChild>, int),
+    (ImmutableNode<TChild>, int))
+    CalcDifference(
+      (ImmutableNode<TChild>, int) self,
+      (ImmutableNode<TChild>, int) target) {
+    if (!ReferenceEquals(this, self.Item1)) {
+      throw new Exception($"Assertion failed: this != self.Item1");
+    }
+    var empty0 = (Empty, 0);
+    if (self == target) {
       // Source and target are the same. No changes
-      return (empty, 0, empty, 0, empty,  0);  // added, removed, modified
+      return (empty0, empty0, empty0);  // added, removed, modified
     }
-    if (this == empty) {
+    if (self == empty0) {
       // Relative to an empty source, everything in target was added
-      return (target, targetCount, empty, 0, empty, 0);  // added, removed, modified
+      return (target, empty0, empty0);  // added, removed, modified
     }
-    if (target == empty) {
+    if (target == empty0) {
       // Relative to an empty destination, everything in src was removed
-      return (empty, 0, this, thisCount, empty, 0);  // added, removed, modified
+      return (empty0, self, empty0);  // added, removed, modified
     }
 
     // Need to recurse to all children to build new nodes
@@ -75,22 +79,23 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode
 
     var length = ((ReadOnlySpan<TChild>)Children).Length;
     for (var i = 0; i != length; ++i) {
-      var (ach, acnt, rch, rcnt, mch, mcnt) = Children[i].CalcDifference(
-        ChildCounts[i], target.Children[i], target.ChildCounts[i]);
-      addedChildren[i] = ach;
-      addedChildCounts[i] = acnt;
+      var newSelf = (Children[i], ChildCounts[i]);
+      var newTarget = (target.Item1.Children[i], target.Item1.ChildCounts[i]);
+      var (added, removed, modified) = newSelf.Item1.CalcDifference(newSelf, newTarget);
+      addedChildren[i] = added.Item1;
+      addedChildCounts[i] = added.Item2;
 
-      removedChildren[i] = rch;
-      removedChildCounts[i] = rcnt;
+      removedChildren[i] = removed.Item1;
+      removedChildCounts[i] = removed.Item2;
 
-      modifiedChildren[i] = mch;
-      modifiedChildCounts[i] = mcnt;
+      modifiedChildren[i] = modified.Item1;
+      modifiedChildCounts[i] = modified.Item2;
     }
 
-    var (aChildren, aCount) = OfArray64(addedChildren, addedChildCounts);
-    var (rChildren, rCount) = OfArray64(removedChildren, removedChildCounts);
-    var (mChildren, mCount) = OfArray64(modifiedChildren, modifiedChildCounts);
-    return (aChildren, aCount, rChildren, rCount, mChildren, mCount);
+    var aResult = OfArray64(addedChildren, addedChildCounts);
+    var rResult = OfArray64(removedChildren, removedChildCounts);
+    var mResult = OfArray64(modifiedChildren, modifiedChildCounts);
+    return (aResult, rResult, mResult);
   }
 
   public void GatherNodesForUnitTesting(HashSet<object> nodes) {

@@ -78,7 +78,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     if (TryGetValue(key, out var oldValue) && Equals(value, oldValue)) {
       return this;
     }
-    var (newRoot, newCount) = new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
+    var (newRoot, newCount) = new ImmutableDestructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
     return new SharableDict<TValue>(newRoot, newCount);
   }
 
@@ -93,7 +93,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     if (!ContainsKey(key)) {
       return this;
     }
-    var (newRoot, newCount) = new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
+    var (newRoot, newCount) = new ImmutableDestructured<TValue>(_root, key).RebuildWithoutLeafHere();
     if (newCount == 0) {
       return Empty;
     }
@@ -111,7 +111,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="value">Storage for the looked-up value</param>
   /// <returns>True if the key was found; false otherwise.</returns>
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
-    var s = new Destructured<TValue>(_root, key);
+    var s = new ImmutableDestructured<TValue>(_root, key);
     var leaf = s.Depth10;
     var leafIndex = s.LeafIndex;
     if (leaf.ChildCounts[leafIndex] == 0) {
@@ -158,11 +158,12 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
     CalcDifference(SharableDict<TValue> target) {
-    var (added, aCount, removed, rCount, modified, mCount) = _root.CalcDifference(
-      _rootCount, target._root, target._rootCount);
-    var aResult = new SharableDict<TValue>(added, aCount);
-    var rResult = new SharableDict<TValue>(removed, rCount);
-    var mResult = new SharableDict<TValue>(modified, mCount);
+    var newSelf = (_root, _rootCount);
+    var newTarget = (target._root, target._rootCount);
+    var (added, removed, modified) = _root.CalcDifference(newSelf, newTarget);
+    var aResult = new SharableDict<TValue>(added.Item1, added.Item2);
+    var rResult = new SharableDict<TValue>(removed.Item1, removed.Item2);
+    var mResult = new SharableDict<TValue>(modified.Item1, modified.Item2);
     return (aResult, rResult, mResult);
   }
 

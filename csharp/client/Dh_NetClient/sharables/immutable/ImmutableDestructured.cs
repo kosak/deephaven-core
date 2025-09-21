@@ -3,7 +3,7 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-internal readonly struct Destructured<TValue> {
+internal readonly struct ImmutableDestructured<TValue> {
   public readonly Int64 Key;
   public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> Depth0;
   public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>> Depth1;
@@ -18,7 +18,7 @@ internal readonly struct Destructured<TValue> {
   public readonly ImmutableNode<ImmutableValueHolder<TValue>> Depth10;
   public readonly int LeafIndex;
 
-  public Destructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> depth0,
+  public ImmutableDestructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> depth0,
     Int64 key) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
     Key = key;
