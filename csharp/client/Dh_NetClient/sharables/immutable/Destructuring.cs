@@ -41,43 +41,37 @@ internal readonly struct Destructured<TValue> {
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>,
     int)
     RebuildWithNewLeafHere(TValue value) {
-    var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var newDepth10 = Depth10.With(i10, value);
-    var newDepth9 = Depth9.Replace(i9, newDepth10);
-    var newDepth8 = Depth8.Replace(i8, newDepth9);
-    var newDepth7 = Depth7.Replace(i7, newDepth8);
-    var newDepth6 = Depth6.Replace(i6, newDepth7);
-    var newDepth5 = Depth5.Replace(i5, newDepth6);
-    var newDepth4 = Depth4.Replace(i4, newDepth5);
-    var newDepth3 = Depth3.Replace(i3, newDepth4);
-    var newDepth2 = Depth2.Replace(i2, newDepth3);
-    var newDepth1 = Depth1.Replace(i1, newDepth2);
-    var newDepth0 = Depth0.Replace(i0, newDepth1);
-    return newDepth0;
+    return RebuildWithHelper(value, 1);
   }
 
   public (ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>,
       int) RebuildWithoutLeafHere() {
+    return RebuildWithHelper(default, 0);
+  }
+
+  private (ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+        ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>,
+    int)
+    RebuildWithHelper(TValue value, int valueExists) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    if (!Depth10.TryGetChild(i10, out _)) {
-      // Leaf doesn't have a child at that index, so there is no change.
-      return Depth0;
-    }
-    var newDepth10 = Depth10.Without(i10);
-    var newDepth9 = Depth9.Replace(i9, newDepth10);
-    var newDepth8 = Depth8.Replace(i8, newDepth9);
-    var newDepth7 = Depth7.Replace(i7, newDepth8);
-    var newDepth6 = Depth6.Replace(i6, newDepth7);
-    var newDepth5 = Depth5.Replace(i5, newDepth6);
-    var newDepth4 = Depth4.Replace(i4, newDepth5);
-    var newDepth3 = Depth3.Replace(i3, newDepth4);
-    var newDepth2 = Depth2.Replace(i2, newDepth3);
-    var newDepth1 = Depth1.Replace(i1, newDepth2);
-    var newDepth0 = Depth0.Replace(i0, newDepth1);
+    var leaf = new ImmutableValueHolder<TValue>(value);
+    var newDepth10 = Depth10.Replace(i10, leaf, valueExists);
+    var newDepth9 = Depth9.Replace(i9, newDepth10.Item1, newDepth10.Item2);
+    var newDepth8 = Depth8.Replace(i8, newDepth9.Item1, newDepth9.Item2);
+    var newDepth7 = Depth7.Replace(i7, newDepth8.Item1, newDepth8.Item2);
+    var newDepth6 = Depth6.Replace(i6, newDepth7.Item1, newDepth7.Item2);
+    var newDepth5 = Depth5.Replace(i5, newDepth6.Item1, newDepth6.Item2);
+    var newDepth4 = Depth4.Replace(i4, newDepth5.Item1, newDepth5.Item2);
+    var newDepth3 = Depth3.Replace(i3, newDepth4.Item1, newDepth4.Item2);
+    var newDepth2 = Depth2.Replace(i2, newDepth3.Item1, newDepth3.Item2);
+    var newDepth1 = Depth1.Replace(i1, newDepth2.Item1, newDepth2.Item2);
+    var newDepth0 = Depth0.Replace(i0, newDepth1.Item1, newDepth1.Item2);
     return newDepth0;
   }
+
 }
 
 public static class Splitter {

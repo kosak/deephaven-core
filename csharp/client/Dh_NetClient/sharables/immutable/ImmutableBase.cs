@@ -22,4 +22,8 @@ public interface IAmImmutable<TSelf> {
 
 public struct ImmutableValueHolder<TValue> : IAmImmutable<ImmutableValueHolder<TValue>> {
   public readonly TValue Value;
+
+  public ImmutableValueHolder(TValue value) {
+    Value = value;
+  }
 }
