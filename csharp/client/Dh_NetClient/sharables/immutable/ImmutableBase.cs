@@ -26,4 +26,17 @@ public struct ImmutableValueHolder<TValue> : IAmImmutable<ImmutableValueHolder<T
   public ImmutableValueHolder(TValue value) {
     Value = value;
   }
+
+  public ImmutableValueHolder<TValue> GetEmptyInstanceForThisType() {
+    throw new NotImplementedException();
+  }
+
+  public (ImmutableValueHolder<TValue>, int, ImmutableValueHolder<TValue>, int, ImmutableValueHolder<TValue>, int) CalcDifference(int thisCount,
+    ImmutableValueHolder<TValue> target, int targetCount) {
+    throw new NotImplementedException();
+  }
+
+  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
+    // Do nothing.
+  }
 }

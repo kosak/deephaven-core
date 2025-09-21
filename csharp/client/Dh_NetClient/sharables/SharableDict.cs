@@ -146,10 +146,11 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
   public (SharableDict<TValue>, SharableDict<TValue>, SharableDict<TValue>)
     CalcDifference(SharableDict<TValue> target) {
-    var (added, removed, modified) = _root.CalcDifference(target._root);
-    var aResult = new SharableDict<TValue>(added);
-    var rResult = new SharableDict<TValue>(removed);
-    var mResult = new SharableDict<TValue>(modified);
+    var (added, aCount, removed, rCount, modified, mCount) = _root.CalcDifference(
+      _rootCount, target._root, target._rootCount);
+    var aResult = new SharableDict<TValue>(added, aCount);
+    var rResult = new SharableDict<TValue>(removed, rCount);
+    var mResult = new SharableDict<TValue>(modified, mCount);
     return (aResult, rResult, mResult);
   }
 
