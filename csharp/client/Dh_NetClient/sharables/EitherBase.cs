@@ -3,13 +3,7 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-public abstract class ImmutableBase<TSelf> where TSelf : class {
-  public readonly int Count;
-
-  public ImmutableBase(int count) {
-    Count = count;
-  }
-
+public abstract class EitherNodeOrLeaf<TSelf> where TSelf : class {
   /// <summary>
   /// This method exists as a hack to get the static Empty instance for this type.
   /// To do this, callers can say new T().GetEmptyInstanceForThisType().
@@ -21,3 +15,11 @@ public abstract class ImmutableBase<TSelf> where TSelf : class {
   public abstract (TSelf, TSelf, TSelf) CalcDifference(TSelf target);
   public abstract void GatherNodesForUnitTesting(HashSet<object> nodes);
 }
+
+public abstract class EitherNode<TSelf> : EitherNodeOrLeaf<TSelf> where TSelf : class {
+}
+
+public abstract class EitherLeaf<TSelf> : EitherNodeOrLeaf<TSelf> where TSelf: class{
+}
+
+public interface IAmImmutable;

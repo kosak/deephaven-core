@@ -39,6 +39,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="sharables\either\**" />
+    <EmbeddedResource Remove="sharables\either\**" />
+    <None Remove="sharables\either\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="README-nuget.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

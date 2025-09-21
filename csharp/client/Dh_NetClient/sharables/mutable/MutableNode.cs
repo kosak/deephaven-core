@@ -4,12 +4,8 @@
 
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableNode<TChild> : EitherNode<ImmutableNode<TChild>>, IAmImmutable
-  where TChild : EitherNodeOrLeaf<TChild>, IAmImmutable, new() {
-  public static readonly ImmutableNode<TChild> Empty = new();
-
-  public override ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
-
+public sealed class MutableNode<TChild> : EitherNode<MutableNode<TChild>>
+  where TChild : EitherNodeOrLeaf<TChild>, new() {
   public static ImmutableNode<TChild> OfArray64(ReadOnlySpan<TChild> children) {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {

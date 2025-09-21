@@ -6,17 +6,17 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableLeaf<TValue> : EitherLeaf<ImmutableLeaf<TValue>>, IAmImmutable {
+public sealed class MutableLeaf<TValue> : IAmLeaf {
   public static readonly ImmutableLeaf<TValue> Empty = new();
 
-  public override ImmutableLeaf<TValue> GetEmptyInstanceForThisType() => Empty;
+  public override MutableLeaf<TValue> GetEmptyInstanceForThisType() => Empty;
 
   /// <summary>
   /// This constructor is used only to make the Empty singleton. No one else should call it.
   /// We are keeping it public because our generics have a new() constraint on them, which
   /// requires that this be public.
   /// </summary>
-  public ImmutableLeaf() : base(0) {
+  public MutableLeaf() : base(0) {
   }
 
   public static ImmutableLeaf<TValue> Of(Bitset64 validitySet, ReadOnlySpan<TValue> children) {
@@ -26,7 +26,7 @@ public sealed class ImmutableLeaf<TValue> : EitherLeaf<ImmutableLeaf<TValue>>, I
   public readonly Bitset64 ValiditySet;
   public readonly Array64<TValue> Children;
 
-  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children) 
+  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children)
     : base(count) {
     ValiditySet = validitySet;
     children.CopyTo(Children);
@@ -96,30 +96,30 @@ public sealed class ImmutableLeaf<TValue> : EitherLeaf<ImmutableLeaf<TValue>>, I
 
       switch (selfHasBit, targetHasBit) {
         case (true, true): {
-          // self && target. This is a modify (if the values are different) or a no-op (if they are the same)
-          if (!Object.Equals(Children[i], target.Children[i])) {
-            modifiedValues[i] = target.Children[i];
-            modifiedSet = modifiedSet.WithElement(i);
+            // self && target. This is a modify (if the values are different) or a no-op (if they are the same)
+            if (!Object.Equals(Children[i], target.Children[i])) {
+              modifiedValues[i] = target.Children[i];
+              modifiedSet = modifiedSet.WithElement(i);
+            }
+            break;
           }
-          break;
-        }
 
         case (true, false): {
-          removedValues[i] = Children[i];
-          removedSet = removedSet.WithElement(i);
-          break;
-        }
+            removedValues[i] = Children[i];
+            removedSet = removedSet.WithElement(i);
+            break;
+          }
 
         case (false, true): {
-          addedValues[i] = target.Children[i];
-          addedSet = addedSet.WithElement(i);
-          break;
-        }
+            addedValues[i] = target.Children[i];
+            addedSet = addedSet.WithElement(i);
+            break;
+          }
 
         case (false, false): {
-          // can't happen
-          throw new Exception("Assertion failure in CalcDifference");
-        }
+            // can't happen
+            throw new Exception("Assertion failure in CalcDifference");
+          }
       }
     }
 
