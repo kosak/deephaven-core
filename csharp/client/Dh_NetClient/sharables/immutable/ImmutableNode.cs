@@ -36,15 +36,14 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable where TChild 
     childCounts.CopyTo(ChildCounts);
   }
 
-  public ImmutableNode<TChild> Replace(int index, TChild newChild) {
-    // If we are about to replace our only non-empty child, then canonicalize.
-    if (Count == Children[index].Count && newChild.Count == 0) {
-      return Empty;
-    }
+  public (ImmutableNode<TChild>, int) Replace(int index, TChild newChild, int newChildCount) {
     var newChildren = new Array64<TChild>();
+    var newCounts = new Array64<int>();
     ((ReadOnlySpan<TChild>)Children).CopyTo(newChildren);
+    ((ReadOnlySpan<int>)ChildCounts).CopyTo(newCounts);
     newChildren[index] = newChild;
-    return OfArray64(newChildren);
+    newCounts[index] = newChildCount;
+    return OfArray64(newChildren, newCounts);
   }
 
   public override (ImmutableNode<TChild>, ImmutableNode<TChild>, ImmutableNode<TChild>) CalcDifference(
