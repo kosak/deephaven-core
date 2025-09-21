@@ -3,6 +3,17 @@
 //
 namespace Deephaven.Dh_NetClient;
 
+public abstract class NodeBase {
+}
+
+public interface IAmImmutable {
+
+}
+
+public class ImmutableValueHolder<TValue> : IAmImmutable {
+
+}
+
 public abstract class ImmutableBase<TSelf> where TSelf : class {
   public readonly int Count;
 

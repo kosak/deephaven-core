@@ -43,12 +43,12 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     _root =
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
         ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-          ImmutableLeaf<TValue>>>>>>>>>>>.Empty; 
+          ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>.Empty; 
   }
 
   private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableLeaf<TValue>>>>>>>>>>> _root;
+      ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> _root;
 
   /// <summary>
   /// Constructor. Used internally.
@@ -57,7 +57,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   internal SharableDict(
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableLeaf<TValue>>>>>>>>>>> root) {
+        ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> root) {
     _root = root;
   }
 
