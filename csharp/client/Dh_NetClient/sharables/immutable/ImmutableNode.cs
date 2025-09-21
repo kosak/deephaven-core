@@ -9,26 +9,31 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable where TChild 
 
   public override ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
 
-  public static ImmutableNode<TChild> OfArray64(ReadOnlySpan<TChild> children) {
+  public static (ImmutableNode<TChild>, int) OfArray64(ReadOnlySpan<TChild> children,
+    ReadOnlySpan<int> childCounts) {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
-      var child = children[i];
-      subtreeCount += child.Count;
+      subtreeCount += childCounts[i];
     }
-    return subtreeCount == 0 ? Empty : new ImmutableNode<TChild>(subtreeCount, children);
+    if (subtreeCount == 0) {
+      return (Empty, 0);
+    }
+    return (new ImmutableNode<TChild>(children, childCounts), subtreeCount);
   }
 
   public readonly Array64<TChild> Children;
   public readonly Array64<int> ChildCounts;
 
-  public ImmutableNode() : base(0) {
+  public ImmutableNode() {
     // This is our hack to access the static T.Empty for type T
     var emptyChild = new TChild().GetEmptyInstanceForThisType();
     ((Span<TChild>)Children).Fill(emptyChild);
+    ((Span<int>)ChildCounts).Clear();
   }
 
-  private ImmutableNode(int count, ReadOnlySpan<TChild> children) : base(count) {
+  private ImmutableNode(ReadOnlySpan<TChild> children, ReadOnlySpan<int> childCounts) {
     children.CopyTo(Children);
+    childCounts.CopyTo(ChildCounts);
   }
 
   public ImmutableNode<TChild> Replace(int index, TChild newChild) {
