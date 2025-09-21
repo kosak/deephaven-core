@@ -19,6 +19,7 @@ public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable where TChild 
   }
 
   public readonly Array64<TChild> Children;
+  public readonly Array64<int> ChildCounts;
 
   public ImmutableNode() : base(0) {
     // This is our hack to access the static T.Empty for type T

@@ -50,15 +50,20 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> _root;
 
+  private readonly int _rootCount;
+
   /// <summary>
   /// Constructor. Used internally.
   /// </summary>
-  /// <param name="root"></param>
+  /// <param name="root">The root of the tree</param>
+  /// <param name="rootCount">The total size of the tree</param>
   internal SharableDict(
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> root) {
+        ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> root,
+    int rootCount) {
     _root = root;
+    _rootCount = rootCount;
   }
 
   /// <summary>
@@ -70,8 +75,8 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="value">The new value</param>
   /// <returns>The new dictionary</returns>
   public SharableDict<TValue> With(Int64 key, TValue value) {
-    var newRoot = new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
-    return new SharableDict<TValue>(newRoot);
+    var (newRoot, newCount) = new Destructured<TValue>(_root, key).RebuildWithNewLeafHere(value);
+    return new SharableDict<TValue>(newRoot, newCount);
   }
 
   /// <summary>
@@ -82,8 +87,8 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <param name="key">The key to remove</param>
   /// <returns>The resulting dictionary</returns>
   public SharableDict<TValue> Without(Int64 key) {
-    var newRoot = new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
-    return newRoot == _root ? this : new SharableDict<TValue>(newRoot);
+    var (newRoot, newCount) = new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
+    return newRoot == _root ? this : new SharableDict<TValue>(newRoot, newCount);
   }
 
   /// <summary>
@@ -95,11 +100,13 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <returns>True if the key was found; false otherwise.</returns>
   public bool TryGetValue(Int64 key, [MaybeNullWhen(false)] out TValue value) {
     var s = new Destructured<TValue>(_root, key);
-    if (!s.Depth10.TryGetChild(s.LeafIndex, out var temp)) {
+    var leaf = s.Depth10;
+    var leafIndex = s.LeafIndex;
+    if (leaf.ChildCounts[leafIndex] == 0) {
       value = default;
       return false;
     }
-    value = temp;
+    value = leaf.Children[leafIndex].Value;
     return true;
   }
 
@@ -171,36 +178,38 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     // but allows for more efficient code.
     var numChildren = _root.Children.Length;
     for (var i0 = 0; i0 != numChildren; ++i0) {
+      if (_root.ChildCounts[i0] == 0) continue;
       var depth1 = _root.Children[i0];
-      if (depth1.Count == 0) continue;
       for (var i1 = 0; i1 != numChildren; ++i1) {
+        if (depth1.ChildCounts[i1] == 0) continue;
         var depth2 = depth1.Children[i1];
-        if (depth2.Count == 0) continue;
         for (var i2 = 0; i2 != numChildren; ++i2) {
+          if (depth2.ChildCounts[i2] == 0) continue;
           var depth3 = depth2.Children[i2];
-          if (depth3.Count == 0) continue;
           for (var i3 = 0; i3 != numChildren; ++i3) {
+            if (depth3.ChildCounts[i3] == 0) continue;
             var depth4 = depth3.Children[i3];
-            if (depth4.Count == 0) continue;
             for (var i4 = 0; i4 != numChildren; ++i4) {
+              if (depth4.ChildCounts[i4] == 0) continue;
               var depth5 = depth4.Children[i4];
-              if (depth5.Count == 0) continue;
               for (var i5 = 0; i5 != numChildren; ++i5) {
+                if (depth5.ChildCounts[i5] == 0) continue;
                 var depth6 = depth5.Children[i5];
-                if (depth6.Count == 0) continue;
                 for (var i6 = 0; i6 != numChildren; ++i6) {
+                  if (depth6.ChildCounts[i6] == 0) continue;
                   var depth7 = depth6.Children[i6];
-                  if (depth7.Count == 0) continue;
                   for (var i7 = 0; i7 != numChildren; ++i7) {
+                    if (depth7.ChildCounts[i7] == 0) continue;
                     var depth8 = depth7.Children[i7];
-                    if (depth8.Count == 0) continue;
                     for (var i8 = 0; i8 != numChildren; ++i8) {
+                      if (depth8.ChildCounts[i8] == 0) continue;
                       var depth9 = depth8.Children[i8];
-                      if (depth9.Count == 0) continue;
                       for (var i9 = 0; i9 != numChildren; ++i9) {
+                        if (depth9.ChildCounts[i9] == 0) continue;
                         var depth10 = depth9.Children[i9];
-                        foreach (var i10 in depth10.ValiditySet) {
-                          var value = depth10.Children[i10];
+                        for (var i10 = 0; i10 != numChildren; ++i10) {
+                          if (depth10.ChildCounts[i10] == 0) continue;
+                          var value = depth10.Children[i10].Value;
                           var offset = Splitter.Merge(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
                           yield return KeyValuePair.Create(offset, value);
                         }

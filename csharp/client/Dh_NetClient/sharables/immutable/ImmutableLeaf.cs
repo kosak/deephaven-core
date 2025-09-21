@@ -1,4 +1,5 @@
-﻿//
+﻿#if false
+//
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
 
@@ -133,3 +134,4 @@ public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>>
     nodes.Add(this);
   }
 }
+#endif

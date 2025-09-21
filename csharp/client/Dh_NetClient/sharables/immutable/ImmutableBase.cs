@@ -11,7 +11,7 @@ public interface IAmImmutable {
 }
 
 public struct ImmutableValueHolder<TValue> : IAmImmutable {
-
+  public readonly TValue Value;
 }
 
 public abstract class ImmutableBase<TSelf> where TSelf : class {
