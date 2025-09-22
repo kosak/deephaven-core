@@ -31,7 +31,7 @@ namespace Deephaven.Dh_NetClient;
 /// enumerating while concurrently modifying (because there is no "modify" operation per se).
 /// </summary>
 /// <typeparam name="TValue"></typeparam>
-public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
+public class MutableDict<TValue> : IDictionary<Int64, TValue> {
   /// <summary>
   /// The singleton for an empty SharableDict&lt;TValue&gt;. This is how you get your initial SharableDict.
   /// </summary>
