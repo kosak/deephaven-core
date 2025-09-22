@@ -15,7 +15,7 @@ internal readonly struct MutableDestructured<TValue> {
   public readonly MutableNode Depth7;
   public readonly MutableNode Depth8;
   public readonly MutableNode Depth9;
-  public readonly MutableLeaf Depth10;
+  public readonly MutableLeaf<TValue> Depth10;
   public readonly int LeafIndex;
 
   public MutableDestructured(NodeBase depth0, Int64 key) {
@@ -31,7 +31,7 @@ internal readonly struct MutableDestructured<TValue> {
     Depth7 = Depth6.Children[i6].AsMutable();
     Depth8 = Depth7.Children[i7].AsMutable();
     Depth9 = Depth8.Children[i8].AsMutable();
-    Depth10 = Depth9.Children[i9].AsMutable();
+    Depth10 = (MutableLeaf<TValue>)Depth9.Children[i9].AsMutable();  // oopsie
     LeafIndex = i10;
   }
 
