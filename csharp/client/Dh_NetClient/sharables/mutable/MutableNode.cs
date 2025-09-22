@@ -35,7 +35,11 @@ public sealed class MutableNode {
     childCounts.CopyTo(ChildCounts);
   }
 
-  public ItemWithCount<ImmutableNode<TChild>> Replace(int index, ItemWithCount<TChild> newChild) {
+  public ItemWithCount<MutableNode> Replace(ItemWithCount<MutableNode> self,
+    int index, ItemWithCount<MutableNode> newChild) {
+    Children[index] = newChild.Item;
+    ChildCounts[index] = newChild.Count;
+
     var newChildren = new Array64<TChild>();
     var newCounts = new Array64<int>();
     ((ReadOnlySpan<TChild>)Children).CopyTo(newChildren);

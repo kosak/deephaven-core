@@ -38,7 +38,7 @@ internal readonly struct MutableDestructured<TValue> {
   public ItemWithCount<NodeBase> RebuildWithNewLeafHere(TValue value) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
     var newDepth10 = Depth10.With(i10, value);
-    var newDepth9 = Depth9.Replace(i9, newDepth10);
+    var newDepth9 = Depth9.Replace(Depth9, i9, newDepth10);
     var newDepth8 = Depth8.Replace(i8, newDepth9);
     var newDepth7 = Depth7.Replace(i7, newDepth8);
     var newDepth6 = Depth6.Replace(i6, newDepth7);
