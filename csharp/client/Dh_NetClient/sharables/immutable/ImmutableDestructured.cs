@@ -5,20 +5,22 @@ namespace Deephaven.Dh_NetClient;
 
 internal readonly struct ImmutableDestructured<TValue> {
   public readonly Int64 Key;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> Depth0;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>> Depth1;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>> Depth2;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>> Depth3;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>> Depth4;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>> Depth5;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>> Depth6;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>> Depth7;
-  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>> Depth8;
-  public readonly ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>> Depth9;
-  public readonly ImmutableNode<ImmutableValueHolder<TValue>> Depth10;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> Depth0;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>> Depth1;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>> Depth2;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>> Depth3;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>> Depth4;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>> Depth5;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>> Depth6;
+  public readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>> Depth7;
+  public readonly ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>> Depth8;
+  public readonly ImmutableNode<ImmutableLeaf<TValue>> Depth9;
+  public readonly ImmutableLeaf<TValue> Depth10;
   public readonly int LeafIndex;
 
-  public ImmutableDestructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>> depth0,
+  public ImmutableDestructured(ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+        ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> depth0,
     Int64 key) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
     Key = key;
@@ -38,28 +40,29 @@ internal readonly struct ImmutableDestructured<TValue> {
 
   public ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>>
+    ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>>>
     RebuildWithNewLeafHere(TValue value) {
-    var valueHolder = new ImmutableValueHolder<TValue>(value);
-    var newLeaf = ItemWithCount.Of(valueHolder, 1);
-    return RebuildWithHelper(newLeaf);
+    var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
+    var newDepth10 = Depth10.With(i10, value);
+    var newDepth9 = Depth9.Replace(i9, newDepth10);
+    var newDepth8 = Depth8.Replace(i8, newDepth9);
+    var newDepth7 = Depth7.Replace(i7, newDepth8);
+    var newDepth6 = Depth6.Replace(i6, newDepth7);
+    var newDepth5 = Depth5.Replace(i5, newDepth6);
+    var newDepth4 = Depth4.Replace(i4, newDepth5);
+    var newDepth3 = Depth3.Replace(i3, newDepth4);
+    var newDepth2 = Depth2.Replace(i2, newDepth3);
+    var newDepth1 = Depth1.Replace(i1, newDepth2);
+    var newDepth0 = Depth0.Replace(i0, newDepth1);
+    return newDepth0;
   }
 
   public ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>>
+      ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>>>
       RebuildWithoutLeafHere() {
-    var valueHolder = new ImmutableValueHolder<TValue>();
-    var newLeaf = ItemWithCount.Of(valueHolder, 0);
-    return RebuildWithHelper(newLeaf);
-  }
-
-  private ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>>
-    RebuildWithHelper(ItemWithCount<ImmutableValueHolder<TValue>> newLeaf) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(Key);
-    var newDepth10 = Depth10.Replace(i10, newLeaf);
+    var newDepth10 = Depth10.Without(i10);
     var newDepth9 = Depth9.Replace(i9, newDepth10);
     var newDepth8 = Depth8.Replace(i8, newDepth9);
     var newDepth7 = Depth7.Replace(i7, newDepth8);

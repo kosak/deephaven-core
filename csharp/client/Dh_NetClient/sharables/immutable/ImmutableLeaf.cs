@@ -23,7 +23,7 @@ public sealed class ImmutableLeaf<TValue> : NodeBase, IAmImmutable<ImmutableLeaf
   /// We are keeping it public because our generics have a new() constraint on them, which
   /// requires that this be public.
   /// </summary>
-  internal ImmutableLeaf() {
+  public ImmutableLeaf() {
   }
 
   private ImmutableLeaf(Bitset64 validitySet, ReadOnlySpan<TValue> children) {
@@ -54,12 +54,12 @@ public sealed class ImmutableLeaf<TValue> : NodeBase, IAmImmutable<ImmutableLeaf
     return ItemWithCount.Of(newLeaf, newCount);
   }
 
-  public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out TValue child) {
+  public bool TryGetValue(int childIndex, [MaybeNullWhen(false)] out TValue value) {
     if (!ValiditySet.ContainsElement(childIndex)) {
-      child = default;
+      value = default;
       return false;
     }
-    child = Children[childIndex];
+    value = Children[childIndex];
     return true;
   }
 

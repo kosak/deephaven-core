@@ -18,12 +18,13 @@ namespace Deephaven.Dh_NetClient;
 /// differing only on the path from root to new value. Callers are welcome to keep multiple versions of the dictionary
 /// if their application needs to. There are no locks and no caller synchronization is required.
 ///
-/// The major operations are called "With" and "Without". The With(k, v) method returns a new dictionary
-/// which is just like the current one except it also has (new or modified) entry mapping "k" to "v". The
-/// Without(key) method returns a new dictionary just like the current one except it lacks an entry for "k".
+/// The major operations are called <see cref="With"/> and <see cref="Without"/>. The
+/// With(k, v) method returns a new dictionary which is just like the current one except it also has
+/// (new or modified) entry mapping "k" to "v". The Without(key) method returns a new dictionary
+/// just like the current one except it lacks an entry for "k".
 /// In the future we will provide batch versions of With and Without for greater efficiency.
 ///
-/// There is also a "CalcDifference" operations which compares the current dictionary with another and
+/// There is also a <see cref="CalcDifference"/> operation which compares the current dictionary with another and
 /// returns three dictionaries representing the difference.
 ///
 /// The data structure is also enumerable. As with any immutable data structure, there is no concern about
@@ -36,6 +37,12 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// </summary>
   public static readonly SharableDict<TValue> Empty = new();
 
+
+  private readonly ItemWithCount<
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableLeaf<TValue>>>>>>>>>>>> _root;
+
   /// <summary>
   /// Makes the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
@@ -43,22 +50,17 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     _root = ItemWithCount.Of(
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
         ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-          ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>.Empty, 0);
+          ImmutableLeaf<TValue>>>>>>>>>>>.Empty, 0);
   }
-
-  private readonly ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>> _root;
 
   /// <summary>
   /// Constructor. Used internally.
   /// </summary>
-  /// <param name="root">The root of the tree</param>
-  /// <param name="rootCount">The total size of the tree</param>
+  /// <param name="root">The root and total size of the tree</param>
   internal SharableDict(
     ItemWithCount<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>> root) {
+        ImmutableLeaf<TValue>>>>>>>>>>>> root) {
     _root = root;
   }
 
@@ -110,12 +112,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     var s = new ImmutableDestructured<TValue>(_root.Item, key);
     var leaf = s.Depth10;
     var leafIndex = s.LeafIndex;
-    if (leaf.ChildCounts[leafIndex] == 0) {
-      value = default;
-      return false;
-    }
-    value = leaf.Children[leafIndex].Value;
-    return true;
+    return leaf.TryGetValue(leafIndex, out value);
   }
 
   /// <summary>
@@ -217,9 +214,8 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
                       for (var i9 = 0; i9 != numChildren; ++i9) {
                         if (depth9.ChildCounts[i9] == 0) continue;
                         var depth10 = depth9.Children[i9];
-                        for (var i10 = 0; i10 != numChildren; ++i10) {
-                          if (depth10.ChildCounts[i10] == 0) continue;
-                          var value = depth10.Children[i10].Value;
+                        foreach (var i10 in depth10.ValiditySet) {
+                          var value = depth10.Children[i10];
                           var offset = Splitter.Merge(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
                           yield return KeyValuePair.Create(offset, value);
                         }
@@ -249,9 +245,9 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// For unit tests
   /// </summary>
-  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableValueHolder<TValue>>>>>>>>>>>>
-    RootForUnitTests
+  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+        ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> RootForUnitTests
     => _root.Item;
 
   /// <summary>
