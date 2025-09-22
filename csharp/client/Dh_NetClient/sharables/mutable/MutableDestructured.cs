@@ -5,23 +5,55 @@ namespace Deephaven.Dh_NetClient;
 
 internal readonly struct MutableDestructured<TValue> {
   public readonly Int64 Key;
-  public readonly MutableNode Depth0;
-  public readonly MutableNode Depth1;
-  public readonly MutableNode Depth2;
-  public readonly MutableNode Depth3;
-  public readonly MutableNode Depth4;
-  public readonly MutableNode Depth5;
-  public readonly MutableNode Depth6;
-  public readonly MutableNode Depth7;
-  public readonly MutableNode Depth8;
-  public readonly MutableNode Depth9;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>>>>>>>> Depth0;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>>>>>>> Depth1;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>>>>>> Depth2;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>>>>> Depth3;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>>>> Depth4;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>>> Depth5;
+  public readonly MutableNode<MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>>> Depth6;
+  public readonly MutableNode<MutableNode<MutableNode<MutableLeaf<TValue>>>> Depth7;
+  public readonly MutableNode<MutableNode<MutableLeaf<TValue>>> Depth8;
+  public readonly MutableNode<MutableLeaf<TValue>> Depth9;
   public readonly MutableLeaf<TValue> Depth10;
   public readonly int LeafIndex;
 
-  public MutableDestructured(NodeBase depth0, Int64 key) {
+  public MutableDestructured(MutableNode<MutableNode<MutableNode<MutableNode<
+      MutableNode<MutableNode<MutableNode<MutableNode<
+        MutableNode<MutableNode<MutableLeaf<TValue>>>>>>>>>>> depth0,
+    Int64 key) {
     var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
     Key = key;
-    Depth0 = depth0.AsMutable();
+    var depth1 = depth0.GetChild(i0);
+    var depth2 = depth1.GetChild(i1);
+    var depth3 = depth2.GetChild(i2);
+    var depth4 = depth3.GetChild(i3);
+    var depth5 = depth4.GetChild(i4);
+    var depth6 = depth5.GetChild(i5);
+    var depth7 = depth6.GetChild(i6);
+    var depth8 = depth7.GetChild(i7);
+    var depth9 = depth8.GetChild(i8);
+    var depth10 = depth9.GetChild(i9);
+
+    Depth0 = depth0;
+    Depth1 = Depth0.MutableChildren[i0] ?? MutableNode<MutableNode<MutableNode<MutableNode<
+      MutableNode<MutableNode<MutableNode<MutableNode<
+        MutableNode<MutableLeaf<TValue>>>>>>>>>>.OfZamboni(Depth0.ImmutableChildren[i0]);
+
+    Depth1 = Depth0.MutableChildren[i0];
+    Depth1 = MutableNode<MutableNode<MutableNode<MutableNode<
+      MutableNode<MutableNode<MutableNode<MutableNode<
+        MutableNode<MutableLeaf<TValue>>>>>>>>>>.OfZamboni(null);
+
+
+
+    Depth2 = Depth1.MutableChildren[i1] ?? MutableNode<MutableNode<MutableNode<MutableNode<
+      MutableNode<MutableNode<MutableNode<MutableNode<
+        MutableNode<MutableLeaf<TValue>>>>>>>>>>.OfZamboni(Depth1.ImmutableChildren[i1]);
+    Depth3 = Depth2.MutableChildren[i2] ?? MutableNode<MutableNode<MutableNode<MutableNode<
+      MutableNode<MutableNode<MutableNode<MutableNode<
+        MutableNode<MutableLeaf<TValue>>>>>>>>>>.OfZamboni(Depth2.ImmutableChildren[i2]);
+
     Depth1 = Depth0.Children[i0].AsMutable();
     Depth2 = Depth1.Children[i1].AsMutable();
     Depth3 = Depth2.Children[i2].AsMutable();

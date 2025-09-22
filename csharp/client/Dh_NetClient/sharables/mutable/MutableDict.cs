@@ -3,6 +3,7 @@
 //
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using static Deephaven.Dh_NetClient.DeephavenMetadataConstants;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -38,9 +39,9 @@ public class MutableDict<TValue> : IDictionary<Int64, TValue> {
   public static readonly SharableDict<TValue> Empty = new();
 
   private readonly ItemWithCount<
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableLeaf<TValue>>>>>>>>>>>> _root;
+    MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<
+    MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<
+      MutableLeaf<TValue>>>>>>>>>>>> _root;
 
   /// <summary>
   /// Makes the singleton for the empty SharableDict&lt;TValue&gt;.
@@ -64,19 +65,40 @@ public class MutableDict<TValue> : IDictionary<Int64, TValue> {
   }
 
   public void Add(Int64 key, TValue value) {
-    if (TryGetValue(key, out var oldValue) && Equals(value, oldValue)) {
-      return;
-    }
-    var newRoot = new MutableDestructured<TValue>(_root.Item, key).RebuildWithNewLeafHere(value);
-    _root = newRoot;
+    var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
+    var depth0 = _root.Item;
+    var depth1 = depth0.GetChild(i0);
+    var depth2 = depth1.GetChild(i1);
+    var depth3 = depth2.GetChild(i2);
+    var depth4 = depth3.GetChild(i3);
+    var depth5 = depth4.GetChild(i4);
+    var depth6 = depth5.GetChild(i5);
+    var depth7 = depth6.GetChild(i6);
+    var depth8 = depth7.GetChild(i7);
+    var depth9 = depth8.GetChild(i8);
+    var depth10 = depth9.GetChild(i9);
+    depth10.Children[i10] = value;
+    depth10.ValiditySet = depth10.ValiditySet.WithElement(i10);
   }
 
   public bool Remove(long key) {
     if (!TryGetValue(key, out _)) {
       return false;
     }
-    var newRoot = new MutableDestructured<TValue>(_root.Item, key).RebuildWithoutLeafHere(key);
-    _root = newRoot;
+    var (i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10) = Splitter.Split(key);
+    var depth0 = _root.Item;
+    var depth1 = depth0.GetChild(i0);
+    var depth2 = depth1.GetChild(i1);
+    var depth3 = depth2.GetChild(i2);
+    var depth4 = depth3.GetChild(i3);
+    var depth5 = depth4.GetChild(i4);
+    var depth6 = depth5.GetChild(i5);
+    var depth7 = depth6.GetChild(i6);
+    var depth8 = depth7.GetChild(i7);
+    var depth9 = depth8.GetChild(i8);
+    var depth10 = depth9.GetChild(i9);
+    depth10.Children[i10] = default;
+    depth10.ValiditySet = depth10.ValiditySet.WithoutElement(i10);
     return true;
   }
 
