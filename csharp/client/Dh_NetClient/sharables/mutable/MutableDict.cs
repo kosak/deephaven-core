@@ -63,41 +63,21 @@ public class MutableDict<TValue> : IDictionary<Int64, TValue> {
     _root = root;
   }
 
-  /// <summary>
-  /// Makes a new SharableDict with the same entries as 'this', except that also 'key' now maps to 'value'.
-  /// Logically, this will be an add operation (if this dictionary does not currently contain 'key') or a modify operation
-  /// (if it does). In all cases 'this' dictionary is unchanged.
-  /// </summary>
-  /// <param name="key">The new key</param>
-  /// <param name="value">The new value</param>
-  /// <returns>The new dictionary</returns>
-  public SharableDict<TValue> With(Int64 key, TValue value) {
+  public void Add(Int64 key, TValue value) {
     if (TryGetValue(key, out var oldValue) && Equals(value, oldValue)) {
-      return this;
+      return;
     }
-    var newRoot = new ImmutableDestructured<TValue>(_root.Item, key).RebuildWithNewLeafHere(value);
-    return new SharableDict<TValue>(newRoot);
+    var newRoot = new MutableDestructured<TValue>(_root.Item, key).RebuildWithNewLeafHere(value);
+    _root = newRoot;
   }
 
-  /// <summary>
-  /// Makes a new SharableDict with the same entries as 'this', except that there is no entry for 'key'.
-  /// Logically, this will be a remove operation (if this dictionary currently contains 'key') or a no-op
-  /// (if it does). 'this' dictionary is unchanged.
-  /// </summary>
-  /// <param name="key">The key to remove</param>
-  /// <returns>The resulting dictionary</returns>
-  public SharableDict<TValue> Without(Int64 key) {
-    if (!ContainsKey(key)) {
-      return this;
+  public bool Remove(long key) {
+    if (!TryGetValue(key, out _)) {
+      return false;
     }
-    var newRoot = new ImmutableDestructured<TValue>(_root.Item, key).RebuildWithoutLeafHere();
-    if (newRoot.Count == 0) {
-      return Empty;
-    }
-    if (newRoot.Item == _root.Item) {
-      return this;
-    }
-    return new SharableDict<TValue>(newRoot);
+    var newRoot = new MutableDestructured<TValue>(_root.Item, key).RebuildWithoutLeafHere(key);
+    _root = newRoot;
+    return true;
   }
 
   /// <summary>
