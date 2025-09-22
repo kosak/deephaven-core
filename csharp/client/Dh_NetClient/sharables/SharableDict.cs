@@ -37,7 +37,6 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// </summary>
   public static readonly SharableDict<TValue> Empty = new();
 
-
   private readonly ItemWithCount<
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
     ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
@@ -166,6 +165,10 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
 
       return value;
     }
+  }
+
+  public MutableDict<TValue> AsMutable() {
+    return new MutableDict<TValue>(_root);
   }
 
   public IEnumerable<Int64> Keys => this.Select(kvp => kvp.Key);
