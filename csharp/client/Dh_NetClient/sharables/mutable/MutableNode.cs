@@ -3,7 +3,19 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-public sealed class MutableNode {
+public sealed class MutableNode<TChild> where TChild : class {
+  public static TChild OfZamboni(NodeBase immutableBase) {
+
+  }
+
+  public TChild GetChild(int childIndex) {
+    var result = MutableChildren[childIndex];
+    if (result == null) {
+      result = OfZamboni(ImmutableChildren[childIndex]);
+      MutableChildren[childIndex] = result;
+    }
+    return result;
+  }
   public static readonly ImmutableNode<TChild> Empty = new();
 
   public ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
@@ -20,8 +32,8 @@ public sealed class MutableNode {
     return ItemWithCount.Of(new ImmutableNode<TChild>(children, childCounts), subtreeCount);
   }
 
-  public Array64<NodeBase> Children;
-  public Array64<int> ChildCounts;
+  public Array64<TChild?> MutableChildren;
+  public Array64<NodeBase> ImmutableChildren;
 
   public ImmutableNode() {
     // This is our hack to access the static T.Empty for type T

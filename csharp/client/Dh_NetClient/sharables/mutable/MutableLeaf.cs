@@ -15,8 +15,8 @@ public sealed class MutableLeaf<TValue> : NodeBase {
     return validitySet.IsEmpty ? Empty : new ImmutableLeaf<TValue>(validitySet, children);
   }
 
-  public readonly Bitset64 ValiditySet;
-  public readonly Array64<TValue> Children;
+  public Bitset64 ValiditySet;
+  public Array64<TValue> Children;
 
   /// <summary>
   /// This constructor is used only to make the Empty singleton. No one else should call it.
