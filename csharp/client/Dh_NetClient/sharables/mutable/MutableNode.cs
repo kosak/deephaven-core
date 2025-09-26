@@ -4,18 +4,21 @@
 namespace Deephaven.Dh_NetClient;
 
 public sealed class MutableNode<TChild> where TChild : class {
-  public static TChild OfZamboni(NodeBase immutableBase) {
-
+  public static MutableNode<TChild> OfZamboni(NodeBase immutableNode) {
+    immutableNode.GetChildren(childrenStorage);
+    return new MutableNode<TChild>(childrenStorage, allnulls);
   }
 
-  public TChild GetChild(int childIndex) {
+  public TChild GetOrMakeMutableChild(int childIndex) {
     var result = MutableChildren[childIndex];
-    if (result == null) {
-      result = OfZamboni(ImmutableChildren[childIndex]);
-      MutableChildren[childIndex] = result;
+    if (result != null) {
+      return result;
     }
+    result = OfZamboni(ImmutableChildren[childIndex]);
+    MutableChildren[childIndex] = result;
     return result;
   }
+
   public static readonly ImmutableNode<TChild> Empty = new();
 
   public ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
