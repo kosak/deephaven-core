@@ -54,6 +54,8 @@ public class ClientOptions {
   /// </summary>
   public IReadOnlyList<(string, string)> StringOptions => _stringOptions;
 
+  public string? ExtraStupid { get; set; }
+
   /// <summary>
   /// Extra headers that should be sent with each outgoing server request.
   /// </summary>
