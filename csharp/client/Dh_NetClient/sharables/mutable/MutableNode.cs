@@ -36,7 +36,7 @@ public sealed class MutableNode<TChild> where TChild : class {
   }
 
   public Array64<TChild?> MutableChildren;
-  public Array64<NodeBase> ImmutableChildren;
+  public Array64<NodeBase<TChild>> ImmutableChildren;
 
   public ImmutableNode() {
     // This is our hack to access the static T.Empty for type T

@@ -3,7 +3,6 @@
 //
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using static Deephaven.Dh_NetClient.DeephavenMetadataConstants;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -36,7 +35,7 @@ public class MutableDict<TValue> : IDictionary<Int64, TValue> {
   /// <summary>
   /// The singleton for an empty SharableDict&lt;TValue&gt;. This is how you get your initial SharableDict.
   /// </summary>
-  public static readonly SharableDict<TValue> Empty = new();
+  public static readonly MutableDict<TValue> Empty = new();
 
   private readonly ItemWithCount<
     MutableNode<MutableNode<MutableNode<MutableNode<MutableNode<
@@ -46,7 +45,7 @@ public class MutableDict<TValue> : IDictionary<Int64, TValue> {
   /// <summary>
   /// Makes the singleton for the empty SharableDict&lt;TValue&gt;.
   /// </summary>
-  private SharableDict() {
+  private MutableDict() {
     _root = ItemWithCount.Of(
       ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
         ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<

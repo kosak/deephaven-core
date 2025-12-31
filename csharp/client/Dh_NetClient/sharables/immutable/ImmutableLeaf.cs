@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableLeaf<TValue> : NodeBase, IAmImmutable<ImmutableLeaf<TValue>> {
+public sealed class ImmutableLeaf<TValue> : NodeBase<TValue>, IAmImmutable<ImmutableLeaf<TValue>> {
   public static readonly ImmutableLeaf<TValue> Empty = new();
 
   public ImmutableLeaf<TValue> GetEmptyInstanceForThisType() => Empty;

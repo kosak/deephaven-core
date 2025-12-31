@@ -3,8 +3,8 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableNode<TChild> : NodeBase, IAmImmutable<ImmutableNode<TChild>>
-  where TChild : IAmImmutable<TChild>, new() {
+public sealed class ImmutableNode<TChild> : NodeBase<TChild>, IAmImmutable<ImmutableNode<TChild>>
+  where TChild : class, IAmImmutable<TChild>, new() {
   public static readonly ImmutableNode<TChild> Empty = new();
 
   public ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;

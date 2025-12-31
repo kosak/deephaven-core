@@ -5,8 +5,8 @@ namespace Deephaven.Dh_NetClient;
 
 using System.Runtime.CompilerServices;
 
-public abstract class NodeBase {
-  public abstract MutableNode AsMutable();
+public abstract class NodeBase<TChild> where TChild : class {
+  public abstract MutableNode<TChild> AsMutable();
 }
 
 public static class ItemWithCount {
