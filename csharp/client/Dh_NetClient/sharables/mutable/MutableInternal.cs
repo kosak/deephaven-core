@@ -3,7 +3,7 @@
 //
 namespace Deephaven.Dh_NetClient;
 
-public class MutableNode<TValue> : NodeBase<TValue> {
+public sealed class MutableInternal<TValue> : MutableNode<TValue> {
   public static MutableNode<TChild> OfZamboni(NodeBase immutableNode) {
     immutableNode.GetChildren(childrenStorage);
     return new MutableNode<TChild>(childrenStorage, allnulls);
@@ -35,7 +35,7 @@ public class MutableNode<TValue> : NodeBase<TValue> {
     return ItemWithCount.Of(new ImmutableNode<TChild>(children, childCounts), subtreeCount);
   }
 
-  public Array64<NodeBase<TValue>> Children;
+  private Array64<NodeBase<TValue>> _children;
 
   public ImmutableNode() {
     // This is our hack to access the static T.Empty for type T
@@ -49,35 +49,20 @@ public class MutableNode<TValue> : NodeBase<TValue> {
     childCounts.CopyTo(ChildCounts);
   }
 
-  public ItemWithCount<MutableNode> Replace(ItemWithCount<MutableNode> self,
-    int index, ItemWithCount<MutableNode> newChild) {
-    Children[index] = newChild.Item;
-    ChildCounts[index] = newChild.Count;
-
-    var newChildren = new Array64<TChild>();
-    var newCounts = new Array64<int>();
-    ((ReadOnlySpan<TChild>)Children).CopyTo(newChildren);
-    ((ReadOnlySpan<int>)ChildCounts).CopyTo(newCounts);
-    newChildren[index] = newChild.Item;
-    newCounts[index] = newChild.Count;
-    return OfArray64(newChildren, newCounts);
+  public void Replace(int index, NodeBase<TValue> newChild) {
+    _count = _count - _children[index].Count + newChild.Count;
+    _children[index] = newChild;
   }
 
-  public (ItemWithCount<ImmutableNode<TChild>>, ItemWithCount<ImmutableNode<TChild>>, ItemWithCount<ImmutableNode<TChild>>)
-    CalcDifference(
-      ItemWithCount<ImmutableNode<TChild>> self,
-      ItemWithCount<ImmutableNode<TChild>> target) {
-    if (!ReferenceEquals(this, self.Item)) {
-      throw new Exception($"Assertion failed: this != self.Item");
-    }
+  public (NodeBase<TValue>, NodeBase<TValue>, NodeBase<TValue>) CalcDifference(NodeBase<TValue> after) {
     var empty = ItemWithCount.Of(Empty, 0);
-    if (self == target) {
-      // Source and target are the same. No changes
+    if (this == after) {
+      // 'before' and after are the same. No changes
       return (empty, empty, empty);  // added, removed, modified
     }
-    if (self == empty) {
-      // Relative to an empty source, everything in target was added
-      return (target, empty, empty);  // added, removed, modified
+    if (Count == 0) {
+      // Relative to an empty 'before', everything in 'after' was added
+      return (after, empty, empty);  // added, removed, modified
     }
     if (target == empty) {
       // Relative to an empty destination, everything in src was removed
