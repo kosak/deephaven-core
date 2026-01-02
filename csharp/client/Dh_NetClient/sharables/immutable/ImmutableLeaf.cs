@@ -6,17 +6,17 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
+public struct ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>> {
   public static readonly ImmutableLeaf<TValue> Empty = new();
 
-  public override ImmutableLeaf<TValue> GetEmptyInstanceForThisType() => Empty;
+  public ImmutableLeaf<TValue> GetEmptyInstanceForThisType() => Empty;
 
   /// <summary>
   /// This constructor is used only to make the Empty singleton. No one else should call it.
   /// We are keeping it public because our generics have a new() constraint on them, which
   /// requires that this be public.
   /// </summary>
-  public ImmutableLeaf() : base(0) {
+  public ImmutableLeaf() {
   }
 
   public static ImmutableLeaf<TValue> Of(Bitset64 validitySet, ReadOnlySpan<TValue> children) {
@@ -24,21 +24,21 @@ public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>>
   }
 
   public readonly Bitset64 ValiditySet;
-  public readonly Array64<TValue> Children;
+  public readonly TValue[] Children;
 
-  private ImmutableLeaf(int count, Bitset64 validitySet, ReadOnlySpan<TValue> children) 
-    : base(count) {
+  public int Count => ValiditySet.Count;
+
+  private ImmutableLeaf(Bitset64 validitySet, TValue[] children) {
     ValiditySet = validitySet;
-    children.CopyTo(Children);
+    Children = children;
   }
 
   public ImmutableLeaf<TValue> With(int index, TValue value) {
     var newVs = ValiditySet.WithElement(index);
-    var newCount = newVs.Count;
-    var newChildren = new Array64<TValue>();
+    var newChildren = new TValue[64];
     ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
     newChildren[index] = value;
-    return new ImmutableLeaf<TValue>(newCount, newVs, newChildren);
+    return new ImmutableLeaf<TValue>(newVs, newChildren);
   }
 
   public ImmutableLeaf<TValue> Without(int index) {
@@ -46,11 +46,11 @@ public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>>
     if (newVs.IsEmpty) {
       return Empty;
     }
-    var newCount = newVs.Count;
-    var newChildren = new Array64<TValue>();
+    var newChildren = new TValue[64];
     ((ReadOnlySpan<TValue>)Children).CopyTo(newChildren);
     newChildren[index] = default;
-    return new ImmutableLeaf<TValue>(newCount, newVs, Children);
+    // OMG THIS IS A BUG FROM BEFORE
+    return new ImmutableLeaf<TValue>(newVs, newChildren);
   }
 
   public bool TryGetChild(int childIndex, [MaybeNullWhen(false)] out TValue child) {
@@ -62,7 +62,7 @@ public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>>
     return true;
   }
 
-  public override (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(
+  public (ImmutableLeaf<TValue>, ImmutableLeaf<TValue>, ImmutableLeaf<TValue>) CalcDifference(
     ImmutableLeaf<TValue> target) {
     var empty = Empty;
     if (this == target) {
@@ -129,7 +129,8 @@ public sealed class ImmutableLeaf<TValue> : ImmutableBase<ImmutableLeaf<TValue>>
     return (aResult, rResult, mResult);
   }
 
-  public override void GatherNodesForUnitTesting(HashSet<object> nodes) {
+  public void GatherNodesForUnitTesting(HashSet<object> nodes) {
+    // painfully WRONG now that we are a struct
     nodes.Add(this);
   }
 }
