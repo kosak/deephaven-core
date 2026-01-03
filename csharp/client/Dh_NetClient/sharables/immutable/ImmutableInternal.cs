@@ -4,33 +4,33 @@
 
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableNode<TChild> : ImmutableBase<ImmutableNode<TChild>> where TChild : ImmutableBase<TChild>, new() {
-  public static readonly ImmutableNode<TChild> Empty = new();
+public sealed class ImmutableInternal<TChild> : ImmutableBase<ImmutableInternal<TChild>> where TChild : ImmutableBase<TChild>, new() {
+  public static readonly ImmutableInternal<TChild> Empty = new();
 
-  public override ImmutableNode<TChild> GetEmptyInstanceForThisType() => Empty;
+  public override ImmutableInternal<TChild> GetEmptyInstanceForThisType() => Empty;
 
-  public static ImmutableNode<TChild> OfArray64(ReadOnlySpan<TChild> children) {
+  public static ImmutableInternal<TChild> OfArray64(ReadOnlySpan<TChild> children) {
     var subtreeCount = 0;
     for (var i = 0; i != children.Length; ++i) {
       var child = children[i];
       subtreeCount += child.Count;
     }
-    return subtreeCount == 0 ? Empty : new ImmutableNode<TChild>(subtreeCount, children);
+    return subtreeCount == 0 ? Empty : new ImmutableInternal<TChild>(subtreeCount, children);
   }
 
   public readonly Array64<TChild> Children;
 
-  public ImmutableNode() : base(0) {
+  public ImmutableInternal() : base(0) {
     // This is our hack to access the static T.Empty for type T
     var emptyChild = new TChild().GetEmptyInstanceForThisType();
     ((Span<TChild>)Children).Fill(emptyChild);
   }
 
-  private ImmutableNode(int count, ReadOnlySpan<TChild> children) : base(count) {
+  private ImmutableInternal(int count, ReadOnlySpan<TChild> children) : base(count) {
     children.CopyTo(Children);
   }
 
-  public ImmutableNode<TChild> Replace(int index, TChild newChild) {
+  public ImmutableInternal<TChild> Replace(int index, TChild newChild) {
     // If we are about to replace our only non-empty child, then canonicalize.
     if (Count == Children[index].Count && newChild.Count == 0) {
       return Empty;
@@ -41,8 +41,8 @@ public sealed class ImmutableNode<TChild> : ImmutableBase<ImmutableNode<TChild>>
     return OfArray64(newChildren);
   }
 
-  public override (ImmutableNode<TChild>, ImmutableNode<TChild>, ImmutableNode<TChild>) CalcDifference(
-    ImmutableNode<TChild> target) {
+  public override (ImmutableInternal<TChild>, ImmutableInternal<TChild>, ImmutableInternal<TChild>) CalcDifference(
+    ImmutableInternal<TChild> target) {
     var empty = Empty;
     if (this == target) {
       // Source and target are the same. No changes

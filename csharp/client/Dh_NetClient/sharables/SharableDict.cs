@@ -41,13 +41,13 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// </summary>
   private SharableDict() {
     _root =
-      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-        ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+      ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
+        ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
           ImmutableLeaf<TValue>>>>>>>>>>>.Empty; 
   }
 
-  private readonly ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+  private readonly ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
+    ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
       ImmutableLeaf<TValue>>>>>>>>>>> _root;
 
   /// <summary>
@@ -55,8 +55,8 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// </summary>
   /// <param name="root"></param>
   internal SharableDict(
-    ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
-      ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<
+    ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
+      ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
         ImmutableLeaf<TValue>>>>>>>>>>> root) {
     _root = root;
   }
@@ -230,7 +230,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <summary>
   /// For unit tests
   /// </summary>
-  internal ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableNode<ImmutableLeaf<TValue>>>>>>>>>>> RootForUnitTests
+  internal ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableLeaf<TValue>>>>>>>>>>> RootForUnitTests
    => _root;
 
   /// <summary>
