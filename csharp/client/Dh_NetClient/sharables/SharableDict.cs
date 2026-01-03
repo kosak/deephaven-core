@@ -43,7 +43,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
     _root =
       ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
         ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
-          ImmutableLeaf<TValue>>>>>>>>>>>.Empty; 
+          ImmutableLeaf<TValue>>>>>>>>>>>.EmptyInstance; 
   }
 
   private readonly ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<ImmutableInternal<
@@ -83,7 +83,7 @@ public class SharableDict<TValue> : IReadOnlyDictionary<Int64, TValue> {
   /// <returns>The resulting dictionary</returns>
   public SharableDict<TValue> Without(Int64 key) {
     var newRoot = new Destructured<TValue>(_root, key).RebuildWithoutLeafHere();
-    return newRoot == _root ? this : new SharableDict<TValue>(newRoot);
+    return ReferenceEquals(newRoot.Children, _root.Children) ? this : new SharableDict<TValue>(newRoot);
   }
 
   /// <summary>
