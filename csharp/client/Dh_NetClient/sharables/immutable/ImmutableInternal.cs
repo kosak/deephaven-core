@@ -4,7 +4,7 @@
 
 namespace Deephaven.Dh_NetClient;
 
-public sealed class ImmutableInternal<TChild> : ImmutableBase<ImmutableInternal<TChild>> where TChild : ImmutableBase<TChild>, new() {
+public sealed class ImmutableInternal<TChild> : IImmutableNode<ImmutableInternal<TChild>> where TChild : IImmutableNode<TChild>, new() {
   public static readonly ImmutableInternal<TChild> Empty = new();
 
   public override ImmutableInternal<TChild> GetEmptyInstanceForThisType() => Empty;
