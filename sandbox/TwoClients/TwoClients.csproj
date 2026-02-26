@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Deephaven.CorePlus.Client" Version="24.5.551.1" />
+    <PackageReference Include="Deephaven.CorePlus.Client" Version="24.5.551.2" />
     <PackageReference Include="Deephaven.Legacy.Client" Version="24.5.551.1" />
   </ItemGroup>
 
