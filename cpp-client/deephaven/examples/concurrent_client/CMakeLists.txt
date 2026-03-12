@@ -1,4 +1,4 @@
-project(hello_world)
+project(concurrent_session)
 
 set(CMAKE_CXX_STANDARD 17)
 
