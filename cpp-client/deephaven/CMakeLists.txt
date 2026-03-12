@@ -23,7 +23,7 @@ if(${SANITIZE_ADDRESS} STREQUAL "ON")
 endif()
 
 option(DHCORE_ONLY "Only build dhcore, skip rest" OFF)
-option(INSTALL_TESTS_AND_EXAMPLES "Include test and example binaries in the installation" OFF)
+option(INSTALL_TESTS "Include test and example binaries in the installation" OFF)
 
 add_subdirectory(dhcore)
 if(NOT DHCORE_ONLY)
@@ -36,7 +36,7 @@ install(DIRECTORY dhcore/include/public/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
-if(INSTALL_TESTS_AND_EXAMPLES)
+if(INSTALL_TESTS)
     install(TARGETS
 	    dhclient_tests
 	    concurrent_session
