@@ -15,6 +15,7 @@
 #include <arrow/array/array_primitive.h>
 
 #include "deephaven/client/impl/util.h"
+#include "deephaven/client/server/bearer_middleware.h"
 #include "deephaven/dhcore/utility/utility.h"
 #include "deephaven/third_party/fmt/format.h"
 
@@ -124,14 +125,6 @@ std::shared_ptr<Server> Server::CreateFromTarget(
     options.private_key = client_options.ClientPrivateKey();
   }
 
-  auto client_res = arrow::flight::FlightClient::Connect(*location_res, options);
-  if (!client_res.ok()) {
-    auto message = fmt::format("FlightClient::Connect() failed, error = {}", client_res.status().ToString());
-    throw std::runtime_error(message);
-  }
-  VLOG(2) << "Server::CreateFromTarget: FlightClient(" << static_cast<void*>(client_res->get())
-          << ") created, target=" << target;
-
   std::string session_token;
   std::chrono::milliseconds expiration_interval;
   auto send_time = std::chrono::system_clock::now();
@@ -171,9 +164,31 @@ std::shared_ptr<Server> Server::CreateFromTarget(
 
   auto next_handshake_time = send_time + expiration_interval;
 
+  // Create the Server object first (with nullptr FlightClient initially)
+  // We need the Server to exist so we can pass pointers to its members to the middleware
   auto result = std::make_shared<Server>(Private(), std::move(as), std::move(cs),
-      std::move(ss), std::move(ts), std::move(cfs), std::move(its), std::move(*client_res),
-      client_options.ExtraHeaders(), std::move(session_token), expiration_interval, next_handshake_time);
+      std::move(ss), std::move(ts), std::move(cfs), std::move(its), nullptr,
+      client_options.ExtraHeaders(), std::move(session_token),
+      expiration_interval, next_handshake_time);
+
+  // Now add bearer middleware factory to FlightClient options
+  // The factory holds raw pointers to Server's sessionToken_ and mutex_
+  // This is safe because Server owns FlightClient, so FlightClient will be destroyed first
+  options.middleware.push_back(
+      std::make_shared<BearerMiddlewareFactory>(&result->sessionToken_, &result->mutex_));
+
+  auto client_res = arrow::flight::FlightClient::Connect(*location_res, options);
+  if (!client_res.ok()) {
+    auto message = fmt::format("FlightClient::Connect() failed, error = {}", client_res.status().ToString());
+    throw std::runtime_error(message);
+  }
+  VLOG(2) << "Server::CreateFromTarget: FlightClient(" << static_cast<void*>(client_res->get())
+          << ") created with BearerMiddleware, target=" << target;
+
+  // Assign the FlightClient to the Server
+  result->flightClient_ = std::move(*client_res);
+
+  // Start the keepalive thread
   result->keepAliveThread_ = std::thread(&SendKeepaliveMessages, result);
   VLOG(2) << "Server::CreateFromTarget: Server(" << static_cast<void*>(result.get())
           << ") created, target=" << target;
@@ -189,7 +204,8 @@ Server::Server(Private,
     std::unique_ptr<InputTableService::Stub> input_table_stub,
     std::unique_ptr<arrow::flight::FlightClient> flight_client,
     ClientOptions::extra_headers_t extra_headers,
-    std::string session_token, std::chrono::milliseconds expiration_interval,
+    std::string session_token,
+    std::chrono::milliseconds expiration_interval,
     std::chrono::system_clock::time_point next_handshake_time) :
     me_(deephaven::dhcore::utility::ObjectId(
         "client::server::Server", this)),
