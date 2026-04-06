@@ -3,6 +3,7 @@
  */
 #include "deephaven/client/server/bearer_middleware.h"
 #include "deephaven/client/utility/logging.h"
+#include <absl/log/log.h>
 #include <cstring>
 
 using deephaven::client::kAuthorizationHeader;
@@ -18,23 +19,23 @@ BearerMiddleware::BearerMiddleware(std::string* session_token, const ExtraHeader
 
 void BearerMiddleware::SendingHeaders(arrow::flight::AddCallHeaders* outgoing_headers) {
   std::unique_lock<std::mutex> lock(*mutex_);
-  gpr_log(GPR_DEBUG, "BearerMiddleware::SendingHeaders called");
+  VLOG(2) << "BearerMiddleware::SendingHeaders called";
 
   // Add authorization header
   if (!session_token_->empty()) {
     // session_token_ already contains the full authorization value (e.g., "Bearer abc123")
     // Don't add the prefix again!
     outgoing_headers->AddHeader(std::string(kAuthorizationHeader), *session_token_);
-    gpr_log(GPR_DEBUG, "BearerMiddleware: Added authorization header, value length: %zu", session_token_->size());
+    VLOG(2) << "BearerMiddleware: Added authorization header, value length: " << session_token_->size();
   } else {
-    gpr_log(GPR_ERROR, "BearerMiddleware: Session token is EMPTY! Cannot add authorization header");
+    LOG(ERROR) << "BearerMiddleware: Session token is EMPTY! Cannot add authorization header";
   }
 
   // Add envoy-prefix header if present in extra headers
   for (const auto& header : *extra_headers_) {
     if (header.first == kEnvoyPrefixHeader) {
       outgoing_headers->AddHeader(std::string(kEnvoyPrefixHeader), header.second);
-      gpr_log(GPR_DEBUG, "BearerMiddleware: Added envoy-prefix header, value: %s", header.second.c_str());
+      VLOG(2) << "BearerMiddleware: Added envoy-prefix header, value: " << header.second;
       break;  // Only one envoy-prefix expected
     }
   }
@@ -60,7 +61,7 @@ void BearerMiddleware::ReceivedHeaders(const arrow::flight::CallHeaders& incomin
     // This matches what SendingHeaders expects
     std::unique_lock<std::mutex> lock(*mutex_);
     *session_token_ = std::move(auth_value);
-    gpr_log(GPR_DEBUG, "BearerMiddleware: Updated session token from response headers");
+    VLOG(2) << "BearerMiddleware: Updated session token from response headers";
   }
 }
 
@@ -80,5 +81,4 @@ void BearerMiddlewareFactory::StartCall(
 }
 
 }  // namespace deephaven::client::server
-
 
