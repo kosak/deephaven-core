@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+ * Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
  */
 #include "deephaven/client/server/bearer_middleware.h"
 #include "deephaven/client/utility/logging.h"
