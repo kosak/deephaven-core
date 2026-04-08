@@ -79,11 +79,7 @@ public:
       std::unique_ptr<TableService::Stub> table_stub,
       std::unique_ptr<ConfigService::Stub> config_stub,
       std::unique_ptr<InputTableService::Stub> input_table_stub,
-      std::unique_ptr<arrow::flight::FlightClient> flight_client,
-      ClientOptions::extra_headers_t extra_headers,
-      std::string session_token,
-      std::chrono::milliseconds expiration_interval,
-      std::chrono::system_clock::time_point next_handshake_time);
+      std::unique_ptr<arrow::flight::FlightClient> flight_client);
   ~Server();
 
   [[nodiscard]]
@@ -149,7 +145,6 @@ private:
   std::unique_ptr<ConfigService::Stub> configStub_;
   std::unique_ptr<InputTableService::Stub> input_table_stub_;
   std::unique_ptr<arrow::flight::FlightClient> flightClient_;
-  const ClientOptions::extra_headers_t extraHeaders_;
 
   std::shared_ptr<ServerSharedState> shared_state_;
 };

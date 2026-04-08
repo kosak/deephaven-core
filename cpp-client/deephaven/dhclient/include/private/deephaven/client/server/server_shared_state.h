@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 
+#include "deephaven/client/client_options.h"
 #include "deephaven/client/utility/executor.h"
 #include "deephaven_core/proto/ticket.pb.h"
 #include "deephaven_core/proto/application.pb.h"
@@ -28,8 +29,21 @@ struct TicketLess {
  * This struct is shared between Server, BearerMiddleware, and BearerMiddlewareFactory.
  */
 struct ServerSharedState {
-  using Ticket = io::deephaven::proto::backplane::grpc::Ticket;
+    using Ticket = io::deephaven::proto::backplane::grpc::Ticket;
 
+    ServerSharedState(ClientOptions::extra_headers_t extra_headers,
+        std::string session_token,
+        std::chrono::milliseconds expiration_interval,
+        std::chrono::system_clock::time_point next_handshake_time
+      );
+
+//   extraHeaders_(std::move(extra_headers)),
+// nextFreeTicketId_(1),
+// sessionToken_(std::move(session_token)),
+// expirationInterval_(expiration_interval),
+// nextHandshakeTime_(next_handshake_time) {
+
+  const ClientOptions::extra_headers_t extraHeaders_;
   std::mutex mutex_;
   std::condition_variable condVar_;
   int32_t nextFreeTicketId_ = 1;
@@ -39,5 +53,6 @@ struct ServerSharedState {
   std::chrono::milliseconds expirationInterval_;
   std::chrono::system_clock::time_point nextHandshakeTime_;
   std::thread keepAliveThread_;
+
 };
 }  // namespace deephaven::client::server

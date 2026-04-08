@@ -30,6 +30,19 @@ using io::deephaven::proto::backplane::grpc::Ticket;
 using UpdateByOperation = io::deephaven::proto::backplane::grpc::UpdateByRequest::UpdateByOperation;
 
 namespace deephaven::client::server {
+ServerSharedState::ServerSharedState(ClientOptions::extra_headers_t extra_headers,
+  std::string session_token,
+  std::chrono::milliseconds expiration_interval,
+  std::chrono::system_clock::time_point next_handshake_time
+) : extraHeaders_(std::move(extra_headers)),
+   nextFreeTicketId_(1),
+   sessionToken_(std::move(session_token)),
+   expirationInterval_(expiration_interval),
+   nextHandshakeTime_(next_handshake_time) {
+}
+
+
+
 
 using deephaven::client::kAuthorizationHeader;
 
@@ -92,7 +105,7 @@ std::shared_ptr<Server> Server::CreateFromTarget(
       client_options.ClientCertChain(),
       client_options.ClientPrivateKey());
   auto channel = grpc::CreateCustomChannel(
-      target, 
+      target,
       credentials,
       channel_args);
   VLOG(2) << "Server::CreateFromTarget: grpc::Channel(" << static_cast<void*>(channel.get())
@@ -216,7 +229,12 @@ Server::Server(Private,
     tableStub_(std::move(table_stub)),
     configStub_(std::move(config_stub)),
     input_table_stub_(std::move(input_table_stub)),
-    flightClient_(std::move(flight_client)) {
+    flightClient_(std::move(flight_client)),
+    extraHeaders_(std::move(extra_headers)),
+    nextFreeTicketId_(1),
+    sessionToken_(std::move(session_token)),
+    expirationInterval_(expiration_interval),
+    nextHandshakeTime_(next_handshake_time) {
 }
 
 Server::~Server() {
