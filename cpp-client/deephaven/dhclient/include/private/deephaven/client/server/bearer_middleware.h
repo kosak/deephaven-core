@@ -4,10 +4,8 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
-#include <string>
 #include <arrow/flight/client_middleware.h>
-#include "deephaven/client/client_options.h"
+#include "deephaven/client/server/server_shared_state.h"
 
 namespace deephaven::client::server {
 
@@ -21,16 +19,12 @@ namespace deephaven::client::server {
  */
 class BearerMiddleware : public arrow::flight::ClientMiddleware {
 public:
-  using ExtraHeaders = std::vector<std::pair<std::string, std::string>>;
-
-
   /**
-   * Construct a BearerMiddleware with references to Server's session token, extra headers, and mutex.
-   * @param session_token Pointer to Server's session token (must outlive this middleware)
-   * @param extra_headers Pointer to Server's extra headers (must outlive this middleware)
-   * @param mutex Pointer to Server's mutex (must outlive this middleware)
+   * Construct a BearerMiddleware with a reference to the ServerSharedState.
+   * @param shared_state The state object, shared with Server.
    */
-  BearerMiddleware(std::string* session_token, const ExtraHeaders* extra_headers, std::mutex* mutex);
+  BearerMiddleware(std::shared_ptr<ServerSharedState> shared_state);
+  ~BearerMiddleware();
 
   /**
    * Called before sending headers. Adds the Bearer token to the authorization header.
@@ -49,27 +43,20 @@ public:
   void CallCompleted(const arrow::Status& status) override;
 
 private:
-  std::string* session_token_;           // Points to Server::sessionToken_
-  const ExtraHeaders* extra_headers_;    // Points to Server::extraHeaders_
-  std::mutex* mutex_;                     // Points to Server::mutex_
+  std::shared_ptr<ServerSharedState> shared_state_;
 };
 
 /**
  * Factory for creating BearerMiddleware instances.
- * The factory holds raw pointers to Server's session token, extra headers, and mutex,
- * which is safe because Server owns the FlightClient which uses this factory.
  */
 class BearerMiddlewareFactory : public arrow::flight::ClientMiddlewareFactory {
 public:
-  using ExtraHeaders = BearerMiddleware::ExtraHeaders;
-
   /**
-   * Construct a factory with references to Server's session token, extra headers, and mutex.
-   * @param session_token Pointer to Server's session token (must outlive this factory)
-   * @param extra_headers Pointer to Server's extra headers (must outlive this factory)
-   * @param mutex Pointer to Server's mutex (must outlive this factory)
+   * Construct a BearerMiddlewareFactory with a reference to the ServerSharedState.
+   * @param shared_state The state object, shared with Server.
    */
-  BearerMiddlewareFactory(std::string* session_token, const ExtraHeaders* extra_headers, std::mutex* mutex);
+  explicit BearerMiddlewareFactory(std::shared_ptr<ServerSharedState> shared_state);
+  ~BearerMiddlewareFactory();
 
   /**
    * Called when a new call starts. Creates a BearerMiddleware instance.
@@ -78,11 +65,6 @@ public:
                  std::unique_ptr<arrow::flight::ClientMiddleware>* middleware) override;
 
 private:
-  std::string* session_token_;           // Points to Server::sessionToken_
-  const ExtraHeaders* extra_headers_;    // Points to Server::extraHeaders_
-  std::mutex* mutex_;                     // Points to Server::mutex_
+  std::shared_ptr<ServerSharedState> shared_state_;
 };
-
 }  // namespace deephaven::client::server
-
-
