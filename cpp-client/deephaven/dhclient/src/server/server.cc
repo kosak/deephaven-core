@@ -166,17 +166,10 @@ std::shared_ptr<Server> Server::CreateFromTarget(
   auto next_handshake_time = send_time + expiration_interval;
 
   // Now add bearer middleware factory to FlightClient options
-  auto shared_state = std::make_shared<ServerSharedState>(client_options.ExtraHeaders());
-
+  auto shared_state = std::make_shared<ServerSharedState>(client_options.ExtraHeaders(),
+      std::move(session_token),expiration_interval, next_handshake_time);
 
   options.middleware.push_back(std::make_shared<BearerMiddlewareFactory>(shared_state));
-
-
-  auto result = std::make_shared<Server>(Private(), std::move(as), std::move(cs),
-      std::move(ss), std::move(ts), std::move(cfs), std::move(its), nullptr,
-      client_options.ExtraHeaders(), std::move(session_token),
-      expiration_interval, next_handshake_time);
-
 
   auto client_res = arrow::flight::FlightClient::Connect(*location_res, options);
   if (!client_res.ok()) {
@@ -186,8 +179,9 @@ std::shared_ptr<Server> Server::CreateFromTarget(
   VLOG(2) << "Server::CreateFromTarget: FlightClient(" << static_cast<void*>(client_res->get())
           << ") created with BearerMiddleware, target=" << target;
 
-  // Assign the FlightClient to the Server
-  result->flightClient_ = std::move(*client_res);
+  auto result = std::make_shared<Server>(Private(), std::move(as), std::move(cs),
+    std::move(ss), std::move(ts), std::move(cfs), std::move(its), std::move(*client_res),
+    std::move(shared_state));
 
   // Start the keepalive thread
   result->keepAliveThread_ = std::thread(&SendKeepaliveMessages, result);
