@@ -79,7 +79,8 @@ public:
       std::unique_ptr<TableService::Stub> table_stub,
       std::unique_ptr<ConfigService::Stub> config_stub,
       std::unique_ptr<InputTableService::Stub> input_table_stub,
-      std::unique_ptr<arrow::flight::FlightClient> flight_client);
+      std::unique_ptr<arrow::flight::FlightClient> flight_client,
+      std::shared_ptr<ServerSharedState> shared_state);
   ~Server();
 
   [[nodiscard]]

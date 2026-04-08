@@ -204,10 +204,7 @@ Server::Server(Private,
     std::unique_ptr<ConfigService::Stub> config_stub,
     std::unique_ptr<InputTableService::Stub> input_table_stub,
     std::unique_ptr<arrow::flight::FlightClient> flight_client,
-    ClientOptions::extra_headers_t extra_headers,
-    std::string session_token,
-    std::chrono::milliseconds expiration_interval,
-    std::chrono::system_clock::time_point next_handshake_time) :
+    std::shared_ptr<ServerSharedState> shared_state) :
     me_(deephaven::dhcore::utility::ObjectId(
         "client::server::Server", this)),
     applicationStub_(std::move(application_stub)),
@@ -216,7 +213,8 @@ Server::Server(Private,
     tableStub_(std::move(table_stub)),
     configStub_(std::move(config_stub)),
     input_table_stub_(std::move(input_table_stub)),
-    flightClient_(std::move(flight_client)) {
+    flightClient_(std::move(flight_client)),
+    shared_state_(shared_state) {
 }
 
 Server::~Server() {
