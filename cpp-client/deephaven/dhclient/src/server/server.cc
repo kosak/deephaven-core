@@ -218,15 +218,15 @@ Server::~Server() {
 void Server::Shutdown() {
   VLOG(2) << me_ << ": Server Shutdown requested.";
 
-  std::unique_lock<std::mutex> guard(mutex_);
-  if (cancelled_) {
+  std::unique_lock<std::mutex> guard(shared_state_->mutex_);
+  if (shared_state_->cancelled_) {
     guard.unlock(); // to be nice
     LOG(ERROR) << me_ << ": Already cancelled.";
     return;
   }
-  cancelled_ = true;
-  auto tickets_to_release = std::move(outstanding_tickets_);
-  outstanding_tickets_.clear();
+  shared_state_->cancelled_ = true;
+  auto tickets_to_release = std::move(shared_state_->outstanding_tickets_);
+  shared_state_->outstanding_tickets_.clear();
   guard.unlock();
 
   for (const auto &ticket : tickets_to_release) {
@@ -239,9 +239,8 @@ void Server::Shutdown() {
   }
 
   // This will cause the handshake thread to shut down (because cancelled_ is true).
-  condVar_.notify_all();
-
-  keepAliveThread_.join();
+  shared_state_->condVar_.notify_all();
+  shared_state_->keepAliveThread_.join();
 }
 
 namespace {
@@ -258,10 +257,10 @@ Ticket MakeNewTicket(int32_t ticket_id) {
 }  // namespace
 
 Ticket Server::NewTicket() {
-  std::unique_lock guard(mutex_);
-  auto ticket_id = nextFreeTicketId_++;
+  std::unique_lock guard(shared_state_->mutex_);
+  auto ticket_id = shared_state_->nextFreeTicketId_++;
   auto ticket = MakeNewTicket(ticket_id);
-  outstanding_tickets_.insert(ticket);
+  shared_state_->outstanding_tickets_.insert(ticket);
   return ticket;
 }
 
@@ -269,11 +268,11 @@ void Server::Release(Ticket ticket) {
   // TODO(kosak): In a future version we might queue up these released tickets and release
   // them asynchronously, in order to give clients a little performance bump without
   // adding too much unexpected asynchronicity to their programs.
-  std::unique_lock guard(mutex_);
-  if (cancelled_) {
+  std::unique_lock guard(shared_state_->mutex_);
+  if (shared_state_->cancelled_) {
     return;
   }
-  if (outstanding_tickets_.erase(ticket) == 0) {
+  if (shared_state_->outstanding_tickets_.erase(ticket) == 0) {
     const char *message = "Server was asked to release a ticket that it is not managing.";
     throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
   }
@@ -305,8 +304,8 @@ void Server::SendRpc(const std::function<grpc::Status(grpc::ClientContext *)> &c
   });
 
   if (!disregard_cancellation_state) {
-    std::unique_lock guard(mutex_);
-    if (cancelled_) {
+    std::unique_lock guard(shared_state_->mutex_);
+    if (shared_state_->cancelled_) {
       const char *message = "Server cancelled. All further RPCs are being rejected";
       throw std::runtime_error(DEEPHAVEN_LOCATION_STR(message));
     }
@@ -323,12 +322,12 @@ void Server::SendRpc(const std::function<grpc::Status(grpc::ClientContext *)> &c
   const auto &metadata = ctx.GetServerInitialMetadata();
 
   auto ip = metadata.find(std::string(kAuthorizationHeader));
-  std::unique_lock lock(mutex_);
+  std::unique_lock lock(shared_state_->mutex_);
   if (ip != metadata.end()) {
     const auto &val = ip->second;
-    sessionToken_.assign(val.begin(), val.end());
+    shared_state_->sessionToken_.assign(val.begin(), val.end());
   }
-  nextHandshakeTime_ = now + expirationInterval_;
+  shared_state_->nextHandshakeTime_ = now + shared_state_->expirationInterval_;
 }
 
 void Server::SendKeepaliveMessages(const std::shared_ptr<Server> &self) {
@@ -344,22 +343,22 @@ void Server::SendKeepaliveMessages(const std::shared_ptr<Server> &self) {
 bool Server::KeepaliveHelper() {
   // Wait for timeout or cancellation
   {
-    std::unique_lock guard(mutex_);
+    std::unique_lock guard(shared_state_->mutex_);
     std::chrono::system_clock::time_point now;
     while (true) {
-      (void) condVar_.wait_until(guard, nextHandshakeTime_);
-      if (cancelled_) {
+      (void) shared_state_->condVar_.wait_until(guard, shared_state_->nextHandshakeTime_);
+      if (shared_state_->cancelled_) {
         return false;
       }
       now = std::chrono::system_clock::now();
       // We can have spurious wakeups and also nextHandshakeTime_ can change while we are waiting.
       // So don't leave the while loop until wall clock time has moved past nextHandshakeTime_.
-      if (now >= nextHandshakeTime_) {
+      if (now >= shared_state_->nextHandshakeTime_) {
         break;
       }
     }
     // Set a default nextHandshakeTime_. This will likely be overwritten by SendRpc, if it succeeds.
-    nextHandshakeTime_ = now + kHandshakeResendInterval;
+    shared_state_->nextHandshakeTime_ = now + kHandshakeResendInterval;
   }
 
   // Send a 'GetConfigurationConstants' as a handshake. On the way out, we note our local time.
@@ -384,25 +383,26 @@ bool Server::KeepaliveHelper() {
 }
 
 void Server::SetExpirationInterval(std::chrono::milliseconds interval) {
-  std::unique_lock guard(mutex_);
-  expirationInterval_ = interval;
+  std::unique_lock guard(shared_state_->mutex_);
+  shared_state_->expirationInterval_ = interval;
 
   // In the unlikely event that the server reduces the expirationInterval_ (probably never happens),
   // we might need to update the nextHandshakeTime_.
-  auto expiration_time_estimate = std::chrono::system_clock::now() + expirationInterval_;
-  if (expiration_time_estimate < nextHandshakeTime_) {
-    nextHandshakeTime_ = expiration_time_estimate;
-    condVar_.notify_all();
+  auto expiration_time_estimate = std::chrono::system_clock::now() +
+    shared_state_->expirationInterval_;
+  if (expiration_time_estimate < shared_state_->nextHandshakeTime_) {
+    shared_state_->nextHandshakeTime_ = expiration_time_estimate;
+    shared_state_->condVar_.notify_all();
   }
 }
 
 void Server::ForEachHeaderNameAndValue(
     const std::function<void(const std::string &, const std::string &)> &fun) {
-  mutex_.lock();
-  auto token_copy = sessionToken_;
-  mutex_.unlock();
+  shared_state_->mutex_.lock();
+  auto token_copy = shared_state_->sessionToken_;
+  shared_state_->mutex_.unlock();
   fun(std::string(kAuthorizationHeader), token_copy);
-  for (const auto &header : extraHeaders_) {
+  for (const auto &header : shared_state_->extraHeaders_) {
     fun(header.first, header.second);
   }
 }
