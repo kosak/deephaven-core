@@ -29,13 +29,13 @@ public:
   /**
    * Called before sending headers. Adds the Bearer token to the authorization header.
    */
-  void SendingHeaders(arrow::flight::AddCallHeaders* outgoing_headers) override;
+  void SendingHeaders(arrow::flight::AddCallHeaders *outgoing_headers) override;
 
   /**
    * Called when headers are received. Extracts and updates the Bearer token if present.
    * Note: Arrow Flight CallHeaders maps header names to single string values.
    */
-  void ReceivedHeaders(const arrow::flight::CallHeaders& incoming_headers) override;
+  void ReceivedHeaders(const arrow::flight::CallHeaders &incoming_headers) override;
 
   /**
    * Called when the call is completed.
@@ -62,7 +62,7 @@ public:
    * Called when a new call starts. Creates a BearerMiddleware instance.
    */
   void StartCall(const arrow::flight::CallInfo& info,
-                 std::unique_ptr<arrow::flight::ClientMiddleware>* middleware) override;
+                 std::unique_ptr<arrow::flight::ClientMiddleware> *middleware) override;
 
 private:
   std::shared_ptr<ServerSharedState> shared_state_;

@@ -19,7 +19,7 @@ BearerMiddleware::BearerMiddleware(std::shared_ptr<ServerSharedState> shared_sta
 
 BearerMiddleware::~BearerMiddleware() = default;
 
-void BearerMiddleware::SendingHeaders(arrow::flight::AddCallHeaders* outgoing_headers) {
+void BearerMiddleware::SendingHeaders(arrow::flight::AddCallHeaders *outgoing_headers) {
   std::unique_lock<std::mutex> lock(shared_state_->mutex_);
   VLOG(2) << "BearerMiddleware::SendingHeaders called";
 
@@ -35,7 +35,7 @@ void BearerMiddleware::SendingHeaders(arrow::flight::AddCallHeaders* outgoing_he
   }
 
   // Add envoy-prefix header if present in extra headers
-  for (const auto& header : shared_state_->extraHeaders_) {
+  for (const auto &header : shared_state_->extraHeaders_) {
     if (header.first == kEnvoyPrefixHeader) {
       outgoing_headers->AddHeader(std::string(kEnvoyPrefixHeader), header.second);
       VLOG(2) << "BearerMiddleware: Added envoy-prefix header, value: " << header.second;
@@ -44,7 +44,7 @@ void BearerMiddleware::SendingHeaders(arrow::flight::AddCallHeaders* outgoing_he
   }
 }
 
-void BearerMiddleware::ReceivedHeaders(const arrow::flight::CallHeaders& incoming_headers) {
+void BearerMiddleware::ReceivedHeaders(const arrow::flight::CallHeaders &incoming_headers) {
   // Look for authorization header in incoming headers
   auto auth_headers = incoming_headers.find(std::string(kAuthorizationHeader));
 
@@ -68,7 +68,7 @@ void BearerMiddleware::ReceivedHeaders(const arrow::flight::CallHeaders& incomin
   }
 }
 
-void BearerMiddleware::CallCompleted(const arrow::Status& status) {
+void BearerMiddleware::CallCompleted(const arrow::Status &status) {
   // Nothing to do on call completion
 }
 
@@ -80,8 +80,8 @@ BearerMiddlewareFactory::BearerMiddlewareFactory(std::shared_ptr<ServerSharedSta
 BearerMiddlewareFactory::~BearerMiddlewareFactory() = default;
 
 void BearerMiddlewareFactory::StartCall(
-    const arrow::flight::CallInfo& info,
-    std::unique_ptr<arrow::flight::ClientMiddleware>* middleware) {
+    const arrow::flight::CallInfo &info,
+    std::unique_ptr<arrow::flight::ClientMiddleware> *middleware) {
   *middleware = std::make_unique<BearerMiddleware>(shared_state_);
 }
 }  // namespace deephaven::client::server
