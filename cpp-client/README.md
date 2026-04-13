@@ -120,7 +120,7 @@ connect a server when you want to run them.
    cd $DHSRC/deephaven-core/cpp-client/deephaven/
    cmake -S . -B build \
        -DCMAKE_INSTALL_LIBDIR=lib \
-       -DCMAKE_CXX_STANDARD=17 \
+       -DCMAKE_CXX_STANDARD=20 \
        -DCMAKE_INSTALL_PREFIX=${DHCPP} \
        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
        -DBUILD_SHARED_LIBS=ON \
@@ -178,8 +178,8 @@ connect a server when you want to run them.
      to the list of arguments to `cmake`.
 
    * Some platforms combining old versions of GCC and cmake may fail
-     to set the cmake C++ standard to 17 without explicitly adding
-     `-DCMAKE_CXX_STANDARD=17` to the list of arguments to `cmake`.
+     to set the cmake C++ standard to 20 without explicitly adding
+     `-DCMAKE_CXX_STANDARD=20` to the list of arguments to `cmake`.
      Note the default mode for C++ is `-std=gnu++17` for GCC 11.
 
 Notes
