@@ -87,25 +87,6 @@ set(ALL_FILES
 
     third_party/roaring/include/roaring/roaring.c
 
-    # The way we vendor the "fmt" library is we compile the cc files directly into dhcore,
-    # and we publish the .h files at deephaven/third_party/fmt
-    third_party/fmt/src/format.cc
-    third_party/fmt/src/os.cc
-
-    include/public/deephaven/third_party/fmt/args.h
-    include/public/deephaven/third_party/fmt/chrono.h
-    include/public/deephaven/third_party/fmt/color.h
-    include/public/deephaven/third_party/fmt/compile.h
-    include/public/deephaven/third_party/fmt/core.h
-    include/public/deephaven/third_party/fmt/format-inl.h
-    include/public/deephaven/third_party/fmt/format.h
-    include/public/deephaven/third_party/fmt/os.h
-    include/public/deephaven/third_party/fmt/ostream.h
-    include/public/deephaven/third_party/fmt/printf.h
-    include/public/deephaven/third_party/fmt/ranges.h
-    include/public/deephaven/third_party/fmt/std.h
-    include/public/deephaven/third_party/fmt/xchar.h
-
     # we vendor the date library also but it's private to us, so we don't export its .h file
     third_party/date/include/date/date.h
 )
