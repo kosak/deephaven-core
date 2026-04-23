@@ -1,9 +1,11 @@
 export DHSRC=~/git
 export VCPKG_ROOT=$DHSRC/vcpkg
+export DHINSTALL=~/tpnn_next1
 
 cd $VCPKG_ROOT
 ./bootstrap-vcpkg.sh
 
+cd $DHSRC/deephaven-core/cpp-client/deephaven
 $VCPKG_ROOT/vcpkg install --triplet x64-linux-dynamic-release --overlay-triplets=./custom-triplets
 
 looks like I needed
