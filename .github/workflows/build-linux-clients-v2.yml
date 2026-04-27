@@ -50,7 +50,7 @@ jobs:
         run: |
           vcpkg_exe=${{ github.workspace }}/vcpkg/vcpkg
           echo vcpkg_exe is $vcpkg_exe
-          nuget_exe=mono `$vcpkg_exe fetch nuget | tail -n 1`
+          nuget_exe="mono $($vcpkg_exe fetch nuget | tail -n 1)"
           echo nuget_exe is $nuget_exe
           $nuget_exe \
             sources add \
