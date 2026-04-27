@@ -92,7 +92,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.DHINSTALL }}
-          key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
+          key: ${{ runner.os }}-cpp-client-${{ hashFiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
         id: checkout-vcpkg
