@@ -1,4 +1,4 @@
-name: linux_client_builds
+name: Client Builds: C++ on Linux
 run-name: "Build Linux C++ Clients"
 on: [push, workflow_dispatch]
 permissions:
@@ -67,10 +67,7 @@ jobs:
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: sudo apt install flex bison linux-libc-dev libssl-dev
 
-      - name: Pray
-        run: echo Time to pray
-
-      - name: Run cmake configuration. For dependent packages, cmake will use vcpkg, and vcpkg will use nuget
+      - name: build packages (vcpkg), configure (cmake), and build (cmake). Cache packages in github's nuget repo
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
