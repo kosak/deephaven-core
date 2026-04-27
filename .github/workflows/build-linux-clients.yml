@@ -1,5 +1,5 @@
-name: windows_client_builds
-run-name: "Build Windows C++, Python Static, Python Ticking; and cross-platform C# Clients"
+name: linux_client_builds
+run-name: "Build Linux C++ Clients"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
