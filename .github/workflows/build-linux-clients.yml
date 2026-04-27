@@ -36,5 +36,4 @@ jobs:
 
       - name: Bootstrap vcpkg
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
-        shell: cmd
         run: ./vcpkg/bootstrap-vcpkg.sh
