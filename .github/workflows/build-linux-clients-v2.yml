@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ env.DHINSTALL }}
-          key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
+          key: ${{ runner.os }}-cpp-client-${{ hashFiles('cpp-client/**', 'proto/**') }}
 
       - name: Check out vcpkg
         id: checkout-vcpkg
@@ -49,9 +49,9 @@ jobs:
         shell: bash
         run: |
           vcpkg_exe=${{ github.workspace }}/vcpkg/vcpkg
-          echo $vcpkg_exe
+          echo vcpkg_exe is $vcpkg_exe
           nuget_exe=mono `$vcpkg_exe fetch nuget | tail -n 1`
-          echo $nuget_exe
+          echo nuget_exe is $nuget_exe
           $nuget_exe \
             sources add \
             -Source "${{ env.GH_PACKAGES_FEED }}" \
@@ -61,4 +61,4 @@ jobs:
             -Password "${{ secrets.GITHUB_TOKEN }}"
           $nuget_exe \
             setapikey "${{ secrets.GITHUB_TOKEN }}" \
-            -Source "${{ env.FEED_URL }}"
+            -Source "${{ env.GH_PACKAGES_FEED }}"
