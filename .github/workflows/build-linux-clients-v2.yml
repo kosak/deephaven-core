@@ -4,8 +4,30 @@ on: [push, workflow_dispatch]
 permissions:
   packages: write
 
+#===============================================================================
+# A note about GitHub caching: in this workflow there are three different kinds
+# of caching going on:
+#
+# 1. The normal Github 10G per-repository/per-branch cache, accessible from
+#    https://github.com/deephaven/deephaven-core/actions/caches
+#    and controlled via "uses: actions/cache".
+#    We use this cache to hold the C++ build artifacts (its INSTALL directory)
+#
+# 2. Github Packages, which is a NuGet-compatible repo accessible from
+#    https://github.com/orgs/deephaven/packages?repo_name=deephaven-core
+#    and controlled via the NuGet API.
+#    We use this package repository to hold the binaries of the built
+#    C++ dependencies (grpc, arrow, etc.). It is managed automatically for us
+#    by cmake/vcpkg/nuget.
+#
+# 3. Github Build artifacts, attached to every action run. These artifacts
+#    can be downloaded from e.g.
+#    https://github.com/deephaven/deephaven-core/actions/runs/17416308139
+#    but the specific URL depends on the build.
+#    We use this to upload:
+#    - The C++ INSTALL directory (the same thing we cached in step 1)
+
 env:
-  # Not sure this will work
   GH_PACKAGES_USERNAME: ${{ github.repository_owner }}
   GH_PACKAGES_FEED: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
   DHINSTALL: ${{ github.workspace }}/dhinstall
@@ -22,12 +44,22 @@ jobs:
       - name: Check out this repo
         uses: actions/checkout@v6
 
-      - name: Try to restore (or begin the creation of) the cached installation directory
+      # Try to fetch the whole installation directory (the final product of the
+      # build) from the Github Cache. The key to this cache is derived
+      # from the hash of the contents of the files in the cpp-client and proto
+      # directories. If this fetch is successful, we skip over all the build
+      # work and just copy this cached install directory to the output artifact
+      # for this run.
+
+      - name: Try to restore the cached installation directory. If it doesn't exist, prepare a new one
         id: cache-cpp-install
         uses: actions/cache@v5
         with:
           path: ${{ env.DHINSTALL }}
           key: ${{ runner.os }}-cpp-client-${{ hashFiles('cpp-client/**', 'proto/**') }}
+
+      # Check out vcpkg
+      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Check out vcpkg
         id: checkout-vcpkg
@@ -37,15 +69,27 @@ jobs:
           repository: microsoft/vcpkg
           path: vcpkg
 
+      # Check out vcpkg
+      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
+
       - name: Bootstrap vcpkg
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
 
-      - name: Get mono
+      # Get mono so that we can run nuget [SKIP IF CACHE FETCH WAS SUCCESSFUL]
+      # This is because the nuget.exe that ships with vcpkg is an old .NET Framework
+      # binary (Windows format), and only mono knows how to run such a thing on Linux.
+      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
+
+      - name: Get mono so that we can run nuget
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: sudo apt install mono-complete
 
-      - name: Configure nuget to know how to download (or upload) each cached package that we need (or create)
+      # Adapted from
+      # https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages?pivots=linux-runner
+      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
+
+      - name: "Configure nuget to know how to download (or upload) each cached package that we need (or create)"
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: |
           vcpkg_exe=${{ github.workspace }}/vcpkg/vcpkg
@@ -63,20 +107,30 @@ jobs:
             setapikey "${{ secrets.GITHUB_TOKEN }}" \
             -Source "${{ env.GH_PACKAGES_FEED }}"
 
-      - name: Get dependent libraries
-        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
-        run: sudo apt install flex bison linux-libc-dev libssl-dev
+#      - name: Get dependent libraries (probably not necessary)
+#        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+#        run: sudo apt install flex bison linux-libc-dev libssl-dev
 
-      - name: build packages (vcpkg), configure (cmake), and build (cmake). Cache packages in github's nuget repo
+      # This cmake is doing a lot of work:
+      # 1. Invoking vcpkg to build the dependent libraries (or pull them in from the nuget cache)
+      # 2. Configuring cmake
+      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
+
+      - name: build packages and configure cmake. Cached packages will be found, or stored in github's nuget repo
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
         run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic-release -DVCPKG_OVERLAY_TRIPLETS=cpp-client/deephaven/custom-triplets
 
-      - name: Run cmake build
+      # Build our executables and install them in the configured install directory {{ env.DHINSTALL }}
+      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
+
+      - name: Run cmake build and install
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install --parallel
 
+      # Upload results as build artifact.
+      # If cache fetch was successful, effectively just copies cache to build artifact
       - name: Upload install directory as build artifact
         id: upload-install-directory
         uses: actions/upload-artifact@v7
