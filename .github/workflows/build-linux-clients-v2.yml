@@ -65,7 +65,7 @@ jobs:
 
       - name: Get dependent libraries
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
-	run: sudo apt install flex bison linux-libc-dev libssl-dev
+        run: sudo apt install flex bison linux-libc-dev libssl-dev
 
       - name: Pray
         run: echo Time to pray
