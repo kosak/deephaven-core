@@ -35,5 +35,11 @@ jobs:
           path: vcpkg
 
       - name: Bootstrap vcpkg
+        shell: bash
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
-        run: ./vcpkg/bootstrap-vcpkg.sh
+        run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
+
+      - name: Get mono
+        shell: bash
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+        run: sudo apt install mono-complete
