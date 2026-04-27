@@ -43,3 +43,22 @@ jobs:
         shell: bash
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: sudo apt install mono-complete
+
+     - name: Configure nuget to know how to download (or upload) each cached package that we need (or create)
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+	  vcpkg_exe=${{ github.workspace }}/vcpkg/vcpkg
+	  echo $vcpkg_exe
+	  nuget_exe=mono `$vcpkg_exe fetch nuget | tail -n 1`
+	  echo $nuget_exe
+          $nuget_exe \
+            sources add \
+            -Source "${{ env.GH_PACKAGES_FEED }}" \
+            -StorePasswordInClearText \
+            -Name GitHubPackages \
+            -UserName "${{ env.GH_PACKAGES_USERNAME }}" \
+            -Password "${{ secrets.GITHUB_TOKEN }}"
+	  $nuget_exe \
+            setapikey "${{ secrets.GITHUB_TOKEN }}" \
+            -Source "${{ env.FEED_URL }}"
