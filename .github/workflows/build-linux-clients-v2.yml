@@ -1,4 +1,4 @@
-name: Client Builds: C++ on Linux
+name: "Client Builds: C++ on Linux"
 run-name: "Build Linux C++ Clients"
 on: [push, workflow_dispatch]
 permissions:
