@@ -44,7 +44,7 @@ jobs:
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: sudo apt install mono-complete
 
-     - name: Configure nuget to know how to download (or upload) each cached package that we need (or create)
+      - name: Configure nuget to know how to download (or upload) each cached package that we need (or create)
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         shell: bash
         run: |
