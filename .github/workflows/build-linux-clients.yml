@@ -1,0 +1,40 @@
+name: windows_client_builds
+run-name: "Build Windows C++, Python Static, Python Ticking; and cross-platform C# Clients"
+on: [push, workflow_dispatch]
+permissions:
+  packages: write
+
+env:
+  # Not sure this will work
+  GH_PACKAGES_USERNAME: ${{ github.repository_owner }}
+  GH_PACKAGES_FEED: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+  DHINSTALL: ${{ github.workspace }}/dhinstall
+
+jobs:
+  linux_job:
+    name: Build C++ linux clients or fetch from cache
+    runs-on: windows-2025
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v6
+
+      - name: Try to restore (or begin the creation of) the cached installation directory
+        id: cache-cpp-install
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.DHINSTALL }}
+          key: ${{ runner.os }}-cpp-client-${{ hashfiles('cpp-client/**', 'proto/**') }}
+
+      - name: Check out vcpkg
+        id: checkout-vcpkg
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: microsoft/vcpkg
+          path: vcpkg
+
+      - name: Bootstrap vcpkg
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+        shell: cmd
+        run: ./vcpkg/bootstrap-vcpkg.sh
