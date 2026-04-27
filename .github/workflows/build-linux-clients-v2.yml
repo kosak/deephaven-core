@@ -14,6 +14,9 @@ jobs:
   linux_job:
     name: Build C++ linux clients or fetch from cache
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Check out this repo
@@ -35,30 +38,40 @@ jobs:
           path: vcpkg
 
       - name: Bootstrap vcpkg
-        shell: bash
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
 
       - name: Get mono
-        shell: bash
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: sudo apt install mono-complete
 
       - name: Configure nuget to know how to download (or upload) each cached package that we need (or create)
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
-        shell: bash
         run: |
           vcpkg_exe=${{ github.workspace }}/vcpkg/vcpkg
           echo vcpkg_exe is $vcpkg_exe
-          nuget_exe="mono $($vcpkg_exe fetch nuget | tail -n 1)"
-          echo nuget_exe is $nuget_exe
-          $nuget_exe \
+          nuget_dotnet=$($vcpkg_exe fetch nuget | tail -n 1)
+          echo nuget_dotnet is $nuget_dotnet
+          mono $nuget_dotnet \
             sources add \
             -Source "${{ env.GH_PACKAGES_FEED }}" \
             -StorePasswordInClearText \
             -Name GitHubPackages \
             -UserName "${{ env.GH_PACKAGES_USERNAME }}" \
             -Password "${{ secrets.GITHUB_TOKEN }}"
-          $nuget_exe \
+          mono $nuget_dotnet \
             setapikey "${{ secrets.GITHUB_TOKEN }}" \
             -Source "${{ env.GH_PACKAGES_FEED }}"
+
+      - name: Get dependent libraries
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+	run: sudo apt install flex bison linux-libc-dev libssl-dev
+
+      - name: Pray
+        run: echo Time to pray
+
+      - name: Run cmake configuration. For dependent packages, cmake will use vcpkg, and vcpkg will use nuget
+        if: steps.cache-cpp-install.outputs.cache-hit != 'true'
+        env:
+          VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
+        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic-release -DVCPKG_OVERLAY_TRIPLETS=./custom-triplets
