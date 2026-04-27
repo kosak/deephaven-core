@@ -74,4 +74,4 @@ jobs:
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
-        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic-release -DVCPKG_OVERLAY_TRIPLETS=./custom-triplets
+        run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic-release -DVCPKG_OVERLAY_TRIPLETS=cpp-client/deephaven/custom-triplets
