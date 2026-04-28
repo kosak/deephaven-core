@@ -50,7 +50,7 @@ jobs:
       # work and just copy this cached install directory to the output artifact
       # for this run.
 
-      - name: Try to restore the cached installation directory. If it doesn't exist, prepare a new one
+      - name: Restore the cached installation directory, or prepare a new one
         id: cache-cpp-install
         uses: actions/cache@v5
         with:
@@ -68,16 +68,17 @@ jobs:
           repository: microsoft/vcpkg
           path: vcpkg
 
-      # Check out vcpkg
+      # Bootstrap vcpkg
       # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Bootstrap vcpkg
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
 
-      # Get mono so that we can run nuget [SKIP IF CACHE FETCH WAS SUCCESSFUL]
-      # This is because the nuget.exe that ships with vcpkg is an old .NET Framework
-      # binary (Windows format), and only mono knows how to run such a thing on Linux.
+      # Get mono so that we can run nuget. This is because (old problem,
+      # unfixed) the nuget.exe that ships with vcpkg is an old .NET Framework
+      # binary (Windows format), and only mono knows how to run such a thing on
+      # Linux. Some day the maintainers will fix this so it runs with "dotnet".
       # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Get mono so that we can run nuget
