@@ -5,8 +5,8 @@ permissions:
   packages: write
 
 #===============================================================================
-# A note about GitHub caching: in this workflow there are three different kinds
-# of caching going on:
+# Background: in this workflow there are three different kinds of caching going
+# on:
 #
 # 1. The normal Github 10G per-repository/per-branch cache, accessible from
 #    https://github.com/deephaven/deephaven-core/actions/caches
@@ -15,10 +15,9 @@ permissions:
 #
 # 2. Github Packages, which is a NuGet-compatible repo accessible from
 #    https://github.com/orgs/deephaven/packages?repo_name=deephaven-core
-#    and controlled via the NuGet API.
-#    We use this package repository to hold the binaries of the built
-#    C++ dependencies (grpc, arrow, etc.). It is managed automatically for us
-#    by cmake/vcpkg/nuget.
+#    and controlled via the NuGet API. We use this package repository to hold
+#    the binaries for the C++ dependencies e build (grpc, arrow, etc.). It is
+#    managed automatically for us by cmake/vcpkg/nuget.
 #
 # 3. Github Build artifacts, attached to every action run. These artifacts
 #    can be downloaded from e.g.
