@@ -22,6 +22,7 @@ jobs:
   dotnet_job:
     name: Build .NET client on Ubuntu
     runs-on: ubuntu-24.04
+    needs: version_job
     defaults:
       run:
         shell: bash
@@ -36,6 +37,8 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Reveal Deephaven version
+        env:
+          DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
         run: echo ${{ env.DEEPHAVEN_VERSION }}
 
 
