@@ -1,6 +1,11 @@
 name: "Determine DEEPHAVEN_VERSION"
 run-name: "Determine DEEPHAVEN_VERSION"
-on: workflow_call
+on:
+  workflow_call:
+    outputs:
+      dhc_version:
+        description: "The detected version of Deephaven Core"
+        value: ${{ jobs.version_job.outputs.dhc_version }}
 
 jobs:
   #=============================================================================
