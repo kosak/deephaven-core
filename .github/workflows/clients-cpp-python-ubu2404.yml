@@ -70,8 +70,8 @@ jobs:
           path: ${{ env.DHINSTALL }}
           key: ${{ runner.os }}-cpp-client-${{ hashFiles('cpp-client/**', 'proto/**') }}
 
+      # [Note: skip this step if cache-cpp-install was successful]
       # Check out vcpkg
-      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Check out vcpkg
         id: checkout-vcpkg
@@ -81,27 +81,28 @@ jobs:
           repository: microsoft/vcpkg
           path: vcpkg
 
+      # [Note: skip this step if cache-cpp-install was successful]
       # Bootstrap vcpkg
-      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Bootstrap vcpkg
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
 
+      # [Note: skip this step if cache-cpp-install was successful]
       # Get mono so that we can run nuget. This is because the nuget.exe that
       # ships with vcpkg is an old .NET Framework binary (Windows format), and
       # only mono knows how to run such a thing on Linux. Some day the maintainers
       # will fix this so it runs with the cross-platform "dotnet".
-      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Get mono so that we can run nuget
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: sudo apt install mono-complete
 
+      # [Note: skip this step if cache-cpp-install was successful]
       # Adapted from
       # https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages?pivots=linux-runner
-      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
+      # [Note: skip this step if cache-cpp-install was successful]
       - name: "Configure nuget to know how to download (or upload) each cached package that we need (or create)"
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: |
@@ -118,12 +119,11 @@ jobs:
             setapikey "${{ secrets.GITHUB_TOKEN }}" \
             -Source "${{ env.GH_PACKAGES_FEED }}"
 
-      # This cmake is doing a lot of work:
+      # [Note: skip this step if cache-cpp-install was successful]
       # 1. Invoke vcpkg to:
       #    a) Try to fetch each of the dependent libraries from the nuget cache
       #    b) If not found, build them and insert them in the nuget cache
       # 2. Configure cmake to prepare for the build/install step, which comes next
-      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: build packages and configure cmake. Cached packages will be found, or stored in github's nuget repo
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
@@ -131,16 +131,16 @@ jobs:
           VCPKG_BINARY_SOURCES: "clear;nuget,${{ env.GH_PACKAGES_FEED }},readwrite"
         run: cmake -S cpp-client/deephaven -B cpp-client/deephaven/build --toolchain ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ env.DHINSTALL }} -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic-release -DVCPKG_OVERLAY_TRIPLETS=cpp-client/deephaven/custom-triplets
 
+      # [Note: skip this step if cache-cpp-install was successful]
       # Build our executables and install them in the configured install directory {{ env.DHINSTALL }}
-      # [SKIP IF CACHE FETCH WAS SUCCESSFUL]
 
       - name: Run cmake build and install
         if: steps.cache-cpp-install.outputs.cache-hit != 'true'
         run: cmake --build cpp-client/deephaven/build --config RelWithDebInfo --target install --parallel
 
-      # Upload results as build artifact.
-      # If cache fetch was successful, then none of the intervening steps actually happened,
-      # so, this effectively just copies cache to build artifact.
+      # Upload results as build artifact. Note: if cache-cpp-install was
+      # then none of the intervening steps were executed. In that case,
+      # this effectively just copies the cache to the build artifact.
 
       - name: Upload install directory as build artifact
         id: upload-install-directory
