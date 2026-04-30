@@ -180,12 +180,12 @@ jobs:
   #=============================================================================
 
   python_static_job:
-    name: Python static client
+    name: Build Python static client on Ubuntu
     runs-on: ubuntu-24.04
+    needs: [version_job]
     defaults:
       run:
         shell: bash
-    needs: [version_job]
 
     steps:
       - name: Check out this repo
@@ -216,3 +216,67 @@ jobs:
         with:
           name: py-static-wheel
           path: ./py/client/dist/*.whl
+
+  #=============================================================================
+  # Build the Python Ticking Client
+  #=============================================================================
+
+python_ticking_job:
+    name: Build Python ticking client on Ubuntu
+    runs-on: ubuntu-24.04
+    needs: [cpp_job, python_static_job, version_job]
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v6
+
+      - name: Get the C++ installation as a build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: cpp-client-install
+          path: ${{ env.DHINSTALL }}
+
+      - name: Get the Python static installation as a build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: py-static-wheel
+          path: ./py/client/dist/
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install the 'wheel' and 'cython' packages
+        run: pip3 install wheel cython
+
+      - name: Install requirements-dev.txt
+        run: |
+          cd ./py/client
+          pip3 install -r requirements-dev.txt
+
+      - name: Install the static client
+        run: pip3 install --force --no-deps ./py/client/dist/*.whl
+
+      - name: Build cython code
+        env:
+          DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
+        run: |
+          cd ./py/client-ticking
+          python setup.py build_ext -i
+
+      - name: Run setup.py
+        env:
+          DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
+        run: |
+          cd ./py/client-ticking
+          python setup.py bdist_wheel
+
+      - name: Upload ticking .whl file as build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: py-ticking-wheel
+          path: ./py/client-ticking/dist/*.whl
