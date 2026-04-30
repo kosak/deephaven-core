@@ -56,9 +56,9 @@ jobs:
 
       - name: Output Deephaven Version
         id: get-dhc-version
-	run: |
-            DHC_VERSION=$(awk -F= '
-              /^[^#]/ { props[$1] = $2 }
+        run: |
+          DHC_VERSION=$(awk -F= '
+            /^[^#]/ { props[$1] = $2 }
             END {
               v = props["deephavenMajorVersion"] "." props["deephavenMinorVersion"]
               if (props["deephavenBaseQualifier"] != "") v = v "-" props["deephavenBaseQualifier"]
