@@ -55,4 +55,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: nuget-package
-          path: ./csharp/client/Dh_NetClient/*.nupkg
+          path: ./csharp/client/Dh_NetClient/bin/Release/*.nupkg
