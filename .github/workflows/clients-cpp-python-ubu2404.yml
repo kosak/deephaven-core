@@ -264,7 +264,7 @@ jobs:
       - name: Build cython code
         env:
           DEEPHAVEN_VERSION: ${{ needs.version_job.outputs.dhc_version }}
-          CPPFLAGS: -I{{ env.DHINSTALL }}/include
+          CPPFLAGS: -I${{ env.DHINSTALL }}/include
           LDFLAGS: -L${{ env.DHINSTALL }}/lib
         run: |
           cd ./py/client-ticking
