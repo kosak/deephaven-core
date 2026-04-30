@@ -46,10 +46,7 @@ jobs:
           DHC_VERSION: ${{ needs.version_job.outputs.dhc_version }}
         run: |
           cd csharp/client/Dh_NetClient
-          dotnet pack --no-build -c Release /p:Platform="Any CPU" /p:PackageVersion=%DHC_VERSION%
-
-      - name: Guess package name
-        run: find ./csharp/client/Dh_NetClient
+          dotnet pack --no-build -c Release /p:Platform="Any CPU" /p:PackageVersion=$DHC_VERSION
 
       - name: Upload unsigned NuGet package as build artifact
         uses: actions/upload-artifact@v7
