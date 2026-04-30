@@ -221,7 +221,7 @@ jobs:
   # Build the Python Ticking Client
   #=============================================================================
 
-python_ticking_job:
+  python_ticking_job:
     name: Build Python ticking client on Ubuntu
     runs-on: ubuntu-24.04
     needs: [cpp_job, python_static_job, version_job]
