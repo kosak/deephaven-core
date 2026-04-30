@@ -1,4 +1,3 @@
-HELLO
 # Deephaven Python Ticking Package
 
 The `pydeephaven-ticking` package enables access to ticking Deephaven data from Python. It extends
