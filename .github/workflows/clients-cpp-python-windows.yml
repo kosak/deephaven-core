@@ -72,7 +72,7 @@ jobs:
   # Build the C++ Client
   #=============================================================================
   cpp_job:
-    name: Build C++ clients on Windows or fetch from cache
+    name: Build C++ client on Windows or fetch from cache
     runs-on: windows-2025
     defaults:
       run:

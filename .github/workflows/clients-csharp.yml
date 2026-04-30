@@ -1,0 +1,41 @@
+name: "Build C++ and Python Clients on Ubuntu 24.04"
+run-name: "Build C++ and Python Clients on Ubuntu 24.04"
+on: [push, workflow_dispatch]
+permissions:
+  packages: write
+
+env:
+  GH_PACKAGES_USERNAME: ${{ github.repository_owner }}
+  GH_PACKAGES_FEED: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+  DHINSTALL: ${{ github.workspace }}/dhinstall
+
+jobs:
+  #=============================================================================
+  # Identify DEEPHAVEN_VERSION
+  #=============================================================================
+  version_job:
+    uses: ./.github/workflows/deephaven-version.yml
+    
+  #=============================================================================
+  # Build the .NET Client
+  #=============================================================================
+  dotnet_job:
+    name: Build .NET client on Ubuntu
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v6
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build Deephaven Core C# Client
+        run: |
+          cd csharp/client/Dh_NetClient
+          dotnet build -c Release
