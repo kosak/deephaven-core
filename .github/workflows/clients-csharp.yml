@@ -36,12 +36,23 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Reveal Deephaven version
-        env:
-          DHC_VERSION: ${{ needs.version_job.outputs.dhc_version }}
-        run: echo Hello, DHC version is ${{ env.DHC_VERSION }}
-
       - name: Build Deephaven Core C# Client
         run: |
           cd csharp/client/Dh_NetClient
           dotnet build -c Release
+
+      - name: Create unsigned NuGet package
+        env:
+          DHC_VERSION: ${{ needs.version_job.outputs.dhc_version }}
+        run: |
+          cd csharp/client/Dh_NetClient
+          dotnet pack --no-build -c Release /p:Platform="Any CPU" /p:PackageVersion=%DHC_VERSION%
+
+      - name: Guess package name
+        run: find ./csharp/client/Dh_NetClient
+
+      - name: Upload unsigned NuGet package as build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-package
+          path: ./csharp/client/Dh_NetClient/*.nupkg
