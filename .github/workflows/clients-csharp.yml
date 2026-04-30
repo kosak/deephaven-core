@@ -39,7 +39,7 @@ jobs:
       - name: Reveal Deephaven version
         env:
           DHC_VERSION: ${{ needs.version_job.outputs.dhc_version }}
-        run: Hello, DHC version is ${{ env.DHC_VERSION }}
+        run: echo Hello, DHC version is ${{ env.DHC_VERSION }}
 
       - name: Build Deephaven Core C# Client
         run: |
