@@ -1,5 +1,4 @@
 name: "Build C++ and Python Clients on Ubuntu 24.04"
-run-name: "Build C++ and Python Clients on Ubuntu 24.04"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -38,10 +37,10 @@ env:
 
 jobs:
   #=============================================================================
-  # Identify DEEPHAVEN_VERSION
+  # Identify version of Deephaven Core
   #=============================================================================
   version_job:
-    uses: ./.github/workflows/deephaven-version.yml
+    uses: ./.github/workflows/dhc-version.yml
 
   #=============================================================================
   # Build the C++ Client

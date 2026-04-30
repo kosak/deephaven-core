@@ -1,5 +1,4 @@
 name: "Build C++ and Python Clients on Windows"
-run-name: "Build C++ and Python Clients on Windows"
 on: [push, workflow_dispatch]
 permissions:
   packages: write
@@ -38,10 +37,10 @@ env:
 
 jobs:
   #=============================================================================
-  # Identify DEEPHAVEN_VERSION
+  # Identify version of Deephaven Core
   #=============================================================================
   version_job:
-    uses: ./.github/workflows/deephaven-version.yml
+    uses: ./.github/workflows/dhc-version.yml
 
   #=============================================================================
   # Build the C++ Client
@@ -225,6 +224,10 @@ jobs:
         run: |
           $wheel = (Get-ChildItem -Path .\py\client\dist\*.whl).FullName
           pip3 install --force --no-deps $wheel
+
+      # Pinned to a specific SHA to avoid future surprises
+      - name: set up PATH to be able to run Visual Studio tools like cl.exe
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
 
       - name: Build cython code
         env:
