@@ -1,2 +1,3 @@
 taint the C++ build to cause it to run again or whatever
 It's been a while... what happens if we rebuild now?
+What is the dang deal here?
