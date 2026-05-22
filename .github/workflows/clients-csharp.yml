@@ -1,4 +1,4 @@
-name: "C# Client"
+name: ".NET Client"
 on:
   pull_request:
     branches: [ 'main', 'rc/v*' ]
