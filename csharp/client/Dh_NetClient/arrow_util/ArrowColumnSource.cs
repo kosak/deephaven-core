@@ -15,8 +15,10 @@ global using DateTimeOffsetArrowColumnSource = Deephaven.Dh_NetClient.ArrowColum
 global using LocalDateArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateOnly>;
 global using LocalTimeArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.TimeOnly>;
 using System.Collections;
+using System.Collections.Immutable;
 using Apache.Arrow;
 using Apache.Arrow.Types;
+using Array = System.Array;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -262,16 +264,42 @@ sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChun
       var start = typedSrc.ValueOffsets[srcOffset];
       var end = typedSrc.ValueOffsets[srcOffset + 1];
       var data = (Apache.Arrow.Array)typedSrc.Values;
-      typedDest.Data[destOffset] = new PainWrapper(data.Slice(start, end - start));
+      var slicedData = data.Slice(start, end - start);
+      var sn = new SuperNubbin();
+      slicedData.Accept(sn);
+      var snr = sn.Result;
+      // var hate1 = (Int32Array)slicedData;
+      // var hate2 = (IReadOnlyList<int?>)slicedData;
+      var q2a = (IReadOnlyList<int?>)snr;
+      var q2b = (IList)snr;
+      var q2c = (IList<int?>)snr;
+
+      q2c[3] = 18;
+
       ++srcOffset;
       ++destOffset;
+      var foo = ImmutableList.Create(3, 4, 5);
+      typedDest.Data[destOffset] = foo; // new PainWrapper(data.Slice(start, end - start));
+     var bar = (IList)foo;
     }
   }
 }
 
-public class PainWrapper(Apache.Arrow.Array x) : IList {
+public class SuperNubbin : IArrowArrayVisitor,
+  IArrowArrayVisitor<Int32Array> {
 
+  public IList Result { get; private set; }
+
+  public void Visit(Int32Array array) {
+    Result = ImmutableList.CreateRange(array);
+  }
+
+  public void Visit(IArrowArray array) {
+    throw new NotImplementedException("SAD");
+  }
 }
+
+
 
 
 public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
