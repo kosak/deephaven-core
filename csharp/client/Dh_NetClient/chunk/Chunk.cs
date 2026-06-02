@@ -13,6 +13,7 @@ global using DoubleChunk = Deephaven.Dh_NetClient.Chunk<double>;
 global using DateTimeOffsetChunk = Deephaven.Dh_NetClient.Chunk<System.DateTimeOffset>;
 global using DateOnlyChunk = Deephaven.Dh_NetClient.Chunk<System.DateOnly>;
 global using TimeOnlyChunk = Deephaven.Dh_NetClient.Chunk<System.TimeOnly>;
+global using ListChunk = Deephaven.Dh_NetClient.Chunk<System.Collections.IList>;
 
 namespace Deephaven.Dh_NetClient;
 

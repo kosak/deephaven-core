@@ -1,6 +1,7 @@
 ﻿//
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
+
 global using BooleanArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<bool>;
 global using StringArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<string>;
 global using CharArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<char>;
@@ -13,7 +14,7 @@ global using DoubleArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<
 global using DateTimeOffsetArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateTimeOffset>;
 global using LocalDateArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateOnly>;
 global using LocalTimeArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.TimeOnly>;
-
+using System.Collections;
 using Apache.Arrow;
 using Apache.Arrow.Types;
 
@@ -181,7 +182,7 @@ abstract class FillChunkHelper {
 }
 
 sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T? deephavenNullValue)
-      : FillChunkHelper where T : struct {
+  : FillChunkHelper where T : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<T?>)src;
     for (var i = 0; i < count; ++i) {
@@ -209,8 +210,12 @@ sealed class ValueCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags, T? deep
   }
 }
 
-sealed class TransformingCopier<TSrc, TDest>(Chunk<TDest> typedDest, BooleanChunk? nullFlags,
-  TSrc deephavenNullValue, TDest transformedNullValue, Func<TSrc, TDest> transformer)
+sealed class TransformingCopier<TSrc, TDest>(
+  Chunk<TDest> typedDest,
+  BooleanChunk? nullFlags,
+  TSrc deephavenNullValue,
+  TDest transformedNullValue,
+  Func<TSrc, TDest> transformer)
   : FillChunkHelper where TSrc : struct where TDest : struct {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (IReadOnlyList<TSrc?>)src;
@@ -249,6 +254,13 @@ sealed class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : F
     }
   }
 }
+
+sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChunkHelper {
+  protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
+    throw new Exception("SAD");
+  }
+}
+
 
 public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
   private int _arrayIndex = -1;
@@ -362,7 +374,9 @@ class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
 
 public class ListArrowColumnSource(ChunkedArray chunkedArray) : ArrowColumnSource, IListColumnSource {
   public override void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags) {
-    throw new NotImplementedException();
+    var typedDest = (ListChunk)dest;
+    var lc = new ListCopier(typedDest, nullFlags);
+    lc.FillChunk(rows, chunkedArray);
   }
 
   public override void Accept(IColumnSourceVisitor visitor) {
