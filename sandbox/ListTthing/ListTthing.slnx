@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../csharp/client/Dh_NetClient/Dh_NetClient.csproj" />
+  <Project Path="ListTthing.csproj" />
+</Solution>
