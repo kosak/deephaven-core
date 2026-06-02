@@ -299,7 +299,8 @@ class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   IArrowTypeVisitor<StringType>,
   IArrowTypeVisitor<TimestampType>,
   IArrowTypeVisitor<Date64Type>,
-  IArrowTypeVisitor<Time64Type> {
+  IArrowTypeVisitor<Time64Type>,
+  IArrowTypeVisitor<ListType> {
   public ArrowColumnSource? Result { get; private set; }
 
   public void Visit(UInt16Type type) {
@@ -350,7 +351,21 @@ class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
     Result = new LocalTimeArrowColumnSource(chunkedArray);
   }
 
+  public void Visit(ListType type) {
+    Result = new ListArrowColumnSource(chunkedArray);
+  }
+
   public void Visit(IArrowType type) {
     throw new Exception($"Arrow type {type.Name} is not supported");
+  }
+}
+
+public class ListArrowColumnSource(ChunkedArray chunkedArray) : ArrowColumnSource, IListColumnSource {
+  public override void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags) {
+    throw new NotImplementedException();
+  }
+
+  public override void Accept(IColumnSourceVisitor visitor) {
+    IColumnSource.Accept(this, visitor);
   }
 }
