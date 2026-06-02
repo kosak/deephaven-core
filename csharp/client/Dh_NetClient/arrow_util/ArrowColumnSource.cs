@@ -257,8 +257,20 @@ sealed class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : F
 
 sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChunkHelper {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
-    throw new Exception("SAD");
+    var typedSrc = (ListArray)src;
+    for (var i = 0; i < count; ++i) {
+      var start = typedSrc.ValueOffsets[srcOffset];
+      var end = typedSrc.ValueOffsets[srcOffset + 1];
+      var data = (Apache.Arrow.Array)typedSrc.Values;
+      typedDest.Data[destOffset] = new PainWrapper(data.Slice(start, end - start));
+      ++srcOffset;
+      ++destOffset;
+    }
   }
+}
+
+public class PainWrapper(Apache.Arrow.Array x) : IList {
+
 }
 
 
