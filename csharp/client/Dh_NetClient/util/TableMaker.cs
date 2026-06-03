@@ -1,6 +1,8 @@
 ﻿//
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
+
+using System.Diagnostics.CodeAnalysis;
 using Apache.Arrow;
 using Apache.Arrow.Types;
 
@@ -121,7 +123,7 @@ public class TableMaker {
     return ToString(true);
   }
 
-  private class ColumnBuilder {
+  public class ColumnBuilder {
     public static ColumnBuilder<T> ForType<T>(IArrowArrayBuilder? callerProvidedBuilder) {
       return (ColumnBuilder<T>)ForType(typeof(T), callerProvidedBuilder);
     }
@@ -239,11 +241,10 @@ public class TableMaker {
           null);
       }
 
-      var listUnderlyingType = GetIListInterfaceUnderlyingType(type);
-      if (listUnderlyingType != null) {
+      if (TryMatchTypeToIListOfUnderlying(type, out var underlyingType)) {
         var miGeneric = typeof(ColumnBuilder).GetMethod(nameof(ForIListType)) ??
           throw new Exception($"Can't find {nameof(ForIListType)}");
-        var miInstantiated = miGeneric.MakeGenericMethod(type, listUnderlyingType);
+        var miInstantiated = miGeneric.MakeGenericMethod(type, underlyingType);
         return (ColumnBuilder)miInstantiated.Invoke(null, [callerProvidedBuilder])!;
       }
 
@@ -269,24 +270,40 @@ public class TableMaker {
       return new ListBuilder<TList, TUnderlying>(builderToUse);
     }
 
-    private static Type? GetIListInterfaceUnderlyingType(Type ilistType) {
-      var temp = ilistType.GetInterfaces();
-      return ilistType.GetInterfaces().Select(GetIListUnderlyingType).FirstOrDefault(t => t != null);
-    }
+    /// <summary>
+    /// Is target an IList&lt;T&gt; or does it inherit from IList&lt;T&gt; for some T?
+    /// If so, set underlying to T and return true. Otherwise return false.
+    /// </summary>
+    /// <param name="target">Type to examine</param>
+    /// <param name="underlying">The underlying type if target is an IList&lt;T&gt;</param>
+    /// <returns>True if target is an IList&lt;T&gt; or inherits from IList&lt;T&gt;, otherwise false</returns>
 
-    private static Type? GetIListUnderlyingType(Type ilistType) {
-      if (ilistType.IsGenericType && !ilistType.IsGenericTypeDefinition) {
-        // Instantiated generic type only
-        var genericType = ilistType.GetGenericTypeDefinition();
-        if (ReferenceEquals(genericType, typeof(IList<>))) {
-          return ilistType.GetGenericArguments()[0];
+    private static bool TryMatchTypeToIListOfUnderlying(Type target,
+      [MaybeNullWhen(false)] out Type underlying) {
+      if (TryMatch(target, out underlying)) {
+        return true;
+      }
+      foreach (var iface in target.GetInterfaces()) {
+        if (TryMatch(iface, out underlying)) {
+          return true;
         }
       }
-      return null;
+      underlying = null;
+      return false;
+
+      // Is target an IList<T> for some T? If so, set underlying to T and return true. Otherwise return false.
+      static bool TryMatch(Type target, [MaybeNullWhen(false)] out Type underlying) {
+        if (target.IsGenericType && target.GetGenericTypeDefinition() == typeof(IList<>)) {
+          underlying = target.GetGenericArguments()[0];
+          return true;
+        }
+        underlying = null;
+        return false;
+      }
     }
   }
 
-  private abstract class ColumnBuilder<T> : ColumnBuilder {
+  public abstract class ColumnBuilder<T> : ColumnBuilder {
     public abstract void Append(T item);
     public abstract void AppendNull();
 

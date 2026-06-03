@@ -14,6 +14,8 @@ global using IDateTimeOffsetColumnSource = Deephaven.Dh_NetClient.IColumnSource<
 global using IDateOnlyColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.DateOnly>;
 global using ITimeOnlyColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.TimeOnly>;
 global using IListColumnSource = Deephaven.Dh_NetClient.IColumnSource<System.Collections.IList>;
+using System.ComponentModel.DataAnnotations;
+
 namespace Deephaven.Dh_NetClient;
 
 public interface IColumnSource {

@@ -18,12 +18,12 @@ using System.Collections;
 using System.Collections.Immutable;
 using Apache.Arrow;
 using Apache.Arrow.Types;
-using Array = System.Array;
 
 namespace Deephaven.Dh_NetClient;
 
 public abstract class ArrowColumnSource : IColumnSource {
   public static ArrowColumnSource CreateFromColumn(Column column) {
+    Apache.Arrow.Types.ArrowType x;
     var visitor = new ArrowColumnSourceMaker(column.Data);
     column.Type.Accept(visitor);
     if (visitor.Result == null) {

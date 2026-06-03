@@ -1,6 +1,9 @@
 ﻿//
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
+
+using System.Diagnostics;
+using Apache.Arrow;
 using Apache.Arrow.Types;
 
 namespace Deephaven.Dh_NetClient;
@@ -30,20 +33,20 @@ public static class ArrowArrayConverter {
     IColumnSourceVisitor<IBooleanColumnSource>,
     IColumnSourceVisitor<IDateTimeOffsetColumnSource>,
     IColumnSourceVisitor<IDateOnlyColumnSource>,
-    IColumnSourceVisitor<ITimeOnlyColumnSource> {
+    IColumnSourceVisitor<ITimeOnlyColumnSource>,
+    IColumnSourceVisitor<IListColumnSource> {
 
     private readonly int _numRows;
     private readonly Chunk _data;
     private readonly BooleanChunk _nulls;
+
+    public Apache.Arrow.IArrowArray? Result = null;
 
     public ColumnSourceToArrowArrayVisitor(int numRows, Chunk data, BooleanChunk nulls) {
       _numRows = numRows;
       _data = data;
       _nulls = nulls;
     }
-
-
-    public Apache.Arrow.IArrowArray? Result = null;
 
     public void Visit(IByteColumnSource cs) {
       var arrowBuilder = new Apache.Arrow.Int8Array.Builder();
@@ -131,18 +134,27 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IListColumnSource cs) {
-      var arrowBuilder = new Apache.Arrow.ListArray.Builder().ValueBuilder.
-      arrowBuilder.Append();
-      var typedData = ((StringChunk)_data).Data;
-      for (var i = 0; i != _numRows; ++i) {
-        if (!_nulls.Data[i]) {
-          arrowBuilder.Append(typedData[i]);
-        } else {
-          arrowBuilder.AppendNull();
-        }
-      }
+      var cb = TableMaker.ColumnBuilder.ForType<IList<int>>(null);
+      cb.Append([1, 2, 3]);
+      cb.Append([4, 5]);
+      cb.AppendNull();
+      Result = cb.Build();
 
-      Result = arrowBuilder.Build();
+      // var elementType = cs.ElementType;
+      // var arrowElementType = ArrowTypeConverter.ToArrowType(elementType);
+      // var arrowBuilder = new Apache.Arrow.ListArray.Builder(arrowElementType);
+      // var underlyingBuilder = arrowBuilder.ValueBuilder;
+      // var typedData = ((StringChunk)_data).Data;
+      // for (var i = 0; i != _numRows; ++i) {
+      //   if (!_nulls.Data[i]) {
+      //     underlyingBuilder.Append(typedData[i]);
+      //   } else {
+      //
+      //     arrowBuilder.AppendNull();
+      //   }
+      // }
+      
+      // Result = arrowBuilder.Build();
     }
 
 
