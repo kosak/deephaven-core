@@ -130,6 +130,22 @@ public static class ArrowArrayConverter {
       Result = arrowBuilder.Build();
     }
 
+    public void Visit(IListColumnSource cs) {
+      var arrowBuilder = new Apache.Arrow.ListArray.Builder().ValueBuilder.
+      arrowBuilder.Append();
+      var typedData = ((StringChunk)_data).Data;
+      for (var i = 0; i != _numRows; ++i) {
+        if (!_nulls.Data[i]) {
+          arrowBuilder.Append(typedData[i]);
+        } else {
+          arrowBuilder.AppendNull();
+        }
+      }
+
+      Result = arrowBuilder.Build();
+    }
+
+
     private void CopyHelper<T, TArray, TBuilder>(TBuilder arrowBuilder)
       where TArray : Apache.Arrow.IArrowArray
       where TBuilder : Apache.Arrow.IArrowArrayBuilder<T, TArray, TBuilder> {
@@ -146,7 +162,7 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IColumnSource cs) {
-      throw new NotImplementedException($"No ColumnSourceToArrayVisitor.Visit for {Utility.FriendlyTypeName(cs.GetType())}");
+      throw new NotImplementedException($"No {nameof(ColumnSourceToArrowArrayVisitor)}.Visit for {Utility.FriendlyTypeName(cs.GetType())}");
     }
 
   }
