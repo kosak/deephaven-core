@@ -133,7 +133,7 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IListColumnSource cs) {
-      var qqq = ZBlonga<IList<int>>(cs);
+      var qqq = ZBlonga<int>(cs);
       // var cb = TableMaker.ColumnBuilder.ForType<IList<int>>(null);
       // cb.Append([1, 2, 3]);
       // cb.Append([4, 5]);
@@ -157,7 +157,7 @@ public static class ArrowArrayConverter {
       // Result = arrowBuilder.Build();
     }
 
-    public IArrowArray ZBlonga<T>(IListColumnSource cs) {
+    public IArrowArray ZBlonga<TElement>(IListColumnSource cs) {
       const int maxChunkSize = 512;
 
       var rowNum = 0;
@@ -165,7 +165,7 @@ public static class ArrowArrayConverter {
       var dest = Chunk<System.Collections.IList>.Create(maxChunkSize);
 
       var nullFlags = BooleanChunk.Create(maxChunkSize);
-      var cb = TableMaker.ColumnBuilder.ForType<T>(null);
+      var cb = TableMaker.ColumnBuilder.ForType<IList<TElement>>(null);
       while (remaining != 0) {
         var nextChunkSize = Math.Min(remaining, maxChunkSize);
         var rows = RowSequence.CreateSequential(Interval.OfStartAndSize((UInt64)rowNum, (UInt64)nextChunkSize));
@@ -173,7 +173,7 @@ public static class ArrowArrayConverter {
 
         for (var i = 0; i != nextChunkSize; ++i) {
           if (!nullFlags.Data[i]) {
-            cb.Append(dest.Data[i]);
+            cb.Append((IList<TElement>)dest.Data[i]);
           } else {
             cb.AppendNull();
           }
