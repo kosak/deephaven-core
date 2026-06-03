@@ -2,6 +2,7 @@
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
 
+using System.Collections.Immutable;
 using Apache.Arrow;
 using Apache.Arrow.Types;
 
@@ -133,7 +134,7 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IListColumnSource cs) {
-      var qqq = ZBlonga<int>(cs);
+      var qqq = ZBlonga<int?>(cs);
       // var cb = TableMaker.ColumnBuilder.ForType<IList<int>>(null);
       // cb.Append([1, 2, 3]);
       // cb.Append([4, 5]);
