@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Immutable;
 using Apache.Arrow;
 using Apache.Arrow.Types;
+using Array = System.Array;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -281,7 +282,8 @@ public class SuperNubbin : IArrowArrayVisitor,
   public IList Result { get; private set; } = new List<int>();
 
   public void Visit(Int32Array array) {
-    Result = ImmutableList.CreateRange(array);
+    Result = new KosakArray<int>(array);
+    // Result = ImmutableList.CreateRange(array);
   }
 
   public void Visit(IArrowArray array) {
@@ -289,41 +291,159 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 }
 
-public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
-  private int _arrayIndex = -1;
-  private Int64 _segmentOffset = 0;
-  private Int64 _segmentBegin = 0;
-  private Int64 _segmentEnd = 0;
+public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
+  private readonly IReadOnlyList<T?> _data;
+  private bool _isReadOnly;
+  private int _count;
+  private int _count1;
+  private bool _isReadOnly1;
+  private int _count2;
+  private bool _isReadOnly2;
 
-  public void Advance(Int64 start) {
-    while (true) {
-      if (start < _segmentBegin) {
-        throw new Exception($"Assertion failed: Can't go backwards from {_segmentBegin} to {start}");
-      }
-
-      if (start < _segmentEnd) {
-        // satisfiable with current segment
-        _segmentBegin = start;
-        return;
-      }
-
-      // Go to next array slice (or the first one, if this is the first call to Advance)
-      ++_arrayIndex;
-      if (_arrayIndex >= chunkedArray.ArrayCount) {
-        throw new Exception($"Ran out of src data before processing all of RowSequence");
-      }
-
-      _segmentBegin = _segmentEnd;
-      _segmentEnd = _segmentBegin + chunkedArray.ArrowArray(_arrayIndex).Length;
-      _segmentOffset = _segmentBegin;
-    }
+  public KosakArray(IReadOnlyList<T?> data) {
+    _data = data;
   }
 
-  public IArrowArray CurrentSegment => chunkedArray.ArrowArray(_arrayIndex);
+  public override bool Equals(object? obj) {
+    return base.Equals(obj);
+  }
 
-  public int SegmentLength => (_segmentEnd - _segmentBegin).ToIntExact();
+  public override int GetHashCode() {
+    return base.GetHashCode();
+  }
 
-  public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
+  public override string ToString() {
+    return base.ToString();
+  }
+
+  public int Add(object? value) {
+    throw new NotImplementedException();
+  }
+
+  void IList.Clear() {
+    throw new NotImplementedException();
+  }
+
+  public bool Contains(object? value) {
+    throw new NotImplementedException();
+  }
+
+  public int IndexOf(object? value) {
+    throw new NotImplementedException();
+  }
+
+  public void Insert(int index, object? value) {
+    throw new NotImplementedException();
+  }
+
+  public void Remove(object? value) {
+    throw new NotImplementedException();
+  }
+
+  void IList.RemoveAt(int index) {
+    throw new NotImplementedException();
+  }
+
+  public bool IsFixedSize { get; }
+  bool IList.IsReadOnly => _isReadOnly;
+
+  object? IList.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+  public void CopyTo(Array array, int index) {
+    throw new NotImplementedException();
+  }
+
+  int ICollection.Count => _count;
+
+  public bool IsSynchronized { get; }
+  public object SyncRoot { get; }
+  IEnumerator IEnumerable.GetEnumerator() {
+    throw new NotImplementedException();
+  }
+
+  public int IndexOf(T item) {
+    throw new NotImplementedException();
+  }
+
+  public void Insert(int index, T item) {
+    throw new NotImplementedException();
+  }
+
+  void IList<T>.RemoveAt(int index) {
+    throw new NotImplementedException();
+  }
+
+  T IList<T>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+  public void Add(T item) {
+    throw new NotImplementedException();
+  }
+
+  void ICollection<T>.Clear() {
+    throw new NotImplementedException();
+  }
+
+  public bool Contains(T item) {
+    throw new NotImplementedException();
+  }
+
+  public void CopyTo(T[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+
+  public bool Remove(T item) {
+    throw new NotImplementedException();
+  }
+
+  int ICollection<T>.Count => _count1;
+
+  bool ICollection<T>.IsReadOnly => _isReadOnly1;
+
+  IEnumerator<T> IEnumerable<T>.GetEnumerator() {
+    throw new NotImplementedException();
+  }
+
+  public int IndexOf(T? item) {
+    throw new NotImplementedException();
+  }
+
+  public void Insert(int index, T? item) {
+    throw new NotImplementedException();
+  }
+
+  void IList<T?>.RemoveAt(int index) {
+    throw new NotImplementedException();
+  }
+
+  T? IList<T?>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+  public void Add(T? item) {
+    throw new NotImplementedException();
+  }
+
+  void ICollection<T?>.Clear() {
+    throw new NotImplementedException();
+  }
+
+  public bool Contains(T? item) {
+    throw new NotImplementedException();
+  }
+
+  public void CopyTo(T?[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+
+  public bool Remove(T? item) {
+    throw new NotImplementedException();
+  }
+
+  int ICollection<T?>.Count => _count2;
+
+  bool ICollection<T?>.IsReadOnly => _isReadOnly2;
+
+  IEnumerator<T?> IEnumerable<T?>.GetEnumerator() {
+    throw new NotImplementedException();
+  }
 }
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
