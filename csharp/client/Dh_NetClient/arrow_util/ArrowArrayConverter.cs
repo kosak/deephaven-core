@@ -134,28 +134,9 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IListColumnSource cs) {
-      var qqq = ZBlonga<int?>(cs);
-      // var cb = TableMaker.ColumnBuilder.ForType<IList<int>>(null);
-      // cb.Append([1, 2, 3]);
-      // cb.Append([4, 5]);
-      // cb.AppendNull();
-      // Result = cb.Build();
-
-      // var elementType = cs.ElementType;
-      // var arrowElementType = ArrowTypeConverter.ToArrowType(elementType);
-      // var arrowBuilder = new Apache.Arrow.ListArray.Builder(arrowElementType);
-      // var underlyingBuilder = arrowBuilder.ValueBuilder;
-      // var typedData = ((StringChunk)_data).Data;
-      // for (var i = 0; i != _numRows; ++i) {
-      //   if (!_nulls.Data[i]) {
-      //     underlyingBuilder.Append(typedData[i]);
-      //   } else {
-      //
-      //     arrowBuilder.AppendNull();
-      //   }
-      // }
-      
-      // Result = arrowBuilder.Build();
+      var cb = TableMaker.ColumnBuilder.ForIListType<IList<int>, int>(null);
+      cb.AppendChunk(_data, _nulls);
+      Result = cb.Build();
     }
 
     public IArrowArray ZBlonga<TElement>(IListColumnSource cs) {

@@ -2,6 +2,7 @@
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Apache.Arrow;
 using Apache.Arrow.Types;
@@ -123,7 +124,7 @@ public class TableMaker {
     return ToString(true);
   }
 
-  public class ColumnBuilder {
+  public abstract class ColumnBuilder {
     public static ColumnBuilder<T> ForType<T>(IArrowArrayBuilder? callerProvidedBuilder) {
       return (ColumnBuilder<T>)ForType(typeof(T), callerProvidedBuilder);
     }
@@ -257,7 +258,7 @@ public class TableMaker {
     }
 
     public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>(
-      IArrowArrayBuilder? callerProvidedBuilder) where TList : IList<TUnderlying> {
+      IArrowArrayBuilder? callerProvidedBuilder) where TList : class, IList<TUnderlying> {
       Apache.Arrow.ListArray.Builder builderToUse;
       if (callerProvidedBuilder == null) {
         // Make a temporary column builder just so I can get the correct Arrow data type
@@ -300,6 +301,10 @@ public class TableMaker {
         underlying = null;
         return false;
       }
+    }
+
+    public virtual void AppendChunk(Chunk data, BooleanChunk nulls) {
+      Debug.WriteLine("hola que pasa");
     }
   }
 
@@ -430,7 +435,7 @@ public class TableMaker {
     }
   }
 
-  private class ListBuilder<TList, TUnderlying> : ColumnBuilder<TList> where TList : IList<TUnderlying> {
+  private class ListBuilder<TList, TUnderlying> : ColumnBuilder<TList> where TList : class, IList<TUnderlying> {
     private readonly Apache.Arrow.ListArray.Builder _listBuilder;
     private readonly ColumnBuilder<TUnderlying> _underlyingBuilder;
 
@@ -448,6 +453,24 @@ public class TableMaker {
 
     public override void AppendNull() {
       _listBuilder.AppendNull();
+    }
+
+    public override void AppendChunk(Chunk data, BooleanChunk nulls) {
+      if (data.Size != nulls.Size) {
+        throw new ArgumentException($"Chunk size {data.Size} does not match nulls size {nulls.Size}");
+      }
+      var typedChunk = data as ListChunk
+        ?? throw new ArgumentException($"Expected chunk of type {typeof(ListChunk)}, but got {data.GetType()}");
+
+      for (var i = 0; i != typedChunk.Size; i++) {
+        if (nulls.Data[i]) {
+          AppendNull();
+        } else {
+          var typedElement = typedChunk.Data[i] as TList ??
+            throw new ArgumentException($"Expected element {i} to be of type {typeof(TList)}, but got {typedChunk.Data[i]?.GetType()}");
+          Append(typedElement);
+        }
+      }
     }
 
     public override IArrowArray Build() {

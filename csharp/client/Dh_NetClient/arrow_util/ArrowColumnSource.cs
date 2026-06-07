@@ -23,7 +23,6 @@ namespace Deephaven.Dh_NetClient;
 
 public abstract class ArrowColumnSource : IColumnSource {
   public static ArrowColumnSource CreateFromColumn(Column column) {
-    Apache.Arrow.Types.ArrowType x;
     var visitor = new ArrowColumnSourceMaker(column.Data);
     column.Type.Accept(visitor);
     if (visitor.Result == null) {
@@ -279,7 +278,7 @@ sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChun
 public class SuperNubbin : IArrowArrayVisitor,
   IArrowArrayVisitor<Int32Array> {
 
-  public IList Result { get; private set; }
+  public IList Result { get; private set; } = new List<int>();
 
   public void Visit(Int32Array array) {
     Result = ImmutableList.CreateRange(array);
