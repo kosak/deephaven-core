@@ -25,6 +25,9 @@ internal class Program {
     var chunk = Chunk<IList>.Create((int)ct.NumRows);
     var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
     col0.FillChunk(stupid, chunk, null);
+    var z0 = chunk.Data[0];
+    var z1 = (IList<int>)chunk.Data[0];
+    var z2 = (IList<int?>)chunk.Data[0];
 
     var at2 = ct.ToArrowTable();
     TableComparer.AssertSame(at, at2);

@@ -291,6 +291,44 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 }
 
+public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
+  private int _arrayIndex = -1;
+  private Int64 _segmentOffset = 0;
+  private Int64 _segmentBegin = 0;
+  private Int64 _segmentEnd = 0;
+
+  public void Advance(Int64 start) {
+    while (true) {
+      if (start < _segmentBegin) {
+        throw new Exception($"Assertion failed: Can't go backwards from {_segmentBegin} to {start}");
+      }
+
+      if (start < _segmentEnd) {
+        // satisfiable with current segment
+        _segmentBegin = start;
+        return;
+      }
+
+      // Go to next array slice (or the first one, if this is the first call to Advance)
+      ++_arrayIndex;
+      if (_arrayIndex >= chunkedArray.ArrayCount) {
+        throw new Exception($"Ran out of src data before processing all of RowSequence");
+      }
+
+      _segmentBegin = _segmentEnd;
+      _segmentEnd = _segmentBegin + chunkedArray.ArrowArray(_arrayIndex).Length;
+      _segmentOffset = _segmentBegin;
+    }
+  }
+
+  public IArrowArray CurrentSegment => chunkedArray.ArrowArray(_arrayIndex);
+
+  public int SegmentLength => (_segmentEnd - _segmentBegin).ToIntExact();
+
+  public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
+}
+
+
 public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
   private readonly IReadOnlyList<T?> _data;
 
