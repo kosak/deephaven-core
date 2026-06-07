@@ -362,8 +362,6 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
 
   T IList<T>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-
-
   public void CopyTo(T[] array, int arrayIndex) {
     throw new NotImplementedException();
   }
