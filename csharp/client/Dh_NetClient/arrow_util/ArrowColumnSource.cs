@@ -348,22 +348,40 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     return base.ToString();
   }
 
-  private U NotImplementedForReadOnlyList<U>() {
-    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
-  }
-
   public int Add(object? item) => NotImplementedForReadOnlyList<int>();
   public void Add(T item) => NotImplementedForReadOnlyList<bool>();
   public void Add(T? item) => NotImplementedForReadOnlyList<bool>();
 
   public void Clear() => NotImplementedForReadOnlyList<int>();
 
-  public bool Contains(object? value) => NotImplementedForReadOnlyList<bool>();
-  public bool Contains(T item) => NotImplementedForReadOnlyList<bool>();
-  public bool Contains(T? item) => NotImplementedForReadOnlyList<bool>();
+  public bool Contains(object? value) => IndexOf(value) >= 0;
+  public bool Contains(T item) => IndexOf(item) >= 0;
+  public bool Contains(T? item) => IndexOf(item) >= 0;
 
   public int IndexOf(object? value) {
-    throw new NotImplementedException();
+    if (value == null) {
+      return IndexOf((T?)null);
+    }
+    if (value is T value1) {
+      return IndexOf(value1);
+    }
+    return -1;
+  }
+
+  public int IndexOf(T value) {
+    if (value == _deephavenNullValue) {
+      return stupid;
+    }
+    return ((IList<T?>)this).IndexOf(value);
+  }
+
+  int IList<T?>.IndexOf(T? value) {
+    for (var i = 0; i < _data.Count; ++i) {
+      if (Nullable.Equals(_data[i], value)) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   public void Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
@@ -379,9 +397,13 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
   public bool IsFixedSize => true;
   public bool IsReadOnly => true;
 
-  object? IList.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
   public void CopyTo(Array array, int index) {
+    throw new NotImplementedException();
+  }
+  public void CopyTo(T[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+  public void CopyTo(T?[] array, int arrayIndex) {
     throw new NotImplementedException();
   }
 
@@ -390,36 +412,22 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
   public bool IsSynchronized => false;
   public object SyncRoot => this;
 
+  object? IList.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  T IList<T>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  T? IList<T?>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
   IEnumerator IEnumerable.GetEnumerator() {
     throw new NotImplementedException();
   }
-
-  public int IndexOf(T item) {
-    throw new NotImplementedException();
-  }
-
-  T IList<T>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-  public void CopyTo(T[] array, int arrayIndex) {
-    throw new NotImplementedException();
-  }
-
   IEnumerator<T> IEnumerable<T>.GetEnumerator() {
     throw new NotImplementedException();
   }
-
-  public int IndexOf(T? item) {
-    throw new NotImplementedException();
-  }
-
-  T? IList<T?>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-  public void CopyTo(T?[] array, int arrayIndex) {
-    throw new NotImplementedException();
-  }
-
   IEnumerator<T?> IEnumerable<T?>.GetEnumerator() {
     throw new NotImplementedException();
+  }
+
+  private U NotImplementedForReadOnlyList<U>() {
+    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
   }
 }
 
