@@ -282,8 +282,7 @@ public class SuperNubbin : IArrowArrayVisitor,
   public IList Result { get; private set; } = new List<int>();
 
   public void Visit(Int32Array array) {
-    Result = new KosakArray<int>(array);
-    // Result = ImmutableList.CreateRange(array);
+    Result = new KosakArray<int>(array, DeephavenConstants.NullInt);
   }
 
   public void Visit(IArrowArray array) {
@@ -329,11 +328,13 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
 }
 
 
-public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
+public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquatable<T> {
   private readonly IReadOnlyList<T?> _data;
+  private readonly T _deephavenNullValue;
 
-  public KosakArray(IReadOnlyList<T?> data) {
+  public KosakArray(IReadOnlyList<T?> data, T deephavenNullValue) {
     _data = data;
+    _deephavenNullValue = deephavenNullValue;
   }
 
   public override bool Equals(object? obj) {
@@ -348,31 +349,29 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     return base.ToString();
   }
 
-  public int Add(object? item) => NotImplementedForReadOnlyList<int>();
-  public void Add(T item) => NotImplementedForReadOnlyList<bool>();
-  public void Add(T? item) => NotImplementedForReadOnlyList<bool>();
+  int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
+  void ICollection<T>.Add(T item) => NotImplementedForReadOnlyList<bool>();
+  void ICollection<T?>.Add(T? item) => NotImplementedForReadOnlyList<bool>();
 
   public void Clear() => NotImplementedForReadOnlyList<int>();
 
-  public bool Contains(object? value) => IndexOf(value) >= 0;
-  public bool Contains(T item) => IndexOf(item) >= 0;
-  public bool Contains(T? item) => IndexOf(item) >= 0;
+  bool IList.Contains(object? value) => ((IList)this).IndexOf(value) >= 0;
+  bool ICollection<T>.Contains(T item) => ((IList<T>)this).IndexOf(item) >= 0;
+  bool ICollection<T?>.Contains(T? item) => ((IList<T?>)this).IndexOf(item) >= 0;
 
-  public int IndexOf(object? value) {
+  int IList.IndexOf(object? value) {
     if (value == null) {
-      return IndexOf((T?)null);
+      return ((IList<T?>)this).IndexOf(null);
     }
     if (value is T value1) {
-      return IndexOf(value1);
+      return ((IList<T?>)this).IndexOf(value1);
     }
     return -1;
   }
 
-  public int IndexOf(T value) {
-    if (value == _deephavenNullValue) {
-      return stupid;
-    }
-    return ((IList<T?>)this).IndexOf(value);
+  int IList<T>.IndexOf(T value) {
+    var valueToCheck = value.Equals(_deephavenNullValue) ? (T?)null : value;
+    return ((IList<T?>)this).IndexOf(valueToCheck);
   }
 
   int IList<T?>.IndexOf(T? value) {
@@ -384,26 +383,26 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     return -1;
   }
 
-  public void Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
-  public void Insert(int index, T item) => NotImplementedForReadOnlyList<bool>();
-  public void Insert(int index, T? item) => NotImplementedForReadOnlyList<bool>();
+  void IList.Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
+  void IList<T>.Insert(int index, T item) => NotImplementedForReadOnlyList<bool>();
+  void IList<T?>.Insert(int index, T? item) => NotImplementedForReadOnlyList<bool>();
 
-  public void Remove(object? value) => NotImplementedForReadOnlyList<bool>();
-  public bool Remove(T item) => NotImplementedForReadOnlyList<bool>();
-  public bool Remove(T? item) => NotImplementedForReadOnlyList<bool>();
+  void IList.Remove(object? value) => NotImplementedForReadOnlyList<bool>();
+  bool ICollection<T>.Remove(T item) => NotImplementedForReadOnlyList<bool>();
+  bool ICollection<T?>.Remove(T? item) => NotImplementedForReadOnlyList<bool>();
 
   public void RemoveAt(int index) => NotImplementedForReadOnlyList<bool>();
 
-  public bool IsFixedSize => true;
+  bool IList.IsFixedSize => true;
   public bool IsReadOnly => true;
 
-  public void CopyTo(Array array, int index) {
+  void ICollection.CopyTo(Array array, int index) {
     throw new NotImplementedException();
   }
-  public void CopyTo(T[] array, int arrayIndex) {
+  void ICollection<T>.CopyTo(T[] array, int arrayIndex) {
     throw new NotImplementedException();
   }
-  public void CopyTo(T?[] array, int arrayIndex) {
+  void ICollection<T?>.CopyTo(T?[] array, int arrayIndex) {
     throw new NotImplementedException();
   }
 
@@ -412,18 +411,42 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
   public bool IsSynchronized => false;
   public object SyncRoot => this;
 
-  object? IList.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-  T IList<T>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-  T? IList<T?>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  object? IList.this[int index] {
+    get {
+      var value = _data[index];
+      return value ?? _deephavenNullValue;
+    }
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  T IList<T>.this[int index] {
+    get {
+      var value = _data[index];
+      return value ?? _deephavenNullValue;
+    }
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  T? IList<T?>.this[int index] {
+    get => _data[index];
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
 
   IEnumerator IEnumerable.GetEnumerator() {
-    throw new NotImplementedException();
+    foreach (var item in _data) {
+      // Since we are returning boxed items, I'm not sure whether to return null or the boxed Deephaven NULL
+      yield return item ?? _deephavenNullValue;
+    }
   }
+
   IEnumerator<T> IEnumerable<T>.GetEnumerator() {
-    throw new NotImplementedException();
+    foreach (var item in _data) {
+      yield return item ?? _deephavenNullValue;
+    }
   }
+
   IEnumerator<T?> IEnumerable<T?>.GetEnumerator() {
-    throw new NotImplementedException();
+    return _data.GetEnumerator();
   }
 
   private U NotImplementedForReadOnlyList<U>() {
