@@ -293,12 +293,6 @@ public class SuperNubbin : IArrowArrayVisitor,
 
 public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
   private readonly IReadOnlyList<T?> _data;
-  private bool _isReadOnly;
-  private int _count;
-  private int _count1;
-  private bool _isReadOnly1;
-  private int _count2;
-  private bool _isReadOnly2;
 
   public KosakArray(IReadOnlyList<T?> data) {
     _data = data;
@@ -316,36 +310,36 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     return base.ToString();
   }
 
-  public int Add(object? value) {
-    throw new NotImplementedException();
+  private U NotImplementedForReadOnlyList<U>() {
+    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
   }
 
-  void IList.Clear() {
-    throw new NotImplementedException();
-  }
+  public int Add(object? item) => NotImplementedForReadOnlyList<int>();
+  public void Add(T item) => NotImplementedForReadOnlyList<bool>();
+  public void Add(T? item) => NotImplementedForReadOnlyList<bool>();
 
-  public bool Contains(object? value) {
-    throw new NotImplementedException();
-  }
+  public void Clear() => NotImplementedForReadOnlyList<int>();
+
+  public bool Contains(object? value) => NotImplementedForReadOnlyList<bool>();
+  public bool Contains(T item) => NotImplementedForReadOnlyList<bool>();
+  public bool Contains(T? item) => NotImplementedForReadOnlyList<bool>();
 
   public int IndexOf(object? value) {
     throw new NotImplementedException();
   }
 
-  public void Insert(int index, object? value) {
-    throw new NotImplementedException();
-  }
+  public void Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
+  public void Insert(int index, T item) => NotImplementedForReadOnlyList<bool>();
+  public void Insert(int index, T? item) => NotImplementedForReadOnlyList<bool>();
 
-  public void Remove(object? value) {
-    throw new NotImplementedException();
-  }
+  public void Remove(object? value) => NotImplementedForReadOnlyList<bool>();
+  public bool Remove(T item) => NotImplementedForReadOnlyList<bool>();
+  public bool Remove(T? item) => NotImplementedForReadOnlyList<bool>();
 
-  void IList.RemoveAt(int index) {
-    throw new NotImplementedException();
-  }
+  public void RemoveAt(int index) => NotImplementedForReadOnlyList<bool>();
 
-  public bool IsFixedSize { get; }
-  bool IList.IsReadOnly => _isReadOnly;
+  public bool IsFixedSize => true;
+  public bool IsReadOnly => true;
 
   object? IList.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
@@ -353,10 +347,11 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     throw new NotImplementedException();
   }
 
-  int ICollection.Count => _count;
+  public int Count => _data.Count;
 
-  public bool IsSynchronized { get; }
-  public object SyncRoot { get; }
+  public bool IsSynchronized => false;
+  public object SyncRoot => this;
+
   IEnumerator IEnumerable.GetEnumerator() {
     throw new NotImplementedException();
   }
@@ -365,39 +360,13 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     throw new NotImplementedException();
   }
 
-  public void Insert(int index, T item) {
-    throw new NotImplementedException();
-  }
-
-  void IList<T>.RemoveAt(int index) {
-    throw new NotImplementedException();
-  }
-
   T IList<T>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-  public void Add(T item) {
-    throw new NotImplementedException();
-  }
 
-  void ICollection<T>.Clear() {
-    throw new NotImplementedException();
-  }
-
-  public bool Contains(T item) {
-    throw new NotImplementedException();
-  }
 
   public void CopyTo(T[] array, int arrayIndex) {
     throw new NotImplementedException();
   }
-
-  public bool Remove(T item) {
-    throw new NotImplementedException();
-  }
-
-  int ICollection<T>.Count => _count1;
-
-  bool ICollection<T>.IsReadOnly => _isReadOnly1;
 
   IEnumerator<T> IEnumerable<T>.GetEnumerator() {
     throw new NotImplementedException();
@@ -407,39 +376,11 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct {
     throw new NotImplementedException();
   }
 
-  public void Insert(int index, T? item) {
-    throw new NotImplementedException();
-  }
-
-  void IList<T?>.RemoveAt(int index) {
-    throw new NotImplementedException();
-  }
-
   T? IList<T?>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-  public void Add(T? item) {
-    throw new NotImplementedException();
-  }
-
-  void ICollection<T?>.Clear() {
-    throw new NotImplementedException();
-  }
-
-  public bool Contains(T? item) {
-    throw new NotImplementedException();
-  }
 
   public void CopyTo(T?[] array, int arrayIndex) {
     throw new NotImplementedException();
   }
-
-  public bool Remove(T? item) {
-    throw new NotImplementedException();
-  }
-
-  int ICollection<T?>.Count => _count2;
-
-  bool ICollection<T?>.IsReadOnly => _isReadOnly2;
 
   IEnumerator<T?> IEnumerable<T?>.GetEnumerator() {
     throw new NotImplementedException();
