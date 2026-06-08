@@ -186,6 +186,5 @@ public static class ArrowArrayConverter {
     public void Visit(IColumnSource cs) {
       throw new NotImplementedException($"No {nameof(ColumnSourceToArrowArrayVisitor)}.Visit for {Utility.FriendlyTypeName(cs.GetType())}");
     }
-
   }
 }

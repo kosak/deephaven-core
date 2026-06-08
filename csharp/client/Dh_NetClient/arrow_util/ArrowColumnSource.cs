@@ -260,18 +260,25 @@ sealed class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : F
 sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChunkHelper {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (ListArray)src;
+    var srcValues = (Apache.Arrow.Array)typedSrc.Values;
     for (var i = 0; i < count; ++i) {
-      var start = typedSrc.ValueOffsets[srcOffset];
-      var end = typedSrc.ValueOffsets[srcOffset + 1];
-      var data = (Apache.Arrow.Array)typedSrc.Values;
-      var slicedData = data.Slice(start, end - start);
+      var srcCurrent = srcOffset + i;
+      var destCurrent = destOffset + i;
+
+      if (src.IsNull(i)) {
+        if (nullFlags != null) {
+          typedDest.Data[destCurrent] = null;
+          nullFlags.Data[destCurrent] = true;
+        }
+        continue;
+      }
+
+      var start = typedSrc.ValueOffsets[srcCurrent];
+      var end = typedSrc.ValueOffsets[srcCurrent + 1];
+      var slicedData = srcValues.Slice(start, end - start);
       var sn = new SuperNubbin();
       slicedData.Accept(sn);
-      var snr = sn.Result;
-      // but also: do something with nullFlags
-      typedDest.Data[destOffset] = snr;
-      ++srcOffset;
-      ++destOffset;
+      typedDest.Data[destCurrent] = sn.Result;
     }
   }
 }
