@@ -565,7 +565,10 @@ class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   }
 
   public void Visit(ListType type) {
-    Result = new ListArrowColumnSource(chunkedArray);
+    var visitor = new ElementTypeVisitor();
+    type.ValueDataType.Accept(visitor);
+    var elementType = visitor.Result;
+    Result = new ListArrowColumnSource(chunkedArray, elementType);
   }
 
   public void Visit(IArrowType type) {
@@ -573,7 +576,67 @@ class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   }
 }
 
-public class ListArrowColumnSource(ChunkedArray chunkedArray) : ArrowColumnSource, IListColumnSource {
+public class ElementTypeVisitor :
+  IArrowTypeVisitor<UInt16Type>,
+  IArrowTypeVisitor<Int8Type>,
+  IArrowTypeVisitor<Int16Type>,
+  IArrowTypeVisitor<Int32Type>,
+  IArrowTypeVisitor<Int64Type>,
+  IArrowTypeVisitor<FloatType>,
+  IArrowTypeVisitor<DoubleType>,
+  IArrowTypeVisitor<BooleanType>,
+  IArrowTypeVisitor<StringType>,
+  IArrowTypeVisitor<TimestampType>,
+  IArrowTypeVisitor<Date64Type>,
+  IArrowTypeVisitor<Time64Type> {
+
+  public Type Result { get; private set; }
+
+  public void Visit(UInt16Type type) {
+    Result = typeof(char);
+  }
+  public void Visit(Int8Type type) {
+    Result = typeof(SByte);
+  }
+  public void Visit(Int16Type type) {
+    Result = typeof(Int16);
+  }
+  public void Visit(Int32Type type) {
+    Result = typeof(Int32);
+  }
+  public void Visit(Int64Type type) {
+    Result = typeof(Int64);
+  }
+  public void Visit(FloatType type) {
+    Result = typeof(float);
+  }
+  public void Visit(DoubleType type) {
+    Result = typeof(double);
+  }
+  public void Visit(BooleanType type) {
+    Result = typeof(bool);
+  }
+  public void Visit(StringType type) {
+    Result = typeof(string);
+  }
+  public void Visit(TimestampType type) {
+    Result = typeof(DateTimeOffset);
+  }
+  public void Visit(Date64Type type) {
+    Result = typeof(DateOnly);
+  }
+  public void Visit(Time64Type type) {
+    Result = typeof(TimeOnly);
+  }
+
+  public void Visit(IArrowType type) {
+    throw new Exception($"Arrow type {type.Name} is not supported");
+  }
+}
+
+public class ListArrowColumnSource(ChunkedArray chunkedArray, Type elementType) : ArrowColumnSource, IListColumnSource, IHasElementType {
+  public Type ElementType => elementType;
+
   public override void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags) {
     var typedDest = (ListChunk)dest;
     var lc = new ListCopier(typedDest, nullFlags);
@@ -583,4 +646,5 @@ public class ListArrowColumnSource(ChunkedArray chunkedArray) : ArrowColumnSourc
   public override void Accept(IColumnSourceVisitor visitor) {
     IColumnSource.Accept(this, visitor);
   }
+
 }

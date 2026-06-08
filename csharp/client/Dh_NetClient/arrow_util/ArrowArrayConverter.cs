@@ -133,7 +133,7 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IListColumnSource cs) {
-      var ihet = cs as IHasElementType ??
+      var type = cs is IHasElementType ihet ? ihet.ElementType : 
         throw new Exception($"Expected {Utility.FriendlyTypeName(cs.GetType())} to implement both {nameof(IListColumnSource)} and {nameof(IHasElementType)}");
 
       var cb = TableMaker.ColumnBuilder.ForIListType<IList<int>, int>(null);
