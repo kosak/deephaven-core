@@ -308,15 +308,13 @@ public class TableMaker {
     }
 
     public abstract void AppendChunk(Chunk data, BooleanChunk nulls);
+    public abstract Apache.Arrow.IArrowArray Build();
+    public abstract (Apache.Arrow.Types.IArrowType, string, string?) GetTypeInfo();
+    public abstract void AppendNull();
   }
 
   public abstract class ColumnBuilder<T> : ColumnBuilder {
     public abstract void Append(T item);
-    public abstract void AppendNull();
-
-    public abstract Apache.Arrow.IArrowArray Build();
-
-    public abstract (Apache.Arrow.Types.IArrowType, string, string?) GetTypeInfo();
   }
 
   private sealed class TypicalBuilder<T, TArray, TBuilder> : ColumnBuilder<T>
