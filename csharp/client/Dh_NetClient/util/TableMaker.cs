@@ -15,6 +15,10 @@ public class TableMaker {
   public void AddColumn<T>(string name, IReadOnlyList<T> values) {
     var cb = ColumnBuilder.ForType<T>(null);
     foreach (var value in values) {
+      if (value == null) {
+        cb.AppendNull();
+        continue;
+      }
       cb.Append(value);
     }
     var array = cb.Build();

@@ -15,11 +15,10 @@ internal class Program {
 
   private static void Nested() {
     var tm = new TableMaker();
-    tm.AddColumn<int[]>("Col1", [[0, 1, 2, 9, 9, 9], [3, 4], [5]]);
+    tm.AddColumn<int?[]?>("Col1", [[0, 1, 2], [3, null], null, [5]]);
 
     var at = tm.ToArrowTable();
 
-    // TODO(kosak): When you fix this, update DH-19910
     var ct = ArrowUtil.ToClientTable(at);
     var col0 = ct.GetColumn(0);
     var chunk = Chunk<IList>.Create((int)ct.NumRows);
