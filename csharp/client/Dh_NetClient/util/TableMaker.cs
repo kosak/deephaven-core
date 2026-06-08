@@ -303,9 +303,7 @@ public class TableMaker {
       }
     }
 
-    public virtual void AppendChunk(Chunk data, BooleanChunk nulls) {
-      Debug.WriteLine("hola que pasa");
-    }
+    public abstract void AppendChunk(Chunk data, BooleanChunk nulls);
   }
 
   public abstract class ColumnBuilder<T> : ColumnBuilder {
@@ -346,6 +344,22 @@ public class TableMaker {
       _builder.AppendNull();
     }
 
+    public override void AppendChunk(Chunk data, BooleanChunk nulls) {
+      if (data.Size != nulls.Size) {
+        throw new ArgumentException($"Chunk size {data.Size} does not match nulls size {nulls.Size}");
+      }
+      var typedChunk = data as Chunk<T>
+        ?? throw new ArgumentException($"Expected chunk of type {Utility.FriendlyTypeName(typeof(Chunk<T>))}, but got {Utility.FriendlyTypeName(data.GetType())}");
+
+      for (var i = 0; i != typedChunk.Size; i++) {
+        if (nulls.Data[i]) {
+          AppendNull();
+        } else {
+          Append(typedChunk.Data[i]);
+        }
+      }
+    }
+
     public override (IArrowType, string, string?) GetTypeInfo() {
       return (_arrowType, _deephavenTypeName, null);
     }
@@ -374,6 +388,22 @@ public class TableMaker {
       _builder.AppendNull();
     }
 
+    public override void AppendChunk(Chunk data, BooleanChunk nulls) {
+      if (data.Size != nulls.Size) {
+        throw new ArgumentException($"Chunk size {data.Size} does not match nulls size {nulls.Size}");
+      }
+      var typedChunk = data as CharChunk
+        ?? throw new ArgumentException($"Expected chunk of type {Utility.FriendlyTypeName(typeof(CharChunk))}, but got {Utility.FriendlyTypeName(data.GetType())}");
+
+      for (var i = 0; i != typedChunk.Size; i++) {
+        if (nulls.Data[i]) {
+          AppendNull();
+        } else {
+          Append(typedChunk.Data[i]);
+        }
+      }
+    }
+
     public override (IArrowType, string, string?) GetTypeInfo() {
       return (Apache.Arrow.Types.UInt16Type.Default, DeephavenMetadataConstants.Types.Char16, null);
     }
@@ -397,6 +427,23 @@ public class TableMaker {
     public override void AppendNull() {
       _builder.AppendNull();
     }
+
+    public override void AppendChunk(Chunk data, BooleanChunk nulls) {
+      if (data.Size != nulls.Size) {
+        throw new ArgumentException($"Chunk size {data.Size} does not match nulls size {nulls.Size}");
+      }
+      var typedChunk = data as StringChunk
+        ?? throw new ArgumentException($"Expected chunk of type {Utility.FriendlyTypeName(typeof(StringChunk))}, but got {Utility.FriendlyTypeName(data.GetType())}");
+
+      for (var i = 0; i != typedChunk.Size; i++) {
+        if (nulls.Data[i]) {
+          AppendNull();
+        } else {
+          Append(typedChunk.Data[i]);
+        }
+      }
+    }
+
 
     public override (IArrowType, string, string?) GetTypeInfo() {
       return (Apache.Arrow.Types.StringType.Default, DeephavenMetadataConstants.Types.String, null);
@@ -424,6 +471,22 @@ public class TableMaker {
 
     public override void AppendNull() {
       _underlyingBuilder.AppendNull();
+    }
+
+    public override void AppendChunk(Chunk data, BooleanChunk nulls) {
+      if (data.Size != nulls.Size) {
+        throw new ArgumentException($"Chunk size {data.Size} does not match nulls size {nulls.Size}");
+      }
+      var typedChunk = data as Chunk<T?>
+        ?? throw new ArgumentException($"Expected chunk of type {Utility.FriendlyTypeName(typeof(Chunk<T?>))}, but got {Utility.FriendlyTypeName(data.GetType())}");
+
+      for (var i = 0; i != typedChunk.Size; i++) {
+        if (nulls.Data[i]) {
+          AppendNull();
+        } else {
+          Append(typedChunk.Data[i]);
+        }
+      }
     }
 
     public override Apache.Arrow.IArrowArray Build() {

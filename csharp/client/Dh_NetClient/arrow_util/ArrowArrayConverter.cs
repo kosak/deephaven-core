@@ -133,38 +133,12 @@ public static class ArrowArrayConverter {
     }
 
     public void Visit(IListColumnSource cs) {
+      var ihet = cs as IHasElementType ??
+        throw new Exception($"Expected {Utility.FriendlyTypeName(cs.GetType())} to implement both {nameof(IListColumnSource)} and {nameof(IHasElementType)}");
+
       var cb = TableMaker.ColumnBuilder.ForIListType<IList<int>, int>(null);
       cb.AppendChunk(_data, _nulls);
       Result = cb.Build();
-    }
-
-    public IArrowArray ZBlonga<TElement>(IListColumnSource cs) {
-      const int maxChunkSize = 512;
-
-      var rowNum = 0;
-      var remaining = _numRows;
-      var dest = Chunk<System.Collections.IList>.Create(maxChunkSize);
-
-      var nullFlags = BooleanChunk.Create(maxChunkSize);
-      var cb = TableMaker.ColumnBuilder.ForType<IList<TElement>>(null);
-      while (remaining != 0) {
-        var nextChunkSize = Math.Min(remaining, maxChunkSize);
-        var rows = RowSequence.CreateSequential(Interval.OfStartAndSize((UInt64)rowNum, (UInt64)nextChunkSize));
-        cs.FillChunk(rows, dest, nullFlags);
-
-        for (var i = 0; i != nextChunkSize; ++i) {
-          if (!nullFlags.Data[i]) {
-            cb.Append((IList<TElement>)dest.Data[i]);
-          } else {
-            cb.AppendNull();
-          }
-        }
-
-        rowNum += nextChunkSize;
-        remaining -= nextChunkSize;
-      }
-
-      return cb.Build();
     }
 
     private void CopyHelper<T, TArray, TBuilder>(TBuilder arrowBuilder)
