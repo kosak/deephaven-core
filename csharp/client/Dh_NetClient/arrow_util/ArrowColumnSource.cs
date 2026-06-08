@@ -15,7 +15,6 @@ global using DateTimeOffsetArrowColumnSource = Deephaven.Dh_NetClient.ArrowColum
 global using LocalDateArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.DateOnly>;
 global using LocalTimeArrowColumnSource = Deephaven.Dh_NetClient.ArrowColumnSource<System.TimeOnly>;
 using System.Collections;
-using System.Collections.Immutable;
 using Apache.Arrow;
 using Apache.Arrow.Types;
 using Array = System.Array;
@@ -284,16 +283,71 @@ sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChun
 }
 
 public class SuperNubbin : IArrowArrayVisitor,
-  IArrowArrayVisitor<Int32Array> {
+  IArrowArrayVisitor<UInt16Array>,
+  IArrowArrayVisitor<Int8Array>,
+  IArrowArrayVisitor<Int16Array>,
+  IArrowArrayVisitor<Int32Array>,
+  IArrowArrayVisitor<Int64Array>,
+  IArrowArrayVisitor<FloatArray>,
+  IArrowArrayVisitor<DoubleArray>,
+  IArrowArrayVisitor<StringArray>,
+  IArrowArrayVisitor<BooleanArray>,
+  IArrowArrayVisitor<TimestampArray>,
+  IArrowArrayVisitor<Date64Array>,
+  IArrowArrayVisitor<Time64Array> {
 
   public IList Result { get; private set; } = new List<int>();
 
+  public void Visit(UInt16Array array) {
+    Result = new KosakArray<UInt16>(array, DeephavenConstants.NullChar);
+  }
+
+  public void Visit(Int8Array array) {
+    Result = new KosakArray<SByte>(array, DeephavenConstants.NullByte);
+  }
+
+  public void Visit(Int16Array array) {
+    Result = new KosakArray<Int16>(array, DeephavenConstants.NullShort);
+  }
+
   public void Visit(Int32Array array) {
-    Result = new KosakArray<int>(array, DeephavenConstants.NullInt);
+    Result = new KosakArray<Int32>(array, DeephavenConstants.NullInt);
+  }
+
+  public void Visit(Int64Array array) {
+    Result = new KosakArray<Int64>(array, DeephavenConstants.NullLong);
+  }
+
+  public void Visit(FloatArray array) {
+    Result = new KosakArray<float>(array, DeephavenConstants.NullFloat);
+  }
+
+  public void Visit(DoubleArray array) {
+    Result = new KosakArray<double>(array, DeephavenConstants.NullDouble);
+  }
+
+  public void Visit(StringArray array) {
+    throw new NotImplementedException("TODO");
+  }
+
+  public void Visit(BooleanArray array) {
+    throw new NotImplementedException("TODO");
+  }
+
+  public void Visit(TimestampArray array) {
+    throw new NotImplementedException("TODO");
+  }
+
+  public void Visit(Date64Array array) {
+    throw new NotImplementedException("TODO");
+  }
+
+  public void Visit(Time64Array array) {
+    throw new NotImplementedException("TODO");
   }
 
   public void Visit(IArrowArray array) {
-    throw new NotImplementedException("SAD");
+    throw new NotImplementedException("NOPE");
   }
 }
 
@@ -342,18 +396,6 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
   public KosakArray(IReadOnlyList<T?> data, T deephavenNullValue) {
     _data = data;
     _deephavenNullValue = deephavenNullValue;
-  }
-
-  public override bool Equals(object? obj) {
-    return base.Equals(obj);
-  }
-
-  public override int GetHashCode() {
-    return base.GetHashCode();
-  }
-
-  public override string ToString() {
-    return base.ToString();
   }
 
   int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
@@ -454,6 +496,8 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
   private U NotImplementedForReadOnlyList<U>() {
     throw new NotImplementedException("This method is not implemented because the data structure is readonly");
   }
+
+  public override string? ToString() => _data.ToString();
 }
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
