@@ -440,16 +440,11 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
   }
 
   IEnumerator IEnumerable.GetEnumerator() {
-    foreach (var item in _data) {
-      // Since we are returning boxed items, I'm not sure whether to return null or the boxed Deephaven NULL
-      yield return item ?? _deephavenNullValue;
-    }
+    return _data.Select(item => item ?? _deephavenNullValue).GetEnumerator();
   }
 
   IEnumerator<T> IEnumerable<T>.GetEnumerator() {
-    foreach (var item in _data) {
-      yield return item ?? _deephavenNullValue;
-    }
+    return _data.Select(item => item ?? _deephavenNullValue).GetEnumerator();
   }
 
   IEnumerator<T?> IEnumerable<T?>.GetEnumerator() {
