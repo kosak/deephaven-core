@@ -259,25 +259,24 @@ sealed class ReferenceCopier<T>(Chunk<T> typedDest, BooleanChunk? nullFlags) : F
 sealed class ListCopier(ListChunk typedDest, BooleanChunk? nullFlags) : FillChunkHelper {
   protected override void DoCopy(IArrowArray src, int srcOffset, int destOffset, int count) {
     var typedSrc = (ListArray)src;
-    var srcValues = (Apache.Arrow.Array)typedSrc.Values;
-    for (var i = 0; i < count; ++i) {
-      var srcCurrent = srcOffset + i;
-      var destCurrent = destOffset + i;
-
+    // var srcValues = (Apache.Arrow.Array)typedSrc.Values;
+    for (var i = 0; i < count; ++i, ++srcOffset, ++destOffset) {
       if (src.IsNull(i)) {
         if (nullFlags != null) {
-          typedDest.Data[destCurrent] = null;
-          nullFlags.Data[destCurrent] = true;
+          typedDest.Data[destOffset] = null;
+          nullFlags.Data[destOffset] = true;
         }
         continue;
       }
 
-      var start = typedSrc.ValueOffsets[srcCurrent];
-      var end = typedSrc.ValueOffsets[srcCurrent + 1];
-      var slicedData = srcValues.Slice(start, end - start);
+      var slicedData = typedSrc.GetSlicedValues(srcOffset);
+
+      // var start = typedSrc.ValueOffsets[srcOffset];
+      // var end = typedSrc.ValueOffsets[srcOffset + 1];
+      // var slicedData = srcValues.Slice(start, end - start);
       var sn = new SuperNubbin();
       slicedData.Accept(sn);
-      typedDest.Data[destCurrent] = sn.Result;
+      typedDest.Data[destOffset] = sn.Result;
     }
   }
 }
@@ -496,8 +495,6 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
   private U NotImplementedForReadOnlyList<U>() {
     throw new NotImplementedException("This method is not implemented because the data structure is readonly");
   }
-
-  public override string? ToString() => _data.ToString();
 }
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
