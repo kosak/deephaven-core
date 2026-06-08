@@ -261,6 +261,11 @@ public class TableMaker {
       return new NullableBuilder<T>(underlyingCb);
     }
 
+    public static ColumnBuilder<IList<TUnderlying>> ForIListUnderlying<TUnderlying>(
+      IArrowArrayBuilder? callerProvidedBuilder) {
+      return ForIListType<IList<TUnderlying>, TUnderlying>(callerProvidedBuilder);
+    }
+
     public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>(
       IArrowArrayBuilder? callerProvidedBuilder) where TList : class, IList<TUnderlying> {
       Apache.Arrow.ListArray.Builder builderToUse;
