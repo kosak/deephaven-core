@@ -330,23 +330,23 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(BooleanArray array) {
-    throw new NotImplementedException("TODO");
+    Result = new KosakArray<bool>(array, null);
   }
 
   public void Visit(TimestampArray array) {
-    throw new NotImplementedException("TODO");
+    Result = new KosakArray<DateTimeOffset>(array, new DateTimeOffset());
   }
 
   public void Visit(Date64Array array) {
-    throw new NotImplementedException("TODO");
+    Result = new KosakArray<DateOnly>(array, new DateOnly());
   }
 
   public void Visit(Time64Array array) {
-    throw new NotImplementedException("TODO");
+    Result = new KosakArray<TimeOnly>(array, new TimeOnly());
   }
 
   public void Visit(IArrowArray array) {
-    throw new NotImplementedException("NOPE");
+    throw new NotImplementedException("Client does not support multiple levels of array nesting");
   }
 }
 
@@ -396,6 +396,7 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
     _data = data;
     _deephavenNullValue = deephavenNullValue;
   }
+
 
   int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
   void ICollection<T>.Add(T item) => NotImplementedForReadOnlyList<bool>();
