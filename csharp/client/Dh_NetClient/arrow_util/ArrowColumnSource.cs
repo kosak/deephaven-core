@@ -330,7 +330,7 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(BooleanArray array) {
-    Result = new KosakArray<bool>(array, null);
+    Result = new KosakBoolArray(array);
   }
 
   public void Visit(TimestampArray array) {
@@ -396,7 +396,6 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
     _data = data;
     _deephavenNullValue = deephavenNullValue;
   }
-
 
   int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
   void ICollection<T>.Add(T item) => NotImplementedForReadOnlyList<bool>();
@@ -497,6 +496,122 @@ public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquat
     throw new NotImplementedException("This method is not implemented because the data structure is readonly");
   }
 }
+
+public class KosakBoolArray : IList, IList<bool>, IList<bool?> {
+  private readonly IReadOnlyList<bool?> _data;
+
+  public KosakBoolArray(IReadOnlyList<bool?> data) {
+    _data = data;
+  }
+
+  int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
+  void ICollection<bool>.Add(bool item) => NotImplementedForReadOnlyList<bool>();
+  void ICollection<bool?>.Add(bool? item) => NotImplementedForReadOnlyList<bool>();
+
+  public void Clear() => NotImplementedForReadOnlyList<int>();
+
+  bool IList.Contains(object? value) => ((IList)this).IndexOf(value) >= 0;
+  bool ICollection<bool>.Contains(bool item) => ((IList<bool>)this).IndexOf(item) >= 0;
+  bool ICollection<bool?>.Contains(bool? item) => ((IList<bool?>)this).IndexOf(item) >= 0;
+
+  int IList.IndexOf(object? value) {
+    if (value == null) {
+      return ((IList<bool?>)this).IndexOf(null);
+    }
+    if (value is bool value1) {
+      return ((IList<bool?>)this).IndexOf(value1);
+    }
+    return -1;
+  }
+
+  int IList<bool>.IndexOf(bool value) {
+    return ((IList<bool?>)this).IndexOf(value);
+  }
+
+  int IList<bool?>.IndexOf(bool? value) {
+    for (var i = 0; i < _data.Count; ++i) {
+      if (Nullable.Equals(_data[i], value)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  void IList.Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
+  void IList<bool>.Insert(int index, bool item) => NotImplementedForReadOnlyList<bool>();
+  void IList<bool?>.Insert(int index, bool? item) => NotImplementedForReadOnlyList<bool>();
+
+  void IList.Remove(object? value) => NotImplementedForReadOnlyList<bool>();
+  bool ICollection<bool>.Remove(bool item) => NotImplementedForReadOnlyList<bool>();
+  bool ICollection<bool?>.Remove(bool? item) => NotImplementedForReadOnlyList<bool>();
+
+  public void RemoveAt(int index) => NotImplementedForReadOnlyList<bool>();
+
+  bool IList.IsFixedSize => true;
+  public bool IsReadOnly => true;
+
+  void ICollection.CopyTo(Array array, int index) {
+    throw new NotImplementedException();
+  }
+  void ICollection<bool>.CopyTo(bool[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+  void ICollection<bool?>.CopyTo(bool?[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+
+  public int Count => _data.Count;
+
+  public bool IsSynchronized => false;
+  public object SyncRoot => this;
+
+  object? IList.this[int index] {
+    get {
+      var value = _data[index];
+      return value ?? null;
+    }
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  bool IList<bool>.this[int index] {
+    get {
+      var value = _data[index];
+      if (!value.HasValue) {
+        throw new InvalidOperationException("This list contains a null boolean value but this indexer type cannot return null. Try casting to IList<bool?> to access nullable values.");
+      }
+      return value.Value;
+    }
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  bool? IList<bool?>.this[int index] {
+    get => _data[index];
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  IEnumerator IEnumerable.GetEnumerator() {
+    return _data.GetEnumerator();
+  }
+
+  IEnumerator<bool> IEnumerable<bool>.GetEnumerator() {
+    foreach (var value in _data) {
+      if (!value.HasValue) {
+        throw new InvalidOperationException(
+          "This enumeration contains a null boolean value but this enumerator type cannot return null. Try casting to IEnumerable<bool?> to access nullable values.");
+      }
+      yield return value.Value;
+    }
+  }
+
+  IEnumerator<bool?> IEnumerable<bool?>.GetEnumerator() {
+    return _data.GetEnumerator();
+  }
+
+  private U NotImplementedForReadOnlyList<U>() {
+    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
+  }
+}
+
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   IArrowTypeVisitor<UInt16Type>,

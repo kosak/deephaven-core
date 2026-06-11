@@ -261,8 +261,13 @@ public class TableMaker {
       return new NullableBuilder<T>(underlyingCb);
     }
 
-    public static ColumnBuilder<IList<TUnderlying>> ForIListUnderlying<TUnderlying>(
-      IArrowArrayBuilder? callerProvidedBuilder) {
+    public static ColumnBuilder<IList<TUnderlying?>> ForIListUnderlyingHelperA<TUnderlying>(
+      IArrowArrayBuilder? callerProvidedBuilder) where TUnderlying : struct {
+      return ForIListType<IList<TUnderlying?>, TUnderlying?>(callerProvidedBuilder);
+    }
+
+    public static ColumnBuilder<IList<TUnderlying>> ForIListUnderlyingHelperB<TUnderlying>(
+      IArrowArrayBuilder? callerProvidedBuilder) where TUnderlying : class {
       return ForIListType<IList<TUnderlying>, TUnderlying>(callerProvidedBuilder);
     }
 
