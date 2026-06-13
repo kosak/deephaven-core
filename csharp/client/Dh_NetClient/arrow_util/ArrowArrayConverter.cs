@@ -136,8 +136,7 @@ public static class ArrowArrayConverter {
       var type = cs is IHasElementType ihet ? ihet.ElementType : 
         throw new Exception($"Expected {Utility.FriendlyTypeName(cs.GetType())} to implement both {nameof(IListColumnSource)} and {nameof(IHasElementType)}");
 
-      var mi = typeof(TableMaker.ColumnBuilder).GetMethod(nameof(TableMaker.ColumnBuilder.ForIListUnderlyingHelperA))!.MakeGenericMethod(type);
-      var cb = (TableMaker.ColumnBuilder)mi.Invoke(null, [null])!;
+      var cb = TableMaker.ColumnBuilder.ForIListWithUnderlyingType(type);
       cb.AppendChunk(_data, _nulls);
       Result = cb.Build();
     }

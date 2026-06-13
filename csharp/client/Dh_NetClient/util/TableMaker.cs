@@ -261,14 +261,13 @@ public class TableMaker {
       return new NullableBuilder<T>(underlyingCb);
     }
 
-    public static ColumnBuilder<IList<TUnderlying?>> ForIListUnderlyingHelperA<TUnderlying>(
-      IArrowArrayBuilder? callerProvidedBuilder) where TUnderlying : struct {
-      return ForIListType<IList<TUnderlying?>, TUnderlying?>(callerProvidedBuilder);
-    }
-
-    public static ColumnBuilder<IList<TUnderlying>> ForIListUnderlyingHelperB<TUnderlying>(
-      IArrowArrayBuilder? callerProvidedBuilder) where TUnderlying : class {
-      return ForIListType<IList<TUnderlying>, TUnderlying>(callerProvidedBuilder);
+    public static ColumnBuilder ForIListWithUnderlyingType(Type underlyingType) {
+      var underlyingTypeToUse = underlyingType.IsValueType ? typeof(Nullable<>).MakeGenericType(underlyingType) : underlyingType;
+      var ilistType = typeof(IList<>).MakeGenericType(underlyingTypeToUse);
+      var miGeneric = typeof(ColumnBuilder).GetMethod(nameof(ForIListType)) ??
+        throw new Exception($"Can't find {nameof(ForIListType)}");
+      var miInstantiated = miGeneric.MakeGenericMethod(ilistType, underlyingTypeToUse);
+      return (ColumnBuilder)miInstantiated.Invoke(null, [null])!;
     }
 
     public static ColumnBuilder<TList> ForIListType<TList, TUnderlying>(
