@@ -23,14 +23,15 @@ internal class Program {
     tm.AddColumn<double?[]?>("double", [[0.0, 1.1, 2.2], [3.3, 4.4, null], null, [6.6]]);
     tm.AddColumn<bool?[]?>("bool", [[false, true], [false, true, null], null, [true]]);
     tm.AddColumn<string?[]?>("string", [["", "hello"], ["a", "b", null], null, ["c"]]);
+    tm.AddColumn<char?[]?>("char", [['a', (char)0], ['a', 'b', null], null, ['c']]);
 
     var at = tm.ToArrowTable();
 
     var ct = ArrowUtil.ToClientTable(at);
-    var col0 = ct.GetColumn(1);
-    var chunk = Chunk<IList>.Create((int)ct.NumRows);
-    var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
-    col0.FillChunk(stupid, chunk, null);
+    //var col0 = ct.GetColumn(1);
+    //var chunk = Chunk<IList>.Create((int)ct.NumRows);
+    //var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
+    //col0.FillChunk(stupid, chunk, null);
     // var z0 = (IList)chunk.Data[0];
     // var z1 = (IList<double>)chunk.Data[0];
     // var z2 = (IList<double?>)chunk.Data[0];
