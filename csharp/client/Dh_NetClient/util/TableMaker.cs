@@ -451,7 +451,7 @@ public class TableMaker {
         if (nulls.Data[i]) {
           AppendNull();
         } else {
-          Append(typedChunk.Data[i]);
+          Append(typedChunk.Data[i]!);
         }
       }
     }

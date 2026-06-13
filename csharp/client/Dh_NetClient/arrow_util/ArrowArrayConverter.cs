@@ -148,7 +148,7 @@ public static class ArrowArrayConverter {
       var typedData = ((Chunk<T>)_data).Data;
       for (var i = 0; i != _numRows; ++i) {
         if (!_nulls.Data[i]) {
-          arrowBuilder.Append(typedData[i]);
+          arrowBuilder.Append(typedData[i]!);
         } else {
           arrowBuilder.AppendNull();
         }

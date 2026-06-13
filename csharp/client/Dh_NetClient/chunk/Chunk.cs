@@ -23,12 +23,12 @@ public abstract class Chunk(int size) {
 
 public sealed class Chunk<T> : Chunk {
   public static Chunk<T> Create(int size) {
-    return new Chunk<T>(new T[size]);
+    return new Chunk<T>(new T?[size]);
   }
 
-  public T[] Data { get; }
+  public T?[] Data { get; }
 
-  private Chunk(T[] data) : base(data.Length) {
+  private Chunk(T?[] data) : base(data.Length) {
     Data = data;
   }
 }
