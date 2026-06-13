@@ -388,6 +388,29 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
 }
 
 
+/// <summary>
+/// Background and rationale for this class. The library initially supported a set of scalar types:
+/// char, bool, int32, float, string, etc. For each simple type S, there is a ColumnSource&lt;S&gt;
+/// that can represent its data and a Chunk&lt;S&gt; that can be used to hold batches of data.
+/// When it came time to add support for List types, we had to, among other things, decide what
+/// the appropriate ColumnSource and Chunk types would be. This is complicated by the fact
+/// that there are infinitely many List types: List&lt;T&gt;, List&lt;List&lt;T&gt;&gt;,
+/// and so on. We decided that there would be a single ColumnSource&lt;IList&gt; that could
+/// represent any list type, and a single Chunk&lt;IList&gt; that could be used to hold batches
+/// of list data. When programmers work with these IList elements, they may want to cast them
+/// down to their actual concrete type. We promise that the IList elements contained in
+/// these ColumnSource and Chunk Types will always implement IList, IList&lt;T&gt; and, for
+/// value types, IList&lt;Nullable&lt;T&gt;&gt;. This allows programmers to cast down to the actual
+/// concrete type when they know it.
+///
+/// Note: it might have been preferable to use IReadOnlyList, IReadOnlyList&lt;T&gt; and
+/// IReadOnlyList&lt;Nullable&lt;T&gt;&gt; instead of IList. The problem is of course that
+/// there is no bare (non-generic) IReadOnlyList type, so we would have had to use IList as
+/// the non-generic interface, which would have been confusing and inconsistent. By using IList
+/// we can at least be consistent, even though it's a big interface with a bunch of mutating
+/// methods that will always throw in our case.
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquatable<T> {
   private readonly IReadOnlyList<T?> _data;
   private readonly T _deephavenNullValue;
