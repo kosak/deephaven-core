@@ -27,6 +27,8 @@ internal class Program {
     var dto1 = new DateTimeOffset(1966, 3, 1, 12, 34, 56, TimeSpan.Zero);
     var dto2 = new DateTimeOffset(1999, 12, 31, 3, 44, 55, TimeSpan.Zero);
     tm.AddColumn<DateTimeOffset?[]?>("dateTimeOffset", [[dto1, dto2], [DateTimeOffset.MinValue, DateTimeOffset.MaxValue, null], null, [dto2]]);
+    tm.AddColumn<DateOnly?[]?>("dateOnly", [[DateOnly.FromDateTime(dto1.Date), DateOnly.FromDateTime(dto2.Date)], [DateOnly.MinValue, DateOnly.MaxValue, null], null, [DateOnly.FromDateTime(dto2.Date)]]);
+    tm.AddColumn<TimeOnly?[]?>("timeOnly", [[TimeOnly.FromDateTime(dto1.Date), TimeOnly.FromDateTime(dto2.Date)], [TimeOnly.MinValue, TimeOnly.MaxValue, null], null, [TimeOnly.FromDateTime(dto2.Date)]]);
 
     var at = tm.ToArrowTable();
 
