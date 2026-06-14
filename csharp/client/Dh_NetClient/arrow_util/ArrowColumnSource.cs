@@ -302,11 +302,11 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(Int8Array array) {
-    Result = new KosakArray<SByte>(array, DeephavenConstants.NullByte);
+    Result = new KosakPainArrayGoSub1000<SByte>(array, DeephavenConstants.NullByte);
   }
 
   public void Visit(Int16Array array) {
-    Result = new KosakArray<Int16>(array, DeephavenConstants.NullShort);
+    Result = new KosakPainArrayGoSub1000<Int16>(array, DeephavenConstants.NullShort);
   }
 
   public void Visit(Int32Array array) {
@@ -314,15 +314,15 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(Int64Array array) {
-    Result = new KosakArray<Int64>(array, DeephavenConstants.NullLong);
+    Result = new KosakPainArrayGoSub1000<Int64>(array, DeephavenConstants.NullLong);
   }
 
   public void Visit(FloatArray array) {
-    Result = new KosakArray<float>(array, DeephavenConstants.NullFloat);
+    Result = new KosakPainArrayGoSub1000<float>(array, DeephavenConstants.NullFloat);
   }
 
   public void Visit(DoubleArray array) {
-    Result = new KosakArray<double>(array, DeephavenConstants.NullDouble);
+    Result = new KosakPainArrayGoSub1000<double>(array, DeephavenConstants.NullDouble);
   }
 
   public void Visit(StringArray array) {
@@ -330,19 +330,19 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(BooleanArray array) {
-    Result = new KosakBoolArray(array);
+    Result = new KosakPainArrayGoSub1000<bool>(array, null);
   }
 
   public void Visit(TimestampArray array) {
-    Result = new KosakArray<DateTimeOffset>(array, new DateTimeOffset());
+    Result = new KosakPainArrayGoSub1000<DateTimeOffset>(array, new DateTimeOffset());
   }
 
   public void Visit(Date64Array array) {
-    Result = new KosakArray<DateOnly>(array, new DateOnly());
+    Result = new KosakPainArrayGoSub1000<DateOnly>(array, new DateOnly());
   }
 
   public void Visit(Time64Array array) {
-    Result = new KosakArray<TimeOnly>(array, new TimeOnly());
+    Result = new KosakPainArrayGoSub1000<TimeOnly>(array, new TimeOnly());
   }
 
   public void Visit(IArrowArray array) {
