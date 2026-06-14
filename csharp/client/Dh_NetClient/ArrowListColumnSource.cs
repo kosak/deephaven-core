@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using Apache.Arrow;
+using System.Collections;
+using Array = System.Array;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -195,6 +197,76 @@ public sealed class ReadOnlyListAdapterForValueTypes<T> : ReadOnlyListAdapterBas
 /// <typeparam name="T"></typeparam>
 public sealed class ReadOnlyListAdapterForReferenceTypes<T> : ReadOnlyListAdapterBase<T> where T : class {
   public ReadOnlyListAdapterForReferenceTypes(IReadOnlyList<T> data) : base(data) { }
+}
+
+public class AdaptorSelector : IArrowArrayVisitor,
+  IArrowArrayVisitor<UInt16Array>,
+  IArrowArrayVisitor<Int8Array>,
+  IArrowArrayVisitor<Int16Array>,
+  IArrowArrayVisitor<Int32Array>,
+  IArrowArrayVisitor<Int64Array>,
+  IArrowArrayVisitor<FloatArray>,
+  IArrowArrayVisitor<DoubleArray>,
+  IArrowArrayVisitor<StringArray>,
+  IArrowArrayVisitor<BooleanArray>,
+  IArrowArrayVisitor<TimestampArray>,
+  IArrowArrayVisitor<Date64Array>,
+  IArrowArrayVisitor<Time64Array> {
+
+  public IList Result { get; private set; } = new List<int>();
+
+  public void Visit(UInt16Array array) {
+    var adapted = new KosakCharAdaptor(array);
+    Result = new ReadOnlyListAdapterForValueTypes<char>(adapted, DeephavenConstants.NullChar);
+  }
+
+  public void Visit(Int8Array array) {
+    Result = new ReadOnlyListAdapterForValueTypes<sbyte>(array, DeephavenConstants.NullByte);
+  }
+
+  public void Visit(Int16Array array) {
+    Result = new ReadOnlyListAdapterForValueTypes<short>(array, DeephavenConstants.NullShort);
+  }
+
+  public void Visit(Int32Array array) {
+    Result = new ReadOnlyListAdapterForValueTypes<int>(array, DeephavenConstants.NullInt);
+  }
+
+  public void Visit(Int64Array array) {
+    Result = new ReadOnlyListAdapterForValueTypes<long>(array, DeephavenConstants.NullLong);
+  }
+
+  public void Visit(FloatArray array) {
+    Result = new ReadOnlyListAdapterForValueTypes<float>(array, DeephavenConstants.NullFloat);
+  }
+
+  public void Visit(DoubleArray array) {
+    Result = new ReadOnlyListAdapterForValueTypes<double>(array, DeephavenConstants.NullDouble);
+  }
+
+  public void Visit(StringArray array) {
+    Result = new ReadOnlyListAdapterForReferenceTypes<string>(array);
+  }
+
+  public void Visit(BooleanArray array) {
+    Result = new ReadOnlyListAdapterForValueTypes<bool>(array, null);
+  }
+
+  public void Visit(TimestampArray array) {
+    Result = new ReadOnlyListAdapterForValueTypes<DateTimeOffset>(array, new DateTimeOffset());
+  }
+
+  public void Visit(Date64Array array) {
+    Result = new ReadOnlyListAdapterForValueTypes<DateOnly>(array, new DateOnly());
+  }
+
+  public void Visit(Time64Array array) {
+    Result = new ReadOnlyListAdapterForValueTypes<TimeOnly>(array, new TimeOnly());
+  }
+
+  public void Visit(IArrowArray array) {
+    throw new NotImplementedException("Client does not support multiple levels of array nesting");
+  }
 }
 
 /// <summary>
