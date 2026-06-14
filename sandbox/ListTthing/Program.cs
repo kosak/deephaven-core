@@ -41,7 +41,7 @@ internal class Program {
     DumpIListColumn<float>(ct, 4, true);
     DumpIListColumn<double>(ct, 5, true);
     DumpIListColumn<bool>(ct, 6, false);
-    // DumpIListColumn<string>(ct, 7);
+    DumpIListColumn2<string>(ct, 7);
     DumpIListColumn<char>(ct, 8, true);
     DumpIListColumn<DateTimeOffset>(ct, 9, true);
     DumpIListColumn<DateOnly>(ct, 10, true);
@@ -53,6 +53,8 @@ internal class Program {
   }
 
   private static void DumpIListColumn<T>(IClientTable ct, int columnIndex, bool includePlainT) where T : struct {
+    Debug.WriteLine($"Hi, T is {Utility.FriendlyTypeName(typeof(T))}");
+
     var col = ct.GetColumn(columnIndex);
     var chunk = Chunk<IList>.Create((int)ct.NumRows);
     var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
@@ -63,6 +65,18 @@ internal class Program {
     }
     Debug.WriteLine(DumpChunk2<T?>(chunk));
   }
+
+  private static void DumpIListColumn2<T>(IClientTable ct, int columnIndex) where T : class {
+    Debug.WriteLine($"Hi, T is {Utility.FriendlyTypeName(typeof(T))}");
+
+    var col = ct.GetColumn(columnIndex);
+    var chunk = Chunk<IList>.Create((int)ct.NumRows);
+    var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
+    col.FillChunk(stupid, chunk, null);
+    Debug.WriteLine(DumpChunk1(chunk));
+    Debug.WriteLine(DumpChunk2<T>(chunk));
+  }
+
 
   private static string DumpChunk1(Chunk<IList> chunk) {
     var sw = new StringWriter();
@@ -93,7 +107,6 @@ internal class Program {
   }
 
   private static string DumpChunk2<T>(Chunk<IList> chunk) {
-    Debug.WriteLine($"Hi, T is {Utility.FriendlyTypeName(typeof(T))}");
     var sw = new StringWriter();
     var sep = "";
     sw.Write('[');
