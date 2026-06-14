@@ -298,7 +298,8 @@ public class SuperNubbin : IArrowArrayVisitor,
   public IList Result { get; private set; } = new List<int>();
 
   public void Visit(UInt16Array array) {
-    Result = new KosakCharArray(array);
+    var adapted = new KosakCharAdaptor(array);
+    Result = new KosakPainArrayGoSub1000<char>(adapted, DeephavenConstants.NullChar);
   }
 
   public void Visit(Int8Array array) {
@@ -516,6 +517,34 @@ public class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T :
   }
 }
 
+public class KosakCharAdaptor : IReadOnlyList<char?> {
+  private readonly IReadOnlyList<UInt16?> _underlying;
+
+  public KosakCharAdaptor(IReadOnlyList<UInt16?> underlying) {
+    _underlying = underlying;
+  }
+
+  public char? this[int index] {
+    get {
+      var item = _underlying[index];
+      return item.HasValue ? (char)item.Value : null;
+    }
+  }
+
+  public IEnumerator<char?> GetEnumerator() {
+    foreach (var item in _underlying) {
+      yield return item.HasValue ? (char)item.Value : null;
+    }
+  }
+
+  IEnumerator IEnumerable.GetEnumerator() {
+    foreach (var item in _underlying) {
+      yield return item.HasValue ? (char)item.Value : null;
+    }
+  }
+
+  public int Count => _underlying.Count;
+}
 
 /// <summary>
   /// Background and rationale for this class. The library initially supported a set of scalar types:
@@ -540,122 +569,6 @@ public class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T :
   /// methods that will always throw in our case.
   /// </summary>
   /// <typeparam name="T"></typeparam>
-
-public class KosakCharArray : IList, IList<char>, IList<char?> {
-  private readonly IReadOnlyList<UInt16?> _data;
-
-  public KosakCharArray(IReadOnlyList<UInt16?> data) {
-    _data = data;
-  }
-
-  int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
-  void ICollection<char>.Add(char item) => NotImplementedForReadOnlyList<bool>();
-  void ICollection<char?>.Add(char? item) => NotImplementedForReadOnlyList<bool>();
-
-  public void Clear() => NotImplementedForReadOnlyList<int>();
-
-  bool IList.Contains(object? value) => ((IList)this).IndexOf(value) >= 0;
-  bool ICollection<char>.Contains(char item) => ((IList<char>)this).IndexOf(item) >= 0;
-  bool ICollection<char?>.Contains(char? item) => ((IList<char?>)this).IndexOf(item) >= 0;
-
-  int IList.IndexOf(object? value) {
-    if (value == null) {
-      return ((IList<char?>)this).IndexOf(null);
-    }
-    if (value is char value1) {
-      return ((IList<char?>)this).IndexOf(value1);
-    }
-    return -1;
-  }
-
-  int IList<char>.IndexOf(char value) {
-    var valueToCheck = value.Equals(DeephavenConstants.NullChar) ? (char?)null : value;
-    return ((IList<char?>)this).IndexOf(valueToCheck);
-  }
-
-  int IList<char?>.IndexOf(char? value) {
-    for (var i = 0; i < _data.Count; ++i) {
-      if (Nullable.Equals(_data[i], value)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  void IList.Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
-  void IList<char>.Insert(int index, char item) => NotImplementedForReadOnlyList<bool>();
-  void IList<char?>.Insert(int index, char? item) => NotImplementedForReadOnlyList<bool>();
-
-  void IList.Remove(object? value) => NotImplementedForReadOnlyList<bool>();
-  bool ICollection<char>.Remove(char item) => NotImplementedForReadOnlyList<bool>();
-  bool ICollection<char?>.Remove(char? item) => NotImplementedForReadOnlyList<bool>();
-
-  public void RemoveAt(int index) => NotImplementedForReadOnlyList<bool>();
-
-  bool IList.IsFixedSize => true;
-  public bool IsReadOnly => true;
-
-  void ICollection.CopyTo(Array array, int index) {
-    throw new NotImplementedException();
-  }
-  void ICollection<char>.CopyTo(char[] array, int arrayIndex) {
-    throw new NotImplementedException();
-  }
-  void ICollection<char?>.CopyTo(char?[] array, int arrayIndex) {
-    throw new NotImplementedException();
-  }
-
-  public int Count => _data.Count;
-
-  public bool IsSynchronized => false;
-  public object SyncRoot => this;
-
-  object? IList.this[int index] {
-    get {
-      var value = _data[index];
-      return value ?? DeephavenConstants.NullChar;
-    }
-    set => _ = NotImplementedForReadOnlyList<bool>();
-  }
-
-  char IList<char>.this[int index] {
-    get {
-      var value = _data[index];
-      return value.HasValue ? (char)value.Value : DeephavenConstants.NullChar;
-    }
-    set => _ = NotImplementedForReadOnlyList<bool>();
-  }
-
-  char? IList<char?>.this[int index] {
-    get {
-      var result = _data[index];
-      return result.HasValue ? (char)result.Value : null;
-    }
-    set => _ = NotImplementedForReadOnlyList<bool>();
-  }
-
-  IEnumerator IEnumerable.GetEnumerator() {
-    foreach (var item in _data) {
-      yield return item.HasValue ? (char)item.Value : DeephavenConstants.NullChar;
-    }
-  }
-
-  IEnumerator<char> IEnumerable<char>.GetEnumerator() {
-    foreach (var item in _data) {
-      yield return item.HasValue ? (char)item.Value : DeephavenConstants.NullChar;
-    }
-  }
-
-  IEnumerator<char?> IEnumerable<char?>.GetEnumerator() {
-    foreach (var item in _data) {
-      yield return item.HasValue ? (char?)item.Value : null;
-    }
-  }
-
-  private U NotImplementedForReadOnlyList<U>() {
-    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
-  }
-}
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   IArrowTypeVisitor<UInt16Type>,

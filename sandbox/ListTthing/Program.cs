@@ -26,7 +26,7 @@ internal class Program {
     tm.AddColumn<double?[]?>("double", [[0.0, 1.1, 2.2], [3.3, 4.4, null], null, [6.6]]);
     tm.AddColumn<bool?[]?>("bool", [[false, true], [false, true, null], null, [true]]);
     tm.AddColumn<string?[]?>("string", [["", "hello"], ["a", "b", null], null, ["c"]]);
-    tm.AddColumn<char?[]?>("char", [['a', (char)0], ['a', 'b', null], null, ['c']]);
+    tm.AddColumn<char?[]?>("char", [['a', 'X'], ['a', 'b', null], null, ['c']]);
     tm.AddColumn<DateTimeOffset?[]?>("dateTimeOffset", [[dto1, dto2], [DateTimeOffset.MinValue, DateTimeOffset.MaxValue, null], null, [dto2]]);
     tm.AddColumn<DateOnly?[]?>("dateOnly", [[DateOnly.FromDateTime(dto1.Date), DateOnly.FromDateTime(dto2.Date)], [DateOnly.MinValue, DateOnly.MaxValue, null], null, [DateOnly.FromDateTime(dto2.Date)]]);
     tm.AddColumn<TimeOnly?[]?>("timeOnly", [[TimeOnly.FromDateTime(dto1.Date), TimeOnly.FromDateTime(dto2.Date)], [TimeOnly.MinValue, TimeOnly.MaxValue, null], null, [TimeOnly.FromDateTime(dto2.Date)]]);
