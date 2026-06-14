@@ -310,7 +310,8 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(Int32Array array) {
-    Result = new KosakArray<Int32>(array, DeephavenConstants.NullInt);
+    // Result = new KosakArray<Int32>(array, DeephavenConstants.NullInt);
+    Result = new KosakPainArray<Int32?>(array);
   }
 
   public void Visit(Int64Array array) {
@@ -326,7 +327,7 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(StringArray array) {
-    Result = new KosakStringArray(array);
+    Result = new KosakPainArray<string>(array);
   }
 
   public void Visit(BooleanArray array) {
@@ -387,6 +388,91 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
   public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
 }
 
+public class KosakPainArray<T> : IList, IList<T> {
+  private readonly IReadOnlyList<T> _data;
+
+  public KosakPainArray(IReadOnlyList<T> data) {
+    _data = data;
+  }
+
+  int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
+  void ICollection<T>.Add(T item) => NotImplementedForReadOnlyList<bool>();
+
+  public void Clear() => NotImplementedForReadOnlyList<int>();
+
+  bool IList.Contains(object? value) => ((IList)this).IndexOf(value) >= 0;
+  bool ICollection<T>.Contains(T item) => ((IList<T>)this).IndexOf(item) >= 0;
+
+  int IList.IndexOf(object? value) {
+    if (value == null) {
+      return ((IList<T>)this).IndexOf(default);
+    }
+    if (value is T value1) {
+      return ((IList<T>)this).IndexOf(value1);
+    }
+    return -1;
+  }
+
+  int IList<T>.IndexOf(T value) {
+    for (var i = 0; i != _data.Count; ++i) {
+      if (Equals(_data[i], value)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  void IList.Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
+  void IList<T>.Insert(int index, T item) => NotImplementedForReadOnlyList<bool>();
+
+  void IList.Remove(object? value) => NotImplementedForReadOnlyList<bool>();
+  bool ICollection<T>.Remove(T item) => NotImplementedForReadOnlyList<bool>();
+
+  public void RemoveAt(int index) => NotImplementedForReadOnlyList<bool>();
+
+  bool IList.IsFixedSize => true;
+  public bool IsReadOnly => true;
+
+  void ICollection.CopyTo(Array array, int index) {
+    throw new NotImplementedException();
+  }
+  void ICollection<T>.CopyTo(T[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+
+  public int Count => _data.Count;
+
+  public bool IsSynchronized => false;
+  public object SyncRoot => this;
+
+  object? IList.this[int index] {
+    get {
+      var value = _data[index];
+      if (value == null) {
+        return null;
+      }
+      return value;
+    }
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  T IList<T>.this[int index] {
+    get => _data[index];
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  IEnumerator IEnumerable.GetEnumerator() {
+    return _data.GetEnumerator();
+  }
+
+  IEnumerator<T> IEnumerable<T>.GetEnumerator() {
+    return _data.GetEnumerator();
+  }
+
+  private U NotImplementedForReadOnlyList<U>() {
+    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
+  }
+}
 
 /// <summary>
 /// Background and rationale for this class. The library initially supported a set of scalar types:

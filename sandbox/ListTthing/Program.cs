@@ -15,6 +15,8 @@ internal class Program {
 
   private static void Nested() {
     var tm = new TableMaker();
+    tm.AddColumn<Int32?[]?>("test-Int32", [[0, 1, 2], [3, 4, null], null, [6]]);
+
     tm.AddColumn<sbyte?[]?>("Int8", [[0, 1, 2], [3, 4, null], null, [6]]);
     tm.AddColumn<Int16?[]?>("Int16", [[0, 1, 2], [3, 4, null], null, [6]]);
     tm.AddColumn<Int32?[]?>("Int32", [[0, 1, 2], [3, 4, null], null, [6]]);
@@ -33,18 +35,75 @@ internal class Program {
     var at = tm.ToArrowTable();
 
     var ct = ArrowUtil.ToClientTable(at);
-    //var col0 = ct.GetColumn(1);
-    //var chunk = Chunk<IList>.Create((int)ct.NumRows);
-    //var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
-    //col0.FillChunk(stupid, chunk, null);
-    // var z0 = (IList)chunk.Data[0];
-    // var z1 = (IList<double>)chunk.Data[0];
-    // var z2 = (IList<double?>)chunk.Data[0];
-    //
-    // var what = z0.GetType();
+    var col0 = ct.GetColumn(0);
+    var chunk = Chunk<IList>.Create((int)ct.NumRows);
+    var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
+    col0.FillChunk(stupid, chunk, null);
+
+    Debug.WriteLine(DumpChunk1(chunk));
+    Debug.WriteLine(DumpChunk2<Int32?>(chunk));
+    Debug.WriteLine(DumpChunk2<Int32>(chunk));
 
     var at2 = ct.ToArrowTable();
     TableComparer.AssertSame(at, at2);
     Debug.WriteLine("BYE");
   }
+
+  private static string DumpChunk1(Chunk<IList> chunk) {
+    var sw = new StringWriter();
+    var sep = "";
+    sw.Write('[');
+    for (var i = 0; i != chunk.Size; i++) {
+      sw.Write(sep);
+      sep = ",";
+
+      var element = chunk.Data[i];
+      if (element == null) {
+        sw.Write("null");
+        continue;
+      }
+
+      sw.Write('[');
+      var innerSep = "";
+      for (var j = 0; j != element.Count; j++) {
+        sw.Write(innerSep);
+        innerSep = ",";
+        var item = element[j];
+        sw.Write(item == null ? "NULL" : item.ToString());
+      }
+      sw.Write(']');
+    }
+    sw.Write(']');
+    return sw.ToString();
+  }
+
+  private static string DumpChunk2<T>(Chunk<IList> chunk) {
+
+    var sw = new StringWriter();
+    var sep = "";
+    sw.Write('[');
+    for (var i = 0; i != chunk.Size; i++) {
+      sw.Write(sep);
+      sep = ",";
+
+      var element = (IList<T>?)chunk.Data[i];
+      if (element == null) {
+        sw.Write("null");
+        continue;
+      }
+
+      sw.Write('[');
+      var innerSep = "";
+      for (var j = 0; j != element.Count; j++) {
+        sw.Write(innerSep);
+        innerSep = ",";
+        var item = element[j];
+        sw.Write(item == null ? "NULL" : item.ToString());
+      }
+      sw.Write(']');
+    }
+    sw.Write(']');
+    return sw.ToString();
+  }
 }
+
