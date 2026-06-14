@@ -310,8 +310,7 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(Int32Array array) {
-    // Result = new KosakArray<Int32>(array, DeephavenConstants.NullInt);
-    Result = new KosakPainArray<Int32?>(array);
+    Result = new KosakPainArrayGoSub1000<Int32>(array, DeephavenConstants.NullInt);
   }
 
   public void Visit(Int64Array array) {
@@ -389,7 +388,7 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
 }
 
 public class KosakPainArray<T> : IList, IList<T> {
-  private readonly IReadOnlyList<T> _data;
+  protected readonly IReadOnlyList<T> _data;
 
   public KosakPainArray(IReadOnlyList<T> data) {
     _data = data;
@@ -469,35 +468,79 @@ public class KosakPainArray<T> : IList, IList<T> {
     return _data.GetEnumerator();
   }
 
-  private U NotImplementedForReadOnlyList<U>() {
+  protected U NotImplementedForReadOnlyList<U>() {
     throw new NotImplementedException("This method is not implemented because the data structure is readonly");
   }
 }
 
+public class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T : struct, IEquatable<T> {
+  private readonly T? _deephavenNullValue;
+
+  public KosakPainArrayGoSub1000(IReadOnlyList<T?> data, T? deephavenNullValue) : base(data) {
+    _deephavenNullValue = deephavenNullValue;
+  }
+
+  public int IndexOf(T item) {
+    throw new NotImplementedException();
+  }
+
+  public void Insert(int index, T item) => _ = NotImplementedForReadOnlyList<bool>();
+
+  public T this[int index] {
+    get {
+      var value = _data[index];
+      if (!value.HasValue) {
+        return _deephavenNullValue ??
+          throw new Exception(
+            $"Assertion failed: This IList<T> contains null value but there is no Deephaven null value for T={Utility.FriendlyTypeName(typeof(T))}. Try casting to IList<T?>");
+      }
+      return value.Value;
+    }
+    set => _ = NotImplementedForReadOnlyList<bool>();
+  }
+
+  public void Add(T item) => _ = NotImplementedForReadOnlyList<bool>();
+
+  public bool Contains(T item) {
+    throw new NotImplementedException();
+  }
+
+  public void CopyTo(T[] array, int arrayIndex) {
+    throw new NotImplementedException();
+  }
+
+  public bool Remove(T item) => NotImplementedForReadOnlyList<bool>();
+
+  public IEnumerator<T> GetEnumerator() {
+    throw new NotImplementedException();
+  }
+}
+
+
 /// <summary>
-/// Background and rationale for this class. The library initially supported a set of scalar types:
-/// char, bool, int32, float, string, etc. For each simple type S, there is a ColumnSource&lt;S&gt;
-/// that can represent its data and a Chunk&lt;S&gt; that can be used to hold batches of data.
-/// When it came time to add support for List types, we had to, among other things, decide what
-/// the appropriate ColumnSource and Chunk types would be. This is complicated by the fact
-/// that there are infinitely many List types: List&lt;T&gt;, List&lt;List&lt;T&gt;&gt;,
-/// and so on. We decided that there would be a single ColumnSource&lt;IList&gt; that could
-/// represent any list type, and a single Chunk&lt;IList&gt; that could be used to hold batches
-/// of list data. When programmers work with these IList elements, they may want to cast them
-/// down to their actual concrete type. We promise that the IList elements contained in
-/// these ColumnSource and Chunk Types will always implement IList, IList&lt;T&gt; and, for
-/// value types, IList&lt;Nullable&lt;T&gt;&gt;. This allows programmers to cast down to the actual
-/// concrete type when they know it.
-///
-/// Note: it might have been preferable to use IReadOnlyList, IReadOnlyList&lt;T&gt; and
-/// IReadOnlyList&lt;Nullable&lt;T&gt;&gt; instead of IList. The problem is of course that
-/// there is no bare (non-generic) IReadOnlyList type, so we would have had to use IList as
-/// the non-generic interface, which would have been confusing and inconsistent. By using IList
-/// we can at least be consistent, even though it's a big interface with a bunch of mutating
-/// methods that will always throw in our case.
-/// </summary>
-/// <typeparam name="T"></typeparam>
-public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquatable<T> {
+  /// Background and rationale for this class. The library initially supported a set of scalar types:
+  /// char, bool, int32, float, string, etc. For each simple type S, there is a ColumnSource&lt;S&gt;
+  /// that can represent its data and a Chunk&lt;S&gt; that can be used to hold batches of data.
+  /// When it came time to add support for List types, we had to, among other things, decide what
+  /// the appropriate ColumnSource and Chunk types would be. This is complicated by the fact
+  /// that there are infinitely many List types: List&lt;T&gt;, List&lt;List&lt;T&gt;&gt;,
+  /// and so on. We decided that there would be a single ColumnSource&lt;IList&gt; that could
+  /// represent any list type, and a single Chunk&lt;IList&gt; that could be used to hold batches
+  /// of list data. When programmers work with these IList elements, they may want to cast them
+  /// down to their actual concrete type. We promise that the IList elements contained in
+  /// these ColumnSource and Chunk Types will always implement IList, IList&lt;T&gt; and, for
+  /// value types, IList&lt;Nullable&lt;T&gt;&gt;. This allows programmers to cast down to the actual
+  /// concrete type when they know it.
+  ///
+  /// Note: it might have been preferable to use IReadOnlyList, IReadOnlyList&lt;T&gt; and
+  /// IReadOnlyList&lt;Nullable&lt;T&gt;&gt; instead of IList. The problem is of course that
+  /// there is no bare (non-generic) IReadOnlyList type, so we would have had to use IList as
+  /// the non-generic interface, which would have been confusing and inconsistent. By using IList
+  /// we can at least be consistent, even though it's a big interface with a bunch of mutating
+  /// methods that will always throw in our case.
+  /// </summary>
+  /// <typeparam name="T"></typeparam>
+  public class KosakArray<T> : IList, IList<T>, IList<T?> where T : struct, IEquatable<T> {
   private readonly IReadOnlyList<T?> _data;
   private readonly T _deephavenNullValue;
 
