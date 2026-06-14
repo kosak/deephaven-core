@@ -34,6 +34,15 @@ internal class Program {
     var at = tm.ToArrowTable();
 
     var ct = ArrowUtil.ToClientTable(at);
+
+
+    var col = ct.GetColumn(2);
+    var chunk = Chunk<IList>.Create((int)ct.NumRows);
+    var stupid = RowSequence.CreateSequential(Interval.OfStartAndSize(0, (UInt64)ct.NumRows));
+    col.FillChunk(stupid, chunk, null);
+
+    var data = (IList<Int32?>?)chunk.Data[1];
+
     DumpIListColumn<sbyte>(ct, 0, true);
     DumpIListColumn<Int16>(ct, 1, true);
     DumpIListColumn<Int32>(ct, 2, true);

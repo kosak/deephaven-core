@@ -404,18 +404,17 @@ public class KosakPainArray<T> : IList, IList<T> {
   bool ICollection<T>.Contains(T item) => ((IList<T>)this).IndexOf(item) >= 0;
 
   int IList.IndexOf(object? value) {
-    if (value == null) {
-      return ((IList<T>)this).IndexOf(default!);
-    }
-    if (value is T value1) {
-      return ((IList<T>)this).IndexOf(value1);
+    for (var i = 0; i != _data.Count; ++i) {
+      if (Equals(_data[i], value)) {
+        return i;
+      }
     }
     return -1;
   }
 
   int IList<T>.IndexOf(T value) {
     for (var i = 0; i != _data.Count; ++i) {
-      if (value is null ? _data[i] is null : value.Equals(_data[i])) {
+      if (Equals(_data[i], value)) {
         return i;
       }
     }
