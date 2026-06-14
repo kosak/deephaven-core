@@ -327,7 +327,7 @@ public class SuperNubbin : IArrowArrayVisitor,
   }
 
   public void Visit(StringArray array) {
-    Result = new KosakPainArray<string>(array);
+    Result = new KosakPainArrayFailFast<string>(array);
   }
 
   public void Visit(BooleanArray array) {
@@ -388,7 +388,7 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
   public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
 }
 
-public class KosakPainArray<T> : IList, IList<T> {
+public abstract class KosakPainArray<T> : IList, IList<T> {
   protected readonly IReadOnlyList<T> _data;
 
   public KosakPainArray(IReadOnlyList<T> data) {
@@ -478,7 +478,11 @@ public class KosakPainArray<T> : IList, IList<T> {
   }
 }
 
-public class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T : struct, IEquatable<T> {
+public sealed class KosakPainArrayFailFast<T> : KosakPainArray<T> {
+  public KosakPainArrayFailFast(IReadOnlyList<T> data) : base(data) { }
+}
+
+public sealed class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T : struct, IEquatable<T> {
   private readonly T? _deephavenNullValue;
 
   public KosakPainArrayGoSub1000(IReadOnlyList<T?> data, T? deephavenNullValue) : base(data) {
@@ -506,18 +510,26 @@ public class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T :
 
   public void Add(T item) => _ = NotImplementedForReadOnlyList<bool>();
 
-  public bool Contains(T item) {
-    throw new NotImplementedException();
-  }
+  public bool Contains(T item) => IndexOf(item) >= 0;
 
   public void CopyTo(T[] array, int arrayIndex) {
-    throw new NotImplementedException();
+    for (var i = 0; i != Count; ++i) {
+      array[arrayIndex + i] = this[i];
+    }
   }
 
   public bool Remove(T item) => NotImplementedForReadOnlyList<bool>();
 
   public IEnumerator<T> GetEnumerator() {
-    throw new NotImplementedException();
+    foreach (var item in _data) {
+      if (!item.HasValue) {
+        yield return _deephavenNullValue ??
+          throw new Exception(
+            $"Assertion failed: This IList<T> contains null value but there is no Deephaven null value for T={Utility.FriendlyTypeName(typeof(T))}. Try casting to IList<T?>");
+        continue;
+      }
+      yield return item.Value;
+    }
   }
 }
 
@@ -572,7 +584,6 @@ public class KosakCharAdaptor : IReadOnlyList<char?> {
   /// we can at least be consistent, even though it's a big interface with a bunch of mutating
   /// methods that will always throw in our case.
   /// </summary>
-  /// <typeparam name="T"></typeparam>
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   IArrowTypeVisitor<UInt16Type>,
