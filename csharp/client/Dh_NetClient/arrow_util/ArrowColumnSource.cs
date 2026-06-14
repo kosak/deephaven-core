@@ -405,7 +405,7 @@ public class KosakPainArray<T> : IList, IList<T> {
 
   int IList.IndexOf(object? value) {
     if (value == null) {
-      return ((IList<T>)this).IndexOf(default);
+      return ((IList<T>)this).IndexOf(default!);
     }
     if (value is T value1) {
       return ((IList<T>)this).IndexOf(value1);
@@ -415,7 +415,7 @@ public class KosakPainArray<T> : IList, IList<T> {
 
   int IList<T>.IndexOf(T value) {
     for (var i = 0; i != _data.Count; ++i) {
-      if (Equals(_data[i], value)) {
+      if (value is null ? _data[i] is null : value.Equals(_data[i])) {
         return i;
       }
     }
@@ -432,12 +432,17 @@ public class KosakPainArray<T> : IList, IList<T> {
 
   bool IList.IsFixedSize => true;
   public bool IsReadOnly => true;
-
+    
   void ICollection.CopyTo(Array array, int index) {
-    throw new NotImplementedException();
+    for (var i = 0; i != _data.Count; ++i) {
+      array.SetValue(_data[i], index + i);
+    }
   }
+
   void ICollection<T>.CopyTo(T[] array, int arrayIndex) {
-    throw new NotImplementedException();
+    for (var i = 0; i != _data.Count; ++i) {
+      array[arrayIndex + i] = _data[i];
+    }
   }
 
   public int Count => _data.Count;
