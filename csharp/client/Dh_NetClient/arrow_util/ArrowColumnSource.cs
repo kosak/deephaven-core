@@ -299,51 +299,51 @@ public class SuperNubbin : IArrowArrayVisitor,
 
   public void Visit(UInt16Array array) {
     var adapted = new KosakCharAdaptor(array);
-    Result = new KosakPainArrayGoSub1000<char>(adapted, DeephavenConstants.NullChar);
+    Result = new ReadOnlyListAdapterForValueTypes<char>(adapted, DeephavenConstants.NullChar);
   }
 
   public void Visit(Int8Array array) {
-    Result = new KosakPainArrayGoSub1000<SByte>(array, DeephavenConstants.NullByte);
+    Result = new ReadOnlyListAdapterForValueTypes<sbyte>(array, DeephavenConstants.NullByte);
   }
 
   public void Visit(Int16Array array) {
-    Result = new KosakPainArrayGoSub1000<Int16>(array, DeephavenConstants.NullShort);
+    Result = new ReadOnlyListAdapterForValueTypes<short>(array, DeephavenConstants.NullShort);
   }
 
   public void Visit(Int32Array array) {
-    Result = new KosakPainArrayGoSub1000<Int32>(array, DeephavenConstants.NullInt);
+    Result = new ReadOnlyListAdapterForValueTypes<int>(array, DeephavenConstants.NullInt);
   }
 
   public void Visit(Int64Array array) {
-    Result = new KosakPainArrayGoSub1000<Int64>(array, DeephavenConstants.NullLong);
+    Result = new ReadOnlyListAdapterForValueTypes<long>(array, DeephavenConstants.NullLong);
   }
 
   public void Visit(FloatArray array) {
-    Result = new KosakPainArrayGoSub1000<float>(array, DeephavenConstants.NullFloat);
+    Result = new ReadOnlyListAdapterForValueTypes<float>(array, DeephavenConstants.NullFloat);
   }
 
   public void Visit(DoubleArray array) {
-    Result = new KosakPainArrayGoSub1000<double>(array, DeephavenConstants.NullDouble);
+    Result = new ReadOnlyListAdapterForValueTypes<double>(array, DeephavenConstants.NullDouble);
   }
 
   public void Visit(StringArray array) {
-    Result = new KosakPainArrayFailFast<string>(array);
+    Result = new ReadOnlyListAdapterForReferenceTypes<string>(array);
   }
 
   public void Visit(BooleanArray array) {
-    Result = new KosakPainArrayGoSub1000<bool>(array, null);
+    Result = new ReadOnlyListAdapterForValueTypes<bool>(array, null);
   }
 
   public void Visit(TimestampArray array) {
-    Result = new KosakPainArrayGoSub1000<DateTimeOffset>(array, new DateTimeOffset());
+    Result = new ReadOnlyListAdapterForValueTypes<DateTimeOffset>(array, new DateTimeOffset());
   }
 
   public void Visit(Date64Array array) {
-    Result = new KosakPainArrayGoSub1000<DateOnly>(array, new DateOnly());
+    Result = new ReadOnlyListAdapterForValueTypes<DateOnly>(array, new DateOnly());
   }
 
   public void Visit(Time64Array array) {
-    Result = new KosakPainArrayGoSub1000<TimeOnly>(array, new TimeOnly());
+    Result = new ReadOnlyListAdapterForValueTypes<TimeOnly>(array, new TimeOnly());
   }
 
   public void Visit(IArrowArray array) {
@@ -387,203 +387,6 @@ public class ChunkedArrayIterator(ChunkedArray chunkedArray) {
 
   public int RelativeBegin => (_segmentBegin - _segmentOffset).ToIntExact();
 }
-
-public abstract class KosakPainArray<T> : IList, IList<T> {
-  protected readonly IReadOnlyList<T> _data;
-
-  public KosakPainArray(IReadOnlyList<T> data) {
-    _data = data;
-  }
-
-  int IList.Add(object? item) => NotImplementedForReadOnlyList<int>();
-  void ICollection<T>.Add(T item) => NotImplementedForReadOnlyList<bool>();
-
-  public void Clear() => NotImplementedForReadOnlyList<int>();
-
-  bool IList.Contains(object? value) => ((IList)this).IndexOf(value) >= 0;
-  bool ICollection<T>.Contains(T item) => ((IList<T>)this).IndexOf(item) >= 0;
-
-  int IList.IndexOf(object? value) {
-    for (var i = 0; i != _data.Count; ++i) {
-      if (Equals(_data[i], value)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  int IList<T>.IndexOf(T value) {
-    for (var i = 0; i != _data.Count; ++i) {
-      if (Equals(_data[i], value)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  void IList.Insert(int index, object? value) => NotImplementedForReadOnlyList<bool>();
-  void IList<T>.Insert(int index, T item) => NotImplementedForReadOnlyList<bool>();
-
-  void IList.Remove(object? value) => NotImplementedForReadOnlyList<bool>();
-  bool ICollection<T>.Remove(T item) => NotImplementedForReadOnlyList<bool>();
-
-  public void RemoveAt(int index) => NotImplementedForReadOnlyList<bool>();
-
-  bool IList.IsFixedSize => true;
-  public bool IsReadOnly => true;
-    
-  void ICollection.CopyTo(Array array, int index) {
-    for (var i = 0; i != _data.Count; ++i) {
-      array.SetValue(_data[i], index + i);
-    }
-  }
-
-  void ICollection<T>.CopyTo(T[] array, int arrayIndex) {
-    for (var i = 0; i != _data.Count; ++i) {
-      array[arrayIndex + i] = _data[i];
-    }
-  }
-
-  public int Count => _data.Count;
-
-  public bool IsSynchronized => false;
-  public object SyncRoot => this;
-
-  object? IList.this[int index] {
-    get {
-      var value = _data[index];
-      if (value == null) {
-        return null;
-      }
-      return value;
-    }
-    set => _ = NotImplementedForReadOnlyList<bool>();
-  }
-
-  T IList<T>.this[int index] {
-    get => _data[index];
-    set => _ = NotImplementedForReadOnlyList<bool>();
-  }
-
-  IEnumerator IEnumerable.GetEnumerator() {
-    return _data.GetEnumerator();
-  }
-
-  IEnumerator<T> IEnumerable<T>.GetEnumerator() {
-    return _data.GetEnumerator();
-  }
-
-  protected U NotImplementedForReadOnlyList<U>() {
-    throw new NotImplementedException("This method is not implemented because the data structure is readonly");
-  }
-}
-
-public sealed class KosakPainArrayFailFast<T> : KosakPainArray<T> {
-  public KosakPainArrayFailFast(IReadOnlyList<T> data) : base(data) { }
-}
-
-public sealed class KosakPainArrayGoSub1000<T> : KosakPainArray<T?>, IList<T> where T : struct, IEquatable<T> {
-  private readonly T? _deephavenNullValue;
-
-  public KosakPainArrayGoSub1000(IReadOnlyList<T?> data, T? deephavenNullValue) : base(data) {
-    _deephavenNullValue = deephavenNullValue;
-  }
-
-  public int IndexOf(T item) {
-    throw new NotImplementedException();
-  }
-
-  public void Insert(int index, T item) => _ = NotImplementedForReadOnlyList<bool>();
-
-  public T this[int index] {
-    get {
-      var value = _data[index];
-      if (!value.HasValue) {
-        return _deephavenNullValue ??
-          throw new Exception(
-            $"Assertion failed: This IList<T> contains null value but there is no Deephaven null value for T={Utility.FriendlyTypeName(typeof(T))}. Try casting to IList<T?>");
-      }
-      return value.Value;
-    }
-    set => _ = NotImplementedForReadOnlyList<bool>();
-  }
-
-  public void Add(T item) => _ = NotImplementedForReadOnlyList<bool>();
-
-  public bool Contains(T item) => IndexOf(item) >= 0;
-
-  public void CopyTo(T[] array, int arrayIndex) {
-    for (var i = 0; i != Count; ++i) {
-      array[arrayIndex + i] = this[i];
-    }
-  }
-
-  public bool Remove(T item) => NotImplementedForReadOnlyList<bool>();
-
-  public IEnumerator<T> GetEnumerator() {
-    foreach (var item in _data) {
-      if (!item.HasValue) {
-        yield return _deephavenNullValue ??
-          throw new Exception(
-            $"Assertion failed: This IList<T> contains null value but there is no Deephaven null value for T={Utility.FriendlyTypeName(typeof(T))}. Try casting to IList<T?>");
-        continue;
-      }
-      yield return item.Value;
-    }
-  }
-}
-
-public class KosakCharAdaptor : IReadOnlyList<char?> {
-  private readonly IReadOnlyList<UInt16?> _underlying;
-
-  public KosakCharAdaptor(IReadOnlyList<UInt16?> underlying) {
-    _underlying = underlying;
-  }
-
-  public char? this[int index] {
-    get {
-      var item = _underlying[index];
-      return item.HasValue ? (char)item.Value : null;
-    }
-  }
-
-  public IEnumerator<char?> GetEnumerator() {
-    foreach (var item in _underlying) {
-      yield return item.HasValue ? (char)item.Value : null;
-    }
-  }
-
-  IEnumerator IEnumerable.GetEnumerator() {
-    foreach (var item in _underlying) {
-      yield return item.HasValue ? (char)item.Value : null;
-    }
-  }
-
-  public int Count => _underlying.Count;
-}
-
-/// <summary>
-  /// Background and rationale for this class. The library initially supported a set of scalar types:
-  /// char, bool, int32, float, string, etc. For each simple type S, there is a ColumnSource&lt;S&gt;
-  /// that can represent its data and a Chunk&lt;S&gt; that can be used to hold batches of data.
-  /// When it came time to add support for List types, we had to, among other things, decide what
-  /// the appropriate ColumnSource and Chunk types would be. This is complicated by the fact
-  /// that there are infinitely many List types: List&lt;T&gt;, List&lt;List&lt;T&gt;&gt;,
-  /// and so on. We decided that there would be a single ColumnSource&lt;IList&gt; that could
-  /// represent any list type, and a single Chunk&lt;IList&gt; that could be used to hold batches
-  /// of list data. When programmers work with these IList elements, they may want to cast them
-  /// down to their actual concrete type. We promise that the IList elements contained in
-  /// these ColumnSource and Chunk Types will always implement IList, IList&lt;T&gt; and, for
-  /// value types, IList&lt;Nullable&lt;T&gt;&gt;. This allows programmers to cast down to the actual
-  /// concrete type when they know it.
-  ///
-  /// Note: it might have been preferable to use IReadOnlyList, IReadOnlyList&lt;T&gt; and
-  /// IReadOnlyList&lt;Nullable&lt;T&gt;&gt; instead of IList. The problem is of course that
-  /// there is no bare (non-generic) IReadOnlyList type, so we would have had to use IList as
-  /// the non-generic interface, which would have been confusing and inconsistent. By using IList
-  /// we can at least be consistent, even though it's a big interface with a bunch of mutating
-  /// methods that will always throw in our case.
-  /// </summary>
 
 class ArrowColumnSourceMaker(ChunkedArray chunkedArray) :
   IArrowTypeVisitor<UInt16Type>,
