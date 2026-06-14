@@ -15,7 +15,7 @@ internal class Program {
 
   private static void Nested() {
     var tm = new TableMaker();
-    tm.AddColumn<Int32?[]?>("test-Int32", [[0, 1, 2], [3, 4, null], null, [6]]);
+    tm.AddColumn<bool?[]?>("test-bool", [[false, true], [false, true, null], null, [true]]);
 
     tm.AddColumn<sbyte?[]?>("Int8", [[0, 1, 2], [3, 4, null], null, [6]]);
     tm.AddColumn<Int16?[]?>("Int16", [[0, 1, 2], [3, 4, null], null, [6]]);
@@ -41,8 +41,8 @@ internal class Program {
     col0.FillChunk(stupid, chunk, null);
 
     Debug.WriteLine(DumpChunk1(chunk));
-    Debug.WriteLine(DumpChunk2<Int32?>(chunk));
-    Debug.WriteLine(DumpChunk2<Int32>(chunk));
+    Debug.WriteLine(DumpChunk2<bool?>(chunk));
+    Debug.WriteLine(DumpChunk2<bool>(chunk));
 
     var at2 = ct.ToArrowTable();
     TableComparer.AssertSame(at, at2);
