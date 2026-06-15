@@ -216,7 +216,7 @@ public class AdaptorSelector : IArrowArrayVisitor,
   public IList Result { get; private set; } = new List<int>();
 
   public void Visit(UInt16Array array) {
-    var adapted = new KosakCharAdaptor(array);
+    var adapted = new UInt16ToCharAdaptor(array);
     Result = new ReadOnlyListAdapterForValueTypes<char>(adapted, DeephavenConstants.NullChar);
   }
 
@@ -274,10 +274,10 @@ public class AdaptorSelector : IArrowArrayVisitor,
 /// we want to present it to users as IList&lt;char&gt;. This class wraps IReadOnlyList&lt;ushort?&gt;
 /// and provides IList&lt;char?&gt; to the user.
 /// </summary>
-public class KosakCharAdaptor : IReadOnlyList<char?> {
+public class UInt16ToCharAdaptor : IReadOnlyList<char?> {
   private readonly IReadOnlyList<UInt16?> _underlying;
 
-  public KosakCharAdaptor(IReadOnlyList<UInt16?> underlying) {
+  public UInt16ToCharAdaptor(IReadOnlyList<UInt16?> underlying) {
     _underlying = underlying;
   }
 

@@ -461,5 +461,4 @@ public class ListArrowColumnSource(ChunkedArray chunkedArray, Type elementType) 
   public override void Accept(IColumnSourceVisitor visitor) {
     IColumnSource.Accept(this, visitor);
   }
-
 }
