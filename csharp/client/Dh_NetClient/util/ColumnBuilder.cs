@@ -1,7 +1,6 @@
 ﻿using Apache.Arrow;
 using Apache.Arrow.Types;
 using System.Diagnostics.CodeAnalysis;
-using static Deephaven.Dh_NetClient.TableMaker;
 
 namespace Deephaven.Dh_NetClient;
 

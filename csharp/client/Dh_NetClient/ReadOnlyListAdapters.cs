@@ -1,4 +1,7 @@
-﻿using Apache.Arrow;
+﻿//
+// Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
+//
+using Apache.Arrow;
 using System.Collections;
 using Array = System.Array;
 
@@ -71,7 +74,14 @@ public abstract class ReadOnlyListAdapterBase<T> : IList, IList<T> {
 
   int IList<T>.IndexOf(T value) {
     for (var i = 0; i != _data.Count; ++i) {
-      if (Equals(_data[i], value)) {
+      var element = _data[i];
+      if (element == null) {
+        if (value == null) {
+          return i;
+        }
+        continue;
+      }
+      if (element.Equals(value)) {
         return i;
       }
     }
@@ -149,7 +159,13 @@ public sealed class ReadOnlyListAdapterForValueTypes<T> : ReadOnlyListAdapterBas
   }
 
   public int IndexOf(T item) {
-    throw new NotImplementedException();
+    for (var i = 0; i != _data.Count; ++i) {
+      var element = StripNull(_data[i]);
+      if (element.Equals(item)) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   public void Insert(int index, T item) => _ = NotImplementedForReadOnlyList<bool>();
