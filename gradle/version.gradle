@@ -1,0 +1,18 @@
+// Computes the Deephaven version string for the standalone build in print-version/, which is
+// deliberately independent of the main build (see print-version/settings.gradle) and so can't
+// reuse buildSrc's io.deephaven.common-conventions.gradle. Keep this formula in sync with the
+// duplicate in that file -- see the comment there for why it can't be de-duplicated further.
+//
+// Set ext.deephavenVersionPropertiesFile before applying this script to point at a
+// gradle.properties file other than "$rootDir/gradle.properties".
+def propsFile = project.hasProperty('deephavenVersionPropertiesFile')
+        ? file(project.property('deephavenVersionPropertiesFile'))
+        : new File(rootDir, 'gradle.properties')
+def props = new Properties()
+propsFile.withInputStream { props.load(it) }
+
+def deephavenMajorVersion = props.getProperty('deephavenMajorVersion').trim()
+def deephavenMinorVersion = props.getProperty('deephavenMinorVersion').trim()
+def deephavenBaseQualifier = props.getProperty('deephavenBaseQualifier').trim()
+def versionSeparator = deephavenBaseQualifier.isEmpty() ? "" : "-"
+ext.deephavenVersion = "${deephavenMajorVersion}.${deephavenMinorVersion}${versionSeparator}${deephavenBaseQualifier}"

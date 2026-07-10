@@ -1,0 +1,18 @@
+// Standalone build that does nothing but print the Deephaven version, as fast as Gradle allows.
+// It is intentionally independent of the main build (see settings.gradle in this directory) so
+// that running it never triggers configuration of buildSrc or the main build's subprojects.
+//
+// Usage (from the repo root): ./gradlew -p print-version -q printVersion
+//
+// The version logic itself lives in ../gradle/version.gradle, which is also applied by the main
+// build (buildSrc/src/main/groovy/io.deephaven.common-conventions.gradle), so there is a single
+// source of truth rather than two copies that can drift apart.
+ext.deephavenVersionPropertiesFile = "$rootDir/../gradle.properties"
+apply from: "$rootDir/../gradle/version.gradle"
+
+tasks.register('printVersion') {task ->
+    def theVersion = deephavenVersion
+    task.doLast {
+        println(theVersion)
+    }
+}

@@ -1,0 +1,4 @@
+// Deliberately NOT included from the main repo's settings.gradle. This is an independent
+// Gradle build so that invoking its printVersion task never configures the main build's
+// buildSrc or its 150+ subprojects. See print-version/build.gradle.
+rootProject.name = 'deephaven-print-version'

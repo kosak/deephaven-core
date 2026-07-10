@@ -6,6 +6,10 @@ plugins {
 
 group = 'io.deephaven'
 
+// Keep in sync with gradle/version.gradle and print-version/build.gradle, which duplicate this
+// formula for a standalone build that can print the version without configuring the main build.
+// (A precompiled buildSrc plugin can't `apply from:` an arbitrary script file here -- Gradle's
+// ClassLoaderScope service isn't available in that context -- so this can't be de-duplicated.)
 def deephavenMajorVersion = project.property('deephavenMajorVersion').toString().trim()
 def deephavenMinorVersion = project.property('deephavenMinorVersion').toString().trim()
 def deephavenBaseQualifier = project.property('deephavenBaseQualifier').toString().trim()

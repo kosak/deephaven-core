@@ -32,8 +32,9 @@ project.tasks.register('outputVersion') {task ->
 }
 
 project.tasks.register('printVersion') {task ->
+    def theVersion = project.version.toString()
     task.doLast {
-        println(project.version)
+        println(theVersion)
     }
 }
 
