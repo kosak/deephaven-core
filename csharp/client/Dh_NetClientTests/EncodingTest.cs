@@ -1,6 +1,8 @@
 ﻿//
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
+
+using Apache.Arrow;
 using Deephaven.Dh_NetClient;
 
 namespace Deephaven.Dh_NetClientTests;
@@ -71,7 +73,6 @@ public class EncodingTest {
     _reedict_fields.add(_make_ree_dict_field('Sym', _JUtf8, 'java.lang.String', 0))
     _reedict_schema = _JSchema(_reedict_fields)
     reedict_table = _reedict_src.with_attributes({ 'BarrageSchema': _reedict_schema})
-    )xxx";
     """;
 
   [Test]
@@ -84,9 +85,9 @@ public class EncodingTest {
 
     var expected = new TableMaker();
     expected.AddColumn("Sym", ["a", "a", "a", "b", "b", "b"]);
-    await Assert.That(() => TableComparer.AssertSame(expected, actual)).ThrowsNothing();
-  }
 
+    TableComparer.AssertSame(expected, actual);
+  }
 
   [Test]
   public async Task DictionaryEncodedTable() {
@@ -98,7 +99,7 @@ public class EncodingTest {
 
     var expected = new TableMaker();
     expected.AddColumn("Sym", ["x", "y", "z", "x", "y"]);
-    await Assert.That(() => TableComparer.AssertSame(expected, actual)).ThrowsNothing();
+    TableComparer.AssertSame(expected, actual);
   }
 
   [Test]
@@ -111,6 +112,6 @@ public class EncodingTest {
 
     var expected = new TableMaker();
     expected.AddColumn("Sym", ["a", "a", "a", "b", "b", "b"]);
-    await Assert.That(() => TableComparer.AssertSame(expected, actual)).ThrowsNothing();
+    TableComparer.AssertSame(expected, actual);
   }
 }
