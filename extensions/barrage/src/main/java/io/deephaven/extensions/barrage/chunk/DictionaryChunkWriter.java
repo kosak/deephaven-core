@@ -250,10 +250,10 @@ public class DictionaryChunkWriter extends BaseChunkWriter<Chunk<Values>> {
     }
 
     /**
-     * Wraps {@code delegate}, forcing {@link #useDeephavenNulls()} to {@code false}. Used solely for the
-     * index sub-stream's own serialization (see {@link DictionaryIndexInputStream}) -- the dictionary
-     * index must always be null-encoded the Arrow-standard way (validity bitmap), independent of what
-     * the stream negotiated for everything else. All other options pass through unchanged.
+     * Wraps {@code delegate}, forcing {@link #useDeephavenNulls()} to {@code false}. Used solely for the index
+     * sub-stream's own serialization (see {@link DictionaryIndexInputStream}) -- the dictionary index must always be
+     * null-encoded the Arrow-standard way (validity bitmap), independent of what the stream negotiated for everything
+     * else. All other options pass through unchanged.
      */
     private static final class ArrowStandardNullsOptions implements BarrageOptions {
         private final BarrageOptions delegate;
