@@ -200,8 +200,19 @@ public class DictionaryChunkWriter extends BaseChunkWriter<Chunk<Values>> {
                     buildIndexChunk(sourceChunk, subset, options, state, logicalSize);
             // getInputStream increments the context ref count; close our own reference so the
             // DrainableColumn becomes the sole owner and frees the chunk when it is closed.
+            //
+            // Serialize the index chunk itself with useDeephavenNulls forced off. Object-keyed
+            // dictionaries (see ObjectDictionaryWriterValueMap) never dictionary-encode null -- a null
+            // row's index is always NULL_INT, regardless of useDeephavenNulls -- so that NULL_INT can
+            // only be recognized by a consumer that trusts the validity bitmap. But IntChunkWriter (and
+            // its narrower siblings) treat their wire-level NULL_INT as a self-describing Deephaven null
+            // and skip the validity bitmap whenever the negotiated options say useDeephavenNulls, which
+            // would silently drop this NULL_INT's null-ness on the wire. Scalar-keyed dictionaries are
+            // unaffected by forcing this off: under useDeephavenNulls they dictionary-encode the null
+            // sentinel as a real entry (see e.g. IntDictionaryWriterValueMap), so no NULL_INT remains in
+            // the index chunk and computing the null count honestly finds none either way.
             try (final ChunkWriter.Context idxCtx = indexWriter.makeContext(indexChunk, 0)) {
-                this.indexColumn = indexWriter.getInputStream(idxCtx, null, options);
+                this.indexColumn = indexWriter.getInputStream(idxCtx, null, new ArrowStandardNullsOptions(options));
             }
         }
 
@@ -235,6 +246,45 @@ public class DictionaryChunkWriter extends BaseChunkWriter<Chunk<Values>> {
         @Override
         public void close() throws IOException {
             indexColumn.close();
+        }
+    }
+
+    /**
+     * Wraps {@code delegate}, forcing {@link #useDeephavenNulls()} to {@code false}. Used solely for the index
+     * sub-stream's own serialization (see {@link DictionaryIndexInputStream}) -- the dictionary index must always be
+     * null-encoded the Arrow-standard way (validity bitmap), independent of what the stream negotiated for everything
+     * else. All other options pass through unchanged.
+     */
+    private static final class ArrowStandardNullsOptions implements BarrageOptions {
+        private final BarrageOptions delegate;
+
+        ArrowStandardNullsOptions(@NotNull final BarrageOptions delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean useDeephavenNulls() {
+            return false;
+        }
+
+        @Override
+        public int batchSize() {
+            return delegate.batchSize();
+        }
+
+        @Override
+        public int maxMessageSize() {
+            return delegate.maxMessageSize();
+        }
+
+        @Override
+        public boolean columnsAsList() {
+            return delegate.columnsAsList();
+        }
+
+        @Override
+        public long previewListLengthLimit() {
+            return delegate.previewListLengthLimit();
         }
     }
 
