@@ -663,7 +663,8 @@ std::shared_ptr<Schema> TableHandleImpl::Schema() {
     auto gs_result = server->FlightClient()->GetSchema(options, fd);
     OkOrThrow(DEEPHAVEN_LOCATION_EXPR(gs_result));
 
-    auto schema_result = (*gs_result)->GetSchema(nullptr);
+    auto *dm = new arrow::ipc::DictionaryMemo();
+    auto schema_result = (*gs_result)->GetSchema(dm);
     auto arrow_schema = ValueOrThrow(DEEPHAVEN_LOCATION_EXPR(schema_result));
     auto deephaven_schema = ArrowUtil::MakeDeephavenSchema(*arrow_schema);
     schema_promise.set_value(std::move(deephaven_schema));
