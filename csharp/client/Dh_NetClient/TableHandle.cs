@@ -646,14 +646,23 @@ public class TableHandle : IDisposable {
   }
 
   private async Task<Table> ToArrowTableAsync() {
-    using var reader = GetFlightStream();
-    // Gather record batches
+    var metadata = new Metadata();
+    Server.ForEachHeaderNameAndValue(metadata.Add);
+    var flightTicket = new ArrowFlightLite.Ticket { Ticket_ = Ticket.Ticket_ };
+    using var call = Server.RawFlightStub.DoGet(flightTicket, metadata);
+    using var reader = new FlightIpcReader(call.ResponseStream);
+
+    // Gather record batches, decoding any dictionary/run-end-encoded columns to plain arrays.
     var recordBatches = new List<RecordBatch>();
-    while (await reader.MoveNext()) {
-      recordBatches.Add(reader.Current);
+    while (true) {
+      var batch = await reader.ReadNextRecordBatchAsync();
+      if (batch == null) {
+        break;
+      }
+      recordBatches.Add(EncodedArrayDecoder.DecodeRecordBatch(batch));
     }
 
-    var schema = await reader.Schema;
+    var schema = EncodedArrayDecoder.DecodeSchema(reader.Schema);
     if (recordBatches.Count != 0) {
       return Table.TableFromRecordBatches(schema, recordBatches);
     }

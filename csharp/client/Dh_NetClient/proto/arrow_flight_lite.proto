@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
+ *
+ * A trimmed, wire-compatible subset of Apache Arrow Flight's Flight.proto
+ * (format/Flight.proto in apache/arrow, Apache License 2.0), containing only the
+ * messages and methods this client calls through its own stubs.
+ *
+ * Why this exists: the Apache.Arrow.Flight NuGet package's typed stream readers do not
+ * implement DictionaryBatch IPC messages (its RecordBatchReaderImplementation throws
+ * NotImplementedException), so any stream carrying dictionary-encoded columns is
+ * unreadable through that layer. These stubs expose the raw FlightData messages, which
+ * FlightIpcReader then feeds to the (fully capable) Apache.Arrow ArrowStreamReader.
+ * The package name must remain arrow.flight.protocol so the generated stubs produce
+ * the method paths the server expects; wire compatibility is by field number.
+ */
+syntax = "proto3";
+
+package arrow.flight.protocol;
+
+option csharp_namespace = "Deephaven.Dh_NetClient.ArrowFlightLite";
+
+message FlightDescriptor {
+  enum DescriptorType {
+    UNKNOWN = 0;
+    PATH = 1;
+    CMD = 2;
+  }
+  DescriptorType type = 1;
+  bytes cmd = 2;
+  repeated string path = 3;
+}
+
+message Ticket {
+  bytes ticket = 1;
+}
+
+message FlightData {
+  // Only populated on the first message of a client-to-server descriptor-based stream.
+  FlightDescriptor flight_descriptor = 1;
+  // The Arrow IPC Message flatbuffer (schema, record batch, or dictionary batch header).
+  bytes data_header = 2;
+  // Application-defined metadata; Deephaven's Barrage protocol rides here.
+  bytes app_metadata = 3;
+  // The IPC message body (the buffers), 8-byte aligned as sent.
+  bytes data_body = 1000;
+}
+
+service FlightService {
+  rpc DoGet(Ticket) returns (stream FlightData);
+  rpc DoExchange(stream FlightData) returns (stream FlightData);
+}

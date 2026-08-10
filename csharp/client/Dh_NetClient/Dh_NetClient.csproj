@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <Protobuf Include="..\..\..\proto\proto-backplane-grpc\src\main\proto\deephaven_core\proto\*.proto" ProtoRoot="..\..\..\proto\proto-backplane-grpc\src\main\proto" GrpcServices="Client" />
+    <Protobuf Include="proto\arrow_flight_lite.proto" GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>

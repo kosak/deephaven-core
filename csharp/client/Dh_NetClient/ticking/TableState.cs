@@ -16,8 +16,10 @@ public class TableState {
 
 
   public TableState(Schema schema) {
-    _schema = schema;
-    _colData = schema.FieldsList.Select(f => ArrayColumnSource.CreateFromArrowType(f.DataType, 0)).ToArray();
+    // Encoded (dictionary/run-end-encoded) columns are decoded to plain arrays as their
+    // chunks arrive, so the table state stores plain data and advertises the decoded schema.
+    _schema = EncodedArrayDecoder.DecodeSchema(schema);
+    _colData = _schema.FieldsList.Select(f => ArrayColumnSource.CreateFromArrowType(f.DataType, 0)).ToArray();
     _numRows = 0;
   }
 

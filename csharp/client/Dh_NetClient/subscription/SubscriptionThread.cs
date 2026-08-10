@@ -2,12 +2,11 @@
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
 using System.Diagnostics;
-using Apache.Arrow.Flight;
 using Apache.Arrow;
-using Apache.Arrow.Flight.Client;
+using Deephaven.Dh_NetClient.ArrowFlightLite;
 using Google.Protobuf;
 using Grpc.Core;
-using Io.Deephaven.Proto.Backplane.Grpc;
+using Ticket = Io.Deephaven.Proto.Backplane.Grpc.Ticket;
 
 namespace Deephaven.Dh_NetClient;
 
@@ -15,31 +14,31 @@ internal class SubscriptionThread {
   public static IDisposable Start(Server server, Schema schema, Ticket ticket, IObserver<TickingUpdate> observer) {
     var metadata = new Metadata();
     server.ForEachHeaderNameAndValue(metadata.Add);
-    var fcw = server.FlightClient;
-    var command = "dphn"u8.ToArray();
-    var fd = FlightDescriptor.CreateCommandDescriptor(command);
-    var exchange = fcw.DoExchange(fd, metadata);
+    // We use the raw FlightData-level stub (rather than Apache.Arrow.Flight's typed exchange)
+    // so that FlightIpcReader can decode streams containing DictionaryBatch messages, which
+    // the typed reader does not implement. See FlightIpcReader.
+    var exchange = server.RawFlightStub.DoExchange(metadata);
     var result = UpdateProcessor.Start(exchange, schema, ticket, observer);
     return result;
   }
 
   private class UpdateProcessor : IDisposable {
-    public static UpdateProcessor Start(FlightRecordBatchExchangeCall exchange, Schema schema,
-      Ticket ticket, IObserver<TickingUpdate> observer) {
+    public static UpdateProcessor Start(AsyncDuplexStreamingCall<FlightData, FlightData> exchange,
+      Schema schema, Ticket ticket, IObserver<TickingUpdate> observer) {
       var result = new UpdateProcessor(exchange, schema, ticket, observer);
       // TODO(kosak): This could be a Task rather than a thread.
       Task.Run(result.RunForever).Forget();
       return result;
     }
 
-    private readonly FlightRecordBatchExchangeCall _exchange;
+    private readonly AsyncDuplexStreamingCall<FlightData, FlightData> _exchange;
     private readonly Schema _schema;
     private readonly Ticket _ticket;
     private readonly IObserver<TickingUpdate> _observer;
     private InterlockedLong _cancelled;
 
-    private UpdateProcessor(FlightRecordBatchExchangeCall exchange, Schema schema, Ticket ticket,
-      IObserver<TickingUpdate> observer) {
+    private UpdateProcessor(AsyncDuplexStreamingCall<FlightData, FlightData> exchange,
+      Schema schema, Ticket ticket, IObserver<TickingUpdate> observer) {
       _exchange = exchange;
       _schema = schema;
       _ticket = ticket;
@@ -77,39 +76,41 @@ internal class SubscriptionThread {
     }
 
     private async Task RunForeverHelper() {
-      var batchBuilder = new RecordBatch.Builder();
-      var arrayBuilder = new Int32Array.Builder();
-      batchBuilder.Append("Dummy", true, arrayBuilder.Build());
-      var uselessMessage = batchBuilder.Build();
-
+      // The first FlightData of a descriptor-based exchange carries the descriptor; the
+      // Barrage subscription request itself rides in app_metadata. No record batch is needed.
       var subReq = BarrageProcessor.CreateSubscriptionRequest(_ticket.Ticket_.ToByteArray());
-      var subReqAsByteString = ByteString.CopyFrom(subReq);
-      await _exchange.RequestStream.WriteAsync(uselessMessage, subReqAsByteString);
+      var subscribeMessage = new FlightData {
+        FlightDescriptor = new FlightDescriptor {
+          Type = FlightDescriptor.Types.DescriptorType.Cmd,
+          Cmd = ByteString.CopyFrom("dphn"u8)
+        },
+        AppMetadata = ByteString.CopyFrom(subReq)
+      };
+      await _exchange.RequestStream.WriteAsync(subscribeMessage);
 
-      var responseStream = _exchange.ResponseStream;
+      using var reader = new FlightIpcReader(_exchange.ResponseStream);
 
       var numCols = _schema.FieldsList.Count;
       var bp = new BarrageProcessor(_schema);
 
       while (true) {
-        var moveNextSucceeded = await responseStream.MoveNext();
-        if (!moveNextSucceeded) {
+        var recordBatch = await reader.ReadNextRecordBatchAsync();
+        if (recordBatch == null) {
           Debug.WriteLine("SubscriptionThread: all done");
           return;
         }
 
         byte[]? metadateBytes = null;
 
-        var mds = responseStream.ApplicationMetadata;
+        var mds = reader.TakeAppMetadata();
         if (mds.Count > 0) {
           if (mds.Count > 1) {
             throw new Exception($"Expected metadata count 1, got {mds.Count}");
           }
 
-          metadateBytes = mds[0].ToByteArray();
+          metadateBytes = mds[0];
         }
 
-        var recordBatch = responseStream.Current;
         if (recordBatch.ColumnCount != numCols) {
           throw new Exception($"Expected {numCols} columns in RecordBatch, got {recordBatch.ColumnCount}");
         }

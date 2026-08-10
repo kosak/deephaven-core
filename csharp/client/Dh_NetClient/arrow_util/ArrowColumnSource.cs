@@ -20,10 +20,19 @@ namespace Deephaven.Dh_NetClient;
 
 public abstract class ArrowColumnSource : IColumnSource {
   public static ArrowColumnSource CreateFromColumn(Column column) {
-    var visitor = new ArrowColumnSourceMaker(column.Data);
-    column.Type.Accept(visitor);
+    var typeToUse = column.Type;
+    var dataToUse = column.Data;
+    if (EncodedArrayDecoder.IsEncodedType(typeToUse)) {
+      var decoded = Enumerable.Range(0, dataToUse.ArrayCount)
+        .Select(i => EncodedArrayDecoder.Decode(dataToUse.ArrowArray(i)))
+        .ToArray();
+      dataToUse = new ChunkedArray(decoded);
+      typeToUse = EncodedArrayDecoder.DecodeType(typeToUse);
+    }
+    var visitor = new ArrowColumnSourceMaker(dataToUse);
+    typeToUse.Accept(visitor);
     if (visitor.Result == null) {
-      throw new Exception($"No result set for {column.Data.DataType}");
+      throw new Exception($"No result set for {dataToUse.DataType}");
     }
     return visitor.Result;
   }
@@ -32,7 +41,7 @@ public abstract class ArrowColumnSource : IColumnSource {
     if (la.Length != 1) {
       throw new Exception($"Expected ListArray of length 1, got {la.Length}");
     }
-    var array = la.GetSlicedValues(0);
+    var array = EncodedArrayDecoder.Decode(la.GetSlicedValues(0));
     var chunkedArray = new ChunkedArray(new[] { array });
 
     var visitor = new ArrowColumnSourceMaker(chunkedArray);
