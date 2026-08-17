@@ -1,4 +1,5 @@
 {
+  "builtin-baseline": "b1a9ffcf749df96638bfebc8640e9c807cf45c0b",
   "dependencies": [
     "immer",
     "grpc",
@@ -8,10 +9,5 @@
         "flight"
       ]
     }
-  ],
-
-  "overrides": [
-    { "name": "arrow", "version": "16.1.0#1" },
-    { "name": "protobuf", "version": "4.25.1" }
   ]
 }
