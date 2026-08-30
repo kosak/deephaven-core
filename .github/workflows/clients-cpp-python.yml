@@ -30,7 +30,18 @@ concurrency:
 #    the binaries for the C++ dependencies we build (grpc, arrow, etc.). It is
 #    managed automatically for us by cmake/vcpkg/nuget. This optimization is
 #    important because building the C++ dependencies takes significant time
-#    (a couple of hours for the Windows build)
+#    (a couple of hours for the Windows build). Reading requires
+#    authentication (GitHub Packages nuget feeds have no anonymous access),
+#    so this cache is only usable by CI, not by developers.
+#
+# 3. [Linux only] The C++ dependencies image on ghcr.io
+#    (ghcr.io/deephaven/deephaven-core-cpp-deps), a Docker image holding the
+#    pinned C++ toolchain plus all vcpkg-built dependencies, tagged with a
+#    hash of its inputs (vcpkg.json, baseline, triplets, Dockerfile). Unlike
+#    the nuget feed, ghcr.io allows anonymous public pulls, so the
+#    :cpp-client:cppClient Gradle task gives developers prebuilt dependencies
+#    with no credentials. This workflow publishes that image on pushes to
+#    main whenever its tag does not exist yet.
 #===============================================================================
 
 env:
@@ -66,30 +77,99 @@ jobs:
           echo "dhc_version=$(cat build/version)" >> $GITHUB_OUTPUT
 
   #=============================================================================
-  # Build the C++ Client
+  # Build the C++ Client (Linux)
+  #
+  # Delegates to the same Gradle task developers use locally:
+  # :cpp-client:cppClient builds the client in Docker on top of a
+  # content-addressed dependencies image (see cpp-client/docker/deps.Dockerfile).
+  # This job additionally holds write credentials: on pushes it lets vcpkg
+  # publish newly built packages to the GitHub Packages nuget feed and pushes
+  # the deps image to ghcr.io, so developers (and PR builds) get cache hits
+  # with anonymous pulls.
   #=============================================================================
-  cpp_job:
-    name: "Build C++"
+  cpp_linux_job:
+    name: "Build C++ (Linux)"
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            target_triplet: x64-linux-dynamic-release
-          - os: windows-2025
-            # We once had a custom triplet x64-windows-release here,
-            # but it seemed to interact poorly with certain Google packages
-            # like grpc and protobuf. Those packages, on Windows only,
-            # don't seem to honor our triplet and they end up both building
-            # too much and then not caching it. So every build takes a long time.
-            # We will try to investigate this further. Until then, we use the
-            # standard triplet "x64-windows". By the way, for historical reasons
-            # they are called triplets even if they don't have three parts.
-            target_triplet: x64-windows
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      DEEPHAVEN_CPP_DEPS_IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/deephaven-core-cpp-deps
+
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v6
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # Needed only to push the deps image; pulls are anonymous.
+      - name: Login to GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pulls the deps image when it exists; on a miss (deps inputs changed)
+      # builds it with vcpkg, using the nuget binary cache so only changed
+      # packages are rebuilt (readwrite on push, read on PRs).
+      - name: Build C++ client
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VCPKG_NUGET_MODE: ${{ github.event_name == 'push' && 'readwrite' || 'read' }}
+        run: ./gradlew :cpp-client:cppClient
+
+      - name: Publish C++ deps image
+        if: github.event_name == 'push'
+        run: ./gradlew :cpp-client:cppDepsImagePublish
+
+      # Export the install tree from the image for the python_ticking_job.
+      # -h dereferences symlinks (the deps image links /opt/deephaven/{include,lib}
+      # into the vcpkg install tree) so the tarball is self-contained; the
+      # transform renames the top-level directory to dhinstall, the layout the
+      # downstream job expects.
+      - name: Tar install dir
+        run: |
+          docker run --rm deephaven/cpp-client:local-build \
+            tar -czh -f - \
+            --exclude=deephaven/src --exclude=deephaven/proto --exclude=deephaven/log \
+            --transform 's,^deephaven,dhinstall,' \
+            -C /opt deephaven > cpp-client-install.tar.gz
+
+      - name: Upload install dir
+        uses: actions/upload-artifact@v7
+        with:
+          name: cpp-client-install-ubuntu-24.04
+          path: cpp-client-install.tar.gz
+
+  #=============================================================================
+  # Build the C++ Client (Windows)
+  #
+  # Still a host-side vcpkg build; not yet unified with the Gradle/Docker
+  # path used for Linux.
+  #=============================================================================
+  cpp_windows_job:
+    name: "Build C++ (Windows)"
+    permissions:
+      contents: read
+      packages: write
+    runs-on: windows-2025
+    env:
+      # We once had a custom triplet x64-windows-release here,
+      # but it seemed to interact poorly with certain Google packages
+      # like grpc and protobuf. Those packages, on Windows only,
+      # don't seem to honor our triplet and they end up both building
+      # too much and then not caching it. So every build takes a long time.
+      # We will try to investigate this further. Until then, we use the
+      # standard triplet "x64-windows". By the way, for historical reasons
+      # they are called triplets even if they don't have three parts.
+      TARGET_TRIPLET: x64-windows
     defaults:
       run:
         # This gets you Git Bash on Windows
@@ -125,41 +205,12 @@ jobs:
       - name: Bootstrap vcpkg
         run: "$GITHUB_WORKSPACE/vcpkg/bootstrap-vcpkg.sh"
 
-      # [Note: Linux only]
-      # Get mono so that we can run nuget. This is because the nuget.exe that
-      # ships with vcpkg is an old .NET Framework binary (Windows format), and
-      # only mono knows how to run such a thing on Linux. Some day the
-      # maintainers will fix this so it runs with the cross-platform "dotnet".
-
-      - name: Install mono (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mono-complete
-
       # Adapted from
-      # https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages?pivots=linux-runner
+      # https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-packages
       # Configure nuget to know how to download (or upload) each cached
       # package that we need (or create)
 
-      - name: "Configure nuget (Linux)"
-        if: runner.os == 'Linux'
-        run: |
-          vcpkg_exe=${{ github.workspace }}/vcpkg/vcpkg
-          nuget_dotnet=$($vcpkg_exe fetch nuget | tail -n 1)
-          mono $nuget_dotnet \
-            sources add \
-            -Source "${{ env.GH_PACKAGES_FEED }}" \
-            -StorePasswordInClearText \
-            -Name GitHubPackages \
-            -UserName "${{ env.GH_PACKAGES_USERNAME }}" \
-            -Password "${{ secrets.GITHUB_TOKEN }}"
-          mono $nuget_dotnet \
-            setapikey "${{ secrets.GITHUB_TOKEN }}" \
-            -Source "${{ env.GH_PACKAGES_FEED }}"
-
-      - name: "Configure nuget (Windows)"
-        if: runner.os == 'Windows'
+      - name: Configure nuget
         shell: pwsh
         run: |
           $nuget_exe = & ./vcpkg/vcpkg.exe fetch nuget
@@ -188,7 +239,7 @@ jobs:
           -DVCPKG_INSTALL_OPTIONS="--x-abi-tools-use-exact-versions" \
           -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON \
           -DCMAKE_INSTALL_PREFIX="$DHINSTALL" \
-          -DVCPKG_TARGET_TRIPLET="${{ matrix.target_triplet }}" \
+          -DVCPKG_TARGET_TRIPLET="${{ env.TARGET_TRIPLET }}" \
           -DVCPKG_OVERLAY_TRIPLETS=cpp-client/deephaven/custom-triplets \
           2>&1 | tee configure.log
 
@@ -198,7 +249,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: vcpkg-debug-${{ matrix.os }}-${{ github.run_id }}
+          name: vcpkg-debug-windows-2025-${{ github.run_id }}
           path: configure.log
 
       # Diagnostic: collect the ABI info, in case we need to debug
@@ -216,7 +267,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: abi-info-${{ matrix.os }}-${{ github.run_id }}
+          name: abi-info-windows-2025-${{ github.run_id }}
           path: abi-dump/
 
       # Build our executables and install them in the configured install
@@ -240,7 +291,7 @@ jobs:
         id: upload-install-directory
         uses: actions/upload-artifact@v7
         with:
-          name: cpp-client-install-${{ matrix.os }}
+          name: cpp-client-install-windows-2025
           path: cpp-client-install.tar.gz
 
   #=============================================================================
@@ -285,7 +336,7 @@ jobs:
         os: [ubuntu-24.04, windows-2025]
     name: Python ticking
     runs-on: ${{ matrix.os }}
-    needs: [cpp_job, python_static_job, version_job]
+    needs: [cpp_linux_job, cpp_windows_job, python_static_job, version_job]
     defaults:
       run:
         shell: bash
