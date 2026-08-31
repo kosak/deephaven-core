@@ -203,7 +203,7 @@ public abstract class HashMapBase implements NullableLongLongMap {
 
     /**
      * @param kv Our keys and values array
-     * @param space The array to populate (if {@code array} is not null and {@code array.length} >=
+     * @param space The array to populate (if {@code space} is not null and {@code space.length} >=
      *        {@link HashMapBase#size()}, otherwise an array of length {@link HashMapBase#size()} will be allocated.
      * @param wantValues false to return keys; true to return values
      * @return The passed-in or newly-allocated array of (keys or values).
@@ -213,7 +213,8 @@ public abstract class HashMapBase implements NullableLongLongMap {
         final long[] result = space != null && space.length >= sz ? space : new long[sz];
         int nextIndex = 0;
         // In a single-threaded case, we would not need the 'nextIndex < sz' part of the conjunction. But in the
-        // unsynchronized concurrent case, we might encounter more keys than would fit in the array. To avoid an index
+        // unsynchronized concurrent case, we might encounter more keys than would fit in the array (because
+        // the set of keys grew concurrently after we checked the size). To avoid an index
         // range exception, we do the 'nextIndex < sz' test here.
         for (int ii = 0; ii < kv.length && nextIndex < sz; ii += 2) {
             final long key = kv[ii];
