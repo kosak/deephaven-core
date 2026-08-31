@@ -148,7 +148,7 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
         size = 0;
         nonEmptySlots = 0;
         long[] newKvs = new long[newNumLongs];
-        final long newMagic = fastmodMagic(newNumLongs / (entriesPerBucket * 2));
+        final long newReciprocal = reciprocalFor(newNumLongs / (entriesPerBucket * 2));
 
         // Copy the keys and values over.
         for (int ii = 0; ii < oldKeysAndValues.length; ii += 2) {
@@ -157,7 +157,7 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
                 continue;
             }
             final long oldValue = oldKeysAndValues[ii + 1];
-            putImplNoTranslate(newKvs, newMagic, oldKey, oldValue, true);
+            putImplNoTranslate(newKvs, newReciprocal, oldKey, oldValue, true);
         }
         setKeysAndValues(newKvs);
     }
@@ -170,7 +170,7 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
         }
     }
 
-    protected abstract long putImplNoTranslate(long[] kvs, long magic, long key, long value, boolean insertOnly);
+    protected abstract long putImplNoTranslate(long[] kvs, long numBucketsReciprocal, long key, long value, boolean insertOnly);
 
     protected abstract void setKeysAndValues(long[] keysAndValues);
 
@@ -326,23 +326,25 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
     }
 
     /**
-     * Computes the magic constant for Lemire's exact "fastmod" remainder: for 32-bit unsigned x and divisor d,
-     * x % d == unsignedMultiplyHigh(magic * x, d) where magic = ceil(2^64 / d). The batch API makes this affordable
-     * without stored per-array state: each batch call snapshots the keysAndValues array once, derives the bucket
-     * count from its length, and pays for this one division across the whole batch.
+     * Computes the scaled reciprocal used by Lemire's exact "fastmod" remainder: ceil(2^64 / numBuckets), i.e. the
+     * reciprocal of the bucket count in unsigned 0.64 fixed-point, rounded up. For 32-bit unsigned x,
+     * x % numBuckets == unsignedMultiplyHigh(reciprocal * x, numBuckets). The batch API makes this affordable without
+     * stored per-array state: each batch call snapshots the keysAndValues array once, derives the bucket count from
+     * its length, and pays for this one division across the whole batch. The result is only meaningful together with
+     * the numBuckets it was computed from — callers must recompute it whenever they pick up a different array.
      */
-    static long fastmodMagic(int d) {
-        return Long.divideUnsigned(-1L, d) + 1;
+    static long reciprocalFor(int numBuckets) {
+        return Long.divideUnsigned(-1L, numBuckets) + 1;
     }
 
     /**
      * Experimental (HMLFnomod, batch edition): same deliberately weak hash as the original probe1 — a 32-bit fold
      * that sends sequentially indexed keys to adjacent, distinct buckets (cache-friendly) — but the prime modulo is
-     * computed exactly via fastmod with the caller-supplied precomputed magic constant instead of a division.
+     * computed exactly via fastmod with the caller-supplied precomputed reciprocal instead of a division.
      */
-    static int probe1(long key, int range, long magic) {
+    static int probe1(long key, int range, long numBucketsReciprocal) {
         final long fold32 = (key ^ (key >>> 32)) & 0xffffffffL;
-        return (int) Math.unsignedMultiplyHigh(magic * fold32, range);
+        return (int) Math.unsignedMultiplyHigh(numBucketsReciprocal * fold32, range);
     }
 
     /**

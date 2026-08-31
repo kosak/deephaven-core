@@ -42,14 +42,14 @@ public final class HMLFnomodK2V2 extends HMLFnomodK2V2Base implements NullableLo
 
     private void putBatch(long[] keys, long[] values, long[] oldValues, boolean insertOnly) {
         long[] kvs = keysAndValues;
-        long magic = kvs == null ? 0 : magicFor(kvs);
+        long numBucketsReciprocal = kvs == null ? 0 : reciprocalFor(kvs);
         for (int ii = 0; ii < keys.length; ++ii) {
-            oldValues[ii] = putImpl(kvs, magic, keys[ii], values[ii], insertOnly);
-            // putImpl may have allocated or rehashed; if so, pick up the new array and recompute the magic constant.
+            oldValues[ii] = putImpl(kvs, numBucketsReciprocal, keys[ii], values[ii], insertOnly);
+            // putImpl may have allocated or rehashed; if so, pick up the new array and recompute the reciprocal.
             final long[] cur = keysAndValues;
             if (cur != kvs) {
                 kvs = cur;
-                magic = magicFor(kvs);
+                numBucketsReciprocal = reciprocalFor(kvs);
             }
         }
     }
@@ -58,9 +58,9 @@ public final class HMLFnomodK2V2 extends HMLFnomodK2V2Base implements NullableLo
     public void get(long[] keys, long[] result) {
         // Lock-free reader: one volatile read and one division amortized over the whole batch.
         final long[] kvs = keysAndValues;
-        final long magic = kvs == null ? 0 : magicFor(kvs);
+        final long numBucketsReciprocal = kvs == null ? 0 : reciprocalFor(kvs);
         for (int ii = 0; ii < keys.length; ++ii) {
-            result[ii] = getImpl(kvs, magic, keys[ii]);
+            result[ii] = getImpl(kvs, numBucketsReciprocal, keys[ii]);
         }
     }
 
@@ -68,9 +68,9 @@ public final class HMLFnomodK2V2 extends HMLFnomodK2V2Base implements NullableLo
     public void remove(long[] keys, long[] oldValues) {
         // Single-writer contract and remove never reallocates, so one snapshot suffices.
         final long[] kvs = keysAndValues;
-        final long magic = kvs == null ? 0 : magicFor(kvs);
+        final long numBucketsReciprocal = kvs == null ? 0 : reciprocalFor(kvs);
         for (int ii = 0; ii < keys.length; ++ii) {
-            oldValues[ii] = removeImpl(kvs, magic, keys[ii]);
+            oldValues[ii] = removeImpl(kvs, numBucketsReciprocal, keys[ii]);
         }
     }
 

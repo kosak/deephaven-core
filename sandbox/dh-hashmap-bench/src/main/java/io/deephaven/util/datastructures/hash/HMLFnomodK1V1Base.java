@@ -8,23 +8,23 @@ public abstract class HMLFnomodK1V1Base extends HMLFnomodBase {
         super(desiredInitialCapacity, loadFactor, noEntryValue);
     }
 
-    static long magicFor(long[] kvs) {
-        return fastmodMagic(kvs.length / (1 * 2));
+    static long reciprocalFor(long[] kvs) {
+        return reciprocalFor(kvs.length / (1 * 2));
     }
 
-    final long putImpl(long[] kvs, long magic, long key, long value, boolean insertOnly) {
+    final long putImpl(long[] kvs, long numBucketsReciprocal, long key, long value, boolean insertOnly) {
         if (kvs == null) {
             kvs = allocateKeysAndValuesArray(1);
-            magic = magicFor(kvs);
+            numBucketsReciprocal = reciprocalFor(kvs);
         }
         final long fixedKey = fixKey(key);
-        return putImplNoTranslate(kvs, magic, fixedKey, value, insertOnly);
+        return putImplNoTranslate(kvs, numBucketsReciprocal, fixedKey, value, insertOnly);
     }
 
     @Override
-    protected final long putImplNoTranslate(long[] kvs, long magic, long key, long value, boolean insertOnly) {
+    protected final long putImplNoTranslate(long[] kvs, long numBucketsReciprocal, long key, long value, boolean insertOnly) {
         // To minimize possible painful effects of nonsynchronized access to our array, we get the reference once.
-        int location = getLocationFor(kvs, key, magic);
+        int location = getLocationFor(kvs, key, numBucketsReciprocal);
         if (location >= 0) {
             // Item found, so replace it (unless 'insertOnly' is set).
             final long oldValue = kvs[location + 1];
@@ -59,26 +59,26 @@ public abstract class HMLFnomodK1V1Base extends HMLFnomodBase {
         return defaultReturnValue();
     }
 
-    final long getImpl(long[] kvs, long magic, long key) {
+    final long getImpl(long[] kvs, long numBucketsReciprocal, long key) {
         if (kvs == null) {
             return defaultReturnValue();
         }
         key = fixKey(key);
         // To minimize possible painful effects of nonsynchronized access to our array, we get the reference once.
-        final int location = getLocationFor(kvs, key, magic);
+        final int location = getLocationFor(kvs, key, numBucketsReciprocal);
         if (location < 0) {
             return defaultReturnValue();
         }
         return kvs[location + 1];
     }
 
-    final long removeImpl(long[] kvs, long magic, long key) {
+    final long removeImpl(long[] kvs, long numBucketsReciprocal, long key) {
         if (kvs == null) {
             return defaultReturnValue();
         }
         key = fixKey(key);
         // To minimize possible painful effects of nonsynchronized access to our array, we get the reference once.
-        final int location = getLocationFor(kvs, key, magic);
+        final int location = getLocationFor(kvs, key, numBucketsReciprocal);
         if (location < 0) {
             return defaultReturnValue();
         }
@@ -87,13 +87,13 @@ public abstract class HMLFnomodK1V1Base extends HMLFnomodBase {
         return kvs[location + 1];
     }
 
-    private static int getLocationFor(long[] kvs, long target, long magic) {
+    private static int getLocationFor(long[] kvs, long target, long numBucketsReciprocal) {
         // In units of longs
         final int length = kvs.length;
         // In units of buckets
         final int numBuckets = length / (1 * 2);
 
-        final int bucketProbe = probe1(target, numBuckets, magic);
+        final int bucketProbe = probe1(target, numBuckets, numBucketsReciprocal);
         // In units of longs again
         int probe = bucketProbe * (1 * 2);
 
