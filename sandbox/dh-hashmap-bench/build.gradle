@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    // PrimeFinder lives in Deephaven's standalone hash library (same artifact deephaven-core uses)
+    implementation 'io.deephaven:hash:0.5.0'
+    // Same fastutil version as deephaven-core's version catalog; also serves as the benchmark baseline
+    implementation 'it.unimi.dsi:fastutil:8.5.19'
+    compileOnly 'org.jetbrains:annotations:26.1.0'
+
+    implementation 'org.openjdk.jmh:jmh-core:1.37'
+    annotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+}
+
+application {
+    // JMH's own CLI: ./gradlew run --args="<regex> -p size=... -prof gc ..."
+    mainClass = 'org.openjdk.jmh.Main'
+}
+
+tasks.withType(JavaExec).configureEach {
+    // JMH forks inherit java.class.path, so plain `run` (or IntelliJ run configs) work fine
+    jvmArgs '-Xmx8g'
+}
