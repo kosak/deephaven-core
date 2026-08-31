@@ -88,12 +88,22 @@ public class NullableLongLongMapBench {
     public int chunkSize;
 
     /**
-     * "random": uniform random longs. "sequential": a contiguous block of small keys — the case the original weak
-     * probe1 hash is deliberately cache-friendly for (adjacent keys land in adjacent buckets); the nomod variants
-     * scatter these, so always compare both distributions before believing an improvement.
+     * "random": uniform random longs. "sequential": one contiguous block of small keys. "pulsed": pulses of N(i)
+     * sequential keys separated by gaps of G(i), N ~ U[100, 10000], G ~ U[100, 100000] — the shape of real row keys.
+     * All DH probe1 variants send adjacent keys to adjacent buckets (the deliberately weak fold), so sequential and
+     * pulsed content is their cache-friendly case; a scrambling hash cannot exploit it.
      */
     @Param({"random"})
     public String keyDist;
+
+    /**
+     * Number of keys probed per getHit/getMiss invocation. 0 means "all table keys" (the original behavior). Set it
+     * far below size to model a large resident table with a comparatively small read: hits are a uniform shuffled
+     * sample for keyDist=random, and a contiguous ascending window of pulses for keyDist=pulsed; misses are fresh
+     * random longs, or keys from the gaps adjacent to the window, respectively.
+     */
+    @Param({"0"})
+    public int lookups;
 
     /** When true, maps are created at full capacity so fill measures pure insertion, not rehashing. */
     @Param({"false"})
@@ -119,6 +129,7 @@ public class NullableLongLongMapBench {
     private long[] missingKeys;
     private long[][] keyChunks;
     private long[][] valueChunks;
+    private long[][] hitChunks;
     private long[][] missChunks;
     private long[] scratch;
     private NullableLongLongMap filledMap;
@@ -127,20 +138,56 @@ public class NullableLongLongMapBench {
     public void setupTrial() {
         // L64X128MixRandom: fixed seed, statistically solid, and (unlike Random) cheap enough to not matter
         final RandomGenerator rng = RandomGeneratorFactory.of("L64X128MixRandom").create(20260831);
+        final int nLookups = lookups == 0 ? size : lookups;
+        long[] hits;
         if ("sequential".equals(keyDist)) {
             keys = new long[size];
-            missingKeys = new long[size];
+            missingKeys = new long[nLookups];
             final long start = 1_000_000;
             for (int i = 0; i < size; ++i) {
                 keys[i] = start + i;
+            }
+            for (int i = 0; i < nLookups; ++i) {
                 missingKeys[i] = start + size + i;
+            }
+            hits = sampleWindow(keys, nLookups, rng);
+        } else if ("pulsed".equals(keyDist)) {
+            // Pulses of N ~ U[100,10000] sequential keys, gaps of G ~ U[100,100000].
+            keys = new long[size];
+            long k = 1_000_000;
+            int i = 0;
+            while (i < size) {
+                final int n = Math.min(rng.nextInt(100, 10_001), size - i);
+                for (int j = 0; j < n; ++j) {
+                    keys[i++] = k++;
+                }
+                k += rng.nextInt(100, 100_001);
+            }
+            // Hits: a contiguous ascending window of pulses. Misses: gap keys — for each table key in a (shifted)
+            // window, probe the key one-full-gap below the table's start, guaranteed absent because all table keys
+            // are >= start and misses are < start... simpler and airtight: mirror the window to negative space.
+            hits = sampleWindow(keys, nLookups, rng);
+            missingKeys = new long[nLookups];
+            for (int m = 0; m < nLookups; ++m) {
+                missingKeys[m] = -hits[m]; // same pulse structure, disjoint from all table keys (which are positive)
             }
         } else {
             keys = distinctKeys(rng, size);
-            missingKeys = distinctKeys(rng, size); // 128-bit-ish state space: overlap with 'keys' is negligible
+            missingKeys = distinctKeys(rng, nLookups); // 128-bit-ish state space: overlap is negligible
+            if (lookups == 0) {
+                hits = keys;
+            } else {
+                hits = new long[nLookups];
+                for (int i = 0; i < nLookups; ++i) {
+                    hits[i] = keys[rng.nextInt(size)];
+                }
+            }
         }
         keyChunks = chunk(keys, chunkSize);
+        hitChunks = chunk(hits, chunkSize);
         missChunks = chunk(missingKeys, chunkSize);
+        keys = null; // the table is only needed via keyChunks from here on; free the duplicate for big tables
+        missingKeys = null;
         valueChunks = new long[keyChunks.length][];
         for (int c = 0, base = 0; c < keyChunks.length; base += keyChunks[c].length, ++c) {
             valueChunks[c] = new long[keyChunks[c].length];
@@ -169,6 +216,12 @@ public class NullableLongLongMapBench {
                 }
             }
         }
+    }
+
+    /** A contiguous ascending window of nLookups table keys starting at a random position (streaming-read shape). */
+    private static long[] sampleWindow(long[] tableKeys, int nLookups, RandomGenerator rng) {
+        final int start = nLookups >= tableKeys.length ? 0 : rng.nextInt(tableKeys.length - nLookups);
+        return Arrays.copyOfRange(tableKeys, start, start + Math.min(nLookups, tableKeys.length));
     }
 
     private static long[][] chunk(long[] src, int chunkSize) {
@@ -222,13 +275,13 @@ public class NullableLongLongMapBench {
         return map;
     }
 
-    /** Look up every present key once, in insertion order. */
+    /** Look up {lookups} present keys (all table keys, in insertion order, when lookups=0). */
     @Benchmark
     public void getHit(Blackhole bh) {
-        sweep(filledMap, keyChunks, scratch, bh);
+        sweep(filledMap, hitChunks, scratch, bh);
     }
 
-    /** Look up {size} absent keys. */
+    /** Look up {lookups} absent keys. */
     @Benchmark
     public void getMiss(Blackhole bh) {
         sweep(filledMap, missChunks, scratch, bh);
