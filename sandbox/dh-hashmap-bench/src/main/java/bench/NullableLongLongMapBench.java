@@ -1,5 +1,8 @@
 package bench;
 
+import io.deephaven.util.datastructures.hash.HMLFamacK1V1;
+import io.deephaven.util.datastructures.hash.HMLFamacK2V2;
+import io.deephaven.util.datastructures.hash.HMLFamacK4V4;
 import io.deephaven.util.datastructures.hash.HMLFnomodK1V1;
 import io.deephaven.util.datastructures.hash.HMLFnomodK2V2;
 import io.deephaven.util.datastructures.hash.HMLFnomodK4V4;
@@ -54,6 +57,9 @@ public class NullableLongLongMapBench {
         NOMOD_K1V1(HMLFnomodK1V1::new),
         NOMOD_K2V2(HMLFnomodK2V2::new),
         NOMOD_K4V4(HMLFnomodK4V4::new),
+        AMAC_K1V1(HMLFamacK1V1::new),
+        AMAC_K2V2(HMLFamacK2V2::new),
+        AMAC_K4V4(HMLFamacK4V4::new),
         FASTUTIL(FastutilAdapter::new);
 
         final IntFunction<NullableLongLongMap> factory;
@@ -63,7 +69,7 @@ public class NullableLongLongMapBench {
         }
     }
 
-    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "FASTUTIL"})
+    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "FASTUTIL"})
     public Impl impl;
 
     @Param({"1000000"})

@@ -23,7 +23,10 @@ public final class SmokeTest {
                 "HashMapLockFreeK4V4", HashMapLockFreeK4V4::new,
                 "HMLFnomodK1V1", HMLFnomodK1V1::new,
                 "HMLFnomodK2V2", HMLFnomodK2V2::new,
-                "HMLFnomodK4V4", HMLFnomodK4V4::new);
+                "HMLFnomodK4V4", HMLFnomodK4V4::new,
+                "HMLFamacK1V1", HMLFamacK1V1::new,
+                "HMLFamacK2V2", HMLFamacK2V2::new,
+                "HMLFamacK4V4", HMLFamacK4V4::new);
         for (final Map.Entry<String, Supplier<NullableLongLongMap>> e : impls.entrySet()) {
             for (final boolean sequential : new boolean[] {false, true}) {
                 run(e.getKey(), e.getValue().get(), sequential);

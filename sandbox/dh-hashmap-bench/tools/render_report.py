@@ -19,7 +19,7 @@ import sys
 LIGHT_SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
 DARK_SERIES = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
 IMPL_ORDER = ["K1V1", "K2V2", "K4V4", "FASTUTIL", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4",
-              "K1V1 (megamorphic)"]
+              "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "K1V1 (megamorphic)"]
 
 PLOT_H = 220
 M_TOP, M_BOT, M_LEFT, M_RIGHT = 16, 34, 64, 12
@@ -176,11 +176,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("inputs", nargs="+")
     ap.add_argument("-o", "--output", default="results/report.html")
+    ap.add_argument("--impls", help="comma-separated series filter; the palette holds 8 distinct series")
     args = ap.parse_args()
 
     runs = load_runs(args.inputs)
     run_labels = [r[0] for r in runs]
     benches, impls, data = collect(runs)
+    if args.impls:
+        keep = set(args.impls.split(","))
+        impls = [i for i in impls if i in keep]
+    if len(impls) > 8:
+        sys.exit(f"{len(impls)} series exceeds the 8-color palette; use --impls to select up to 8")
     first = runs[0][1][0]
     unit = first["primaryMetric"]["scoreUnit"]
     meta = (f'JDK {first.get("jdkVersion", "?")} · {first.get("vmName", "?")} · '
