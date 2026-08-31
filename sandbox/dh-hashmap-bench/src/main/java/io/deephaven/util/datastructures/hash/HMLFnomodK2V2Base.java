@@ -130,7 +130,9 @@ public abstract class HMLFnomodK2V2Base extends HMLFnomodBase {
         final int offset = (1 + probe2(target, numBuckets - 2)) * (2 * 2);
         final int probeStart = probe;
         while (true) {
-            probe = (int) (((long) probe + offset) % length);
+            // offset < length and probe < length, so one conditional subtraction replaces the modulo.
+            final long advanced = (long) probe + offset;
+            probe = (int) (advanced >= length ? advanced - length : advanced);
             if (probe == probeStart) {
                 throw new IllegalStateException("Wrapped around? Impossible.");
             }
