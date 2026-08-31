@@ -17,7 +17,8 @@ LF_FILES = [("0.5", "results/final-hit-lf0.5.json"), ("0.75", "results/final-hit
             ("0.9", "results/final-hit-lf0.9.json"), ("0.95", "results/final-hit-lf0.95.json")]
 MISS_FILE = "results/final-get.json"
 # 7 series for the charts (palette holds 8); the full 11-impl numbers appear in the appendix table.
-CHART_IMPLS = ["K1V1", "K4V4", "FASTUTIL", "NOMOD_K1V1", "NOMOD_K4V4", "AMAC_K4V4", "AMAC_K4V4_BB"]
+CHART_IMPLS = ["K1V1", "K4V4", "FASTUTIL", "NOMOD_K1V1", "NOMOD_K4V4", "AMAC_K2V2", "AMAC_K4V4",
+               "AMAC_K4V4_BB"]
 
 
 def load():
@@ -80,16 +81,41 @@ def full_table(run_labels, impls, data, benches):
     return "\n".join(rows)
 
 
+def values_table(bench, run_labels, impls, data):
+    head = "".join(f"<th>{html.escape(r)}</th>" for r in run_labels)
+    rows = []
+    for i in impls:
+        cells = []
+        for r in run_labels:
+            e = data.get((bench, r, i))
+            if e is None:
+                cells.append("<td class='num'>—</td>")
+                continue
+            m = e["primaryMetric"]
+            err = m.get("scoreError") or 0.0
+            if isinstance(err, str) or (isinstance(err, float) and math.isnan(err)):
+                err = 0.0
+            cells.append(f"<td class='num'>{fmt(m['score'])} <span class='sub'>± {fmt(err)}</span></td>")
+        rows.append(f"<tr><td>{html.escape(i)}</td>{''.join(cells)}</tr>")
+    return (f"<table><thead><tr><th>{html.escape(bench)}</th>{head}</tr></thead>"
+            f"<tbody>{''.join(rows)}</tbody></table>")
+
+
 def main():
     run_labels, impls_all, data = load()
     if not run_labels:
         sys.exit("no final-hit-lf*.json files found")
     chart_impls = [i for i in CHART_IMPLS if i in impls_all]
     benches = ["getHit — pulsed keys", "getHit — random keys"]
+
+    def chart_table(bench):
+        return values_table(bench, run_labels, chart_impls, data)
+
     panels = "".join(
         f'<figure class="panel"><figcaption>{html.escape(b)} <span class="sub">1M lookups, ~2GB table, '
         f'occupancy = load factor</span></figcaption>'
         f'{panel_svg(b, run_labels, chart_impls, data, "ms per 1M lookups")}</figure>'
+        f'{chart_table(b)}'
         for b in benches)
 
     miss_impls, miss_data = load_miss()
@@ -100,6 +126,7 @@ def main():
             f'<figure class="panel"><figcaption>{html.escape(b)} <span class="sub">appendix: misses cannot occur '
             f'in a redirection index</span></figcaption>'
             f'{panel_svg(b, ["lf 0.5"], miss_chart, miss_data, "ms per 1M lookups")}</figure>'
+            f'{values_table(b, ["lf 0.5"], miss_chart, miss_data)}'
             for b in ["getMiss — pulsed keys", "getMiss — random keys"])
 
     # winner strip: best impl per (dist, lf)
@@ -153,6 +180,8 @@ def main():
   .key {{ display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; }}
   .chip {{ width: 12px; height: 12px; border-radius: 3px; display: inline-block; }}
   .grid2 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 16px; }}
+  .grid1 {{ display: grid; grid-template-columns: 1fr; gap: 8px; }}
+  .grid1 table {{ margin: 0 0 20px; }}
   .panel {{ background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
            padding: 14px 16px 8px; margin: 0; overflow-x: auto; }}
   .panel figcaption {{ font-weight: 600; margin-bottom: 6px; }}
@@ -196,10 +225,17 @@ and the reason the obvious fastutil baseline is answering a different question (
 factor is varied by inserting more keys, not by shrinking the array. This isolates fullness from footprint, and
 sidesteps fastutil's power-of-two quantization, which would otherwise silently leave it half-full while others ran
 at 0.9. Charts show ms per 1M lookups — directly comparable everywhere; hover for exact numbers and ns/op.</p>
+<p>One caveat for reading the pulsed columns: each pulsed read is a random contiguous window of pulses, and window
+placement re-rolls per table size — so pulsed results include genuine workload variance across load-factor groups,
+not just measurement noise. The extreme case is instructive: at lf 0.95 the sampled window was dense enough that
+NOMOD_K1V1 served 1M lookups in 1.5 ms (~1.5 ns each) — adjacent-bucket locality turning a hash probe into a
+near-linear scan of a few cache-resident megabytes. That is the redirection-index superpower in its purest form.</p>
 
 <h2>Headline: hit-path lookups, random vs pulsed</h2>
 <div class="legend">{legend}</div>
-<div class="grid2">{panels}</div>
+<div class="grid1">{panels}</div>
+<p class="sub">Table cells are ms per 1M lookups ± JMH's 99.9% confidence interval — numerically identical to
+nanoseconds per lookup.</p>
 <h3>Fastest implementation per cell</h3>
 {winners_html}
 
@@ -226,7 +262,11 @@ long chains — it earns ~9–15%: AMAC_K4V4 was the first DH impl to beat fastu
 <p>A K4V4 bucket is exactly 64 bytes, but heap arrays can't promise alignment, so most buckets straddle two cache
 lines. Backing the same algorithm with a 64-byte-aligned direct ByteBuffer answered "how much does that cost":
 ~15% of lookup performance at lf 0.5 (95.5 → 80.5 ms hits), ~9% on misses at 0.9 — at the price of ~33% slower
-fills (bounds-checked stores + direct-buffer zeroing) and the direct-memory lifecycle burden.</p>
+fills (bounds-checked stores + direct-buffer zeroing) and the direct-memory lifecycle burden. It is absent from
+the headline study for a structural reason discovered there: <strong>ByteBuffer is int-indexed, capping one table
+at 2GB</strong> — the 67M-key K4V4 table needs 2.19GB and simply cannot be allocated. Scaling the aligned design
+past 2GB requires segmented buffers or JDK 22+ MemorySegment (long-indexed, arena-managed), which is where that
+experiment should go next.</p>
 
 <h2>Verdict</h2>
 <div class="verdict">
