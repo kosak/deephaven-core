@@ -23,9 +23,8 @@ below. From the repository root:
 builds the client into a Docker image (`deephaven/cpp-client:local-build`)
 on top of a prebuilt dependencies image that is pulled anonymously from
 `ghcr.io/deephaven/deephaven-core-cpp-deps`. The dependencies image is
-content-addressed: its tag is a hash of `deephaven/vcpkg.json`,
-`deephaven/vcpkg-configuration.json`, the custom triplets and
-`docker/deps.Dockerfile`. CI publishes it on every push to `main`, so unless
+content-addressed: its tag is a hash of `deephaven/vcpkg.json` (which pins
+the vcpkg baseline), the custom triplets and `docker/deps.Dockerfile`. CI publishes it on every push to `main`, so unless
 you have locally modified one of those files, no dependency is ever compiled
 on your machine. If you *have* modified them, the Gradle task falls back to
 building the dependencies locally with vcpkg (slow, but automatic); once your
@@ -41,6 +40,21 @@ To run the C++ client unit tests against a Deephaven server, all in Docker:
 The manual instructions below remain useful when you want a native
 (non-Docker) build on your host, e.g. for local development against a
 debugger.
+
+## Where the logs are
+
+Everything streams to your console live; nothing waits silently. If you need
+to dig after the fact:
+
+* Dependencies build (only happens on a cache miss): the full vcpkg output is
+  written to `cpp-client/build/cppDepsImage-build.log` as it happens. It is
+  plain text, it survives failures, and its last line is the last thing that
+  happened.
+* Client compile: streamed live during the build, and the full ninja log is
+  kept (plain text) inside the image:
+  ```
+  docker run --rm deephaven/cpp-client:local-build cat /opt/deephaven/log/ninja-install.log
+  ```
 
 ## Clearing the caches
 

@@ -57,14 +57,13 @@ def build_type = 'RelWithDebInfo'
 def cppDepsTriplet = 'x64-linux-dynamic-release'
 
 def cppDepsVcpkgBaseline = new groovy.json.JsonSlurper()
-        .parse(file('deephaven/vcpkg-configuration.json'))['default-registry']['baseline']
+        .parse(file('deephaven/vcpkg.json'))['builtin-baseline']
 
 def cppDepsHash = {
     def md = MessageDigest.getInstance('SHA-256')
     md.update(cppDepsTriplet.getBytes('UTF-8'))
     def hashInputs = [file('docker/deps.Dockerfile'),
-                      file('deephaven/vcpkg.json'),
-                      file('deephaven/vcpkg-configuration.json')]
+                      file('deephaven/vcpkg.json')]
     hashInputs += fileTree(dir: 'deephaven/custom-triplets').files.sort { it.name }
     hashInputs.each { f ->
         md.update(f.name.getBytes('UTF-8'))
@@ -92,10 +91,13 @@ abstract class CppDepsImageTask extends DefaultTask {
         } else if (tryExec(['docker', 'pull', ref])) {
             logger.lifecycle("C++ deps image ${ref} pulled.")
         } else {
+            File logFile = new File(markerFile.get().asFile.parentFile, 'cppDepsImage-build.log')
             logger.lifecycle("C++ deps image ${ref} is not available remotely " +
                     "(usually because vcpkg.json or its Dockerfile changed and CI has not built it yet). " +
-                    "Building it locally with vcpkg; this can take a long time.")
-            def args = ['docker', 'buildx', 'build', '--load',
+                    "Building it locally with vcpkg; this can take a long time (tens of minutes cold, " +
+                    "much less when the local package cache has entries).")
+            logger.lifecycle("Full build log (kept for post-mortems): ${logFile}")
+            def args = ['docker', 'buildx', 'build', '--load', '--progress=plain',
                         '-f', new File(contextDir.get().asFile, 'deps.Dockerfile').absolutePath,
                         '-t', ref,
                         '--build-arg', "VCPKG_BASELINE=${vcpkgBaseline.get()}".toString(),
@@ -110,7 +112,17 @@ abstract class CppDepsImageTask extends DefaultTask {
                          '--build-arg', "VCPKG_NUGET_MODE=${nugetMode}".toString()]
             }
             args += [contextDir.get().asFile.absolutePath]
-            execOperations.exec { it.commandLine args }
+            // Tee the build output: the console keeps its live stream, and the
+            // log file survives for post-mortems after the scrollback is gone.
+            logFile.parentFile.mkdirs()
+            new FileOutputStream(logFile).withCloseable { fileOut ->
+                def tee = new org.apache.tools.ant.util.TeeOutputStream(System.out, fileOut)
+                execOperations.exec {
+                    it.commandLine args
+                    it.standardOutput = tee
+                    it.errorOutput = tee
+                }
+            }
         }
         markerFile.get().asFile.text = ref + '\n'
     }
@@ -132,7 +144,6 @@ def cppDepsContext = tasks.register('cppDepsContext', Sync) {
     from 'docker/deps.Dockerfile'
     from('deephaven') {
         include 'vcpkg.json'
-        include 'vcpkg-configuration.json'
         include 'custom-triplets/**'
     }
     into layout.buildDirectory.dir('cppDepsContext')
@@ -169,6 +180,10 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
         from(layout.projectDirectory) {
             include 'cpp-tests-to-junit.sh'
             include 'deephaven/CMakeLists.txt'
+            // Installed next to the CMake package config for downstream
+            // pin-verification; see the install(FILES vcpkg.json) block in
+            // CMakeLists.txt.
+            include 'deephaven/vcpkg.json'
             include 'deephaven/cmake/**'
             include 'deephaven/dhcore/**'
             include 'deephaven/dhclient/**'
@@ -185,6 +200,9 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
         // dependencies, and the R toolchain (for :R:rClient, which builds
         // FROM the image we generate here).
         from(cppDepsImageRef)
+        // bash with pipefail so 'ninja ... | tee' below fails when ninja
+        // fails, not when tee does.
+        instruction('SHELL ["/bin/bash", "-euo", "pipefail", "-c"]')
         //
         // Build and install client.
         //
@@ -194,6 +212,7 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
                         ${prefix}/log
                    """)
         copyFile('deephaven/CMakeLists.txt',  "${prefix}/src/deephaven/")
+        copyFile('deephaven/vcpkg.json',  "${prefix}/src/deephaven/")
         copyFile('deephaven/cmake/',   "${prefix}/src/deephaven/cmake/")
         copyFile('deephaven/dhcore/',  "${prefix}/src/deephaven/dhcore/")
         copyFile('deephaven/dhclient/', "${prefix}/src/deephaven/dhclient/")
@@ -217,7 +236,7 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
                         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \\
                         -DBUILD_SHARED_LIBS=ON \\
                         .. ; \\
-                      ninja -v install 2>&1 | gzip > "${PREFIX}/log/ninja-install.log.gz"; \\
+                      ninja -v install 2>&1 | tee "${PREFIX}/log/ninja-install.log"; \\
                       cd ..; \\
                       rm -fr "${PREFIX}/src/deephaven/build"
                    ''')

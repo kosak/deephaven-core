@@ -6,8 +6,7 @@
 # the :cpp-client:cppClient Gradle task to build the client itself on top.
 #
 # This image is content-addressed: the Gradle build hashes this Dockerfile,
-# vcpkg.json, vcpkg-configuration.json and the custom triplets into the image
-# tag, pulls the matching image from ghcr.io when it exists (anonymous, no
+# vcpkg.json and the custom triplets into the image tag, pulls the matching image from ghcr.io when it exists (anonymous, no
 # credentials needed), and only builds it locally on a miss. CI publishes the
 # image on pushes to main, so developers should almost never build it.
 #
@@ -85,8 +84,8 @@ status = tryCatch(
      install.packages(c("Rcpp", "arrow", "R6", "dplyr", "testthat", "xml2", "lubridate", "zoo", "knitr", "rmarkdown"), repos="https://cloud.r-project.org", quiet=TRUE)
      0
   },
-  error=function(e) 1,
-  warning=function(w) 2
+  error=function(e) { print(e); 1 },
+  warning=function(w) { print(w); 2 }
 )
 print(paste0('status=', status))
 quit(save='no', status=status)
@@ -98,9 +97,9 @@ EOF
 #
 FROM toolchain AS deps
 ARG PREFIX=/opt/deephaven
-# The commit of microsoft/vcpkg to use: must match the registry baseline in
-# vcpkg-configuration.json (the Gradle build passes it in from that file).
-# Pinning the tool to the baseline keeps ABI hashes stable.
+# The commit of microsoft/vcpkg to use: must match the builtin-baseline in
+# vcpkg.json (the Gradle build passes it in from that file). Pinning the
+# tool to the baseline keeps ABI hashes stable.
 ARG VCPKG_BASELINE
 ARG TARGET_TRIPLET=x64-linux-dynamic-release
 # NuGet binary caching against GitHub Packages. Requires authentication even
@@ -110,16 +109,17 @@ ARG GH_PACKAGES_FEED=
 ARG GH_PACKAGES_USERNAME=deephaven
 ARG VCPKG_NUGET_MODE=read
 
+# Full clone on purpose: builtin-baseline versioning resolves port versions
+# through the clone's own git history ("failed to unpack tree object" /
+# "vcpkg was cloned as a shallow repository" otherwise). The layer is cached
+# and only rebuilt when the baseline changes.
 RUN set -eux; \
     [ -n "$VCPKG_BASELINE" ]; \
-    git init -q /opt/vcpkg; \
-    cd /opt/vcpkg; \
-    git remote add origin https://github.com/microsoft/vcpkg.git; \
-    git fetch -q --depth 1 origin "$VCPKG_BASELINE"; \
-    git -c advice.detachedHead=false checkout -q FETCH_HEAD; \
-    ./bootstrap-vcpkg.sh -disableMetrics
+    git clone -q https://github.com/microsoft/vcpkg.git /opt/vcpkg; \
+    git -C /opt/vcpkg -c advice.detachedHead=false checkout -q "$VCPKG_BASELINE"; \
+    /opt/vcpkg/bootstrap-vcpkg.sh -disableMetrics
 
-COPY vcpkg.json vcpkg-configuration.json /opt/dh-manifest/
+COPY vcpkg.json /opt/dh-manifest/
 COPY custom-triplets/ /opt/dh-manifest/custom-triplets/
 
 # The cache mount persists vcpkg's local binary cache (completed package
