@@ -208,6 +208,7 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
                       cd "${PREFIX}/src/deephaven/build"; \\
                       . "${PREFIX}/env.sh"; \\
                       cmake \\
+                        -GNinja \\
                         -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \\
                         -DVCPKG_TARGET_TRIPLET="${DH_VCPKG_TARGET_TRIPLET}" \\
                         -DVCPKG_INSTALLED_DIR="${DH_VCPKG_INSTALLED}" \\
@@ -216,7 +217,7 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
                         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \\
                         -DBUILD_SHARED_LIBS=ON \\
                         .. ; \\
-                      VERBOSE=1 make "-j${NCPUS}" install 2>&1 | gzip > "${PREFIX}/log/make-install.log.gz"; \\
+                      ninja -v install 2>&1 | gzip > "${PREFIX}/log/ninja-install.log.gz"; \\
                       cd ..; \\
                       rm -fr "${PREFIX}/src/deephaven/build"
                    ''')

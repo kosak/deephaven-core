@@ -16,15 +16,20 @@
 # because :R:rClient builds FROM the resulting cpp-client image, and mono is
 # included so vcpkg's nuget binary caching (GitHub Packages) works on Linux.
 #
-# The base image is pinned by digest on purpose: vcpkg binary cache keys (ABI
-# hashes) include the compiler version, so an unpinned base would silently
-# invalidate the shared cache whenever upstream rebuilds the tag.
-#
 
-FROM ubuntu:22.04@sha256:2edbbc5dc405e9612ba3584ce95480277e3eb374407b5505fe26f17df77c7dbc AS toolchain
+# Pinned by digest on purpose: vcpkg binary cache keys (ABI hashes) include the
+# compiler version, so an unpinned base would silently invalidate the shared
+# cache whenever upstream rebuilds the tag.
+FROM ubuntu:24.04@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517 AS toolchain
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PREFIX=/opt/deephaven
 
+# Toolchain, vcpkg host requirements (git/curl/zip/unzip/tar/pkg-config), and
+# host tools some vcpkg ports require but refuse to fetch themselves on Linux
+# (thrift needs flex/bison; GitHub-hosted runners preinstall these, which is
+# why host-side CI builds never noticed). mono runs vcpkg's nuget.exe.
+# Noble's cmake (3.28) suits everyone: arrow requires >= 3.25, while cmake 4.x
+# breaks dependencies whose cmake_minimum_required is too old.
 RUN set -eux; \
     apt-get -qq update; \
     TZ=Etc/UTC apt-get -qq -y --no-install-recommends install \
@@ -37,6 +42,7 @@ RUN set -eux; \
         git \
         g++ \
         make \
+        cmake \
         build-essential \
         gzip \
         zip \
@@ -44,6 +50,11 @@ RUN set -eux; \
         tar \
         pkg-config \
         ninja-build \
+        flex \
+        bison \
+        autoconf \
+        automake \
+        libtool \
         zlib1g-dev \
         libssl-dev \
         dwz \
@@ -53,20 +64,6 @@ RUN set -eux; \
     locale-gen en_US.UTF-8; \
     rm -rf /var/lib/apt/lists/*
 
-# Ubuntu 22.04 ships cmake 3.22 but arrow requires 3.25+. We can't jump to
-# cmake 4.x because some dependencies declare a cmake_minimum_required that
-# 4.x refuses. Pin 3.31 from kitware (same reasoning as deephaven-base-images).
-RUN set -eux; \
-    wget -qO- https://apt.kitware.com/keys/kitware-archive-latest.asc \
-        | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg; \
-    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main" \
-        > /etc/apt/sources.list.d/kitware.list; \
-    apt-get -qq update; \
-    apt-get -qq -y --no-install-recommends install \
-        cmake=3.31.11-0kitware1ubuntu22.04.1 \
-        cmake-data=3.31.11-0kitware1ubuntu22.04.1; \
-    rm -rf /var/lib/apt/lists/*
-
 # R toolchain: :R:rClient builds FROM the cpp-client image, which builds FROM
 # this image. Package list matches the retired cpp-clients-multi-base.
 RUN set -eux; \
@@ -74,7 +71,7 @@ RUN set -eux; \
     apt-get -qq -y --no-install-recommends install libuv1-dev libxml2-dev; \
     wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
         | gpg --dearmor -o /usr/share/keyrings/r-project.gpg; \
-    echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" \
+    echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
         > /etc/apt/sources.list.d/r-project.list; \
     apt-get -qq update; \
     apt-get -qq -y install r-base r-recommended pandoc; \
@@ -94,20 +91,6 @@ status = tryCatch(
 print(paste0('status=', status))
 quit(save='no', status=status)
 EOF
-
-# Host tools that some vcpkg ports require but refuse to download themselves
-# on Linux (e.g. thrift needs flex/bison). GitHub-hosted runners have these
-# preinstalled, which is why host-side CI builds never noticed.
-RUN set -eux; \
-    apt-get -qq update; \
-    apt-get -qq -y --no-install-recommends install \
-        flex \
-        bison \
-        autoconf \
-        automake \
-        libtool \
-        ; \
-    rm -rf /var/lib/apt/lists/*
 
 #
 # Dependencies stage: vcpkg at the pinned registry baseline, then build (or
