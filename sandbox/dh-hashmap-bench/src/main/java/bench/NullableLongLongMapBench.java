@@ -3,6 +3,7 @@ package bench;
 import io.deephaven.util.datastructures.hash.HMLFamacK1V1;
 import io.deephaven.util.datastructures.hash.HMLFamacK2V2;
 import io.deephaven.util.datastructures.hash.HMLFamacK4V4;
+import io.deephaven.util.datastructures.hash.HMLFamacK4V4BB;
 import io.deephaven.util.datastructures.hash.HMLFnomodK1V1;
 import io.deephaven.util.datastructures.hash.HMLFnomodK2V2;
 import io.deephaven.util.datastructures.hash.HMLFnomodK4V4;
@@ -27,7 +28,6 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 
@@ -50,26 +50,34 @@ import static io.deephaven.util.QueryConstants.NULL_LONG;
 @Measurement(iterations = 5, time = 1)
 @Fork(1)
 public class NullableLongLongMapBench {
+    @FunctionalInterface
+    public interface MapFactory {
+        /** desiredEntries is entry-slot capacity (the DH maps' desiredInitialCapacity convention). */
+        NullableLongLongMap create(int desiredEntries, float loadFactor);
+    }
+
     public enum Impl {
-        K1V1(HashMapLockFreeK1V1::new),
-        K2V2(HashMapLockFreeK2V2::new),
-        K4V4(HashMapLockFreeK4V4::new),
-        NOMOD_K1V1(HMLFnomodK1V1::new),
-        NOMOD_K2V2(HMLFnomodK2V2::new),
-        NOMOD_K4V4(HMLFnomodK4V4::new),
-        AMAC_K1V1(HMLFamacK1V1::new),
-        AMAC_K2V2(HMLFamacK2V2::new),
-        AMAC_K4V4(HMLFamacK4V4::new),
+        // The DH constructors' third argument is the noEntryValue; -1 is their default.
+        K1V1((cap, lf) -> new HashMapLockFreeK1V1(cap, lf, -1)),
+        K2V2((cap, lf) -> new HashMapLockFreeK2V2(cap, lf, -1)),
+        K4V4((cap, lf) -> new HashMapLockFreeK4V4(cap, lf, -1)),
+        NOMOD_K1V1((cap, lf) -> new HMLFnomodK1V1(cap, lf, -1)),
+        NOMOD_K2V2((cap, lf) -> new HMLFnomodK2V2(cap, lf, -1)),
+        NOMOD_K4V4((cap, lf) -> new HMLFnomodK4V4(cap, lf, -1)),
+        AMAC_K1V1((cap, lf) -> new HMLFamacK1V1(cap, lf, -1)),
+        AMAC_K2V2((cap, lf) -> new HMLFamacK2V2(cap, lf, -1)),
+        AMAC_K4V4((cap, lf) -> new HMLFamacK4V4(cap, lf, -1)),
+        AMAC_K4V4_BB((cap, lf) -> new HMLFamacK4V4BB(cap, lf, -1)),
         FASTUTIL(FastutilAdapter::new);
 
-        final IntFunction<NullableLongLongMap> factory;
+        final MapFactory factory;
 
-        Impl(IntFunction<NullableLongLongMap> factory) {
+        Impl(MapFactory factory) {
             this.factory = factory;
         }
     }
 
-    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "FASTUTIL"})
+    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "AMAC_K4V4_BB", "FASTUTIL"})
     public Impl impl;
 
     @Param({"1000000"})
@@ -90,6 +98,14 @@ public class NullableLongLongMapBench {
     /** When true, maps are created at full capacity so fill measures pure insertion, not rehashing. */
     @Param({"false"})
     public boolean presize;
+
+    /**
+     * Table load factor. With presize=true the filled map sits at ~this occupancy, so lookup benchmarks measure a
+     * table that is genuinely this full. Note fastutil rounds its table to a power of two: pick size = loadFactor *
+     * 2^k (e.g. 1887436 = 0.9 * 2^21) or its true occupancy will silently differ from the requested load factor.
+     */
+    @Param({"0.5"})
+    public float loadFactor;
 
     /**
      * When true, setup runs the measured sweep loop with ALL impls first, so the map.get() call site inside
@@ -139,7 +155,7 @@ public class NullableLongLongMapBench {
             final long[][] pollutionChunks = chunk(distinctKeys(rng, 65536), chunkSize);
             final long[] pollutionScratch = new long[chunkSize];
             for (final Impl other : Impl.values()) {
-                final NullableLongLongMap m = other.factory.apply(65536 * 2);
+                final NullableLongLongMap m = other.factory.create(65536 * 2, 0.5f);
                 for (final long[] c : pollutionChunks) {
                     m.put(c, c, pollutionScratch);
                 }
@@ -189,7 +205,7 @@ public class NullableLongLongMapBench {
     }
 
     private NullableLongLongMap createMap() {
-        return impl.factory.apply(presize ? size * 2 : 16);
+        return impl.factory.create(presize ? (int) (size / loadFactor) + 1 : 16, loadFactor);
     }
 
     private void fill(NullableLongLongMap map) {
@@ -232,8 +248,9 @@ public class NullableLongLongMapBench {
     private static final class FastutilAdapter implements NullableLongLongMap {
         private final Long2LongOpenHashMap map;
 
-        FastutilAdapter(int initialCapacity) {
-            map = new Long2LongOpenHashMap(initialCapacity);
+        FastutilAdapter(int desiredEntries, float loadFactor) {
+            // fastutil's first argument is expected element count, not slot capacity; convert from ours.
+            map = new Long2LongOpenHashMap(Math.max(16, (int) (desiredEntries * loadFactor)), loadFactor);
             map.defaultReturnValue(NULL_LONG);
         }
 

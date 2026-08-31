@@ -19,7 +19,7 @@ import sys
 LIGHT_SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
 DARK_SERIES = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
 IMPL_ORDER = ["K1V1", "K2V2", "K4V4", "FASTUTIL", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4",
-              "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "K1V1 (megamorphic)"]
+              "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "AMAC_K4V4_BB", "K1V1 (megamorphic)"]
 
 PLOT_H = 220
 M_TOP, M_BOT, M_LEFT, M_RIGHT = 16, 34, 64, 12
@@ -128,6 +128,7 @@ def panel_svg(bench, run_labels, impls, data, unit):
                 bh = max(M_TOP + PLOT_H - by, 1.5)
                 size = int(e.get("params", {}).get("size", "0") or 0)
                 kd = e.get("params", {}).get("keyDist", "random")
+                kd += ", lf " + e.get("params", {}).get("loadFactor", "0.5")
                 nsop = score * 1e6 / size if size else None
                 tip = (f"{i} — {bench} ({r}, {kd} keys)&#10;{fmt(score)} ± {fmt(err)} {unit}"
                        + (f"&#10;≈ {fmt(nsop)} ns per operation" if nsop else ""))
