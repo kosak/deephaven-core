@@ -66,6 +66,14 @@ public class NullableLongLongMapBench {
     @Param({"false"})
     public boolean presize;
 
+    /**
+     * When true, setup runs the measured sweep loop with ALL impls first, so the map.get() call site inside
+     * sweep() has a megamorphic type profile before C2 compiles it. When false (JMH's default forking already
+     * isolates each impl in its own JVM), the call site is monomorphic. A/B this to price megamorphic dispatch.
+     */
+    @Param({"false"})
+    public boolean pollute;
+
     private long[] keys;
     private long[] missingKeys;
     private NullableLongLongMap filledMap;
@@ -78,6 +86,30 @@ public class NullableLongLongMapBench {
         missingKeys = distinctKeys(rng, size); // 128-bit-ish state space: overlap with 'keys' is negligible
         filledMap = createMap();
         fill(filledMap);
+        if (pollute) {
+            final long[] pollutionKeys = distinctKeys(rng, 65536);
+            for (final Impl other : Impl.values()) {
+                final NullableLongLongMap m = other.factory.apply(65536 * 2);
+                for (int i = 0; i < pollutionKeys.length; ++i) {
+                    m.put(pollutionKeys[i], i);
+                }
+                long sum = 0;
+                for (int rep = 0; rep < 50; ++rep) {
+                    sum += sweep(m, pollutionKeys);
+                }
+                if (sum == 12345678901L) {
+                    throw new IllegalStateException("unreachable; defeats dead-code elimination");
+                }
+            }
+        }
+    }
+
+    private static long sweep(NullableLongLongMap map, long[] keys) {
+        long sum = 0;
+        for (final long k : keys) {
+            sum += map.get(k);
+        }
+        return sum;
     }
 
     private static long[] distinctKeys(RandomGenerator rng, int n) {
@@ -115,23 +147,13 @@ public class NullableLongLongMapBench {
     /** Look up every present key once, in insertion order. */
     @Benchmark
     public long getHit() {
-        final NullableLongLongMap map = filledMap;
-        long sum = 0;
-        for (final long k : keys) {
-            sum += map.get(k);
-        }
-        return sum;
+        return sweep(filledMap, keys);
     }
 
     /** Look up {size} absent keys. */
     @Benchmark
     public long getMiss() {
-        final NullableLongLongMap map = filledMap;
-        long sum = 0;
-        for (final long k : missingKeys) {
-            sum += map.get(k);
-        }
-        return sum;
+        return sweep(filledMap, missingKeys);
     }
 
     /** Remove every key, then re-insert all of them (exercises deleted-slot handling). */
