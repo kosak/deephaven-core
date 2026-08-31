@@ -22,6 +22,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 import java.util.random.RandomGenerator;
@@ -68,6 +69,10 @@ public class NullableLongLongMapBench {
     @Param({"1000000"})
     public int size;
 
+    /** Batch size: keys are fed to the map interface in chunks of this many elements. */
+    @Param({"4096"})
+    public int chunkSize;
+
     /**
      * "random": uniform random longs. "sequential": a contiguous block of small keys — the case the original weak
      * probe1 hash is deliberately cache-friendly for (adjacent keys land in adjacent buckets); the nomod variants
@@ -90,6 +95,10 @@ public class NullableLongLongMapBench {
 
     private long[] keys;
     private long[] missingKeys;
+    private long[][] keyChunks;
+    private long[][] valueChunks;
+    private long[][] missChunks;
+    private long[] scratch;
     private NullableLongLongMap filledMap;
 
     @Setup(Level.Trial)
@@ -108,18 +117,30 @@ public class NullableLongLongMapBench {
             keys = distinctKeys(rng, size);
             missingKeys = distinctKeys(rng, size); // 128-bit-ish state space: overlap with 'keys' is negligible
         }
+        keyChunks = chunk(keys, chunkSize);
+        missChunks = chunk(missingKeys, chunkSize);
+        valueChunks = new long[keyChunks.length][];
+        for (int c = 0, base = 0; c < keyChunks.length; base += keyChunks[c].length, ++c) {
+            valueChunks[c] = new long[keyChunks[c].length];
+            for (int j = 0; j < valueChunks[c].length; ++j) {
+                valueChunks[c][j] = base + j;
+            }
+        }
+        scratch = new long[chunkSize];
         filledMap = createMap();
         fill(filledMap);
         if (pollute) {
-            final long[] pollutionKeys = distinctKeys(rng, 65536);
+            final long[][] pollutionChunks = chunk(distinctKeys(rng, 65536), chunkSize);
+            final long[] pollutionScratch = new long[chunkSize];
             for (final Impl other : Impl.values()) {
                 final NullableLongLongMap m = other.factory.apply(65536 * 2);
-                for (int i = 0; i < pollutionKeys.length; ++i) {
-                    m.put(pollutionKeys[i], i);
+                for (final long[] c : pollutionChunks) {
+                    m.put(c, c, pollutionScratch);
                 }
                 long sum = 0;
                 for (int rep = 0; rep < 50; ++rep) {
-                    sum += sweep(m, pollutionKeys);
+                    sweep(m, pollutionChunks, pollutionScratch, null);
+                    sum += pollutionScratch[0];
                 }
                 if (sum == 12345678901L) {
                     throw new IllegalStateException("unreachable; defeats dead-code elimination");
@@ -128,12 +149,24 @@ public class NullableLongLongMapBench {
         }
     }
 
-    private static long sweep(NullableLongLongMap map, long[] keys) {
-        long sum = 0;
-        for (final long k : keys) {
-            sum += map.get(k);
+    private static long[][] chunk(long[] src, int chunkSize) {
+        final int n = (src.length + chunkSize - 1) / chunkSize;
+        final long[][] result = new long[n][];
+        for (int c = 0; c < n; ++c) {
+            final int from = c * chunkSize;
+            result[c] = Arrays.copyOfRange(src, from, Math.min(from + chunkSize, src.length));
         }
-        return sum;
+        return result;
+    }
+
+    /** The one shared call site for map.get(): 'pollute' poisons this site's type profile through all impls. */
+    private static void sweep(NullableLongLongMap map, long[][] chunks, long[] scratch, Blackhole bh) {
+        for (final long[] c : chunks) {
+            map.get(c, scratch);
+            if (bh != null) {
+                bh.consume(scratch);
+            }
+        }
     }
 
     private static long[] distinctKeys(RandomGenerator rng, int n) {
@@ -154,9 +187,8 @@ public class NullableLongLongMapBench {
     }
 
     private void fill(NullableLongLongMap map) {
-        final long[] lk = keys;
-        for (int i = 0; i < lk.length; ++i) {
-            map.put(lk[i], i);
+        for (int c = 0; c < keyChunks.length; ++c) {
+            map.put(keyChunks[c], valueChunks[c], scratch);
         }
     }
 
@@ -170,22 +202,22 @@ public class NullableLongLongMapBench {
 
     /** Look up every present key once, in insertion order. */
     @Benchmark
-    public long getHit() {
-        return sweep(filledMap, keys);
+    public void getHit(Blackhole bh) {
+        sweep(filledMap, keyChunks, scratch, bh);
     }
 
     /** Look up {size} absent keys. */
     @Benchmark
-    public long getMiss() {
-        return sweep(filledMap, missingKeys);
+    public void getMiss(Blackhole bh) {
+        sweep(filledMap, missChunks, scratch, bh);
     }
 
     /** Remove every key, then re-insert all of them (exercises deleted-slot handling). */
     @Benchmark
-    public void removeThenReinsert(Blackhole bh) {
+    public void removeThenReinsert() {
         final NullableLongLongMap map = filledMap;
-        for (final long k : keys) {
-            bh.consume(map.remove(k));
+        for (final long[] c : keyChunks) {
+            map.remove(c);
         }
         fill(map);
     }
@@ -200,23 +232,31 @@ public class NullableLongLongMapBench {
         }
 
         @Override
-        public long put(long key, long value) {
-            return map.put(key, value);
+        public void put(long[] keys, long[] values, long[] oldValues) {
+            for (int ii = 0; ii < keys.length; ++ii) {
+                oldValues[ii] = map.put(keys[ii], values[ii]);
+            }
         }
 
         @Override
-        public long putIfAbsent(long key, long value) {
-            return map.putIfAbsent(key, value);
+        public void putIfAbsent(long[] keys, long[] values, long[] oldValues) {
+            for (int ii = 0; ii < keys.length; ++ii) {
+                oldValues[ii] = map.putIfAbsent(keys[ii], values[ii]);
+            }
         }
 
         @Override
-        public long get(long key) {
-            return map.get(key);
+        public void get(long[] keys, long[] result) {
+            for (int ii = 0; ii < keys.length; ++ii) {
+                result[ii] = map.get(keys[ii]);
+            }
         }
 
         @Override
-        public long remove(long key) {
-            return map.remove(key);
+        public void remove(long[] keys) {
+            for (int ii = 0; ii < keys.length; ++ii) {
+                map.remove(keys[ii]);
+            }
         }
 
         @Override

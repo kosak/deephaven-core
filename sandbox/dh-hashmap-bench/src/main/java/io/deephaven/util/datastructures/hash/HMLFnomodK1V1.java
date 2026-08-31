@@ -31,23 +31,47 @@ public final class HMLFnomodK1V1 extends HMLFnomodK1V1Base implements NullableLo
     }
 
     @Override
-    public long put(long key, long value) {
-        return putImpl(keysAndValues, key, value, false);
+    public void put(long[] keys, long[] values, long[] oldValues) {
+        putBatch(keys, values, oldValues, false);
     }
 
     @Override
-    public long putIfAbsent(long key, long value) {
-        return putImpl(keysAndValues, key, value, true);
+    public void putIfAbsent(long[] keys, long[] values, long[] oldValues) {
+        putBatch(keys, values, oldValues, true);
+    }
+
+    private void putBatch(long[] keys, long[] values, long[] oldValues, boolean insertOnly) {
+        long[] kvs = keysAndValues;
+        long magic = kvs == null ? 0 : magicFor(kvs);
+        for (int ii = 0; ii < keys.length; ++ii) {
+            oldValues[ii] = putImpl(kvs, magic, keys[ii], values[ii], insertOnly);
+            // putImpl may have allocated or rehashed; if so, pick up the new array and recompute the magic constant.
+            final long[] cur = keysAndValues;
+            if (cur != kvs) {
+                kvs = cur;
+                magic = magicFor(kvs);
+            }
+        }
     }
 
     @Override
-    public long get(long key) {
-        return getImpl(keysAndValues, key);
+    public void get(long[] keys, long[] result) {
+        // Lock-free reader: one volatile read and one division amortized over the whole batch.
+        final long[] kvs = keysAndValues;
+        final long magic = kvs == null ? 0 : magicFor(kvs);
+        for (int ii = 0; ii < keys.length; ++ii) {
+            result[ii] = getImpl(kvs, magic, keys[ii]);
+        }
     }
 
     @Override
-    public long remove(long key) {
-        return removeImpl(keysAndValues, key);
+    public void remove(long[] keys) {
+        // Single-writer contract and remove never reallocates, so one snapshot suffices.
+        final long[] kvs = keysAndValues;
+        final long magic = kvs == null ? 0 : magicFor(kvs);
+        for (int ii = 0; ii < keys.length; ++ii) {
+            removeImpl(kvs, magic, keys[ii]);
+        }
     }
 
     public int capacity() {

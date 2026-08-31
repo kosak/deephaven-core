@@ -31,23 +31,31 @@ public final class HashMapLockFreeK2V2 extends HashMapK2V2 implements NullableLo
     }
 
     @Override
-    public long put(long key, long value) {
-        return putImpl(keysAndValues, key, value, false);
+    public void put(long[] keys, long[] values, long[] oldValues) {
+        for (int ii = 0; ii < keys.length; ++ii) {
+            oldValues[ii] = putImpl(keysAndValues, keys[ii], values[ii], false);
+        }
     }
 
     @Override
-    public long putIfAbsent(long key, long value) {
-        return putImpl(keysAndValues, key, value, true);
+    public void putIfAbsent(long[] keys, long[] values, long[] oldValues) {
+        for (int ii = 0; ii < keys.length; ++ii) {
+            oldValues[ii] = putImpl(keysAndValues, keys[ii], values[ii], true);
+        }
     }
 
     @Override
-    public long get(long key) {
-        return getImpl(keysAndValues, key);
+    public void get(long[] keys, long[] result) {
+        for (int ii = 0; ii < keys.length; ++ii) {
+            result[ii] = getImpl(keysAndValues, keys[ii]);
+        }
     }
 
     @Override
-    public long remove(long key) {
-        return removeImpl(keysAndValues, key);
+    public void remove(long[] keys) {
+        for (int ii = 0; ii < keys.length; ++ii) {
+            removeImpl(keysAndValues, keys[ii]);
+        }
     }
 
     public int capacity() {

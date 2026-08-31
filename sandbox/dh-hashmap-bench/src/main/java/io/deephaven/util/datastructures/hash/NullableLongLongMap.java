@@ -29,40 +29,42 @@ public interface NullableLongLongMap {
     long defaultReturnValue();
 
     /**
-     * Add a mapping from key to value. Return the old value of key.
-     * 
-     * @param key the key to add
-     * @param value the value to add
-     * @return the old value of key (or {@link #defaultReturnValue()}} if there was no mapping)
+     * For each i in [0, keys.length): add a mapping from keys[i] to values[i], storing the previous value of keys[i]
+     * (or {@link #defaultReturnValue()} if there was no mapping) in oldValues[i]. Elements are processed in index
+     * order. values and oldValues must have at least keys.length elements.
+     *
+     * @param keys the keys to add
+     * @param values the values to add
+     * @param oldValues output: the previous value of each key (or {@link #defaultReturnValue()})
      */
-    long put(long key, long value);
+    void put(long[] keys, long[] values, long[] oldValues);
 
     /**
-     * Add a mapping from key to value, if one does not already exist. Return the old value of key (or
-     * {@link #defaultReturnValue()}) if one does not exist.
-     * 
-     * @param key the key to add
-     * @param value the value to add
-     * @return the old value of key (or {@link #defaultReturnValue()}} if there was no mapping)
+     * For each i in [0, keys.length): add a mapping from keys[i] to values[i] if one does not already exist, storing
+     * the previous value of keys[i] (or {@link #defaultReturnValue()} if there was no mapping) in oldValues[i].
+     * Elements are processed in index order. values and oldValues must have at least keys.length elements.
+     *
+     * @param keys the keys to add
+     * @param values the values to add
+     * @param oldValues output: the previous value of each key (or {@link #defaultReturnValue()})
      */
-    long putIfAbsent(long key, long value);
+    void putIfAbsent(long[] keys, long[] values, long[] oldValues);
 
     /**
-     * Gets the value associated with key. Returns {@link #defaultReturnValue()}} if no mapping exists.
-     * 
-     * @param key the key to get
-     * @return the value of the key (or {@link #defaultReturnValue()})
+     * For each i in [0, keys.length): store the value associated with keys[i] (or {@link #defaultReturnValue()} if no
+     * mapping exists) in result[i]. result must have at least keys.length elements.
+     *
+     * @param keys the keys to look up
+     * @param result output: the value of each key (or {@link #defaultReturnValue()})
      */
-    long get(long key);
+    void get(long[] keys, long[] result);
 
     /**
-     * Remove a mapping for a key. Return the removed value of key (or {@link #defaultReturnValue()}) if one does not
-     * exist.
-     * 
-     * @param key the key to add
-     * @return the removed value of (or {@link #defaultReturnValue()}} if there was no mapping)
+     * For each i in [0, keys.length): remove the mapping for keys[i] if one exists.
+     *
+     * @param keys the keys to remove
      */
-    long remove(long key);
+    void remove(long[] keys);
 
     void clear();
 

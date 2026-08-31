@@ -148,6 +148,7 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
         size = 0;
         nonEmptySlots = 0;
         long[] newKvs = new long[newNumLongs];
+        final long newMagic = fastmodMagic(newNumLongs / (entriesPerBucket * 2));
 
         // Copy the keys and values over.
         for (int ii = 0; ii < oldKeysAndValues.length; ii += 2) {
@@ -156,7 +157,7 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
                 continue;
             }
             final long oldValue = oldKeysAndValues[ii + 1];
-            putImplNoTranslate(newKvs, oldKey, oldValue, true);
+            putImplNoTranslate(newKvs, newMagic, oldKey, oldValue, true);
         }
         setKeysAndValues(newKvs);
     }
@@ -169,7 +170,7 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
         }
     }
 
-    protected abstract long putImplNoTranslate(long[] kvs, long key, long value, boolean insertOnly);
+    protected abstract long putImplNoTranslate(long[] kvs, long magic, long key, long value, boolean insertOnly);
 
     protected abstract void setKeysAndValues(long[] keysAndValues);
 
@@ -325,21 +326,29 @@ public abstract class HMLFnomodBase implements NullableLongLongMap {
     }
 
     /**
-     * Experimental (HMLFnomod): full mix, then Lemire "fastrange" reduction — (hash * range) taken as the high 64
-     * bits of the unsigned 128-bit product lands uniformly in [0, range) with a single multiply and no division.
-     * Unlike a precomputed-reciprocal remainder, this needs no per-divisor constant, which matters here: lock-free
-     * readers snapshot only the keysAndValues array and derive the bucket count from its length, so there is no safe
-     * place to stash a magic constant that is guaranteed to match the snapshot.
-     *
-     * <p>
-     * Trade-off vs the original probe1: the original's deliberately weak hash + prime mod sent sequentially indexed
-     * keys to adjacent, distinct buckets (cache-friendly); a full mix scatters them. Benchmark with sequential keys
-     * before drawing conclusions.
+     * Computes the magic constant for Lemire's exact "fastmod" remainder: for 32-bit unsigned x and divisor d,
+     * x % d == unsignedMultiplyHigh(magic * x, d) where magic = ceil(2^64 / d). The batch API makes this affordable
+     * without stored per-array state: each batch call snapshots the keysAndValues array once, derives the bucket
+     * count from its length, and pays for this one division across the whole batch.
      */
-    static int probe1(long key, int range) {
-        return (int) Math.unsignedMultiplyHigh(mix64(key), range);
+    static long fastmodMagic(int d) {
+        return Long.divideUnsigned(-1L, d) + 1;
     }
 
+    /**
+     * Experimental (HMLFnomod, batch edition): same deliberately weak hash as the original probe1 — a 32-bit fold
+     * that sends sequentially indexed keys to adjacent, distinct buckets (cache-friendly) — but the prime modulo is
+     * computed exactly via fastmod with the caller-supplied precomputed magic constant instead of a division.
+     */
+    static int probe1(long key, int range, long magic) {
+        final long fold32 = (key ^ (key >>> 32)) & 0xffffffffL;
+        return (int) Math.unsignedMultiplyHigh(magic * fold32, range);
+    }
+
+    /**
+     * Second probe (double-hash step): full mix then multiply-high "fastrange" reduction — well-mixed input makes
+     * plain scaling into [0, range) as good as a remainder, and it needs no per-divisor constant at all.
+     */
     static int probe2(long key, int range) {
         return (int) Math.unsignedMultiplyHigh(mix64b(key), range);
     }
