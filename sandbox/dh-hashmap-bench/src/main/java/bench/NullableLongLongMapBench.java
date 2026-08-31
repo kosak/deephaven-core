@@ -1,5 +1,8 @@
 package bench;
 
+import io.deephaven.util.datastructures.hash.HMLFnomodK1V1;
+import io.deephaven.util.datastructures.hash.HMLFnomodK2V2;
+import io.deephaven.util.datastructures.hash.HMLFnomodK4V4;
 import io.deephaven.util.datastructures.hash.HashMapLockFreeK1V1;
 import io.deephaven.util.datastructures.hash.HashMapLockFreeK2V2;
 import io.deephaven.util.datastructures.hash.HashMapLockFreeK4V4;
@@ -47,6 +50,9 @@ public class NullableLongLongMapBench {
         K1V1(HashMapLockFreeK1V1::new),
         K2V2(HashMapLockFreeK2V2::new),
         K4V4(HashMapLockFreeK4V4::new),
+        NOMOD_K1V1(HMLFnomodK1V1::new),
+        NOMOD_K2V2(HMLFnomodK2V2::new),
+        NOMOD_K4V4(HMLFnomodK4V4::new),
         FASTUTIL(FastutilAdapter::new);
 
         final IntFunction<NullableLongLongMap> factory;
@@ -56,11 +62,19 @@ public class NullableLongLongMapBench {
         }
     }
 
-    @Param({"K1V1", "K2V2", "K4V4", "FASTUTIL"})
+    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "FASTUTIL"})
     public Impl impl;
 
     @Param({"1000000"})
     public int size;
+
+    /**
+     * "random": uniform random longs. "sequential": a contiguous block of small keys — the case the original weak
+     * probe1 hash is deliberately cache-friendly for (adjacent keys land in adjacent buckets); the nomod variants
+     * scatter these, so always compare both distributions before believing an improvement.
+     */
+    @Param({"random"})
+    public String keyDist;
 
     /** When true, maps are created at full capacity so fill measures pure insertion, not rehashing. */
     @Param({"false"})
@@ -82,8 +96,18 @@ public class NullableLongLongMapBench {
     public void setupTrial() {
         // L64X128MixRandom: fixed seed, statistically solid, and (unlike Random) cheap enough to not matter
         final RandomGenerator rng = RandomGeneratorFactory.of("L64X128MixRandom").create(20260831);
-        keys = distinctKeys(rng, size);
-        missingKeys = distinctKeys(rng, size); // 128-bit-ish state space: overlap with 'keys' is negligible
+        if ("sequential".equals(keyDist)) {
+            keys = new long[size];
+            missingKeys = new long[size];
+            final long start = 1_000_000;
+            for (int i = 0; i < size; ++i) {
+                keys[i] = start + i;
+                missingKeys[i] = start + size + i;
+            }
+        } else {
+            keys = distinctKeys(rng, size);
+            missingKeys = distinctKeys(rng, size); // 128-bit-ish state space: overlap with 'keys' is negligible
+        }
         filledMap = createMap();
         fill(filledMap);
         if (pollute) {

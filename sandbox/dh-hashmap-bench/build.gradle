@@ -33,3 +33,8 @@ tasks.withType(JavaExec).configureEach {
     // JMH forks inherit java.class.path, so plain `run` (or IntelliJ run configs) work fine
     jvmArgs '-Xmx8g'
 }
+
+tasks.register('smokeTest', JavaExec) {
+    mainClass = 'bench.SmokeTest'
+    classpath = sourceSets.main.runtimeClasspath
+}
