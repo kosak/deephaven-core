@@ -217,7 +217,7 @@ public class NullableLongLongMapBench {
     public void removeThenReinsert() {
         final NullableLongLongMap map = filledMap;
         for (final long[] c : keyChunks) {
-            map.remove(c);
+            map.remove(c, scratch);
         }
         fill(map);
     }
@@ -253,9 +253,9 @@ public class NullableLongLongMapBench {
         }
 
         @Override
-        public void remove(long[] keys) {
+        public void remove(long[] keys, long[] oldValues) {
             for (int ii = 0; ii < keys.length; ++ii) {
-                map.remove(keys[ii]);
+                oldValues[ii] = map.remove(keys[ii]);
             }
         }
 

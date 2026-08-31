@@ -60,11 +60,14 @@ public interface NullableLongLongMap {
     void get(long[] keys, long[] result);
 
     /**
-     * For each i in [0, keys.length): remove the mapping for keys[i] if one exists.
+     * For each i in [0, keys.length): remove the mapping for keys[i] if one exists, storing the removed value (or
+     * {@link #defaultReturnValue()} if there was no mapping) in oldValues[i]. Elements are processed in index order.
+     * oldValues must have at least keys.length elements.
      *
      * @param keys the keys to remove
+     * @param oldValues output: the removed value of each key (or {@link #defaultReturnValue()})
      */
-    void remove(long[] keys);
+    void remove(long[] keys, long[] oldValues);
 
     void clear();
 

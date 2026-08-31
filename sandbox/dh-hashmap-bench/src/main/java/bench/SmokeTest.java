@@ -73,11 +73,14 @@ public final class SmokeTest {
                 checkArrays(ctx, "get round " + round, expected, actual, batch);
             } else {
                 for (int i = 0; i < batch; ++i) {
-                    ref.remove(keys[i]);
-                    expected[i] = noEntry;
+                    expected[i] = unbox(ref.remove(keys[i]), noEntry);
                 }
                 final long[] batchKeys = subarray(keys, batch);
-                m.remove(batchKeys);
+                m.remove(batchKeys, actual);
+                checkArrays(ctx, "remove round " + round, expected, actual, batch);
+                for (int i = 0; i < batch; ++i) {
+                    expected[i] = noEntry;
+                }
                 m.get(batchKeys, actual);
                 checkArrays(ctx, "get-after-remove round " + round, expected, actual, batch);
             }

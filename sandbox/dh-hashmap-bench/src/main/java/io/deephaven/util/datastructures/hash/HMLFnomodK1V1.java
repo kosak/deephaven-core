@@ -65,12 +65,12 @@ public final class HMLFnomodK1V1 extends HMLFnomodK1V1Base implements NullableLo
     }
 
     @Override
-    public void remove(long[] keys) {
+    public void remove(long[] keys, long[] oldValues) {
         // Single-writer contract and remove never reallocates, so one snapshot suffices.
         final long[] kvs = keysAndValues;
         final long magic = kvs == null ? 0 : magicFor(kvs);
         for (int ii = 0; ii < keys.length; ++ii) {
-            removeImpl(kvs, magic, keys[ii]);
+            oldValues[ii] = removeImpl(kvs, magic, keys[ii]);
         }
     }
 

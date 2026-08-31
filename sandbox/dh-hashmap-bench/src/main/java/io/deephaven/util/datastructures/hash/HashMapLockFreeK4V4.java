@@ -52,9 +52,9 @@ public final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLo
     }
 
     @Override
-    public void remove(long[] keys) {
+    public void remove(long[] keys, long[] oldValues) {
         for (int ii = 0; ii < keys.length; ++ii) {
-            removeImpl(keysAndValues, keys[ii]);
+            oldValues[ii] = removeImpl(keysAndValues, keys[ii]);
         }
     }
 
