@@ -27,7 +27,6 @@ public final class SmokeTest {
                 Map.entry("HMLFamacK1V1", HMLFamacK1V1::new),
                 Map.entry("HMLFamacK2V2", HMLFamacK2V2::new),
                 Map.entry("HMLFamacK4V4", HMLFamacK4V4::new),
-                Map.entry("HMLFamacK4V4BB", HMLFamacK4V4BB::new),
                 Map.entry("HMLFamacK4V4MS", HMLFamacK4V4MS::new));
         for (final Map.Entry<String, Supplier<NullableLongLongMap>> e : impls.entrySet()) {
             for (final boolean sequential : new boolean[] {false, true}) {

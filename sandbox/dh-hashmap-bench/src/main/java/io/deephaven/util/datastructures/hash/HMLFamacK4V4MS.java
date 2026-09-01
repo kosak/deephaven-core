@@ -25,9 +25,12 @@ import static io.deephaven.util.datastructures.hash.HMLFamacBase.probe2;
 import static io.deephaven.util.datastructures.hash.HMLFamacBase.reciprocalFor;
 
 /**
- * K4V4 on a 64-byte-aligned native MemorySegment (java.lang.foreign, JDK 22+). Same algorithm as HMLFamacK4V4BB but
- * with two structural upgrades over ByteBuffer: segments are long-indexed, so a table can exceed 2GB; and storage
- * comes from {@link Arena#ofAuto()}, which is GC-managed — an old segment stays valid exactly as long as any reader
+ * K4V4 on a 64-byte-aligned native MemorySegment (java.lang.foreign, JDK 22+): the same probing algorithm as
+ * HMLFamacK4V4, with the bucket storage aligned so each 64-byte bucket occupies exactly one cache line (heap
+ * arrays cannot promise this, so most of their buckets straddle two lines). A ByteBuffer-based predecessor
+ * validated the alignment win but was removed: ByteBuffer is int-indexed in BYTES, capping a table at 2GB — 1/8
+ * the reach of a long[] (see git history / HANDOFF.md). Segments are long-indexed, so no such cap. Storage comes
+ * from {@link Arena#ofAuto()}, which is GC-managed — an old segment stays valid exactly as long as any reader
  * still references its snapshot, giving the same lock-free rehash semantics the heap long[] design gets for free.
  * (A shared arena's deterministic close() is deliberately NOT used: closing while a concurrent reader holds an old
  * snapshot would throw mid-probe. Deterministic reclamation would need epoch-based schemes; out of scope here.)

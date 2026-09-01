@@ -11,8 +11,10 @@ story and results are in `results/final-report.html` (regenerate: `python3 tools
   - `HMLFnomod*`: division-free probing (weak fold + Lemire fastmod via per-batch `numBucketsReciprocal`).
     ~20-30% faster lookups, keeps the sequential/pulsed-key locality superpower.
   - `HMLFamac*`: + AMAC windowed batch get. Null result at load factor 0.5; wins ~10-15% at 0.9+.
-  - `HMLFamacK4V4BB`: 64-byte-aligned direct ByteBuffer (~15% lookup win) — HARD 2GB/table cap
-    (ByteBuffer is int-indexed); next step there is JDK 22+ MemorySegment.
+  - `HMLFamacK4V4MS`: 64-byte-aligned native MemorySegment (JDK 22+; Arena.ofAuto for GC-managed,
+    reader-safe segments; long-indexed so no size cap). Supersedes a deleted ByteBuffer variant
+    (HMLFamacK4V4BB, ~15% lookup win at small scale but int-indexed = 2GB/table cap = 1/8 the reach of a
+    long[]; archived numbers in results/bb-*.json, code in git history). Do not reintroduce ByteBuffer.
 - The deliberately weak probe1 hash is LOAD-BEARING: sequential/pulsed keys -> adjacent buckets ->
   3-13x faster than fastutil on the redirection-index workload. Do not "fix" it with a strong mixer.
 - fastutil comparison: wins uniform-random lookups at occupancy <= 0.75; structurally unusable for the
