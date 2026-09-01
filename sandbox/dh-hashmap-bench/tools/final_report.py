@@ -145,18 +145,61 @@ def main():
             f'{values_table(b, ["lf 0.5"], miss_chart, miss_data)}'
             for b in ["getMiss — pulsed keys", "getMiss — random keys"])
 
-    # winner strip: best impl per (dist, lf)
-    winners = []
-    for b in benches:
-        cells = "".join(
-            (lambda best: f'<td>{html.escape(best[0])}<br><span class="sub">{fmt(best[1])} ms</span></td>' if best[1] is not None else "<td>—</td>")(
-                min(((i, score(data, b, r, i)) for i in impls_all if score(data, b, r, i) is not None),
-                    key=lambda t: t[1], default=("—", None)))
-            for r in run_labels)
-        winners.append(f'<tr><th>{html.escape(b.split(" — ")[1])}</th>{cells}</tr>')
-    winners_html = (f'<table class="mini"><thead><tr><th></th>'
-                    + "".join(f"<th>{html.escape(r)}</th>" for r in run_labels)
-                    + f'</tr></thead><tbody>{"".join(winners)}</tbody></table>')
+    # winner strips: best impl per (workload, lf), with configurable exclusions
+    def winners_table(excluded):
+        eligible = [i for i in impls_all if i not in excluded]
+        rows = []
+        for b in benches:
+            cells = "".join(
+                (lambda best: f'<td>{html.escape(best[0])}<br><span class="sub">{fmt(best[1])} ms</span></td>'
+                 if best[1] is not None else "<td>—</td>")(
+                    min(((i, score(data, b, r, i)) for i in eligible if score(data, b, r, i) is not None),
+                        key=lambda t: t[1], default=("—", None)))
+                for r in run_labels)
+            rows.append(f'<tr><th>{html.escape(b.split(" — ", 1)[1])}</th>{cells}</tr>')
+        return (f'<table class="mini"><thead><tr><th></th>'
+                + "".join(f"<th>{html.escape(r)}</th>" for r in run_labels)
+                + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+
+    def penalty_table(chosen, excluded):
+        eligible = [i for i in impls_all if i not in excluded]
+        rows = []
+        for b in benches:
+            cells = []
+            for r in run_labels:
+                mine = score(data, b, r, chosen)
+                candidates = [(i, score(data, b, r, i)) for i in eligible if score(data, b, r, i) is not None]
+                if mine is None or not candidates:
+                    cells.append("<td>—</td>")
+                    continue
+                best_impl, best = min(candidates, key=lambda t: t[1])
+                if best_impl == chosen:
+                    cells.append('<td>optimal<br><span class="sub">this cell\'s winner</span></td>')
+                else:
+                    pct = (mine / best - 1) * 100
+                    cells.append(f'<td>+{pct:.0f}%<br><span class="sub">{fmt(mine)} vs {fmt(best)} '
+                                 f'({html.escape(best_impl)})</span></td>')
+            rows.append(f'<tr><th>{html.escape(b.split(" — ", 1)[1])}</th>{"".join(cells)}</tr>')
+        return (f'<table class="mini"><thead><tr><th></th>'
+                + "".join(f"<th>{html.escape(r)}</th>" for r in run_labels)
+                + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+
+    winners_html = f"""{winners_table(set())}
+<h3>Fastest implementation per cell, excluding FASTUTIL</h3>
+<p class="sub">FASTUTIL cannot honor the lock-free reader contract (see verdict), so it can win cells but not the
+job. This table is the real leaderboard.</p>
+{winners_table({"FASTUTIL"})}
+<h3>Fastest implementation per cell, excluding FASTUTIL and AMAC_K4V4_MS</h3>
+<p class="sub">AMAC_K4V4_MS requires java.lang.foreign (JDK 22+). This table is the leaderboard for deployments
+that cannot opt in.</p>
+{winners_table({"FASTUTIL", "AMAC_K4V4_MS"})}
+<h3>Difference from optimal (excluding FASTUTIL), if AMAC_K4V4 is chosen for every scenario</h3>
+<p class="sub">The cost of standardizing on one heap implementation (JDK-11-compatible) instead of picking the
+per-scenario winner: cells show how much slower AMAC_K4V4 is than the best contract-eligible choice.</p>
+{penalty_table("AMAC_K4V4", {"FASTUTIL"})}
+<h3>Difference from optimal (excluding FASTUTIL), if AMAC_K4V4_MS is chosen for every scenario</h3>
+<p class="sub">Same question for the JDK-22+ MemorySegment implementation.</p>
+{penalty_table("AMAC_K4V4_MS", {"FASTUTIL"})}"""
 
     light_css = "".join(f".s{k}{{fill:{LIGHT_SERIES[k % 8]}}} .chip{k}{{background:{LIGHT_SERIES[k % 8]}}}"
                         for k in range(len(chart_impls)))
@@ -261,10 +304,10 @@ confirming it is genuine workload variance (that window sampled a sparse pulse r
 </style></head>
 <body class="viz-root"><main>
 <h1>HashMapLockFree: the get() campaign</h1>
-<p class="meta">Deephaven sandbox study · JDK 21 · JMH, 1 fork, 3×500ms warmup + 5×500ms measurement per trial ·
-headline sections measured on native Windows (Temurin 21); development history measured on WSL2 (see the
-environment check) · all implementations differentially verified against java.util.HashMap (2.1M-op randomized
-batches, both key distributions) before any number below was recorded.</p>
+<p class="meta">Deephaven sandbox study · JMH, 1 fork, 3×500ms warmup + 5×500ms measurement per trial · headline
+sections measured on native Windows, JDK 25 (Temurin); development history (the "acts") measured on WSL2/JDK 21 —
+see the environment note · all implementations differentially verified against java.util.HashMap (2.1M-op
+randomized batches, both key distributions) before any number below was recorded.</p>
 
 <h2>The workload</h2>
 <p>A <strong>redirection index</strong> maps row keys to storage positions. Three properties define the benchmark:
@@ -277,11 +320,11 @@ and the reason the obvious fastutil baseline is answering a different question (
 factor is varied by inserting more keys, not by shrinking the array. This isolates fullness from footprint, and
 sidesteps fastutil's power-of-two quantization, which would otherwise silently leave it half-full while others ran
 at 0.9. Charts show ms per 1M lookups — directly comparable everywhere; hover for exact numbers and ns/op.</p>
-<p>One caveat for reading the pulsed columns: each pulsed read is a random contiguous window of pulses, and window
-placement re-rolls per table size — so pulsed results include genuine workload variance across load-factor groups,
-not just measurement noise. The extreme case is instructive: at lf 0.95 the sampled window was dense enough that
-NOMOD_K1V1 served 1M lookups in 1.5 ms (~1.5 ns each) — adjacent-bucket locality turning a hash probe into a
-near-linear scan of a few cache-resident megabytes. That is the redirection-index superpower in its purest form.</p>
+<p>Lookup selection matters as much as table content, so it is a first-class dimension: the 1M probed keys are a
+uniform random subset of the table keys — never a dense contiguous run, which an earlier draft used and which
+flatters pulsed tables absurdly (it turns hashing into a linear scan; numbers like 1.5 ns/lookup result). Each
+panel pair shows the subset probed in ascending order (<em>sorted</em> — the realistic redirection-index read) and
+in random order (<em>shuffled</em> — the pessimistic bound).</p>
 
 <h2>Headline: hit-path lookups, random vs pulsed</h2>
 <div class="legend">{legend}</div>
@@ -304,36 +347,53 @@ precompute <code>ceil(2<sup>64</sup>/numBuckets)</code> once, turning the modulo
 buckets. Result at 1M keys, lf 0.5: random-key hits 43.5 → 30.1 ms, misses 63.8 → 44.0 ms, and the sequential-key
 superpower intact (2.7 ms — 10–14× faster than fastutil). A second modulo in the probe-advance was later replaced
 by a conditional subtract.</p>
-<h3>Act 3 — HMLFamac: memory-level parallelism (a mostly-null result)</h3>
+<h3>Act 3 — HMLFamac: memory-level parallelism (null at 0.5, decisive when tables fill)</h3>
 <p>An AMAC-style window of 16 in-flight lookups, each stashing its next bucket's keys a turn ahead. At lf 0.5 it
-changed nothing (window 8/16/32 all flat): short probe chains and independent loop iterations mean out-of-order
-hardware already extracts the available parallelism, and Java has no true prefetch to add more. At lf 0.9 —
-long chains — it earns ~9–15%: AMAC_K4V4 was the first DH impl to beat fastutil on any random-key benchmark
-(275 vs 307 ms misses at 1.89M keys).</p>
-<h3>Act 4 — alignment: the ByteBuffer experiment</h3>
-<p>A K4V4 bucket is exactly 64 bytes, but heap arrays can't promise alignment, so most buckets straddle two cache
-lines. Backing the same algorithm with a 64-byte-aligned direct ByteBuffer answered "how much does that cost":
-~15% of lookup performance at lf 0.5 (95.5 → 80.5 ms hits), ~9% on misses at 0.9 — at the price of ~33% slower
-fills (bounds-checked stores + direct-buffer zeroing) and the direct-memory lifecycle burden. It is absent from
-the headline study for a structural reason discovered there: <strong>ByteBuffer is int-indexed, capping one table
-at 2GB</strong> — the 67M-key K4V4 table needs 2.19GB and simply cannot be allocated. Scaling the aligned design
-past 2GB requires segmented buffers or JDK 22+ MemorySegment (long-indexed, arena-managed), which is where that
-experiment should go next.</p>
+changes nothing (window 8/16/32 all flat): probe chains are short and independent loop iterations already let
+out-of-order hardware extract the available parallelism, and Java has no true prefetch to add more. But the
+window's design case is long probe chains, and when tables fill it delivers: at lf 0.9 it produced the first DH
+win over fastutil on any random-key benchmark (275 vs 307 ms misses at 1.89M keys), and in the headline study
+above the AMAC variants own every high-load-factor cell — the windowed get is a core ingredient of the
+implementations that beat fastutil by 25–60% at lf 0.9–0.95. Verdict by regime, not "mostly null": free to carry
+at low occupancy, decisive at high.</p>
+<h3>Act 4 — alignment: from ByteBuffer to MemorySegment</h3>
+<p>A K4V4 bucket is exactly 64 bytes, but heap arrays can't promise alignment — the JVM places array data where it
+likes, so most buckets straddle two cache lines and every probe pays double the miss traffic. A ByteBuffer
+prototype proved the thesis (~15% faster lookups at lf 0.5 once buckets sat on single lines) and then hit a wall
+that got it deleted from the suite: ByteBuffer is int-indexed <em>in bytes</em>, capping a table at 2GB — 1/8 the
+reach of a long[] — and the ~2.15GB headline tables simply cannot be allocated (archived numbers in
+<code>results/bb-*.json</code>; code in git history). Its finished form is <strong>AMAC_K4V4_MS</strong>
+(java.lang.foreign, JDK 22+): 64-byte-aligned native MemorySegments, long-indexed so no size cap, allocated from
+<code>Arena.ofAuto()</code> — the GC-managed arena, chosen deliberately because an old segment must outlive the
+rehash that replaces it for exactly as long as some reader still holds the snapshot, which is the same lifetime
+contract heap arrays get from the garbage collector for free (a deterministic <code>close()</code> would throw
+under a concurrent reader mid-probe). In the headline study it sweeps every lf 0.9/0.95 cell, edging the heap
+AMAC_K4V4 by a final ~2–4% — so it is the champion, but a JDK-22+ opt-in luxury rather than a necessity.</p>
 
-<h2>Environment check: WSL2 vs native Windows</h2>
-{env_section}
+<h2>Environment note</h2>
+<p>Suite v1 (an earlier workload definition) was run on both WSL2 and native Windows, which validated the
+methodology: every ranking reproduced across environments; median confidence-interval half-width fell from ±10.1%
+(WSL2) to ±4.3% (Windows); and one WSL2 group was caught running uniformly ~2× slow across all implementations
+including the baseline — classic shared-memory-bandwidth contamination, and the reason the headline suite runs on
+native Windows. The v1 datasets are archived under <code>results/wsl2/</code> and in git history.</p>
 
 <h2>Verdict</h2>
 <div class="verdict">
-<p><strong>Why not just use fastutil?</strong> Its speed comes from linear probing and backward-shift deletion —
-both of which move or scan entries in ways that are <em>illegal under a lock-free reader</em>: a concurrent shift
-can make a present key silently vanish from a reader's probe path. Its speed is the prize for dropping exactly the
-guarantee the redirection index requires. And on the workload that actually matters — pulsed hits — its scrambling
-hash discards the locality the DH weak-fold hash exploits, as the headline chart shows.</p>
-<p><strong>What to keep:</strong> the batch interface, the reciprocal trick, and the wide-bucket (K4V4-style)
-shapes, which barely notice high load factors. AMAC and 64-byte alignment are situational: worth it for
-miss-heavy or 0.9+ deployments, not for the common case. The write path was out of scope here beyond spot
-checks; benchmark it before promoting any variant.</p>
+<p><strong>The load factor is the verdict.</strong> At relaxed occupancy (0.5–0.75), fastutil wins most realistic
+lookup workloads — with sorted reads of pulsed tables the one hold-out where the DH weak-fold hash still pays. At
+0.9–0.95, the customer-critical regime, <strong>AMAC_K4V4_MS sweeps every cell</strong> — both key distributions,
+both probe orderings — beating fastutil by 25–60% even on uniform-random shuffled lookups, its strongest ground.
+The full stack earns that: batch interface (amortized dispatch, snapshot, and reciprocal), division-free probing,
+the AMAC window (which only pays off when probe chains lengthen), and one-cache-line buckets via 64-byte-aligned
+MemorySegments.</p>
+<p><strong>Why not just use fastutil anyway?</strong> Its speed comes from linear probing and backward-shift
+deletion — both of which move or scan entries in ways that are <em>illegal under a lock-free reader</em>: a
+concurrent shift can make a present key silently vanish from a reader's probe path. It is a superb map answering
+a different question. Where its tricks are legal, use it; the redirection index is not that place — and at the
+load factors customers actually run, it now loses on raw speed too.</p>
+<p><strong>What to keep:</strong> the batch interface and reciprocal everywhere; wide (K4V4) buckets; the
+MemorySegment variant as the high-load-factor engine (requires JDK 22+ — an opt-in for customers who can take
+it). The write path was out of scope beyond spot checks; benchmark it before promoting any variant.</p>
 </div>
 
 <h2>Appendix</h2>
