@@ -5,7 +5,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -13,9 +13,9 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -27,38 +27,39 @@
             "impl" : "K1V1",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 93.65131,
-            "scoreError" : 1.9150013208740144,
+            "score" : 100.785464,
+            "scoreError" : 10.760884922622205,
             "scoreConfidence" : [
-                91.73630867912598,
-                95.56631132087401
+                90.0245790773778,
+                111.54634892262222
             ],
             "scorePercentiles" : {
-                "0.0" : 93.18928333333334,
-                "50.0" : 93.43518333333333,
-                "90.0" : 94.43445,
-                "95.0" : 94.43445,
-                "99.0" : 94.43445,
-                "99.9" : 94.43445,
-                "99.99" : 94.43445,
-                "99.999" : 94.43445,
-                "99.9999" : 94.43445,
-                "100.0" : 94.43445
+                "0.0" : 98.0715,
+                "50.0" : 99.59788333333333,
+                "90.0" : 104.00686,
+                "95.0" : 104.00686,
+                "99.0" : 104.00686,
+                "99.9" : 104.00686,
+                "99.99" : 104.00686,
+                "99.999" : 104.00686,
+                "99.9999" : 104.00686,
+                "100.0" : 104.00686
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    93.36396666666667,
-                    94.43445,
-                    93.18928333333334,
-                    93.83366666666667,
-                    93.43518333333333
+                    98.69101666666667,
+                    98.0715,
+                    103.56006,
+                    104.00686,
+                    99.59788333333333
                 ]
             ]
         },
@@ -71,7 +72,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -79,9 +80,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "K1V1",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 99.73026933333334,
+            "scoreError" : 11.150071412657411,
+            "scoreConfidence" : [
+                88.58019792067593,
+                110.88034074599075
+            ],
+            "scorePercentiles" : {
+                "0.0" : 97.40018333333333,
+                "50.0" : 98.78036666666667,
+                "90.0" : 104.75958,
+                "95.0" : 104.75958,
+                "99.0" : 104.75958,
+                "99.9" : 104.75958,
+                "99.99" : 104.75958,
+                "99.999" : 104.75958,
+                "99.9999" : 104.75958,
+                "100.0" : 104.75958
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    104.75958,
+                    97.40018333333333,
+                    98.41786666666667,
+                    99.29335,
+                    98.78036666666667
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -93,38 +161,39 @@
             "impl" : "K1V1",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 69.91877,
-            "scoreError" : 0.8196876960681142,
+            "score" : 71.40576821428571,
+            "scoreError" : 2.3336800696954043,
             "scoreConfidence" : [
-                69.09908230393188,
-                70.73845769606811
+                69.07208814459031,
+                73.73944828398112
             ],
             "scorePercentiles" : {
-                "0.0" : 69.6307625,
-                "50.0" : 69.8846625,
-                "90.0" : 70.1967375,
-                "95.0" : 70.1967375,
-                "99.0" : 70.1967375,
-                "99.9" : 70.1967375,
-                "99.99" : 70.1967375,
-                "99.999" : 70.1967375,
-                "99.9999" : 70.1967375,
-                "100.0" : 70.1967375
+                "0.0" : 70.925975,
+                "50.0" : 71.11225,
+                "90.0" : 72.4185,
+                "95.0" : 72.4185,
+                "99.0" : 72.4185,
+                "99.9" : 72.4185,
+                "99.99" : 72.4185,
+                "99.999" : 72.4185,
+                "99.9999" : 72.4185,
+                "100.0" : 72.4185
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    69.843625,
-                    69.6307625,
-                    70.1967375,
-                    70.0380625,
-                    69.8846625
+                    72.4185,
+                    71.50802857142857,
+                    70.925975,
+                    71.0640875,
+                    71.11225
                 ]
             ]
         },
@@ -137,7 +206,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -145,9 +214,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "K1V1",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 88.68894,
+            "scoreError" : 2.18136540382761,
+            "scoreConfidence" : [
+                86.50757459617239,
+                90.87030540382762
+            ],
+            "scorePercentiles" : {
+                "0.0" : 88.03681666666667,
+                "50.0" : 88.98441666666666,
+                "90.0" : 89.24211666666666,
+                "95.0" : 89.24211666666666,
+                "99.0" : 89.24211666666666,
+                "99.9" : 89.24211666666666,
+                "99.99" : 89.24211666666666,
+                "99.999" : 89.24211666666666,
+                "99.9999" : 89.24211666666666,
+                "100.0" : 89.24211666666666
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    89.24211666666666,
+                    88.03681666666667,
+                    88.11856666666667,
+                    88.98441666666666,
+                    89.06278333333333
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -159,38 +295,39 @@
             "impl" : "K2V2",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 108.37581599999999,
-            "scoreError" : 5.200169006999908,
+            "score" : 106.02519600000001,
+            "scoreError" : 3.060956306500821,
             "scoreConfidence" : [
-                103.17564699300007,
-                113.5759850069999
+                102.96423969349918,
+                109.08615230650084
             ],
             "scorePercentiles" : {
-                "0.0" : 106.71184,
-                "50.0" : 108.90046,
-                "90.0" : 109.67392,
-                "95.0" : 109.67392,
-                "99.0" : 109.67392,
-                "99.9" : 109.67392,
-                "99.99" : 109.67392,
-                "99.999" : 109.67392,
-                "99.9999" : 109.67392,
-                "100.0" : 109.67392
+                "0.0" : 105.32018,
+                "50.0" : 105.88822,
+                "90.0" : 107.30486,
+                "95.0" : 107.30486,
+                "99.0" : 107.30486,
+                "99.9" : 107.30486,
+                "99.99" : 107.30486,
+                "99.999" : 107.30486,
+                "99.9999" : 107.30486,
+                "100.0" : 107.30486
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    109.42632,
-                    109.67392,
-                    108.90046,
-                    107.16654,
-                    106.71184
+                    105.88822,
+                    105.32018,
+                    106.1795,
+                    105.43322,
+                    107.30486
                 ]
             ]
         },
@@ -203,7 +340,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -211,9 +348,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "K2V2",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 108.229632,
+            "scoreError" : 4.263411369960764,
+            "scoreConfidence" : [
+                103.96622063003923,
+                112.49304336996076
+            ],
+            "scorePercentiles" : {
+                "0.0" : 106.99576,
+                "50.0" : 107.8145,
+                "90.0" : 109.86574,
+                "95.0" : 109.86574,
+                "99.0" : 109.86574,
+                "99.9" : 109.86574,
+                "99.99" : 109.86574,
+                "99.999" : 109.86574,
+                "99.9999" : 109.86574,
+                "100.0" : 109.86574
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    107.8145,
+                    107.72042,
+                    106.99576,
+                    108.75174,
+                    109.86574
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -225,38 +429,39 @@
             "impl" : "K2V2",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 48.601738181818185,
-            "scoreError" : 5.099489556904625,
+            "score" : 60.35579555555555,
+            "scoreError" : 3.9928073398118253,
             "scoreConfidence" : [
-                43.50224862491356,
-                53.70122773872281
+                56.36298821574373,
+                64.34860289536738
             ],
             "scorePercentiles" : {
-                "0.0" : 47.59522727272727,
-                "50.0" : 47.781172727272725,
-                "90.0" : 50.53226363636364,
-                "95.0" : 50.53226363636364,
-                "99.0" : 50.53226363636364,
-                "99.9" : 50.53226363636364,
-                "99.99" : 50.53226363636364,
-                "99.999" : 50.53226363636364,
-                "99.9999" : 50.53226363636364,
-                "100.0" : 50.53226363636364
+                "0.0" : 59.626733333333334,
+                "50.0" : 59.81494444444444,
+                "90.0" : 62.105644444444444,
+                "95.0" : 62.105644444444444,
+                "99.0" : 62.105644444444444,
+                "99.9" : 62.105644444444444,
+                "99.99" : 62.105644444444444,
+                "99.999" : 62.105644444444444,
+                "99.9999" : 62.105644444444444,
+                "100.0" : 62.105644444444444
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    47.656527272727274,
-                    49.4435,
-                    47.781172727272725,
-                    50.53226363636364,
-                    47.59522727272727
+                    59.626733333333334,
+                    59.81494444444444,
+                    62.105644444444444,
+                    59.72877777777778,
+                    60.502877777777776
                 ]
             ]
         },
@@ -269,7 +474,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -277,9 +482,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "K2V2",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 103.28558000000001,
+            "scoreError" : 6.388338236310283,
+            "scoreConfidence" : [
+                96.89724176368972,
+                109.6739182363103
+            ],
+            "scorePercentiles" : {
+                "0.0" : 101.88034,
+                "50.0" : 102.9337,
+                "90.0" : 106.0033,
+                "95.0" : 106.0033,
+                "99.0" : 106.0033,
+                "99.9" : 106.0033,
+                "99.99" : 106.0033,
+                "99.999" : 106.0033,
+                "99.9999" : 106.0033,
+                "100.0" : 106.0033
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    106.0033,
+                    102.07602,
+                    103.53454,
+                    102.9337,
+                    101.88034
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -291,38 +563,39 @@
             "impl" : "K4V4",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 131.06664499999997,
-            "scoreError" : 0.9671733090553953,
+            "score" : 130.61280000000002,
+            "scoreError" : 1.8022460990083604,
             "scoreConfidence" : [
-                130.09947169094457,
-                132.03381830905536
+                128.81055390099166,
+                132.41504609900838
             ],
             "scorePercentiles" : {
-                "0.0" : 130.795525,
-                "50.0" : 130.98805,
-                "90.0" : 131.46835,
-                "95.0" : 131.46835,
-                "99.0" : 131.46835,
-                "99.9" : 131.46835,
-                "99.99" : 131.46835,
-                "99.999" : 131.46835,
-                "99.9999" : 131.46835,
-                "100.0" : 131.46835
+                "0.0" : 130.107225,
+                "50.0" : 130.629075,
+                "90.0" : 131.3349,
+                "95.0" : 131.3349,
+                "99.0" : 131.3349,
+                "99.9" : 131.3349,
+                "99.99" : 131.3349,
+                "99.999" : 131.3349,
+                "99.9999" : 131.3349,
+                "100.0" : 131.3349
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    131.46835,
-                    131.111175,
-                    130.970125,
-                    130.795525,
-                    130.98805
+                    130.107225,
+                    130.685925,
+                    130.629075,
+                    130.306875,
+                    131.3349
                 ]
             ]
         },
@@ -335,7 +608,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -343,9 +616,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "K4V4",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 131.923385,
+            "scoreError" : 6.646479563407008,
+            "scoreConfidence" : [
+                125.27690543659298,
+                138.569864563407
+            ],
+            "scorePercentiles" : {
+                "0.0" : 130.493525,
+                "50.0" : 130.9205,
+                "90.0" : 133.8812,
+                "95.0" : 133.8812,
+                "99.0" : 133.8812,
+                "99.9" : 133.8812,
+                "99.99" : 133.8812,
+                "99.999" : 133.8812,
+                "99.9999" : 133.8812,
+                "100.0" : 133.8812
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    130.9205,
+                    130.493525,
+                    133.8812,
+                    130.592225,
+                    133.729475
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -357,38 +697,39 @@
             "impl" : "K4V4",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 33.75430441666666,
-            "scoreError" : 0.8335688827423208,
+            "score" : 52.633712,
+            "scoreError" : 3.5048766458019633,
             "scoreConfidence" : [
-                32.92073553392434,
-                34.58787329940898
+                49.12883535419804,
+                56.13858864580197
             ],
             "scorePercentiles" : {
-                "0.0" : 33.46019375,
-                "50.0" : 33.764813333333336,
-                "90.0" : 34.059126666666664,
-                "95.0" : 34.059126666666664,
-                "99.0" : 34.059126666666664,
-                "99.9" : 34.059126666666664,
-                "99.99" : 34.059126666666664,
-                "99.999" : 34.059126666666664,
-                "99.9999" : 34.059126666666664,
-                "100.0" : 34.059126666666664
+                "0.0" : 51.96313,
+                "50.0" : 52.23239,
+                "90.0" : 54.20981,
+                "95.0" : 54.20981,
+                "99.0" : 54.20981,
+                "99.9" : 54.20981,
+                "99.99" : 54.20981,
+                "99.999" : 54.20981,
+                "99.9999" : 54.20981,
+                "100.0" : 54.20981
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    33.46019375,
-                    33.764813333333336,
-                    33.80571333333334,
-                    34.059126666666664,
-                    33.681675
+                    51.96313,
+                    52.16718,
+                    52.23239,
+                    54.20981,
+                    52.59605
                 ]
             ]
         },
@@ -401,7 +742,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -409,9 +750,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "K4V4",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 129.24993,
+            "scoreError" : 6.313009473801274,
+            "scoreConfidence" : [
+                122.93692052619873,
+                135.5629394738013
+            ],
+            "scorePercentiles" : {
+                "0.0" : 126.760825,
+                "50.0" : 129.41975,
+                "90.0" : 131.34415,
+                "95.0" : 131.34415,
+                "99.0" : 131.34415,
+                "99.9" : 131.34415,
+                "99.99" : 131.34415,
+                "99.999" : 131.34415,
+                "99.9999" : 131.34415,
+                "100.0" : 131.34415
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    129.60315,
+                    129.41975,
+                    129.121775,
+                    126.760825,
+                    131.34415
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -423,38 +831,39 @@
             "impl" : "NOMOD_K1V1",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 83.83578,
-            "scoreError" : 3.4371956805715325,
+            "score" : 86.96983333333333,
+            "scoreError" : 2.942613250961073,
             "scoreConfidence" : [
-                80.39858431942847,
-                87.27297568057153
+                84.02722008237225,
+                89.9124465842944
             ],
             "scorePercentiles" : {
-                "0.0" : 82.60778571428571,
-                "50.0" : 83.74334285714286,
-                "90.0" : 85.08248333333333,
-                "95.0" : 85.08248333333333,
-                "99.0" : 85.08248333333333,
-                "99.9" : 85.08248333333333,
-                "99.99" : 85.08248333333333,
-                "99.999" : 85.08248333333333,
-                "99.9999" : 85.08248333333333,
-                "100.0" : 85.08248333333333
+                "0.0" : 86.06376666666667,
+                "50.0" : 86.72346666666667,
+                "90.0" : 88.12448333333333,
+                "95.0" : 88.12448333333333,
+                "99.0" : 88.12448333333333,
+                "99.9" : 88.12448333333333,
+                "99.99" : 88.12448333333333,
+                "99.999" : 88.12448333333333,
+                "99.9999" : 88.12448333333333,
+                "100.0" : 88.12448333333333
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    83.63427142857142,
-                    82.60778571428571,
-                    83.74334285714286,
-                    85.08248333333333,
-                    84.11101666666667
+                    86.72346666666667,
+                    88.12448333333333,
+                    87.21475,
+                    86.7227,
+                    86.06376666666667
                 ]
             ]
         },
@@ -467,7 +876,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -475,9 +884,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "NOMOD_K1V1",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 88.56537333333334,
+            "scoreError" : 3.8572986376892047,
+            "scoreConfidence" : [
+                84.70807469564414,
+                92.42267197102254
+            ],
+            "scorePercentiles" : {
+                "0.0" : 87.61321666666667,
+                "50.0" : 88.19346666666667,
+                "90.0" : 89.71273333333333,
+                "95.0" : 89.71273333333333,
+                "99.0" : 89.71273333333333,
+                "99.9" : 89.71273333333333,
+                "99.99" : 89.71273333333333,
+                "99.999" : 89.71273333333333,
+                "99.9999" : 89.71273333333333,
+                "100.0" : 89.71273333333333
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    89.5584,
+                    89.71273333333333,
+                    87.74905,
+                    88.19346666666667,
+                    87.61321666666667
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -489,38 +965,39 @@
             "impl" : "NOMOD_K1V1",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 68.57436499999999,
-            "scoreError" : 1.4164325428000133,
+            "score" : 63.12626,
+            "scoreError" : 2.3445087180568267,
             "scoreConfidence" : [
-                67.15793245719998,
-                69.9907975428
+                60.78175128194317,
+                65.47076871805683
             ],
             "scorePercentiles" : {
-                "0.0" : 68.1142875,
-                "50.0" : 68.6346625,
-                "90.0" : 69.10605,
-                "95.0" : 69.10605,
-                "99.0" : 69.10605,
-                "99.9" : 69.10605,
-                "99.99" : 69.10605,
-                "99.999" : 69.10605,
-                "99.9999" : 69.10605,
-                "100.0" : 69.10605
+                "0.0" : 62.6679875,
+                "50.0" : 62.9458,
+                "90.0" : 64.1751625,
+                "95.0" : 64.1751625,
+                "99.0" : 64.1751625,
+                "99.9" : 64.1751625,
+                "99.99" : 64.1751625,
+                "99.999" : 64.1751625,
+                "99.9999" : 64.1751625,
+                "100.0" : 64.1751625
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    68.377,
-                    69.10605,
-                    68.6346625,
-                    68.1142875,
-                    68.639825
+                    62.9458,
+                    62.7539125,
+                    64.1751625,
+                    62.6679875,
+                    63.0884375
                 ]
             ]
         },
@@ -533,7 +1010,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -541,9 +1018,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "NOMOD_K1V1",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 83.7715019047619,
+            "scoreError" : 1.9243661803945962,
+            "scoreConfidence" : [
+                81.8471357243673,
+                85.6958680851565
+            ],
+            "scorePercentiles" : {
+                "0.0" : 83.25271428571429,
+                "50.0" : 83.71956666666667,
+                "90.0" : 84.29081666666667,
+                "95.0" : 84.29081666666667,
+                "99.0" : 84.29081666666667,
+                "99.9" : 84.29081666666667,
+                "99.99" : 84.29081666666667,
+                "99.999" : 84.29081666666667,
+                "99.9999" : 84.29081666666667,
+                "100.0" : 84.29081666666667
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    83.25271428571429,
+                    83.31962857142857,
+                    84.29081666666667,
+                    83.71956666666667,
+                    84.27478333333333
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -555,38 +1099,39 @@
             "impl" : "NOMOD_K2V2",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 92.19542,
-            "scoreError" : 1.834571105597112,
+            "score" : 94.71756333333335,
+            "scoreError" : 1.1833953141637754,
             "scoreConfidence" : [
-                90.36084889440289,
-                94.0299911055971
+                93.53416801916957,
+                95.90095864749712
             ],
             "scorePercentiles" : {
-                "0.0" : 91.73593333333334,
-                "50.0" : 92.18885,
-                "90.0" : 92.95561666666667,
-                "95.0" : 92.95561666666667,
-                "99.0" : 92.95561666666667,
-                "99.9" : 92.95561666666667,
-                "99.99" : 92.95561666666667,
-                "99.999" : 92.95561666666667,
-                "99.9999" : 92.95561666666667,
-                "100.0" : 92.95561666666667
+                "0.0" : 94.44791666666667,
+                "50.0" : 94.69138333333333,
+                "90.0" : 95.20296666666667,
+                "95.0" : 95.20296666666667,
+                "99.0" : 95.20296666666667,
+                "99.9" : 95.20296666666667,
+                "99.99" : 95.20296666666667,
+                "99.999" : 95.20296666666667,
+                "99.9999" : 95.20296666666667,
+                "100.0" : 95.20296666666667
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    92.95561666666667,
-                    92.18885,
-                    91.8539,
-                    92.2428,
-                    91.73593333333334
+                    94.44791666666667,
+                    94.69138333333333,
+                    95.20296666666667,
+                    94.78216666666667,
+                    94.46338333333334
                 ]
             ]
         },
@@ -599,7 +1144,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -607,9 +1152,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "NOMOD_K2V2",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 88.33524333333332,
+            "scoreError" : 1.563812332509044,
+            "scoreConfidence" : [
+                86.77143100082428,
+                89.89905566584237
+            ],
+            "scorePercentiles" : {
+                "0.0" : 87.85768333333333,
+                "50.0" : 88.54155,
+                "90.0" : 88.69026666666667,
+                "95.0" : 88.69026666666667,
+                "99.0" : 88.69026666666667,
+                "99.9" : 88.69026666666667,
+                "99.99" : 88.69026666666667,
+                "99.999" : 88.69026666666667,
+                "99.9999" : 88.69026666666667,
+                "100.0" : 88.69026666666667
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    88.54155,
+                    87.85768333333333,
+                    88.69026666666667,
+                    87.93311666666666,
+                    88.6536
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -621,38 +1233,39 @@
             "impl" : "NOMOD_K2V2",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 43.37653999999999,
-            "scoreError" : 0.7996329144720533,
+            "score" : 55.40252400000001,
+            "scoreError" : 1.7424625998015164,
             "scoreConfidence" : [
-                42.576907085527935,
-                44.17617291447205
+                53.660061400198494,
+                57.14498659980152
             ],
             "scorePercentiles" : {
-                "0.0" : 43.114666666666665,
-                "50.0" : 43.447266666666664,
-                "90.0" : 43.618408333333335,
-                "95.0" : 43.618408333333335,
-                "99.0" : 43.618408333333335,
-                "99.9" : 43.618408333333335,
-                "99.99" : 43.618408333333335,
-                "99.999" : 43.618408333333335,
-                "99.9999" : 43.618408333333335,
-                "100.0" : 43.618408333333335
+                "0.0" : 54.99708,
+                "50.0" : 55.20001,
+                "90.0" : 56.1403,
+                "95.0" : 56.1403,
+                "99.0" : 56.1403,
+                "99.9" : 56.1403,
+                "99.99" : 56.1403,
+                "99.999" : 56.1403,
+                "99.9999" : 56.1403,
+                "100.0" : 56.1403
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    43.49105,
-                    43.447266666666664,
-                    43.114666666666665,
-                    43.618408333333335,
-                    43.211308333333335
+                    55.51216,
+                    55.20001,
+                    54.99708,
+                    55.16307,
+                    56.1403
                 ]
             ]
         },
@@ -665,7 +1278,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -673,9 +1286,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "NOMOD_K2V2",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 88.83617666666666,
+            "scoreError" : 2.6782013187524174,
+            "scoreConfidence" : [
+                86.15797534791425,
+                91.51437798541907
+            ],
+            "scorePercentiles" : {
+                "0.0" : 87.64956666666667,
+                "50.0" : 88.98968333333333,
+                "90.0" : 89.45693333333334,
+                "95.0" : 89.45693333333334,
+                "99.0" : 89.45693333333334,
+                "99.9" : 89.45693333333334,
+                "99.99" : 89.45693333333334,
+                "99.999" : 89.45693333333334,
+                "99.9999" : 89.45693333333334,
+                "100.0" : 89.45693333333334
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    87.64956666666667,
+                    88.91383333333333,
+                    88.98968333333333,
+                    89.17086666666667,
+                    89.45693333333334
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -687,38 +1367,39 @@
             "impl" : "NOMOD_K4V4",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 126.923419,
-            "scoreError" : 3.425452856649444,
+            "score" : 135.12015499999998,
+            "scoreError" : 9.926016282997024,
             "scoreConfidence" : [
-                123.49796614335055,
-                130.34887185664945
+                125.19413871700296,
+                145.046171282997
             ],
             "scorePercentiles" : {
-                "0.0" : 125.83306,
-                "50.0" : 126.89498,
-                "90.0" : 128.30492,
-                "95.0" : 128.30492,
-                "99.0" : 128.30492,
-                "99.9" : 128.30492,
-                "99.99" : 128.30492,
-                "99.999" : 128.30492,
-                "99.9999" : 128.30492,
-                "100.0" : 128.30492
+                "0.0" : 131.60755,
+                "50.0" : 134.99425,
+                "90.0" : 138.22375,
+                "95.0" : 138.22375,
+                "99.0" : 138.22375,
+                "99.9" : 138.22375,
+                "99.99" : 138.22375,
+                "99.999" : 138.22375,
+                "99.9999" : 138.22375,
+                "100.0" : 138.22375
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    126.664275,
-                    126.91986,
-                    128.30492,
-                    125.83306,
-                    126.89498
+                    138.22375,
+                    136.8792,
+                    134.99425,
+                    133.896025,
+                    131.60755
                 ]
             ]
         },
@@ -731,7 +1412,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -739,9 +1420,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "NOMOD_K4V4",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 124.25506,
+            "scoreError" : 1.1507741796836366,
+            "scoreConfidence" : [
+                123.10428582031636,
+                125.40583417968364
+            ],
+            "scorePercentiles" : {
+                "0.0" : 123.89838,
+                "50.0" : 124.20342,
+                "90.0" : 124.72584,
+                "95.0" : 124.72584,
+                "99.0" : 124.72584,
+                "99.9" : 124.72584,
+                "99.99" : 124.72584,
+                "99.999" : 124.72584,
+                "99.9999" : 124.72584,
+                "100.0" : 124.72584
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    123.89838,
+                    124.72584,
+                    124.18036,
+                    124.20342,
+                    124.2673
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -753,38 +1501,39 @@
             "impl" : "NOMOD_K4V4",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 32.477238750000005,
-            "scoreError" : 0.5509331707128918,
+            "score" : 47.94158,
+            "scoreError" : 0.5609855983519481,
             "scoreConfidence" : [
-                31.926305579287114,
-                33.0281719207129
+                47.380594401648054,
+                48.50256559835195
             ],
             "scorePercentiles" : {
-                "0.0" : 32.2702125,
-                "50.0" : 32.551825,
-                "90.0" : 32.59073125,
-                "95.0" : 32.59073125,
-                "99.0" : 32.59073125,
-                "99.9" : 32.59073125,
-                "99.99" : 32.59073125,
-                "99.999" : 32.59073125,
-                "99.9999" : 32.59073125,
-                "100.0" : 32.59073125
+                "0.0" : 47.75940909090909,
+                "50.0" : 47.928081818181816,
+                "90.0" : 48.16077272727273,
+                "95.0" : 48.16077272727273,
+                "99.0" : 48.16077272727273,
+                "99.9" : 48.16077272727273,
+                "99.99" : 48.16077272727273,
+                "99.999" : 48.16077272727273,
+                "99.9999" : 48.16077272727273,
+                "100.0" : 48.16077272727273
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    32.2702125,
-                    32.38571875,
-                    32.58770625,
-                    32.551825,
-                    32.59073125
+                    47.969863636363634,
+                    47.928081818181816,
+                    48.16077272727273,
+                    47.75940909090909,
+                    47.88977272727273
                 ]
             ]
         },
@@ -797,7 +1546,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -805,9 +1554,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "NOMOD_K4V4",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 120.203216,
+            "scoreError" : 4.009321213658487,
+            "scoreConfidence" : [
+                116.19389478634152,
+                124.21253721365848
+            ],
+            "scorePercentiles" : {
+                "0.0" : 118.9255,
+                "50.0" : 120.07142,
+                "90.0" : 121.7214,
+                "95.0" : 121.7214,
+                "99.0" : 121.7214,
+                "99.9" : 121.7214,
+                "99.99" : 121.7214,
+                "99.999" : 121.7214,
+                "99.9999" : 121.7214,
+                "100.0" : 121.7214
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    120.07142,
+                    118.9255,
+                    119.71544,
+                    121.7214,
+                    120.58232
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -819,38 +1635,39 @@
             "impl" : "AMAC_K1V1",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 57.04218155555556,
-            "scoreError" : 4.00809599658144,
+            "score" : 57.63481111111112,
+            "scoreError" : 2.4078330225046685,
             "scoreConfidence" : [
-                53.03408555897412,
-                61.050277552137
+                55.22697808860645,
+                60.04264413361579
             ],
             "scorePercentiles" : {
-                "0.0" : 55.51463,
-                "50.0" : 56.84522222222222,
-                "90.0" : 58.13173333333334,
-                "95.0" : 58.13173333333334,
-                "99.0" : 58.13173333333334,
-                "99.9" : 58.13173333333334,
-                "99.99" : 58.13173333333334,
-                "99.999" : 58.13173333333334,
-                "99.9999" : 58.13173333333334,
-                "100.0" : 58.13173333333334
+                "0.0" : 56.90507777777778,
+                "50.0" : 57.6027,
+                "90.0" : 58.32057777777778,
+                "95.0" : 58.32057777777778,
+                "99.0" : 58.32057777777778,
+                "99.9" : 58.32057777777778,
+                "99.99" : 58.32057777777778,
+                "99.999" : 58.32057777777778,
+                "99.9999" : 58.32057777777778,
+                "100.0" : 58.32057777777778
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    55.51463,
-                    56.84522222222222,
-                    57.894866666666665,
-                    56.82445555555555,
-                    58.13173333333334
+                    56.90507777777778,
+                    58.20073333333333,
+                    57.14496666666667,
+                    58.32057777777778,
+                    57.6027
                 ]
             ]
         },
@@ -863,7 +1680,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -871,9 +1688,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K1V1",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 61.99248861111111,
+            "scoreError" : 10.827753241923066,
+            "scoreConfidence" : [
+                51.16473536918805,
+                72.82024185303418
+            ],
+            "scorePercentiles" : {
+                "0.0" : 58.21675555555556,
+                "50.0" : 62.6133,
+                "90.0" : 64.6671625,
+                "95.0" : 64.6671625,
+                "99.0" : 64.6671625,
+                "99.9" : 64.6671625,
+                "99.99" : 64.6671625,
+                "99.999" : 64.6671625,
+                "99.9999" : 64.6671625,
+                "100.0" : 64.6671625
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    64.436825,
+                    64.6671625,
+                    58.21675555555556,
+                    60.0284,
+                    62.6133
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -885,38 +1769,39 @@
             "impl" : "AMAC_K1V1",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 47.100818181818184,
-            "scoreError" : 0.6536822131920047,
+            "score" : 53.891980000000004,
+            "scoreError" : 2.440423777498352,
             "scoreConfidence" : [
-                46.44713596862618,
-                47.75450039501019
+                51.45155622250165,
+                56.33240377749836
             ],
             "scorePercentiles" : {
-                "0.0" : 46.8955,
-                "50.0" : 47.20147272727273,
-                "90.0" : 47.242045454545455,
-                "95.0" : 47.242045454545455,
-                "99.0" : 47.242045454545455,
-                "99.9" : 47.242045454545455,
-                "99.99" : 47.242045454545455,
-                "99.999" : 47.242045454545455,
-                "99.9999" : 47.242045454545455,
-                "100.0" : 47.242045454545455
+                "0.0" : 53.06482,
+                "50.0" : 53.93514,
+                "90.0" : 54.78685,
+                "95.0" : 54.78685,
+                "99.0" : 54.78685,
+                "99.9" : 54.78685,
+                "99.99" : 54.78685,
+                "99.999" : 54.78685,
+                "99.9999" : 54.78685,
+                "100.0" : 54.78685
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    46.8955,
-                    47.242045454545455,
-                    46.93698181818182,
-                    47.20147272727273,
-                    47.22809090909091
+                    53.59815,
+                    53.06482,
+                    54.78685,
+                    54.07494,
+                    53.93514
                 ]
             ]
         },
@@ -929,7 +1814,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -937,9 +1822,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K1V1",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 56.44140666666667,
+            "scoreError" : 2.142188032008703,
+            "scoreConfidence" : [
+                54.29921863465797,
+                58.58359469867538
+            ],
+            "scorePercentiles" : {
+                "0.0" : 55.658855555555554,
+                "50.0" : 56.38341111111111,
+                "90.0" : 57.196688888888886,
+                "95.0" : 57.196688888888886,
+                "99.0" : 57.196688888888886,
+                "99.9" : 57.196688888888886,
+                "99.99" : 57.196688888888886,
+                "99.999" : 57.196688888888886,
+                "99.9999" : 57.196688888888886,
+                "100.0" : 57.196688888888886
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    56.38341111111111,
+                    56.32891111111111,
+                    57.196688888888886,
+                    55.658855555555554,
+                    56.63916666666667
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -951,38 +1903,39 @@
             "impl" : "AMAC_K2V2",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 53.59134400000001,
-            "scoreError" : 3.7702839537109414,
+            "score" : 53.923471333333325,
+            "scoreError" : 6.515505776513843,
             "scoreConfidence" : [
-                49.82106004628906,
-                57.36162795371095
+                47.407965556819484,
+                60.438977109847166
             ],
             "scorePercentiles" : {
-                "0.0" : 52.44171,
-                "50.0" : 53.57692,
-                "90.0" : 55.1125,
-                "95.0" : 55.1125,
-                "99.0" : 55.1125,
-                "99.9" : 55.1125,
-                "99.99" : 55.1125,
-                "99.999" : 55.1125,
-                "99.9999" : 55.1125,
-                "100.0" : 55.1125
+                "0.0" : 52.37106,
+                "50.0" : 53.27916,
+                "90.0" : 56.180366666666664,
+                "95.0" : 56.180366666666664,
+                "99.0" : 56.180366666666664,
+                "99.9" : 56.180366666666664,
+                "99.99" : 56.180366666666664,
+                "99.999" : 56.180366666666664,
+                "99.9999" : 56.180366666666664,
+                "100.0" : 56.180366666666664
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    53.57692,
-                    53.67284,
-                    53.15275,
-                    55.1125,
-                    52.44171
+                    53.27916,
+                    52.37106,
+                    55.22224,
+                    52.56453,
+                    56.180366666666664
                 ]
             ]
         },
@@ -995,7 +1948,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -1003,9 +1956,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K2V2",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 53.195128,
+            "scoreError" : 0.9687693773888019,
+            "scoreConfidence" : [
+                52.226358622611194,
+                54.1638973773888
+            ],
+            "scorePercentiles" : {
+                "0.0" : 52.79633,
+                "50.0" : 53.20733,
+                "90.0" : 53.45916,
+                "95.0" : 53.45916,
+                "99.0" : 53.45916,
+                "99.9" : 53.45916,
+                "99.99" : 53.45916,
+                "99.999" : 53.45916,
+                "99.9999" : 53.45916,
+                "100.0" : 53.45916
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    53.16484,
+                    53.34798,
+                    52.79633,
+                    53.20733,
+                    53.45916
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -1017,38 +2037,39 @@
             "impl" : "AMAC_K2V2",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 34.726697333333334,
-            "scoreError" : 3.323271734909704,
+            "score" : 49.591575272727276,
+            "scoreError" : 2.3203594988100313,
             "scoreConfidence" : [
-                31.40342559842363,
-                38.04996906824304
+                47.27121577391725,
+                51.911934771537304
             ],
             "scorePercentiles" : {
-                "0.0" : 34.14892666666667,
-                "50.0" : 34.437693333333335,
-                "90.0" : 36.25501333333333,
-                "95.0" : 36.25501333333333,
-                "99.0" : 36.25501333333333,
-                "99.9" : 36.25501333333333,
-                "99.99" : 36.25501333333333,
-                "99.999" : 36.25501333333333,
-                "99.9999" : 36.25501333333333,
-                "100.0" : 36.25501333333333
+                "0.0" : 48.75382727272727,
+                "50.0" : 49.74253636363636,
+                "90.0" : 50.13971818181818,
+                "95.0" : 50.13971818181818,
+                "99.0" : 50.13971818181818,
+                "99.9" : 50.13971818181818,
+                "99.99" : 50.13971818181818,
+                "99.999" : 50.13971818181818,
+                "99.9999" : 50.13971818181818,
+                "100.0" : 50.13971818181818
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    34.33484,
-                    34.437693333333335,
-                    36.25501333333333,
-                    34.457013333333336,
-                    34.14892666666667
+                    50.13971818181818,
+                    48.75382727272727,
+                    50.11794,
+                    49.74253636363636,
+                    49.20385454545455
                 ]
             ]
         },
@@ -1061,7 +2082,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -1069,9 +2090,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K2V2",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 52.882805999999995,
+            "scoreError" : 2.590294238622566,
+            "scoreConfidence" : [
+                50.292511761377426,
+                55.473100238622564
+            ],
+            "scorePercentiles" : {
+                "0.0" : 52.39657,
+                "50.0" : 52.53779,
+                "90.0" : 54.0147,
+                "95.0" : 54.0147,
+                "99.0" : 54.0147,
+                "99.9" : 54.0147,
+                "99.99" : 54.0147,
+                "99.999" : 54.0147,
+                "99.9999" : 54.0147,
+                "100.0" : 54.0147
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    52.98568,
+                    52.53779,
+                    52.47929,
+                    52.39657,
+                    54.0147
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -1083,38 +2171,39 @@
             "impl" : "AMAC_K4V4",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 52.12528763636364,
-            "scoreError" : 6.48731519393479,
+            "score" : 52.24802,
+            "scoreError" : 3.636434503031221,
             "scoreConfidence" : [
-                45.63797244242885,
-                58.61260283029843
+                48.61158549696878,
+                55.884454503031215
             ],
             "scorePercentiles" : {
-                "0.0" : 50.56561818181818,
-                "50.0" : 51.69307,
-                "90.0" : 54.59872,
-                "95.0" : 54.59872,
-                "99.0" : 54.59872,
-                "99.9" : 54.59872,
-                "99.99" : 54.59872,
-                "99.999" : 54.59872,
-                "99.9999" : 54.59872,
-                "100.0" : 54.59872
+                "0.0" : 51.45129,
+                "50.0" : 52.09507,
+                "90.0" : 53.86261,
+                "95.0" : 53.86261,
+                "99.0" : 53.86261,
+                "99.9" : 53.86261,
+                "99.99" : 53.86261,
+                "99.999" : 53.86261,
+                "99.9999" : 53.86261,
+                "100.0" : 53.86261
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    54.59872,
-                    53.00258,
-                    50.76645,
-                    50.56561818181818,
-                    51.69307
+                    51.45129,
+                    53.86261,
+                    52.11708,
+                    52.09507,
+                    51.71405
                 ]
             ]
         },
@@ -1127,7 +2216,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -1135,9 +2224,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K4V4",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 51.869884,
+            "scoreError" : 2.5059044865966262,
+            "scoreConfidence" : [
+                49.36397951340337,
+                54.375788486596626
+            ],
+            "scorePercentiles" : {
+                "0.0" : 50.95287,
+                "50.0" : 51.75304,
+                "90.0" : 52.59184,
+                "95.0" : 52.59184,
+                "99.0" : 52.59184,
+                "99.9" : 52.59184,
+                "99.99" : 52.59184,
+                "99.999" : 52.59184,
+                "99.9999" : 52.59184,
+                "100.0" : 52.59184
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    51.75304,
+                    51.65868,
+                    50.95287,
+                    52.39299,
+                    52.59184
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -1149,38 +2305,39 @@
             "impl" : "AMAC_K4V4",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 22.57038937417655,
-            "scoreError" : 0.7569030485938536,
+            "score" : 47.122947272727274,
+            "scoreError" : 1.8980606231287551,
             "scoreConfidence" : [
-                21.813486325582698,
-                23.3272924227704
+                45.22488664959852,
+                49.02100789585603
             ],
             "scorePercentiles" : {
-                "0.0" : 22.272158333333334,
-                "50.0" : 22.59336956521739,
-                "90.0" : 22.770536363636364,
-                "95.0" : 22.770536363636364,
-                "99.0" : 22.770536363636364,
-                "99.9" : 22.770536363636364,
-                "99.99" : 22.770536363636364,
-                "99.999" : 22.770536363636364,
-                "99.9999" : 22.770536363636364,
-                "100.0" : 22.770536363636364
+                "0.0" : 46.52325454545455,
+                "50.0" : 47.10048181818182,
+                "90.0" : 47.87298181818182,
+                "95.0" : 47.87298181818182,
+                "99.0" : 47.87298181818182,
+                "99.9" : 47.87298181818182,
+                "99.99" : 47.87298181818182,
+                "99.999" : 47.87298181818182,
+                "99.9999" : 47.87298181818182,
+                "100.0" : 47.87298181818182
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    22.713304347826085,
-                    22.272158333333334,
-                    22.770536363636364,
-                    22.59336956521739,
-                    22.502578260869566
+                    47.10048181818182,
+                    46.52325454545455,
+                    47.20221818181818,
+                    46.9158,
+                    47.87298181818182
                 ]
             ]
         },
@@ -1193,7 +2350,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -1201,9 +2358,344 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K4V4",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 53.37590155555555,
+            "scoreError" : 10.431987322937708,
+            "scoreConfidence" : [
+                42.94391423261784,
+                63.80788887849326
+            ],
+            "scorePercentiles" : {
+                "0.0" : 51.05671,
+                "50.0" : 51.72848,
+                "90.0" : 56.462022222222224,
+                "95.0" : 56.462022222222224,
+                "99.0" : 56.462022222222224,
+                "99.9" : 56.462022222222224,
+                "99.99" : 56.462022222222224,
+                "99.999" : 56.462022222222224,
+                "99.9999" : 56.462022222222224,
+                "100.0" : 56.462022222222224
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    56.19875555555556,
+                    56.462022222222224,
+                    51.72848,
+                    51.43354,
+                    51.05671
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K4V4_MS",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 51.28387600000001,
+            "scoreError" : 3.736025196376454,
+            "scoreConfidence" : [
+                47.547850803623554,
+                55.01990119637646
+            ],
+            "scorePercentiles" : {
+                "0.0" : 50.36071,
+                "50.0" : 51.01344,
+                "90.0" : 52.93582,
+                "95.0" : 52.93582,
+                "99.0" : 52.93582,
+                "99.9" : 52.93582,
+                "99.99" : 52.93582,
+                "99.999" : 52.93582,
+                "99.9999" : 52.93582,
+                "100.0" : 52.93582
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    50.36071,
+                    50.99954,
+                    52.93582,
+                    51.01344,
+                    51.10987
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K4V4_MS",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 50.896165454545454,
+            "scoreError" : 5.560185607486593,
+            "scoreConfidence" : [
+                45.33597984705886,
+                56.45635106203205
+            ],
+            "scorePercentiles" : {
+                "0.0" : 49.896145454545454,
+                "50.0" : 50.6026,
+                "90.0" : 53.38968,
+                "95.0" : 53.38968,
+                "99.0" : 53.38968,
+                "99.9" : 53.38968,
+                "99.99" : 53.38968,
+                "99.999" : 53.38968,
+                "99.9999" : 53.38968,
+                "100.0" : 53.38968
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    53.38968,
+                    49.89848181818182,
+                    50.6026,
+                    49.896145454545454,
+                    50.69392
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K4V4_MS",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 45.29978333333333,
+            "scoreError" : 6.3234772343259795,
+            "scoreConfidence" : [
+                38.97630609900735,
+                51.62326056765931
+            ],
+            "scorePercentiles" : {
+                "0.0" : 44.23215,
+                "50.0" : 44.490608333333334,
+                "90.0" : 48.1742,
+                "95.0" : 48.1742,
+                "99.0" : 48.1742,
+                "99.9" : 48.1742,
+                "99.99" : 48.1742,
+                "99.999" : 48.1742,
+                "99.9999" : 48.1742,
+                "100.0" : 48.1742
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    48.1742,
+                    44.45993333333333,
+                    44.490608333333334,
+                    44.23215,
+                    45.142025
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "AMAC_K4V4_MS",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 49.92155872727272,
+            "scoreError" : 4.931268601913415,
+            "scoreConfidence" : [
+                44.9902901253593,
+                54.852827329186134
+            ],
+            "scorePercentiles" : {
+                "0.0" : 48.637727272727275,
+                "50.0" : 49.771581818181815,
+                "90.0" : 52.02923,
+                "95.0" : 52.02923,
+                "99.0" : 52.02923,
+                "99.9" : 52.02923,
+                "99.99" : 52.02923,
+                "99.999" : 52.02923,
+                "99.9999" : 52.02923,
+                "100.0" : 52.02923
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    52.02923,
+                    49.25291818181818,
+                    49.771581818181815,
+                    48.637727272727275,
+                    49.91633636363636
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -1215,38 +2707,39 @@
             "impl" : "FASTUTIL",
             "keyDist" : "random",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 65.43439,
-            "scoreError" : 0.8667727030698011,
+            "score" : 62.89820166666666,
+            "scoreError" : 2.3040217494263966,
             "scoreConfidence" : [
-                64.5676172969302,
-                66.30116270306979
+                60.59417991724026,
+                65.20222341609305
             ],
             "scorePercentiles" : {
-                "0.0" : 65.2560375,
-                "50.0" : 65.349175,
-                "90.0" : 65.8248875,
-                "95.0" : 65.8248875,
-                "99.0" : 65.8248875,
-                "99.9" : 65.8248875,
-                "99.99" : 65.8248875,
-                "99.999" : 65.8248875,
-                "99.9999" : 65.8248875,
-                "100.0" : 65.8248875
+                "0.0" : 62.1438,
+                "50.0" : 63.2312375,
+                "90.0" : 63.3891625,
+                "95.0" : 63.3891625,
+                "99.0" : 63.3891625,
+                "99.9" : 63.3891625,
+                "99.99" : 63.3891625,
+                "99.999" : 63.3891625,
+                "99.9999" : 63.3891625,
+                "100.0" : 63.3891625
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    65.2560375,
-                    65.41005,
-                    65.3318,
-                    65.349175,
-                    65.8248875
+                    63.2312375,
+                    62.35913333333333,
+                    62.1438,
+                    63.367675,
+                    63.3891625
                 ]
             ]
         },
@@ -1259,7 +2752,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
-        "jvm" : "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin\\java.exe",
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
         "jvmArgs" : [
             "-Xmx8g",
             "-Dfile.encoding=UTF-8",
@@ -1267,9 +2760,76 @@
             "-Duser.language=en",
             "-Duser.variant"
         ],
-        "jdkVersion" : "21.0.12.1",
+        "jdkVersion" : "25.0.4.1",
         "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.12.1+1-LTS",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "FASTUTIL",
+            "keyDist" : "random",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 63.72538750000001,
+            "scoreError" : 3.73799182806775,
+            "scoreConfidence" : [
+                59.98739567193226,
+                67.46337932806776
+            ],
+            "scorePercentiles" : {
+                "0.0" : 62.6287625,
+                "50.0" : 63.87195,
+                "90.0" : 65.085975,
+                "95.0" : 65.085975,
+                "99.0" : 65.085975,
+                "99.9" : 65.085975,
+                "99.99" : 65.085975,
+                "99.999" : 65.085975,
+                "99.9999" : 65.085975,
+                "100.0" : 65.085975
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    64.072325,
+                    62.967925,
+                    65.085975,
+                    62.6287625,
+                    63.87195
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
         "warmupIterations" : 3,
         "warmupTime" : "500 ms",
         "warmupBatchSize" : 1,
@@ -1281,38 +2841,106 @@
             "impl" : "FASTUTIL",
             "keyDist" : "pulsed",
             "loadFactor" : "0.9",
+            "lookupPattern" : "sorted",
             "lookups" : "1000000",
             "pollute" : "false",
             "presize" : "true",
             "size" : "120700000"
         },
         "primaryMetric" : {
-            "score" : 105.32665200000001,
-            "scoreError" : 1.7660960630806857,
+            "score" : 73.55115428571428,
+            "scoreError" : 1.92091186771091,
             "scoreConfidence" : [
-                103.56055593691933,
-                107.09274806308069
+                71.63024241800336,
+                75.47206615342519
             ],
             "scorePercentiles" : {
-                "0.0" : 104.85576,
-                "50.0" : 105.21262,
-                "90.0" : 106.08902,
-                "95.0" : 106.08902,
-                "99.0" : 106.08902,
-                "99.9" : 106.08902,
-                "99.99" : 106.08902,
-                "99.999" : 106.08902,
-                "99.9999" : 106.08902,
-                "100.0" : 106.08902
+                "0.0" : 72.72568571428572,
+                "50.0" : 73.69501428571428,
+                "90.0" : 74.01894285714286,
+                "95.0" : 74.01894285714286,
+                "99.0" : 74.01894285714286,
+                "99.9" : 74.01894285714286,
+                "99.99" : 74.01894285714286,
+                "99.999" : 74.01894285714286,
+                "99.9999" : 74.01894285714286,
+                "100.0" : 74.01894285714286
             },
             "scoreUnit" : "ms/op",
             "rawData" : [
                 [
-                    104.85576,
-                    106.08902,
-                    105.30774,
-                    105.21262,
-                    105.16812
+                    73.49737142857143,
+                    73.69501428571428,
+                    74.01894285714286,
+                    73.81875714285714,
+                    72.72568571428572
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "bench.NullableLongLongMapBench.getHit",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "C:\\Users\\kosak\\.gradle\\jdks\\eclipse_adoptium-25-amd64-windows.2\\bin\\java.exe",
+        "jvmArgs" : [
+            "-Xmx8g",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=US",
+            "-Duser.language=en",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.4.1+1-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "chunkSize" : "4096",
+            "impl" : "FASTUTIL",
+            "keyDist" : "pulsed",
+            "loadFactor" : "0.9",
+            "lookupPattern" : "shuffled",
+            "lookups" : "1000000",
+            "pollute" : "false",
+            "presize" : "true",
+            "size" : "120700000"
+        },
+        "primaryMetric" : {
+            "score" : 64.99539250000001,
+            "scoreError" : 3.185113774025651,
+            "scoreConfidence" : [
+                61.81027872597436,
+                68.18050627402566
+            ],
+            "scorePercentiles" : {
+                "0.0" : 64.4349125,
+                "50.0" : 64.61635,
+                "90.0" : 66.4350375,
+                "95.0" : 66.4350375,
+                "99.0" : 66.4350375,
+                "99.9" : 66.4350375,
+                "99.99" : 66.4350375,
+                "99.999" : 66.4350375,
+                "99.9999" : 66.4350375,
+                "100.0" : 66.4350375
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    64.9470125,
+                    64.4349125,
+                    64.61635,
+                    64.54365,
+                    66.4350375
                 ]
             ]
         },
