@@ -15,6 +15,7 @@ from render_report import panel_svg, fmt, IMPL_ORDER, LIGHT_SERIES, DARK_SERIES
 
 LF_FILES = [("0.5", "results/final-hit-lf0.5.json"), ("0.75", "results/final-hit-lf0.75.json"),
             ("0.9", "results/final-hit-lf0.9.json"), ("0.95", "results/final-hit-lf0.95.json")]
+WSL2_DIR = "results/wsl2"  # same filenames: the original WSL2 measurements, for the environment section
 MISS_FILE = "results/final-get.json"
 # 7 series for the charts (palette holds 8); the full 11-impl numbers appear in the appendix table.
 CHART_IMPLS = ["K1V1", "K4V4", "FASTUTIL", "NOMOD_K1V1", "NOMOD_K4V4", "AMAC_K2V2", "AMAC_K4V4",
@@ -39,6 +40,19 @@ def load():
             data[(f"getHit — {dist} keys", label, impl)] = e
     impls_all.sort(key=lambda i: (IMPL_ORDER.index(i) if i in IMPL_ORDER else 99, i))
     return run_labels, impls_all, data
+
+
+def load_wsl2():
+    data = {}
+    for lf, path in LF_FILES:
+        p2 = os.path.join(WSL2_DIR, os.path.basename(path))
+        if not os.path.exists(p2):
+            continue
+        for e in json.load(open(p2)):
+            if e["benchmark"].endswith("getHit"):
+                data[(f'getHit — {e["params"].get("keyDist", "random")} keys', f"lf {lf}",
+                      e["params"]["impl"])] = e
+    return data
 
 
 def load_miss():
@@ -150,6 +164,41 @@ def main():
                      f'{" (baseline)" if i == "FASTUTIL" else ""}</span>'
                      for k, i in enumerate(chart_impls))
 
+    wsl2 = load_wsl2()
+    if wsl2:
+        def env_table(bench):
+            head = "".join(f"<th>{html.escape(r)}</th>" for r in run_labels)
+            rows = []
+            for i in chart_impls:
+                cells = []
+                for r in run_labels:
+                    w = wsl2.get((bench, r, i))
+                    n = data.get((bench, r, i))
+                    if w is None or n is None:
+                        cells.append("<td class='num'>—</td>")
+                        continue
+                    ws, ns = w["primaryMetric"]["score"], n["primaryMetric"]["score"]
+                    cells.append(f"<td class='num'>{fmt(ws)} → {fmt(ns)}</td>")
+                rows.append(f"<tr><td>{html.escape(i)}</td>{''.join(cells)}</tr>")
+            return (f"<table><thead><tr><th>{html.escape(bench)} <span class='sub'>WSL2 → Windows, "
+                    f"ms per 1M lookups</span></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>")
+        env_section = f"""
+<p>The entire suite was rerun on native Windows (Eclipse Temurin 21.0.12, otherwise-idle box) via
+<code>tools/run-final-suite.ps1</code>. Three findings. <strong>The rankings held</strong> — every conclusion in
+this report reproduces across environments, including the pulsed-key dominance and the crossover where the DH
+family overtakes fastutil on random keys at high occupancy. <strong>Measurement quality improved
+substantially</strong>: median confidence-interval half-width fell from ±10.1% (WSL2) to ±4.3% (Windows) across
+the 80 shared cells. <strong>WSL2's lf 0.5 group was contaminated</strong>: it ran uniformly ~2× slower than
+Windows across all implementations including the baseline — a signature of environmental interference (shared
+memory bandwidth), not code — while the other groups sat at a consistent ~0.85 ratio that plausibly reflects the
+hardware difference. The headline charts above use the Windows numbers; the WSL2 originals are preserved under
+<code>results/wsl2/</code>. Note the pulsed lf 0.75 slow column reproduces exactly on both environments —
+confirming it is genuine workload variance (that window sampled a sparse pulse region), not noise.</p>
+{env_table("getHit — pulsed keys")}
+{env_table("getHit — random keys")}"""
+    else:
+        env_section = "<p class='sub'>results/wsl2/ not found — single-environment report.</p>"
+
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HashMapLockFree: the get() campaign</title>
@@ -211,8 +260,9 @@ def main():
 <body class="viz-root"><main>
 <h1>HashMapLockFree: the get() campaign</h1>
 <p class="meta">Deephaven sandbox study · JDK 21 · JMH, 1 fork, 3×500ms warmup + 5×500ms measurement per trial ·
-WSL2 (expect modest run-to-run drift) · all implementations differentially verified against java.util.HashMap
-(2.1M-op randomized batches, both key distributions) before any number below was recorded.</p>
+headline sections measured on native Windows (Temurin 21); development history measured on WSL2 (see the
+environment check) · all implementations differentially verified against java.util.HashMap (2.1M-op randomized
+batches, both key distributions) before any number below was recorded.</p>
 
 <h2>The workload</h2>
 <p>A <strong>redirection index</strong> maps row keys to storage positions. Three properties define the benchmark:
@@ -267,6 +317,9 @@ the headline study for a structural reason discovered there: <strong>ByteBuffer 
 at 2GB</strong> — the 67M-key K4V4 table needs 2.19GB and simply cannot be allocated. Scaling the aligned design
 past 2GB requires segmented buffers or JDK 22+ MemorySegment (long-indexed, arena-managed), which is where that
 experiment should go next.</p>
+
+<h2>Environment check: WSL2 vs native Windows</h2>
+{env_section}
 
 <h2>Verdict</h2>
 <div class="verdict">
