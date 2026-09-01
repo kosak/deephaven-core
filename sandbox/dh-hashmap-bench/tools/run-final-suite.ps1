@@ -1,3 +1,5 @@
+# Suite v2: 4 workloads (random/pulsed x sorted/shuffled sample) x 11 impls x 4 load factors
+# ~75-90 min. First run downloads a JDK 25 toolchain (java.lang.foreign for HMLFamacK4V4MS).
 # Reproduce the full final-report benchmark suite on native Windows.
 # Usage (from the project root, ideally on an otherwise-idle box):
 #   powershell -ExecutionPolicy Bypass -File tools\run-final-suite.ps1
@@ -19,7 +21,7 @@ $configs = @(
 )
 foreach ($c in $configs) {
     Write-Host "-- loadFactor=$($c.lf) (size=$($c.size)) --"
-    .\gradlew.bat -q run --args="getHit -p size=$($c.size) -p lookups=1000000 -p presize=true -p loadFactor=$($c.lf) -p keyDist=random,pulsed -f 1 -wi 3 -i 5 -r 500ms -w 500ms -rf json -rff results/final-hit-lf$($c.lf).json"
+    .\gradlew.bat -q run --args="getHit -p size=$($c.size) -p lookups=1000000 -p presize=true -p loadFactor=$($c.lf) -p keyDist=random,pulsed -p lookupPattern=sorted,shuffled -f 1 -wi 3 -i 5 -r 500ms -w 500ms -rf json -rff results/final-hit-lf$($c.lf).json"
     if ($LASTEXITCODE -ne 0) { throw "benchmark failed at loadFactor=$($c.lf)" }
 }
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Suite v2: 4 workloads (random/pulsed x sorted/shuffled sample) x 11 impls x 4 load factors
+# ~75-90 min. First run downloads a JDK 25 toolchain (java.lang.foreign for HMLFamacK4V4MS).
 # Reproduce the full final-report benchmark suite on this machine.
 # Usage: tools/run-final-suite.sh   (from the project root; needs JDK 11+ on PATH — gradle fetches its own JDK 21)
 # Produces results/final-hit-lf{0.5,0.75,0.9,0.95}.json and results/final-get.json,
@@ -15,7 +17,7 @@ for CFG in "0.5:67000000" "0.75:100600000" "0.9:120700000" "0.95:127400000"; do
   LF="${CFG%%:*}"; SZ="${CFG##*:}"
   echo "-- loadFactor=$LF (size=$SZ) --"
   ./gradlew -q run --args="getHit -p size=$SZ -p lookups=1000000 -p presize=true -p loadFactor=$LF \
-    -p keyDist=random,pulsed -f 1 -wi 3 -i 5 -r 500ms -w 500ms \
+    -p keyDist=random,pulsed -p lookupPattern=sorted,shuffled -f 1 -wi 3 -i 5 -r 500ms -w 500ms \
     -rf json -rff results/final-hit-lf$LF.json" | grep -E "^NullableLong" || true
 done
 

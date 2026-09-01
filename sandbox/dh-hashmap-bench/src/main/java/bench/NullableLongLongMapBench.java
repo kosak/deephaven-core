@@ -4,6 +4,7 @@ import io.deephaven.util.datastructures.hash.HMLFamacK1V1;
 import io.deephaven.util.datastructures.hash.HMLFamacK2V2;
 import io.deephaven.util.datastructures.hash.HMLFamacK4V4;
 import io.deephaven.util.datastructures.hash.HMLFamacK4V4BB;
+import io.deephaven.util.datastructures.hash.HMLFamacK4V4MS;
 import io.deephaven.util.datastructures.hash.HMLFnomodK1V1;
 import io.deephaven.util.datastructures.hash.HMLFnomodK2V2;
 import io.deephaven.util.datastructures.hash.HMLFnomodK4V4;
@@ -68,6 +69,7 @@ public class NullableLongLongMapBench {
         AMAC_K2V2((cap, lf) -> new HMLFamacK2V2(cap, lf, -1)),
         AMAC_K4V4((cap, lf) -> new HMLFamacK4V4(cap, lf, -1)),
         AMAC_K4V4_BB((cap, lf) -> new HMLFamacK4V4BB(cap, lf, -1)),
+        AMAC_K4V4_MS((cap, lf) -> new HMLFamacK4V4MS(cap, lf, -1)),
         FASTUTIL(FastutilAdapter::new);
 
         final MapFactory factory;
@@ -77,7 +79,7 @@ public class NullableLongLongMapBench {
         }
     }
 
-    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "AMAC_K4V4_BB", "FASTUTIL"})
+    @Param({"K1V1", "K2V2", "K4V4", "NOMOD_K1V1", "NOMOD_K2V2", "NOMOD_K4V4", "AMAC_K1V1", "AMAC_K2V2", "AMAC_K4V4", "AMAC_K4V4_BB", "AMAC_K4V4_MS", "FASTUTIL"})
     public Impl impl;
 
     @Param({"1000000"})
@@ -98,12 +100,19 @@ public class NullableLongLongMapBench {
 
     /**
      * Number of keys probed per getHit/getMiss invocation. 0 means "all table keys" (the original behavior). Set it
-     * far below size to model a large resident table with a comparatively small read: hits are a uniform shuffled
-     * sample for keyDist=random, and a contiguous ascending window of pulses for keyDist=pulsed; misses are fresh
-     * random longs, or keys from the gaps adjacent to the window, respectively.
+     * far below size to model a large resident table with a comparatively small read.
      */
     @Param({"0"})
     public int lookups;
+
+    /**
+     * How the {lookups} probed keys are chosen from the table (ignored when lookups=0). "sorted": a uniform random
+     * subset, probed in ascending order. "shuffled": the same subset in random order. "window": a contiguous
+     * ascending run of table keys — the original (and flattering) pattern: for pulsed tables it turns lookups into
+     * a dense streaming read, which real redirection-index reads of a sparse subset are not. Kept for comparison.
+     */
+    @Param({"sorted"})
+    public String lookupPattern;
 
     /** When true, maps are created at full capacity so fill measures pure insertion, not rehashing. */
     @Param({"false"})
@@ -150,7 +159,7 @@ public class NullableLongLongMapBench {
             for (int i = 0; i < nLookups; ++i) {
                 missingKeys[i] = start + size + i;
             }
-            hits = sampleWindow(keys, nLookups, rng);
+            hits = sampleHits(keys, nLookups, rng);
         } else if ("pulsed".equals(keyDist)) {
             // Pulses of N ~ U[100,10000] sequential keys, gaps of G ~ U[100,100000].
             keys = new long[size];
@@ -166,7 +175,7 @@ public class NullableLongLongMapBench {
             // Hits: a contiguous ascending window of pulses. Misses: gap keys — for each table key in a (shifted)
             // window, probe the key one-full-gap below the table's start, guaranteed absent because all table keys
             // are >= start and misses are < start... simpler and airtight: mirror the window to negative space.
-            hits = sampleWindow(keys, nLookups, rng);
+            hits = sampleHits(keys, nLookups, rng);
             missingKeys = new long[nLookups];
             for (int m = 0; m < nLookups; ++m) {
                 missingKeys[m] = -hits[m]; // same pulse structure, disjoint from all table keys (which are positive)
@@ -174,13 +183,9 @@ public class NullableLongLongMapBench {
         } else {
             keys = distinctKeys(rng, size);
             missingKeys = distinctKeys(rng, nLookups); // 128-bit-ish state space: overlap is negligible
-            if (lookups == 0) {
-                hits = keys;
-            } else {
-                hits = new long[nLookups];
-                for (int i = 0; i < nLookups; ++i) {
-                    hits[i] = keys[rng.nextInt(size)];
-                }
+            hits = sampleHits(keys, nLookups, rng);
+            if ("sorted".equals(lookupPattern) && lookups != 0) {
+                Arrays.sort(missingKeys); // keep miss ordering consistent with hit ordering
             }
         }
         keyChunks = chunk(keys, chunkSize);
@@ -218,10 +223,25 @@ public class NullableLongLongMapBench {
         }
     }
 
-    /** A contiguous ascending window of nLookups table keys starting at a random position (streaming-read shape). */
-    private static long[] sampleWindow(long[] tableKeys, int nLookups, RandomGenerator rng) {
-        final int start = nLookups >= tableKeys.length ? 0 : rng.nextInt(tableKeys.length - nLookups);
-        return Arrays.copyOfRange(tableKeys, start, start + Math.min(nLookups, tableKeys.length));
+    /** Select the probed keys per {@link #lookupPattern}; lookups=0 means the whole table in insertion order. */
+    private long[] sampleHits(long[] tableKeys, int nLookups, RandomGenerator rng) {
+        if (lookups == 0) {
+            return tableKeys;
+        }
+        if ("window".equals(lookupPattern)) {
+            final int start = nLookups >= tableKeys.length ? 0 : rng.nextInt(tableKeys.length - nLookups);
+            return Arrays.copyOfRange(tableKeys, start, start + Math.min(nLookups, tableKeys.length));
+        }
+        final long[] result = new long[nLookups];
+        for (int i = 0; i < nLookups; ++i) {
+            result[i] = tableKeys[rng.nextInt(tableKeys.length)];
+        }
+        if ("sorted".equals(lookupPattern)) {
+            Arrays.sort(result);
+        } else if (!"shuffled".equals(lookupPattern)) {
+            throw new IllegalArgumentException("unknown lookupPattern: " + lookupPattern);
+        }
+        return result;
     }
 
     private static long[][] chunk(long[] src, int chunkSize) {

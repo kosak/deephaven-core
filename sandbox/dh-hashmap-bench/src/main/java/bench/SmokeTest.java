@@ -17,17 +17,18 @@ public final class SmokeTest {
     private static final int MAX_BATCH = 4096;
 
     public static void main(String[] args) {
-        final Map<String, Supplier<NullableLongLongMap>> impls = Map.of(
-                "HashMapLockFreeK1V1", HashMapLockFreeK1V1::new,
-                "HashMapLockFreeK2V2", HashMapLockFreeK2V2::new,
-                "HashMapLockFreeK4V4", HashMapLockFreeK4V4::new,
-                "HMLFnomodK1V1", HMLFnomodK1V1::new,
-                "HMLFnomodK2V2", HMLFnomodK2V2::new,
-                "HMLFnomodK4V4", HMLFnomodK4V4::new,
-                "HMLFamacK1V1", HMLFamacK1V1::new,
-                "HMLFamacK2V2", HMLFamacK2V2::new,
-                "HMLFamacK4V4", HMLFamacK4V4::new,
-                "HMLFamacK4V4BB", HMLFamacK4V4BB::new);
+        final Map<String, Supplier<NullableLongLongMap>> impls = Map.ofEntries(
+                Map.entry("HashMapLockFreeK1V1", (Supplier<NullableLongLongMap>) HashMapLockFreeK1V1::new),
+                Map.entry("HashMapLockFreeK2V2", HashMapLockFreeK2V2::new),
+                Map.entry("HashMapLockFreeK4V4", HashMapLockFreeK4V4::new),
+                Map.entry("HMLFnomodK1V1", HMLFnomodK1V1::new),
+                Map.entry("HMLFnomodK2V2", HMLFnomodK2V2::new),
+                Map.entry("HMLFnomodK4V4", HMLFnomodK4V4::new),
+                Map.entry("HMLFamacK1V1", HMLFamacK1V1::new),
+                Map.entry("HMLFamacK2V2", HMLFamacK2V2::new),
+                Map.entry("HMLFamacK4V4", HMLFamacK4V4::new),
+                Map.entry("HMLFamacK4V4BB", HMLFamacK4V4BB::new),
+                Map.entry("HMLFamacK4V4MS", HMLFamacK4V4MS::new));
         for (final Map.Entry<String, Supplier<NullableLongLongMap>> e : impls.entrySet()) {
             for (final boolean sequential : new boolean[] {false, true}) {
                 run(e.getKey(), e.getValue().get(), sequential);

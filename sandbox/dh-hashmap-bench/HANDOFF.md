@@ -19,6 +19,11 @@ story and results are in `results/final-report.html` (regenerate: `python3 tools
   lock-free contract (backward-shift deletion moves entries under concurrent readers).
 
 ## Invariants
+- Toolchain is JDK 25 (auto-provisioned via foojay resolver) — required by `HMLFamacK4V4MS`
+  (java.lang.foreign; Arena.ofAuto() = GC-managed segments, which is what makes lock-free rehash safe;
+  64-byte aligned AND long-indexed, so no 2GB cap like the ByteBuffer variant).
+- Lookup patterns: `lookupPattern=sorted|shuffled|window`. `window` (a dense contiguous run) flatters pulsed
+  tables enormously and is NOT the realistic redirection-index read; suite v2 measures sorted+shuffled samples.
 - `./gradlew smokeTest` (or `gradlew.bat` on Windows) is the correctness gate. Run it after ANY change
   to hash code. It has caught two real bugs already.
 - The originals (`HashMapLockFree*`) stay byte-faithful to deephaven-core except the batch wrappers.

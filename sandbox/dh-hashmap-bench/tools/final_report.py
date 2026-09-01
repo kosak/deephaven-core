@@ -19,7 +19,7 @@ WSL2_DIR = "results/wsl2"  # same filenames: the original WSL2 measurements, for
 MISS_FILE = "results/final-get.json"
 # 7 series for the charts (palette holds 8); the full 11-impl numbers appear in the appendix table.
 CHART_IMPLS = ["K1V1", "K4V4", "FASTUTIL", "NOMOD_K1V1", "NOMOD_K4V4", "AMAC_K2V2", "AMAC_K4V4",
-               "AMAC_K4V4_BB"]
+               "AMAC_K4V4_MS"]
 
 
 def load():
@@ -35,9 +35,11 @@ def load():
                 continue
             impl = e["params"]["impl"]
             dist = e["params"].get("keyDist", "random")
+            pattern = e["params"].get("lookupPattern")
+            bench = f"getHit — {dist} keys" + (f" ({pattern} sample)" if pattern and pattern != "window" else "")
             if impl not in impls_all:
                 impls_all.append(impl)
-            data[(f"getHit — {dist} keys", label, impl)] = e
+            data[(bench, label, impl)] = e
     impls_all.sort(key=lambda i: (IMPL_ORDER.index(i) if i in IMPL_ORDER else 99, i))
     return run_labels, impls_all, data
 
@@ -120,7 +122,7 @@ def main():
     if not run_labels:
         sys.exit("no final-hit-lf*.json files found")
     chart_impls = [i for i in CHART_IMPLS if i in impls_all]
-    benches = ["getHit — pulsed keys", "getHit — random keys"]
+    benches = sorted({k[0] for k in data}, key=lambda b: (0 if "pulsed" in b else 1, b))
 
     def chart_table(bench):
         return values_table(bench, run_labels, chart_impls, data)
