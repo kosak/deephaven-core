@@ -44,3 +44,29 @@ Nothing else needs to be modified for that task. Resist refactoring; that is not
 Built 2026-08-31 in a session with Corey Kosak, starting from "benchmark HashMapLockFreeKnVn" and ending
 at the load-factor/pulsed-key study. Prior context that doesn't fit here: the session transcript on the
 WSL2 machine, and the memory file `dh-hashmap-bench-sandbox.md` in that machine's Claude project memory.
+
+## Design backlog (discussed and endorsed, deliberately NOT yet implemented)
+- **In-array header** (colleague's idea, refined): steal a header block at the front of kvs/segment:
+  immutable-after-publish words (fastmod magic, numBuckets, noEntryValue, format/impl discriminator),
+  then padding, then writer-mutable counters (size, nonEmptySlots), then padding, then buckets. Header
+  travels atomically with the array snapshot -> per-ELEMENT fastmod becomes race-free and division-free
+  (one L1 load). PADDING MATH (heap arrays have arbitrary 8B-granular alignment — do NOT assume slot 0
+  starts a cache line): two words are guaranteed on different lines only if >= 64 bytes (8 slots) apart;
+  7 spacer slots is the proven minimum. Intel's adjacent-line prefetcher pulls line PAIRS, so use 16
+  spacer slots (128B), same as the JDK's @Contended default. Data start at a multiple of 8 slots keeps
+  MS-variant buckets 64-aligned. Total theft ~48-64 slots: negligible.
+- **Related pre-existing bug to fix during engine migration**: HashMapBase's size/nonEmptySlots fields
+  share a cache line with the keysAndValues reference -> every put invalidates the line concurrent
+  readers use to fetch the array. Separate them (padding or field reordering).
+- **Tiered redirection index**: run heap NOMOD_K2V2-style at comfortable occupancy; one-way promotion
+  (a rehash whose destination is a different class) to AMAC_K4V4 / AMAC_K4V4_MS at ~0.75 occupancy or
+  the array-length ceiling. Swap happens in the wrapper (volatile baseline field) during commitUpdates;
+  readers keep old snapshot; precedent = HashMap treeification. MS also relieves heap pressure and the
+  ~912M-entry heap cap. Never migrate back.
+- **Open bet (Cinnabon-denominated)**: for JDK 22+, is MS-backed better than heap for ALL shapes/load
+  factors? Settle with a substrate-only A/B: MS-backed nomod-K2V2 (no AMAC) vs heap twin. Expected:
+  MS wins big tables, heap wins cache-hot small tables (per-access segment overhead) and write paths.
+- **Engine migration survey (done, no code)**: only 5 files touch the map. RowRedirection's fillChunk
+  defaults already loop per-element get() -> override with batch + gather/scatter for the updates->
+  baseline overlay. SortOperation hands out reverseLookup::get as LongUnaryOperator (per-element leak;
+  serve via 1-element batches). Production defaults contradict findings: hashBucketWidth=1, lf 0.5.
