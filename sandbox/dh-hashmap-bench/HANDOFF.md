@@ -70,3 +70,20 @@ WSL2 machine, and the memory file `dh-hashmap-bench-sandbox.md` in that machine'
   defaults already loop per-element get() -> override with batch + gather/scatter for the updates->
   baseline overlay. SortOperation hands out reverseLookup::get as LongUnaryOperator (per-element leak;
   serve via 1-element batches). Production defaults contradict findings: hashBucketWidth=1, lf 0.5.
+- **Static kernels over self-describing arrays** (Corey, endorsed): with the full header (type word,
+  capacity, magic, counters), the KnVn class hierarchy is redundant at the storage layer — replace
+  instance methods with static kernels that read the header type word once per batch and jump to a
+  width-specialized loop (same cost model that killed the megamorphism worry). Benefits: the tiered
+  swap becomes "publish an array with a different type word" (readers never know); the array/segment
+  becomes a serialization format (disk/mmap/shared memory) for free. NON-NEGOTIABLE residue: one thin
+  facade must still own the concurrency contract (the volatile publication field, single-writer
+  discipline, old-array liveness) — cf. ConcurrentHashMap's static tabAt kernels + one owning class.
+  In production the facade can simply be WritableRowRedirectionLockFree holding volatile long[]
+  directly. Kernels should validate a header magic number on entry.
+- **Kernel-singleton refinement** (Corey): instead of raw static kernels, stateless singleton objects
+  (flat two-level hierarchy: one abstract Kernel + one final per width; all data passed as long[] self)
+  -> recovers full JIT devirtualization/inlining (exact-typed receiver) while keeping self-describing
+  arrays. TRAP: the facade's (kernel, table) pair must change atomically under tiered migration — the
+  magic-constant race reincarnated at dispatch level. Fix: publish an immutable pair via one volatile
+  ref (preferred) or re-derive kernel from header type word per batch; either way the kernel should
+  assert the header type word once per batch as a tripwire.
