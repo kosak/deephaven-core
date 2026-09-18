@@ -132,7 +132,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 if (LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wno-deprecated-declarations)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wno-deprecated-declarations -Wno-tautological-compare)
 endif()
 
 if (WIN32)
