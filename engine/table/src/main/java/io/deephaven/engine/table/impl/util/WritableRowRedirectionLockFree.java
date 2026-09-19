@@ -184,14 +184,17 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (outerRowKey == -1) {
             return BASELINE_KEY_NOT_FOUND;
         }
-        final long result = updates.getOne(outerRowKey);
+        final ScalarAccessPair scalarAccess = SCALAR_ACCESS.get();
+        scalarAccess.forUpdates.reset(updates);
+        final long result = scalarAccess.forUpdates.get(outerRowKey);
         if (result != UPDATES_KEY_NOT_FOUND) {
             // The prior value from updates is either some ordinary previous value, or BASELINE_KEY_NOT_FOUND.
             // In either case, return it to the caller.
             return result;
         }
         // There's no entry in 'updates' so we return the entry in 'baseline'.
-        return baseline.getOne(outerRowKey);
+        scalarAccess.forBaseline.reset(baseline);
+        return scalarAccess.forBaseline.get(outerRowKey);
     }
 
     /**
@@ -205,7 +208,24 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (outerRowKey == -1) {
             return BASELINE_KEY_NOT_FOUND;
         }
-        return baseline.getOne(outerRowKey);
+        final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
+        forBaseline.reset(baseline);
+        return forBaseline.get(outerRowKey);
+    }
+
+    /**
+     * Per-thread pair of scalar-access cursors for the read paths (get, getPrev, and putImpl's baseline consultation).
+     * One cursor per map role, deliberately separate so each can memoize per-map state (in future map implementations)
+     * without churning between the two maps we know alternate; one holder behind a single ThreadLocal lookup. Static
+     * rather than per-map: the scratch belongs to the calling thread's computation, not to any particular redirection,
+     * and these lookups never reenter.
+     */
+    private static final ThreadLocal<ScalarAccessPair> SCALAR_ACCESS =
+            ThreadLocal.withInitial(ScalarAccessPair::new);
+
+    private static final class ScalarAccessPair {
+        private final NullableLongLongMap.ScalarAccess forUpdates = new NullableLongLongMap.ScalarAccess();
+        private final NullableLongLongMap.ScalarAccess forBaseline = new NullableLongLongMap.ScalarAccess();
     }
 
     /**
@@ -346,7 +366,9 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (result != UPDATES_KEY_NOT_FOUND) {
             return result;
         }
-        return baseline.getOne(key);
+        final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
+        forBaseline.reset(baseline);
+        return forBaseline.get(key);
     }
 
     @Override
