@@ -278,9 +278,10 @@ public class NullableLongLongMapBench {
     }
 
     // region glue
-    // Glue between the chunk-oriented benchmark code above/below and the map's current per-element API. When the map
-    // API itself becomes chunk-oriented (a later change in this series), only these four methods change; everything
-    // the benchmarks measure and generate stays identical. Each output chunk must have capacity >= keys.size();
+    // Glue between the chunk-oriented benchmark code above/below and the map's current API. As map operations become
+    // chunk-oriented (get already is; put/putIfAbsent/remove are still per-element), only these four methods change;
+    // everything the benchmarks measure and generate stays identical. Each output chunk must have capacity >=
+    // keys.size();
     // element ii of the output corresponds to element ii of keys.
 
     private static <T extends Any> void putAll(final NullableLongLongMap map, final LongChunk<? extends Any> keys,
@@ -299,9 +300,7 @@ public class NullableLongLongMapBench {
 
     private static void getAll(final NullableLongLongMap map, final LongChunk<? extends Any> keys,
             final WritableLongChunk<? extends Any> result) {
-        for (int ii = 0; ii < keys.size(); ++ii) {
-            result.set(ii, map.get(keys.get(ii)));
-        }
+        map.get(keys, result);
     }
 
     private static void removeAll(final NullableLongLongMap map, final LongChunk<? extends Any> keys,
@@ -383,8 +382,12 @@ public class NullableLongLongMapBench {
         }
 
         @Override
-        public long get(final long key) {
-            return map.get(key);
+        public void get(final LongChunk<? extends Any> keys, final WritableLongChunk<? extends Any> result) {
+            final int size = keys.size();
+            for (int ii = 0; ii < size; ++ii) {
+                result.set(ii, map.get(keys.get(ii)));
+            }
+            result.setSize(size);
         }
 
         @Override

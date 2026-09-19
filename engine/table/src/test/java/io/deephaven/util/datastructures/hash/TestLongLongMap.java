@@ -4,6 +4,9 @@
 package io.deephaven.util.datastructures.hash;
 
 import io.deephaven.util.mutable.MutableInt;
+import io.deephaven.chunk.LongChunk;
+import io.deephaven.chunk.WritableLongChunk;
+import io.deephaven.chunk.attributes.Any;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongLongBiConsumer;
 import junit.framework.TestCase;
@@ -62,7 +65,7 @@ public class TestLongLongMap {
     public void zeroKey() {
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         map.put(0, 12345);
-        TestCase.assertEquals(map.get(0), 12345);
+        TestCase.assertEquals(map.getOne(0), 12345);
         TestCase.assertEquals(map.size(), 1);
     }
 
@@ -99,7 +102,7 @@ public class TestLongLongMap {
         map.put(2, 3);
         map.resetToNull();
         for (int ii = 0; ii < 4; ++ii) {
-            TestCase.assertEquals(map.get(ii), noEntryValue);
+            TestCase.assertEquals(map.getOne(ii), noEntryValue);
         }
     }
 
@@ -154,7 +157,7 @@ public class TestLongLongMap {
         }
         for (long key = beginKey; key < endKey; ++key) {
             final long expectedValue = (key % 2) == 0 ? key + 5000 : key + 10000;
-            final long actualValue = map.get(key);
+            final long actualValue = map.getOne(key);
             TestCase.assertEquals(expectedValue, actualValue);
         }
     }
@@ -261,17 +264,17 @@ public class TestLongLongMap {
         TestCase.assertEquals(map.size(), size);
         // These lookups should fail
         for (long key = beginKey - size; key < beginKey; ++key) {
-            final long result = map.get(key);
+            final long result = map.getOne(key);
             TestCase.assertEquals(result, noEntryValue);
         }
         // These lookups should succeed
         for (long key = beginKey; key < endKey; ++key) {
-            final long result = map.get(key);
+            final long result = map.getOne(key);
             TestCase.assertEquals(result, key + 1000000);
         }
         // These lookups should fail
         for (long key = endKey; key < endKey + size; ++key) {
-            final long result = map.get(key);
+            final long result = map.getOne(key);
             TestCase.assertEquals(result, noEntryValue);
         }
     }
@@ -292,7 +295,7 @@ public class TestLongLongMap {
         TestCase.assertEquals(map.size(), size / 2);
         for (long key = beginKey; key < endKey; ++key) {
             final long expectedResult = (key % 2) == 0 ? noEntryValue : key + 1000000;
-            final long actualResult = map.get(key);
+            final long actualResult = map.getOne(key);
             TestCase.assertEquals(expectedResult, actualResult);
         }
     }
@@ -369,7 +372,7 @@ public class TestLongLongMap {
         // Resetting a never-allocated map is a no-op.
         map.resetToNullRetainingCapacity();
         TestCase.assertEquals(0, map.capacity());
-        TestCase.assertEquals(noEntryValue, map.get(0));
+        TestCase.assertEquals(noEntryValue, map.getOne(0));
 
         for (int ii = 0; ii < size; ++ii) {
             map.put(ii * 7, ii);
@@ -382,7 +385,7 @@ public class TestLongLongMap {
         TestCase.assertTrue(map.isEmpty());
         TestCase.assertEquals(0, map.capacity());
         for (int ii = 0; ii < size; ++ii) {
-            TestCase.assertEquals(noEntryValue, map.get(ii * 7));
+            TestCase.assertEquals(noEntryValue, map.getOne(ii * 7));
         }
 
         // The remembered capacity is restored by the next allocation, so refilling to the same size never rehashes.
@@ -393,7 +396,7 @@ public class TestLongLongMap {
         }
         TestCase.assertEquals(filledCapacity, map.capacity());
         for (int ii = 1; ii < size; ++ii) {
-            TestCase.assertEquals(ii + 1, map.get(ii * 7));
+            TestCase.assertEquals(ii + 1, map.getOne(ii * 7));
         }
     }
 
@@ -572,8 +575,12 @@ public class TestLongLongMap {
         }
 
         @Override
-        public long get(long key) {
-            return map.get(key);
+        public void get(LongChunk<? extends Any> keys, WritableLongChunk<? extends Any> result) {
+            final int size = keys.size();
+            for (int ii = 0; ii < size; ++ii) {
+                result.set(ii, map.get(keys.get(ii)));
+            }
+            result.setSize(size);
         }
 
         @Override
