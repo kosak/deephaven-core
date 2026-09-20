@@ -81,13 +81,15 @@ public interface NullableLongLongMap {
     void get(LongChunk<? extends Any> keys, WritableLongChunk<? extends Any> result);
 
     /**
-     * Remove a mapping for a key. Return the removed value of key (or {@link #defaultReturnValue()}) if one does not
-     * exist.
-     * 
-     * @param key the key to add
-     * @return the removed value of (or {@link #defaultReturnValue()} if there was no mapping)
+     * For each element ii of {@code keys}: removes the mapping for {@code keys.get(ii)}, writing the removed value (or
+     * {@link #defaultReturnValue()} if there was no mapping) to element ii of {@code oldValues}. Elements are processed
+     * in index order; a duplicate key within {@code keys} therefore finds nothing left to remove. On return, the size
+     * of {@code oldValues} is set to {@code keys.size()}; its capacity must be at least that large.
+     *
+     * @param keys the keys to remove
+     * @param oldValues output: the removed value of each key (or {@link #defaultReturnValue()})
      */
-    long remove(long key);
+    void remove(LongChunk<? extends Any> keys, WritableLongChunk<? extends Any> oldValues);
 
     /**
      * Empty the map in place, retaining its backing array and capacity. Not safe in the presence of concurrent readers.
@@ -106,8 +108,10 @@ public interface NullableLongLongMap {
      * Contract: an instance may be used by only one thread at a time. It is valid from the time of {@link #reset}, with
      * the same semantics as any other read of these maps: a concurrent writer will not make it crash, but readers under
      * a clock discipline must discard their work if the clock tells them to. One footnote for writers reading their own
-     * map: a mutation invalidates that thread's own bindings to the mutated map — reset again before the next scalar
-     * read.
+     * map: a mutation performed through this cursor keeps the cursor's own binding fresh, but a mutation through any
+     * other path (a chunked call on the map, another cursor, {@link NullableLongLongMap#clear},
+     * {@link NullableLongLongMap#resetToNull}) invalidates that thread's bindings to the mutated map — reset again
+     * before the next use.
      *
      * <p>
      * Keep one cursor per map you are working with (rather than ping-ponging one cursor between maps): future
@@ -154,6 +158,17 @@ public interface NullableLongLongMap {
             keyChunk.set(0, key);
             valueChunk.set(0, value);
             map.putIfAbsent(keyChunk, valueChunk, resultChunk);
+            return resultChunk.get(0);
+        }
+
+        /**
+         * Removes the mapping for key, exactly as {@link NullableLongLongMap#remove} would, returning the removed value
+         * (or the bound map's {@link NullableLongLongMap#defaultReturnValue()} if there was no mapping). Mutating
+         * through the cursor keeps its own binding fresh; only mutation through any other path invalidates it.
+         */
+        public long remove(final long key) {
+            keyChunk.set(0, key);
+            map.remove(keyChunk, resultChunk);
             return resultChunk.get(0);
         }
     }
