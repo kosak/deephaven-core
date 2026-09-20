@@ -65,9 +65,9 @@ public class TestLongLongMap {
     @Test
     public void zeroKey() {
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
-        map.put(0, 12345);
         final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
         scalarAccess.reset(map);
+        scalarAccess.put(0, 12345);
         TestCase.assertEquals(scalarAccess.get(0), 12345);
         TestCase.assertEquals(map.size(), 1);
     }
@@ -79,14 +79,16 @@ public class TestLongLongMap {
             return;
         }
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         try {
-            map.put(HashMapBase.SPECIAL_KEY_FOR_DELETED_SLOT, 12345);
+            scalarAccess.put(HashMapBase.SPECIAL_KEY_FOR_DELETED_SLOT, 12345);
             TestCase.fail("SPECIAL_KEY_FOR_DELETED_SLOT should not be accepted");
         } catch (io.deephaven.base.verify.AssertionFailure e) {
             // do nothing
         }
         try {
-            map.put(HashMapBase.REDIRECTED_KEY_FOR_EMPTY_SLOT, 12345);
+            scalarAccess.put(HashMapBase.REDIRECTED_KEY_FOR_EMPTY_SLOT, 12345);
             TestCase.fail("REDIRECTED_KEY_FOR_EMPTY_SLOT should not be accepted");
         } catch (io.deephaven.base.verify.AssertionFailure e) {
             // do nothing
@@ -101,14 +103,16 @@ public class TestLongLongMap {
         }
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final long noEntryValue = map.defaultReturnValue();
-        map.put(0, 1);
-        map.put(2, 3);
-        map.resetToNull();
-        // The hoisted ScalarAccess pattern: allocate and reset a cursor once, outside the loop; gets inside the
-        // loop are then cheap. (Reset again after mutating the map. Code whose enclosing method is itself invoked
-        // per-element has no loop to hoist over — stash the cursor in a ThreadLocal instead; see
-        // WritableRowRedirectionLockFree for that form.)
+        // The hoisted ScalarAccess pattern: allocate and reset a cursor once, outside your loops; the cursor's own
+        // operations are then cheap, and its mutators keep its binding fresh. Reset again only after the map is
+        // mutated other than through the cursor. (Code whose enclosing method is itself invoked per-element has no
+        // loop to hoist over — stash the cursor in a ThreadLocal instead; see WritableRowRedirectionLockFree.)
         final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
+        scalarAccess.put(0, 1);
+        scalarAccess.put(2, 3);
+        map.resetToNull();
+        // resetToNull() is not a cursor operation: reset the invalidated binding.
         scalarAccess.reset(map);
         for (int ii = 0; ii < 4; ++ii) {
             TestCase.assertEquals(scalarAccess.get(ii), noEntryValue);
@@ -123,10 +127,12 @@ public class TestLongLongMap {
         final long endValue = 5010;
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final long noEntryValue = map.defaultReturnValue();
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (long valueBase = beginValue; valueBase < endValue; ++valueBase) {
             for (long key = beginKey; key < endKey; ++key) {
                 final long expectedPrevious = valueBase == beginValue ? noEntryValue : key + valueBase - 1;
-                final long actualPrevious = map.put(key, key + valueBase);
+                final long actualPrevious = scalarAccess.put(key, key + valueBase);
                 TestCase.assertEquals(expectedPrevious, actualPrevious);
             }
         }
@@ -138,8 +144,10 @@ public class TestLongLongMap {
         final long endKey = 200;
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final long noEntryValue = map.defaultReturnValue();
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (long key = beginKey; key < endKey; ++key) {
-            final long previous = map.put(key, key - 10000);
+            final long previous = scalarAccess.put(key, key - 10000);
             TestCase.assertEquals(previous, noEntryValue);
         }
         for (long key = beginKey; key < endKey; ++key) {
@@ -155,17 +163,18 @@ public class TestLongLongMap {
         final long endKey = 200;
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final long noEntryValue = map.defaultReturnValue();
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (long key = beginKey; key < endKey; key += 2) {
-            final long previous = map.put(key, key + 5000);
+            final long previous = scalarAccess.put(key, key + 5000);
             TestCase.assertEquals(previous, noEntryValue);
         }
         for (long key = beginKey; key < endKey; ++key) {
             final long expectedPrevious = (key % 2) == 0 ? key + 5000 : noEntryValue;
-            final long actualPrevious = map.putIfAbsent(key, key + 10000);
+            final long actualPrevious = scalarAccess.putIfAbsent(key, key + 10000);
             TestCase.assertEquals(expectedPrevious, actualPrevious);
         }
-        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
-        scalarAccess.reset(map);
+        // The cursor did all the mutating itself, so its binding is still fresh for the reads.
         for (long key = beginKey; key < endKey; ++key) {
             final long expectedValue = (key % 2) == 0 ? key + 5000 : key + 10000;
             final long actualValue = scalarAccess.get(key);
@@ -178,13 +187,17 @@ public class TestLongLongMap {
         final int numIterations = 10;
         final int sizeAtWhichToClear = 10000;
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (int iteration = 0; iteration < numIterations; ++iteration) {
             TestCase.assertEquals(map.size(), 0);
             for (long ii = 0; ii < sizeAtWhichToClear; ++ii) {
-                map.put(ii, ii + 1);
+                scalarAccess.put(ii, ii + 1);
             }
             TestCase.assertEquals(map.size(), sizeAtWhichToClear);
             map.clear();
+            // clear() is not a cursor operation: reset the invalidated binding.
+            scalarAccess.reset(map);
         }
     }
 
@@ -197,13 +210,17 @@ public class TestLongLongMap {
         final int numIterations = 10;
         final int sizeAtWhichToClear = 10000;
         NullableLongLongMap map = (NullableLongLongMap) factory.create(initialCapacity, loadFactor);
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (int iteration = 0; iteration < numIterations; ++iteration) {
             TestCase.assertEquals(map.size(), 0);
             for (long ii = 0; ii < sizeAtWhichToClear; ++ii) {
-                map.put(ii, ii + 1);
+                scalarAccess.put(ii, ii + 1);
             }
             TestCase.assertEquals(map.size(), sizeAtWhichToClear);
             map.resetToNull();
+            // resetToNull() is not a cursor operation: reset the invalidated binding.
+            scalarAccess.reset(map);
         }
     }
 
@@ -211,7 +228,9 @@ public class TestLongLongMap {
     public void zeroComesBackThroughKeys() {
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final long specialKey = HashMapBase.SPECIAL_KEY_FOR_EMPTY_SLOT;
-        map.put(specialKey, 12345);
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
+        scalarAccess.put(specialKey, 12345);
         final long[] keys = ((NullableLongLongMapTestAccessors) map).keyArray();
         TestCase.assertEquals(1, keys.length);
         TestCase.assertEquals(specialKey, keys[0]);
@@ -269,13 +288,13 @@ public class TestLongLongMap {
         final long endKey = 50000;
         final long size = endKey - beginKey;
         final long noEntryValue = map.defaultReturnValue();
-        for (long key = beginKey; key < endKey; ++key) {
-            map.put(key, key + 1000000);
-        }
-        TestCase.assertEquals(map.size(), size);
-        // One reset serves all three read loops: the map is not mutated between them.
         final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
         scalarAccess.reset(map);
+        for (long key = beginKey; key < endKey; ++key) {
+            scalarAccess.put(key, key + 1000000);
+        }
+        TestCase.assertEquals(map.size(), size);
+        // The cursor did all the mutating itself, so one binding serves the fills and all three read loops.
         // These lookups should fail
         for (long key = beginKey - size; key < beginKey; ++key) {
             final long result = scalarAccess.get(key);
@@ -300,14 +319,16 @@ public class TestLongLongMap {
         final long endKey = 100000;
         final long size = endKey - beginKey;
         final long noEntryValue = map.defaultReturnValue();
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (long key = beginKey; key < endKey; ++key) {
-            map.put(key, key + 1000000);
+            scalarAccess.put(key, key + 1000000);
         }
         for (long key = beginKey; key < endKey; key += 2) {
             map.remove(key);
         }
         TestCase.assertEquals(map.size(), size / 2);
-        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        // The removes did not go through the cursor: reset the invalidated binding (the writer footnote).
         scalarAccess.reset(map);
         for (long key = beginKey; key < endKey; ++key) {
             final long expectedResult = (key % 2) == 0 ? noEntryValue : key + 1000000;
@@ -333,8 +354,10 @@ public class TestLongLongMap {
         // A chunked get on a never-populated map yields noEntryValue everywhere.
         checkChunkedGet(map, probes, 4096, key -> noEntryValue);
 
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (long key = beginKey; key < endKey; ++key) {
-            map.put(key, key + 1000000);
+            scalarAccess.put(key, key + 1000000);
         }
 
         // Probe a range three times as wide as the occupied keyspace — misses below, hits, misses above — through
@@ -356,8 +379,10 @@ public class TestLongLongMap {
         final NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final long noEntryValue = map.defaultReturnValue();
         final long endKey = 100000;
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (long key = 0; key < endKey; ++key) {
-            map.put(key, key + 1000000);
+            scalarAccess.put(key, key + 1000000);
         }
         for (long key = 0; key < endKey; key += 2) {
             map.remove(key);
@@ -419,19 +444,23 @@ public class TestLongLongMap {
         Random insertStream = new Random(67890);
         Random deleteStream = new Random(67890);
 
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
         for (int ii = 0; ii < size; ++ii) {
             final long key = insertStream.nextLong() % randomMod;
             final long value = key + 12;
-            map.put(key, value);
+            scalarAccess.put(key, value);
         }
 
         for (int ii = 0; ii < iterations; ++ii) {
             final long deleteKey = deleteStream.nextLong() % randomMod;
             map.remove(deleteKey);
+            // remove() does not go through the cursor yet: reset the invalidated binding.
+            scalarAccess.reset(map);
 
             final long key = insertStream.nextLong() % randomMod;
             final long value = key + 12;
-            map.put(key, value);
+            scalarAccess.put(key, value);
         }
 
         // Rationale:
@@ -466,7 +495,7 @@ public class TestLongLongMap {
         TestCase.assertEquals(noEntryValue, scalarAccess.get(0));
 
         for (int ii = 0; ii < size; ++ii) {
-            map.put(ii * 7, ii);
+            scalarAccess.put(ii * 7, ii);
         }
         final int filledCapacity = map.capacity();
         map.resetToNullRetainingCapacity();
@@ -475,21 +504,20 @@ public class TestLongLongMap {
         TestCase.assertEquals(0, map.size());
         TestCase.assertTrue(map.isEmpty());
         TestCase.assertEquals(0, map.capacity());
-        // The puts above invalidated the binding (the writer footnote in the ScalarAccess contract): reset again.
+        // resetToNullRetainingCapacity() is not a cursor operation: reset the invalidated binding.
         scalarAccess.reset(map);
         for (int ii = 0; ii < size; ++ii) {
             TestCase.assertEquals(noEntryValue, scalarAccess.get(ii * 7));
         }
 
         // The remembered capacity is restored by the next allocation, so refilling to the same size never rehashes.
-        map.put(0, 1);
+        scalarAccess.put(0, 1);
         TestCase.assertEquals(filledCapacity, map.capacity());
         for (int ii = 1; ii < size; ++ii) {
-            map.put(ii * 7, ii + 1);
+            scalarAccess.put(ii * 7, ii + 1);
         }
         TestCase.assertEquals(filledCapacity, map.capacity());
-        // Mutated again: reset again.
-        scalarAccess.reset(map);
+        // The cursor did all the refilling itself, so its binding is still fresh for the reads.
         for (int ii = 1; ii < size; ++ii) {
             TestCase.assertEquals(ii + 1, scalarAccess.get(ii * 7));
         }
@@ -498,8 +526,10 @@ public class TestLongLongMap {
     @Test
     public void iteratorFromEmptyAndNullMap() {
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
-        map.put(0, 1);
-        map.put(2, 3);
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
+        scalarAccess.put(0, 1);
+        scalarAccess.put(2, 3);
         map.clear();
         emptyMapHelper(map);
         if (factory == referenceFactory) {
@@ -587,16 +617,20 @@ public class TestLongLongMap {
 
     private static void populate(Random rng, int numIterations, long randomRange, double putProbability,
             Map<Long, Long> reference, NullableLongLongMap test) {
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(test);
         for (int ii = 0; ii < numIterations; ++ii) {
             final long nextKey = Math.abs(rng.nextLong()) % randomRange;
             final long nextValue = ii;
 
             if (rng.nextDouble() < putProbability) {
                 reference.put(nextKey, nextValue);
-                test.put(nextKey, nextValue);
+                scalarAccess.put(nextKey, nextValue);
             } else {
                 reference.remove(nextKey);
                 test.remove(nextKey);
+                // remove() does not go through the cursor yet: reset the invalidated binding.
+                scalarAccess.reset(test);
             }
         }
     }
@@ -660,13 +694,23 @@ public class TestLongLongMap {
         }
 
         @Override
-        public long put(long key, long value) {
-            return map.put(key, value);
+        public void put(LongChunk<? extends Any> keys, LongChunk<? extends Any> values,
+                WritableLongChunk<? extends Any> oldValues) {
+            final int size = keys.size();
+            for (int ii = 0; ii < size; ++ii) {
+                oldValues.set(ii, map.put(keys.get(ii), values.get(ii)));
+            }
+            oldValues.setSize(size);
         }
 
         @Override
-        public long putIfAbsent(long key, long value) {
-            return map.putIfAbsent(key, value);
+        public void putIfAbsent(LongChunk<? extends Any> keys, LongChunk<? extends Any> values,
+                WritableLongChunk<? extends Any> oldValues) {
+            final int size = keys.size();
+            for (int ii = 0; ii < size; ++ii) {
+                oldValues.set(ii, map.putIfAbsent(keys.get(ii), values.get(ii)));
+            }
+            oldValues.setSize(size);
         }
 
         @Override

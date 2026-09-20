@@ -161,11 +161,15 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         final NullableLongLongMap baseline = instance.baseline;
         Assert.neq(baseline, "baseline", updates, "updates");
 
+        final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
+        forBaseline.reset(baseline);
         updates.forEach((key, value) -> {
             if (value == BASELINE_KEY_NOT_FOUND) {
                 baseline.remove(key);
+                // remove() does not go through the cursor yet, so it invalidates the binding (the writer footnote).
+                forBaseline.reset(baseline);
             } else {
-                baseline.put(key, value);
+                forBaseline.put(key, value);
             }
         });
         // Publish null (a volatile write, see the class comment), retaining the capacity for the next allocation. We
@@ -331,7 +335,9 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
             updateCommitter.maybeActivate();
         }
 
-        rowSequence.forAllRowKeys(key -> updates.put(key, BASELINE_KEY_NOT_FOUND));
+        final NullableLongLongMap.ScalarAccess forUpdates = SCALAR_ACCESS.get().forUpdates;
+        forUpdates.reset(updates);
+        rowSequence.forAllRowKeys(key -> forUpdates.put(key, BASELINE_KEY_NOT_FOUND));
     }
 
     @Override
@@ -339,8 +345,10 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (updateCommitter != null) {
             updateCommitter.maybeActivate();
         }
+        final NullableLongLongMap.ScalarAccess forUpdates = SCALAR_ACCESS.get().forUpdates;
+        forUpdates.reset(updates);
         for (int ii = 0; ii < outerRowKeys.size(); ++ii) {
-            updates.put(outerRowKeys.get(ii), BASELINE_KEY_NOT_FOUND);
+            forUpdates.put(outerRowKeys.get(ii), BASELINE_KEY_NOT_FOUND);
         }
     }
 
@@ -360,15 +368,16 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (updateCommitter != null) {
             updateCommitter.maybeActivate();
         }
-        final long result = updates.put(key, value);
+        final ScalarAccessPair scalarAccess = SCALAR_ACCESS.get();
+        scalarAccess.forUpdates.reset(updates);
+        final long result = scalarAccess.forUpdates.put(key, value);
         // The prior value from updates is either some legit previous value, or BASELINE_KEY_NOT_FOUND.
         // In either case, return it to the caller.
         if (result != UPDATES_KEY_NOT_FOUND) {
             return result;
         }
-        final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
-        forBaseline.reset(baseline);
-        return forBaseline.get(key);
+        scalarAccess.forBaseline.reset(baseline);
+        return scalarAccess.forBaseline.get(key);
     }
 
     @Override
@@ -380,12 +389,12 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
             updateCommitter.maybeActivate();
         }
 
-        final MutableInt offset = new MutableInt();
         final LongChunk<? extends RowKeys> innerRowKeysTyped = innerRowKeys.asLongChunk();
-        outerRowKeys.forAllRowKeys(outerRowKey -> {
-            updates.put(outerRowKey, innerRowKeysTyped.get(offset.get()));
-            offset.increment();
-        });
+        final LongChunk<? extends RowKeys> outerRowKeysTyped = outerRowKeys.asRowKeyChunk();
+        try (final WritableLongChunk<RowKeys> oldValues =
+                WritableLongChunk.makeWritableChunk(outerRowKeysTyped.size())) {
+            updates.put(outerRowKeysTyped, innerRowKeysTyped, oldValues);
+        }
     }
 
     @Override
@@ -398,9 +407,9 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         }
 
         final LongChunk<? extends RowKeys> innerRowKeysTyped = innerRowKeys.asLongChunk();
-        final int size = innerRowKeysTyped.size();
-        for (int ki = 0; ki < size; ++ki) {
-            updates.put(outerRowKeys.get(ki), innerRowKeysTyped.get(ki));
+        try (final WritableLongChunk<RowKeys> oldValues =
+                WritableLongChunk.makeWritableChunk(innerRowKeysTyped.size())) {
+            updates.put(outerRowKeys, innerRowKeysTyped, oldValues);
         }
     }
 

@@ -71,10 +71,12 @@ public class TestHashMapBase {
 
     private static void checkPresizedMapDoesNotRehash(final String name, final NullableLongLongMap map,
             final int expected, final double loadFactor) {
-        map.put(1, 1);
+        final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
+        scalarAccess.reset(map);
+        scalarAccess.put(1, 1);
         final int initialCapacity = map.capacity();
         for (int ii = 2; ii <= expected; ++ii) {
-            map.put(ii, ii);
+            scalarAccess.put(ii, ii);
         }
         TestCase.assertEquals(String.format("%s: loadFactor=%f, expected=%d", name, loadFactor, expected),
                 initialCapacity, map.capacity());
