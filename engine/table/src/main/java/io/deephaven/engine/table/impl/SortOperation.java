@@ -19,7 +19,6 @@ import io.deephaven.engine.table.impl.util.RowRedirection;
 import io.deephaven.engine.table.iterators.ChunkedLongColumnIterator;
 import io.deephaven.engine.table.iterators.LongColumnIterator;
 import io.deephaven.util.SafeCloseableList;
-import io.deephaven.engine.table.impl.util.hash.HashMapK4V4;
 import io.deephaven.engine.table.impl.util.hash.NullableLongLongMap;
 import io.deephaven.engine.table.impl.util.hash.HashMapLockFreeK4V4;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -311,7 +310,8 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
                     .getArrayMapping();
 
             // Size the map so the initial population completes without any rehashing.
-            final HashMapK4V4 reverseLookup = HashMapLockFreeK4V4.ofExpectedSize(sortedKeys.length, 0.75, -3);
+            final NullableLongLongMap reverseLookup =
+                    HashMapLockFreeK4V4.ofExpectedSize(sortedKeys.length, 0.75, -3);
 
             sortMapping = SortHelpers.createSortRowRedirection();
 
@@ -437,7 +437,7 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
             return null;
         }
         // Size the map so the population below completes without any rehashing.
-        final HashMapK4V4 reverseLookup =
+        final NullableLongLongMap reverseLookup =
                 HashMapLockFreeK4V4.ofExpectedSize(sortResult.intSize(), 0.75, RowSequence.NULL_ROW_KEY);
         try (final LongColumnIterator innerRowKeys =
                 new ChunkedLongColumnIterator(sortRedirection, sortResult.getRowSet());
