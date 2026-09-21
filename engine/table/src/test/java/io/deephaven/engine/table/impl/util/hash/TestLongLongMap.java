@@ -245,10 +245,11 @@ public class TestLongLongMap {
         final long first = 1;
         cursor.put(first, 10);
         final int numBuckets = map.capacity() / entriesPerBucket;
-        final int bucket = HashMapBase.probe1(first, numBuckets);
+        final long reciprocal = HashMapBase.reciprocalFor(numBuckets);
+        final int bucket = HashMapBase.probe1(first, numBuckets, reciprocal);
         // Another key whose probe starts in the same bucket.
         long second = 2;
-        while (HashMapBase.probe1(second, numBuckets) != bucket) {
+        while (HashMapBase.probe1(second, numBuckets, reciprocal) != bucket) {
             ++second;
         }
         cursor.remove(first);
