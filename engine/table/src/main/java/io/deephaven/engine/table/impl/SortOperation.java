@@ -20,7 +20,7 @@ import io.deephaven.engine.table.iterators.ChunkedLongColumnIterator;
 import io.deephaven.engine.table.iterators.LongColumnIterator;
 import io.deephaven.util.SafeCloseableList;
 import io.deephaven.engine.table.impl.util.hash.NullableLongLongMap;
-import io.deephaven.engine.table.impl.util.hash.NullableLongLongMaps;
+import io.deephaven.engine.table.impl.util.hash.HashMapLockFreeK4V4;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -309,15 +309,12 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
                             dataIndex, rowSetToSort, usePrev, ALLOW_SYMBOL_TABLE)
                     .getArrayMapping();
 
-            // Size the map so the initial population completes without any rehashing. The shape comes from the
-            // central policy; at this load factor (0.75 — measured as a wash between the serial and windowed
-            // shapes) it picks serial K4V4 except for sorts within reach of the maps' absolute capacity ceiling,
-            // which are forced dense and get the windowed shape. There is deliberately no dynamic upgrade here:
-            // getSingle's operator
-            // captures the map reference, and swapping a field under a captured alias would leave the alias serving
-            // the abandoned map.
-            final NullableLongLongMap reverseLookup = NullableLongLongMaps.ofExpectedSize(sortedKeys.length, 0.75,
-                    -3, NullableLongLongMaps.DEFAULT_AMAC_THRESHOLD_ENTRIES);
+            // Size the map so the initial population completes without any rehashing. No shape decision is needed:
+            // K4V4's reads switch to the windowed (AMAC) strategy by footprint on their own (see
+            // NullableLongLongMaps.wantWindowedReads). Nor is any dynamic layout upgrade wanted here — getSingle's
+            // operator captures the map reference, and swapping a field under a captured alias would leave the alias
+            // serving the abandoned map.
+            final NullableLongLongMap reverseLookup = HashMapLockFreeK4V4.ofExpectedSize(sortedKeys.length, 0.75, -3);
 
             sortMapping = SortHelpers.createSortRowRedirection();
 
@@ -442,10 +439,10 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
         if (sortRedirection == null) {
             return null;
         }
-        // Size the map so the population below completes without any rehashing. The shape comes from the central
-        // policy (currently always serial at this load factor; see the comment at the other call site).
-        final NullableLongLongMap reverseLookup = NullableLongLongMaps.ofExpectedSize(sortResult.intSize(), 0.75,
-                RowSequence.NULL_ROW_KEY, NullableLongLongMaps.DEFAULT_AMAC_THRESHOLD_ENTRIES);
+        // Size the map so the population below completes without any rehashing. (Reads adapt by footprint on their
+        // own; see the comment at the other call site.)
+        final NullableLongLongMap reverseLookup =
+                HashMapLockFreeK4V4.ofExpectedSize(sortResult.intSize(), 0.75, RowSequence.NULL_ROW_KEY);
         try (final LongColumnIterator innerRowKeys =
                 new ChunkedLongColumnIterator(sortRedirection, sortResult.getRowSet());
                 final RowSet.Iterator outerRowKeys = sortResult.getRowSet().iterator()) {
