@@ -82,6 +82,19 @@ public final class NullableLongLongMaps {
     public static final int DEFAULT_AMAC_THRESHOLD_ENTRIES = 1 << 20;
 
     /**
+     * Chunk size at and below which a K4V4 map services a chunked get serially even when its footprint says window. The
+     * window only pays when it is full: a chunk narrower than the window cannot overlap a window's worth of misses,
+     * while the window's fixed cost (the per-thread scratch, per-job setup) is paid regardless. Measured at 10M entries
+     * on an i9-13900K (three forks, serial vs forced window, window/serial time ratio): single-key chunks cost 1.6-2.3x
+     * under the window on every load factor and pattern; four-key chunks lose on everything but dense shuffled lookups;
+     * sixteen-key chunks win 10% on sparse shuffled and 2.4x on dense shuffled; sixty-four-key chunks win 23% and 3x
+     * there and tie dense sorted. Sixteen is the window width: the smallest chunk that can fill it. (Sorted sparse
+     * lookups lose under the window at every chunk size on that machine and tie or win on a Ryzen 9 9950X3D2 — a
+     * lookup-pattern question, deliberately left out of this gate.)
+     */
+    public static final int MIN_WINDOWED_CHUNK = 16;
+
+    /**
      * Load factor at and below which the windowed shape does not pay, regardless of size. Measured at 10M entries: at
      * load factor 0.5 the windowed shape loses (~30-40% slower — probe chains barely exist, so the window has nothing
      * to hide and wider buckets just cost more bytes per probe); at 0.75 it is a wash (sorted lookups trend against it,
@@ -145,18 +158,20 @@ public final class NullableLongLongMaps {
     }
 
     /**
-     * Should a K4V4-shaped map service chunked gets through the AMAC window right now? Yes exactly when its FOOTPRINT
-     * is beyond the last-level cache — entry capacity at or above {@link #DEFAULT_AMAC_THRESHOLD_ENTRIES} — because the
+     * Should a K4V4-shaped map service this chunked get through the AMAC window? Yes exactly when its FOOTPRINT is
+     * beyond the last-level cache — entry capacity at or above {@link #DEFAULT_AMAC_THRESHOLD_ENTRIES} — because the
      * window's whole job is overlapping cache misses, and a cache-resident table has none to overlap (there the window
-     * is pure bookkeeping, measured as a tax). Footprint is the first-order predictor. Occupancy turned out to be
-     * second-order and is deliberately NOT an input: at a fixed large footprint the window ties or wins at every
+     * is pure bookkeeping, measured as a tax); and when the chunk is at least {@link #MIN_WINDOWED_CHUNK} keys wide,
+     * because a chunk that cannot fill the window pays its fixed cost for nothing (a single-key chunk — the scalar
+     * cursor's case — has nothing to overlap at all). Footprint is the first-order predictor. Occupancy turned out to
+     * be second-order and is deliberately NOT an input: at a fixed large footprint the window ties or wins at every
      * occupancy measured, and open-addressing occupancy sawtooths in [loadFactor/2, loadFactor] as rehash doubles
      * overshoot, so it never sits where a threshold calibrated on load factor expects it (a lesson learned the hard
      * way). Capacity changes only at rehash, so this answer is stable between rehashes and flips exactly when the array
      * grows past the cache.
      */
-    public static boolean wantWindowedReads(final int entryCapacity) {
-        return entryCapacity >= DEFAULT_AMAC_THRESHOLD_ENTRIES;
+    public static boolean wantWindowedReads(final int entryCapacity, final int chunkSize) {
+        return chunkSize >= MIN_WINDOWED_CHUNK && entryCapacity >= DEFAULT_AMAC_THRESHOLD_ENTRIES;
     }
 
     /**
