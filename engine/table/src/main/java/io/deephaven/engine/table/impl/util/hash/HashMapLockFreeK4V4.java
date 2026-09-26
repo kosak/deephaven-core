@@ -21,7 +21,7 @@ final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLongLongM
     HashMapLockFreeK4V4(int desiredInitialCapacity, double loadFactor, long noEntryValue, ReadMode readMode) {
         super(desiredInitialCapacity, loadFactor, noEntryValue);
         this.readMode = readMode;
-        this.keysAndValues = null;
+        this.keysAndValues = EMPTY_KEYS_AND_VALUES;
     }
 
     @Override
@@ -38,10 +38,10 @@ final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLongLongM
         // from the new array's own header whenever the array changes (a load, not a divide: every array carries
         // its reciprocal).
         long[] kvs = keysAndValues;
-        long numBucketsReciprocal = kvs == null ? 0 : reciprocalOf(kvs);
+        long numBucketsReciprocal = reciprocalOf(kvs);
         for (int ii = 0; ii < size; ++ii) {
             oldValues.set(ii, putImpl(kvs, numBucketsReciprocal, keys.get(ii), values.get(ii), false));
-            // Hot reads: cheap, and free of a stale-check branch; kvs is non-null once putImpl has run.
+            // Hot reads: cheap, and free of a stale-check branch (the array is never null).
             kvs = keysAndValues;
             numBucketsReciprocal = reciprocalOf(kvs);
         }
@@ -54,10 +54,10 @@ final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLongLongM
         final int size = keys.size();
         // Same volatile-read and reciprocal-memo discipline as put.
         long[] kvs = keysAndValues;
-        long numBucketsReciprocal = kvs == null ? 0 : reciprocalOf(kvs);
+        long numBucketsReciprocal = reciprocalOf(kvs);
         for (int ii = 0; ii < size; ++ii) {
             oldValues.set(ii, putImpl(kvs, numBucketsReciprocal, keys.get(ii), values.get(ii), true));
-            // Hot reads: cheap, and free of a stale-check branch; kvs is non-null once putImpl has run.
+            // Hot reads: cheap, and free of a stale-check branch (the array is never null).
             kvs = keysAndValues;
             numBucketsReciprocal = reciprocalOf(kvs);
         }
@@ -70,14 +70,6 @@ final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLongLongM
         // array, whose header carries its reciprocal.
         final long[] localKvs = keysAndValues;
         final int n = keys.size();
-        if (localKvs == null) {
-            final long noEntry = defaultReturnValue();
-            for (int ii = 0; ii < n; ++ii) {
-                result.set(ii, noEntry);
-            }
-            result.setSize(n);
-            return;
-        }
         // Adaptive read strategy: when the map's footprint is beyond the last-level cache — its whole job is
         // overlapping the misses that a cache-resident table simply does not have — service the chunk through the
         // AMAC window; otherwise use the serial loop, which ties or wins when the table is cache-resident. Footprint
@@ -105,7 +97,7 @@ final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLongLongM
         // rehashes, so no element can replace the array a later element must see.
         final long[] localKvs = keysAndValues;
         // Same header-borne reciprocal as get.
-        final long numBucketsReciprocal = localKvs == null ? 0 : reciprocalOf(localKvs);
+        final long numBucketsReciprocal = reciprocalOf(localKvs);
         final int size = keys.size();
         for (int ii = 0; ii < size; ++ii) {
             oldValues.set(ii, removeImpl(localKvs, numBucketsReciprocal, keys.get(ii)));
@@ -124,13 +116,13 @@ final class HashMapLockFreeK4V4 extends HashMapK4V4 implements NullableLongLongM
 
     public void resetToNull() {
         resetToNullImpl();
-        keysAndValues = null;
+        keysAndValues = EMPTY_KEYS_AND_VALUES;
     }
 
     @Override
     public void resetToNullRetainingCapacity() {
         resetToNullRetainingCapacityImpl(keysAndValues);
-        keysAndValues = null;
+        keysAndValues = EMPTY_KEYS_AND_VALUES;
     }
 
     @Override
