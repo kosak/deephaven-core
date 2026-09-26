@@ -35,7 +35,7 @@ public class TestLongLongMap {
 
     private static BiFunction<Integer, Float, NullableLongLongMap> shaped(final Shape shape, final ReadMode readMode) {
         return (capacity, loadFactor) -> NullableLongLongMaps.of(shape, capacity, loadFactor,
-                HashMapBase.DEFAULT_NO_ENTRY_VALUE, readMode);
+                HashMapLockFreeKnVn.DEFAULT_NO_ENTRY_VALUE, readMode);
     }
 
     @Parameterized.Parameters(name = "map={0}, cap={1}, load={2}")
@@ -90,13 +90,13 @@ public class TestLongLongMap {
         final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
         scalarAccess.reset(map);
         try {
-            scalarAccess.put(HashMapBase.SPECIAL_KEY_FOR_DELETED_SLOT, 12345);
+            scalarAccess.put(HashMapLockFreeKnVn.SPECIAL_KEY_FOR_DELETED_SLOT, 12345);
             TestCase.fail("SPECIAL_KEY_FOR_DELETED_SLOT should not be accepted");
         } catch (io.deephaven.base.verify.AssertionFailure e) {
             // do nothing
         }
         try {
-            scalarAccess.put(HashMapBase.REDIRECTED_KEY_FOR_EMPTY_SLOT, 12345);
+            scalarAccess.put(HashMapLockFreeKnVn.REDIRECTED_KEY_FOR_EMPTY_SLOT, 12345);
             TestCase.fail("REDIRECTED_KEY_FOR_EMPTY_SLOT should not be accepted");
         } catch (io.deephaven.base.verify.AssertionFailure e) {
             // do nothing
@@ -247,17 +247,17 @@ public class TestLongLongMap {
         // K1V1 -> 1, K2V2 -> 2, K4V4 -> 4: the factory's name says how many slots a bucket has.
         final int entriesPerBucket = factory.toString().charAt(1) - '0';
         final NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
-        final HashMapBase base = (HashMapBase) map;
+        final HashMapLockFreeKnVn base = (HashMapLockFreeKnVn) map;
         final NullableLongLongMap.ScalarAccess cursor = new NullableLongLongMap.ScalarAccess();
         cursor.reset(map);
         final long first = 1;
         cursor.put(first, 10);
         final int numBuckets = map.capacity() / entriesPerBucket;
-        final long reciprocal = HashMapBase.reciprocalFor(numBuckets);
-        final int bucket = HashMapBase.probe1(first, numBuckets, reciprocal);
+        final long reciprocal = HashMapLockFreeKnVn.reciprocalFor(numBuckets);
+        final int bucket = HashMapLockFreeKnVn.probe1(first, numBuckets, reciprocal);
         // Another key whose probe starts in the same bucket.
         long second = 2;
-        while (HashMapBase.probe1(second, numBuckets, reciprocal) != bucket) {
+        while (HashMapLockFreeKnVn.probe1(second, numBuckets, reciprocal) != bucket) {
             ++second;
         }
         cursor.remove(first);
@@ -301,7 +301,7 @@ public class TestLongLongMap {
     @Test
     public void zeroComesBackThroughKeys() {
         NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
-        final long specialKey = HashMapBase.SPECIAL_KEY_FOR_EMPTY_SLOT;
+        final long specialKey = HashMapLockFreeKnVn.SPECIAL_KEY_FOR_EMPTY_SLOT;
         final NullableLongLongMap.ScalarAccess scalarAccess = new NullableLongLongMap.ScalarAccess();
         scalarAccess.reset(map);
         scalarAccess.put(specialKey, 12345);
@@ -342,7 +342,7 @@ public class TestLongLongMap {
         TestCase.assertTrue(Arrays.equals(expectedKeys, actualKeys));
         TestCase.assertTrue(Arrays.equals(expectedValues, actualValues));
 
-        if (test instanceof HashMapBase) {
+        if (test instanceof HashMapLockFreeKnVn) {
             // Also exercise the caller-provided-space overloads.
             final long[] keySpace = new long[reference.size()];
             final long[] valueSpace = new long[reference.size()];

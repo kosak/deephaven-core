@@ -32,7 +32,7 @@ public class TestNullableLongLongMaps {
             reference.remove(key);
         }
         final NullableLongLongMap upgraded = NullableLongLongMaps.maybeUpgrade(map, DENSE, 1);
-        TestCase.assertTrue(upgraded instanceof HashMapLockFreeK4V4);
+        TestCase.assertEquals(Shape.K4V4, ((HashMapLockFreeKnVn) upgraded).shape());
         TestCase.assertEquals(NO_ENTRY_VALUE, upgraded.defaultReturnValue());
         TestCase.assertEquals(reference.size(), upgraded.size());
         cursor.reset(upgraded);
@@ -72,7 +72,7 @@ public class TestNullableLongLongMaps {
             cursor.put(key, key + 1);
         }
         final NullableLongLongMap upgraded = NullableLongLongMaps.maybeUpgrade(map, SPARSE, 1000, 50);
-        TestCase.assertTrue(upgraded instanceof HashMapLockFreeK4V4);
+        TestCase.assertEquals(Shape.K4V4, ((HashMapLockFreeKnVn) upgraded).shape());
         TestCase.assertEquals(100, upgraded.size());
         cursor.reset(upgraded);
         for (long key = 0; key < 100; ++key) {
@@ -117,14 +117,18 @@ public class TestNullableLongLongMaps {
 
     @Test
     public void factoryBuildsTheRequestedShape() {
-        final Map<Shape, Class<?>> expectedClasses = new HashMap<>();
-        expectedClasses.put(Shape.K1V1, HashMapLockFreeK1V1.class);
-        expectedClasses.put(Shape.K2V2, HashMapLockFreeK2V2.class);
-        expectedClasses.put(Shape.K4V4, HashMapLockFreeK4V4.class);
         for (final Shape shape : Shape.values()) {
             final NullableLongLongMap map = NullableLongLongMaps.of(shape, 16, DENSE, NO_ENTRY_VALUE);
-            TestCase.assertEquals(shape.name(), expectedClasses.get(shape), map.getClass());
+            final HashMapLockFreeKnVn knVn = (HashMapLockFreeKnVn) map;
+            // Before the first write the requested shape is a promise the map remembers; after it, the array's own
+            // tag keeps it.
+            TestCase.assertEquals(shape, knVn.shape());
             TestCase.assertEquals(NO_ENTRY_VALUE, map.defaultReturnValue());
+            final NullableLongLongMap.ScalarAccess cursor = new NullableLongLongMap.ScalarAccess();
+            cursor.reset(map);
+            cursor.put(1, 2);
+            TestCase.assertEquals(shape, knVn.shape());
+            TestCase.assertEquals(shape.bucketWidth(), HashMapLockFreeKnVn.shapeTagOf(knVn.keysAndValuesSnapshot()));
             TestCase.assertEquals(shape, Shape.forBucketWidth(shape.bucketWidth()));
         }
     }

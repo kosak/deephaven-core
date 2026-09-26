@@ -135,16 +135,7 @@ public final class NullableLongLongMaps {
         if (readMode == ReadMode.WINDOW && shape != Shape.K4V4) {
             throw new IllegalArgumentException("ReadMode.WINDOW requires Shape.K4V4, not " + shape);
         }
-        switch (shape) {
-            case K1V1:
-                return new HashMapLockFreeK1V1(desiredInitialCapacity, loadFactor, noEntryValue);
-            case K2V2:
-                return new HashMapLockFreeK2V2(desiredInitialCapacity, loadFactor, noEntryValue);
-            case K4V4:
-                return new HashMapLockFreeK4V4(desiredInitialCapacity, loadFactor, noEntryValue, readMode);
-            default:
-                throw new IllegalStateException("Unknown shape " + shape);
-        }
+        return new HashMapLockFreeKnVn(shape, desiredInitialCapacity, loadFactor, noEntryValue, readMode);
     }
 
     /**
@@ -153,7 +144,7 @@ public final class NullableLongLongMaps {
      */
     public static NullableLongLongMap ofExpectedSize(final Shape shape, final int expectedSize,
             final double loadFactor, final long noEntryValue) {
-        final int desiredInitialCapacity = HashMapBase.capacityForExpectedEntries(expectedSize, loadFactor);
+        final int desiredInitialCapacity = HashMapLockFreeKnVn.capacityForExpectedEntries(expectedSize, loadFactor);
         return of(shape, desiredInitialCapacity, loadFactor, noEntryValue);
     }
 
@@ -198,7 +189,7 @@ public final class NullableLongLongMaps {
     // Package-visible so tests can exercise the ceiling trigger without building a 750M-entry map.
     static NullableLongLongMap maybeUpgrade(final NullableLongLongMap map, final double loadFactor,
             final int amacThresholdEntries, final int ceilingCutoverEntries) {
-        if (map instanceof HashMapK4V4) {
+        if (!(map instanceof HashMapLockFreeKnVn) || ((HashMapLockFreeKnVn) map).shape() == Shape.K4V4) {
             return map;
         }
         final boolean deliberatelyDense =
