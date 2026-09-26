@@ -109,19 +109,21 @@ public class TestHashMapLockFreeKnVn {
     }
 
     /**
-     * A growing rehash doubles the bucket count, but never past the width's maximum: at the maximum the doubling used
-     * to overflow int and hand the prime finder a negative count.
+     * A growing rehash doubles the entry capacity, saturating rather than overflowing: at a width's maximum the
+     * doubling used to wrap negative and hand the prime finder a negative bucket count. The saturated request rounds to
+     * at least the maximum bucket count for every width, which the builder then clamps.
      */
     @Test
-    public void grownBucketCountSaturatesAtTheMaximum() {
+    public void grownEntryCapacitySaturates() {
+        TestCase.assertEquals(2000, HashMapLockFreeKnVn.grownEntryCapacity(1000));
+        TestCase.assertEquals(Integer.MAX_VALUE, HashMapLockFreeKnVn.grownEntryCapacity(Integer.MAX_VALUE / 2 + 1));
+        TestCase.assertEquals(Integer.MAX_VALUE, HashMapLockFreeKnVn.grownEntryCapacity(Integer.MAX_VALUE));
         for (final int entriesPerBucket : new int[] {1, 2, 4}) {
-            final int max = HashMapLockFreeKnVn.getMaxBucketCapacity(entriesPerBucket);
-            // Each width's maximum is the largest prime whose array fits in an int: near 2^31 / (2 * width).
-            TestCase.assertTrue(max > Integer.MAX_VALUE / (2 * entriesPerBucket) - 100_000);
-            TestCase.assertEquals(2000, HashMapLockFreeKnVn.grownBucketCount(1000, entriesPerBucket));
-            TestCase.assertEquals(max, HashMapLockFreeKnVn.grownBucketCount(max / 2 + 1, entriesPerBucket));
-            TestCase.assertEquals(max, HashMapLockFreeKnVn.grownBucketCount(max - 1, entriesPerBucket));
-            TestCase.assertEquals(max, HashMapLockFreeKnVn.grownBucketCount(max, entriesPerBucket));
+            final int maxBuckets = HashMapLockFreeKnVn.getMaxBucketCapacity(entriesPerBucket);
+            final int maxEntries = maxBuckets * entriesPerBucket;
+            final int grown = HashMapLockFreeKnVn.grownEntryCapacity(maxEntries);
+            TestCase.assertTrue(grown > 0);
+            TestCase.assertTrue(HashMapLockFreeKnVn.desiredBucketCount(grown, entriesPerBucket) >= maxBuckets);
         }
     }
 

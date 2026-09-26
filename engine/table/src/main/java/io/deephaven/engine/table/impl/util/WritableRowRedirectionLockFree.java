@@ -129,13 +129,9 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
     private static final long UPDATES_KEY_NOT_FOUND = -2L;
 
     /**
-     * How things looked at the beginning of the most recent idle cycle. Not final: commitUpdates() may replace a
-     * baseline that has grown past AMAC_THRESHOLD_ENTRIES with an upgraded (windowed) map. The swap rides the same
-     * release/acquire chains that publish the commit itself (arguments #1 and #2 in the class comment); a Reader that
-     * has not yet synchronized sees the old map, which is never mutated again after the swap and so remains a
-     * consistent pre-commit snapshot.
+     * How things looked at the beginning of the most recent idle cycle.
      */
-    private NullableLongLongMap baseline;
+    private final NullableLongLongMap baseline;
     /**
      * Updates that have happened since the start of the most recent idle cycle.
      */
@@ -161,16 +157,7 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         // in turn can only happen once prev tracking has been turned on). We copy updates to baseline and reset the
         // updates map.
         final NullableLongLongMap updates = instance.updates;
-        // A baseline that has become big and dense — deliberately (grown past the AMAC threshold while LOAD_FACTOR
-        // is at or above the policy's density floor; never at the default 0.5) or forcibly (creeping toward the
-        // absolute capacity ceiling, where rehash clamps and occupancy climbs regardless of LOAD_FACTOR) — is
-        // rebuilt into the wide-bucket K4V4 shape before the merge, so the merge's own puts also run against the
-        // upgraded map; that map's reads then adapt to the AMAC window by footprint on their own. Readers
-        // pick up the swap through the usual publication chains; one still holding the old map sees a consistent
-        // pre-commit snapshot, which the commit boundary permits.
-        final NullableLongLongMap baseline =
-                NullableLongLongMaps.maybeUpgrade(instance.baseline, LOAD_FACTOR, AMAC_THRESHOLD_ENTRIES);
-        instance.baseline = baseline;
+        final NullableLongLongMap baseline = instance.baseline;
         Assert.neq(baseline, "baseline", updates, "updates");
 
         final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
@@ -424,18 +411,13 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
     }
 
     /**
-     * The shape of the maps this redirection builds, configured as a bucket width (1, 2 or 4; see
-     * {@link Shape#forBucketWidth}).
+     * The shape the maps this redirection builds are BORN with, configured as a bucket width (1, 2 or 4; see
+     * {@link Shape#forBucketWidth}). A map widens itself to the K4V4 shape as it grows dense (load factor at or above
+     * the policy's floor — never at the default 0.5) or near the capacity ceiling; see
+     * {@link NullableLongLongMaps#shapeForRebuild}.
      */
     private static final Shape HASH_SHAPE = Shape.forBucketWidth(Configuration.getInstance()
             .getIntegerForClassWithDefault(WritableRowRedirectionLockFree.class, "hashBucketWidth", 1));
-
-    /**
-     * Entry count at which commitUpdates() upgrades the baseline map to the windowed (AMAC) shape.
-     */
-    private static final int AMAC_THRESHOLD_ENTRIES = Configuration.getInstance()
-            .getIntegerForClassWithDefault(WritableRowRedirectionLockFree.class, "amacThresholdEntries",
-                    NullableLongLongMaps.DEFAULT_AMAC_THRESHOLD_ENTRIES);
 
     @NotNull
     private static NullableLongLongMap createUpdateMap() {
