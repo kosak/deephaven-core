@@ -107,4 +107,40 @@ public class TestHashMapBase {
             TestCase.assertEquals(expected, buckets);
         }
     }
+
+    /**
+     * Every array carries its own shape: the header's tag is the bucket width, or SHAPE_TAG_EMPTY for the sentinel,
+     * through allocation, growth, and reset — and the reciprocal keeps its place at the very end.
+     */
+    @Test
+    public void headerCarriesTheShapeTag() {
+        for (final Shape shape : Shape.values()) {
+            final NullableLongLongMap map = NullableLongLongMaps.of(shape, 16, 0.5, -1);
+            final NullableLongLongMapTestAccessors accessors = (NullableLongLongMapTestAccessors) map;
+            TestCase.assertTrue(shape.name(), HashMapBase.isEmptyArray(accessors.keysAndValuesSnapshot()));
+            TestCase.assertEquals(HashMapBase.SHAPE_TAG_EMPTY,
+                    HashMapBase.shapeTagOf(accessors.keysAndValuesSnapshot()));
+            final NullableLongLongMap.ScalarAccess cursor = new NullableLongLongMap.ScalarAccess();
+            cursor.reset(map);
+            cursor.put(1, 1);
+            long[] kvs = accessors.keysAndValuesSnapshot();
+            checkHeader(shape, kvs);
+            // Grow through several rehashes: every new array carries the tag too.
+            for (long key = 2; key <= 10_000; ++key) {
+                cursor.put(key, key);
+            }
+            TestCase.assertNotSame(kvs, accessors.keysAndValuesSnapshot());
+            kvs = accessors.keysAndValuesSnapshot();
+            checkHeader(shape, kvs);
+            map.resetToNull();
+            TestCase.assertTrue(shape.name(), HashMapBase.isEmptyArray(accessors.keysAndValuesSnapshot()));
+        }
+    }
+
+    private static void checkHeader(final Shape shape, final long[] kvs) {
+        TestCase.assertEquals(shape.name(), shape.bucketWidth(), HashMapBase.shapeTagOf(kvs));
+        TestCase.assertFalse(shape.name(), HashMapBase.isEmptyArray(kvs));
+        final int numBuckets = (kvs.length - HashMapBase.HEADER_LONGS) / (shape.bucketWidth() * 2);
+        TestCase.assertEquals(shape.name(), HashMapBase.reciprocalFor(numBuckets), HashMapBase.reciprocalOf(kvs));
+    }
 }

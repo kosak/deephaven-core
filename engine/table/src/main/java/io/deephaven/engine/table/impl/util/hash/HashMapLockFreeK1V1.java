@@ -112,6 +112,11 @@ final class HashMapLockFreeK1V1 extends HashMapK1V1 implements NullableLongLongM
     }
 
     @Override
+    public long[] keysAndValuesSnapshot() {
+        return keysAndValues;
+    }
+
+    @Override
     public long[] keyArray() {
         return keysOrValuesImpl(keysAndValues, null, false);
     }
