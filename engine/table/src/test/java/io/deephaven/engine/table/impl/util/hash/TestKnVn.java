@@ -3,6 +3,7 @@
 //
 package io.deephaven.engine.table.impl.util.hash;
 
+import io.deephaven.engine.table.impl.util.hash.NullableLongLongMaps.Shape;
 import junit.framework.TestCase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class TestKnVn {
      */
     @Test
     public void fillK1V1ToTheMax() {
-        fillToCapacity(new HashMapLockFreeK1V1(), HASHTABLE_SIZE_LOWER_BOUND_1);
+        fillToCapacity(withDefaults(Shape.K1V1), HASHTABLE_SIZE_LOWER_BOUND_1);
     }
 
     /**
@@ -34,7 +35,7 @@ public class TestKnVn {
      */
     @Test
     public void fillK2V2ToTheMax() {
-        fillToCapacity(new HashMapLockFreeK2V2(), HASHTABLE_SIZE_LOWER_BOUND_2);
+        fillToCapacity(withDefaults(Shape.K2V2), HASHTABLE_SIZE_LOWER_BOUND_2);
     }
 
     /**
@@ -43,7 +44,12 @@ public class TestKnVn {
      */
     @Test
     public void fillK4V4ToTheMax() {
-        fillToCapacity(new HashMapLockFreeK4V4(), HASHTABLE_SIZE_LOWER_BOUND_4);
+        fillToCapacity(withDefaults(Shape.K4V4), HASHTABLE_SIZE_LOWER_BOUND_4);
+    }
+
+    private static NullableLongLongMap withDefaults(final Shape shape) {
+        return NullableLongLongMaps.of(shape, HashMapBase.DEFAULT_INITIAL_CAPACITY, HashMapBase.DEFAULT_LOAD_FACTOR,
+                HashMapBase.DEFAULT_NO_ENTRY_VALUE);
     }
 
     private static void fillToCapacity(NullableLongLongMap ht, final long lowerSizeBound) {
