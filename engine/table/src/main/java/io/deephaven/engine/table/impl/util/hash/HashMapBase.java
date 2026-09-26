@@ -126,6 +126,21 @@ abstract class HashMapBase implements NullableLongLongMap {
     // mandatory at that point.
     static final int HEADER_LONGS = 1;
 
+    // The array is never null. An empty map — fresh, or after resetToNull* — holds this shared, immutable sentinel:
+    // one bucket of the widest shape (every slot SPECIAL_KEY_FOR_EMPTY_SLOT, which is 0) behind a header whose
+    // reciprocal is 0, so probe1 sends every key to bucket 0 (fastRange(0, n) == 0 for any n) and finds it empty —
+    // whatever a map's width makes of the data length (four K1V1 buckets, two K2V2, one K4V4: all empty). Probing
+    // the sentinel is therefore an ordinary miss, and no read path needs an empty-map branch. Writes must never
+    // touch it, and they are the only code that tells it apart, by identity: put swaps in a real array before
+    // probing (where the null check used to live); clear and resetToNullRetainingCapacity skip it.
+    static final long[] EMPTY_KEYS_AND_VALUES = newEmptyKeysAndValues();
+
+    private static long[] newEmptyKeysAndValues() {
+        final long[] kvs = new long[4 * 2 + HEADER_LONGS];
+        writeReciprocal(kvs, 0);
+        return kvs;
+    }
+
     /**
      * The fastmod reciprocal of {@code kvs}'s bucket count, read from the array's own header — published with the array
      * and immutable thereafter, so it cannot tear against the snapshot in hand.
@@ -217,12 +232,16 @@ abstract class HashMapBase implements NullableLongLongMap {
     }
 
     final int capacityImpl(long[] keysAndValues) {
-        return keysAndValues == null ? 0 : (keysAndValues.length - HEADER_LONGS) / 2;
+        return keysAndValues == EMPTY_KEYS_AND_VALUES ? 0 : (keysAndValues.length - HEADER_LONGS) / 2;
     }
 
     final void clearImpl(long[] keysAndValues) {
         size = 0;
         nonEmptySlots = 0;
+        if (keysAndValues == EMPTY_KEYS_AND_VALUES) {
+            // Already empty; the shared sentinel is never written.
+            return;
+        }
         // We leave rehashThreshold alone because the array size (and therefore the hashtable capacity) isn't changing.
         Arrays.fill(keysAndValues, 0, keysAndValues.length - HEADER_LONGS, SPECIAL_KEY_FOR_EMPTY_SLOT);
     }
@@ -234,7 +253,7 @@ abstract class HashMapBase implements NullableLongLongMap {
     }
 
     final void resetToNullRetainingCapacityImpl(long[] keysAndValues) {
-        if (keysAndValues != null) {
+        if (keysAndValues != EMPTY_KEYS_AND_VALUES) {
             // Remember the capacity, in entries, so that the next allocation lands back at this size directly rather
             // than regrowing from the construction-time capacity through successive rehashes. We remember the size
             // rather than holding the array itself so that the storage is reclaimable while the map sits empty.
@@ -307,9 +326,6 @@ abstract class HashMapBase implements NullableLongLongMap {
     }
 
     final void forEachImpl(final long[] kv, LongLongBiConsumer consumer) {
-        if (kv == null) {
-            return;
-        }
         final int dataLongs = kv.length - HEADER_LONGS;
         for (int nextIndex = findOccupiedSlot(kv, 0); nextIndex < dataLongs; nextIndex =
                 findOccupiedSlot(kv, nextIndex + 2)) {

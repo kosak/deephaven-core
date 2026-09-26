@@ -13,7 +13,7 @@ abstract class HashMapK4V4 extends HashMapBase {
     }
 
     final long putImpl(long[] kvs, long numBucketsReciprocal, long key, long value, boolean insertOnly) {
-        if (kvs == null) {
+        if (kvs == EMPTY_KEYS_AND_VALUES) {
             kvs = allocateKeysAndValuesArray(4);
             numBucketsReciprocal = reciprocalOf(kvs);
         }
@@ -59,9 +59,6 @@ abstract class HashMapK4V4 extends HashMapBase {
     }
 
     final long getImpl(long[] kvs, long numBucketsReciprocal, long key) {
-        if (kvs == null) {
-            return defaultReturnValue();
-        }
         key = fixKey(key);
         // To minimize possible painful effects of nonsynchronized access to our array, we get the reference once.
         final int location = getLocationFor(kvs, key, numBucketsReciprocal);
@@ -72,9 +69,6 @@ abstract class HashMapK4V4 extends HashMapBase {
     }
 
     final long removeImpl(long[] kvs, long numBucketsReciprocal, long key) {
-        if (kvs == null) {
-            return defaultReturnValue();
-        }
         key = fixKey(key);
         // To minimize possible painful effects of nonsynchronized access to our array, we get the reference once.
         final int location = getLocationFor(kvs, key, numBucketsReciprocal);
