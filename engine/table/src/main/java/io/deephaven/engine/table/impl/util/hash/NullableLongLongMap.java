@@ -100,9 +100,11 @@ public interface NullableLongLongMap {
 
     /**
      * A reusable cursor for scalar access to a {@link NullableLongLongMap}, for callers whose shape is genuinely
-     * per-element. {@link #reset} binds the cursor to a map. The per-batch setup the map's chunked operations need is
-     * memoized by the map itself, validated against its own array snapshot, so the cursor's calls stay cheap; callers
-     * with a loop should still allocate and reset once, outside the loop.
+     * per-element. {@link #reset} binds the cursor to a map. Bound to the engine's own map, each call goes straight to
+     * that map's scalar entry point: one volatile read, one dispatch on the array's shape tag, one kernel probe, the
+     * same price a per-element API paid before the maps spoke chunks. Bound to any other implementation, each call
+     * travels as a one-element chunk. Either way the calls are cheap; callers with a loop should still allocate and
+     * reset once, outside the loop.
      *
      * <p>
      * Contract: an instance may be used by only one thread at a time. It is valid from the time of {@link #reset}, with
@@ -115,12 +117,17 @@ public interface NullableLongLongMap {
      */
     final class ScalarAccess {
         private NullableLongLongMap map;
+        // Bound at reset when the map is the engine's own implementation: the operations below then go straight to
+        // its scalar entry points, one kernel call per key, with no chunk in between. Any other implementation is
+        // served through the one-element chunks.
+        private HashMapLockFreeKnVn direct;
         private final WritableLongChunk<Any> keyChunk = WritableLongChunk.writableChunkWrap(new long[1]);
         private final WritableLongChunk<Any> valueChunk = WritableLongChunk.writableChunkWrap(new long[1]);
         private final WritableLongChunk<Any> resultChunk = WritableLongChunk.writableChunkWrap(new long[1]);
 
         public void reset(final NullableLongLongMap map) {
             this.map = map;
+            this.direct = map instanceof HashMapLockFreeKnVn ? (HashMapLockFreeKnVn) map : null;
         }
 
         /**
@@ -128,6 +135,9 @@ public interface NullableLongLongMap {
          * {@link NullableLongLongMap#defaultReturnValue()} if no mapping exists.
          */
         public long get(final long key) {
+            if (direct != null) {
+                return direct.getScalar(key);
+            }
             keyChunk.set(0, key);
             map.get(keyChunk, resultChunk);
             return resultChunk.get(0);
@@ -139,6 +149,9 @@ public interface NullableLongLongMap {
          * keeps its own binding fresh; only mutation through any other path invalidates it.
          */
         public long put(final long key, final long value) {
+            if (direct != null) {
+                return direct.putScalar(key, value, false);
+            }
             keyChunk.set(0, key);
             valueChunk.set(0, value);
             map.put(keyChunk, valueChunk, resultChunk);
@@ -151,6 +164,9 @@ public interface NullableLongLongMap {
          * through the cursor keeps its own binding fresh; only mutation through any other path invalidates it.
          */
         public long putIfAbsent(final long key, final long value) {
+            if (direct != null) {
+                return direct.putScalar(key, value, true);
+            }
             keyChunk.set(0, key);
             valueChunk.set(0, value);
             map.putIfAbsent(keyChunk, valueChunk, resultChunk);
@@ -163,6 +179,9 @@ public interface NullableLongLongMap {
          * through the cursor keeps its own binding fresh; only mutation through any other path invalidates it.
          */
         public long remove(final long key) {
+            if (direct != null) {
+                return direct.removeScalar(key);
+            }
             keyChunk.set(0, key);
             map.remove(keyChunk, resultChunk);
             return resultChunk.get(0);
