@@ -42,13 +42,12 @@ public class TestLongLongMap {
     @Parameterized.Parameters(name = "map={0}, cap={1}, load={2}")
     public static Iterable<Object[]> data() {
         List<Object[]> result = new ArrayList<>();
-        // K1V1 and K2V2 are the shapes the maps are BORN with. Where the policy says so — capacity 1M at load factor
-        // 0.9 — the map builds the K4V4 shape from its first allocation, so those cells exercise a wide map and the
-        // narrow kernels are covered by the other cells.
+        // K1V1 is the shape a default map is born with. Where the policy says so — capacity 1M at load factor 0.9 —
+        // the map builds the K4V4 shape from its first allocation, so those cells exercise a wide map and the narrow
+        // kernel is covered by the other cells.
         final Factory[] factories = {
                 referenceFactory,
                 new Factory("K1V1", 1, shaped(Shape.K1V1, ReadMode.ADAPTIVE)),
-                new Factory("K2V2", 2, shaped(Shape.K2V2, ReadMode.ADAPTIVE)),
                 new Factory("K4V4", 4, shaped(Shape.K4V4, ReadMode.ADAPTIVE)),
                 new Factory("K4V4/WINDOW", 4, shaped(Shape.K4V4, ReadMode.WINDOW))
         };
@@ -232,7 +231,7 @@ public class TestLongLongMap {
      * An insert whose probe starts in a bucket holding a deleted slot ahead of an empty one takes the deleted slot — in
      * the first bucket of the probe as in every later one — so putting removed keys back does not consume empty slots
      * and walk the map toward a needless rehash. (K1V1 has one slot per bucket and was always right; the unrolled first
-     * bucket of K2V2 and K4V4 used to take the empty slot instead.)
+     * bucket of K4V4, and of the since-retired K2V2, used to take the empty slot instead.)
      */
     @Test
     public void firstBucketReusesTombstones() {

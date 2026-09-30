@@ -17,7 +17,6 @@ public class TestKnVn {
      */
     private static final long MINIMUM_HEAP_SIZE_NEEDED_FOR_TEST = 40L << 30;
     private static final int HASHTABLE_SIZE_LOWER_BOUND_1 = 900_000_000;
-    private static final int HASHTABLE_SIZE_LOWER_BOUND_2 = 800_000_000;
     private static final int HASHTABLE_SIZE_LOWER_BOUND_4 = 900_000_000;
     private static final int HASHTABLE_SIZE_UPPER_BOUND = 1_000_000_000;
 
@@ -28,15 +27,6 @@ public class TestKnVn {
     @Test
     public void fillK1V1ToTheMax() {
         fillToCapacity(withDefaults(Shape.K1V1), HASHTABLE_SIZE_LOWER_BOUND_1);
-    }
-
-    /**
-     * This is a very long-running test which also needs a big heap. We should figure out how to configure things so
-     * this runs off to the side without disrupting other developers.
-     */
-    @Test
-    public void fillK2V2ToTheMax() {
-        fillToCapacity(withDefaults(Shape.K2V2), HASHTABLE_SIZE_LOWER_BOUND_2);
     }
 
     /**
