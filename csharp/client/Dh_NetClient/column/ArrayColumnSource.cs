@@ -26,7 +26,7 @@ public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
     return visitor.Result!;
   }
 
-  protected readonly bool[] Nulls = new bool[size];
+  protected bool[] Nulls = new bool[size];
 
   public abstract void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags);
   public abstract void FillFromChunk(RowSequence rows, Chunk src, BooleanChunk? nullFlags);
@@ -34,6 +34,31 @@ public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
   public abstract void Accept(IColumnSourceVisitor visitor);
 
   public abstract ArrayColumnSource CreateOfSameType(int size);
+
+  /// <summary>
+  /// Ensures the source can hold at least 'capacity' elements, growing its backing storage if it cannot.
+  ///
+  /// Growth is geometric, which is what keeps a filling snapshot linear. A snapshot arrives as many
+  /// successive batches, and the alternative - allocating an exactly-sized array per batch and copying
+  /// the whole table into it - makes the total work quadratic in the number of rows: the Nth batch copies
+  /// all N-1 batches that preceded it. Doubling instead amortises to O(1) copies per element.
+  /// </summary>
+  public abstract void EnsureCapacity(int capacity);
+
+  /// <summary>
+  /// Grows an array geometrically to hold at least 'capacity' elements, preserving 'used' leading elements.
+  /// Returns the original array when it is already large enough.
+  /// </summary>
+  protected static T?[] Grown<T>(T?[] data, int capacity, int used) {
+    if (capacity <= data.Length) {
+      return data;
+    }
+
+    var newCapacity = Math.Max(data.Length == 0 ? 16 : data.Length * 2, capacity);
+    var grown = new T?[newCapacity];
+    Array.Copy(data, grown, used);
+    return grown;
+  }
 
   private class ArrayColumnSourceMaker(int size) :
     IArrowTypeVisitor<UInt16Type>,
@@ -110,7 +135,21 @@ public abstract class ArrayColumnSource(int size) : IMutableColumnSource {
 }
 
 public sealed class ArrayColumnSource<T>(int size) : ArrayColumnSource(size), IMutableColumnSource<T> {
-  private readonly T?[] _data = new T?[size];
+  private T?[] _data = new T?[size];
+
+  /// <summary>
+  /// How much of _data is live. Backing storage is grown geometrically so it usually runs past this point;
+  /// only the leading _used elements have to be preserved when it grows again.
+  /// </summary>
+  private int _used = size;
+
+  public override void EnsureCapacity(int capacity) {
+    _data = Grown(_data, capacity, _used);
+    Nulls = Grown(Nulls, capacity, _used)!;
+    if (capacity > _used) {
+      _used = capacity;
+    }
+  }
 
   public override void FillChunk(RowSequence rows, Chunk dest, BooleanChunk? nullFlags) {
     var typedChunk = (Chunk<T>)dest;

@@ -673,8 +673,11 @@ public class TableHandle : IDisposable {
     return ArrowClientTable.Create(at);
   }
 
-  public IDisposable Subscribe(IObserver<TickingUpdate> observer) {
-    var disposer = SubscriptionThread.Start(Server, Schema, Ticket, observer);
+  /// <param name="batchSize">Rows per record batch to ask the server for. Zero lets the server choose.</param>
+  /// <param name="maxMessageSize">Bytes per message. Zero uses the server's default.</param>
+  public IDisposable Subscribe(IObserver<TickingUpdate> observer,
+      int batchSize = BarrageProcessor.DefaultBatchSize, int maxMessageSize = 0) {
+    var disposer = SubscriptionThread.Start(Server, Schema, Ticket, observer, batchSize, maxMessageSize);
     // TODO(kosak): Add this subscription to a set of things that the TableHandleManager
     // will dispose when it is disposed.
     return disposer;

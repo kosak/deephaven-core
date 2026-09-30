@@ -24,11 +24,26 @@ public class BarrageProcessor {
   // "dphn"u8.ToArray();
   public const UInt32 DeephavenMagicNumber = 0x6E687064U;
 
-  public static byte[] CreateSubscriptionRequest(byte[] ticketBytes) {
+  /// <summary>
+  /// Rows per record batch to ask the server for, when the caller expresses no preference.
+  /// </summary>
+  public const int DefaultBatchSize = 4096;
+
+  /// <summary>
+  /// Builds the Barrage subscription request for a table.
+  /// </summary>
+  /// <param name="ticketBytes">The ticket of the table to subscribe to</param>
+  /// <param name="batchSize">Rows per record batch. Zero lets the server choose, which it does by fitting
+  /// batches to its message size limit; a positive value caps them at that many rows.</param>
+  /// <param name="maxMessageSize">Bytes per message. Zero uses the server's default.</param>
+  public static byte[] CreateSubscriptionRequest(
+      byte[] ticketBytes,
+      int batchSize = DefaultBatchSize,
+      int maxMessageSize = 0) {
     var payloadBuilder = new FlatBufferBuilder(4096);
 
     var subOptions = BarrageSubscriptionOptions.CreateBarrageSubscriptionOptions(
-      payloadBuilder, ColumnConversionMode.Stringify, true, 0, 4096, 0, true);
+      payloadBuilder, ColumnConversionMode.Stringify, true, 0, batchSize, maxMessageSize, true);
 
     // add ticket
     payloadBuilder.StartVector(1, ticketBytes.Length, 1);
@@ -104,6 +119,19 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     var shiftDestIndex = RowSequenceDecoder.ReadExternalCompressedDelta(diThreeShiftIndices);
     var addedRows = RowSequenceDecoder.ReadExternalCompressedDelta(diAdded);
 
+    // The rows this message actually carries data for, which is not always the set being added.
+    //
+    // added_rows is what the table gains; added_rows_included is what the record batches in this message
+    // are sized from. The server omits it when it would equal added_rows, so absent means "same as
+    // added_rows". This mirrors BarrageMessageReaderImpl, the Java client's reader:
+    //
+    //   msg.rowsIncluded = rowsIncluded != null ? extractIndex(rowsIncluded) : msg.rowsAdded.copy();
+    //   numAddRowsTotal = msg.rowsIncluded.size();
+    var addedRowsIncludedBytes = bmd.GetAddedRowsIncludedBytes();
+    var addedRowsIncluded = addedRowsIncludedBytes == null
+      ? addedRows
+      : RowSequenceDecoder.ReadExternalCompressedDelta(new DataInput(addedRowsIncludedBytes));
+
     var perColumnModifies = new List<RowSequence>();
     for (var i = 0; i != bmd.ModColumnNodesLength; ++i) {
       var mcns = bmd.ModColumnNodes(i);
@@ -131,7 +159,13 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     var (prev, removedRowsIndexSpace, afterRemoves) = ProcessRemoves(removedRows);
     tableState.ApplyShifts(shiftStartIndex, shiftEndIndex, shiftDestIndex);
 
-    var addedRowsIndexSpace = tableState.AddKeys(addedRows);
+    // Keys are added for the rows this message carries data for, not for the whole announced set. The two
+    // coincide except when the server sends data for a set it did not announce as added, in which case the
+    // record batches are sized from added_rows_included and the key mapping must follow the data.
+    //
+    // Existing keys are tolerated rather than rejected: a growing subscription interleaves deltas with its
+    // snapshot rounds, so a round can carry data for a row a delta has already added.
+    var addedRowsIndexSpace = tableState.AddKeysAllowingExisting(addedRowsIncluded);
 
     var nextState = new AwaitingAdds(tableState, perColumnModifies.ToArray(), prev, removedRowsIndexSpace, afterRemoves,
       addedRowsIndexSpace);
@@ -142,6 +176,10 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
     var prev = tableState.Snapshot();
     // The reason we special-case "empty" is because when the tables are unchanged, we prefer
     // to indicate this via pointer equality (e.g. beforeRemoves == afterRemoves).
+    //
+    // Note that a non-empty removedRows can still erase nothing: full subscriptions receive the server's
+    // whole removed set, which during a growing snapshot may name only rows this client has not been sent
+    // yet. That leaves the table unchanged, so it takes the pointer-equality path too.
     RowSequence removedRowsIndexSpace;
     IClientTable afterRemoves;
     if (removedRows.IsEmpty) {
@@ -149,7 +187,7 @@ class AwaitingMetadata(TableState tableState) : IChunkProcessor {
       afterRemoves = prev;
     } else {
       removedRowsIndexSpace = tableState.Erase(removedRows);
-      afterRemoves = tableState.Snapshot();
+      afterRemoves = removedRowsIndexSpace.IsEmpty ? prev : tableState.Snapshot();
     }
 
     return (prev, removedRowsIndexSpace, afterRemoves);

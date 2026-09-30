@@ -12,21 +12,22 @@ using Io.Deephaven.Proto.Backplane.Grpc;
 namespace Deephaven.Dh_NetClient;
 
 internal class SubscriptionThread {
-  public static IDisposable Start(Server server, Schema schema, Ticket ticket, IObserver<TickingUpdate> observer) {
+  public static IDisposable Start(Server server, Schema schema, Ticket ticket, IObserver<TickingUpdate> observer,
+    int batchSize = BarrageProcessor.DefaultBatchSize, int maxMessageSize = 0) {
     var metadata = new Metadata();
     server.ForEachHeaderNameAndValue(metadata.Add);
     var fcw = server.FlightClient;
     var command = "dphn"u8.ToArray();
     var fd = FlightDescriptor.CreateCommandDescriptor(command);
     var exchange = fcw.DoExchange(fd, metadata);
-    var result = UpdateProcessor.Start(exchange, schema, ticket, observer);
+    var result = UpdateProcessor.Start(exchange, schema, ticket, observer, batchSize, maxMessageSize);
     return result;
   }
 
   private class UpdateProcessor : IDisposable {
     public static UpdateProcessor Start(FlightRecordBatchExchangeCall exchange, Schema schema,
-      Ticket ticket, IObserver<TickingUpdate> observer) {
-      var result = new UpdateProcessor(exchange, schema, ticket, observer);
+      Ticket ticket, IObserver<TickingUpdate> observer, int batchSize, int maxMessageSize) {
+      var result = new UpdateProcessor(exchange, schema, ticket, observer, batchSize, maxMessageSize);
       // TODO(kosak): This could be a Task rather than a thread.
       Task.Run(result.RunForever).Forget();
       return result;
@@ -36,14 +37,18 @@ internal class SubscriptionThread {
     private readonly Schema _schema;
     private readonly Ticket _ticket;
     private readonly IObserver<TickingUpdate> _observer;
+    private readonly int _batchSize;
+    private readonly int _maxMessageSize;
     private InterlockedLong _cancelled;
 
     private UpdateProcessor(FlightRecordBatchExchangeCall exchange, Schema schema, Ticket ticket,
-      IObserver<TickingUpdate> observer) {
+      IObserver<TickingUpdate> observer, int batchSize, int maxMessageSize) {
       _exchange = exchange;
       _schema = schema;
       _ticket = ticket;
       _observer = observer;
+      _batchSize = batchSize;
+      _maxMessageSize = maxMessageSize;
     }
 
     private void RunForever() {
@@ -82,7 +87,8 @@ internal class SubscriptionThread {
       batchBuilder.Append("Dummy", true, arrayBuilder.Build());
       var uselessMessage = batchBuilder.Build();
 
-      var subReq = BarrageProcessor.CreateSubscriptionRequest(_ticket.Ticket_.ToByteArray());
+      var subReq = BarrageProcessor.CreateSubscriptionRequest(
+        _ticket.Ticket_.ToByteArray(), _batchSize, _maxMessageSize);
       var subReqAsByteString = ByteString.CopyFrom(subReq);
       await _exchange.RequestStream.WriteAsync(uselessMessage, subReqAsByteString);
 

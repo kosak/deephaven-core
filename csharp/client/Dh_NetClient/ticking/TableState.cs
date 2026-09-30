@@ -14,6 +14,18 @@ public class TableState {
   private int _numRows;
   private readonly SpaceMapper _spaceMapper = new();
 
+  /// <summary>
+  /// The highest row count at which <see cref="Snapshot"/> handed out a reference to the current column
+  /// storage, or 0 if it never has since the storage was last replaced.
+  ///
+  /// Snapshots share storage rather than copying it. That is safe precisely to the extent that later writes
+  /// stay at or above this mark: a snapshot taken at N rows only ever reads [0, N), so appending at N and
+  /// beyond cannot be observed by it, and growing the backing array leaves the snapshot holding the old one
+  /// with [0, N) intact. A write below the mark would be visible, so those paths either build fresh storage
+  /// or clone first.
+  /// </summary>
+  private int _sharedUpTo;
+
 
   public TableState(Schema schema) {
     _schema = schema;
@@ -32,6 +44,14 @@ public class TableState {
   /// <returns>Added keys, represented in index space</returns>
   public RowSequence AddKeys(RowSequence keysToAddKeySpace) {
     return _spaceMapper.AddKeys(keysToAddKeySpace);
+  }
+
+  /// <summary>
+  /// Adds whichever of the given keys are absent and returns the positions of all of them. See
+  /// SpaceMapper.AddKeysAllowingExisting.
+  /// </summary>
+  public RowSequence AddKeysAllowingExisting(RowSequence keysToAddKeySpace) {
+    return _spaceMapper.AddKeysAllowingExisting(keysToAddKeySpace);
   }
 
   /// <summary>
@@ -62,6 +82,19 @@ public class TableState {
     var newNumRows = _numRows + nrows;
 
 
+    // An append - every new row lands at or past the current end - is the overwhelmingly common case while a
+    // snapshot fills, and it can be done in place. The general path below has to build a fresh column and
+    // interleave old and new data, which costs a copy of the whole table per batch and so makes filling a
+    // table quadratic in its size. Appending instead grows the column geometrically and writes only the new
+    // rows, which is what keeps a large snapshot linear.
+    var isAppend = true;
+    foreach (var interval in rowsToAddIndexSpace.Intervals) {
+      if (interval.Begin.ToIntExact() < _numRows) {
+        isAppend = false;
+        break;
+      }
+    }
+
     for (var i = 0; i != ncols; ++i) {
       var sourceAndRange = sourcesAndRanges[i];
       var numElementsProvided = sourceAndRange.Range.Count.ToIntExact();
@@ -76,9 +109,23 @@ public class TableState {
       var newData = sourceAndRange.Source;
       var newDataIndex = 0;
 
+      if (isAppend) {
+        // Appending only writes at or above _numRows, which is at or above any snapshot's row count, so a
+        // snapshot sharing this storage cannot observe it. Growing the array leaves the snapshot on the old
+        // one, with its own rows intact.
+        origData.EnsureCapacity(newNumRows);
+        foreach (var interval in rowsToAddIndexSpace.Intervals) {
+          var beginKey = interval.Begin.ToIntExact();
+          var count = interval.Count.ToIntExact();
+          IColumnSource.Copy(newData, newDataIndex, origData, beginKey, count);
+          newDataIndex += count;
+        }
+        continue;
+      }
+
       var destData = origData.CreateOfSameType(newNumRows);
       var destDataIndex = 0;
-      
+
       foreach (var interval in rowsToAddIndexSpace.Intervals) {
         var beginKey = interval.Begin.ToIntExact();
         var endKey = interval.End.ToIntExact();
@@ -100,6 +147,8 @@ public class TableState {
 
       _colData[i] = destData;
     }
+    // Every column was rebuilt into storage no snapshot has seen, so nothing is shared any more.
+    _sharedUpTo = 0;
     _numRows = newNumRows;
   }
 
@@ -110,10 +159,13 @@ public class TableState {
   /// <param name="rowsToEraseKeySpace">The keys, represented in key space, to erase</param>
   /// <returns>The keys, represented in index space, that were erased</returns>
   public RowSequence Erase(RowSequence rowsToEraseKeySpace) {
-    var result = _spaceMapper.ConvertKeysToIndices(rowsToEraseKeySpace);
+    // Only the keys we actually hold can be erased. A full subscription is sent the server's whole removed
+    // set, which during a growing snapshot can name rows this client has not been given yet; those are
+    // tracked by the server's row set but absent from ours, and must be skipped rather than rejected.
+    var result = _spaceMapper.ConvertPresentKeysToIndices(rowsToEraseKeySpace);
     var ncols = _colData.Length;
-    var nrows = rowsToEraseKeySpace.Count;
-    var newNumRows = ((UInt64)_numRows - (UInt64)nrows).ToIntExact();
+    var nrows = result.Count;
+    var newNumRows = ((UInt64)_numRows - nrows).ToIntExact();
 
     for (var i = 0; i != ncols; ++i) {
       var srcData = _colData[i];
@@ -145,6 +197,8 @@ public class TableState {
 
       _colData[i] = destData;
     }
+    // Erase compacts into freshly allocated columns, so the live storage is private again.
+    _sharedUpTo = 0;
 
     foreach (var interval in rowsToEraseKeySpace.Intervals) {
       _spaceMapper.EraseRange(interval);
@@ -177,6 +231,10 @@ public class TableState {
     if (nrows > sourceCount) {
       throw new Exception($"Insufficient data in source: have {sourceCount}, need {nrows}");
     }
+
+    // Unlike adds, modifies overwrite existing positions, which an outstanding snapshot can see. Take private
+    // storage first so the snapshot keeps the values it was created with.
+    UnshareColumns();
 
     var srcCol = sourceAndRange.Source;
     var srcRemaining = sourceAndRange.Range;
@@ -212,18 +270,41 @@ public class TableState {
   }
 
   /// <summary>
-  /// Takes a snapshot of the current table state
+  /// Takes a snapshot of the current table state.
   /// </summary>
+  /// <remarks>
+  /// This is on the per-message path, not a user-facing freeze: processing one Barrage message takes three or
+  /// four snapshots to fill in the before/after tables of a <see cref="TickingUpdate"/>. Copying the whole
+  /// table that many times per message is what made filling a large table quadratic, so the snapshot shares
+  /// the live column storage instead and the mutating paths copy when they would disturb it.
+  /// </remarks>
   /// <returns>A ClientTable representing the current table state</returns>
-  /// <exception cref="NotImplementedException"></exception>
   public IClientTable Snapshot() {
-    // Clone all my data
-    var clonedData = _colData.Select(src => {
+    // Handing out the live storage obliges every subsequent write to either stay above _numRows or clone
+    // first; see _sharedUpTo.
+    if (_numRows > _sharedUpTo) {
+      _sharedUpTo = _numRows;
+    }
+    return new TableStateClientTable(_schema, (ArrayColumnSource[])_colData.Clone(), _numRows);
+  }
+
+  /// <summary>
+  /// Gives this state private column storage again, so that writes below <see cref="_sharedUpTo"/> cannot be
+  /// seen by a snapshot that is still holding the old storage.
+  /// </summary>
+  private void UnshareColumns() {
+    if (_sharedUpTo == 0) {
+      return;
+    }
+
+    for (var i = 0; i != _colData.Length; ++i) {
+      var src = _colData[i];
       var dest = src.CreateOfSameType(_numRows);
       IColumnSource.Copy(src, 0, dest, 0, _numRows);
-      return dest;
-    }).ToArray();
-    return new TableStateClientTable(_schema, clonedData, _numRows);
+      _colData[i] = dest;
+    }
+
+    _sharedUpTo = 0;
   }
 }
 

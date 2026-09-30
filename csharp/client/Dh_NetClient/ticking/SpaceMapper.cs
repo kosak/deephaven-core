@@ -35,6 +35,49 @@ public class SpaceMapper {
   }
 
   /// <summary>
+  /// Like <see cref="AddKeys"/>, but tolerates keys that are already in the map instead of treating them as an
+  /// error, and returns the positions of all of the requested keys rather than only the newly added ones.
+  ///
+  /// This is what a growing subscription's adds need. While the viewport is growing the client receives both
+  /// snapshot rounds and the deltas that keep them consistent - "While the subscription viewport is growing, it
+  /// may receive deltas on the rows that have already been snapshotted and sent to the client"
+  /// (BarrageMessageProducer) - so a round's `added_rows_included` can name a row an interleaved delta already
+  /// added. The data for it still arrives in this message, so the row has to be positioned, not rejected, and
+  /// certainly not inserted twice.
+  ///
+  /// Works key by key rather than per interval: a RowSequence coalesces abutting intervals, so one interval
+  /// here can span keys the map holds and keys it does not, and AddRange can only be handed a run that is
+  /// entirely new.
+  /// </summary>
+  /// <param name="keys">Keys represented in key space, which may already be present</param>
+  /// <returns>The positions, in index space, of all of the given keys</returns>
+  public RowSequence AddKeysAllowingExisting(RowSequence keys) {
+    foreach (var interval in keys.Intervals) {
+      // Insert maximal runs of absent keys rather than one key at a time. Both are correct, but AddRange is
+      // O(log n) plus an allocation however few keys it is given, so per-key insertion costs a tree walk and a
+      // temporary array for every row of a snapshot. Keys already present are almost always a small minority,
+      // so scanning for runs collapses that to a handful of AddRange calls per batch.
+      var runBegin = interval.Begin;
+      for (var key = interval.Begin; key < interval.End; ++key) {
+        if (_set.Contains(key)) {
+          if (key > runBegin) {
+            _ = AddRange(Interval.Of(runBegin, key));
+          }
+          runBegin = key + 1;
+        }
+      }
+
+      if (interval.End > runBegin) {
+        _ = AddRange(Interval.Of(runBegin, interval.End));
+      }
+    }
+
+    // Every requested key is present now, so the strict conversion is safe and gives the caller positions for
+    // the whole set - which is what the add phase must write, since the server sent data for all of it.
+    return ConvertKeysToIndices(keys);
+  }
+
+  /// <summary>
   /// Adds the keys (represented in key space) in the specified interval to the set.
   /// The keys must not already exist in the set. If they do, an exception is thrown.
   /// </summary>
@@ -151,6 +194,40 @@ public class SpaceMapper {
 
       var nextRank = ZeroBasedRank(interval.Begin);
       builder.AddInterval(Interval.OfStartAndSize(nextRank, size));
+    }
+    return builder.Build();
+  }
+
+  /// <summary>
+  /// Like <see cref="ConvertKeysToIndices"/>, but silently skips keys that are not in the map rather than
+  /// treating their absence as an error.
+  ///
+  /// This is what removes need. A full subscription — including one still growing toward full — is sent the
+  /// server's entire removed set, unscoped: `BarrageMessageProducer.enqueueUpdate` copies `upstream.removed()`
+  /// verbatim and `BarrageMessageWriterImpl.getSubscriptionMetadata` writes it without intersecting the
+  /// client's viewport. The client is expected to free only the rows it holds while still tracking the table's
+  /// overall row set, so a remove naming keys beyond the portion delivered so far is normal traffic.
+  ///
+  /// Because the map is sorted, the keys present within one requested interval occupy consecutive ranks
+  /// starting at the rank of the interval's first key, so each interval still maps to a single index-space
+  /// range — just a shorter one than the caller asked for.
+  /// </summary>
+  /// <param name="keys">Keys represented in key space, which need not all be present</param>
+  /// <returns>The positions, in index space, of those keys that were present</returns>
+  public RowSequence ConvertPresentKeysToIndices(RowSequence keys) {
+    if (keys.IsEmpty) {
+      return RowSequence.CreateEmpty();
+    }
+
+    var builder = new RowSequenceBuilder();
+    foreach (var interval in keys.Intervals) {
+      var presentCount = (UInt64)_set.RangeFromTo(interval.Begin, interval.End).Count;
+      if (presentCount == 0) {
+        continue;
+      }
+
+      var nextRank = ZeroBasedRank(interval.Begin);
+      builder.AddInterval(Interval.OfStartAndSize(nextRank, presentCount));
     }
     return builder.Build();
   }
