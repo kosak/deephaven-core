@@ -293,18 +293,13 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
             baseline.get(outerRowKeys, innerRowKeys);
             return;
         }
-        updates.get(outerRowKeys, innerRowKeys);
         final int size = outerRowKeys.size();
-        int missingCount = 0;
-        for (int ii = 0; ii < size; ++ii) {
-            if (innerRowKeys.get(ii) == UPDATES_KEY_NOT_FOUND) {
-                ++missingCount;
-            }
-        }
-        if (missingCount == 0) {
+        final int found = updates.get(outerRowKeys, innerRowKeys);
+        if (found == size) {
             return;
         }
-        if (missingCount == size) {
+        final int missingCount = size - found;
+        if (found == 0) {
             // Nothing in 'updates' for any of these keys, which is every read of a ticking table between its update
             // cycles, once the terminal commit has folded 'updates' into 'baseline': answer them all from 'baseline'
             // in one pass, with no gathering.
