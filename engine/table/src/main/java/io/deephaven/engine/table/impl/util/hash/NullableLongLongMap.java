@@ -87,6 +87,21 @@ public interface NullableLongLongMap {
 
     void forEach(LongLongBiConsumer consumer);
 
+    final class ScalarAccessHolder {
+        private final ScalarAccess scalarAccess = new ScalarAccess(null);
+
+        /**
+         * Gets the cached {@link ScalarAccess} and sets its map. {@link get} calls do not nest,
+         * so an inner {@link get} call on the same ScalarAccessHolder wipes out the state of an outer call.
+         * @param map The map to reset the {@link ScalarAccess} to.
+         * @return The cached {@link ScalarAccess}
+         */
+        public ScalarAccess get(NullableLongLongMap map) {
+            scalarAccess.reset(map);
+            return scalarAccess;
+        }
+    }
+
     /**
      * A reusable cursor for scalar access to a {@link NullableLongLongMap}, for callers whose shape is genuinely
      * per-element. {@link #reset} binds the cursor to a map and performs (and, in future map implementations, caches)
@@ -104,10 +119,14 @@ public interface NullableLongLongMap {
      * Keep one cursor per map you are working with (rather than ping-ponging one cursor between maps): future
      * implementations memoize per-map state keyed on the map's backing storage, and rebinding churns that cache.
      */
-    final class ScalarAccess {
+    final class ScalarAccess implements AutoCloseable {
         private NullableLongLongMap map;
         private final WritableLongChunk<Any> keyChunk = WritableLongChunk.writableChunkWrap(new long[1]);
         private final WritableLongChunk<Any> valueChunk = WritableLongChunk.writableChunkWrap(new long[1]);
+
+        public ScalarAccess(final NullableLongLongMap map) {
+            this.map = map;
+        }
 
         public void reset(final NullableLongLongMap map) {
             this.map = map;
@@ -118,7 +137,7 @@ public interface NullableLongLongMap {
          * longer than the maps it reads, a thread-local one in particular, releases after each use so that it never
          * keeps a map, and the array behind it, reachable after the map's owner has let it go.
          */
-        public void release() {
+        public void close() {
             this.map = null;
         }
 

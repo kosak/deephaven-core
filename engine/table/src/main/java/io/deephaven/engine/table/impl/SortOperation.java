@@ -459,14 +459,12 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
      * cursor is bound for the one read and released: a thread-local cursor outlives every sorted table the thread
      * touches, and must not keep the last one's map reachable.
      */
-    private static final ThreadLocal<NullableLongLongMap.ScalarAccess> REVERSE_LOOKUP_SCALAR_ACCESS =
-            ThreadLocal.withInitial(NullableLongLongMap.ScalarAccess::new);
+    private static final ThreadLocal<NullableLongLongMap.ScalarAccessHolder> REVERSE_LOOKUP_SCALAR_ACCESS =
+            ThreadLocal.withInitial(NullableLongLongMap.ScalarAccessHolder::new);
 
     private static long getSingle(final NullableLongLongMap map, final long key) {
-        final NullableLongLongMap.ScalarAccess scalarAccess = REVERSE_LOOKUP_SCALAR_ACCESS.get();
-        scalarAccess.reset(map);
-        final long result = scalarAccess.get(key);
-        scalarAccess.release();
-        return result;
+        try (final NullableLongLongMap.ScalarAccess scalarAccess = REVERSE_LOOKUP_SCALAR_ACCESS.get().get(map)) {
+            return scalarAccess.get(key);
+        }
     }
 }
