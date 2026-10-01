@@ -244,8 +244,6 @@ public class TestLongLongMap {
         final String where = "occupied=" + occupied + " deleted=" + deleted + " alsoDeleted=" + alsoDeleted;
         final NullableLongLongMap map = factory.create(initialCapacity, loadFactor);
         final HashMapBase base = (HashMapBase) map;
-        final NullableLongLongMap.ScalarAccess cursor = new NullableLongLongMap.ScalarAccess();
-        cursor.reset(map);
         // The first key goes in before anything is measured: a never-populated map has no array, hence no capacity.
         final long first = 1;
         map.put(first, 10);

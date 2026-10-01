@@ -455,7 +455,9 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
 
     /**
      * Per-element adapter for the {@link LongUnaryOperator} reverse-lookup contract, which is per-element by design.
-     * Deliberately private so batch-capable callers use the chunked {@link NullableLongLongMap#get} directly.
+     * Deliberately private so batch-capable callers use the chunked {@link NullableLongLongMap#get} directly. The
+     * cursor is bound for the one read and released: a thread-local cursor outlives every sorted table the thread
+     * touches, and must not keep the last one's map reachable.
      */
     private static final ThreadLocal<NullableLongLongMap.ScalarAccess> REVERSE_LOOKUP_SCALAR_ACCESS =
             ThreadLocal.withInitial(NullableLongLongMap.ScalarAccess::new);
@@ -463,6 +465,8 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
     private static long getSingle(final NullableLongLongMap map, final long key) {
         final NullableLongLongMap.ScalarAccess scalarAccess = REVERSE_LOOKUP_SCALAR_ACCESS.get();
         scalarAccess.reset(map);
-        return scalarAccess.get(key);
+        final long result = scalarAccess.get(key);
+        scalarAccess.release();
+        return result;
     }
 }

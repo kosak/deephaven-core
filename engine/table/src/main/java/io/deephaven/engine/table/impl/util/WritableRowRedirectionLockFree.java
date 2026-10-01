@@ -187,14 +187,14 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         final ScalarAccessPair scalarAccess = SCALAR_ACCESS.get();
         scalarAccess.forUpdates.reset(updates);
         final long result = scalarAccess.forUpdates.get(outerRowKey);
+        scalarAccess.forUpdates.release();
         if (result != UPDATES_KEY_NOT_FOUND) {
             // The prior value from updates is either some ordinary previous value, or BASELINE_KEY_NOT_FOUND.
             // In either case, return it to the caller.
             return result;
         }
         // There's no entry in 'updates' so we return the entry in 'baseline'.
-        scalarAccess.forBaseline.reset(baseline);
-        return scalarAccess.forBaseline.get(outerRowKey);
+        return scalarAccess.getFromBaseline(baseline, outerRowKey);
     }
 
     /**
@@ -208,9 +208,7 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (outerRowKey == -1) {
             return BASELINE_KEY_NOT_FOUND;
         }
-        final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
-        forBaseline.reset(baseline);
-        return forBaseline.get(outerRowKey);
+        return SCALAR_ACCESS.get().getFromBaseline(baseline, outerRowKey);
     }
 
     /**
@@ -218,7 +216,8 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
      * One cursor per map role, deliberately separate so each can memoize per-map state (in future map implementations)
      * without churning between the two maps we know alternate; one holder behind a single ThreadLocal lookup. Static
      * rather than per-map: the scratch belongs to the calling thread's computation, not to any particular redirection,
-     * and these lookups never reenter.
+     * and these lookups never reenter. Each cursor is bound for the one read and released, so a thread keeps no map
+     * reachable between calls: a redirection and the arrays behind it are collectable as soon as their table is.
      */
     private static final ThreadLocal<ScalarAccessPair> SCALAR_ACCESS =
             ThreadLocal.withInitial(ScalarAccessPair::new);
@@ -226,6 +225,13 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
     private static final class ScalarAccessPair {
         private final NullableLongLongMap.ScalarAccess forUpdates = new NullableLongLongMap.ScalarAccess();
         private final NullableLongLongMap.ScalarAccess forBaseline = new NullableLongLongMap.ScalarAccess();
+
+        long getFromBaseline(final NullableLongLongMap baseline, final long key) {
+            forBaseline.reset(baseline);
+            final long result = forBaseline.get(key);
+            forBaseline.release();
+            return result;
+        }
     }
 
     /**
@@ -388,9 +394,7 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         if (result != UPDATES_KEY_NOT_FOUND) {
             return result;
         }
-        final NullableLongLongMap.ScalarAccess forBaseline = SCALAR_ACCESS.get().forBaseline;
-        forBaseline.reset(baseline);
-        return forBaseline.get(key);
+        return SCALAR_ACCESS.get().getFromBaseline(baseline, key);
     }
 
     @Override

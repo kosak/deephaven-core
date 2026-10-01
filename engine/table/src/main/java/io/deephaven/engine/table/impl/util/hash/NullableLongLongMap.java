@@ -114,6 +114,15 @@ public interface NullableLongLongMap {
         }
 
         /**
+         * Drops the binding made by {@link #reset}, keeping the cursor's scratch for the next one. A cursor that lives
+         * longer than the maps it reads, a thread-local one in particular, releases after each use so that it never
+         * keeps a map, and the array behind it, reachable after the map's owner has let it go.
+         */
+        public void release() {
+            this.map = null;
+        }
+
+        /**
          * Gets the value associated with key, exactly as {@link NullableLongLongMap#get} would. Returns the bound map's
          * {@link NullableLongLongMap#defaultReturnValue()} if no mapping exists.
          */
