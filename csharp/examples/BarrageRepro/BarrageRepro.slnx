@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../client/Dh_NetClient/Dh_NetClient.csproj" />
+  <Project Path="BarrageRepro.csproj" />
+</Solution>
