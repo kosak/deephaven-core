@@ -87,16 +87,26 @@ public interface NullableLongLongMap {
 
     void forEach(LongLongBiConsumer consumer);
 
+    /**
+     * Keeps one {@link ScalarAccess} for a caller whose own shape is per-element and who therefore has no loop to hoist
+     * a cursor over, typically behind a {@link ThreadLocal}. {@link #bind} hands out the cursor bound to a map; closing
+     * it at the end of the try-with-resources that received it drops the binding, so the holder retains no map between
+     * uses and a thread that read a since-dropped table keeps none of it reachable.
+     *
+     * <p>
+     * A holder serves one thread at a time, and its binds do not nest: an inner bind on the same holder rebinds the
+     * cursor out from under an outer one.
+     */
     final class ScalarAccessHolder {
         private final ScalarAccess scalarAccess = new ScalarAccess(null);
 
         /**
-         * Gets the cached {@link ScalarAccess} and sets its map. {@link get} calls do not nest,
-         * so an inner {@link get} call on the same ScalarAccessHolder wipes out the state of an outer call.
-         * @param map The map to reset the {@link ScalarAccess} to.
-         * @return The cached {@link ScalarAccess}
+         * The held cursor, bound to {@code map}; close it when the read is done.
+         *
+         * @param map the map to bind the cursor to
+         * @return the held {@link ScalarAccess}, bound
          */
-        public ScalarAccess get(NullableLongLongMap map) {
+        public ScalarAccess bind(final NullableLongLongMap map) {
             scalarAccess.reset(map);
             return scalarAccess;
         }
@@ -133,10 +143,11 @@ public interface NullableLongLongMap {
         }
 
         /**
-         * Drops the binding made by {@link #reset}, keeping the cursor's scratch for the next one. A cursor that lives
-         * longer than the maps it reads, a thread-local one in particular, releases after each use so that it never
-         * keeps a map, and the array behind it, reachable after the map's owner has let it go.
+         * Drops the binding made by the constructor or {@link #reset}, keeping the cursor's scratch for the next one. A
+         * cursor that lives longer than the maps it reads, a thread-local one in particular, is closed after each use
+         * so that it never keeps a map, and the array behind it, reachable after the map's owner has let it go.
          */
+        @Override
         public void close() {
             this.map = null;
         }

@@ -463,7 +463,7 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
             ThreadLocal.withInitial(NullableLongLongMap.ScalarAccessHolder::new);
 
     private static long getSingle(final NullableLongLongMap map, final long key) {
-        try (final NullableLongLongMap.ScalarAccess scalarAccess = REVERSE_LOOKUP_SCALAR_ACCESS.get().get(map)) {
+        try (final NullableLongLongMap.ScalarAccess scalarAccess = REVERSE_LOOKUP_SCALAR_ACCESS.get().bind(map)) {
             return scalarAccess.get(key);
         }
     }

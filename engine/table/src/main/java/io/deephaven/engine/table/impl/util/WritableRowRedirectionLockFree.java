@@ -185,7 +185,7 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
             return BASELINE_KEY_NOT_FOUND;
         }
         final ScalarAccessPair scalarAccessPair = SCALAR_ACCESS_PAIR.get();
-        try (final NullableLongLongMap.ScalarAccess forUpdates = scalarAccessPair.forUpdates.get(updates)) {
+        try (final NullableLongLongMap.ScalarAccess forUpdates = scalarAccessPair.forUpdates.bind(updates)) {
             final long result = forUpdates.get(outerRowKey);
             if (result != UPDATES_KEY_NOT_FOUND) {
                 // The prior value from updates is either some ordinary previous value, or BASELINE_KEY_NOT_FOUND.
@@ -227,7 +227,7 @@ public class WritableRowRedirectionLockFree implements WritableRowRedirection {
         private final NullableLongLongMap.ScalarAccessHolder forBaseline = new NullableLongLongMap.ScalarAccessHolder();
 
         long getFromBaseline(final NullableLongLongMap baseline, final long key) {
-            try (final NullableLongLongMap.ScalarAccess scalarAccess = forBaseline.get(baseline)) {
+            try (final NullableLongLongMap.ScalarAccess scalarAccess = forBaseline.bind(baseline)) {
                 return scalarAccess.get(key);
             }
         }
