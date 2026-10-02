@@ -314,42 +314,44 @@ public class TestLongLongMap {
         // Room for every key of the test without a rehash, whatever the parameterized capacity.
         final NullableLongLongMap map = factory.create(1000, loadFactor);
         final HashMapBase base = (HashMapBase) map;
-        try (final NullableLongLongMap.ScalarAccess cursor = new NullableLongLongMap.ScalarAccess(map)) {
-            final long first = 1;
-            map.put(first, 10);
-            final int numBuckets = map.capacity() / entriesPerBucket;
-            final int bucket = HashMapBase.probe1(first, numBuckets);
-            // Fill the first bucket: entriesPerBucket keys whose probes start there, then one more, the key under test.
-            long candidate = first;
-            for (int ki = 1; ki < entriesPerBucket; ++ki) {
-                do {
-                    ++candidate;
-                } while (HashMapBase.probe1(candidate, numBuckets) != bucket);
-                map.put(candidate, 10 + ki);
-            }
+        final long first = 1;
+        map.put(first, 10);
+        final int numBuckets = map.capacity() / entriesPerBucket;
+        final int bucket = HashMapBase.probe1(first, numBuckets);
+        // Fill the first bucket: entriesPerBucket keys whose probes start there, then one more, the key under test.
+        long candidate = first;
+        for (int ki = 1; ki < entriesPerBucket; ++ki) {
             do {
                 ++candidate;
             } while (HashMapBase.probe1(candidate, numBuckets) != bucket);
-            final long key = candidate;
-            // Its second bucket, as the probe loop computes it: one plus the second hash, in buckets, past the first.
-            final int secondBucket = (bucket + 1 + HashMapBase.probe2(key, numBuckets - 2)) % numBuckets;
-            // filled keys whose first bucket is that second bucket; they take its slots 0..filled-1 in order.
-            final long[] others = new long[filled];
-            candidate = 1_000_000;
-            for (int ki = 0; ki < filled; ++ki) {
-                do {
-                    ++candidate;
-                } while (HashMapBase.probe1(candidate, numBuckets) != secondBucket);
-                others[ki] = candidate;
-                map.put(candidate, 100 + ki);
-            }
-            assertEquals(where, entriesPerBucket + filled, base.nonEmptySlots);
-            map.remove(others[deleted]);
-            assertEquals(where, entriesPerBucket + filled, base.nonEmptySlots);
-            map.put(key, 99);
-            // The tombstone was reused: the count of non-empty slots did not grow, and the map holds what it should.
-            assertEquals(where, entriesPerBucket + filled, base.nonEmptySlots);
-            assertEquals(where, entriesPerBucket + filled, map.size());
+            map.put(candidate, 10 + ki);
+        }
+        do {
+            ++candidate;
+        } while (HashMapBase.probe1(candidate, numBuckets) != bucket);
+        final long key = candidate;
+        // Its second bucket, as the probe loop computes it: one plus the second hash, in buckets, past the first.
+        final int secondBucket = (bucket + 1 + HashMapBase.probe2(key, numBuckets - 2)) % numBuckets;
+        // filled keys whose first bucket is that second bucket; they take its slots 0..filled-1 in order.
+        final long[] others = new long[filled];
+        candidate = 1_000_000;
+        for (int ki = 0; ki < filled; ++ki) {
+            do {
+                ++candidate;
+            } while (HashMapBase.probe1(candidate, numBuckets) != secondBucket);
+            others[ki] = candidate;
+            map.put(candidate, 100 + ki);
+        }
+        assertEquals(where, entriesPerBucket + filled, base.nonEmptySlots);
+        map.remove(others[deleted]);
+        assertEquals(where, entriesPerBucket + filled, base.nonEmptySlots);
+        map.put(key, 99);
+        // The tombstone was reused: the count of non-empty slots did not grow, and the map holds what it should.
+        assertEquals(where, entriesPerBucket + filled, base.nonEmptySlots);
+        assertEquals(where, entriesPerBucket + filled, map.size());
+        // Bind the cursor only now: the puts and the remove above went through the map, which invalidates any
+        // binding made before them.
+        try (final NullableLongLongMap.ScalarAccess cursor = new NullableLongLongMap.ScalarAccess(map)) {
             assertEquals(where, 99, cursor.get(key));
         }
     }
