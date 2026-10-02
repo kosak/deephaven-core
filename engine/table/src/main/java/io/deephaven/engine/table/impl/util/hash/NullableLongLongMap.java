@@ -138,6 +138,14 @@ public interface NullableLongLongMap {
             this.map = map;
         }
 
+        /**
+         * Binds the cursor to {@code map}, replacing any earlier binding. Whatever per-batch setup the map's chunked
+         * operations need happens here, once, rather than in every {@link #get}. The binding stays fresh across this
+         * cursor's own calls, but a mutation of the map through any other path (a chunked call, another cursor, a
+         * clear) invalidates it: reset again before the next use.
+         *
+         * @param map the map to bind the cursor to
+         */
         public void reset(final NullableLongLongMap map) {
             this.map = map;
         }
