@@ -164,18 +164,18 @@ public final class NullableLongLongMaps {
     }
 
     /**
-     * Should a K4V4-shaped map service this chunked get through the AMAC window? Yes exactly when its FOOTPRINT is
-     * beyond the last-level cache — entry capacity at or above {@link #DEFAULT_AMAC_THRESHOLD_ENTRIES} — because the
-     * window's whole job is overlapping cache misses, and a cache-resident table has none to overlap (there the window
-     * is pure bookkeeping, measured as a tax); and when the chunk is at least {@link #MIN_WINDOWED_CHUNK} keys wide,
-     * because a chunk that cannot fill the window pays its fixed cost for nothing (a single-key chunk — the scalar
-     * cursor's case — has nothing to overlap at all). Footprint is the first-order predictor, and this gate is the
-     * first stage: it looks only at the array and the chunk width, so its answer is stable between rehashes and flips
-     * exactly when the array grows past the cache. Occupancy on its own is second-order — at a fixed large footprint
-     * the window ties or wins at every occupancy measured when keys arrive in any order but ascending — and is not an
-     * input here. It matters in one combination, monotone local keys into a sparse table, which the second stage
-     * handles: see {@link #wantSerialForMonotoneKeys}, {@link #MONOTONE_KEYS_SERIAL_BELOW_OCCUPANCY} and
-     * {@link #isLocalWalk}.
+     * Should a K4V4-shaped map service this chunked get through the AMAC window? Yes exactly when its FOOTPRINT is past
+     * the measured crossover — entry capacity at or above {@link #DEFAULT_AMAC_THRESHOLD_ENTRIES}, which the footprint
+     * sweep above puts near L2, well inside the last-level cache — because the window's whole job is overlapping cache
+     * misses, and a table that fits the near caches has none worth overlapping (there the window is pure bookkeeping,
+     * measured as a tax); and when the chunk is at least {@link #MIN_WINDOWED_CHUNK} keys wide, because a chunk that
+     * cannot fill the window pays its fixed cost for nothing (a single-key chunk — the scalar cursor's case — has
+     * nothing to overlap at all). Footprint is the first-order predictor, and this gate is the first stage: it looks
+     * only at the array and the chunk width, so its answer is stable between rehashes and flips exactly when the array
+     * grows past the crossover. Occupancy on its own is second-order — at a fixed large footprint the window ties or
+     * wins at every occupancy measured when keys arrive in any order but ascending — and is not an input here. It
+     * matters in one combination, monotone local keys into a sparse table, which the second stage handles: see
+     * {@link #wantSerialForMonotoneKeys}, {@link #MONOTONE_KEYS_SERIAL_BELOW_OCCUPANCY} and {@link #isLocalWalk}.
      */
     public static boolean wantWindowedReads(final int entryCapacity, final int chunkSize) {
         return chunkSize >= MIN_WINDOWED_CHUNK && entryCapacity >= DEFAULT_AMAC_THRESHOLD_ENTRIES;
