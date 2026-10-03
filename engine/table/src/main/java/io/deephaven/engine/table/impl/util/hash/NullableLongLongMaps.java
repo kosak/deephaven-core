@@ -11,14 +11,15 @@ package io.deephaven.engine.table.impl.util.hash;
  */
 public final class NullableLongLongMaps {
     /**
-     * The bucket width of a map: how many keys (followed by that many values) each hash bucket holds. Wider buckets
-     * mean fewer cache lines per probe chain at density and more bytes per bucket when sparse. K4V4 is one 64-byte
-     * cache line per bucket, and the only shape with an AMAC window kernel (see {@link ReadMode}).
+     * The bucket width of a map: how many key/value pairs each hash bucket holds. Within a bucket the pairs are
+     * interleaved, each key at an even offset with its value in the slot after it, so a bucket of width w spans 2w
+     * longs. Wider buckets mean fewer cache lines per probe chain at density and more bytes per bucket when sparse.
+     * K4V4 is one 64-byte cache line per bucket, and the only shape with an AMAC window kernel (see {@link ReadMode}).
      */
     public enum Shape {
-        /** One key and one value per bucket. */
+        /** One key/value pair per bucket. */
         K1V1(1),
-        /** Four keys followed by four values per bucket: one cache line. */
+        /** Four key/value pairs per bucket, interleaved: one cache line. */
         K4V4(4);
 
         private final int bucketWidth;
