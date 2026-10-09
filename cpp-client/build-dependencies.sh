@@ -140,6 +140,12 @@ cmake_pic_arg=""
 
 shared_opt=""
 
+# CMake 4 refuses to configure projects whose cmake_minimum_required is below
+# 3.5; at the versions pinned here, zlib and gflags declare lower. This makes
+# CMake 4 treat them as requiring 3.5 (CMake 3.x ignores the variable), and is
+# inherited by every cmake this script runs.
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
 while [ "$#" -ge 1 ]; do
     if [ "$1" == "--clean" ]; then
         clean="yes"

@@ -43,6 +43,7 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
             include 'cpp-tests-to-junit.sh'
             include 'build-dependencies.sh'
             include 'deephaven/CMakeLists.txt'
+            include 'deephaven/vcpkg.json'
             include 'deephaven/cmake/**'
             include 'deephaven/dhcore/**'
             include 'deephaven/dhclient/**'
@@ -66,6 +67,7 @@ def buildCppClientImage = Docker.registerDockerTask(project, 'cppClient') {
                         ${prefix}/log
                    """)
         copyFile('deephaven/CMakeLists.txt',  "${prefix}/src/deephaven/")
+        copyFile('deephaven/vcpkg.json',  "${prefix}/src/deephaven/")
         copyFile('deephaven/cmake/',   "${prefix}/src/deephaven/cmake/")
         copyFile('deephaven/dhcore/',  "${prefix}/src/deephaven/dhcore/")
         copyFile('deephaven/dhclient/', "${prefix}/src/deephaven/dhclient/")
