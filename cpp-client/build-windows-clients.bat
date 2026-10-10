@@ -168,10 +168,7 @@ REM ================================================================
 
 REM vcpkg's versioning resolves ports through the clone's own git history, so
 REM the clone must be full (a shallow clone fails with "failed to unpack tree
-REM object") and checked out at the builtin-baseline from vcpkg.json. This
-REM runs on every invocation, so an existing clone (possibly shallow, from an
-REM older version of this script) is brought up to date and onto the current
-REM baseline rather than silently staying where it was.
+REM object") and checked out at the builtin-baseline from vcpkg.json.
 for /f "tokens=2 delims=:, " %%a in ('findstr "builtin-baseline" "%DHSRC%\deephaven-core\cpp-client\deephaven\vcpkg.json"') do set VCPKG_BASELINE=%%~a
 if not defined VCPKG_BASELINE (
   echo Could not read builtin-baseline from vcpkg.json
@@ -185,14 +182,6 @@ if not exist "%DHSRC%" (
 cd /d %DHSRC% || exit /b
 if not exist "%DHSRC%\vcpkg" (
   git clone https://github.com/microsoft/vcpkg.git || exit /b
-)
-
-for /f %%s in ('git -C vcpkg rev-parse --is-shallow-repository') do set VCPKG_SHALLOW=%%s
-if "%VCPKG_SHALLOW%"=="true" (
-  echo vcpkg clone is shallow, fetching full history...
-  git -C vcpkg fetch --unshallow || exit /b
-) else (
-  git -C vcpkg fetch || exit /b
 )
 git -C vcpkg checkout %VCPKG_BASELINE% || exit /b
 

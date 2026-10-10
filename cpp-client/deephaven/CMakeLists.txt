@@ -101,21 +101,16 @@ if(NOT DHCORE_ONLY)
 
       set(ConfigPackageLocation ${CMAKE_INSTALL_LIBDIR}/cmake/deephaven)
       install(EXPORT deephavenTargets
-        FILE
-        deephavenTargets.cmake
-        NAMESPACE
-        deephaven::
-        DESTINATION
-        ${ConfigPackageLocation}
+        FILE deephavenTargets.cmake
+        NAMESPACE deephaven::
+        DESTINATION ${ConfigPackageLocation}
         )
       install(
         FILES
-        cmake/deephavenConfig.cmake
-        "${CMAKE_CURRENT_BINARY_DIR}/deephaven/deephavenConfigVersion.cmake"
-        DESTINATION
-        ${ConfigPackageLocation}
-        COMPONENT
-        Devel
+          cmake/deephavenConfig.cmake
+          "${CMAKE_CURRENT_BINARY_DIR}/deephaven/deephavenConfigVersion.cmake"
+        DESTINATION ${ConfigPackageLocation}
+        COMPONENT Devel
         )
 
       # Publish our vcpkg manifest next to the CMake package config so that
@@ -126,12 +121,9 @@ if(NOT DHCORE_ONLY)
       # DLLs (abseil, protobuf, arrow, ...) into the same prefix, which fails
       # at load time with "Entry Point Not Found".
       install(
-        FILES
-        vcpkg.json
-        DESTINATION
-        ${ConfigPackageLocation}
-        COMPONENT
-        Devel
+        FILES vcpkg.json
+        DESTINATION ${ConfigPackageLocation}
+        COMPONENT Devel
         )
 
 endif()
