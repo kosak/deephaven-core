@@ -103,13 +103,23 @@ public static class EncodedArrayDecoder {
         var indexGetter = MakeIndexGetter(indices);
         var length = dictArray.Length;
         for (var i = 0; i != length; ++i) {
+          // A null row's index arrives either flagged in the Arrow validity bitmap or, under the
+          // negotiated useDeephavenNulls option, as the negative Deephaven null sentinel
+          // (NULL_INT = INT32_MIN) with no validity bit. Treat both as null, mirroring the C++
+          // client's DictionaryChunkDecoder in arrow_array_converter.cc. Test the validity bitmap
+          // first so indexGetter only reads slots the bitmap says are valid.
           if (indices.IsNull(i)) {
+            target.AppendNull();
+            continue;
+          }
+          var index = indexGetter(i);
+          if (index < 0) {
             target.AppendNull();
             continue;
           }
           // The dictionary itself may contain null entries, distinct from null indices;
           // AppendFrom handles that case.
-          target.AppendFrom(dictArray.Dictionary, checked((int)indexGetter(i)));
+          target.AppendFrom(dictArray.Dictionary, checked((int)index));
         }
         return target.Build();
       }
@@ -122,11 +132,18 @@ public static class EncodedArrayDecoder {
           var indices = innerDict.Indices;
           var indexGetter = MakeIndexGetter(indices);
           foreach (var physicalIndex in reeArray.EnumeratePhysicalIndices()) {
+            // As in the dictionary case above, a null arrives either in the validity bitmap or as
+            // the negative Deephaven null sentinel; treat both as null, bitmap first.
             if (indices.IsNull(physicalIndex)) {
               target.AppendNull();
               continue;
             }
-            target.AppendFrom(innerDict.Dictionary, checked((int)indexGetter(physicalIndex)));
+            var index = indexGetter(physicalIndex);
+            if (index < 0) {
+              target.AppendNull();
+              continue;
+            }
+            target.AppendFrom(innerDict.Dictionary, checked((int)index));
           }
           return target.Build();
         } else {
