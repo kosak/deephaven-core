@@ -5,8 +5,7 @@ package io.deephaven.engine.table.impl.sources;
 
 import io.deephaven.configuration.Configuration;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.stream.IntStream;
 
 /**
  * A central view of configuration options for array column sources.
@@ -74,7 +73,7 @@ public class ArrayColumnSourceConfiguration {
     }
 
     private static int getDefaultInUseRecyclerCapacity() {
-        final Integer[] CAPACITIES = {BOOLEAN_RECYCLER_CAPACITY,
+        return IntStream.of(BOOLEAN_RECYCLER_CAPACITY,
                 BYTE_RECYCLER_CAPACITY,
                 CHAR_RECYCLER_CAPACITY,
                 DOUBLE_RECYCLER_CAPACITY,
@@ -82,8 +81,7 @@ public class ArrayColumnSourceConfiguration {
                 INT_RECYCLER_CAPACITY,
                 OBJECT_RECYCLER_CAPACITY,
                 SHORT_RECYCLER_CAPACITY,
-                LONG_RECYCLER_CAPACITY};
-        return Collections.max(Arrays.asList(CAPACITIES));
+                LONG_RECYCLER_CAPACITY).max().getAsInt();
     }
 }
 
