@@ -67,22 +67,12 @@ public abstract class SparseArrayColumnSourceConfiguration {
     public static final int SHORT_RECYCLER_CAPACITY0 = getRecyclerCapacity("short.0", SHORT_RECYCLER_CAPACITY);
     public static final int LONG_RECYCLER_CAPACITY0 = getRecyclerCapacity("long.0", LONG_RECYCLER_CAPACITY);
 
-    /**
-     * The default capacity InUse SoftRecycler for the lowest level should be the sum of all the other capacities.
-     */
     public static final int IN_USE_RECYCLER_CAPACITY =
             getRecyclerCapacity("inuse", getDefaultInUseLowestLevelRecyclerCapacity());
 
-    /**
-     * The default capacity InUse SoftRecycler for all levels other than the lowest should be the max recycler capacity
-     * for any type.
-     */
-    public static final int IN_USE_RECYCLER_CAPACITY2 =
-            getRecyclerCapacity("inuse.2", getDefaultInUseRecyclerCapacity2());
-    public static final int IN_USE_RECYCLER_CAPACITY1 =
-            getRecyclerCapacity("inuse.1", getDefaultInUseRecyclerCapacity1());
-    public static final int IN_USE_RECYCLER_CAPACITY0 =
-            getRecyclerCapacity("inuse.0", getDefaultInUseRecyclerCapacity0());
+    public static final int IN_USE_RECYCLER_CAPACITY2 = getDefaultInUseRecyclerCapacity2();
+    public static final int IN_USE_RECYCLER_CAPACITY1 = getDefaultInUseRecyclerCapacity1();
+    public static final int IN_USE_RECYCLER_CAPACITY0 = getDefaultInUseRecyclerCapacity0();
 
     private static final String RECYCLER_MAXIMUM_CAPACITY_PROPERTY_PREFIX = "sparsearray.recycler.maximumCapacity.";
     /**
@@ -193,6 +183,10 @@ public abstract class SparseArrayColumnSourceConfiguration {
                 .getIntegerWithDefault(RECYCLER_MAXIMUM_CAPACITY_PROPERTY_PREFIX + thisType, defaultValue));
     }
 
+    /**
+     * The default capacity InUse SoftRecycler for all levels other than the lowest should be the max recycler capacity
+     * for any type.
+     */
     private static int getDefaultInUseRecyclerCapacity2() {
         return IntStream.of(BOOLEAN_RECYCLER_CAPACITY2,
                 BYTE_RECYCLER_CAPACITY2,
@@ -206,6 +200,10 @@ public abstract class SparseArrayColumnSourceConfiguration {
         ).max().getAsInt();
     }
 
+    /**
+     * The default capacity InUse SoftRecycler for all levels other than the lowest should be the max recycler capacity
+     * for any type.
+     */
     private static int getDefaultInUseRecyclerCapacity1() {
         return IntStream.of(BOOLEAN_RECYCLER_CAPACITY1,
                 BYTE_RECYCLER_CAPACITY1,
@@ -219,6 +217,10 @@ public abstract class SparseArrayColumnSourceConfiguration {
         ).max().getAsInt();
     }
 
+    /**
+     * The default capacity InUse SoftRecycler for all levels other than the lowest should be the max recycler capacity
+     * for any type.
+     */
     private static int getDefaultInUseRecyclerCapacity0() {
         return IntStream.of(BOOLEAN_RECYCLER_CAPACITY0,
                 BYTE_RECYCLER_CAPACITY0,
@@ -232,6 +234,9 @@ public abstract class SparseArrayColumnSourceConfiguration {
         ).max().getAsInt();
     }
 
+    /**
+     * The default capacity InUse SoftRecycler for the lowest level should be the sum of all the other capacities.
+     */
     private static int getDefaultInUseLowestLevelRecyclerCapacity() {
         return BOOLEAN_RECYCLER_CAPACITY
                 + BYTE_RECYCLER_CAPACITY

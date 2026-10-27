@@ -25,11 +25,7 @@ public class ArrayColumnSourceConfiguration {
     public static final int SHORT_RECYCLER_CAPACITY = getRecyclerCapacity("short", DEFAULT_RECYCLER_CAPACITY);
     public static final int LONG_RECYCLER_CAPACITY = getRecyclerCapacity("long", DEFAULT_RECYCLER_CAPACITY);
 
-    /**
-     * The default capacity InUse SoftRecycler for all levels other than the lowest should be the max recycler capacity
-     * for any type.
-     */
-    public static final int IN_USE_RECYCLER_CAPACITY = getRecyclerCapacity("inuse", getDefaultInUseRecyclerCapacity());
+    public static final int IN_USE_RECYCLER_CAPACITY = getDefaultInUseRecyclerCapacity();
 
     private static final String RECYCLER_MAXIMUM_CAPACITY_PROPERTY_PREFIX = "array.recycler.maximumCapacity.";
     /**
@@ -72,6 +68,10 @@ public class ArrayColumnSourceConfiguration {
                 .getIntegerWithDefault(RECYCLER_MAXIMUM_CAPACITY_PROPERTY_PREFIX + thisType, defaultValue));
     }
 
+    /**
+     * The default capacity InUse SoftRecycler for all levels other than the lowest should be the max recycler capacity
+     * for any type.
+     */
     private static int getDefaultInUseRecyclerCapacity() {
         return IntStream.of(BOOLEAN_RECYCLER_CAPACITY,
                 BYTE_RECYCLER_CAPACITY,
