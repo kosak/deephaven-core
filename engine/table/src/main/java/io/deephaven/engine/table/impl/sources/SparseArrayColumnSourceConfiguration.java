@@ -7,6 +7,7 @@ import io.deephaven.configuration.Configuration;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.IntStream;
 
 /**
  * A central view of configuration options for sparse array column sources.
@@ -193,7 +194,7 @@ public abstract class SparseArrayColumnSourceConfiguration {
     }
 
     private static int getDefaultInUseRecyclerCapacity2() {
-        final Integer[] CAPACITIES = {BOOLEAN_RECYCLER_CAPACITY2,
+        return IntStream.of(BOOLEAN_RECYCLER_CAPACITY2,
                 BYTE_RECYCLER_CAPACITY2,
                 CHAR_RECYCLER_CAPACITY2,
                 DOUBLE_RECYCLER_CAPACITY2,
@@ -202,12 +203,11 @@ public abstract class SparseArrayColumnSourceConfiguration {
                 OBJECT_RECYCLER_CAPACITY2,
                 SHORT_RECYCLER_CAPACITY2,
                 LONG_RECYCLER_CAPACITY2
-        };
-        return Collections.max(Arrays.asList(CAPACITIES));
+        ).max().getAsInt();
     }
 
     private static int getDefaultInUseRecyclerCapacity1() {
-        final Integer[] CAPACITIES = {BOOLEAN_RECYCLER_CAPACITY1,
+        return IntStream.of(BOOLEAN_RECYCLER_CAPACITY1,
                 BYTE_RECYCLER_CAPACITY1,
                 CHAR_RECYCLER_CAPACITY1,
                 DOUBLE_RECYCLER_CAPACITY1,
@@ -216,12 +216,11 @@ public abstract class SparseArrayColumnSourceConfiguration {
                 OBJECT_RECYCLER_CAPACITY1,
                 SHORT_RECYCLER_CAPACITY1,
                 LONG_RECYCLER_CAPACITY1
-        };
-        return Collections.max(Arrays.asList(CAPACITIES));
+        ).max().getAsInt();
     }
 
     private static int getDefaultInUseRecyclerCapacity0() {
-        final Integer[] CAPACITIES = {BOOLEAN_RECYCLER_CAPACITY0,
+        return IntStream.of(BOOLEAN_RECYCLER_CAPACITY0,
                 BYTE_RECYCLER_CAPACITY0,
                 CHAR_RECYCLER_CAPACITY0,
                 DOUBLE_RECYCLER_CAPACITY0,
@@ -230,8 +229,7 @@ public abstract class SparseArrayColumnSourceConfiguration {
                 OBJECT_RECYCLER_CAPACITY0,
                 SHORT_RECYCLER_CAPACITY0,
                 LONG_RECYCLER_CAPACITY0
-        };
-        return Collections.max(Arrays.asList(CAPACITIES));
+        ).max().getAsInt();
     }
 
     private static int getDefaultInUseLowestLevelRecyclerCapacity() {
