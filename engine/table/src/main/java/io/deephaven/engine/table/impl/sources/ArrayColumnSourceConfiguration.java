@@ -31,7 +31,7 @@ public class ArrayColumnSourceConfiguration {
      */
     public static final int IN_USE_RECYCLER_CAPACITY = getRecyclerCapacity("inuse", getDefaultInUseRecyclerCapacity());
 
-    private static final String RECYCLER_MAXIMUM_CAPACITY_PROPERTY = "array.recycler.maximumCapacity.";
+    private static final String RECYCLER_MAXIMUM_CAPACITY_PROPERTY_PREFIX = "array.recycler.maximumCapacity.";
     /**
      * The most items a recycler grows to hold if not specified by type. Unlimited by default, since the recycled items
      * are soft references, which the garbage collector reclaims under memory pressure.
@@ -69,7 +69,7 @@ public class ArrayColumnSourceConfiguration {
      */
     private static int getRecyclerMaximumCapacity(final String thisType, final int defaultValue, final int capacity) {
         return Math.max(capacity, Configuration.getInstance()
-                .getIntegerWithDefault(RECYCLER_MAXIMUM_CAPACITY_PROPERTY + thisType, defaultValue));
+                .getIntegerWithDefault(RECYCLER_MAXIMUM_CAPACITY_PROPERTY_PREFIX + thisType, defaultValue));
     }
 
     private static int getDefaultInUseRecyclerCapacity() {
